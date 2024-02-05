@@ -42,7 +42,7 @@ TBDIR = $(CALIPTRA_SS_ROOT)/src/integration/tb
 RISCV_HW_IF_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/riscv_hw_if
 ISR_DIR    = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/caliptra_isr
 PRINTF_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/printf
-DUT ?= caliptra_top_tb
+DUT ?= caliptra_mcu_top_tb
 
 # Determine test directory
 #ifneq (,$(wildcard $(TBDIR)/tests/$(TEST)))
