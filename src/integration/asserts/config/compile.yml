@@ -1,0 +1,20 @@
+---
+provides: [asserts]
+schema_version: 2.4.0
+requires:
+targets:
+  tb:
+    directories: [$COMPILE_ROOT]
+    files:
+      - $COMPILE_ROOT/caliptra_mcu_top_sva.sv
+global:
+  tool:
+    vcs:
+      default:
+        - '-assert svaext'
+        #- '-v2k_generate'
+        #- '-timescale=1ns/1ps'
+        - '-noinherit_timescale=1ns/1ps'
+        #- '-ucli -i dump.ucli'
+      #sim:
+        #- '-ucli -i dump.ucli'

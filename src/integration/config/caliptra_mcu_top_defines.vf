@@ -1,0 +1,4 @@
++incdir+${CALIPTRA_SS_ROOT}/src/integration/rtl
+${CALIPTRA_SS_ROOT}/src/integration/rtl/config_defines_mcu.svh
+${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_reg_defines.svh
+${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_reg_defines.svh
