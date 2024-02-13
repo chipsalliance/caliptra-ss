@@ -17,13 +17,13 @@ This document provides definitions and requirements for the components used spec
 # Caliptra Manufacturer Control Unit
 
 The Caliptra Manufacturer Control Unit (MCU) repurposes a subset of the Caliptra RTM design. The MCU is intended to run manufacturer specific firmware that will interface with Caliptra to authenticate, measure and load all of the SoC firmware. The MCU firmware is also responsible for performing SoC specific initializations, and should be able to toggle functional signals and resets specific to the SoC.
-In addition to the peripherals leveraged from Caliptra RTM design, the subsystem includes QSPI and I3C peripherals for loading firmware, an AXI command buffer for initiating transactions onto the SoC fabric for communication with Caliptra as well as loading firmware to other SoC peripherals, and a custom fuse controller block for handling Caliptra and subsystem specific fuses.
+In addition to the peripherals leveraged from Caliptra RTM design, the subsystem includes an I3C peripheral for loading firmware, an AXI command buffer that initiates transactions onto the SoC fabric for communication with Caliptra as well as loading firmware to other SoC peripherals, and a custom fuse controller block for handling Caliptra and subsystem specific fuses.
 
 # QSPI
 
 # I3C
 
-# AXI Comnmand Buffer
+# AXI Command Buffer
 
 # Fuse Controller
 
