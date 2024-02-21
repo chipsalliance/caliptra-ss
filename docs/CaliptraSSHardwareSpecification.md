@@ -29,7 +29,26 @@ The AXI Command Buffer utilizes a 64B data buffer and a set of command API regis
 
 ## API
 
+The MCU will be responsible for programming the command buffer API registers to initiate transactions over the AXI interface.
 
+The START_ADDRESS, BURST, and LENGTH will be routed to the appropriate read or write channel addr, burst, and len interfaces based on the RW register value.
+
+The DATA register is used to store the pending write data as well as the read return data, depending on the transaction type.
+
+Setting the GO register will initiate the transaction flow
+
+*Table 1: AXI Command Buffer Registers*
+
+| **Register name** | **Width** | **Description** |
+| :--------- | :--------- | :--------- |
+| START_ADDRESS | [31:0] | Indicates the start address for the AXI command |
+| RW | [1:0] | Indicates the type of transaction. 10: READ, 01: WRITE |
+| BURST | [1:0] | Type of burst transaction 00: FIXED, 01: INCR, 10: WRAP |
+| LENGTH | [4:0] | Indicates the length of the transaction in beats. |
+| DATA | [15:0][31:0] | Write transactions data will come from here, read transactions will return data here. |
+| GO | [0:0] | Once set, the command buffer will initiate the requested transaction. |
+| VALID | [0:0] | Valid is set once the transaction has completed |
+| RESP | [1:0] | Read or write response bits from AXI protocol |
 
 # Fuse Controller
 
