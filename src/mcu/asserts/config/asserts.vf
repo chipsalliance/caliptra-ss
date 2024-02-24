@@ -1,0 +1,2 @@
++incdir+${CALIPTRA_ROOT}/src/integration/asserts
+${CALIPTRA_ROOT}/src/integration/asserts/caliptra_mcu_top_sva.sv
