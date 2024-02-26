@@ -16,7 +16,7 @@ This document provides definitions and requirements for the components used spec
 
 The following figure shows the block diagram for the subsystem reference design.
 
-*Figure 1: Caliptra Subsystem Block Diagram
+*Figure 1: Caliptra Subsystem Block Diagram*
 
 ![](./images/caliptra_ss_block_diagram.png)
 
@@ -31,7 +31,7 @@ The MCU will be responsible for driving the boot flow for Caliptra. This include
 
 The following figure shows an example of the possible boot flow involving Caliptra core and the MCU.
 
-*Figure 2: MCU Boot Flow
+*Figure 2: MCU Boot Flow*
 
 ![](./images/mcu_boot_flow_diagram.png)
 
