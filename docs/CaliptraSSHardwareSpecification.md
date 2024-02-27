@@ -14,10 +14,26 @@ This document defines technical specifications for a reference subsystem design 
 
 This document provides definitions and requirements for the components used specifically for the subsystem. For specifications of the components re-used from Caliptra RTM, see the [Caliptra Hardware Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraHardwareSpecification.md).
 
+The following figure shows the block diagram for the subsystem reference design.
+
+*Figure 1: Caliptra Subsystem Block Diagram*
+
+![](./images/caliptra_ss_block_diagram.png)
+
 # Caliptra Manufacturer Control Unit
 
 The Caliptra Manufacturer Control Unit (MCU) repurposes a subset of the Caliptra RTM design. The MCU is intended to run manufacturer specific firmware that will interface with Caliptra to authenticate, measure and load all of the SoC firmware. The MCU firmware is also responsible for performing SoC specific initializations, and should be able to toggle functional signals and resets specific to the SoC.
 In addition to the peripherals leveraged from Caliptra RTM design, the subsystem includes an I3C peripheral for loading firmware, an AXI command buffer that initiates transactions onto the SoC fabric for communication with Caliptra as well as loading firmware to other SoC peripherals, and a custom fuse controller block for handling Caliptra and subsystem specific fuses.
+
+## MCU Boot Flow
+
+The MCU will be responsible for driving the boot flow for Caliptra. This includes bringing Caliptra out of reset, pushing the appropriate fuses to Caliptra and providing the FMC and runtime firmware. After Caliptra has verified its own firmware, the MCU can utilize Caliptra services to verify its own firmware and any firmware on the SoC.
+
+The following figure shows an example of the possible boot flow involving Caliptra core and the MCU.
+
+*Figure 2: MCU Boot Flow*
+
+![](./images/mcu_boot_flow_diagram.png)
 
 # I3C
 
