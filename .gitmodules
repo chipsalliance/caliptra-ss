@@ -1,4 +1,4 @@
 [submodule "caliptra-rtl"]
-	path = caliptra-rtl
+	path = third_party/caliptra-rtl
 	url = git@github.com:chipsalliance/caliptra-rtl.git
 	branch = main
