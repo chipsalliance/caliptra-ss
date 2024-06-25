@@ -2,3 +2,6 @@
 	path = third_party/caliptra-rtl
 	url = git@github.com:chipsalliance/caliptra-rtl.git
 	branch = main
+[submodule "Cores-VeeR-EL2"]
+	path = third_party/Cores-VeeR-EL2
+	url = https://github.com/chipsalliance/Cores-VeeR-EL2.git
