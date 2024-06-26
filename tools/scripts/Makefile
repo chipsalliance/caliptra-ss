@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 
+SHELL = /bin/bash
 PLAYBOOK_RANDOM_SEED ?= $(shell date +%s)
 BUILD_CFLAGS ?= 
 TEST_CFLAGS = -g -O3 -DMY_RANDOM_SEED=$(PLAYBOOK_RANDOM_SEED) $(BUILD_CFLAGS)
@@ -34,7 +35,7 @@ ABI = -mabi=ilp32 -march=rv32imc
 endif
 
 # Define test name
-TESTNAME ?= iccm_lock
+TESTNAME ?= smoke_test_mbox
 TEST_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/$(TESTNAME)
 HEX_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/hex
 INCLUDES_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/includes
@@ -42,7 +43,10 @@ TBDIR = $(CALIPTRA_SS_ROOT)/src/mcu/tb
 RISCV_HW_IF_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/riscv_hw_if
 ISR_DIR    = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/caliptra_isr
 PRINTF_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/printf
+RV_ROOT = $(CALIPTRA_SS_ROOT)/third_party/Cores-VeeR-EL2
 DUT ?= caliptra_mcu_top_tb
+
+export RV_ROOT
 
 # Determine test directory
 #ifneq (,$(wildcard $(TBDIR)/tests/$(TEST)))
@@ -316,9 +320,27 @@ program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 
 endif
 
+############ Microsoft Custom Target ###############################
+# Run software test with:
+# 	make -f $RV_ROOT/tools/Makefile clean ms-sw-test
+
+MS_SNAPSHOT_NAME = ms_custom_conf
+MS_SNAPSHOT_DIR = snapshots/$(MS_SNAPSHOT_NAME)
+
+$(MS_SNAPSHOT_DIR):
+	${CALIPTRA_SS_ROOT}/veer_config/veer_build_command.sh $(MS_SNAPSHOT_NAME)
+	mv ${CALIPTRA_SS_ROOT}/$(MS_SNAPSHOT_DIR)/common_defines.vh ${CALIPTRA_SS_ROOT}/$(MS_SNAPSHOT_DIR)/common_defines.sv
+	sed -i 's|`define RV_TOP|// `define RV_TOP|' ${CALIPTRA_SS_ROOT}/$(MS_SNAPSHOT_DIR)/common_defines.sv
+	sed -i 's|`define RV_ROOT.*|`define RV_ROOT ""|' ${CALIPTRA_SS_ROOT}/$(MS_SNAPSHOT_DIR)/common_defines.sv
+
+ms-gen-config: $(MS_SNAPSHOT_DIR)
+
+ms-sw-test: ms-gen-config
+	TESTNAME=$(TESTNAME) $(MAKE) -f ${CALIPTRA_SS_ROOT}/tools/scripts/Makefile verilator
+
 help:
 	@echo Make sure the environment variable RV_ROOT is set.
-	@echo Possible targets: verilator vcs irun vlog riviera help clean all verilator-build irun-build vcs-build riviera-build program.hex
+	@echo Possible targets: verilator vcs irun vlog riviera help clean all verilator-build irun-build vcs-build riviera-build program.hex ms-gen-config ms-sw-test
 
 .PHONY: help clean clean_fw verilator vcs irun vlog riviera
 
