@@ -328,7 +328,7 @@ MS_SNAPSHOT_NAME = ms_custom_conf
 MS_SNAPSHOT_DIR = snapshots/$(MS_SNAPSHOT_NAME)
 
 $(MS_SNAPSHOT_DIR):
-	${CALIPTRA_SS_ROOT}/veer_config/veer_build_command.sh $(MS_SNAPSHOT_NAME)
+	cd ${CALIPTRA_SS_ROOT} && veer_config/veer_build_command.sh $(MS_SNAPSHOT_NAME) && cd -
 	mv ${CALIPTRA_SS_ROOT}/$(MS_SNAPSHOT_DIR)/common_defines.vh ${CALIPTRA_SS_ROOT}/$(MS_SNAPSHOT_DIR)/common_defines.sv
 	sed -i 's|`define RV_TOP|// `define RV_TOP|' ${CALIPTRA_SS_ROOT}/$(MS_SNAPSHOT_DIR)/common_defines.sv
 	sed -i 's|`define RV_ROOT.*|`define RV_ROOT ""|' ${CALIPTRA_SS_ROOT}/$(MS_SNAPSHOT_DIR)/common_defines.sv
