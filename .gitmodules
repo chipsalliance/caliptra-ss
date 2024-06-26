@@ -5,3 +5,6 @@
 [submodule "Cores-VeeR-EL2"]
 	path = third_party/Cores-VeeR-EL2
 	url = https://github.com/chipsalliance/Cores-VeeR-EL2.git
+[submodule "microsoft-i3c-core-rtl"]
+	path = third_party/microsoft-i3c-core-rtl
+	url = ../microsoft-i3c-core-rtl.git
