@@ -882,8 +882,15 @@ module caliptra_mcu_top_tb_services
 
         fd = $fopen("console.log","w");
         commit_count = 0;
-        preload_dccm();
-        preload_iccm();
+
+        `ifdef RV_DCCM_ENABLE
+            preload_dccm();
+        `endif
+
+        `ifdef RV_ICCM_ENABLE
+            preload_iccm();
+        `endif
+
         preload_mbox();
 
         assert_hard_rst_flag = 0;
