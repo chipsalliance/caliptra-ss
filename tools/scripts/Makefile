@@ -36,7 +36,7 @@ endif
 
 # Define test name
 TESTNAME ?= smoke_test_mbox
-TEST_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/$(TESTNAME)
+TEST_DIR ?= $(CALIPTRA_ROOT)/src/integration/test_suites/$(TESTNAME)
 HEX_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/hex
 INCLUDES_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/includes
 TBDIR = $(CALIPTRA_SS_ROOT)/src/mcu/tb
@@ -44,9 +44,11 @@ RISCV_HW_IF_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/riscv_hw_if
 ISR_DIR    = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/caliptra_isr
 PRINTF_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/printf
 RV_ROOT = $(CALIPTRA_SS_ROOT)/third_party/Cores-VeeR-EL2
+I3C_ROOT = $(CALIPTRA_SS_ROOT)/third_party/microsoft-i3c-core-rtl
 DUT ?= caliptra_mcu_top_tb
 
 export RV_ROOT
+export I3C_ROOT
 
 # Determine test directory
 #ifneq (,$(wildcard $(TBDIR)/tests/$(TEST)))
@@ -68,7 +70,7 @@ COMP_LIB_NAMES := aes \
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_ROOT)/src/integration/test_suites/libs/$(name))
 HEADER_FILES := $(INCLUDES_DIR)/caliptra_defines.h \
 		$(INCLUDES_DIR)/defines.h \
-		$(CALIPTRA_ROOT)/src/integration/rtl/caliptra_reg.h  \
+		$(I3C_ROOT)/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg.h  \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(PRINTF_DIR)/printf.h \
@@ -319,6 +321,18 @@ program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 
 endif
+
+############ I3C Core helpers ######################################
+I3C_DIR = $(CALIPTRA_SS_ROOT)/third_party/microsoft-i3c-core-rtl
+I3C_SW_DIR = $(I3C_DIR)/sw
+
+i3c-config:
+	$(MAKE) -f $(I3C_DIR)/Makefile config
+
+i3c-test:
+	TESTNAME=smoke_test_i3c \
+	TEST_DIR=$(CALIPTRA_SS_ROOT)/src/mcu/test_suites/smoke_test_i3c \
+	$(MAKE) -f ${CALIPTRA_SS_ROOT}/tools/scripts/Makefile ms-sw-test
 
 ############ Microsoft Custom Target ###############################
 # Run software test with:
