@@ -1001,6 +1001,39 @@ uart #(
   );
 `endif
 
+i3c_wrapper #(
+    .AHB_DATA_WIDTH(`CALIPTRA_AHB_HDATA_SIZE),
+    .AHB_ADDR_WIDTH(`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_I3C))
+) i3c (
+    .clk_i       (clk_cg),
+    .rst_ni      (cptra_noncore_rst_b),
+    // AMBA AHB Lite Interface
+    .haddr_i     (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].haddr[`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_I3C)-1:0]),
+    .hburst_i    (),
+    .hprot_i     (),
+    .hwdata_i    (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hwdata),
+    .hsel_i      (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hsel),
+    .hwstrb_i    (),
+    .hwrite_i    (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hwrite),
+    .hready_i    (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hready),
+    .htrans_i    (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].htrans),
+    .hsize_i     (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hsize),
+    .hresp_o     (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hresp),
+    .hreadyout_o (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hreadyout),
+    .hrdata_o    (responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hrdata),
+
+    .i3c_scl_i(),
+    .i3c_scl_o(),
+    .i3c_scl_en_o(),
+
+    .i3c_sda_i(),
+    .i3c_sda_o(),
+    .i3c_sda_en_o(),
+
+    .i3c_fsm_en_i(1'b1),
+    .i3c_fsm_idle_o()
+);
+
 soc_ifc_top #(
     .AHB_ADDR_WIDTH(`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
     .AHB_DATA_WIDTH(`CALIPTRA_AHB_HDATA_SIZE),
@@ -1127,9 +1160,6 @@ always_comb begin: tie_off_slaves
     responder_inst[`CALIPTRA_SLAVE_SEL_UART].hreadyout = '0;
     responder_inst[`CALIPTRA_SLAVE_SEL_UART].hrdata = '0;
 `endif
-    responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hresp = '0;
-    responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hreadyout = '0;
-    responder_inst[`CALIPTRA_SLAVE_SEL_I3C].hrdata = '0;
 
 `ifndef CALIPTRA_INTERNAL_TRNG
     responder_inst[`CALIPTRA_SLAVE_SEL_CSRNG].hresp = '0;
