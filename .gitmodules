@@ -1,10 +1,9 @@
-[submodule "caliptra-rtl"]
-	path = third_party/caliptra-rtl
-	url = ../caliptra-rtl.git
-	branch = main
 [submodule "Cores-VeeR-EL2"]
 	path = third_party/Cores-VeeR-EL2
 	url = https://github.com/chipsalliance/Cores-VeeR-EL2.git
-[submodule "microsoft-i3c-core-rtl"]
-	path = third_party/microsoft-i3c-core-rtl
-	url = ../microsoft-i3c-core-rtl.git
+[submodule "third_party/caliptra-rtl"]
+	path = third_party/caliptra-rtl
+	url = https://github.com/antmicro/caliptra-rtl.git
+[submodule "third_party/i3c-core"]
+	path = third_party/i3c-core
+	url = https://github.com/chipsalliance/i3c-core.git
