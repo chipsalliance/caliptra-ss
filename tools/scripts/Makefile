@@ -70,7 +70,7 @@ COMP_LIB_NAMES := aes \
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_ROOT)/src/integration/test_suites/libs/$(name))
 HEADER_FILES := $(INCLUDES_DIR)/caliptra_defines.h \
 		$(INCLUDES_DIR)/defines.h \
-		$(I3C_ROOT)/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg.h \
+		$(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg.h \
 		$(I3C_ROOT)/sw/I3CCSR.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
