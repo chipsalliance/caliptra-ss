@@ -108,8 +108,9 @@ targets:
       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_class_pll.sv
       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_pkg_test.sv
       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_intf.sv
-      - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/vip/aaxi4_top_interconnect.sv
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//testsuite/Interconnect.axi4/axi4_interconn_rw.sv
+      - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/vip/aaxi4_interconnect.sv
+      - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/vip/caliptra_ss_top.sv
+      # - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//testsuite/Interconnect.axi4/axi4_interconn_rw.sv
       # - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/tb/ref_axi4_interconn_rw.sv
       # - $COMPILE_ROOT/tb/caliptra_mcu_top_tb_pkg.sv
       # - $COMPILE_ROOT/tb/caliptra_veer_sram_export.sv
@@ -119,7 +120,7 @@ targets:
       # - $COMPILE_ROOT/coverage/caliptra_mcu_top_cov_bind.sv
       # - $COMPILE_ROOT/test_suites/libs/jtagdpi/jtagdpi.sv
       # - $COMPILE_ROOT/tb/caliptra_mcu_top_tb.sv
-    tops: [aaxi_top_interconnect]
+    tops: [caliptra_ss_top]
   sim:
     pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile'
 global:
@@ -132,8 +133,13 @@ global:
         - +define+RV_OPENSOURCE
         - +define+AVERY_VCS
         - +define+AVERY_CLOCK=5
+        - +define+FOUR_OUTSTANDING
         - +define+AVERY_AXI_INTERCONNECT
         - +define+AAXI_MAX_DATA_WIDTH=64
+        # - +define+AAXI_INTC_ID_WIDTH=3
+        # - +define+AAXI_ID_WIDTH=3
+        - +define+AAXI_MAX_ID_WIDTH=4 
+        # - +define+AAXI_MPORT_ID_WIDTH=3
         - '-noinherit_timescale=1ns/1ps'
         - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
         - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
@@ -142,3 +148,5 @@ global:
       elab:
         - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
         - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
+      sim:
+        - +define+aaxi_dbg_name=all
