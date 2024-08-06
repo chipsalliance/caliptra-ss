@@ -136,6 +136,7 @@ global:
         - +define+FOUR_OUTSTANDING
         - +define+AVERY_AXI_INTERCONNECT
         - +define+AAXI_MAX_DATA_WIDTH=64
+        # - +define+AAXI_INTC_MASTER_CNT=2
         # - +define+AAXI_INTC_ID_WIDTH=3
         # - +define+AAXI_ID_WIDTH=3
         - +define+AAXI_MAX_ID_WIDTH=4 
