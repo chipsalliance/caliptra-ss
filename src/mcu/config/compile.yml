@@ -24,8 +24,8 @@ targets:
 #       default:
 #         - '-assert svaext'
 #         - '+vpi -sverilog -full64 -lpthread'
-#         - +define+RV_BUILD_AXI4
-#         - +define+RV_OPENSOURCE
+#         - +define+MCU_RV_BUILD_AXI4
+#         - +define+MCU_RV_OPENSOURCE
 #         - +define+AVERY_VCS
 #         - +define+AVERY_CLOCK=5
 #         - +define+AVERY_AXI_INTERCONNECT
@@ -98,8 +98,8 @@ targets:
 #       default:
 #         - '-assert svaext'
 #         - '+vpi -sverilog -full64 -lpthread'
-#         - +define+RV_BUILD_AXI4
-#         - +define+RV_OPENSOURCE
+#         - +define+MCU_RV_BUILD_AXI4
+#         - +define+MCU_RV_OPENSOURCE
 #         - +define+AVERY_VCS
 #         - +define+AVERY_CLOCK=5
 #         - +define+FOUR_OUTSTANDING
