@@ -27,21 +27,23 @@ endif
 
 rv_gcc_version = $(strip $(shell $(GCC_PREFIX)-gcc --version | head -1 | sed "s/$(GCC_PREFIX)-gcc (.*) //"))
 $(info rv_gcc_version is $(rv_gcc_version))
+
 ifeq "12.2.0" "$(word 1, $(sort 12.2.0 $(rv_gcc_version)))"
-ABI = -mabi=ilp32 -march=rv32imc_zicsr_zifencei
+# ABI = -mabi=ilp32 -march=rv32imc_zicsr_zifencei_zba_zbb_zbc_zbs
+ABI = -mabi=ilp32 -march=rv32imc_zicsr --verbose 
 else
 ABI = -mabi=ilp32 -march=rv32imc
 endif
 
 # Define test name
 TESTNAME ?= iccm_lock
-TEST_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/$(TESTNAME)
-HEX_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/hex
-INCLUDES_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/includes
-TBDIR = $(CALIPTRA_SS_ROOT)/src/integration/tb
-RISCV_HW_IF_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/riscv_hw_if
-ISR_DIR    = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/caliptra_isr
-PRINTF_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/libs/printf
+TEST_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/$(TESTNAME)
+HEX_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/hex
+INCLUDES_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/includes
+TBDIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/tb
+RISCV_HW_IF_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/libs/riscv_hw_if
+ISR_DIR    = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/libs/caliptra_isr
+PRINTF_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/libs/printf
 DUT ?= caliptra_mcu_top_tb
 
 # Determine test directory
@@ -50,31 +52,32 @@ DUT ?= caliptra_mcu_top_tb
 #endif
 
 # Libraries providing functionality for each peripheral component in Caliptra
-COMP_LIB_NAMES := aes \
-		  doe \
-		  ecc \
-		  hmac \
-		  keyvault \
-		  datavault \
-		  sha256 \
-		  sha512 \
-		  soc_ifc \
-		  clk_gate \
-		  wdt
-COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_ROOT)/src/integration/test_suites/libs/$(name))
-HEADER_FILES := $(INCLUDES_DIR)/caliptra_defines.h \
-		$(INCLUDES_DIR)/defines.h \
-		$(CALIPTRA_ROOT)/src/integration/rtl/caliptra_reg.h  \
-		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
+# COMP_LIB_NAMES := aes \
+# 		  doe \
+# 		  ecc \
+# 		  hmac \
+# 		  keyvault \
+# 		  datavault \
+# 		  sha256 \
+# 		  sha512 \
+# 		  soc_ifc \
+# 		  clk_gate \
+# 		  wdt
+# COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/$(name))
+HEADER_FILES := $(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(PRINTF_DIR)/printf.h \
 		$(ISR_DIR)/riscv-csr.h \
 		$(ISR_DIR)/riscv-interrupts.h \
-		$(ISR_DIR)/veer-csr.h \
-		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
+		$(ISR_DIR)/veer-csr.h
 
-TEST_GEN_FILES := $(CALIPTRA_ROOT)/src/ecc/tb/ecdsa_secp384r1.exe \
-	          $(CALIPTRA_ROOT)/src/doe/tb/doe_test_gen.py
+#$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
+#$(CALIPTRA_SS_INT)/src/integration/rtl/caliptra_reg.h
+#$(INCLUDES_DIR)/caliptra_defines.h \
+#$(INCLUDES_DIR)/defines.h \
+
+TEST_GEN_FILES := $(CALIPTRA_SS_INT)/src/ecc/tb/ecdsa_secp384r1.exe \
+	          $(CALIPTRA_SS_INT)/src/doe/tb/doe_test_gen.py
 
 # Separate OFILE variable since this is not used to build remote images
 # (i.e. FMC or RunTime)
@@ -82,13 +85,13 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILE_CRT := crt0.o
 endif
 OFILES += $(TESTNAME).o
-ifeq (0,$(shell test -e $(TEST_DIR)/caliptra_isr.h && echo $$?))
-	OFILES += caliptra_isr.o
-endif
+# ifeq (0,$(shell test -e $(TEST_DIR)/caliptra_isr.h && echo $$?))
+# 	OFILES += caliptra_isr.o
+# endif
 # Assume all tests will import our printf lib
-OFILES += printf.o
+# OFILES += printf.o
 # Always compile the lib files - for every target
-OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
+# OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
 
 # Verilator trace format
 VERILATOR_TRACE=vcd
@@ -116,10 +119,11 @@ else
 	LINK = $(TEST_DIR)/$(TESTNAME).ld
 endif
 
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR) $(COMP_LIBS)
+# VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR) $(COMP_LIBS)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR)
 
 # Use eval to expand env variables in the .vf file
-$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
+# $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
 
 #defines  = $(BUILD_DIR)/common_defines.vh
 #defines += $(RV_ROOT)/design/include/el2_def.sv
@@ -165,7 +169,8 @@ suppress = -Wno-WIDTH -Wno-UNOPTFLAT -Wno-LITENDIAN -Wno-CMPCONST -Wno-MULTIDRIV
 
 # CFLAGS for verilator generated Makefiles. Without -std=c++17 it
 # complains for `auto` variables
-CFLAGS += -std=c++17
+CFLAGS += -std=c++14
+#CFLAGS += -std=c11
 
 # Optimization for better performance; alternative is nothing for
 # slower runtime (faster compiles) -O2 for faster runtime (slower
@@ -176,8 +181,8 @@ VERILATOR_MAKE_FLAGS = OPT_FAST="-Os"
 TB_DPI_SRCS = jtagdpi/jtagdpi.c \
               tcp_server/tcp_server.c
 
-TB_DPI_INCS := $(addprefix -I$(CALIPTRA_ROOT)/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
-TB_DPI_SRCS := $(addprefix $(CALIPTRA_ROOT)/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
+TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS_INT)/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
+TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
 
 # Testbench sources
 TB_VERILATOR_SRCS = $(TBDIR)/test_$(DUT).cpp $(TB_DPI_SRCS)
@@ -216,7 +221,8 @@ clean_fw:
 
 ############ Model Builds ###############################
 
-verilator-build: $(TBFILES) $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
+#verilator-build: $(TBFILES) $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
+verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	$(VERILATOR) $(TB_VERILATOR_SRCS) --cc -CFLAGS "$(CFLAGS)" \
 	  +libext+.v+.sv +define+RV_OPENSOURCE \
 	  --timescale 1ns/1ps \
@@ -230,7 +236,8 @@ verilator-build: $(TBFILES) $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	$(MAKE) -j`nproc` -e -C obj_dir/ -f V$(DUT).mk $(VERILATOR_MAKE_FLAGS) VM_PARALLEL_BUILDS=1
 	touch verilator-build
 
-vcs-build: $(TBFILES) $(INCLUDES_DIR)/defines.h $(TB_DPI_SRCS)
+#vcs-build: $(TBFILES) $(INCLUDES_DIR)/defines.h $(TB_DPI_SRCS)
+vcs-build: $(INCLUDES_DIR)/defines.h $(TB_DPI_SRCS)
 	vlogan -full64 -sverilog -kdb -incr_vlogan +lint=IA_CHECKFAIL -assert svaext \
 	  +define+CLP_ASSERT_ON $(TB_DEFS) -noinherit_timescale=1ns/1ps \
 	  -f $(TBDIR)/../config/$(DUT).vf
@@ -262,11 +269,11 @@ program.hex:
 	@echo "Building program.hex from $(TESTNAME) using Crypto Test rules for pre-compiled RUST executables"
 	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .bss -R .sbss -R .iccm -R .dccm -R .eh_frame --pad-to 0xC000 --gap-fill 0xFF --no-change-warnings $(TEST_DIR)/$(TESTNAME) program.hex
 	-$(GCC_PREFIX)-objcopy -O verilog -j .data -j .rodata -j .bss -j .sbss -j .dccm \
-			      --change-section-lma       .data-0x50000000 \
-			      --change-section-lma     .rodata-0x50000000 \
-			      --change-section-lma        .bss-0x50000000 \
-			      --change-section-lma       .sbss-0x50000000 \
-			      --change-section-lma       .dccm-0x50000000 \
+			      --change-section-lma       .data-0x80000000 \
+			      --change-section-lma     .rodata-0x80000000 \
+			      --change-section-lma        .bss-0x80000000 \
+			      --change-section-lma       .sbss-0x80000000 \
+			      --change-section-lma       .dccm-0x80000000 \
 			      --pad-to 0x20000 \
 			      --no-change-warnings \
 			      $(TEST_DIR)/$(TESTNAME) dccm.hex
@@ -276,24 +283,46 @@ program.hex:
 	$(GCC_PREFIX)-size        $(TEST_DIR)/$(TESTNAME) | tee $(TESTNAME).size
 
 else
-# Build program.hex from source (test_suites)
-program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
+# # Build program.hex from source (test_suites)
+# program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
+# 	@echo Building $(TESTNAME)
+# 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
+# 	$(GCC_PREFIX)-objcopy -O verilog  mcu_hello_world.exe program.hex
+# 	$(GCC_PREFIX)-objdump -S  mcu_hello_world.exe > mcu_hello_world.dis
+# 	riscv64-unknown-elf-nm -B -n mcu_hello_world.exe > mcu_hello_world.sym
+# 	@echo Completed building $(TESTNAME)
+
+mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	@echo Building $(TESTNAME)
 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
-	-$(GCC_PREFIX)-objcopy -O verilog -R .data_iccm0 -R .data_iccm1 -R .data_iccm2 -R .iccm -R .dccm -R .eh_frame --pad-to 0xC000 --no-change-warnings $(TESTNAME).exe program.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -j .data_iccm0 -j .data_iccm1 -j .data_iccm2 -j .dccm \
-			      --change-section-lma .data_iccm0-0x50000000 \
-			      --change-section-lma .data_iccm1-0x50000000 \
-			      --change-section-lma .data_iccm2-0x50000000 \
-			      --change-section-lma       .dccm-0x50000000 \
-			      --pad-to 0x20000 \
-			      --no-change-warnings \
-			      $(TESTNAME).exe dccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -j .iccm                       --change-section-address .iccm=0 --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe iccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -j .mailbox --gap-fill 0x0     --change-section-address .mailbox=0 --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mailbox.hex
-	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
-	$(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
+	$(GCC_PREFIX)-objcopy -O verilog  mcu_hello_world.exe mcu_program.hex
+	$(GCC_PREFIX)-objdump -S  mcu_hello_world.exe > mcu_hello_world.dis
+	riscv64-unknown-elf-nm -B -n mcu_hello_world.exe > mcu_hello_world.sym
 	@echo Completed building $(TESTNAME)
+
+# cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.dis mcu_hello_world.dis
+# cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.sym mcu_hello_world.sym
+# cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.exe mcu_hello_world.exe
+# cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.map mcu_hello_world.map
+# cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/program.hex program.hex
+
+# $(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
+# riscv64-unknown-elf-objcopy -O verilog  mcu_hello_world.exe program.hex
+# riscv64-unknown-elf-objdump -S  mcu_hello_world.exe > mcu_hello_world.dis
+# riscv64-unknown-elf-nm -B -n mcu_hello_world.exe > mcu_hello_world.sym
+# -$(GCC_PREFIX)-objcopy -O verilog -R .data_iccm0 -R .data_iccm1 -R .data_iccm2 -R .iccm -R .dccm -R .eh_frame --pad-to 0xC000 --no-change-warnings $(TESTNAME).exe program.hex
+# -$(GCC_PREFIX)-objcopy -O verilog -j .data_iccm0 -j .data_iccm1 -j .data_iccm2 -j .dccm \
+# 				--change-section-lma .data_iccm0-0x50000000 \
+# 				--change-section-lma .data_iccm1-0x50000000 \
+# 				--change-section-lma .data_iccm2-0x50000000 \
+# 				--change-section-lma       .dccm-0x50000000 \
+# 				--pad-to 0x20000 \
+# 				--no-change-warnings \
+# 				$(TESTNAME).exe dccm.hex
+# -$(GCC_PREFIX)-objcopy -O verilog -j .iccm                       --change-section-address .iccm=0 --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe iccm.hex
+# -$(GCC_PREFIX)-objcopy -O verilog -j .mailbox --gap-fill 0x0     --change-section-address .mailbox=0 --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mailbox.hex
+# $(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
+# $(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
 
 # Cannot build caliptra_{fmc,rt}.hex and program.hex in the same make invocation (TESTNAME will be invalid, and consequently other dependencies like LINK)
 # Entire image will be loaded into the mailbox, so it must fit the 128KiB memory
@@ -306,15 +335,22 @@ program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	@echo Completed building $(TESTNAME)
 
 %.o : %.s $(HEADER_FILES)
+	@echo " !!! Executing *.s files !!"
 	cp $(HEADER_FILES) $(BUILD_DIR)
-	$(GCC_PREFIX)-cpp $(includes) -I$(TEST_DIR)  $<  > $*.cpp.s
+	$(GCC_PREFIX)-cpp -I${BUILD_DIR}  $<  > $*.cpp.s
 	$(GCC_PREFIX)-as $(ABI) $*.cpp.s -o $@
 
 %.o : %.c $(HEADER_FILES)
 	cp $(HEADER_FILES) $(BUILD_DIR)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 
+# # Specific rule for crt0.o
+# crt0.o: /home/ws/caliptra/pateln/caliptra-ss-int-ws-0723/caliptra-ss-int/integration/test_suites/libs/riscv_hw_if/crt0.s
+# 	$(GCC_PREFIX)-as $(ABI) -o $@ $<
+
 endif
+
+# $(GCC_PREFIX)-cpp $(includes) -I$(TEST_DIR)  $<  > $*.cpp.s
 
 help:
 	@echo Make sure the environment variable RV_ROOT is set.

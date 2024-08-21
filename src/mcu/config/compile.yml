@@ -77,8 +77,8 @@ targets:
 #       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_class_pll.sv
 #       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_pkg_test.sv
 #       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_intf.sv
-#       - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/vip/aaxi4_interconnect.sv
-#       - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/vip/caliptra_ss_top.sv
+#       - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/testbench/aaxi4_interconnect.sv
+#       - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/testbench/caliptra_ss_top.sv
 #       # - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//testsuite/Interconnect.axi4/axi4_interconn_rw.sv
 #       # - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/tb/ref_axi4_interconn_rw.sv
 #       # - $COMPILE_ROOT/tb/caliptra_mcu_top_tb_pkg.sv
