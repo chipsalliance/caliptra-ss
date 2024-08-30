@@ -345,7 +345,7 @@ import caliptra_top_tb_pkg::*;
 
         assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
 
-        parameter MAX_CYCLES = 20_000;
+        parameter MAX_CYCLES = 200_000;
 
         integer fd, tp, el;
 
@@ -424,7 +424,7 @@ import caliptra_top_tb_pkg::*;
             // if(mailbox_write && mailbox_data[7:0] == 8'hff) begin
             //     $display("TEST_PASSED");
             //     $display("\nFinished : minstret = %0d, mcycle = %0d", `DEC.tlu.minstretl[31:0],`DEC.tlu.mcyclel[31:0]);
-            //     $display("See \"exec.log\" for execution trace with register updates..\n");
+            //     $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
             //     $finish;
             // end
             // else if(mailbox_write && mailbox_data[7:0] == 8'h1) begin
@@ -513,12 +513,12 @@ import caliptra_top_tb_pkg::*;
             reset_vector = `MCU_RV_RESET_VEC;
             nmi_vector   = 32'hee000000;
 
-            $readmemh("mcu_program.hex",  lmem.mem);
+            $readmemh("mcu_lmem.hex",     lmem.mem);
             $readmemh("mcu_program.hex",  imem.mem);
             tp = $fopen("trace_port.csv","w");
-            el = $fopen("exec.log","w");
+            el = $fopen("mcu_exec.log","w");
             $fwrite (el, "//   Cycle : #inst    0    pc    opcode    reg=value    csr=value     ; mnemonic\n");
-            fd = $fopen("console.log","w");
+            fd = $fopen("mcu_console.log","w");
             commit_count = 0;
             preload_dccm();
             preload_iccm();
@@ -904,6 +904,45 @@ import caliptra_top_tb_pkg::*;
         assign caliptra_top_tb_i.axi_sram_if.rready = axi_interconnect.sintf_arr[4].RREADY;
         
 
+
+        // AXI Interconnect connections
+        assign axi_interconnect.mintf_arr[2].AWVALID = '0;
+        assign axi_interconnect.mintf_arr[2].AWADDR  = '0;
+        assign axi_interconnect.mintf_arr[2].AWID    = '0;
+        assign axi_interconnect.mintf_arr[2].AWLEN   = '0;
+        assign axi_interconnect.mintf_arr[2].AWSIZE  = '0;
+        assign axi_interconnect.mintf_arr[2].AWBURST = '0;
+        assign axi_interconnect.mintf_arr[2].AWLOCK  = '0;
+        assign axi_interconnect.mintf_arr[2].AWUSER  = '0;
+//        assign something.awready    = axi_interconnect.mintf_arr[2].AWREADY;
+        
+        assign axi_interconnect.mintf_arr[2].WVALID = '0;
+        assign axi_interconnect.mintf_arr[2].WDATA  = '0;
+        assign axi_interconnect.mintf_arr[2].WSTRB  = '0;
+        assign axi_interconnect.mintf_arr[2].WLAST  = '0;
+//        assign something.wready    = axi_interconnect.mintf_arr[2].WREADY;
+        
+//        assign something.bvalid = axi_interconnect.mintf_arr[2].BVALID;
+//        assign something.bresp  = axi_interconnect.mintf_arr[2].BRESP;
+//        assign something.bid    = axi_interconnect.mintf_arr[2].BID;
+        assign axi_interconnect.mintf_arr[2].BREADY = '0;
+
+        assign axi_interconnect.mintf_arr[2].ARVALID = '0;
+        assign axi_interconnect.mintf_arr[2].ARADDR  = '0;
+        assign axi_interconnect.mintf_arr[2].ARID    = '0;
+        assign axi_interconnect.mintf_arr[2].ARLEN   = '0;
+        assign axi_interconnect.mintf_arr[2].ARSIZE  = '0;
+        assign axi_interconnect.mintf_arr[2].ARBURST = '0;
+        assign axi_interconnect.mintf_arr[2].ARLOCK  = '0;
+        assign axi_interconnect.mintf_arr[2].ARUSER  = '0;
+//        assign something.arready    = axi_interconnect.mintf_arr[2].ARREADY;
+        
+//        assign something.rvalid = axi_interconnect.mintf_arr[2].RVALID;
+//        assign something.rdata  = axi_interconnect.mintf_arr[2].RDATA;
+//        assign something.rresp  = axi_interconnect.mintf_arr[2].RRESP;
+//        assign something.rid    = axi_interconnect.mintf_arr[2].RID;
+//        assign something.rlast  = axi_interconnect.mintf_arr[2].RLAST;
+        assign axi_interconnect.mintf_arr[2].RREADY = '0;
 
         // AXI Interconnect connections
         assign axi_interconnect.mintf_arr[3].AWVALID = caliptra_top_tb_i.m_axi_if.awvalid;
