@@ -164,8 +164,8 @@ initial begin
         slave[i].cfg_info.passive_mode= 1; 
         slave[i].cfg_info.opt_awuser_enable = 0; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_aruser_enable = 0; // optional, axi4_interconn_routings.sv need it
-        slave[i].cfg_info.base_address[0] = 64'h8000_0000 + i*64'h0000_0100;
-        slave[i].cfg_info.limit_address[0] = 64'h8000_00FF + i*64'h0000_0100;
+        slave[i].cfg_info.base_address[0] = 64'h8000_0000 + i*64'h0001_0000;
+        slave[i].cfg_info.limit_address[0] = 64'h8000_FFFF + i*64'h0001_0000;
         // slave[i].add_fifo(64'habcc+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'ha000_0000+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'hb000_0001+i*64'h100_0000, 4);
