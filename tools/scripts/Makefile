@@ -30,7 +30,7 @@ $(info rv_gcc_version is $(rv_gcc_version))
 
 ifeq "12.2.0" "$(word 1, $(sort 12.2.0 $(rv_gcc_version)))"
 # ABI = -mabi=ilp32 -march=rv32imc_zicsr_zifencei_zba_zbb_zbc_zbs
-ABI = -mabi=ilp32 -march=rv32imc_zicsr --verbose 
+ABI = -mabi=ilp32 -march=rv32imc_zicsr_zifencei --verbose 
 else
 ABI = -mabi=ilp32 -march=rv32imc
 endif
@@ -44,6 +44,7 @@ TBDIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/tb
 RISCV_HW_IF_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/libs/riscv_hw_if
 ISR_DIR    = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/libs/caliptra_isr
 PRINTF_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/libs/printf
+CALIPTRA_DIR = $(CALIPTRA_ROOT)/src/integration/rtl
 DUT ?= caliptra_mcu_top_tb
 
 # Determine test directory
@@ -64,7 +65,8 @@ DUT ?= caliptra_mcu_top_tb
 # 		  clk_gate \
 # 		  wdt
 # COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/$(name))
-HEADER_FILES := $(RISCV_HW_IF_DIR)/riscv_hw_if.h \
+HEADER_FILES := $(CALIPTRA_DIR)/caliptra_reg.h \
+		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(PRINTF_DIR)/printf.h \
 		$(ISR_DIR)/riscv-csr.h \
@@ -82,14 +84,14 @@ TEST_GEN_FILES := $(CALIPTRA_SS_INT)/src/ecc/tb/ecdsa_secp384r1.exe \
 # Separate OFILE variable since this is not used to build remote images
 # (i.e. FMC or RunTime)
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
-	OFILE_CRT := crt0.o
+	OFILE_CRT := mcu_crt0.o
 endif
 OFILES += $(TESTNAME).o
-# ifeq (0,$(shell test -e $(TEST_DIR)/caliptra_isr.h && echo $$?))
-# 	OFILES += caliptra_isr.o
-# endif
+ifeq (0,$(shell test -e $(TEST_DIR)/caliptra_isr.h && echo $$?))
+	OFILES += caliptra_isr.o
+endif
 # Assume all tests will import our printf lib
-# OFILES += printf.o
+OFILES += printf.o
 # Always compile the lib files - for every target
 # OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
 
@@ -295,9 +297,10 @@ else
 mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	@echo Building $(TESTNAME)
 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
-	$(GCC_PREFIX)-objcopy -O verilog  mcu_hello_world.exe mcu_program.hex
-	$(GCC_PREFIX)-objdump -S  mcu_hello_world.exe > mcu_hello_world.dis
-	riscv64-unknown-elf-nm -B -n mcu_hello_world.exe > mcu_hello_world.sym
+	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
+	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
 	@echo Completed building $(TESTNAME)
 
 # cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.dis mcu_hello_world.dis
