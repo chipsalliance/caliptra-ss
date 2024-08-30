@@ -1,17 +1,4 @@
 /*
- * |-----------------------------------------------------------------------|
- * |                                                                       |
- * |   Copyright Avery Design Systems, Inc. 2010.                          |
- * |     All Rights Reserved.       Licensed Software.                     |
- * |                                                                       |
- * |                                                                       |
- * | THIS IS UNPUBLISHED PROPRIETARY SOURCE CODE OF AVERY DESIGN SYSTEMS   |
- * | The copyright notice above does not evidence any actual or intended   |
- * | publication of such source code.                                      |
- * |                                                                       |
- * |-----------------------------------------------------------------------|
- */
-/*
     Example top module for instantiation of Master/Slave BFM and
     interconnect.
     Includes 4 AXI Master BFMs and 5 AXI Slave BFMs connected to AXI Interconnect
@@ -132,48 +119,6 @@ defparam def_monitor.checker0.MAXWAITS= 60;
 defparam def_monitor.monitor.FNAME_TRACK= "default_slave_intf.txt";
 
 `endif
-
-// `ifdef AAXI_DUMP_VCD
-// initial begin
-//     $dumpfile("aaxi_interconnect.vcd");
-//     $dumpvars(0, aaxi_interconnect);
-// `ifdef AVERY_MS
-//     $dumpvars(0, aaxi_interconnect.ports);
-// `endif
-//     $dumpon;
-//     end
-// `endif
-
-// `ifdef AAXI_DUMP_VPD
-
-// generate 
-//     for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++) begin
-// 	initial begin
-// 	    $vcdpluson(0, aaxi_interconnect.mintf_arr[i]);
-// 	end
-//     end
-//     for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++) begin
-// 	initial begin
-// 	    $vcdpluson(0, aaxi_interconnect.sintf_arr[i]);
-// 	end 
-//     end
-// endgenerate 
-
-// initial begin
-//     $vcdpluson(0, aaxi_interconnect.ports);
-// end
-
-// `endif
-
-// // generate reset
-// initial begin
-//     rst_l = 1;
-//     #20;
-//     rst_l = 0;
-//     #20;
-//     rst_l = 1;
-// end
-
 
 // instance device classes
 
@@ -364,3 +309,43 @@ initial begin
         test.run();
     endtask
 endmodule
+// `ifdef AAXI_DUMP_VCD
+// initial begin
+//     $dumpfile("aaxi_interconnect.vcd");
+//     $dumpvars(0, aaxi_interconnect);
+// `ifdef AVERY_MS
+//     $dumpvars(0, aaxi_interconnect.ports);
+// `endif
+//     $dumpon;
+//     end
+// `endif
+
+// `ifdef AAXI_DUMP_VPD
+
+// generate 
+//     for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++) begin
+// 	initial begin
+// 	    $vcdpluson(0, aaxi_interconnect.mintf_arr[i]);
+// 	end
+//     end
+//     for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++) begin
+// 	initial begin
+// 	    $vcdpluson(0, aaxi_interconnect.sintf_arr[i]);
+// 	end 
+//     end
+// endgenerate 
+
+// initial begin
+//     $vcdpluson(0, aaxi_interconnect.ports);
+// end
+
+// `endif
+
+// // generate reset
+// initial begin
+//     rst_l = 1;
+//     #20;
+//     rst_l = 0;
+//     #20;
+//     rst_l = 1;
+// end
