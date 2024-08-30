@@ -37,13 +37,13 @@ endif
 
 # Define test name
 TESTNAME ?= iccm_lock
-TEST_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/$(TESTNAME)
-HEX_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/hex
-INCLUDES_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/includes
-TBDIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/tb
-RISCV_HW_IF_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/libs/riscv_hw_if
-ISR_DIR    = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/libs/caliptra_isr
-PRINTF_DIR = $(CALIPTRA_SS_INT)/src/caliptra-ss/integration/test_suites/libs/printf
+TEST_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/$(TESTNAME)
+HEX_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/hex
+INCLUDES_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/includes
+TBDIR = $(CALIPTRA_SS_INT)/src/integration/tb
+RISCV_HW_IF_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/riscv_hw_if
+ISR_DIR    = $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/caliptra_isr
+PRINTF_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/printf
 CALIPTRA_DIR = $(CALIPTRA_ROOT)/src/integration/rtl
 DUT ?= caliptra_mcu_top_tb
 
