@@ -16,11 +16,11 @@
 
 // Run time disassembler functions
 // supports  RISCV extentions I, C, M, A
-`ifndef RV_NUM_THREADS
-`define RV_NUM_THREADS 1
+`ifndef MCU_RV_NUM_THREADS
+`define MCU_RV_NUM_THREADS 1
 `endif
 
-bit[31:0] [31:0] gpr[`RV_NUM_THREADS];
+bit[31:0] [31:0] gpr[`MCU_RV_NUM_THREADS];
 
 // main DASM function
 function static string dasm(input[31:0] opcode, input[31:0] pc, input[4:0] regn, input[31:0] regv, input tid=0);

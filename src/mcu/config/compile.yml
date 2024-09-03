@@ -1,114 +1,116 @@
----
-provides: [caliptra_mcu_top_defines]
-schema_version: 2.4.0
-targets:
-  tb:
-    directories: [$COMPILE_ROOT/rtl]
-    files:
-      - $COMPILE_ROOT/rtl/config_defines_mcu.svh
-      - $COMPILE_ROOT/rtl/caliptra_reg_defines.svh
-  rtl:
-    directories: [$COMPILE_ROOT/rtl]
-    files:
-      - $COMPILE_ROOT/rtl/config_defines_mcu.svh
-      - $COMPILE_ROOT/rtl/caliptra_reg_defines.svh
----
-provides: [caliptra_mcu_top]
+provides: [mcu_top]
 schema_version: 2.4.0
 requires:
-  - caliptra_mcu_top_defines
-  - libs
-  - el2_veer_pkg
-  - el2_veer_wrapper
-  - ahb_lite_bus
-  - sha512_ctrl
-  - sha256_ctrl
-  - hmac_ctrl
-  - soc_ifc_top
-  - entropy_src
-  - csrng
-  - spi_host
-  - uart
+  - mcu_el2_veer_wrapper
 targets:
   rtl:
     directories: [$COMPILE_ROOT/rtl]
     files:
-      - $COMPILE_ROOT/rtl/caliptra_mcu_top.sv
-    tops: [caliptra_mcu_top]
-  rtl_lint:
-    waiver_files:
-      - $COMPILE_ROOT/config/design_lint/sglint_waivers
-    black_box:
-      - el2_veer_wrapper
-  cdc:
-    tcl_files:
-      - $COMPILE_ROOT/config/cdc/integration_top.constraints.tcl
-      - $COMPILE_ROOT/config/cdc/integration_top.waivers.tcl
-global:
-  tool:
-    vcs:
-      default:
-        - '-assert svaext'
-#        - '+define+CALIPTRA_INTERNAL_TRNG'
-        #- '-v2k_generate'
----
-provides: [caliptra_mcu_top_tb]
-schema_version: 2.4.0
-requires:
-  - asserts
-  - libs
-  - spiflash
-  - caliptra_mcu_top
-  - el2_veer_pkg
-  - el2_veer_wrapper
-  - sha512_coverage
-  - sha256_coverage
-  - hmac_coverage
-  - soc_ifc_coverage
-targets:
-  dpi_compile:
-    directories:
-      - $COMPILE_ROOT/test_suites/libs/tcp_server
-      - $COMPILE_ROOT/test_suites/libs/jtagdpi
-    files:
-      - $COMPILE_ROOT/test_suites/libs/tcp_server/tcp_server.h
-      - $COMPILE_ROOT/test_suites/libs/tcp_server/tcp_server.c
-      - $COMPILE_ROOT/test_suites/libs/jtagdpi/jtagdpi.h
-      - $COMPILE_ROOT/test_suites/libs/jtagdpi/jtagdpi.c
-    options:
-      - '-Wno-unused-variable'
-      - '-Wno-unused-function'
-      - tool:
-          vcs:
-            - '-DVCS'
-          ius:
-            - '-DXCELIUM'
-  tb:
-    directories:
-      - $COMPILE_ROOT/tb
-      - $COMPILE_ROOT/coverage
-    files:
-      - $COMPILE_ROOT/tb/caliptra_mcu_top_tb_pkg.sv
-      - $COMPILE_ROOT/tb/caliptra_veer_sram_export.sv
-      - $COMPILE_ROOT/tb/caliptra_mcu_top_tb_services.sv
-      - $COMPILE_ROOT/coverage/caliptra_mcu_top_cov_if.sv
-      - $COMPILE_ROOT/coverage/caliptra_mcu_top_cov_props.sv
-      - $COMPILE_ROOT/coverage/caliptra_mcu_top_cov_bind.sv
-      - $COMPILE_ROOT/test_suites/libs/jtagdpi/jtagdpi.sv
-      - $COMPILE_ROOT/tb/caliptra_mcu_top_tb.sv
-    tops: [caliptra_mcu_top_tb]
-  sim:
-    pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile'
-global:
-  tool:
-    vcs:
-      default:
-        - '-assert svaext'
-#        - '+define+CALIPTRA_INTERNAL_TRNG'
-        - +define+CLP_ASSERT_ON
-        #- '-v2k_generate'
-        #- '-timescale=1ns/1ps'
-        - '-noinherit_timescale=1ns/1ps'
-        #- '-ucli -i dump.ucli'
-      #sim:
-        #- '-ucli -i dump.ucli'
+      - $COMPILE_ROOT/rtl/mcu_top.sv
+    tops: [mcu_top]
+  # rtl_lint:
+  #   waiver_files:
+  #     - $COMPILE_ROOT/config/design_lint/sglint_waivers
+  #   black_box:
+  #     - mcu_el2_veer_wrapper
+  # cdc:
+  #   tcl_files:
+  #     - $COMPILE_ROOT/config/cdc/integration_top.constraints.tcl
+  #     - $COMPILE_ROOT/config/cdc/integration_top.waivers.tcl
+#-- Remove this
+# global:
+#   tool:
+#     vcs:
+#       default:
+#         - '-assert svaext'
+#         - '+vpi -sverilog -full64 -lpthread'
+#         - +define+MCU_RV_BUILD_AXI4
+#         - +define+MCU_RV_OPENSOURCE
+#         - +define+AVERY_VCS
+#         - +define+AVERY_CLOCK=5
+#         - +define+AVERY_AXI_INTERCONNECT
+#         - +define+AAXI_MAX_DATA_WIDTH=32
+#         - '-noinherit_timescale=1ns/1ps'
+#         - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
+#         - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
+#       elab:
+#         - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
+#         - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
+# ---
+# provides: [mcu_top_tb]
+# schema_version: 2.4.0
+# requires:
+#   # - asserts
+#   # - libs
+#   - mcu_top
+# targets:
+#   # dpi_compile:
+#   #   directories:
+#   #     # - $COMPILE_ROOT/test_suites/libs/tcp_server
+#   #     # - $COMPILE_ROOT/test_suites/libs/jtagdpi
+#   #   files:
+#   #     - $COMPILE_ROOT/test_suites/libs/tcp_server/tcp_server.h
+#   #     - $COMPILE_ROOT/test_suites/libs/tcp_server/tcp_server.c
+#   #     - $COMPILE_ROOT/test_suites/libs/jtagdpi/jtagdpi.h
+#   #     - $COMPILE_ROOT/test_suites/libs/jtagdpi/jtagdpi.c
+#   #   options:
+#   #     - '-Wno-unused-variable'
+#   #     - '-Wno-unused-function'
+#   #     - tool:
+#   #         vcs:
+#   #           - '-DVCS'
+#   #         ius:
+#   #           - '-DXCELIUM'
+#   tb:
+#     directories:
+#       - $COMPILE_ROOT/vip
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi.VCS
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//checker/BP063-BU-01000-r0p1-00rel0/sva
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//testbench
+#     files:
+#       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src/avery_pkg.sv
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src/avery_pkg_test.sv
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_pkg.sv
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_pkg_xactor.sv
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_class_pll.sv
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_pkg_test.sv
+#       - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_intf.sv
+#       - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/testbench/aaxi4_interconnect.sv
+#       - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/testbench/caliptra_ss_top.sv
+#       # - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//testsuite/Interconnect.axi4/axi4_interconn_rw.sv
+#       # - $COMPILE_ROOT/../../../../caliptra-ss-int/src/caliptra-ss-int/tb/ref_axi4_interconn_rw.sv
+#       # - $COMPILE_ROOT/tb/caliptra_mcu_top_tb_pkg.sv
+#       # - $COMPILE_ROOT/tb/caliptra_veer_sram_export.sv
+#       # - $COMPILE_ROOT/tb/caliptra_mcu_top_tb_services.sv
+#       # - $COMPILE_ROOT/coverage/caliptra_mcu_top_cov_if.sv
+#       # - $COMPILE_ROOT/coverage/caliptra_mcu_top_cov_props.sv
+#       # - $COMPILE_ROOT/coverage/caliptra_mcu_top_cov_bind.sv
+#       # - $COMPILE_ROOT/test_suites/libs/jtagdpi/jtagdpi.sv
+#       # - $COMPILE_ROOT/tb/caliptra_mcu_top_tb.sv
+#     tops: [caliptra_ss_top]
+#   sim:
+#     pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile'
+# global:
+#   tool:
+#     vcs:
+#       default:
+#         - '-assert svaext'
+#         - '+vpi -sverilog -full64 -lpthread'
+#         - +define+MCU_RV_BUILD_AXI4
+#         - +define+MCU_RV_OPENSOURCE
+#         - +define+AVERY_VCS
+#         - +define+AVERY_CLOCK=5
+#         - +define+FOUR_OUTSTANDING
+#         - +define+AVERY_AXI_INTERCONNECT
+#         - +define+AAXI_MAX_DATA_WIDTH=64
+#         - +define+AAXI_MAX_ID_WIDTH=4 
+#         - '-noinherit_timescale=1ns/1ps'
+#         - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
+#         - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
+#       elab:
+#         - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
+#         - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
+#       sim:
+#         - +define+aaxi_dbg_name=all

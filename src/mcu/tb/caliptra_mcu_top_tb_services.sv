@@ -28,7 +28,7 @@
 
 `default_nettype none
 
-`include "common_defines.sv"
+`include "mcu_common_defines.sv"
 `include "config_defines_mcu.svh"
 `include "caliptra_reg_defines.svh"
 
@@ -697,8 +697,8 @@ module caliptra_mcu_top_tb_services
         if(cycleCnt == MAX_CYCLES && !UVM_TB) begin
             $error("Hit max cycle count (%0d) .. stopping",cycleCnt);
             dump_memory_contents(MEMTYPE_LMEM, 32'h8000_0110, 32'h8000_0180);
-            dump_memory_contents(MEMTYPE_DCCM, `RV_DCCM_SADR, `RV_DCCM_EADR);
-            dump_memory_contents(MEMTYPE_ICCM, `RV_ICCM_SADR, `RV_ICCM_EADR);
+            dump_memory_contents(MEMTYPE_DCCM, `MCU_RV_DCCM_SADR, `MCU_RV_DCCM_EADR);
+            dump_memory_contents(MEMTYPE_ICCM, `MCU_RV_ICCM_SADR, `MCU_RV_ICCM_EADR);
             $finish;
         end
         // console Monitor
@@ -726,8 +726,8 @@ module caliptra_mcu_top_tb_services
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `DEC.tlu.minstretl[31:0],`DEC.tlu.mcyclel[31:0]);
                 $display("See \"exec.log\" for execution trace with register updates..\n");
                 dump_memory_contents(MEMTYPE_LMEM, 32'h0000_0000, 32'h001_FFFF);
-                dump_memory_contents(MEMTYPE_DCCM, `RV_DCCM_SADR, `RV_DCCM_EADR);
-                dump_memory_contents(MEMTYPE_ICCM, `RV_ICCM_SADR, `RV_ICCM_EADR);
+                dump_memory_contents(MEMTYPE_DCCM, `MCU_RV_DCCM_SADR, `MCU_RV_DCCM_EADR);
+                dump_memory_contents(MEMTYPE_ICCM, `MCU_RV_ICCM_SADR, `MCU_RV_ICCM_EADR);
                 $finish;
             end
         end
@@ -742,8 +742,8 @@ module caliptra_mcu_top_tb_services
         if (|cycleCntKillReq && (cycleCnt == (cycleCntKillReq + 100))) begin
                 $error("Dumping memory contents at simulation end due to FAILURE");
                 dump_memory_contents(MEMTYPE_LMEM, 32'h0000_0000, 32'h001_FFFF);
-                dump_memory_contents(MEMTYPE_DCCM, `RV_DCCM_SADR, `RV_DCCM_EADR);
-                dump_memory_contents(MEMTYPE_ICCM, `RV_ICCM_SADR, `RV_ICCM_EADR);
+                dump_memory_contents(MEMTYPE_DCCM, `MCU_RV_DCCM_SADR, `MCU_RV_DCCM_EADR);
+                dump_memory_contents(MEMTYPE_ICCM, `MCU_RV_ICCM_SADR, `MCU_RV_ICCM_EADR);
                 $finish;
         end
     end
@@ -1037,15 +1037,15 @@ task static preload_iccm;
     `ifndef VERILATOR
     init_iccm();
     `endif
-    saddr = `RV_ICCM_SADR;
-    if ( (saddr < `RV_ICCM_SADR) || (saddr > `RV_ICCM_EADR)) return;
-    `ifndef RV_ICCM_ENABLE
+    saddr = `MCU_RV_ICCM_SADR;
+    if ( (saddr < `MCU_RV_ICCM_SADR) || (saddr > `MCU_RV_ICCM_EADR)) return;
+    `ifndef MCU_RV_ICCM_ENABLE
         $display("********************************************************");
         $display("ICCM preload: there is no ICCM in VeeR, terminating !!!");
         $display("********************************************************");
         $finish;
     `endif
-    eaddr = `RV_ICCM_EADR;
+    eaddr = `MCU_RV_ICCM_EADR;
     $display("ICCM pre-load from %h to %h", saddr, eaddr);
 
     for(addr= saddr; addr <= eaddr; addr+=4) begin
@@ -1069,15 +1069,15 @@ task static preload_dccm;
     `ifndef VERILATOR
     init_dccm();
     `endif
-    saddr = `RV_DCCM_SADR;
-    if (saddr < `RV_DCCM_SADR || saddr > `RV_DCCM_EADR) return;
-    `ifndef RV_DCCM_ENABLE
+    saddr = `MCU_RV_DCCM_SADR;
+    if (saddr < `MCU_RV_DCCM_SADR || saddr > `MCU_RV_DCCM_EADR) return;
+    `ifndef MCU_RV_DCCM_ENABLE
         $display("********************************************************");
         $display("DCCM preload: there is no DCCM in VeeR, terminating !!!");
         $display("********************************************************");
         $finish;
     `endif
-    eaddr = `RV_DCCM_EADR;
+    eaddr = `MCU_RV_DCCM_EADR;
     $display("DCCM pre-load from %h to %h", saddr, eaddr);
 
     for(addr=saddr; addr <= eaddr; addr+=4) begin
@@ -1107,15 +1107,15 @@ endtask
 task static slam_dccm_ram(input [31:0] addr, input[38:0] data);
     int bank, indx;
     bank = get_dccm_bank(addr, indx);
-    `ifdef RV_DCCM_ENABLE
+    `ifdef MCU_RV_DCCM_ENABLE
     case(bank)
     0: `DRAM(0)[indx] = data;
     1: `DRAM(1)[indx] = data;
-    `ifdef RV_DCCM_NUM_BANKS_4
+    `ifdef MCU_RV_DCCM_NUM_BANKS_4
     2: `DRAM(2)[indx] = data;
     3: `DRAM(3)[indx] = data;
     `endif
-    `ifdef RV_DCCM_NUM_BANKS_8
+    `ifdef MCU_RV_DCCM_NUM_BANKS_8
     2: `DRAM(2)[indx] = data;
     3: `DRAM(3)[indx] = data;
     4: `DRAM(4)[indx] = data;
@@ -1133,15 +1133,15 @@ task static slam_iccm_ram( input[31:0] addr, input[38:0] data);
     int bank, idx;
 
     bank = get_iccm_bank(addr, idx);
-    `ifdef RV_ICCM_ENABLE
+    `ifdef MCU_RV_ICCM_ENABLE
     case(bank) // {
       0: `IRAM(0)[idx] = data;
       1: `IRAM(1)[idx] = data;
-     `ifdef RV_ICCM_NUM_BANKS_4
+     `ifdef MCU_RV_ICCM_NUM_BANKS_4
       2: `IRAM(2)[idx] = data;
       3: `IRAM(3)[idx] = data;
      `endif
-     `ifdef RV_ICCM_NUM_BANKS_8
+     `ifdef MCU_RV_ICCM_NUM_BANKS_8
       2: `IRAM(2)[idx] = data;
       3: `IRAM(3)[idx] = data;
       4: `IRAM(4)[idx] = data;
@@ -1150,7 +1150,7 @@ task static slam_iccm_ram( input[31:0] addr, input[38:0] data);
       7: `IRAM(7)[idx] = data;
      `endif
 
-     `ifdef RV_ICCM_NUM_BANKS_16
+     `ifdef MCU_RV_ICCM_NUM_BANKS_16
       2: `IRAM(2)[idx] = data;
       3: `IRAM(3)[idx] = data;
       4: `IRAM(4)[idx] = data;
@@ -1171,21 +1171,21 @@ task static slam_iccm_ram( input[31:0] addr, input[38:0] data);
 endtask
 
 task static init_iccm;
-    `ifdef RV_ICCM_ENABLE
+    `ifdef MCU_RV_ICCM_ENABLE
         `IRAM(0) = '{default:39'h0};
         `IRAM(1) = '{default:39'h0};
-    `ifdef RV_ICCM_NUM_BANKS_4
+    `ifdef MCU_RV_ICCM_NUM_BANKS_4
         `IRAM(2) = '{default:39'h0};
         `IRAM(3) = '{default:39'h0};
     `endif
-    `ifdef RV_ICCM_NUM_BANKS_8
+    `ifdef MCU_RV_ICCM_NUM_BANKS_8
         `IRAM(4) = '{default:39'h0};
         `IRAM(5) = '{default:39'h0};
         `IRAM(6) = '{default:39'h0};
         `IRAM(7) = '{default:39'h0};
     `endif
 
-    `ifdef RV_ICCM_NUM_BANKS_16
+    `ifdef MCU_RV_ICCM_NUM_BANKS_16
         `IRAM(4) = '{default:39'h0};
         `IRAM(5) = '{default:39'h0};
         `IRAM(6) = '{default:39'h0};
@@ -1203,14 +1203,14 @@ task static init_iccm;
 endtask
 
 task static init_dccm;
-    `ifdef RV_DCCM_ENABLE
+    `ifdef MCU_RV_DCCM_ENABLE
         `DRAM(0) = '{default:39'h0};
         `DRAM(1) = '{default:39'h0};
-    `ifdef RV_DCCM_NUM_BANKS_4
+    `ifdef MCU_RV_DCCM_NUM_BANKS_4
         `DRAM(2) = '{default:39'h0};
         `DRAM(3) = '{default:39'h0};
     `endif
-    `ifdef RV_DCCM_NUM_BANKS_8
+    `ifdef MCU_RV_DCCM_NUM_BANKS_8
         `DRAM(4) = '{default:39'h0};
         `DRAM(5) = '{default:39'h0};
         `DRAM(6) = '{default:39'h0};
@@ -1248,15 +1248,15 @@ task static dump_memory_contents;
             MEMTYPE_LMEM: data = `LMEM[addr[31:2]][addr[1:0]];
             MEMTYPE_DCCM: begin
                             bank = get_dccm_bank(addr, indx);
-                            `ifdef RV_DCCM_ENABLE
+                            `ifdef MCU_RV_DCCM_ENABLE
                             case(bank)
                                 0: ecc_data = `DRAM(0)[indx];
                                 1: ecc_data = `DRAM(1)[indx];
-                                `ifdef RV_DCCM_NUM_BANKS_4
+                                `ifdef MCU_RV_DCCM_NUM_BANKS_4
                                 2: ecc_data = `DRAM(2)[indx];
                                 3: ecc_data = `DRAM(3)[indx];
                                 `endif
-                                `ifdef RV_DCCM_NUM_BANKS_8
+                                `ifdef MCU_RV_DCCM_NUM_BANKS_8
                                 2: ecc_data = `DRAM(2)[indx];
                                 3: ecc_data = `DRAM(3)[indx];
                                 4: ecc_data = `DRAM(4)[indx];
@@ -1269,15 +1269,15 @@ task static dump_memory_contents;
             end
             MEMTYPE_ICCM: begin
                             bank = get_iccm_bank(addr, indx);
-                            `ifdef RV_ICCM_ENABLE
+                            `ifdef MCU_RV_ICCM_ENABLE
                             case(bank) // {
                                 0: ecc_data =  `IRAM(0)[indx];
                                 1: ecc_data = `IRAM(1)[indx];
-                                `ifdef RV_ICCM_NUM_BANKS_4
+                                `ifdef MCU_RV_ICCM_NUM_BANKS_4
                                 2: ecc_data = `IRAM(2)[indx];
                                 3: ecc_data = `IRAM(3)[indx];
                                 `endif
-                                `ifdef RV_ICCM_NUM_BANKS_8
+                                `ifdef MCU_RV_ICCM_NUM_BANKS_8
                                 2: ecc_data = `IRAM(2)[indx];
                                 3: ecc_data = `IRAM(3)[indx];
                                 4: ecc_data = `IRAM(4)[indx];
@@ -1285,7 +1285,7 @@ task static dump_memory_contents;
                                 6: ecc_data = `IRAM(6)[indx];
                                 7: ecc_data = `IRAM(7)[indx];
                                 `endif
-                                `ifdef RV_ICCM_NUM_BANKS_16
+                                `ifdef MCU_RV_ICCM_NUM_BANKS_16
                                 2: ecc_data = `IRAM(2)[indx];
                                 3: ecc_data = `IRAM(3)[indx];
                                 4: ecc_data = `IRAM(4)[indx];
@@ -1356,30 +1356,30 @@ function[6:0] riscv_ecc32(input[31:0] data);
 endfunction
 
 function int get_dccm_bank(input[31:0] addr,  output int bank_idx);
-    `ifdef RV_DCCM_NUM_BANKS_2
-        bank_idx = int'(addr[`RV_DCCM_BITS-1:3]);
+    `ifdef MCU_RV_DCCM_NUM_BANKS_2
+        bank_idx = int'(addr[`MCU_RV_DCCM_BITS-1:3]);
         return int'( addr[2]);
-    `elsif RV_DCCM_NUM_BANKS_4
-        bank_idx = int'(addr[`RV_DCCM_BITS-1:4]);
+    `elsif MCU_RV_DCCM_NUM_BANKS_4
+        bank_idx = int'(addr[`MCU_RV_DCCM_BITS-1:4]);
         return int'(addr[3:2]);
-    `elsif RV_DCCM_NUM_BANKS_8
-        bank_idx = int'(addr[`RV_DCCM_BITS-1:5]);
+    `elsif MCU_RV_DCCM_NUM_BANKS_8
+        bank_idx = int'(addr[`MCU_RV_DCCM_BITS-1:5]);
         return int'( addr[4:2]);
     `endif
 endfunction
 
 function int get_iccm_bank(input[31:0] addr,  output int bank_idx);
-    `ifdef RV_DCCM_NUM_BANKS_2
-        bank_idx = int'(addr[`RV_DCCM_BITS-1:3]);
+    `ifdef MCU_RV_DCCM_NUM_BANKS_2
+        bank_idx = int'(addr[`MCU_RV_DCCM_BITS-1:3]);
         return int'( addr[2]);
-    `elsif RV_ICCM_NUM_BANKS_4
-        bank_idx = int'(addr[`RV_ICCM_BITS-1:4]);
+    `elsif MCU_RV_ICCM_NUM_BANKS_4
+        bank_idx = int'(addr[`MCU_RV_ICCM_BITS-1:4]);
         return int'(addr[3:2]);
-    `elsif RV_ICCM_NUM_BANKS_8
-        bank_idx = int'(addr[`RV_ICCM_BITS-1:5]);
+    `elsif MCU_RV_ICCM_NUM_BANKS_8
+        bank_idx = int'(addr[`MCU_RV_ICCM_BITS-1:5]);
         return int'( addr[4:2]);
-    `elsif RV_ICCM_NUM_BANKS_16
-        bank_idx = int'(addr[`RV_ICCM_BITS-1:6]);
+    `elsif MCU_RV_ICCM_NUM_BANKS_16
+        bank_idx = int'(addr[`MCU_RV_ICCM_BITS-1:6]);
         return int'( addr[5:2]);
     `endif
 endfunction

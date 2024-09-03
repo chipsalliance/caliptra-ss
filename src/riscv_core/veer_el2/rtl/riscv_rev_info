@@ -1,0 +1,10 @@
+Core rev1p0 generated from commit, 
+
+commit 198f54787d126b17aa1ae5a3ee34a839dd818c1f (HEAD -> main, origin/main, origin/HEAD)
+Merge: 38bee9a3ee ed8d7e9d52
+Author: Tomasz Michalak <tmichalak@antmicro.com>
+Date:   Thu Jul 25 15:01:12 2024 +0200
+
+    Merge pull request #204 from antmicro/wsip/resize_ports
+    
+    resize iccm ecc signals
