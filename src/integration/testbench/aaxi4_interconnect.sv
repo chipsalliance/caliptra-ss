@@ -164,8 +164,6 @@ initial begin
         slave[i].cfg_info.passive_mode= 1; 
         slave[i].cfg_info.opt_awuser_enable = 0; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_aruser_enable = 0; // optional, axi4_interconn_routings.sv need it
-        slave[i].cfg_info.base_address[0] = 64'h8000_0000 + i*64'h0001_0000;
-        slave[i].cfg_info.limit_address[0] = 64'h8000_FFFF + i*64'h0001_0000;
         // slave[i].add_fifo(64'habcc+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'ha000_0000+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'hb000_0001+i*64'h100_0000, 4);
@@ -185,11 +183,21 @@ initial begin
 	slave[i].cfg_info.arready_default = 1;
 `endif
 	end
-        //-- Mailbox
+        //-- imem
+        slave[0].cfg_info.base_address[0] = 64'h8000_0000;
+        slave[0].cfg_info.limit_address[0] = 64'h8000_FFFF;
+
+        //-- lmem/Mailbox
+        slave[1].cfg_info.base_address[0] = 64'h8001_0000;
+        slave[1].cfg_info.limit_address[0] = 64'h8001_FFFF;
         slave[1].cfg_info.base_address[1]  = 64'hD058_0000;
         slave[1].cfg_info.limit_address[1] = 64'hD058_0000;
         // slave[1].cfg_info.fifo_address[1]  = 64'hE000_0000;
         // slave[1].cfg_info.fifo_limit[1]    = 64'hE000_1000;
+
+        //-- MCU AXI DMA sub
+        slave[2].cfg_info.base_address[0] = 64'h8002_0000;
+        slave[2].cfg_info.limit_address[0] = 64'h8002_FFFF;
 
         //-- Caliptra TB BFM (SOC BFM)
         slave[3].cfg_info.passive_mode= 1; 
