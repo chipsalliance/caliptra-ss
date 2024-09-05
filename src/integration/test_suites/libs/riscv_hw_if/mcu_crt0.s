@@ -43,7 +43,7 @@ _start:
         //  - STDOUT     @ 0xD000_0000:    SE
         //  - [UNMAPPED] @ 0xE000_0000:    SE
         //  - [UNMAPPED] @ 0xF000_0000:    SE
-        li t0, 0xAAA9A6AA
+        li t0, 0xAAA9A2AA
         csrw mrac, t0
 
         la sp, STACK
