@@ -904,6 +904,7 @@ import caliptra_top_tb_pkg::*;
                 s_axi_if_wr_is_upper_dw_latched <= 0;
             else if (s_axi_if.awvalid && s_axi_if.awready)
                 s_axi_if_wr_is_upper_dw_latched <= s_axi_if.awaddr[2] && (s_axi_if.awsize < 3);
+        `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT, (s_axi_if.awvalid && s_axi_if.awready) -> (s_axi_if.awsize < 3), core_clk, !rst_l)
 
         assign s_axi_if.wvalid                       = axi_interconnect.sintf_arr[3].WVALID;
         assign s_axi_if.wdata                        = axi_interconnect.sintf_arr[3].WDATA >> (s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
@@ -932,6 +933,7 @@ import caliptra_top_tb_pkg::*;
                 s_axi_if_rd_is_upper_dw_latched <= 0;
             else if (s_axi_if.arvalid && s_axi_if.arready)
                 s_axi_if_rd_is_upper_dw_latched <= s_axi_if.araddr[2] && (s_axi_if.arsize < 3);
+        `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT, (s_axi_if.arvalid && s_axi_if.arready) -> (s_axi_if.arsize < 3), core_clk, !rst_l)
 
         assign axi_interconnect.sintf_arr[3].RVALID  = s_axi_if.rvalid;
         assign axi_interconnect.sintf_arr[3].RDATA   = 64'(s_axi_if.rdata) << (s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
