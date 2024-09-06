@@ -3,7 +3,7 @@ schema_version: 2.4.0
 requires:
   - mcu_top
   - mcu_el2_veer_wrapper
-  - caliptra_top_tb
+  - caliptra_top_tb_pkg
 targets:
   tb:
     directories:
@@ -28,13 +28,18 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_top.sv
     tops: [caliptra_ss_top]
   sim:
-    pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile'
+    pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile && echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $CALIPTRA_ROOT/src/ecc/tb/ecdsa_secp384r1.exe . 
+                && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $CALIPTRA_ROOT/src/doe/tb/doe_test_gen.py .
+                && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $CALIPTRA_ROOT/src/sha256/tb/sha256_wntz_test_gen.py .'
 global:
   tool:
     vcs:
       default:
         - '-assert svaext'
         - '+vpi -sverilog -full64 -lpthread'
+        # Used in caliptra_top_sva to find signals
+        - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top
+        - +define+CPTRA_TOP_PATH=caliptra_ss_top.caliptra_top_dut
         - +define+MCU_RV_BUILD_AXI4
         - +define+MCU_RV_OPENSOURCE
         - +define+AVERY_VCS
