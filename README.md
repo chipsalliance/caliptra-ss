@@ -18,13 +18,9 @@ _*Last Update: 2024/01/24*_
 
 HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and additional infrastructure to support manufacturer custom controls.
 
-:warning:**$${\color{red}DISCLAIMER:\ This\ repository\ is\ under\ active\ development\ and\ has\ no\ official\ release.}$$**<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**$${\color{red}Functionality\ or\ quality\ is\ not\ guaranteed.}$$**<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**$${\color{red}Do\ not\ integrate\ this\ into\ a\ production\ design!}$$**<br>
-
-```html
-<span style='color: red;'> This is an HTML test </span>
-```
+:warning:**$${\fontsf{\color{red}DISCLAIMER:\ This\ repository\ is\ under\ active\ development\ and\ has\ no\ official\ release.}}$$**<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**$${\fontsf{\color{red}Functionality\ or\ quality\ is\ not\ guaranteed.}}$$**<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**$${\fontsf{\color{red}Do\ not\ integrate\ this\ into\ a\ production\ design!}}$$**<br>
 
 ## Project Links
 [caliptra-rtl](https://github.com/chipsalliance/caliptra-rtl)
