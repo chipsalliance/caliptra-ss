@@ -1,0 +1,9 @@
+document:
+  schema: 1.0
+
+contents:
+  - tests:
+      tags: ["L0", "Lop_regression", "top_regression"]
+      paths:
+        - ../test_suites/mcu_hello_world/mcu_hello_world.yml
+        - ../test_suites/mcu_cptra_bringup/mcu_cptra_bringup.yml
