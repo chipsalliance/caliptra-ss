@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and<BR>
 limitations under the License.*_<BR>
 
 # Caliptra Subsystem Overview
-_*Last Update: 2024/01/24*_
+_*Last Update: 2024/09/17*_
 
 HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and additional infrastructure to support manufacturer custom controls.
 
