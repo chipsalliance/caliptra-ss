@@ -18,7 +18,7 @@ _*Last Update: 2024/01/24*_
 
 HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and additional infrastructure to support manufacturer custom controls.
 
-:warning:**<span style='color: red;'>DISCLAIMER</span>**
+:warning:**$${\color{red}DISCLAIMER}$$**
 
 ## Project Links
 [caliptra-rtl](https://github.com/chipsalliance/caliptra-rtl)
