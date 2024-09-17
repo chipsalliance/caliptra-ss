@@ -22,5 +22,9 @@ HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**$${\color{red}Functionality\ or\ quality\ is\ not\ guaranteed.}$$**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**$${\color{red}Do\ not\ integrate\ this\ into\ a\ production\ design!}$$**<br>
 
+```HTML
+<span style='color: red;'> This is an HTML test </span>
+```
+
 ## Project Links
 [caliptra-rtl](https://github.com/chipsalliance/caliptra-rtl)
