@@ -36,7 +36,7 @@ global:
     vcs:
       default:
         - '-assert svaext'
-        - '+vpi -sverilog -full64 -lpthread'
+        - '-sverilog -full64'
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top
         - +define+CPTRA_TOP_PATH=caliptra_ss_top.caliptra_top_dut
@@ -59,4 +59,6 @@ global:
         - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
         - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
       sim:
-        - +define+aaxi_dbg_name=all
+        # Uncomment for debug prints
+        #- +aaxi_dbg_name=all
+        - '+vpi -lpthread'
