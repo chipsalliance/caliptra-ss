@@ -433,13 +433,13 @@ import mcu_el2_pkg::*;
    mcu_el2_reg_pkt_t i0r;
 
 
-   rvdffie  #(8) misc1ff (.*,
+   mcu_rvdffie  #(8) misc1ff (.*,
                           .clk(free_l2clk),
                           .din( {leak1_i1_stall_in,leak1_i0_stall_in,dec_tlu_flush_extint,pause_state_in ,dec_tlu_wr_pause_r, tlu_wr_pause_r1,illegal_lockout_in,ps_stall_in}),
                           .dout({leak1_i1_stall,   leak1_i0_stall,   dec_extint_stall,    pause_state,       tlu_wr_pause_r1,tlu_wr_pause_r2,illegal_lockout,   ps_stall   })
                           );
 
-   rvdffie  #(8) misc2ff (.*,
+   mcu_rvdffie  #(8) misc2ff (.*,
                           .clk(free_l2clk),
                           .din( {lsu_trigger_match_m[3:0],lsu_pmu_misaligned_m,div_active_in,exu_flush_final,  dec_debug_valid_d}),
                           .dout({lsu_trigger_match_r[3:0],lsu_pmu_misaligned_r,div_active,       flush_final_r,    debug_valid_x})
@@ -488,7 +488,7 @@ if(mcu_pt.BTB_ENABLE==1) begin
       assign btb_error_found = (i0_br_error_all | btb_error_found_f) & ~dec_tlu_flush_lower_r;
       assign fa_error_index_ns = (i0_br_error_all & ~btb_error_found_f) ? dec_i0_bp_fa_index : dec_fa_error_index;
 
-      rvdff #($clog2(mcu_pt.BTB_SIZE)+1) btberrorfa_f   (.*, .clk(active_clk),
+      mcu_rvdff #($clog2(mcu_pt.BTB_SIZE)+1) btberrorfa_f   (.*, .clk(active_clk),
                                                          .din({btb_error_found,    fa_error_index_ns}),
                                                          .dout({btb_error_found_f, dec_fa_error_index}));
 
@@ -678,7 +678,7 @@ end // else: !if(mcu_pt.BTB_ENABLE==1)
       end
 
 
-   rvdffie #( $bits(mcu_el2_load_cam_pkt_t) ) cam_ff (.*, .din(cam_in[i]), .dout(cam_raw[i]));
+   mcu_rvdffie #( $bits(mcu_el2_load_cam_pkt_t) ) cam_ff (.*, .din(cam_in[i]), .dout(cam_raw[i]));
 
 
    assign nonblock_load_write[i] = (load_data_tag[NBLOAD_TAG_MSB:0] == cam_raw[i].tag[NBLOAD_TAG_MSB:0]) & cam_raw[i].valid;
@@ -720,7 +720,7 @@ end : cam_array
 
 // don't writeback a nonblock load
 
-   rvdffs #(1) wbnbloaddelayff (.*, .clk(active_clk), .en(i0_r_ctl_en ), .din(lsu_nonblock_load_valid_m),        .dout(nonblock_load_valid_m_delay) );
+   mcu_rvdffs #(1) wbnbloaddelayff (.*, .clk(active_clk), .en(i0_r_ctl_en ), .din(lsu_nonblock_load_valid_m),        .dout(nonblock_load_valid_m_delay) );
 
    assign i0_load_kill_wen_r = nonblock_load_valid_m_delay &  r_d.i0load;
 
@@ -778,7 +778,7 @@ end : cam_array
 
 
 
-   rvdff #(1) lsu_idle_ff (.*, .clk(active_clk), .din(lsu_idle_any), .dout(lsu_idle));
+   mcu_rvdff #(1) lsu_idle_ff (.*, .clk(active_clk), .din(lsu_idle_any), .dout(lsu_idle));
 
 
 
@@ -934,7 +934,7 @@ end : cam_array
    assign dec_csr_stall_int_ff = ((r_d.csraddr[11:0] == 12'h300) | (r_d.csraddr[11:0] == 12'h304)) & r_d.csrwen & r_d.i0valid & ~dec_tlu_i0_kill_writeb_wb;
 
 
-   rvdff #(5) csrmiscff (.*,
+   mcu_rvdff #(5) csrmiscff (.*,
                         .clk (active_clk),
                         .din ({csr_ren_qual_d, csr_clr_d, csr_set_d, csr_write_d, i0_dp.csr_imm}),
                         .dout({csr_read_x,     csr_clr_x, csr_set_x, csr_write_x, csr_imm_x})
@@ -945,7 +945,7 @@ end : cam_array
 
    // perform the update operation if any
 
-   rvdffe #(37) csr_rddata_x_ff (.*, .en(i0_x_data_en & any_csr_d), .din( {i0[19:15],dec_csr_rddata_d[31:0]}), .dout({csrimm_x[4:0],csr_rddata_x[31:0]}));
+   mcu_rvdffe #(37) csr_rddata_x_ff (.*, .en(i0_x_data_en & any_csr_d), .din( {i0[19:15],dec_csr_rddata_d[31:0]}), .dout({csrimm_x[4:0],csr_rddata_x[31:0]}));
 
 
    assign csr_mask_x[31:0]       = ({32{ csr_imm_x}} & {27'b0,csrimm_x[4:0]}) |
@@ -984,7 +984,7 @@ end : cam_array
                                     (dec_tlu_wr_pause_r) ? dec_csr_wrdata_r[31:0] : write_csr_data_x[31:0];
 
    // will hold until write-back at which time the CSR will be updated while GPR is possibly written with prior CSR
-   rvdffe #(32) write_csr_ff (.*, .clk(free_l2clk), .en(csr_data_wen), .din(write_csr_data_in[31:0]), .dout(write_csr_data[31:0]));
+   mcu_rvdffe #(32) write_csr_ff (.*, .clk(free_l2clk), .en(csr_data_wen), .din(write_csr_data_in[31:0]), .dout(write_csr_data[31:0]));
 
    assign pause_stall = pause_state;
 
@@ -1140,7 +1140,7 @@ end : cam_array
 
    assign illegal_inst_en    = shift_illegal & ~illegal_lockout;
 
-   rvdffe #(32) illegal_any_ff (.*, .en(illegal_inst_en), .din(i0_inst_d[31:0]), .dout(dec_illegal_inst[31:0]));
+   mcu_rvdffe #(32) illegal_any_ff (.*, .en(illegal_inst_en), .din(i0_inst_d[31:0]), .dout(dec_illegal_inst[31:0]));
 
    assign illegal_lockout_in = (shift_illegal | illegal_lockout) & ~flush_final_r;
 
@@ -1258,7 +1258,7 @@ end : cam_array
 
 
 
-   rvdfflie #( .WIDTH($bits(mcu_el2_trap_pkt_t)),.LEFT(9) ) trap_xff (.*, .en(i0_x_ctl_en), .din(d_t),  .dout(x_t));
+   mcu_rvdfflie #( .WIDTH($bits(mcu_el2_trap_pkt_t)),.LEFT(9) ) trap_xff (.*, .en(i0_x_ctl_en), .din(d_t),  .dout(x_t));
 
    always_comb begin
       x_t_in = x_t;
@@ -1266,7 +1266,7 @@ end : cam_array
    end
 
 
-   rvdfflie  #( .WIDTH($bits(mcu_el2_trap_pkt_t)),.LEFT(9) ) trap_r_ff (.*, .en(i0_x_ctl_en), .din(x_t_in),  .dout(r_t));
+   mcu_rvdfflie  #( .WIDTH($bits(mcu_el2_trap_pkt_t)),.LEFT(9) ) trap_r_ff (.*, .en(i0_x_ctl_en), .din(x_t_in),  .dout(r_t));
 
 
     always_comb begin
@@ -1296,8 +1296,8 @@ end : cam_array
    assign i0_d_c.load               =  i0_dp.load & i0_legal_decode_d;
    assign i0_d_c.alu                =  i0_dp.alu  & i0_legal_decode_d;
 
-   rvdffs #( $bits(mcu_el2_class_pkt_t) ) i0_x_c_ff   (.*, .en(i0_x_ctl_en),  .clk(active_clk), .din(i0_d_c),  .dout(i0_x_c));
-   rvdffs #( $bits(mcu_el2_class_pkt_t) ) i0_r_c_ff   (.*, .en(i0_r_ctl_en),  .clk(active_clk), .din(i0_x_c),  .dout(i0_r_c));
+   mcu_rvdffs #( $bits(mcu_el2_class_pkt_t) ) i0_x_c_ff   (.*, .en(i0_x_ctl_en),  .clk(active_clk), .din(i0_d_c),  .dout(i0_x_c));
+   mcu_rvdffs #( $bits(mcu_el2_class_pkt_t) ) i0_r_c_ff   (.*, .en(i0_r_ctl_en),  .clk(active_clk), .din(i0_x_c),  .dout(i0_r_c));
 
 
    assign d_d.i0rd[4:0]             =  i0r.rd[4:0];
@@ -1314,7 +1314,7 @@ end : cam_array
    assign d_d.csraddr[11:0] =  i0[31:20]; // csr read/write address
 
 
-   rvdff  #(3) i0cgff               (.*, .clk(active_clk),            .din(i0_pipe_en[3:1]), .dout(i0_pipe_en[2:0]));
+   mcu_rvdff  #(3) i0cgff               (.*, .clk(active_clk),            .din(i0_pipe_en[3:1]), .dout(i0_pipe_en[2:0]));
 
    assign i0_pipe_en[3]             =  dec_i0_decode_d;
 
@@ -1330,7 +1330,7 @@ end : cam_array
 
 
 
-   rvdfflie #( .WIDTH($bits(mcu_el2_dest_pkt_t)),.LEFT(15) ) e1ff (.*, .en(i0_x_ctl_en), .din(d_d),  .dout(x_d));
+   mcu_rvdfflie #( .WIDTH($bits(mcu_el2_dest_pkt_t)),.LEFT(15) ) e1ff (.*, .en(i0_x_ctl_en), .din(d_d),  .dout(x_d));
 
    always_comb begin
       x_d_in = x_d;
@@ -1339,7 +1339,7 @@ end : cam_array
       x_d_in.i0valid     = x_d.i0valid & ~dec_tlu_flush_lower_wb & ~dec_tlu_flush_lower_r;
    end
 
-   rvdfflie #( .WIDTH($bits(mcu_el2_dest_pkt_t)), .LEFT(15) ) r_d_ff (.*, .en(i0_r_ctl_en), .din(x_d_in), .dout(r_d));
+   mcu_rvdfflie #( .WIDTH($bits(mcu_el2_dest_pkt_t)), .LEFT(15) ) r_d_ff (.*, .en(i0_r_ctl_en), .din(x_d_in), .dout(r_d));
 
 
    always_comb begin
@@ -1359,7 +1359,7 @@ end : cam_array
    end
 
 
-   rvdfflie #(.WIDTH($bits(mcu_el2_dest_pkt_t)), .LEFT(15)) wbff (.*, .en(i0_wb_ctl_en), .din(r_d_in), .dout(wbd));
+   mcu_rvdfflie #(.WIDTH($bits(mcu_el2_dest_pkt_t)), .LEFT(15)) wbff (.*, .en(i0_wb_ctl_en), .din(r_d_in), .dout(wbd));
 
    assign dec_i0_waddr_r[4:0]       =  r_d_in.i0rd[4:0];
 
@@ -1410,13 +1410,13 @@ end : cam_array
    end
 
 
-   rvdffe #(32) i0_result_r_ff       (.*, .en(i0_r_data_en & (x_d.i0v | x_d.csrwen | debug_valid_x)),  .din(i0_result_x[31:0]),       .dout(i0_result_r_raw[31:0]));
+   mcu_rvdffe #(32) i0_result_r_ff       (.*, .en(i0_r_data_en & (x_d.i0v | x_d.csrwen | debug_valid_x)),  .din(i0_result_x[31:0]),       .dout(i0_result_r_raw[31:0]));
 
    // correct lsu load data - don't use for bypass, do pass down the pipe
    assign i0_result_corr_r[31:0]     = (r_d.i0v & r_d.i0load) ? lsu_result_corr_r[31:0] : i0_result_r_raw[31:0];
 
 
-   rvdffe #(12) e1brpcff             (.*, .en(i0_x_data_en), .din(last_br_immed_d[12:1] ), .dout(last_br_immed_x[12:1]));
+   mcu_rvdffe #(12) e1brpcff             (.*, .en(i0_x_data_en), .din(last_br_immed_d[12:1] ), .dout(last_br_immed_x[12:1]));
 
 
 
@@ -1429,25 +1429,25 @@ end : cam_array
    assign trace_enable = ~dec_tlu_trace_disable;
 
 
-   rvdffe #(.WIDTH(5),.OVERRIDE(1))  i0rdff  (.*, .en(i0_div_decode_d),        .din(i0r.rd[4:0]),             .dout(div_waddr_wb[4:0]));
+   mcu_rvdffe #(.WIDTH(5),.OVERRIDE(1))  i0rdff  (.*, .en(i0_div_decode_d),        .din(i0r.rd[4:0]),             .dout(div_waddr_wb[4:0]));
 
-   rvdffe #(32) i0xinstff            (.*, .en(i0_x_data_en & trace_enable),    .din(i0_inst_d[31:0]),         .dout(i0_inst_x[31:0]));
-   rvdffe #(32) i0cinstff            (.*, .en(i0_r_data_en & trace_enable),    .din(i0_inst_x[31:0]),         .dout(i0_inst_r[31:0]));
+   mcu_rvdffe #(32) i0xinstff            (.*, .en(i0_x_data_en & trace_enable),    .din(i0_inst_d[31:0]),         .dout(i0_inst_x[31:0]));
+   mcu_rvdffe #(32) i0cinstff            (.*, .en(i0_r_data_en & trace_enable),    .din(i0_inst_x[31:0]),         .dout(i0_inst_r[31:0]));
 
-   rvdffe #(32) i0wbinstff           (.*, .en(i0_wb_en & trace_enable),        .din(i0_inst_wb_in[31:0]),     .dout(i0_inst_wb[31:0]));
-   rvdffe #(31) i0wbpcff             (.*, .en(i0_wb_en & trace_enable),        .din(dec_tlu_i0_pc_r[31:1]),   .dout(  i0_pc_wb[31:1]));
+   mcu_rvdffe #(32) i0wbinstff           (.*, .en(i0_wb_en & trace_enable),        .din(i0_inst_wb_in[31:0]),     .dout(i0_inst_wb[31:0]));
+   mcu_rvdffe #(31) i0wbpcff             (.*, .en(i0_wb_en & trace_enable),        .din(dec_tlu_i0_pc_r[31:1]),   .dout(  i0_pc_wb[31:1]));
 
    assign dec_i0_inst_wb[31:0] = i0_inst_wb[31:0];
    assign dec_i0_pc_wb[31:1] = i0_pc_wb[31:1];
 
 
 
-   rvdffpcie #(31) i0_pc_r_ff           (.*, .en(i0_r_data_en), .din(exu_i0_pc_x[31:1]), .dout(dec_i0_pc_r[31:1]));
+   mcu_rvdffpcie #(31) i0_pc_r_ff           (.*, .en(i0_r_data_en), .din(exu_i0_pc_x[31:1]), .dout(dec_i0_pc_r[31:1]));
 
    assign dec_tlu_i0_pc_r[31:1]      = dec_i0_pc_r[31:1];
 
 
-   rvbradder ibradder_correct (
+   mcu_rvbradder ibradder_correct (
                      .pc(exu_i0_pc_x[31:1]),
                      .offset(last_br_immed_x[12:1]),
                      .dout(pred_correct_npc_x[31:1]));

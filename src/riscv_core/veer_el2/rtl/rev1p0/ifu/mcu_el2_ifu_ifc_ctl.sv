@@ -198,7 +198,7 @@ end
    assign idle     = state      == IDLE  ;
    assign wfm      = state      == WFM   ;
 
-   rvdffie #(10) fbwrite_ff (.*, .clk(free_l2clk),
+   mcu_rvdffie #(10) fbwrite_ff (.*, .clk(free_l2clk),
                           .din( {dma_iccm_stall_any, miss_f, ifc_fetch_req_bf, next_state[1:0], fb_full_f_ns, fb_write_ns[3:0]}),
                           .dout({dma_iccm_stall_any_f, miss_a, ifc_fetch_req_f, state[1:0], fb_full_f, fb_write_f[3:0]}));
 
@@ -211,13 +211,13 @@ end
 
    assign ifc_fetch_addr_bf[31:1] = fetch_addr_bf[31:1];
 
-   rvdffpcie #(31) faddrf1_ff  (.*, .en(fetch_bf_en), .din(fetch_addr_bf[31:1]), .dout(ifc_fetch_addr_f[31:1]));
+   mcu_rvdffpcie #(31) faddrf1_ff  (.*, .en(fetch_bf_en), .din(fetch_addr_bf[31:1]), .dout(ifc_fetch_addr_f[31:1]));
 
 
  if (mcu_pt.ICCM_ENABLE)  begin : genblock2
    logic iccm_acc_in_region_bf;
    logic iccm_acc_in_range_bf;
-   rvrangecheck #( .CCM_SADR    (mcu_pt.ICCM_SADR),
+   mcu_rvrangecheck #( .CCM_SADR    (mcu_pt.ICCM_SADR),
                    .CCM_SIZE    (mcu_pt.ICCM_SIZE) ) iccm_rangecheck (
                                      .addr     ({ifc_fetch_addr_bf[31:1],1'b0}) ,
                                      .in_range (iccm_acc_in_range_bf) ,

@@ -199,7 +199,7 @@ module mcu_el2_exu_div_existing_1bit_cheapshortq
 
 
 
-   rvdffe #(23) i_misc_ff        (.*, .clk(clk), .en(div_clken),   .din ({valid_in & ~cancel,
+   mcu_rvdffe #(23) i_misc_ff        (.*, .clk(clk), .en(div_clken),   .din ({valid_in & ~cancel,
                                                                           finish   & ~cancel,
                                                                           run_in,
                                                                           count_in[5:0],
@@ -226,13 +226,13 @@ module mcu_el2_exu_div_existing_1bit_cheapshortq
                                                                           shortq_shift_xx[3:0]}));
 
 
-   rvdffe #(33) mff              (.*, .clk(clk), .en(valid_in),    .din({signed_in & divisor_in[31], divisor_in[31:0]}),   .dout(m_ff[32:0]));
-   rvdffe #(33) qff              (.*, .clk(clk), .en(qff_enable),  .din(q_in[32:0]),                                       .dout(q_ff[32:0]));
-   rvdffe #(33) aff              (.*, .clk(clk), .en(aff_enable),  .din(a_in[32:0]),                                       .dout(a_ff[32:0]));
+   mcu_rvdffe #(33) mff              (.*, .clk(clk), .en(valid_in),    .din({signed_in & divisor_in[31], divisor_in[31:0]}),   .dout(m_ff[32:0]));
+   mcu_rvdffe #(33) qff              (.*, .clk(clk), .en(qff_enable),  .din(q_in[32:0]),                                       .dout(q_ff[32:0]));
+   mcu_rvdffe #(33) aff              (.*, .clk(clk), .en(aff_enable),  .din(a_in[32:0]),                                       .dout(a_ff[32:0]));
 
-   rvtwoscomp #(32) i_dividend_comp (.din(q_ff[31:0]),    .dout(dividend_comp[31:0]));
-   rvtwoscomp #(32) i_q_ff_comp     (.din(q_ff[31:0]),    .dout(q_ff_comp[31:0]));
-   rvtwoscomp #(32) i_a_ff_comp     (.din(a_ff[31:0]),    .dout(a_ff_comp[31:0]));
+   mcu_rvtwoscomp #(32) i_dividend_comp (.din(q_ff[31:0]),    .dout(dividend_comp[31:0]));
+   mcu_rvtwoscomp #(32) i_q_ff_comp     (.din(q_ff[31:0]),    .dout(q_ff_comp[31:0]));
+   mcu_rvtwoscomp #(32) i_a_ff_comp     (.din(a_ff[31:0]),    .dout(a_ff_comp[31:0]));
 
 
    assign valid_x                 = valid_ff_x & ~cancel;
@@ -504,13 +504,13 @@ module mcu_el2_exu_div_new_1bit_fullshortq
 
 
 
-   rvdffe #(19) i_misc_ff        (.*, .clk(clk), .en(misc_enable),    .din ({valid_ff_in, control_in[2:0], by_zero_case,    shortq_enable,    shortq_shift[4:0],    finish,    count_in[6:0]}),
+   mcu_rvdffe #(19) i_misc_ff        (.*, .clk(clk), .en(misc_enable),    .din ({valid_ff_in, control_in[2:0], by_zero_case,    shortq_enable,    shortq_shift[4:0],    finish,    count_in[6:0]}),
                                                                       .dout({valid_ff,    control_ff[2:0], by_zero_case_ff, shortq_enable_ff, shortq_shift_ff[4:0], finish_ff, count_ff[6:0]}));
 
-   rvdffe #(32) i_a_ff           (.*, .clk(clk), .en(a_enable),       .din(a_in[31:0]),           .dout(a_ff[31:0]));
-   rvdffe #(33) i_b_ff           (.*, .clk(clk), .en(b_enable),       .din(b_in[32:0]),           .dout(b_ff[32:0]));
-   rvdffe #(32) i_r_ff           (.*, .clk(clk), .en(rq_enable),      .din(r_in[31:0]),           .dout(r_ff[31:0]));
-   rvdffe #(32) i_q_ff           (.*, .clk(clk), .en(rq_enable),      .din(q_in[31:0]),           .dout(q_ff[31:0]));
+   mcu_rvdffe #(32) i_a_ff           (.*, .clk(clk), .en(a_enable),       .din(a_in[31:0]),           .dout(a_ff[31:0]));
+   mcu_rvdffe #(33) i_b_ff           (.*, .clk(clk), .en(b_enable),       .din(b_in[32:0]),           .dout(b_ff[32:0]));
+   mcu_rvdffe #(32) i_r_ff           (.*, .clk(clk), .en(rq_enable),      .din(r_in[31:0]),           .dout(r_ff[31:0]));
+   mcu_rvdffe #(32) i_q_ff           (.*, .clk(clk), .en(rq_enable),      .din(q_in[31:0]),           .dout(q_ff[31:0]));
 
 
 
@@ -590,7 +590,7 @@ module mcu_el2_exu_div_new_1bit_fullshortq
    assign twos_comp_in[31:0]     = ( {32{twos_comp_q_sel}} & q_ff[31:0] ) |
                                    ( {32{twos_comp_b_sel}} & b_ff[31:0] );
 
-   rvtwoscomp #(32) i_twos_comp  (.din(twos_comp_in[31:0]), .dout(twos_comp_out[31:0]));
+   mcu_rvtwoscomp #(32) i_twos_comp  (.din(twos_comp_in[31:0]), .dout(twos_comp_out[31:0]));
 
 
 
@@ -766,13 +766,13 @@ module mcu_el2_exu_div_new_2bit_fullshortq
 
 
 
-   rvdffe #(18) i_misc_ff        (.*, .clk(clk), .en(misc_enable),    .din ({valid_ff_in, control_in[2:0], by_zero_case,    shortq_enable,    shortq_shift[4:1],    finish,    count_in[6:0]}),
+   mcu_rvdffe #(18) i_misc_ff        (.*, .clk(clk), .en(misc_enable),    .din ({valid_ff_in, control_in[2:0], by_zero_case,    shortq_enable,    shortq_shift[4:1],    finish,    count_in[6:0]}),
                                                                       .dout({valid_ff,    control_ff[2:0], by_zero_case_ff, shortq_enable_ff, shortq_shift_ff[4:1], finish_ff, count_ff[6:0]}));
 
-   rvdffe #(32) i_a_ff           (.*, .clk(clk), .en(a_enable),       .din(a_in[31:0]),           .dout(a_ff[31:0]));
-   rvdffe #(33) i_b_ff           (.*, .clk(clk), .en(b_enable),       .din(b_in[32:0]),           .dout(b_ff[32:0]));
-   rvdffe #(32) i_r_ff           (.*, .clk(clk), .en(rq_enable),      .din(r_in[31:0]),           .dout(r_ff[31:0]));
-   rvdffe #(32) i_q_ff           (.*, .clk(clk), .en(rq_enable),      .din(q_in[31:0]),           .dout(q_ff[31:0]));
+   mcu_rvdffe #(32) i_a_ff           (.*, .clk(clk), .en(a_enable),       .din(a_in[31:0]),           .dout(a_ff[31:0]));
+   mcu_rvdffe #(33) i_b_ff           (.*, .clk(clk), .en(b_enable),       .din(b_in[32:0]),           .dout(b_ff[32:0]));
+   mcu_rvdffe #(32) i_r_ff           (.*, .clk(clk), .en(rq_enable),      .din(r_in[31:0]),           .dout(r_ff[31:0]));
+   mcu_rvdffe #(32) i_q_ff           (.*, .clk(clk), .en(rq_enable),      .din(q_in[31:0]),           .dout(q_ff[31:0]));
 
 
 
@@ -864,7 +864,7 @@ module mcu_el2_exu_div_new_2bit_fullshortq
    assign twos_comp_in[31:0]     = ( {32{twos_comp_q_sel}} & q_ff[31:0] ) |
                                    ( {32{twos_comp_b_sel}} & b_ff[31:0] );
 
-   rvtwoscomp #(32) i_twos_comp  (.din(twos_comp_in[31:0]), .dout(twos_comp_out[31:0]));
+   mcu_rvtwoscomp #(32) i_twos_comp  (.din(twos_comp_in[31:0]), .dout(twos_comp_out[31:0]));
 
 
 
@@ -1048,13 +1048,13 @@ module mcu_el2_exu_div_new_3bit_fullshortq
 
 
 
-   rvdffe #(19) i_misc_ff        (.*, .clk(clk), .en(misc_enable),    .din ({valid_ff_in, control_in[2:0], by_zero_case,    shortq_enable,    shortq_shift[4:0],    finish,    count_in[6:0]}),
+   mcu_rvdffe #(19) i_misc_ff        (.*, .clk(clk), .en(misc_enable),    .din ({valid_ff_in, control_in[2:0], by_zero_case,    shortq_enable,    shortq_shift[4:0],    finish,    count_in[6:0]}),
                                                                       .dout({valid_ff,    control_ff[2:0], by_zero_case_ff, shortq_enable_ff, shortq_shift_ff[4:0], finish_ff, count_ff[6:0]}));
 
-   rvdffe #(33) i_a_ff           (.*, .clk(clk), .en(a_enable),       .din(a_in[32:0]),           .dout(a_ff[32:0]));
-   rvdffe #(33) i_b_ff           (.*, .clk(clk), .en(b_enable),       .din(b_in[32:0]),           .dout(b_ff[32:0]));
-   rvdffe #(33) i_r_ff           (.*, .clk(clk), .en(rq_enable),      .din(r_in[32:0]),           .dout(r_ff[32:0]));
-   rvdffe #(32) i_q_ff           (.*, .clk(clk), .en(rq_enable),      .din(q_in[31:0]),           .dout(q_ff[31:0]));
+   mcu_rvdffe #(33) i_a_ff           (.*, .clk(clk), .en(a_enable),       .din(a_in[32:0]),           .dout(a_ff[32:0]));
+   mcu_rvdffe #(33) i_b_ff           (.*, .clk(clk), .en(b_enable),       .din(b_in[32:0]),           .dout(b_ff[32:0]));
+   mcu_rvdffe #(33) i_r_ff           (.*, .clk(clk), .en(rq_enable),      .din(r_in[32:0]),           .dout(r_ff[32:0]));
+   mcu_rvdffe #(32) i_q_ff           (.*, .clk(clk), .en(rq_enable),      .din(q_in[31:0]),           .dout(q_ff[31:0]));
 
 
 
@@ -1162,7 +1162,7 @@ module mcu_el2_exu_div_new_3bit_fullshortq
    assign twos_comp_in[31:0]     = ( {32{twos_comp_q_sel}} & q_ff[31:0] ) |
                                    ( {32{twos_comp_b_sel}} & b_ff[31:0] );
 
-   rvtwoscomp #(32) i_twos_comp  (.din(twos_comp_in[31:0]), .dout(twos_comp_out[31:0]));
+   mcu_rvtwoscomp #(32) i_twos_comp  (.din(twos_comp_in[31:0]), .dout(twos_comp_out[31:0]));
 
 
 
@@ -1391,13 +1391,13 @@ module mcu_el2_exu_div_new_4bit_fullshortq
 
 
 
-   rvdffe #(19) i_misc_ff        (.*, .clk(clk), .en(misc_enable),     .din ({valid_ff_in, control_in[2:0], by_zero_case,    shortq_enable,    shortq_shift[4:0],    finish,    count_in[6:0]}),
+   mcu_rvdffe #(19) i_misc_ff        (.*, .clk(clk), .en(misc_enable),     .din ({valid_ff_in, control_in[2:0], by_zero_case,    shortq_enable,    shortq_shift[4:0],    finish,    count_in[6:0]}),
                                                                        .dout({valid_ff,    control_ff[2:0], by_zero_case_ff, shortq_enable_ff, shortq_shift_ff[4:0], finish_ff, count_ff[6:0]}));
 
-   rvdffe #(32) i_a_ff           (.*, .clk(clk), .en(a_enable),        .din(a_in[31:0]),           .dout(a_ff[31:0]));
-   rvdffe #(33) i_b_ff           (.*, .clk(clk), .en(b_enable),        .din(b_in[32:0]),           .dout(b_ff[32:0]));
-   rvdffe #(33) i_r_ff           (.*, .clk(clk), .en(rq_enable),       .din(r_in[32:0]),           .dout(r_ff[32:0]));
-   rvdffe #(32) i_q_ff           (.*, .clk(clk), .en(rq_enable),       .din(q_in[31:0]),           .dout(q_ff[31:0]));
+   mcu_rvdffe #(32) i_a_ff           (.*, .clk(clk), .en(a_enable),        .din(a_in[31:0]),           .dout(a_ff[31:0]));
+   mcu_rvdffe #(33) i_b_ff           (.*, .clk(clk), .en(b_enable),        .din(b_in[32:0]),           .dout(b_ff[32:0]));
+   mcu_rvdffe #(33) i_r_ff           (.*, .clk(clk), .en(rq_enable),       .din(r_in[32:0]),           .dout(r_ff[32:0]));
+   mcu_rvdffe #(32) i_q_ff           (.*, .clk(clk), .en(rq_enable),       .din(q_in[31:0]),           .dout(q_ff[31:0]));
 
 
 
@@ -1569,7 +1569,7 @@ module mcu_el2_exu_div_new_4bit_fullshortq
    assign twos_comp_in[31:0]     = ( {32{twos_comp_q_sel}} & q_ff[31:0] ) |
                                    ( {32{twos_comp_b_sel}} & b_ff[31:0] );
 
-   rvtwoscomp #(32) i_twos_comp  (.din(twos_comp_in[31:0]), .dout(twos_comp_out[31:0]));
+   mcu_rvtwoscomp #(32) i_twos_comp  (.din(twos_comp_in[31:0]), .dout(twos_comp_out[31:0]));
 
 
 

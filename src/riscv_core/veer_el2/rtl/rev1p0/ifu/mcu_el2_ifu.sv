@@ -343,7 +343,7 @@ import mcu_el2_pkg::*;
    logic        exu_flush_final_d1;
    assign mppc_ns[31:1] = `EXU.i0_flush_upper_x ? `EXU.exu_i0_pc_x : `EXU.dec_i0_pc_d;
    assign mppc_ns[0] = 1'b0;
-   rvdff #(33)  junk_ff (.*, .clk(active_clk), .din({mppc_ns[31:0], exu_flush_final}), .dout({mppc[31:0], exu_flush_final_d1}));
+   mcu_rvdff #(33)  junk_ff (.*, .clk(active_clk), .din({mppc_ns[31:0], exu_flush_final}), .dout({mppc[31:0], exu_flush_final_d1}));
    logic  tmp_bnk;
    assign tmp_bnk = bpred.bp.btb_sel_f[1];
 

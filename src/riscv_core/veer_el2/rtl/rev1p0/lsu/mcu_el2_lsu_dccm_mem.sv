@@ -112,8 +112,8 @@ module mcu_el2_lsu_dccm_mem
    end : mem_bank
 
    // Flops
-   rvdff  #(mcu_pt.DCCM_BANK_BITS) rd_addr_lo_ff (.*, .din(dccm_rd_addr_lo[DCCM_WIDTH_BITS+:mcu_pt.DCCM_BANK_BITS]), .dout(dccm_rd_addr_lo_q[DCCM_WIDTH_BITS+:mcu_pt.DCCM_BANK_BITS]), .clk(active_clk));
-   rvdff  #(mcu_pt.DCCM_BANK_BITS) rd_addr_hi_ff (.*, .din(dccm_rd_addr_hi[DCCM_WIDTH_BITS+:mcu_pt.DCCM_BANK_BITS]), .dout(dccm_rd_addr_hi_q[DCCM_WIDTH_BITS+:mcu_pt.DCCM_BANK_BITS]), .clk(active_clk));
+   mcu_rvdff  #(mcu_pt.DCCM_BANK_BITS) rd_addr_lo_ff (.*, .din(dccm_rd_addr_lo[DCCM_WIDTH_BITS+:mcu_pt.DCCM_BANK_BITS]), .dout(dccm_rd_addr_lo_q[DCCM_WIDTH_BITS+:mcu_pt.DCCM_BANK_BITS]), .clk(active_clk));
+   mcu_rvdff  #(mcu_pt.DCCM_BANK_BITS) rd_addr_hi_ff (.*, .din(dccm_rd_addr_hi[DCCM_WIDTH_BITS+:mcu_pt.DCCM_BANK_BITS]), .dout(dccm_rd_addr_hi_q[DCCM_WIDTH_BITS+:mcu_pt.DCCM_BANK_BITS]), .clk(active_clk));
 
 endmodule // mcu_el2_lsu_dccm_mem
 

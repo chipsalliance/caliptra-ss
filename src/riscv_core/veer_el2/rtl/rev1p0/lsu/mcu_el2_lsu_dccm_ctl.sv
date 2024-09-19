@@ -210,14 +210,14 @@ import mcu_el2_pkg::*;
          assign lsu_rdata_r[(8*i)+7:8*i]       = stbuf_fwdbyteen_r[i] ? stbuf_fwddata_r[(8*i)+7:8*i] :
                                                                         (addr_in_pic_r ? picm_rd_data_r[(8*i)+7:8*i] :  ({8{addr_in_dccm_r}} & dccm_rdata_r[(8*i)+7:8*i]));
       end
-      rvdffe #(mcu_pt.DCCM_DATA_WIDTH) dccm_rdata_hi_r_ff    (.*, .din(dccm_rdata_hi_m[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(dccm_rdata_hi_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en((lsu_dccm_rden_m & ldst_dual_m) | clk_override));
-      rvdffe #(mcu_pt.DCCM_DATA_WIDTH) dccm_rdata_lo_r_ff    (.*, .din(dccm_rdata_lo_m[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(dccm_rdata_lo_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(lsu_dccm_rden_m | clk_override));
-      rvdffe #(2*mcu_pt.DCCM_ECC_WIDTH)  dccm_data_ecc_r_ff  (.*, .din({dccm_data_ecc_hi_m[mcu_pt.DCCM_ECC_WIDTH-1:0], dccm_data_ecc_lo_m[mcu_pt.DCCM_ECC_WIDTH-1:0]}),
+      mcu_rvdffe #(mcu_pt.DCCM_DATA_WIDTH) dccm_rdata_hi_r_ff    (.*, .din(dccm_rdata_hi_m[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(dccm_rdata_hi_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en((lsu_dccm_rden_m & ldst_dual_m) | clk_override));
+      mcu_rvdffe #(mcu_pt.DCCM_DATA_WIDTH) dccm_rdata_lo_r_ff    (.*, .din(dccm_rdata_lo_m[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(dccm_rdata_lo_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(lsu_dccm_rden_m | clk_override));
+      mcu_rvdffe #(2*mcu_pt.DCCM_ECC_WIDTH)  dccm_data_ecc_r_ff  (.*, .din({dccm_data_ecc_hi_m[mcu_pt.DCCM_ECC_WIDTH-1:0], dccm_data_ecc_lo_m[mcu_pt.DCCM_ECC_WIDTH-1:0]}),
                                                               .dout({dccm_data_ecc_hi_r[mcu_pt.DCCM_ECC_WIDTH-1:0], dccm_data_ecc_lo_r[mcu_pt.DCCM_ECC_WIDTH-1:0]}),                                  .en(lsu_dccm_rden_m | clk_override));
-      rvdff #(8)                   stbuf_fwdbyteen_ff    (.*, .din({stbuf_fwdbyteen_hi_m[3:0], stbuf_fwdbyteen_lo_m[3:0]}), .dout({stbuf_fwdbyteen_hi_r[3:0], stbuf_fwdbyteen_lo_r[3:0]}), .clk(lsu_c2_r_clk));
-      rvdffe #(64)                 stbuf_fwddata_ff      (.*, .din({stbuf_fwddata_hi_m[31:0], stbuf_fwddata_lo_m[31:0]}),   .dout({stbuf_fwddata_hi_r[31:0], stbuf_fwddata_lo_r[31:0]}),   .en(stbuf_fwddata_en));
-      rvdffe #(32)                 picm_rddata_rff       (.*, .din(picm_rd_data_m[31:0]),                                   .dout(picm_rd_data_r[31:0]),                                   .en(addr_in_pic_m | clk_override));
-      rvdff #(3)                   dma_mem_tag_rff       (.*, .din(dma_mem_tag_m[2:0]),                                     .dout(dma_mem_tag_r[2:0]),                                     .clk(lsu_c1_r_clk));
+      mcu_rvdff #(8)                   stbuf_fwdbyteen_ff    (.*, .din({stbuf_fwdbyteen_hi_m[3:0], stbuf_fwdbyteen_lo_m[3:0]}), .dout({stbuf_fwdbyteen_hi_r[3:0], stbuf_fwdbyteen_lo_r[3:0]}), .clk(lsu_c2_r_clk));
+      mcu_rvdffe #(64)                 stbuf_fwddata_ff      (.*, .din({stbuf_fwddata_hi_m[31:0], stbuf_fwddata_lo_m[31:0]}),   .dout({stbuf_fwddata_hi_r[31:0], stbuf_fwddata_lo_r[31:0]}),   .en(stbuf_fwddata_en));
+      mcu_rvdffe #(32)                 picm_rddata_rff       (.*, .din(picm_rd_data_m[31:0]),                                   .dout(picm_rd_data_r[31:0]),                                   .en(addr_in_pic_m | clk_override));
+      mcu_rvdff #(3)                   dma_mem_tag_rff       (.*, .din(dma_mem_tag_m[2:0]),                                     .dout(dma_mem_tag_r[2:0]),                                     .clk(lsu_c1_r_clk));
 
    end else begin: L2U_Plus1_0
 
@@ -248,7 +248,7 @@ import mcu_el2_pkg::*;
                                                                        (addr_in_pic_m ? picm_rd_data_m[(8*i)+7:8*i] : ({8{addr_in_dccm_m}} & dccm_rdata_m[(8*i)+7:8*i]));
       end
 
-      rvdffe #(32) lsu_ld_data_corr_rff(.*, .din(lsu_ld_data_corr_m[31:0]), .dout(lsu_ld_data_corr_r[31:0]), .en((lsu_pkt_m.valid & lsu_pkt_m.load & (addr_in_pic_m | addr_in_dccm_m)) | clk_override));
+      mcu_rvdffe #(32) lsu_ld_data_corr_rff(.*, .din(lsu_ld_data_corr_m[31:0]), .dout(lsu_ld_data_corr_r[31:0]), .en((lsu_pkt_m.valid & lsu_pkt_m.load & (addr_in_pic_m | addr_in_dccm_m)) | clk_override));
    end
 
    assign kill_ecc_corr_lo_r = (((lsu_addr_d[mcu_pt.DCCM_BITS-1:2] == lsu_addr_r[mcu_pt.DCCM_BITS-1:2]) | (end_addr_d[mcu_pt.DCCM_BITS-1:2] == lsu_addr_r[mcu_pt.DCCM_BITS-1:2])) & lsu_pkt_d.valid & lsu_pkt_d.store & lsu_pkt_d.dma & addr_in_dccm_d) |
@@ -335,11 +335,11 @@ import mcu_el2_pkg::*;
                                                                                                                     ((dccm_wren_Q & dccm_wr_bypass_d_m_hi_Q) ? dccm_wr_data_Q[(8*i)+7:(8*i)] : sec_data_hi_r[(8*i)+7:(8*i)]));
       end
 
-      rvdff #(1)   dccm_wren_ff       (.*, .din(lsu_stbuf_commit_any),  .dout(dccm_wren_Q),             .clk(lsu_free_c2_clk));   // ECC load errors writing to dccm shouldn't fwd to stores in pipe
-      rvdffe #(32) dccm_wrdata_ff     (.*, .din(stbuf_data_any[31:0]),  .dout(dccm_wr_data_Q[31:0]),    .en(lsu_stbuf_commit_any | clk_override), .clk(clk));
-      rvdff #(1)   dccm_wrbyp_dm_loff (.*, .din(dccm_wr_bypass_d_m_lo), .dout(dccm_wr_bypass_d_m_lo_Q), .clk(lsu_free_c2_clk));
-      rvdff #(1)   dccm_wrbyp_dm_hiff (.*, .din(dccm_wr_bypass_d_m_hi), .dout(dccm_wr_bypass_d_m_hi_Q), .clk(lsu_free_c2_clk));
-      rvdff #(32)  store_data_rff     (.*, .din(store_data_m[31:0]),    .dout(store_data_r[31:0]),      .clk(lsu_store_c1_r_clk));
+      mcu_rvdff #(1)   dccm_wren_ff       (.*, .din(lsu_stbuf_commit_any),  .dout(dccm_wren_Q),             .clk(lsu_free_c2_clk));   // ECC load errors writing to dccm shouldn't fwd to stores in pipe
+      mcu_rvdffe #(32) dccm_wrdata_ff     (.*, .din(stbuf_data_any[31:0]),  .dout(dccm_wr_data_Q[31:0]),    .en(lsu_stbuf_commit_any | clk_override), .clk(clk));
+      mcu_rvdff #(1)   dccm_wrbyp_dm_loff (.*, .din(dccm_wr_bypass_d_m_lo), .dout(dccm_wr_bypass_d_m_lo_Q), .clk(lsu_free_c2_clk));
+      mcu_rvdff #(1)   dccm_wrbyp_dm_hiff (.*, .din(dccm_wr_bypass_d_m_hi), .dout(dccm_wr_bypass_d_m_hi_Q), .clk(lsu_free_c2_clk));
+      mcu_rvdff #(32)  store_data_rff     (.*, .din(store_data_m[31:0]),    .dout(store_data_r[31:0]),      .clk(lsu_store_c1_r_clk));
 
    end else begin: L2U1_Plus1_0
 
@@ -362,8 +362,8 @@ import mcu_el2_pkg::*;
       end
       assign store_data_r[31:0]      = 32'({store_data_hi_r[31:0],store_data_lo_r[31:0]} >> 8*lsu_addr_r[1:0]) & store_data_mask[31:0];
 
-      rvdffe #(mcu_pt.DCCM_DATA_WIDTH) store_data_hi_rff (.*, .din(store_data_hi_r_in[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(store_data_hi_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en((ldst_dual_m & lsu_pkt_m.valid & lsu_pkt_m.store) | clk_override), .clk(clk));
-      rvdff  #(mcu_pt.DCCM_DATA_WIDTH) store_data_lo_rff (.*, .din(store_data_lo_r_in[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(store_data_lo_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .clk(lsu_store_c1_r_clk));
+      mcu_rvdffe #(mcu_pt.DCCM_DATA_WIDTH) store_data_hi_rff (.*, .din(store_data_hi_r_in[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(store_data_hi_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en((ldst_dual_m & lsu_pkt_m.valid & lsu_pkt_m.store) | clk_override), .clk(clk));
+      mcu_rvdff  #(mcu_pt.DCCM_DATA_WIDTH) store_data_lo_rff (.*, .din(store_data_lo_r_in[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(store_data_lo_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .clk(lsu_store_c1_r_clk));
 
    end
 
@@ -387,17 +387,17 @@ import mcu_el2_pkg::*;
    assign picm_rd_data_m[63:0]   = {picm_rd_data[31:0],picm_rd_data[31:0]};
 
    if (mcu_pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
-      rvdff #(1) dccm_rden_mff (.*, .din(lsu_dccm_rden_d), .dout(lsu_dccm_rden_m), .clk(lsu_c2_m_clk));
-      rvdff #(1) dccm_rden_rff (.*, .din(lsu_dccm_rden_m), .dout(lsu_dccm_rden_r), .clk(lsu_c2_r_clk));
+      mcu_rvdff #(1) dccm_rden_mff (.*, .din(lsu_dccm_rden_d), .dout(lsu_dccm_rden_m), .clk(lsu_c2_m_clk));
+      mcu_rvdff #(1) dccm_rden_rff (.*, .din(lsu_dccm_rden_m), .dout(lsu_dccm_rden_r), .clk(lsu_c2_r_clk));
 
       // ECC correction flops since dccm write happens next cycle
       // We are writing to dccm in r+1 for ecc correction since fast_int needs to be blocked in decode - 1. We can probably write in r for plus0 configuration since we know ecc error in M.
       // In that case these (_ff) flops are needed only in plus1 configuration
-      rvdff #(1) ld_double_ecc_error_rff    (.*, .din(lsu_double_ecc_error_r),   .dout(lsu_double_ecc_error_r_ff),   .clk(lsu_free_c2_clk));
-      rvdff #(1) ld_single_ecc_error_hi_rff (.*, .din(ld_single_ecc_error_hi_r_ns), .dout(ld_single_ecc_error_hi_r_ff), .clk(lsu_free_c2_clk));
-      rvdff #(1) ld_single_ecc_error_lo_rff (.*, .din(ld_single_ecc_error_lo_r_ns), .dout(ld_single_ecc_error_lo_r_ff), .clk(lsu_free_c2_clk));
-      rvdffe #(mcu_pt.DCCM_BITS) ld_sec_addr_hi_rff (.*, .din(end_addr_r[mcu_pt.DCCM_BITS-1:0]), .dout(ld_sec_addr_hi_r_ff[mcu_pt.DCCM_BITS-1:0]), .en(ld_single_ecc_error_r | clk_override), .clk(clk));
-      rvdffe #(mcu_pt.DCCM_BITS) ld_sec_addr_lo_rff (.*, .din(lsu_addr_r[mcu_pt.DCCM_BITS-1:0]), .dout(ld_sec_addr_lo_r_ff[mcu_pt.DCCM_BITS-1:0]), .en(ld_single_ecc_error_r | clk_override), .clk(clk));
+      mcu_rvdff #(1) ld_double_ecc_error_rff    (.*, .din(lsu_double_ecc_error_r),   .dout(lsu_double_ecc_error_r_ff),   .clk(lsu_free_c2_clk));
+      mcu_rvdff #(1) ld_single_ecc_error_hi_rff (.*, .din(ld_single_ecc_error_hi_r_ns), .dout(ld_single_ecc_error_hi_r_ff), .clk(lsu_free_c2_clk));
+      mcu_rvdff #(1) ld_single_ecc_error_lo_rff (.*, .din(ld_single_ecc_error_lo_r_ns), .dout(ld_single_ecc_error_lo_r_ff), .clk(lsu_free_c2_clk));
+      mcu_rvdffe #(mcu_pt.DCCM_BITS) ld_sec_addr_hi_rff (.*, .din(end_addr_r[mcu_pt.DCCM_BITS-1:0]), .dout(ld_sec_addr_hi_r_ff[mcu_pt.DCCM_BITS-1:0]), .en(ld_single_ecc_error_r | clk_override), .clk(clk));
+      mcu_rvdffe #(mcu_pt.DCCM_BITS) ld_sec_addr_lo_rff (.*, .din(lsu_addr_r[mcu_pt.DCCM_BITS-1:0]), .dout(ld_sec_addr_lo_r_ff[mcu_pt.DCCM_BITS-1:0]), .en(ld_single_ecc_error_r | clk_override), .clk(clk));
 
    end else begin: Gen_dccm_disable
       assign lsu_dccm_rden_m = '0;

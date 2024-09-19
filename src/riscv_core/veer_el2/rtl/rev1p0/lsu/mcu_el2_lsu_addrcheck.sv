@@ -74,7 +74,7 @@ import mcu_el2_pkg::*;
 
    if (mcu_pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
       // Start address check
-      rvrangecheck #(.CCM_SADR(mcu_pt.DCCM_SADR),
+      mcu_rvrangecheck #(.CCM_SADR(mcu_pt.DCCM_SADR),
                      .CCM_SIZE(mcu_pt.DCCM_SIZE)) start_addr_dccm_rangecheck (
          .addr(start_addr_d[31:0]),
          .in_range(start_addr_in_dccm_d),
@@ -82,7 +82,7 @@ import mcu_el2_pkg::*;
       );
 
       // End address check
-      rvrangecheck #(.CCM_SADR(mcu_pt.DCCM_SADR),
+      mcu_rvrangecheck #(.CCM_SADR(mcu_pt.DCCM_SADR),
                      .CCM_SIZE(mcu_pt.DCCM_SIZE)) end_addr_dccm_rangecheck (
          .addr(end_addr_d[31:0]),
          .in_range(end_addr_in_dccm_d),
@@ -103,7 +103,7 @@ import mcu_el2_pkg::*;
 
    // PIC memory check
    // Start address check
-   rvrangecheck #(.CCM_SADR(mcu_pt.PIC_BASE_ADDR),
+   mcu_rvrangecheck #(.CCM_SADR(mcu_pt.PIC_BASE_ADDR),
                   .CCM_SIZE(mcu_pt.PIC_SIZE)) start_addr_pic_rangecheck (
       .addr(start_addr_d[31:0]),
       .in_range(start_addr_in_pic_d),
@@ -111,7 +111,7 @@ import mcu_el2_pkg::*;
    );
 
    // End address check
-   rvrangecheck #(.CCM_SADR(mcu_pt.PIC_BASE_ADDR),
+   mcu_rvrangecheck #(.CCM_SADR(mcu_pt.PIC_BASE_ADDR),
                   .CCM_SIZE(mcu_pt.PIC_SIZE)) end_addr_pic_rangecheck (
       .addr(end_addr_d[31:0]),
       .in_range(end_addr_in_pic_d),
@@ -233,6 +233,6 @@ import mcu_el2_pkg::*;
                                                                                 (end_addr_in_dccm_region_d   & ~end_addr_in_dccm_d)) & lsu_pkt_d.valid & lsu_pkt_d.fast_int;
    assign fir_nondccm_access_error_d = ~(start_addr_in_dccm_region_d & end_addr_in_dccm_region_d) & lsu_pkt_d.valid & lsu_pkt_d.fast_int;
 
-   rvdff #(.WIDTH(1))   is_sideeffects_mff (.din(is_sideeffects_d), .dout(is_sideeffects_m), .clk(lsu_c2_m_clk), .*);
+   mcu_rvdff #(.WIDTH(1))   is_sideeffects_mff (.din(is_sideeffects_d), .dout(is_sideeffects_m), .clk(lsu_c2_m_clk), .*);
 
 endmodule // mcu_el2_lsu_addrcheck

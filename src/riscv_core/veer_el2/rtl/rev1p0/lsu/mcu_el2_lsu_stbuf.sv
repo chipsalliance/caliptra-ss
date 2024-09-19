@@ -204,11 +204,11 @@ import mcu_el2_pkg::*;
          assign stbuf_datain[i][31:24]            = sel_lo[i] ? ((~stbuf_byteen[i][3] | store_byteen_lo_r[3]) ? store_datafn_lo_r[31:24] : stbuf_data[i][31:24])    :
                                                                 ((~stbuf_byteen[i][3] | store_byteen_hi_r[3]) ? store_datafn_hi_r[31:24] : stbuf_data[i][31:24]);
 
-         rvdffsc #(.WIDTH(1))              stbuf_vldff         (.din(1'b1),                                .dout(stbuf_vld[i]),                      .en(stbuf_wr_en[i]), .clear(stbuf_reset[i]), .clk(lsu_free_c2_clk), .*);
-         rvdffsc #(.WIDTH(1))              stbuf_killff        (.din(1'b1),                                .dout(stbuf_dma_kill[i]),                 .en(stbuf_dma_kill_en[i]), .clear(stbuf_reset[i]), .clk(lsu_free_c2_clk), .*);
-         rvdffe  #(.WIDTH(mcu_pt.LSU_SB_BITS)) stbuf_addrff        (.din(stbuf_addrin[i][mcu_pt.LSU_SB_BITS-1:0]), .dout(stbuf_addr[i][mcu_pt.LSU_SB_BITS-1:0]), .en(stbuf_wr_en[i]), .*);
-         rvdffsc #(.WIDTH(BYTE_WIDTH))     stbuf_byteenff      (.din(stbuf_byteenin[i][BYTE_WIDTH-1:0]),   .dout(stbuf_byteen[i][BYTE_WIDTH-1:0]),   .en(stbuf_wr_en[i]), .clear(stbuf_reset[i]), .clk(lsu_stbuf_c1_clk), .*);
-         rvdffe  #(.WIDTH(DATA_WIDTH))     stbuf_dataff        (.din(stbuf_datain[i][DATA_WIDTH-1:0]),     .dout(stbuf_data[i][DATA_WIDTH-1:0]),     .en(stbuf_wr_en[i]), .*);
+         mcu_rvdffsc #(.WIDTH(1))              stbuf_vldff         (.din(1'b1),                                .dout(stbuf_vld[i]),                      .en(stbuf_wr_en[i]), .clear(stbuf_reset[i]), .clk(lsu_free_c2_clk), .*);
+         mcu_rvdffsc #(.WIDTH(1))              stbuf_killff        (.din(1'b1),                                .dout(stbuf_dma_kill[i]),                 .en(stbuf_dma_kill_en[i]), .clear(stbuf_reset[i]), .clk(lsu_free_c2_clk), .*);
+         mcu_rvdffe  #(.WIDTH(mcu_pt.LSU_SB_BITS)) stbuf_addrff        (.din(stbuf_addrin[i][mcu_pt.LSU_SB_BITS-1:0]), .dout(stbuf_addr[i][mcu_pt.LSU_SB_BITS-1:0]), .en(stbuf_wr_en[i]), .*);
+         mcu_rvdffsc #(.WIDTH(BYTE_WIDTH))     stbuf_byteenff      (.din(stbuf_byteenin[i][BYTE_WIDTH-1:0]),   .dout(stbuf_byteen[i][BYTE_WIDTH-1:0]),   .en(stbuf_wr_en[i]), .clear(stbuf_reset[i]), .clk(lsu_stbuf_c1_clk), .*);
+         mcu_rvdffe  #(.WIDTH(DATA_WIDTH))     stbuf_dataff        (.din(stbuf_datain[i][DATA_WIDTH-1:0]),     .dout(stbuf_data[i][DATA_WIDTH-1:0]),     .en(stbuf_wr_en[i]), .*);
       end
    end else begin: Gen_dccm_disable
       assign stbuf_wr_en[DEPTH-1:0] = '0;
@@ -333,8 +333,8 @@ import mcu_el2_pkg::*;
    end
 
    // Flops
-   rvdffs #(.WIDTH(DEPTH_LOG2)) WrPtrff (.din(NxtWrPtr[DEPTH_LOG2-1:0]), .dout(WrPtr[DEPTH_LOG2-1:0]), .en(WrPtrEn), .clk(lsu_stbuf_c1_clk), .*);
-   rvdffs #(.WIDTH(DEPTH_LOG2)) RdPtrff (.din(NxtRdPtr[DEPTH_LOG2-1:0]), .dout(RdPtr[DEPTH_LOG2-1:0]), .en(RdPtrEn), .clk(lsu_stbuf_c1_clk), .*);
+   mcu_rvdffs #(.WIDTH(DEPTH_LOG2)) WrPtrff (.din(NxtWrPtr[DEPTH_LOG2-1:0]), .dout(WrPtr[DEPTH_LOG2-1:0]), .en(WrPtrEn), .clk(lsu_stbuf_c1_clk), .*);
+   mcu_rvdffs #(.WIDTH(DEPTH_LOG2)) RdPtrff (.din(NxtRdPtr[DEPTH_LOG2-1:0]), .dout(RdPtr[DEPTH_LOG2-1:0]), .en(RdPtrEn), .clk(lsu_stbuf_c1_clk), .*);
 
 `ifdef MCU_RV_ASSERT_ON
 

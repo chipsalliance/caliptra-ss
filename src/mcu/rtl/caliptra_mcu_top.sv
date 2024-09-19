@@ -109,7 +109,7 @@ module caliptra_mcu_top
     input logic                        scan_mode
 );
 
-    `include "mcu_common_defines.sv"
+    `include "mcu_common_defines.vh"
 
     localparam NUM_INTR = `MCU_RV_PIC_TOTAL_INT; // 31
     localparam TOTAL_OBF_KEY_BITS = `CLP_OBF_KEY_DWORDS * 32;

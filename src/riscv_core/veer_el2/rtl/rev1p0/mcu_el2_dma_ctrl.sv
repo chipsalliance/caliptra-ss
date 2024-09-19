@@ -261,22 +261,22 @@ import mcu_el2_pkg::*;
                                                         ((dccm_dma_rvalid & (i == DEPTH_PTR'(dccm_dma_rtag[2:0])))  ? dccm_dma_rdata[63:0] : (iccm_dma_rvalid & (i == DEPTH_PTR'(iccm_dma_rtag[2:0]))) ? iccm_dma_rdata[63:0] :
                                                                                                                                                        (dbg_cmd_valid ? {2{dma_dbg_mem_wrdata[31:0]}} : bus_cmd_wdata[63:0]));
 
-      rvdffsc #(1) fifo_valid_dff (.din(1'b1), .dout(fifo_valid[i]), .en(fifo_cmd_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
-      rvdffsc #(2) fifo_error_dff (.din(fifo_error_in[i]), .dout(fifo_error[i]), .en(fifo_error_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
-      rvdffsc #(1) fifo_error_bus_dff (.din(1'b1), .dout(fifo_error_bus[i]), .en(fifo_error_bus_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
-      rvdffsc #(1) fifo_rpend_dff (.din(1'b1), .dout(fifo_rpend[i]), .en(fifo_pend_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
-      rvdffsc #(1) fifo_done_dff (.din(1'b1), .dout(fifo_done[i]), .en(fifo_done_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
-      rvdffsc #(1) fifo_done_bus_dff (.din(1'b1), .dout(fifo_done_bus[i]), .en(fifo_done_bus_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
-      rvdffe  #(32) fifo_addr_dff (.din(fifo_addr_in[31:0]), .dout(fifo_addr[i]), .en(fifo_cmd_en[i]), .*);
-      rvdffs  #(3) fifo_sz_dff (.din(fifo_sz_in[2:0]), .dout(fifo_sz[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
-      rvdffs  #(8) fifo_byteen_dff (.din(fifo_byteen_in[7:0]), .dout(fifo_byteen[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
-      rvdffs  #(1) fifo_write_dff (.din(fifo_write_in), .dout(fifo_write[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
-      rvdffs  #(1) fifo_posted_write_dff (.din(fifo_posted_write_in), .dout(fifo_posted_write[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
-      rvdffs  #(1) fifo_dbg_dff (.din(fifo_dbg_in), .dout(fifo_dbg[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
-      rvdffe  #(64) fifo_data_dff (.din(fifo_data_in[i]), .dout(fifo_data[i]), .en(fifo_data_en[i]), .*);
-      rvdffs  #(mcu_pt.DMA_BUS_TAG) fifo_tag_dff(.din(bus_cmd_tag[mcu_pt.DMA_BUS_TAG-1:0]), .dout(fifo_tag[i][mcu_pt.DMA_BUS_TAG-1:0]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
-      rvdffs  #(mcu_pt.DMA_BUS_ID) fifo_mid_dff(.din(bus_cmd_mid[mcu_pt.DMA_BUS_ID-1:0]), .dout(fifo_mid[i][mcu_pt.DMA_BUS_ID-1:0]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
-      rvdffs  #(mcu_pt.DMA_BUS_PRTY) fifo_prty_dff(.din(bus_cmd_prty[mcu_pt.DMA_BUS_PRTY-1:0]), .dout(fifo_prty[i][mcu_pt.DMA_BUS_PRTY-1:0]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
+      mcu_rvdffsc #(1) fifo_valid_dff (.din(1'b1), .dout(fifo_valid[i]), .en(fifo_cmd_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
+      mcu_rvdffsc #(2) fifo_error_dff (.din(fifo_error_in[i]), .dout(fifo_error[i]), .en(fifo_error_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
+      mcu_rvdffsc #(1) fifo_error_bus_dff (.din(1'b1), .dout(fifo_error_bus[i]), .en(fifo_error_bus_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
+      mcu_rvdffsc #(1) fifo_rpend_dff (.din(1'b1), .dout(fifo_rpend[i]), .en(fifo_pend_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
+      mcu_rvdffsc #(1) fifo_done_dff (.din(1'b1), .dout(fifo_done[i]), .en(fifo_done_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
+      mcu_rvdffsc #(1) fifo_done_bus_dff (.din(1'b1), .dout(fifo_done_bus[i]), .en(fifo_done_bus_en[i]), .clear(fifo_reset[i]), .clk(dma_free_clk), .*);
+      mcu_rvdffe  #(32) fifo_addr_dff (.din(fifo_addr_in[31:0]), .dout(fifo_addr[i]), .en(fifo_cmd_en[i]), .*);
+      mcu_rvdffs  #(3) fifo_sz_dff (.din(fifo_sz_in[2:0]), .dout(fifo_sz[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
+      mcu_rvdffs  #(8) fifo_byteen_dff (.din(fifo_byteen_in[7:0]), .dout(fifo_byteen[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
+      mcu_rvdffs  #(1) fifo_write_dff (.din(fifo_write_in), .dout(fifo_write[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
+      mcu_rvdffs  #(1) fifo_posted_write_dff (.din(fifo_posted_write_in), .dout(fifo_posted_write[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
+      mcu_rvdffs  #(1) fifo_dbg_dff (.din(fifo_dbg_in), .dout(fifo_dbg[i]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
+      mcu_rvdffe  #(64) fifo_data_dff (.din(fifo_data_in[i]), .dout(fifo_data[i]), .en(fifo_data_en[i]), .*);
+      mcu_rvdffs  #(mcu_pt.DMA_BUS_TAG) fifo_tag_dff(.din(bus_cmd_tag[mcu_pt.DMA_BUS_TAG-1:0]), .dout(fifo_tag[i][mcu_pt.DMA_BUS_TAG-1:0]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
+      mcu_rvdffs  #(mcu_pt.DMA_BUS_ID) fifo_mid_dff(.din(bus_cmd_mid[mcu_pt.DMA_BUS_ID-1:0]), .dout(fifo_mid[i][mcu_pt.DMA_BUS_ID-1:0]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
+      mcu_rvdffs  #(mcu_pt.DMA_BUS_PRTY) fifo_prty_dff(.din(bus_cmd_prty[mcu_pt.DMA_BUS_PRTY-1:0]), .dout(fifo_prty[i][mcu_pt.DMA_BUS_PRTY-1:0]), .en(fifo_cmd_en[i]), .clk(dma_buffer_c1_clk), .*);
    end
 
    // Pointer logic
@@ -288,9 +288,9 @@ import mcu_el2_pkg::*;
    assign RdPtrEn = dma_dccm_req | dma_iccm_req | (dma_address_error | dma_alignment_error | dma_dbg_cmd_error);
    assign RspPtrEn = (dma_dbg_cmd_done | (bus_rsp_sent | bus_posted_write_done) & dma_bus_clk_en);
 
-   rvdffs #(DEPTH_PTR) WrPtr_dff(.din(NxtWrPtr[DEPTH_PTR-1:0]), .dout(WrPtr[DEPTH_PTR-1:0]), .en(WrPtrEn), .clk(dma_free_clk), .*);
-   rvdffs #(DEPTH_PTR) RdPtr_dff(.din(NxtRdPtr[DEPTH_PTR-1:0]), .dout(RdPtr[DEPTH_PTR-1:0]), .en(RdPtrEn), .clk(dma_free_clk), .*);
-   rvdffs #(DEPTH_PTR) RspPtr_dff(.din(NxtRspPtr[DEPTH_PTR-1:0]), .dout(RspPtr[DEPTH_PTR-1:0]), .en(RspPtrEn), .clk(dma_free_clk), .*);
+   mcu_rvdffs #(DEPTH_PTR) WrPtr_dff(.din(NxtWrPtr[DEPTH_PTR-1:0]), .dout(WrPtr[DEPTH_PTR-1:0]), .en(WrPtrEn), .clk(dma_free_clk), .*);
+   mcu_rvdffs #(DEPTH_PTR) RdPtr_dff(.din(NxtRdPtr[DEPTH_PTR-1:0]), .dout(RdPtr[DEPTH_PTR-1:0]), .en(RdPtrEn), .clk(dma_free_clk), .*);
+   mcu_rvdffs #(DEPTH_PTR) RspPtr_dff(.din(NxtRspPtr[DEPTH_PTR-1:0]), .dout(RspPtr[DEPTH_PTR-1:0]), .en(RspPtrEn), .clk(dma_free_clk), .*);
 
    // Miscellaneous signals
    assign fifo_full = fifo_full_spec_bus;
@@ -350,7 +350,7 @@ import mcu_el2_pkg::*;
    assign dma_nack_count_d[2:0] = (dma_nack_count[2:0] >= dma_nack_count_csr[2:0]) ? ({3{~(dma_dccm_req | dma_iccm_req)}} & dma_nack_count[2:0]) :
                                                                                     (dma_mem_req & ~(dma_dccm_req | dma_iccm_req)) ? (dma_nack_count[2:0] + 1'b1) : 3'b0;
 
-   rvdffs #(3) nack_count_dff(.din(dma_nack_count_d[2:0]), .dout(dma_nack_count[2:0]), .en(dma_mem_req), .clk(dma_free_clk), .*);
+   mcu_rvdffs #(3) nack_count_dff(.din(dma_nack_count_d[2:0]), .dout(dma_nack_count[2:0]), .en(dma_mem_req), .clk(dma_free_clk), .*);
 
    // Core outputs
    assign dma_mem_req         = fifo_valid[RdPtr] & ~fifo_rpend[RdPtr] & ~fifo_done[RdPtr] & ~(dma_address_error | dma_alignment_error | dma_dbg_cmd_error);
@@ -373,7 +373,7 @@ import mcu_el2_pkg::*;
 
    // Address check  dccm
    if (mcu_pt.DCCM_ENABLE) begin: Gen_dccm_enable
-      rvrangecheck #(.CCM_SADR(mcu_pt.DCCM_SADR),
+      mcu_rvrangecheck #(.CCM_SADR(mcu_pt.DCCM_SADR),
                      .CCM_SIZE(mcu_pt.DCCM_SIZE)) addr_dccm_rangecheck (
          .addr(dma_mem_addr_int[31:0]),
          .in_range(dma_mem_addr_in_dccm),
@@ -386,7 +386,7 @@ import mcu_el2_pkg::*;
 
    // Address check  iccm
    if (mcu_pt.ICCM_ENABLE) begin: Gen_iccm_enable
-      rvrangecheck #(.CCM_SADR(mcu_pt.ICCM_SADR),
+      mcu_rvrangecheck #(.CCM_SADR(mcu_pt.ICCM_SADR),
                      .CCM_SIZE(mcu_pt.ICCM_SIZE)) addr_iccm_rangecheck (
          .addr(dma_mem_addr_int[31:0]),
          .in_range(dma_mem_addr_in_iccm),
@@ -399,7 +399,7 @@ import mcu_el2_pkg::*;
 
 
    // PIC memory address check
-   rvrangecheck #(.CCM_SADR(mcu_pt.PIC_BASE_ADDR),
+   mcu_rvrangecheck #(.CCM_SADR(mcu_pt.PIC_BASE_ADDR),
                   .CCM_SIZE(mcu_pt.PIC_SIZE)) addr_pic_rangecheck (
       .addr(dma_mem_addr_int[31:0]),
       .in_range(dma_mem_addr_in_pic),
@@ -407,16 +407,16 @@ import mcu_el2_pkg::*;
     );
 
    // Inputs
-   rvdff_fpga #(1) fifo_full_bus_ff     (.din(fifo_full_spec),   .dout(fifo_full_spec_bus), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
-   rvdff_fpga #(1) dbg_dma_bubble_ff    (.din(dbg_dma_bubble),   .dout(dbg_dma_bubble_bus), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
-   rvdff      #(1) dma_dbg_cmd_doneff   (.din(dma_dbg_cmd_done), .dout(dma_dbg_cmd_done_q), .clk(free_clk), .*);
+   mcu_rvdff_fpga #(1) fifo_full_bus_ff     (.din(fifo_full_spec),   .dout(fifo_full_spec_bus), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(1) dbg_dma_bubble_ff    (.din(dbg_dma_bubble),   .dout(dbg_dma_bubble_bus), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdff      #(1) dma_dbg_cmd_doneff   (.din(dma_dbg_cmd_done), .dout(dma_dbg_cmd_done_q), .clk(free_clk), .*);
 
    // Clock Gating logic
    assign dma_buffer_c1_clken = (bus_cmd_valid & dma_bus_clk_en) | dbg_cmd_valid | clk_override;
    assign dma_free_clken = (bus_cmd_valid | bus_rsp_valid | dbg_cmd_valid | dma_dbg_cmd_done | dma_dbg_cmd_done_q | (|fifo_valid[DEPTH-1:0]) | clk_override);
 
-   rvoclkhdr dma_buffer_c1cgc ( .en(dma_buffer_c1_clken), .l1clk(dma_buffer_c1_clk), .* );
-   rvoclkhdr dma_free_cgc (.en(dma_free_clken), .l1clk(dma_free_clk), .*);
+   mcu_rvoclkhdr dma_buffer_c1cgc ( .en(dma_buffer_c1_clken), .l1clk(dma_buffer_c1_clk), .* );
+   mcu_rvoclkhdr dma_free_cgc (.en(dma_free_clken), .l1clk(dma_free_clk), .*);
 
 `ifdef MCU_RV_FPGA_OPTIMIZE
    assign dma_bus_clk = 1'b0;
@@ -431,23 +431,23 @@ import mcu_el2_pkg::*;
    assign wrbuf_rst      = wrbuf_cmd_sent & ~wrbuf_en;
    assign wrbuf_data_rst = wrbuf_cmd_sent & ~wrbuf_data_en;
 
-   rvdffsc_fpga  #(.WIDTH(1))              wrbuf_vldff       (.din(1'b1), .dout(wrbuf_vld),      .en(wrbuf_en),      .clear(wrbuf_rst),      .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
-   rvdffsc_fpga  #(.WIDTH(1))              wrbuf_data_vldff  (.din(1'b1), .dout(wrbuf_data_vld), .en(wrbuf_data_en), .clear(wrbuf_data_rst), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
-   rvdffs_fpga   #(.WIDTH(mcu_pt.DMA_BUS_TAG)) wrbuf_tagff       (.din(dma_axi_awid[mcu_pt.DMA_BUS_TAG-1:0]), .dout(wrbuf_tag[mcu_pt.DMA_BUS_TAG-1:0]), .en(wrbuf_en), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
-   rvdffs_fpga   #(.WIDTH(3))              wrbuf_szff        (.din(dma_axi_awsize[2:0]),  .dout(wrbuf_sz[2:0]),     .en(wrbuf_en),                  .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
-   rvdffe        #(.WIDTH(32))             wrbuf_addrff      (.din(dma_axi_awaddr[31:0]), .dout(wrbuf_addr[31:0]),  .en(wrbuf_en & dma_bus_clk_en), .*);
-   rvdffe        #(.WIDTH(64))             wrbuf_dataff      (.din(dma_axi_wdata[63:0]),  .dout(wrbuf_data[63:0]),  .en(wrbuf_data_en & dma_bus_clk_en), .*);
-   rvdffs_fpga   #(.WIDTH(8))              wrbuf_byteenff    (.din(dma_axi_wstrb[7:0]),   .dout(wrbuf_byteen[7:0]), .en(wrbuf_data_en),             .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffsc_fpga  #(.WIDTH(1))              wrbuf_vldff       (.din(1'b1), .dout(wrbuf_vld),      .en(wrbuf_en),      .clear(wrbuf_rst),      .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffsc_fpga  #(.WIDTH(1))              wrbuf_data_vldff  (.din(1'b1), .dout(wrbuf_data_vld), .en(wrbuf_data_en), .clear(wrbuf_data_rst), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffs_fpga   #(.WIDTH(mcu_pt.DMA_BUS_TAG)) wrbuf_tagff       (.din(dma_axi_awid[mcu_pt.DMA_BUS_TAG-1:0]), .dout(wrbuf_tag[mcu_pt.DMA_BUS_TAG-1:0]), .en(wrbuf_en), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffs_fpga   #(.WIDTH(3))              wrbuf_szff        (.din(dma_axi_awsize[2:0]),  .dout(wrbuf_sz[2:0]),     .en(wrbuf_en),                  .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffe        #(.WIDTH(32))             wrbuf_addrff      (.din(dma_axi_awaddr[31:0]), .dout(wrbuf_addr[31:0]),  .en(wrbuf_en & dma_bus_clk_en), .*);
+   mcu_rvdffe        #(.WIDTH(64))             wrbuf_dataff      (.din(dma_axi_wdata[63:0]),  .dout(wrbuf_data[63:0]),  .en(wrbuf_data_en & dma_bus_clk_en), .*);
+   mcu_rvdffs_fpga   #(.WIDTH(8))              wrbuf_byteenff    (.din(dma_axi_wstrb[7:0]),   .dout(wrbuf_byteen[7:0]), .en(wrbuf_data_en),             .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
 
    // Read channel buffer
    assign rdbuf_en    = dma_axi_arvalid & dma_axi_arready;
    assign rdbuf_cmd_sent = bus_cmd_sent & ~bus_cmd_write;
    assign rdbuf_rst   = rdbuf_cmd_sent & ~rdbuf_en;
 
-   rvdffsc_fpga  #(.WIDTH(1))              rdbuf_vldff  (.din(1'b1), .dout(rdbuf_vld), .en(rdbuf_en), .clear(rdbuf_rst), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
-   rvdffs_fpga   #(.WIDTH(mcu_pt.DMA_BUS_TAG)) rdbuf_tagff  (.din(dma_axi_arid[mcu_pt.DMA_BUS_TAG-1:0]), .dout(rdbuf_tag[mcu_pt.DMA_BUS_TAG-1:0]), .en(rdbuf_en), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
-   rvdffs_fpga   #(.WIDTH(3))              rdbuf_szff   (.din(dma_axi_arsize[2:0]),  .dout(rdbuf_sz[2:0]),    .en(rdbuf_en), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
-   rvdffe       #(.WIDTH(32))              rdbuf_addrff (.din(dma_axi_araddr[31:0]), .dout(rdbuf_addr[31:0]), .en(rdbuf_en & dma_bus_clk_en), .*);
+   mcu_rvdffsc_fpga  #(.WIDTH(1))              rdbuf_vldff  (.din(1'b1), .dout(rdbuf_vld), .en(rdbuf_en), .clear(rdbuf_rst), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffs_fpga   #(.WIDTH(mcu_pt.DMA_BUS_TAG)) rdbuf_tagff  (.din(dma_axi_arid[mcu_pt.DMA_BUS_TAG-1:0]), .dout(rdbuf_tag[mcu_pt.DMA_BUS_TAG-1:0]), .en(rdbuf_en), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffs_fpga   #(.WIDTH(3))              rdbuf_szff   (.din(dma_axi_arsize[2:0]),  .dout(rdbuf_sz[2:0]),    .en(rdbuf_en), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffe       #(.WIDTH(32))              rdbuf_addrff (.din(dma_axi_araddr[31:0]), .dout(rdbuf_addr[31:0]), .en(rdbuf_en & dma_bus_clk_en), .*);
 
    assign dma_axi_awready = ~(wrbuf_vld & ~wrbuf_cmd_sent);
    assign dma_axi_wready  = ~(wrbuf_data_vld & ~wrbuf_cmd_sent);
@@ -470,7 +470,7 @@ import mcu_el2_pkg::*;
    assign axi_mstr_sel     = (wrbuf_vld & wrbuf_data_vld & rdbuf_vld) ? axi_mstr_priority : (wrbuf_vld & wrbuf_data_vld);
    assign axi_mstr_prty_in = ~axi_mstr_priority;
    assign axi_mstr_prty_en = bus_cmd_sent;
-   rvdffs_fpga #(.WIDTH(1)) mstr_prtyff(.din(axi_mstr_prty_in), .dout(axi_mstr_priority), .en(axi_mstr_prty_en), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffs_fpga #(.WIDTH(1)) mstr_prtyff(.din(axi_mstr_prty_in), .dout(axi_mstr_priority), .en(axi_mstr_prty_en), .clk(dma_bus_clk), .clken(dma_bus_clk_en), .rawclk(clk), .*);
 
    assign axi_rsp_valid                   = fifo_valid[RspPtr] & ~fifo_dbg[RspPtr] & fifo_done_bus[RspPtr];
    assign axi_rsp_rdata[63:0]             = fifo_data[RspPtr];

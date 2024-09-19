@@ -57,7 +57,7 @@ import mcu_el2_pkg::*;
       assign lsu_match_data[i][31:0] = ({32{~trigger_pkt_any[i].select}} & ldst_addr_trigger_m[31:0]) |
                                        ({32{trigger_pkt_any[i].select & trigger_pkt_any[i].store}} & store_data_trigger_m[31:0]);
 
-      rvmaskandmatch trigger_match (.mask(trigger_pkt_any[i].tdata2[31:0]), .data(lsu_match_data[i][31:0]), .masken(trigger_pkt_any[i].match), .match(lsu_trigger_data_match[i]));
+      mcu_rvmaskandmatch trigger_match (.mask(trigger_pkt_any[i].tdata2[31:0]), .data(lsu_match_data[i][31:0]), .masken(trigger_pkt_any[i].match), .match(lsu_trigger_data_match[i]));
 
       assign lsu_trigger_match_m[i] = lsu_pkt_m.valid & ~lsu_pkt_m.dma & trigger_enable &
                                         ((trigger_pkt_any[i].store & lsu_pkt_m.store) | (trigger_pkt_any[i].load & lsu_pkt_m.load & ~trigger_pkt_any[i].select)) &

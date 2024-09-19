@@ -846,12 +846,12 @@ import mcu_el2_pkg::*;
 
    assign active_state = (~(halt_state | pause_state) | dec_tlu_flush_lower_r | dec_tlu_flush_lower_wb)  | dec_tlu_misc_clk_override;
 
-   rvoclkhdr free_cg2   ( .clk(clk), .en(1'b1),         .l1clk(free_l2clk), .* );
-   rvoclkhdr active_cg2 ( .clk(clk), .en(active_state), .l1clk(active_l2clk), .* );
+   mcu_rvoclkhdr free_cg2   ( .clk(clk), .en(1'b1),         .l1clk(free_l2clk), .* );
+   mcu_rvoclkhdr active_cg2 ( .clk(clk), .en(active_state), .l1clk(active_l2clk), .* );
 
 // all other clock headers are 1st level
-   rvoclkhdr free_cg1   ( .clk(free_l2clk),     .en(1'b1), .l1clk(free_clk), .* );
-   rvoclkhdr active_cg1 ( .clk(active_l2clk),   .en(1'b1), .l1clk(active_clk), .* );
+   mcu_rvoclkhdr free_cg1   ( .clk(free_l2clk),     .en(1'b1), .l1clk(free_clk), .* );
+   mcu_rvoclkhdr active_cg1 ( .clk(active_l2clk),   .en(1'b1), .l1clk(active_clk), .* );
 
 
    assign core_dbg_cmd_done = dma_dbg_cmd_done | dec_dbg_cmd_done;

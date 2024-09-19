@@ -113,7 +113,7 @@ module mcu_el2_dec_pmp_ctl
       assign csr_wdata = (raw_wdata & 8'b00000001) ? (raw_wdata & 8'b10011111) : (raw_wdata & 8'b10011101);
 `endif
 
-      rvdffe #(8) pmpcfg_ff (.*, .clk(free_l2clk),
+      mcu_rvdffe #(8) pmpcfg_ff (.*, .clk(free_l2clk),
                           .en(wr_pmpcfg_r & (wr_pmpcfg_group == entry_idx[5:2]) & (~entry_lock_eff[entry_idx])),
                           .din(csr_wdata),
                           .dout(pmp_pmpcfg[entry_idx]));
@@ -150,7 +150,7 @@ module mcu_el2_dec_pmp_ctl
                                   : 1'b0);
       assign pmpaddr_lock = entry_lock_eff[entry_idx] | pmpaddr_lock_next;
       assign pmp_pmpaddr[entry_idx][31:30] = 2'b00;
-      rvdffe #(30) pmpaddr_ff (.*, .clk(free_l2clk),
+      mcu_rvdffe #(30) pmpaddr_ff (.*, .clk(free_l2clk),
                           .en(wr_pmpaddr_r & (wr_pmpaddr_address == entry_idx)
                               & (~pmpaddr_lock)),
                           .din(dec_csr_wrdata_r[29:0]),

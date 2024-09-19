@@ -261,11 +261,11 @@ import mcu_el2_pkg::*;
 
    // Fifo flops
 
-   rvdff #(.WIDTH(1)) clken_ff (.din(lsu_bus_clk_en), .dout(lsu_bus_clk_en_q), .clk(active_clk), .*);
+   mcu_rvdff #(.WIDTH(1)) clken_ff (.din(lsu_bus_clk_en), .dout(lsu_bus_clk_en_q), .clk(active_clk), .*);
 
-   rvdff #(.WIDTH(1)) is_sideeffects_rff (.din(is_sideeffects_m), .dout(is_sideeffects_r), .clk(lsu_c1_r_clk), .*);
+   mcu_rvdff #(.WIDTH(1)) is_sideeffects_rff (.din(is_sideeffects_m), .dout(is_sideeffects_r), .clk(lsu_c1_r_clk), .*);
 
-   rvdff #(4) lsu_byten_rff (.*, .din(ldst_byteen_m[3:0]), .dout(ldst_byteen_r[3:0]), .clk(lsu_c1_r_clk));
+   mcu_rvdff #(4) lsu_byten_rff (.*, .din(ldst_byteen_m[3:0]), .dout(ldst_byteen_r[3:0]), .clk(lsu_c1_r_clk));
 
 `ifdef MCU_RV_ASSERT_ON
 

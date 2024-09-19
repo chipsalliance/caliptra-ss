@@ -446,20 +446,20 @@ import mcu_el2_pkg::*;
                                                                                                         ibuf_data[(8*i)+7:(8*i)];
    end
 
-   rvdffsc #(.WIDTH(1))              ibuf_valid_ff     (.din(1'b1),                      .dout(ibuf_valid),      .en(ibuf_wr_en), .clear(ibuf_rst), .clk(lsu_free_c2_clk), .*);
-   rvdffs  #(.WIDTH(DEPTH_LOG2))     ibuf_tagff        (.din(ibuf_tag_in),               .dout(ibuf_tag),        .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffs  #(.WIDTH(DEPTH_LOG2))     ibuf_dualtagff    (.din(ibuf_dualtag_in),           .dout(ibuf_dualtag),    .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffs  #(.WIDTH(1))              ibuf_dualff       (.din(ldst_dual_r),               .dout(ibuf_dual),       .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffs  #(.WIDTH(1))              ibuf_samedwff     (.din(ldst_samedw_r),             .dout(ibuf_samedw),     .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffs  #(.WIDTH(1))              ibuf_nomergeff    (.din(no_dword_merge_r),          .dout(ibuf_nomerge),    .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffs  #(.WIDTH(1))              ibuf_sideeffectff (.din(is_sideeffects_r),          .dout(ibuf_sideeffect), .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffs  #(.WIDTH(1))              ibuf_unsignff     (.din(lsu_pkt_r.unsign),          .dout(ibuf_unsign),     .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffs  #(.WIDTH(1))              ibuf_writeff      (.din(lsu_pkt_r.store),           .dout(ibuf_write),      .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffs  #(.WIDTH(2))              ibuf_szff         (.din(ibuf_sz_in[1:0]),           .dout(ibuf_sz),         .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffe  #(.WIDTH(32))             ibuf_addrff       (.din(ibuf_addr_in[31:0]),        .dout(ibuf_addr),       .en(ibuf_wr_en),                                              .*);
-   rvdffs  #(.WIDTH(4))              ibuf_byteenff     (.din(ibuf_byteen_in[3:0]),       .dout(ibuf_byteen),     .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
-   rvdffe  #(.WIDTH(32))             ibuf_dataff       (.din(ibuf_data_in[31:0]),        .dout(ibuf_data),       .en(ibuf_wr_en),                                              .*);
-   rvdff   #(.WIDTH(TIMER_LOG2))     ibuf_timerff      (.din(ibuf_timer_in),             .dout(ibuf_timer),                                         .clk(lsu_free_c2_clk),     .*);
+   mcu_rvdffsc #(.WIDTH(1))              ibuf_valid_ff     (.din(1'b1),                      .dout(ibuf_valid),      .en(ibuf_wr_en), .clear(ibuf_rst), .clk(lsu_free_c2_clk), .*);
+   mcu_rvdffs  #(.WIDTH(DEPTH_LOG2))     ibuf_tagff        (.din(ibuf_tag_in),               .dout(ibuf_tag),        .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffs  #(.WIDTH(DEPTH_LOG2))     ibuf_dualtagff    (.din(ibuf_dualtag_in),           .dout(ibuf_dualtag),    .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffs  #(.WIDTH(1))              ibuf_dualff       (.din(ldst_dual_r),               .dout(ibuf_dual),       .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffs  #(.WIDTH(1))              ibuf_samedwff     (.din(ldst_samedw_r),             .dout(ibuf_samedw),     .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffs  #(.WIDTH(1))              ibuf_nomergeff    (.din(no_dword_merge_r),          .dout(ibuf_nomerge),    .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffs  #(.WIDTH(1))              ibuf_sideeffectff (.din(is_sideeffects_r),          .dout(ibuf_sideeffect), .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffs  #(.WIDTH(1))              ibuf_unsignff     (.din(lsu_pkt_r.unsign),          .dout(ibuf_unsign),     .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffs  #(.WIDTH(1))              ibuf_writeff      (.din(lsu_pkt_r.store),           .dout(ibuf_write),      .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffs  #(.WIDTH(2))              ibuf_szff         (.din(ibuf_sz_in[1:0]),           .dout(ibuf_sz),         .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffe  #(.WIDTH(32))             ibuf_addrff       (.din(ibuf_addr_in[31:0]),        .dout(ibuf_addr),       .en(ibuf_wr_en),                                              .*);
+   mcu_rvdffs  #(.WIDTH(4))              ibuf_byteenff     (.din(ibuf_byteen_in[3:0]),       .dout(ibuf_byteen),     .en(ibuf_wr_en),                   .clk(lsu_bus_ibuf_c1_clk), .*);
+   mcu_rvdffe  #(.WIDTH(32))             ibuf_dataff       (.din(ibuf_data_in[31:0]),        .dout(ibuf_data),       .en(ibuf_wr_en),                                              .*);
+   mcu_rvdff   #(.WIDTH(TIMER_LOG2))     ibuf_timerff      (.din(ibuf_timer_in),             .dout(ibuf_timer),                                         .clk(lsu_free_c2_clk),     .*);
 
 
    //------------------------------------------------------------------------------
@@ -527,23 +527,23 @@ import mcu_el2_pkg::*;
                           (ibuf_buf_byp & ldst_samedw_r & ldst_dual_r);
 
 
-   rvdff_fpga  #(.WIDTH(1))              obuf_wren_ff      (.din(obuf_wr_en),                  .dout(obuf_wr_enQ),                                        .clk(lsu_busm_clk),        .clken(lsu_busm_clken), .rawclk(clk),        .*);
-   rvdffsc     #(.WIDTH(1))              obuf_valid_ff     (.din(1'b1),                        .dout(obuf_valid),      .en(obuf_wr_en), .clear(obuf_rst), .clk(lsu_free_c2_clk),                                                  .*);
-   rvdffs      #(.WIDTH(1))              obuf_nosend_ff    (.din(obuf_nosend_in),              .dout(obuf_nosend),     .en(obuf_wr_en),                   .clk(lsu_free_c2_clk),                                                  .*);
-   rvdffs      #(.WIDTH(1))              obuf_rdrsp_pend_ff(.din(obuf_rdrsp_pend_in),          .dout(obuf_rdrsp_pend), .en(obuf_rdrsp_pend_en),           .clk(lsu_free_c2_clk),                                                  .*);
-   rvdff_fpga  #(.WIDTH(1))              obuf_cmd_done_ff  (.din(obuf_cmd_done_in),            .dout(obuf_cmd_done),                                      .clk(lsu_busm_clk),        .clken(lsu_busm_clken),        .rawclk(clk), .*);
-   rvdff_fpga  #(.WIDTH(1))              obuf_data_done_ff (.din(obuf_data_done_in),           .dout(obuf_data_done),                                     .clk(lsu_busm_clk),        .clken(lsu_busm_clken),        .rawclk(clk), .*);
-   rvdff_fpga  #(.WIDTH(mcu_pt.LSU_BUS_TAG)) obuf_rdrsp_tagff  (.din(obuf_rdrsp_tag_in),           .dout(obuf_rdrsp_tag),                                     .clk(lsu_busm_clk),        .clken(lsu_busm_clken),        .rawclk(clk), .*);
-   rvdffs_fpga #(.WIDTH(mcu_pt.LSU_BUS_TAG)) obuf_tag0ff       (.din(obuf_tag0_in),                .dout(obuf_tag0),       .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
-   rvdffs_fpga #(.WIDTH(mcu_pt.LSU_BUS_TAG)) obuf_tag1ff       (.din(obuf_tag1_in),                .dout(obuf_tag1),       .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
-   rvdffs_fpga #(.WIDTH(1))              obuf_mergeff      (.din(obuf_merge_in),               .dout(obuf_merge),      .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
-   rvdffs_fpga #(.WIDTH(1))              obuf_writeff      (.din(obuf_write_in),               .dout(obuf_write),      .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
-   rvdffs_fpga #(.WIDTH(1))              obuf_sideeffectff (.din(obuf_sideeffect_in),          .dout(obuf_sideeffect), .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
-   rvdffs_fpga #(.WIDTH(2))              obuf_szff         (.din(obuf_sz_in[1:0]),             .dout(obuf_sz),         .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
-   rvdffs_fpga #(.WIDTH(8))              obuf_byteenff     (.din(obuf_byteen_in[7:0]),         .dout(obuf_byteen),     .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
-   rvdffe     #(.WIDTH(32))              obuf_addrff       (.din(obuf_addr_in[31:0]),          .dout(obuf_addr),       .en(obuf_wr_en),                                                                                           .*);
-   rvdffe     #(.WIDTH(64))              obuf_dataff       (.din(obuf_data_in[63:0]),          .dout(obuf_data),       .en(obuf_wr_en),                                                                                           .*);
-   rvdff_fpga #(.WIDTH(TIMER_LOG2))      obuf_timerff      (.din(obuf_wr_timer_in),            .dout(obuf_wr_timer),                                      .clk(lsu_busm_clk),        .clken(lsu_busm_clken), .rawclk(clk),        .*);
+   mcu_rvdff_fpga  #(.WIDTH(1))              obuf_wren_ff      (.din(obuf_wr_en),                  .dout(obuf_wr_enQ),                                        .clk(lsu_busm_clk),        .clken(lsu_busm_clken), .rawclk(clk),        .*);
+   mcu_rvdffsc     #(.WIDTH(1))              obuf_valid_ff     (.din(1'b1),                        .dout(obuf_valid),      .en(obuf_wr_en), .clear(obuf_rst), .clk(lsu_free_c2_clk),                                                  .*);
+   mcu_rvdffs      #(.WIDTH(1))              obuf_nosend_ff    (.din(obuf_nosend_in),              .dout(obuf_nosend),     .en(obuf_wr_en),                   .clk(lsu_free_c2_clk),                                                  .*);
+   mcu_rvdffs      #(.WIDTH(1))              obuf_rdrsp_pend_ff(.din(obuf_rdrsp_pend_in),          .dout(obuf_rdrsp_pend), .en(obuf_rdrsp_pend_en),           .clk(lsu_free_c2_clk),                                                  .*);
+   mcu_rvdff_fpga  #(.WIDTH(1))              obuf_cmd_done_ff  (.din(obuf_cmd_done_in),            .dout(obuf_cmd_done),                                      .clk(lsu_busm_clk),        .clken(lsu_busm_clken),        .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(1))              obuf_data_done_ff (.din(obuf_data_done_in),           .dout(obuf_data_done),                                     .clk(lsu_busm_clk),        .clken(lsu_busm_clken),        .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(mcu_pt.LSU_BUS_TAG)) obuf_rdrsp_tagff  (.din(obuf_rdrsp_tag_in),           .dout(obuf_rdrsp_tag),                                     .clk(lsu_busm_clk),        .clken(lsu_busm_clken),        .rawclk(clk), .*);
+   mcu_rvdffs_fpga #(.WIDTH(mcu_pt.LSU_BUS_TAG)) obuf_tag0ff       (.din(obuf_tag0_in),                .dout(obuf_tag0),       .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
+   mcu_rvdffs_fpga #(.WIDTH(mcu_pt.LSU_BUS_TAG)) obuf_tag1ff       (.din(obuf_tag1_in),                .dout(obuf_tag1),       .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
+   mcu_rvdffs_fpga #(.WIDTH(1))              obuf_mergeff      (.din(obuf_merge_in),               .dout(obuf_merge),      .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
+   mcu_rvdffs_fpga #(.WIDTH(1))              obuf_writeff      (.din(obuf_write_in),               .dout(obuf_write),      .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
+   mcu_rvdffs_fpga #(.WIDTH(1))              obuf_sideeffectff (.din(obuf_sideeffect_in),          .dout(obuf_sideeffect), .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
+   mcu_rvdffs_fpga #(.WIDTH(2))              obuf_szff         (.din(obuf_sz_in[1:0]),             .dout(obuf_sz),         .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
+   mcu_rvdffs_fpga #(.WIDTH(8))              obuf_byteenff     (.din(obuf_byteen_in[7:0]),         .dout(obuf_byteen),     .en(obuf_wr_en),                   .clk(lsu_bus_obuf_c1_clk), .clken(lsu_bus_obuf_c1_clken), .rawclk(clk), .*);
+   mcu_rvdffe     #(.WIDTH(32))              obuf_addrff       (.din(obuf_addr_in[31:0]),          .dout(obuf_addr),       .en(obuf_wr_en),                                                                                           .*);
+   mcu_rvdffe     #(.WIDTH(64))              obuf_dataff       (.din(obuf_data_in[63:0]),          .dout(obuf_data),       .en(obuf_wr_en),                                                                                           .*);
+   mcu_rvdff_fpga #(.WIDTH(TIMER_LOG2))      obuf_timerff      (.din(obuf_wr_timer_in),            .dout(obuf_wr_timer),                                      .clk(lsu_busm_clk),        .clken(lsu_busm_clken), .rawclk(clk),        .*);
 
 
    //------------------------------------------------------------------------------
@@ -735,24 +735,24 @@ import mcu_el2_pkg::*;
          endcase
       end
 
-      rvdffs  #(.WIDTH($bits(state_t))) buf_state_ff     (.din(buf_nxtstate[i]),             .dout({buf_state[i]}),    .en(buf_state_en[i]),                                        .clk(lsu_bus_buf_c1_clk), .*);
-      rvdff   #(.WIDTH(DEPTH))          buf_ageff        (.din(buf_age_in[i]),               .dout(buf_ageQ[i]),                                                                    .clk(lsu_bus_buf_c1_clk), .*);
-      rvdff   #(.WIDTH(DEPTH))          buf_rspageff     (.din(buf_rspage_in[i]),            .dout(buf_rspageQ[i]),                                                                 .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(DEPTH_LOG2))     buf_dualtagff    (.din(buf_dualtag_in[i]),           .dout(buf_dualtag[i]),    .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(1))              buf_dualff       (.din(buf_dual_in[i]),              .dout(buf_dual[i]),       .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(1))              buf_samedwff     (.din(buf_samedw_in[i]),            .dout(buf_samedw[i]),     .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(1))              buf_nomergeff    (.din(buf_nomerge_in[i]),           .dout(buf_nomerge[i]),    .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(1))              buf_dualhiff     (.din(buf_dualhi_in[i]),            .dout(buf_dualhi[i]),     .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(1))              buf_ldfwdff      (.din(buf_ldfwd_in[i]),             .dout(buf_ldfwd[i]),      .en(buf_ldfwd_en[i]),                                        .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(DEPTH_LOG2))     buf_ldfwdtagff   (.din(buf_ldfwdtag_in[i]),          .dout(buf_ldfwdtag[i]),   .en(buf_ldfwd_en[i]),                                        .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(1))              buf_sideeffectff (.din(buf_sideeffect_in[i]),        .dout(buf_sideeffect[i]), .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(1))              buf_unsignff     (.din(buf_unsign_in[i]),            .dout(buf_unsign[i]),     .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(1))              buf_writeff      (.din(buf_write_in[i]),             .dout(buf_write[i]),      .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffs  #(.WIDTH(2))              buf_szff         (.din(buf_sz_in[i]),                .dout(buf_sz[i]),         .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffe  #(.WIDTH(32))             buf_addrff       (.din(buf_addr_in[i][31:0]),        .dout(buf_addr[i]),       .en(buf_wr_en[i]),                                                                     .*);
-      rvdffs  #(.WIDTH(4))              buf_byteenff     (.din(buf_byteen_in[i][3:0]),       .dout(buf_byteen[i]),     .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
-      rvdffe  #(.WIDTH(32))             buf_dataff       (.din(buf_data_in[i][31:0]),        .dout(buf_data[i]),       .en(buf_data_en[i]),                                                                   .*);
-      rvdffsc #(.WIDTH(1))              buf_errorff      (.din(1'b1),                        .dout(buf_error[i]),      .en(buf_error_en[i]),                    .clear(buf_rst[i]), .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH($bits(state_t))) buf_state_ff     (.din(buf_nxtstate[i]),             .dout({buf_state[i]}),    .en(buf_state_en[i]),                                        .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdff   #(.WIDTH(DEPTH))          buf_ageff        (.din(buf_age_in[i]),               .dout(buf_ageQ[i]),                                                                    .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdff   #(.WIDTH(DEPTH))          buf_rspageff     (.din(buf_rspage_in[i]),            .dout(buf_rspageQ[i]),                                                                 .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(DEPTH_LOG2))     buf_dualtagff    (.din(buf_dualtag_in[i]),           .dout(buf_dualtag[i]),    .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(1))              buf_dualff       (.din(buf_dual_in[i]),              .dout(buf_dual[i]),       .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(1))              buf_samedwff     (.din(buf_samedw_in[i]),            .dout(buf_samedw[i]),     .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(1))              buf_nomergeff    (.din(buf_nomerge_in[i]),           .dout(buf_nomerge[i]),    .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(1))              buf_dualhiff     (.din(buf_dualhi_in[i]),            .dout(buf_dualhi[i]),     .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(1))              buf_ldfwdff      (.din(buf_ldfwd_in[i]),             .dout(buf_ldfwd[i]),      .en(buf_ldfwd_en[i]),                                        .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(DEPTH_LOG2))     buf_ldfwdtagff   (.din(buf_ldfwdtag_in[i]),          .dout(buf_ldfwdtag[i]),   .en(buf_ldfwd_en[i]),                                        .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(1))              buf_sideeffectff (.din(buf_sideeffect_in[i]),        .dout(buf_sideeffect[i]), .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(1))              buf_unsignff     (.din(buf_unsign_in[i]),            .dout(buf_unsign[i]),     .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(1))              buf_writeff      (.din(buf_write_in[i]),             .dout(buf_write[i]),      .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffs  #(.WIDTH(2))              buf_szff         (.din(buf_sz_in[i]),                .dout(buf_sz[i]),         .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffe  #(.WIDTH(32))             buf_addrff       (.din(buf_addr_in[i][31:0]),        .dout(buf_addr[i]),       .en(buf_wr_en[i]),                                                                     .*);
+      mcu_rvdffs  #(.WIDTH(4))              buf_byteenff     (.din(buf_byteen_in[i][3:0]),       .dout(buf_byteen[i]),     .en(buf_wr_en[i]),                                           .clk(lsu_bus_buf_c1_clk), .*);
+      mcu_rvdffe  #(.WIDTH(32))             buf_dataff       (.din(buf_data_in[i][31:0]),        .dout(buf_data[i]),       .en(buf_data_en[i]),                                                                   .*);
+      mcu_rvdffsc #(.WIDTH(1))              buf_errorff      (.din(1'b1),                        .dout(buf_error[i]),      .en(buf_error_en[i]),                    .clear(buf_rst[i]), .clk(lsu_bus_buf_c1_clk), .*);
 
    end
 
@@ -893,29 +893,29 @@ import mcu_el2_pkg::*;
    assign lsu_pmu_bus_error = lsu_imprecise_error_load_any | lsu_imprecise_error_store_any;
    assign lsu_pmu_bus_busy  = (lsu_axi_awvalid & ~lsu_axi_awready) | (lsu_axi_wvalid & ~lsu_axi_wready) | (lsu_axi_arvalid & ~lsu_axi_arready);
 
-   rvdff_fpga #(.WIDTH(1))               lsu_axi_awvalid_ff (.din(lsu_axi_awvalid),                .dout(lsu_axi_awvalid_q),                .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(1))               lsu_axi_awready_ff (.din(lsu_axi_awready),                .dout(lsu_axi_awready_q),                .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(1))               lsu_axi_wvalid_ff  (.din(lsu_axi_wvalid),                 .dout(lsu_axi_wvalid_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(1))               lsu_axi_wready_ff  (.din(lsu_axi_wready),                 .dout(lsu_axi_wready_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(1))               lsu_axi_arvalid_ff (.din(lsu_axi_arvalid),                .dout(lsu_axi_arvalid_q),                .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(1))               lsu_axi_arready_ff (.din(lsu_axi_arready),                .dout(lsu_axi_arready_q),                .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(1))               lsu_axi_awvalid_ff (.din(lsu_axi_awvalid),                .dout(lsu_axi_awvalid_q),                .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(1))               lsu_axi_awready_ff (.din(lsu_axi_awready),                .dout(lsu_axi_awready_q),                .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(1))               lsu_axi_wvalid_ff  (.din(lsu_axi_wvalid),                 .dout(lsu_axi_wvalid_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(1))               lsu_axi_wready_ff  (.din(lsu_axi_wready),                 .dout(lsu_axi_wready_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(1))               lsu_axi_arvalid_ff (.din(lsu_axi_arvalid),                .dout(lsu_axi_arvalid_q),                .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(1))               lsu_axi_arready_ff (.din(lsu_axi_arready),                .dout(lsu_axi_arready_q),                .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
 
-   rvdff_fpga  #(.WIDTH(1))              lsu_axi_bvalid_ff  (.din(lsu_axi_bvalid),                 .dout(lsu_axi_bvalid_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga  #(.WIDTH(1))              lsu_axi_bready_ff  (.din(lsu_axi_bready),                 .dout(lsu_axi_bready_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga  #(.WIDTH(2))              lsu_axi_bresp_ff   (.din(lsu_axi_bresp[1:0]),             .dout(lsu_axi_bresp_q[1:0]),             .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga  #(.WIDTH(mcu_pt.LSU_BUS_TAG)) lsu_axi_bid_ff     (.din(lsu_axi_bid[mcu_pt.LSU_BUS_TAG-1:0]),.dout(lsu_axi_bid_q[mcu_pt.LSU_BUS_TAG-1:0]),.clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdffe      #(.WIDTH(64))             lsu_axi_rdata_ff   (.din(lsu_axi_rdata[63:0]),            .dout(lsu_axi_rdata_q[63:0]),            .en((lsu_axi_rvalid | clk_override) & lsu_bus_clk_en), .*);
+   mcu_rvdff_fpga  #(.WIDTH(1))              lsu_axi_bvalid_ff  (.din(lsu_axi_bvalid),                 .dout(lsu_axi_bvalid_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(1))              lsu_axi_bready_ff  (.din(lsu_axi_bready),                 .dout(lsu_axi_bready_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(2))              lsu_axi_bresp_ff   (.din(lsu_axi_bresp[1:0]),             .dout(lsu_axi_bresp_q[1:0]),             .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(mcu_pt.LSU_BUS_TAG)) lsu_axi_bid_ff     (.din(lsu_axi_bid[mcu_pt.LSU_BUS_TAG-1:0]),.dout(lsu_axi_bid_q[mcu_pt.LSU_BUS_TAG-1:0]),.clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdffe      #(.WIDTH(64))             lsu_axi_rdata_ff   (.din(lsu_axi_rdata[63:0]),            .dout(lsu_axi_rdata_q[63:0]),            .en((lsu_axi_rvalid | clk_override) & lsu_bus_clk_en), .*);
 
-   rvdff_fpga  #(.WIDTH(1))              lsu_axi_rvalid_ff  (.din(lsu_axi_rvalid),                 .dout(lsu_axi_rvalid_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga  #(.WIDTH(1))              lsu_axi_rready_ff  (.din(lsu_axi_rready),                 .dout(lsu_axi_rready_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga  #(.WIDTH(2))              lsu_axi_rresp_ff   (.din(lsu_axi_rresp[1:0]),             .dout(lsu_axi_rresp_q[1:0]),             .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
-   rvdff_fpga  #(.WIDTH(mcu_pt.LSU_BUS_TAG)) lsu_axi_rid_ff     (.din(lsu_axi_rid[mcu_pt.LSU_BUS_TAG-1:0]),.dout(lsu_axi_rid_q[mcu_pt.LSU_BUS_TAG-1:0]),.clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(1))              lsu_axi_rvalid_ff  (.din(lsu_axi_rvalid),                 .dout(lsu_axi_rvalid_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(1))              lsu_axi_rready_ff  (.din(lsu_axi_rready),                 .dout(lsu_axi_rready_q),                 .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(2))              lsu_axi_rresp_ff   (.din(lsu_axi_rresp[1:0]),             .dout(lsu_axi_rresp_q[1:0]),             .clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(mcu_pt.LSU_BUS_TAG)) lsu_axi_rid_ff     (.din(lsu_axi_rid[mcu_pt.LSU_BUS_TAG-1:0]),.dout(lsu_axi_rid_q[mcu_pt.LSU_BUS_TAG-1:0]),.clk(lsu_busm_clk), .clken(lsu_busm_clken), .rawclk(clk), .*);
 
-   rvdff #(.WIDTH(DEPTH_LOG2)) lsu_WrPtr0_rff (.din(WrPtr0_m), .dout(WrPtr0_r), .clk(lsu_c2_r_clk), .*);
-   rvdff #(.WIDTH(DEPTH_LOG2)) lsu_WrPtr1_rff (.din(WrPtr1_m), .dout(WrPtr1_r), .clk(lsu_c2_r_clk), .*);
+   mcu_rvdff #(.WIDTH(DEPTH_LOG2)) lsu_WrPtr0_rff (.din(WrPtr0_m), .dout(WrPtr0_r), .clk(lsu_c2_r_clk), .*);
+   mcu_rvdff #(.WIDTH(DEPTH_LOG2)) lsu_WrPtr1_rff (.din(WrPtr1_m), .dout(WrPtr1_r), .clk(lsu_c2_r_clk), .*);
 
-   rvdff #(.WIDTH(1)) lsu_busreq_rff (.din(lsu_busreq_m & ~flush_r & ~ld_full_hit_m),      .dout(lsu_busreq_r), .clk(lsu_c2_r_clk), .*);
-   rvdff #(.WIDTH(1)) lsu_nonblock_load_valid_rff  (.din(lsu_nonblock_load_valid_m),  .dout(lsu_nonblock_load_valid_r), .clk(lsu_c2_r_clk), .*);
+   mcu_rvdff #(.WIDTH(1)) lsu_busreq_rff (.din(lsu_busreq_m & ~flush_r & ~ld_full_hit_m),      .dout(lsu_busreq_r), .clk(lsu_c2_r_clk), .*);
+   mcu_rvdff #(.WIDTH(1)) lsu_nonblock_load_valid_rff  (.din(lsu_nonblock_load_valid_m),  .dout(lsu_nonblock_load_valid_r), .clk(lsu_c2_r_clk), .*);
 
 `ifdef MCU_RV_ASSERT_ON
 
