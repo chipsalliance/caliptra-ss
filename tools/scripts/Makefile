@@ -37,14 +37,16 @@ endif
 
 # Define test name
 TESTNAME ?= iccm_lock
+CALIPTRA_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites
 TEST_DIR = $(CALIPTRA_SS)/src/integration/test_suites/$(TESTNAME)
 HEX_DIR = $(CALIPTRA_SS)/src/integration/test_suites/hex
 INCLUDES_DIR = $(CALIPTRA_SS)/src/integration/test_suites/includes
 TBDIR = $(CALIPTRA_SS)/src/integration/tb
 RISCV_HW_IF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/riscv_hw_if
-ISR_DIR    = $(CALIPTRA_SS)/src/integration/test_suites/libs/caliptra_isr
+#ISR_DIR    = $(CALIPTRA_SS)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
 PRINTF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/printf
-CALIPTRA_DIR = $(CALIPTRA_ROOT)/src/integration/rtl
+SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
+CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
 DUT ?= caliptra_mcu_top_tb
 
 # Determine test directory
@@ -65,13 +67,14 @@ DUT ?= caliptra_mcu_top_tb
 # 		  clk_gate \
 # 		  wdt
 # COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_SS)/src/integration/test_suites/libs/$(name))
-HEADER_FILES := $(CALIPTRA_DIR)/caliptra_reg.h \
+HEADER_FILES := $(CALIPTRA_RTL)/caliptra_reg.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
-		$(PRINTF_DIR)/printf.h \
-		$(ISR_DIR)/riscv-csr.h \
-		$(ISR_DIR)/riscv-interrupts.h \
-		$(ISR_DIR)/veer-csr.h
+		$(SOC_IFC_DIR)/soc_ifc.h \
+		$(PRINTF_DIR)/printf.h
+#		$(ISR_DIR)/riscv-csr.h \
+#		$(ISR_DIR)/riscv-interrupts.h \
+#		$(ISR_DIR)/veer-csr.h
 
 #$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 #$(CALIPTRA_SS)/src/integration/rtl/caliptra_reg.h
@@ -122,7 +125,7 @@ else
 endif
 
 # VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR) $(COMP_LIBS)
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR)
 
 # Use eval to expand env variables in the .vf file
 # $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
