@@ -361,7 +361,7 @@ import caliptra_top_tb_pkg::*;
         `define MCU_DEC rvtop_wrapper.rvtop.veer.dec
 
 
-        assign mailbox_write    = lmem.awvalid && (lmem.awaddr == 32'hD0580000) && rst_l;
+        assign mailbox_write    = lmem.awvalid && (lmem.awaddr == mem_mailbox) && rst_l;
         assign mailbox_data     = lmem.wdata;
 
         assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
@@ -434,18 +434,18 @@ import caliptra_top_tb_pkg::*;
                 if (mem_signature_begin < mem_signature_end) begin
                     dump_signature();
                 end
+                // End Of test monitor
+                else if(mailbox_data[7:0] == 8'hff) begin
+                    $display("* TESTCASE PASSED");
+                    $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
+                    $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
+                    $finish;
+                end
+                else if(mailbox_data[7:0] == 8'h1) begin
+                    $error("* TESTCASE FAILED");
+                    $finish;
+                end
             end
-            // // End Of test monitor
-            // if(mailbox_write && mailbox_data[7:0] == 8'hff) begin
-            //     $display("TEST_PASSED");
-            //     $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
-            //     $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
-            //     $finish;
-            // end
-            // else if(mailbox_write && mailbox_data[7:0] == 8'h1) begin
-            //     $display("TEST_FAILED");
-            //     $finish;
-            // end
         end
 
 
@@ -1102,6 +1102,12 @@ import caliptra_top_tb_pkg::*;
         assign axi_interconnect.mintf_arr[4].RREADY   = m_axi_bfm_if.rready;
         
 
+        logic [mcu_pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_arid_req;
+        logic [mcu_pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_arid_req_r [mcu_pt.LSU_BUS_TAG];
+        logic [mcu_pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_awid_req;
+        logic [mcu_pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_awid_req_r [mcu_pt.LSU_BUS_TAG];
+        assign axi_interconnect.mintf_arr[0].ARID[mcu_pt.LSU_BUS_TAG-1:0] = mcu_pt.LSU_BUS_TAG'(0);
+        assign axi_interconnect.mintf_arr[0].AWID[mcu_pt.LSU_BUS_TAG-1:0] = mcu_pt.LSU_BUS_TAG'(0);
        //=========================================================================-
        // RTL instance
        //=========================================================================-
@@ -1121,7 +1127,7 @@ import caliptra_top_tb_pkg::*;
 
         .lsu_axi_awvalid        (axi_interconnect.mintf_arr[0].AWVALID),
         .lsu_axi_awready        (axi_interconnect.mintf_arr[0].AWREADY),
-        .lsu_axi_awid           (axi_interconnect.mintf_arr[0].AWID[mcu_pt.LSU_BUS_TAG-1:0]),
+        .lsu_axi_awid           (fixme_lsu_axi_awid_req), /*FIXME*/
         .lsu_axi_awaddr         (axi_interconnect.mintf_arr[0].AWADDR[31:0]),
         .lsu_axi_awregion       (axi_interconnect.mintf_arr[0].AWREGION),
         .lsu_axi_awlen          (axi_interconnect.mintf_arr[0].AWLEN),
@@ -1141,11 +1147,11 @@ import caliptra_top_tb_pkg::*;
         .lsu_axi_bvalid         (axi_interconnect.mintf_arr[0].BVALID),
         .lsu_axi_bready         (axi_interconnect.mintf_arr[0].BREADY),
         .lsu_axi_bresp          (axi_interconnect.mintf_arr[0].BRESP),
-        .lsu_axi_bid            (axi_interconnect.mintf_arr[0].BID[mcu_pt.LSU_BUS_TAG-1:0]),
+        .lsu_axi_bid            (fixme_lsu_axi_awid_req_r[0]/*axi_interconnect.mintf_arr[0].BID[mcu_pt.LSU_BUS_TAG-1:0]*/), /*FIXME*/
 
         .lsu_axi_arvalid        (axi_interconnect.mintf_arr[0].ARVALID),
         .lsu_axi_arready        (axi_interconnect.mintf_arr[0].ARREADY),
-        .lsu_axi_arid           (axi_interconnect.mintf_arr[0].ARID[mcu_pt.LSU_BUS_TAG-1:0]),
+        .lsu_axi_arid           (fixme_lsu_axi_arid_req), /*FIXME*/
         .lsu_axi_araddr         (axi_interconnect.mintf_arr[0].ARADDR[31:0]),
         .lsu_axi_arregion       (axi_interconnect.mintf_arr[0].ARREGION),
         .lsu_axi_arlen          (axi_interconnect.mintf_arr[0].ARLEN),
@@ -1158,7 +1164,7 @@ import caliptra_top_tb_pkg::*;
 
         .lsu_axi_rvalid         (axi_interconnect.mintf_arr[0].RVALID),
         .lsu_axi_rready         (axi_interconnect.mintf_arr[0].RREADY),
-        .lsu_axi_rid            (axi_interconnect.mintf_arr[0].RID[mcu_pt.LSU_BUS_TAG-1:0]),
+        .lsu_axi_rid            (fixme_lsu_axi_arid_req_r[0]/*axi_interconnect.mintf_arr[0].RID[mcu_pt.LSU_BUS_TAG-1:0]*/), /*FIXME*/
         .lsu_axi_rdata          (axi_interconnect.mintf_arr[0].RDATA),
         .lsu_axi_rresp          (axi_interconnect.mintf_arr[0].RRESP),
         .lsu_axi_rlast          (axi_interconnect.mintf_arr[0].RLAST),
@@ -1389,6 +1395,99 @@ import caliptra_top_tb_pkg::*;
     assign axi_interconnect.sintf_arr[2].BID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:mcu_pt.DMA_BUS_TAG]  = '0;
     assign axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
     assign axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    // FIXME This hacky FIFO is to ensure the same AXI ID is used throughout a mailbox transfer.
+    //       We need an ability to deterministically use the same AXI ID from the VeeR executable
+    int ar_count;
+    int aw_count;
+    bit ar_hshake;
+    bit r_hshake;
+    bit aw_hshake;
+    bit b_hshake;
+    int r_ii, w_ii;
+    always_comb begin
+        ar_hshake = axi_interconnect.mintf_arr[0].ARVALID && axi_interconnect.mintf_arr[0].ARREADY;
+        r_hshake  = axi_interconnect.mintf_arr[0].RVALID && axi_interconnect.mintf_arr[0].RREADY;
+        aw_hshake = axi_interconnect.mintf_arr[0].AWVALID && axi_interconnect.mintf_arr[0].AWREADY;
+        b_hshake  = axi_interconnect.mintf_arr[0].BVALID && axi_interconnect.mintf_arr[0].BREADY;
+    end
+    always_ff@(posedge core_clk or negedge rst_l) begin
+        if (!rst_l) begin
+            fixme_lsu_axi_arid_req_r <= '{default:0};
+            fixme_lsu_axi_awid_req_r <= '{default:0};
+            ar_count <= 0;
+            aw_count <= 0;
+        end
+        else begin
+            case ({ar_hshake,r_hshake}) inside
+                2'b00: begin
+                    fixme_lsu_axi_arid_req_r <= fixme_lsu_axi_arid_req_r;
+                    ar_count <= ar_count;
+                end
+                2'b01: begin
+                    `CALIPTRA_ASSERT(FIXME_R, ar_count > 0, core_clk, !rst_l)
+                    for (r_ii = 0; r_ii < mcu_pt.LSU_BUS_TAG-1; r_ii++) begin
+                        if (r_ii < ar_count-1)       fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req_r[r_ii+1]; // Shift down
+                        else if (r_ii >= ar_count-1) fixme_lsu_axi_arid_req_r[r_ii] <= '0;
+                    end
+                    if (ar_count == mcu_pt.LSU_BUS_TAG) fixme_lsu_axi_arid_req_r[mcu_pt.LSU_BUS_TAG-1] <= '0;
+                    ar_count <= ar_count - 1;
+                end
+                2'b10: begin
+                    for (r_ii = 0; r_ii < mcu_pt.LSU_BUS_TAG-1; r_ii++) begin
+                        if (r_ii < ar_count)       fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req_r[r_ii];
+                        else if (r_ii == ar_count) fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req;
+                        else if (r_ii > ar_count)  fixme_lsu_axi_arid_req_r[r_ii] <= '0;
+                    end
+                    if (ar_count == mcu_pt.LSU_BUS_TAG-1) fixme_lsu_axi_arid_req_r[mcu_pt.LSU_BUS_TAG-1] <= fixme_lsu_axi_arid_req;
+                    ar_count <= ar_count + 1;
+                end
+                2'b11: begin
+                    `CALIPTRA_ASSERT(FIXME_AR, ar_count > 0, core_clk, !rst_l)
+                    for (r_ii = 0; r_ii < mcu_pt.LSU_BUS_TAG-1; r_ii++) begin
+                        if (r_ii < ar_count-1)       fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req_r[r_ii+1]; // Shift down
+                        else if (r_ii == ar_count-1) fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req;
+                        else if (r_ii >= ar_count)   fixme_lsu_axi_arid_req_r[r_ii] <= '0;
+                    end
+                    if (ar_count == mcu_pt.LSU_BUS_TAG) fixme_lsu_axi_arid_req_r[mcu_pt.LSU_BUS_TAG-1] <= fixme_lsu_axi_arid_req;
+                    ar_count <= ar_count;
+                end
+            endcase
+            case ({aw_hshake,b_hshake}) inside
+                2'b00: begin
+                    fixme_lsu_axi_awid_req_r <= fixme_lsu_axi_awid_req_r;
+                    aw_count <= aw_count;
+                end
+                2'b01: begin
+                    `CALIPTRA_ASSERT(FIXME_B, aw_count > 0, core_clk, !rst_l)
+                    for (w_ii = 0; w_ii < mcu_pt.LSU_BUS_TAG-1; w_ii++) begin
+                        if (w_ii < aw_count-1)       fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req_r[w_ii+1]; // Shift down
+                        else if (w_ii >= aw_count-1) fixme_lsu_axi_awid_req_r[w_ii] <= '0;
+                    end
+                    if (aw_count == mcu_pt.LSU_BUS_TAG) fixme_lsu_axi_awid_req_r[mcu_pt.LSU_BUS_TAG-1] <= '0;
+                    aw_count <= aw_count - 1;
+                end
+                2'b10: begin
+                    for (w_ii = 0; w_ii < mcu_pt.LSU_BUS_TAG-1; w_ii++) begin
+                        if (w_ii < aw_count)       fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req_r[w_ii];
+                        else if (w_ii == aw_count) fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req;
+                        else if (w_ii > aw_count)  fixme_lsu_axi_awid_req_r[w_ii] <= '0;
+                    end
+                    if (aw_count == mcu_pt.LSU_BUS_TAG-1) fixme_lsu_axi_awid_req_r[mcu_pt.LSU_BUS_TAG-1] <= fixme_lsu_axi_awid_req;
+                    aw_count <= aw_count + 1;
+                end
+                2'b11: begin
+                    `CALIPTRA_ASSERT(FIXME_AW, aw_count > 0, core_clk, !rst_l)
+                    for (w_ii = 0; w_ii < mcu_pt.LSU_BUS_TAG-1; w_ii++) begin
+                        if (w_ii < aw_count-1)       fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req_r[w_ii+1]; // Shift down
+                        else if (w_ii == aw_count-1) fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req;
+                        else if (w_ii >= aw_count)   fixme_lsu_axi_awid_req_r[w_ii] <= '0;
+                    end
+                    if (aw_count == mcu_pt.LSU_BUS_TAG) fixme_lsu_axi_awid_req_r[mcu_pt.LSU_BUS_TAG-1] <= fixme_lsu_axi_awid_req;
+                    aw_count <= aw_count;
+                end
+            endcase
+        end
+    end
 
 
     //=========================================================================-
