@@ -28,7 +28,7 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_top.sv
     tops: [caliptra_ss_top]
   sim:
-    pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile && echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $CALIPTRA_ROOT/src/ecc/tb/ecdsa_secp384r1.exe . 
+    pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile && echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $CALIPTRA_ROOT/src/ecc/tb/ecc_secp384r1.exe . 
                 && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $CALIPTRA_ROOT/src/doe/tb/doe_test_gen.py .
                 && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $CALIPTRA_ROOT/src/sha256/tb/sha256_wntz_test_gen.py .'
 global:
