@@ -31,7 +31,7 @@ loop:
    bnez x5, loop
    li a0, 0xff # success
 
-// Write return value (a0) from printf to STDOUT for TB to termiate test.
+// Write return value (a0) from printf to STDOUT for TB to terminate test.
 _finish:
     li x3, STDOUT
     sb a0, 0(x3)
@@ -48,6 +48,6 @@ _trap:
 .data
 hw_data:
 .ascii "-------------------------\n"
-.ascii "Hello World from VeeR EL2\n"
+.ascii "Hello World from MCU\n"
 .ascii "-------------------------\n"
 .byte 0
