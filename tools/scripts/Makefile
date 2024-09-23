@@ -93,8 +93,10 @@ OFILES += $(TESTNAME).o
 ifeq (0,$(shell test -e $(TEST_DIR)/caliptra_isr.h && echo $$?))
 	OFILES += caliptra_isr.o
 endif
-# Assume all tests will import our printf lib
-OFILES += printf.o
+# Assume all C tests will import our printf lib, but not assembly
+ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
+	OFILES += printf.o
+endif
 # Always compile the lib files - for every target
 # OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
 
