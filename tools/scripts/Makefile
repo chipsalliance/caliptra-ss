@@ -37,14 +37,16 @@ endif
 
 # Define test name
 TESTNAME ?= iccm_lock
-TEST_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/$(TESTNAME)
-HEX_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/hex
-INCLUDES_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/includes
-TBDIR = $(CALIPTRA_SS_INT)/src/integration/tb
-RISCV_HW_IF_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/riscv_hw_if
-ISR_DIR    = $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/caliptra_isr
-PRINTF_DIR = $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/printf
-CALIPTRA_DIR = $(CALIPTRA_ROOT)/src/integration/rtl
+CALIPTRA_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites
+TEST_DIR = $(CALIPTRA_SS)/src/integration/test_suites/$(TESTNAME)
+HEX_DIR = $(CALIPTRA_SS)/src/integration/test_suites/hex
+INCLUDES_DIR = $(CALIPTRA_SS)/src/integration/test_suites/includes
+TBDIR = $(CALIPTRA_SS)/src/integration/tb
+RISCV_HW_IF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/riscv_hw_if
+#ISR_DIR    = $(CALIPTRA_SS)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
+PRINTF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/printf
+SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
+CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
 DUT ?= caliptra_mcu_top_tb
 
 # Determine test directory
@@ -64,22 +66,23 @@ DUT ?= caliptra_mcu_top_tb
 # 		  soc_ifc \
 # 		  clk_gate \
 # 		  wdt
-# COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/$(name))
-HEADER_FILES := $(CALIPTRA_DIR)/caliptra_reg.h \
+# COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_SS)/src/integration/test_suites/libs/$(name))
+HEADER_FILES := $(CALIPTRA_RTL)/caliptra_reg.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
-		$(PRINTF_DIR)/printf.h \
-		$(ISR_DIR)/riscv-csr.h \
-		$(ISR_DIR)/riscv-interrupts.h \
-		$(ISR_DIR)/veer-csr.h
+		$(SOC_IFC_DIR)/soc_ifc.h \
+		$(PRINTF_DIR)/printf.h
+#		$(ISR_DIR)/riscv-csr.h \
+#		$(ISR_DIR)/riscv-interrupts.h \
+#		$(ISR_DIR)/veer-csr.h
 
 #$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
-#$(CALIPTRA_SS_INT)/src/integration/rtl/caliptra_reg.h
+#$(CALIPTRA_SS)/src/integration/rtl/caliptra_reg.h
 #$(INCLUDES_DIR)/caliptra_defines.h \
 #$(INCLUDES_DIR)/defines.h \
 
-TEST_GEN_FILES := $(CALIPTRA_SS_INT)/src/ecc/tb/ecdsa_secp384r1.exe \
-	          $(CALIPTRA_SS_INT)/src/doe/tb/doe_test_gen.py
+TEST_GEN_FILES := $(CALIPTRA_SS)/src/ecc/tb/ecdsa_secp384r1.exe \
+	          $(CALIPTRA_SS)/src/doe/tb/doe_test_gen.py
 
 # Separate OFILE variable since this is not used to build remote images
 # (i.e. FMC or RunTime)
@@ -90,8 +93,10 @@ OFILES += $(TESTNAME).o
 ifeq (0,$(shell test -e $(TEST_DIR)/caliptra_isr.h && echo $$?))
 	OFILES += caliptra_isr.o
 endif
-# Assume all tests will import our printf lib
-OFILES += printf.o
+# Assume all C tests will import our printf lib, but not assembly
+ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
+	OFILES += printf.o
+endif
 # Always compile the lib files - for every target
 # OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
 
@@ -122,7 +127,7 @@ else
 endif
 
 # VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR) $(COMP_LIBS)
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR)
 
 # Use eval to expand env variables in the .vf file
 # $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
@@ -171,7 +176,7 @@ suppress = -Wno-WIDTH -Wno-UNOPTFLAT -Wno-LITENDIAN -Wno-CMPCONST -Wno-MULTIDRIV
 
 # CFLAGS for verilator generated Makefiles. Without -std=c++17 it
 # complains for `auto` variables
-CFLAGS += -std=c++14
+CFLAGS += -std=c++17
 #CFLAGS += -std=c11
 
 # Optimization for better performance; alternative is nothing for
@@ -183,8 +188,8 @@ VERILATOR_MAKE_FLAGS = OPT_FAST="-Os"
 TB_DPI_SRCS = jtagdpi/jtagdpi.c \
               tcp_server/tcp_server.c
 
-TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS_INT)/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
-TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS_INT)/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
+TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS)/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
+TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS)/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
 
 # Testbench sources
 TB_VERILATOR_SRCS = $(TBDIR)/test_$(DUT).cpp $(TB_DPI_SRCS)

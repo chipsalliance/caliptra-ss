@@ -233,9 +233,9 @@
 `define MCU_RV_RET_STACK_SIZE 8
 `define MCU_RV_TARGET default
 `define TEC_MCU_RV_ICG mcu_clockhdr
-`define CPU_TOP `MCU_RV_TOP.veer
+`define MCU_CPU_TOP `MCU_RV_TOP.veer
 `define MCU_RV_TOP `TOP.rvtop_wrapper.rvtop
-`define SDVT_AHB 0
+`define MCU_SDVT_AHB 0
 `define TOP tb_top
 `define MCU_RV_BUILD_AXI4 1
 `define MCU_RV_BUILD_AXI_NATIVE 1

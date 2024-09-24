@@ -336,8 +336,8 @@ import mcu_el2_pkg::*;
    assign exu_mp_addr[mcu_pt.BTB_ADDR_HI:mcu_pt.BTB_ADDR_LO]  = exu_mp_index[mcu_pt.BTB_ADDR_HI:mcu_pt.BTB_ADDR_LO] ;  // BTB/BHT address
 
    logic [mcu_pt.BTB_ADDR_HI:mcu_pt.BTB_ADDR_LO] btb_rd_addr_f;
- `define DEC `CPU_TOP.dec
- `define EXU `CPU_TOP.exu
+ `define DEC `MCU_CPU_TOP.dec
+ `define EXU `MCU_CPU_TOP.exu
    mcu_el2_btb_addr_hash f2hash(.pc(ifc_fetch_addr_f[mcu_pt.BTB_INDEX3_HI:mcu_pt.BTB_INDEX1_LO]), .hash(btb_rd_addr_f[mcu_pt.BTB_ADDR_HI:mcu_pt.BTB_ADDR_LO]));
    logic [31:0] mppc_ns, mppc;
    logic        exu_flush_final_d1;
