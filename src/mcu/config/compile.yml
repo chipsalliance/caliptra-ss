@@ -1,7 +1,7 @@
 provides: [mcu_top]
 schema_version: 2.4.0
 requires:
-  - mcu_el2_veer_wrapper
+  - veer_el2_rtl_pkg
 targets:
   rtl:
     directories: [$COMPILE_ROOT/rtl]
@@ -12,7 +12,7 @@ targets:
   #   waiver_files:
   #     - $COMPILE_ROOT/config/design_lint/sglint_waivers
   #   black_box:
-  #     - mcu_el2_veer_wrapper
+  #     - css_mcu0_el2_veer_wrapper
   # cdc:
   #   tcl_files:
   #     - $COMPILE_ROOT/config/cdc/integration_top.constraints.tcl
@@ -24,7 +24,7 @@ targets:
 #       default:
 #         - '-assert svaext'
 #         - '+vpi -sverilog -full64 -lpthread'
-#         - +define+MCU_RV_BUILD_AXI4
+#         - +define+css_mcu0_RV_BUILD_AXI4
 #         - +define+MCU_RV_OPENSOURCE
 #         - +define+AVERY_VCS
 #         - +define+AVERY_CLOCK=5
@@ -98,7 +98,7 @@ targets:
 #       default:
 #         - '-assert svaext'
 #         - '+vpi -sverilog -full64 -lpthread'
-#         - +define+MCU_RV_BUILD_AXI4
+#         - +define+css_mcu0_RV_BUILD_AXI4
 #         - +define+MCU_RV_OPENSOURCE
 #         - +define+AVERY_VCS
 #         - +define+AVERY_CLOCK=5

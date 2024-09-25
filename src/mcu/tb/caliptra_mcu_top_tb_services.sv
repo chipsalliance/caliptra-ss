@@ -697,8 +697,8 @@ module caliptra_mcu_top_tb_services
         if(cycleCnt == MAX_CYCLES && !UVM_TB) begin
             $error("Hit max cycle count (%0d) .. stopping",cycleCnt);
             dump_memory_contents(MEMTYPE_LMEM, 32'h8000_0110, 32'h8000_0180);
-            dump_memory_contents(MEMTYPE_DCCM, `MCU_RV_DCCM_SADR, `MCU_RV_DCCM_EADR);
-            dump_memory_contents(MEMTYPE_ICCM, `MCU_RV_ICCM_SADR, `MCU_RV_ICCM_EADR);
+            dump_memory_contents(MEMTYPE_DCCM, `css_mcu0_RV_DCCM_SADR, `css_mcu0_RV_DCCM_EADR);
+            dump_memory_contents(MEMTYPE_ICCM, `css_mcu0_RV_ICCM_SADR, `css_mcu0_RV_ICCM_EADR);
             $finish;
         end
         // console Monitor
@@ -726,8 +726,8 @@ module caliptra_mcu_top_tb_services
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `DEC.tlu.minstretl[31:0],`DEC.tlu.mcyclel[31:0]);
                 $display("See \"exec.log\" for execution trace with register updates..\n");
                 dump_memory_contents(MEMTYPE_LMEM, 32'h0000_0000, 32'h001_FFFF);
-                dump_memory_contents(MEMTYPE_DCCM, `MCU_RV_DCCM_SADR, `MCU_RV_DCCM_EADR);
-                dump_memory_contents(MEMTYPE_ICCM, `MCU_RV_ICCM_SADR, `MCU_RV_ICCM_EADR);
+                dump_memory_contents(MEMTYPE_DCCM, `css_mcu0_RV_DCCM_SADR, `css_mcu0_RV_DCCM_EADR);
+                dump_memory_contents(MEMTYPE_ICCM, `css_mcu0_RV_ICCM_SADR, `css_mcu0_RV_ICCM_EADR);
                 $finish;
             end
         end
@@ -742,8 +742,8 @@ module caliptra_mcu_top_tb_services
         if (|cycleCntKillReq && (cycleCnt == (cycleCntKillReq + 100))) begin
                 $error("Dumping memory contents at simulation end due to FAILURE");
                 dump_memory_contents(MEMTYPE_LMEM, 32'h0000_0000, 32'h001_FFFF);
-                dump_memory_contents(MEMTYPE_DCCM, `MCU_RV_DCCM_SADR, `MCU_RV_DCCM_EADR);
-                dump_memory_contents(MEMTYPE_ICCM, `MCU_RV_ICCM_SADR, `MCU_RV_ICCM_EADR);
+                dump_memory_contents(MEMTYPE_DCCM, `css_mcu0_RV_DCCM_SADR, `css_mcu0_RV_DCCM_EADR);
+                dump_memory_contents(MEMTYPE_ICCM, `css_mcu0_RV_ICCM_SADR, `css_mcu0_RV_ICCM_EADR);
                 $finish;
         end
     end
@@ -1037,15 +1037,15 @@ task static preload_iccm;
     `ifndef VERILATOR
     init_iccm();
     `endif
-    saddr = `MCU_RV_ICCM_SADR;
-    if ( (saddr < `MCU_RV_ICCM_SADR) || (saddr > `MCU_RV_ICCM_EADR)) return;
+    saddr = `css_mcu0_RV_ICCM_SADR;
+    if ( (saddr < `css_mcu0_RV_ICCM_SADR) || (saddr > `css_mcu0_RV_ICCM_EADR)) return;
     `ifndef MCU_RV_ICCM_ENABLE
         $display("********************************************************");
         $display("ICCM preload: there is no ICCM in VeeR, terminating !!!");
         $display("********************************************************");
         $finish;
     `endif
-    eaddr = `MCU_RV_ICCM_EADR;
+    eaddr = `css_mcu0_RV_ICCM_EADR;
     $display("ICCM pre-load from %h to %h", saddr, eaddr);
 
     for(addr= saddr; addr <= eaddr; addr+=4) begin
@@ -1069,15 +1069,15 @@ task static preload_dccm;
     `ifndef VERILATOR
     init_dccm();
     `endif
-    saddr = `MCU_RV_DCCM_SADR;
-    if (saddr < `MCU_RV_DCCM_SADR || saddr > `MCU_RV_DCCM_EADR) return;
+    saddr = `css_mcu0_RV_DCCM_SADR;
+    if (saddr < `css_mcu0_RV_DCCM_SADR || saddr > `css_mcu0_RV_DCCM_EADR) return;
     `ifndef MCU_RV_DCCM_ENABLE
         $display("********************************************************");
         $display("DCCM preload: there is no DCCM in VeeR, terminating !!!");
         $display("********************************************************");
         $finish;
     `endif
-    eaddr = `MCU_RV_DCCM_EADR;
+    eaddr = `css_mcu0_RV_DCCM_EADR;
     $display("DCCM pre-load from %h to %h", saddr, eaddr);
 
     for(addr=saddr; addr <= eaddr; addr+=4) begin
@@ -1357,29 +1357,29 @@ endfunction
 
 function int get_dccm_bank(input[31:0] addr,  output int bank_idx);
     `ifdef MCU_RV_DCCM_NUM_BANKS_2
-        bank_idx = int'(addr[`MCU_RV_DCCM_BITS-1:3]);
+        bank_idx = int'(addr[`css_mcu0_RV_DCCM_BITS-1:3]);
         return int'( addr[2]);
     `elsif MCU_RV_DCCM_NUM_BANKS_4
-        bank_idx = int'(addr[`MCU_RV_DCCM_BITS-1:4]);
+        bank_idx = int'(addr[`css_mcu0_RV_DCCM_BITS-1:4]);
         return int'(addr[3:2]);
     `elsif MCU_RV_DCCM_NUM_BANKS_8
-        bank_idx = int'(addr[`MCU_RV_DCCM_BITS-1:5]);
+        bank_idx = int'(addr[`css_mcu0_RV_DCCM_BITS-1:5]);
         return int'( addr[4:2]);
     `endif
 endfunction
 
 function int get_iccm_bank(input[31:0] addr,  output int bank_idx);
     `ifdef MCU_RV_DCCM_NUM_BANKS_2
-        bank_idx = int'(addr[`MCU_RV_DCCM_BITS-1:3]);
+        bank_idx = int'(addr[`css_mcu0_RV_DCCM_BITS-1:3]);
         return int'( addr[2]);
     `elsif MCU_RV_ICCM_NUM_BANKS_4
-        bank_idx = int'(addr[`MCU_RV_ICCM_BITS-1:4]);
+        bank_idx = int'(addr[`css_mcu0_RV_ICCM_BITS-1:4]);
         return int'(addr[3:2]);
     `elsif MCU_RV_ICCM_NUM_BANKS_8
-        bank_idx = int'(addr[`MCU_RV_ICCM_BITS-1:5]);
+        bank_idx = int'(addr[`css_mcu0_RV_ICCM_BITS-1:5]);
         return int'( addr[4:2]);
     `elsif MCU_RV_ICCM_NUM_BANKS_16
-        bank_idx = int'(addr[`MCU_RV_ICCM_BITS-1:6]);
+        bank_idx = int'(addr[`css_mcu0_RV_ICCM_BITS-1:6]);
         return int'( addr[5:2]);
     `endif
 endfunction

@@ -12,13 +12,13 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License../src/riscv_core/veer_el2/rtl/z_rev1p0
 //********************************************************************************
 
 module mcu_top
-    import mcu_el2_pkg::*;
+    import css_mcu0_el2_pkg::*;
 #(
-    `include "mcu_el2_param.vh"
+    `include "css_mcu0_el2_param.vh"
 ) (
     input logic        clk,
     input logic        rst_l,
@@ -38,12 +38,12 @@ module mcu_top
     output logic [31:0] trace_rv_i_tval_ip,
 
     // Bus signals
-`ifdef MCU_RV_BUILD_AXI4
+`ifdef css_mcu0_RV_BUILD_AXI4
     //-------------------------- LSU AXI signals--------------------------
     // AXI Write Channels
     output logic                      lsu_axi_awvalid,
     input  logic                      lsu_axi_awready,
-    output logic [mcu_pt.LSU_BUS_TAG-1:0] lsu_axi_awid,
+    output logic [pt.LSU_BUS_TAG-1:0] lsu_axi_awid,
     output logic [              31:0] lsu_axi_awaddr,
     output logic [               3:0] lsu_axi_awregion,
     output logic [               7:0] lsu_axi_awlen,
@@ -63,12 +63,12 @@ module mcu_top
     input  logic                      lsu_axi_bvalid,
     output logic                      lsu_axi_bready,
     input  logic [               1:0] lsu_axi_bresp,
-    input  logic [mcu_pt.LSU_BUS_TAG-1:0] lsu_axi_bid,
+    input  logic [pt.LSU_BUS_TAG-1:0] lsu_axi_bid,
 
     // AXI Read Channels
     output logic                      lsu_axi_arvalid,
     input  logic                      lsu_axi_arready,
-    output logic [mcu_pt.LSU_BUS_TAG-1:0] lsu_axi_arid,
+    output logic [pt.LSU_BUS_TAG-1:0] lsu_axi_arid,
     output logic [              31:0] lsu_axi_araddr,
     output logic [               3:0] lsu_axi_arregion,
     output logic [               7:0] lsu_axi_arlen,
@@ -81,7 +81,7 @@ module mcu_top
 
     input  logic                      lsu_axi_rvalid,
     output logic                      lsu_axi_rready,
-    input  logic [mcu_pt.LSU_BUS_TAG-1:0] lsu_axi_rid,
+    input  logic [pt.LSU_BUS_TAG-1:0] lsu_axi_rid,
     input  logic [              63:0] lsu_axi_rdata,
     input  logic [               1:0] lsu_axi_rresp,
     input  logic                      lsu_axi_rlast,
@@ -90,7 +90,7 @@ module mcu_top
     // AXI Write Channels
     output logic                      ifu_axi_awvalid,
     input  logic                      ifu_axi_awready,
-    output logic [mcu_pt.IFU_BUS_TAG-1:0] ifu_axi_awid,
+    output logic [pt.IFU_BUS_TAG-1:0] ifu_axi_awid,
     output logic [              31:0] ifu_axi_awaddr,
     output logic [               3:0] ifu_axi_awregion,
     output logic [               7:0] ifu_axi_awlen,
@@ -110,12 +110,12 @@ module mcu_top
     input  logic                      ifu_axi_bvalid,
     output logic                      ifu_axi_bready,
     input  logic [               1:0] ifu_axi_bresp,
-    input  logic [mcu_pt.IFU_BUS_TAG-1:0] ifu_axi_bid,
+    input  logic [pt.IFU_BUS_TAG-1:0] ifu_axi_bid,
 
     // AXI Read Channels
     output logic                      ifu_axi_arvalid,
     input  logic                      ifu_axi_arready,
-    output logic [mcu_pt.IFU_BUS_TAG-1:0] ifu_axi_arid,
+    output logic [pt.IFU_BUS_TAG-1:0] ifu_axi_arid,
     output logic [              31:0] ifu_axi_araddr,
     output logic [               3:0] ifu_axi_arregion,
     output logic [               7:0] ifu_axi_arlen,
@@ -128,7 +128,7 @@ module mcu_top
 
     input  logic                      ifu_axi_rvalid,
     output logic                      ifu_axi_rready,
-    input  logic [mcu_pt.IFU_BUS_TAG-1:0] ifu_axi_rid,
+    input  logic [pt.IFU_BUS_TAG-1:0] ifu_axi_rid,
     input  logic [              63:0] ifu_axi_rdata,
     input  logic [               1:0] ifu_axi_rresp,
     input  logic                      ifu_axi_rlast,
@@ -137,7 +137,7 @@ module mcu_top
     // AXI Write Channels
     output logic                     sb_axi_awvalid,
     input  logic                     sb_axi_awready,
-    output logic [mcu_pt.SB_BUS_TAG-1:0] sb_axi_awid,
+    output logic [pt.SB_BUS_TAG-1:0] sb_axi_awid,
     output logic [             31:0] sb_axi_awaddr,
     output logic [              3:0] sb_axi_awregion,
     output logic [              7:0] sb_axi_awlen,
@@ -157,12 +157,12 @@ module mcu_top
     input  logic                     sb_axi_bvalid,
     output logic                     sb_axi_bready,
     input  logic [              1:0] sb_axi_bresp,
-    input  logic [mcu_pt.SB_BUS_TAG-1:0] sb_axi_bid,
+    input  logic [pt.SB_BUS_TAG-1:0] sb_axi_bid,
 
     // AXI Read Channels
     output logic                     sb_axi_arvalid,
     input  logic                     sb_axi_arready,
-    output logic [mcu_pt.SB_BUS_TAG-1:0] sb_axi_arid,
+    output logic [pt.SB_BUS_TAG-1:0] sb_axi_arid,
     output logic [             31:0] sb_axi_araddr,
     output logic [              3:0] sb_axi_arregion,
     output logic [              7:0] sb_axi_arlen,
@@ -175,7 +175,7 @@ module mcu_top
 
     input  logic                     sb_axi_rvalid,
     output logic                     sb_axi_rready,
-    input  logic [mcu_pt.SB_BUS_TAG-1:0] sb_axi_rid,
+    input  logic [pt.SB_BUS_TAG-1:0] sb_axi_rid,
     input  logic [             63:0] sb_axi_rdata,
     input  logic [              1:0] sb_axi_rresp,
     input  logic                     sb_axi_rlast,
@@ -184,7 +184,7 @@ module mcu_top
     // AXI Write Channels
     input  logic                      dma_axi_awvalid,
     output logic                      dma_axi_awready,
-    input  logic [mcu_pt.DMA_BUS_TAG-1:0] dma_axi_awid,
+    input  logic [pt.DMA_BUS_TAG-1:0] dma_axi_awid,
     input  logic [              31:0] dma_axi_awaddr,
     input  logic [               2:0] dma_axi_awsize,
     input  logic [               2:0] dma_axi_awprot,
@@ -201,12 +201,12 @@ module mcu_top
     output logic                      dma_axi_bvalid,
     input  logic                      dma_axi_bready,
     output logic [               1:0] dma_axi_bresp,
-    output logic [mcu_pt.DMA_BUS_TAG-1:0] dma_axi_bid,
+    output logic [pt.DMA_BUS_TAG-1:0] dma_axi_bid,
 
     // AXI Read Channels
     input  logic                      dma_axi_arvalid,
     output logic                      dma_axi_arready,
-    input  logic [mcu_pt.DMA_BUS_TAG-1:0] dma_axi_arid,
+    input  logic [pt.DMA_BUS_TAG-1:0] dma_axi_arid,
     input  logic [              31:0] dma_axi_araddr,
     input  logic [               2:0] dma_axi_arsize,
     input  logic [               2:0] dma_axi_arprot,
@@ -215,7 +215,7 @@ module mcu_top
 
     output logic                      dma_axi_rvalid,
     input  logic                      dma_axi_rready,
-    output logic [mcu_pt.DMA_BUS_TAG-1:0] dma_axi_rid,
+    output logic [pt.DMA_BUS_TAG-1:0] dma_axi_rid,
     output logic [              63:0] dma_axi_rdata,
     output logic [               1:0] dma_axi_rresp,
     output logic                      dma_axi_rlast,
@@ -286,12 +286,12 @@ module mcu_top
 
     // all of these test inputs are brought to top-level; must be tied off based on usage by physical design (ie. icache or not, iccm or not, dccm or not)
 
-    input                                   mcu_el2_ic_data_ext_in_pkt_t  [mcu_pt.ICACHE_NUM_WAYS-1:0][mcu_pt.ICACHE_BANKS_WAY-1:0] ic_data_ext_in_pkt,
-    input mcu_el2_ic_tag_ext_in_pkt_t [mcu_pt.ICACHE_NUM_WAYS-1:0] ic_tag_ext_in_pkt,
+    input el2_ic_data_ext_in_pkt_t  [pt.ICACHE_NUM_WAYS-1:0][pt.ICACHE_BANKS_WAY-1:0] ic_data_ext_in_pkt,
+    input el2_ic_tag_ext_in_pkt_t [pt.ICACHE_NUM_WAYS-1:0] ic_tag_ext_in_pkt,
 
     input logic                      timer_int,
     input logic                      soft_int,
-    input logic [mcu_pt.PIC_TOTAL_INT:1] extintsrc_req,
+    input logic [pt.PIC_TOTAL_INT:1] extintsrc_req,
 
     output logic dec_tlu_perfcnt0,  // toggles when slot0 perf counter 0 has an event inc
     output logic dec_tlu_perfcnt1,
@@ -311,21 +311,21 @@ module mcu_top
     // Memory Export Interface
     output logic mem_clk,
     // ICCM
-    output logic [mcu_pt.ICCM_NUM_BANKS-1:0] iccm_clken,
-    output logic [mcu_pt.ICCM_NUM_BANKS-1:0] iccm_wren_bank,
-    output logic [mcu_pt.ICCM_NUM_BANKS-1:0][mcu_pt.ICCM_BITS-1:mcu_pt.ICCM_BANK_INDEX_LO] iccm_addr_bank,
-    output logic [mcu_pt.ICCM_NUM_BANKS-1:0][31:0] iccm_bank_wr_data,
-    output logic [mcu_pt.ICCM_NUM_BANKS-1:0][mcu_pt.ICCM_ECC_WIDTH-1:0] iccm_bank_wr_ecc,
-    input logic [mcu_pt.ICCM_NUM_BANKS-1:0][31:0] iccm_bank_dout,
-    input logic [mcu_pt.ICCM_NUM_BANKS-1:0][mcu_pt.ICCM_ECC_WIDTH-1:0] iccm_bank_ecc,
+    output logic [pt.ICCM_NUM_BANKS-1:0] iccm_clken,
+    output logic [pt.ICCM_NUM_BANKS-1:0] iccm_wren_bank,
+    output logic [pt.ICCM_NUM_BANKS-1:0][pt.ICCM_BITS-1:pt.ICCM_BANK_INDEX_LO] iccm_addr_bank,
+    output logic [pt.ICCM_NUM_BANKS-1:0][31:0] iccm_bank_wr_data,
+    output logic [pt.ICCM_NUM_BANKS-1:0][pt.ICCM_ECC_WIDTH-1:0] iccm_bank_wr_ecc,
+    input logic [pt.ICCM_NUM_BANKS-1:0][31:0] iccm_bank_dout,
+    input logic [pt.ICCM_NUM_BANKS-1:0][pt.ICCM_ECC_WIDTH-1:0] iccm_bank_ecc,
     // DCCM
-    output logic [mcu_pt.DCCM_NUM_BANKS-1:0] dccm_clken,
-    output logic [mcu_pt.DCCM_NUM_BANKS-1:0] dccm_wren_bank,
-    output logic [mcu_pt.DCCM_NUM_BANKS-1:0][mcu_pt.DCCM_BITS-1:(mcu_pt.DCCM_BANK_BITS+2)] dccm_addr_bank,
-    output logic [mcu_pt.DCCM_NUM_BANKS-1:0][mcu_pt.DCCM_DATA_WIDTH-1:0] dccm_wr_data_bank,
-    output logic [mcu_pt.DCCM_NUM_BANKS-1:0][mcu_pt.DCCM_FDATA_WIDTH-mcu_pt.DCCM_DATA_WIDTH-1:0] dccm_wr_ecc_bank,
-    input logic [mcu_pt.DCCM_NUM_BANKS-1:0][mcu_pt.DCCM_DATA_WIDTH-1:0] dccm_bank_dout,
-    input logic [mcu_pt.DCCM_NUM_BANKS-1:0][mcu_pt.DCCM_FDATA_WIDTH-mcu_pt.DCCM_DATA_WIDTH-1:0] dccm_bank_ecc,
+    output logic [pt.DCCM_NUM_BANKS-1:0] dccm_clken,
+    output logic [pt.DCCM_NUM_BANKS-1:0] dccm_wren_bank,
+    output logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_BITS-1:(pt.DCCM_BANK_BITS+2)] dccm_addr_bank,
+    output logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_DATA_WIDTH-1:0] dccm_wr_data_bank,
+    output logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-pt.DCCM_DATA_WIDTH-1:0] dccm_wr_ecc_bank,
+    input logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_DATA_WIDTH-1:0] dccm_bank_dout,
+    input logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-pt.DCCM_DATA_WIDTH-1:0] dccm_bank_ecc,
 
     // ICCM/DCCM ECC status
     output logic iccm_ecc_single_error,
@@ -359,7 +359,7 @@ module mcu_top
     input  logic [31:0] dmi_uncore_rdata
 );
 
-  mcu_el2_mem_if mem_export ();
+  css_mcu0_el2_mem_if mem_export ();
   assign mem_clk                   = mem_export.clk;
   assign dccm_clken                = mem_export.dccm_clken;
   assign dccm_wren_bank            = mem_export.dccm_wren_bank;
@@ -376,8 +376,8 @@ module mcu_top
   assign mem_export.iccm_bank_dout = iccm_bank_dout;
   assign mem_export.iccm_bank_ecc  = iccm_bank_ecc;
 
-  mcu_el2_veer_wrapper rvtop (
-      .mcu_el2_mem_export(mem_export.veer_sram_src),
+  css_mcu0_el2_veer_wrapper rvtop (
+      .el2_mem_export(mem_export.veer_sram_src),
       .*
   );
 
