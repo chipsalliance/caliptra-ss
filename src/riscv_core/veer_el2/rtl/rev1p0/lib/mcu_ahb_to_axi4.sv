@@ -161,7 +161,7 @@ import mcu_el2_pkg::*;
      endcase
    end // always_comb begin
 
-    rvdffs_fpga #($bits(state_t)) state_reg (.*, .din(buf_nxtstate), .dout({buf_state}), .en(buf_state_en), .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk));
+    mcu_rvdffs_fpga #($bits(state_t)) state_reg (.*, .din(buf_nxtstate), .dout({buf_state}), .en(buf_state_en), .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk));
 
    assign master_wstrb[7:0]   = ({8{ahb_hsize_q[2:0] == 3'b0}}  & (8'b1    << ahb_haddr_q[2:0])) |
                                 ({8{ahb_hsize_q[2:0] == 3'b1}}  & (8'b11   << ahb_haddr_q[2:0])) |
@@ -186,19 +186,19 @@ import mcu_el2_pkg::*;
                              (ahb_hresp_q & ~ahb_hready_q);
 
    // Buffer signals - needed for the read data and ECC error response
-   rvdff_fpga  #(.WIDTH(64)) buf_rdata_ff     (.din(axi_rdata[63:0]),   .dout(buf_rdata[63:0]), .clk(buf_rdata_clk), .clken(buf_rdata_clk_en), .rawclk(clk), .*);
-   rvdff_fpga  #(.WIDTH(1))  buf_read_error_ff(.din(buf_read_error_in), .dout(buf_read_error),  .clk(bus_clk),       .clken(bus_clk_en),       .rawclk(clk), .*);          // buf_read_error will be high only one cycle
+   mcu_rvdff_fpga  #(.WIDTH(64)) buf_rdata_ff     (.din(axi_rdata[63:0]),   .dout(buf_rdata[63:0]), .clk(buf_rdata_clk), .clken(buf_rdata_clk_en), .rawclk(clk), .*);
+   mcu_rvdff_fpga  #(.WIDTH(1))  buf_read_error_ff(.din(buf_read_error_in), .dout(buf_read_error),  .clk(bus_clk),       .clken(bus_clk_en),       .rawclk(clk), .*);          // buf_read_error will be high only one cycle
 
    // All the Master signals are captured before presenting it to the command buffer. We check for Hresp before sending it to the cmd buffer.
-   rvdff_fpga #(.WIDTH(1))  hresp_ff  (.din(ahb_hresp),          .dout(ahb_hresp_q),       .clk(bus_clk),      .clken(bus_clk_en),      .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(1))  hready_ff (.din(ahb_hready),         .dout(ahb_hready_q),      .clk(bus_clk),      .clken(bus_clk_en),      .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(2))  htrans_ff (.din(ahb_htrans_in[1:0]), .dout(ahb_htrans_q[1:0]), .clk(bus_clk),      .clken(bus_clk_en),      .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(3))  hsize_ff  (.din(ahb_hsize[2:0]),     .dout(ahb_hsize_q[2:0]),  .clk(ahb_addr_clk), .clken(ahb_addr_clk_en), .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(1))  hwrite_ff (.din(ahb_hwrite),         .dout(ahb_hwrite_q),      .clk(ahb_addr_clk), .clken(ahb_addr_clk_en), .rawclk(clk), .*);
-   rvdff_fpga #(.WIDTH(32)) haddr_ff  (.din(ahb_haddr[31:0]),    .dout(ahb_haddr_q[31:0]), .clk(ahb_addr_clk), .clken(ahb_addr_clk_en), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(1))  hresp_ff  (.din(ahb_hresp),          .dout(ahb_hresp_q),       .clk(bus_clk),      .clken(bus_clk_en),      .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(1))  hready_ff (.din(ahb_hready),         .dout(ahb_hready_q),      .clk(bus_clk),      .clken(bus_clk_en),      .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(2))  htrans_ff (.din(ahb_htrans_in[1:0]), .dout(ahb_htrans_q[1:0]), .clk(bus_clk),      .clken(bus_clk_en),      .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(3))  hsize_ff  (.din(ahb_hsize[2:0]),     .dout(ahb_hsize_q[2:0]),  .clk(ahb_addr_clk), .clken(ahb_addr_clk_en), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(1))  hwrite_ff (.din(ahb_hwrite),         .dout(ahb_hwrite_q),      .clk(ahb_addr_clk), .clken(ahb_addr_clk_en), .rawclk(clk), .*);
+   mcu_rvdff_fpga #(.WIDTH(32)) haddr_ff  (.din(ahb_haddr[31:0]),    .dout(ahb_haddr_q[31:0]), .clk(ahb_addr_clk), .clken(ahb_addr_clk_en), .rawclk(clk), .*);
 
    // Address check  dccm
-   rvrangecheck #(.CCM_SADR(mcu_pt.DCCM_SADR),
+   mcu_rvrangecheck #(.CCM_SADR(mcu_pt.DCCM_SADR),
                   .CCM_SIZE(mcu_pt.DCCM_SIZE)) addr_dccm_rangecheck (
       .addr(ahb_haddr_q[31:0]),
       .in_range(ahb_addr_in_dccm),
@@ -207,7 +207,7 @@ import mcu_el2_pkg::*;
 
    // Address check  iccm
    if (mcu_pt.ICCM_ENABLE == 1) begin: GenICCM
-      rvrangecheck #(.CCM_SADR(mcu_pt.ICCM_SADR),
+      mcu_rvrangecheck #(.CCM_SADR(mcu_pt.ICCM_SADR),
                      .CCM_SIZE(mcu_pt.ICCM_SIZE)) addr_iccm_rangecheck (
          .addr(ahb_haddr_q[31:0]),
          .in_range(ahb_addr_in_iccm),
@@ -219,7 +219,7 @@ import mcu_el2_pkg::*;
    end
 
    // PIC memory address check
-   rvrangecheck #(.CCM_SADR(mcu_pt.PIC_BASE_ADDR),
+   mcu_rvrangecheck #(.CCM_SADR(mcu_pt.PIC_BASE_ADDR),
                   .CCM_SIZE(mcu_pt.PIC_SIZE)) addr_pic_rangecheck (
       .addr(ahb_haddr_q[31:0]),
       .in_range(ahb_addr_in_pic),
@@ -230,12 +230,12 @@ import mcu_el2_pkg::*;
    assign cmdbuf_rst         = (((axi_awvalid & axi_awready) | (axi_arvalid & axi_arready)) & ~cmdbuf_wr_en) | (ahb_hresp & ~cmdbuf_write);
    assign cmdbuf_full        = (cmdbuf_vld & ~((axi_awvalid & axi_awready) | (axi_arvalid & axi_arready)));
 
-   rvdffsc_fpga #(.WIDTH(1))  cmdbuf_vldff      (.din(1'b1),              .dout(cmdbuf_vld),         .en(cmdbuf_wr_en), .clear(cmdbuf_rst), .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk), .*);
-   rvdffs_fpga  #(.WIDTH(1))  cmdbuf_writeff    (.din(ahb_hwrite_q),      .dout(cmdbuf_write),       .en(cmdbuf_wr_en),                     .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk), .*);
-   rvdffs_fpga  #(.WIDTH(2))  cmdbuf_sizeff     (.din(ahb_hsize_q[1:0]),  .dout(cmdbuf_size[1:0]),   .en(cmdbuf_wr_en),                     .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk), .*);
-   rvdffs_fpga  #(.WIDTH(8))  cmdbuf_wstrbff    (.din(master_wstrb[7:0]), .dout(cmdbuf_wstrb[7:0]),  .en(cmdbuf_wr_en),                     .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk), .*);
-   rvdffe       #(.WIDTH(32)) cmdbuf_addrff     (.din(ahb_haddr_q[31:0]), .dout(cmdbuf_addr[31:0]),  .en(cmdbuf_wr_en & bus_clk_en),        .clk(clk), .*);
-   rvdffe       #(.WIDTH(64)) cmdbuf_wdataff    (.din(ahb_hwdata[63:0]),  .dout(cmdbuf_wdata[63:0]), .en(cmdbuf_wr_en & bus_clk_en),        .clk(clk), .*);
+   mcu_rvdffsc_fpga #(.WIDTH(1))  cmdbuf_vldff      (.din(1'b1),              .dout(cmdbuf_vld),         .en(cmdbuf_wr_en), .clear(cmdbuf_rst), .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffs_fpga  #(.WIDTH(1))  cmdbuf_writeff    (.din(ahb_hwrite_q),      .dout(cmdbuf_write),       .en(cmdbuf_wr_en),                     .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffs_fpga  #(.WIDTH(2))  cmdbuf_sizeff     (.din(ahb_hsize_q[1:0]),  .dout(cmdbuf_size[1:0]),   .en(cmdbuf_wr_en),                     .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffs_fpga  #(.WIDTH(8))  cmdbuf_wstrbff    (.din(master_wstrb[7:0]), .dout(cmdbuf_wstrb[7:0]),  .en(cmdbuf_wr_en),                     .clk(bus_clk), .clken(bus_clk_en), .rawclk(clk), .*);
+   mcu_rvdffe       #(.WIDTH(32)) cmdbuf_addrff     (.din(ahb_haddr_q[31:0]), .dout(cmdbuf_addr[31:0]),  .en(cmdbuf_wr_en & bus_clk_en),        .clk(clk), .*);
+   mcu_rvdffe       #(.WIDTH(64)) cmdbuf_wdataff    (.din(ahb_hwdata[63:0]),  .dout(cmdbuf_wdata[63:0]), .en(cmdbuf_wr_en & bus_clk_en),        .clk(clk), .*);
 
    // AXI Write Command Channel
    assign axi_awvalid           = cmdbuf_vld & cmdbuf_write;

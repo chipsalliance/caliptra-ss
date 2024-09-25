@@ -188,7 +188,7 @@ else begin : genblock
 `ifdef MCU_RV_FPGA_OPTIMIZE
       mcu_rvdffs #(WIDTH) dff ( .* );
 `else
-      rvclkhdr clkhdr ( .* );
+      mcu_rvclkhdr clkhdr ( .* );
       mcu_rvdff #(WIDTH) dff (.*, .clk(l1clk));
 `endif
 
@@ -234,7 +234,7 @@ module mcu_rvdffpcie #( parameter WIDTH=31 )
 endmodule
 
 // format: { LEFT, EXTRA }
-// LEFT # of bits will be done with mcu_rvdffie, all else EXTRA with rvdffe
+// LEFT # of bits will be done with mcu_rvdffie, all else EXTRA with mcu_rvdffe
 module mcu_rvdfflie #( parameter WIDTH=16, LEFT=8 )
    (
      input  logic [WIDTH-1:0] din,
@@ -362,7 +362,7 @@ module mcu_rvdffie #( parameter WIDTH=1, OVERRIDE=0 )
 `ifdef MCU_RV_FPGA_OPTIMIZE
       mcu_rvdffs #(WIDTH) dff ( .* );
 `else
-      rvclkhdr clkhdr ( .* );
+      mcu_rvclkhdr clkhdr ( .* );
       mcu_rvdff #(WIDTH) dff (.*, .clk(l1clk));
 `endif
 

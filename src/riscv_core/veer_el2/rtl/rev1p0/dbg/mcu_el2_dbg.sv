@@ -264,8 +264,8 @@ import mcu_el2_pkg::*;
    // used for the system bus
    assign sb_free_clken = dmi_reg_en | execute_command | sb_state_en | (sb_state != SBIDLE) | clk_override;
 
-   rvoclkhdr dbg_free_cgc    (.en(dbg_free_clken), .l1clk(dbg_free_clk), .*);
-   rvoclkhdr sb_free_cgc     (.en(sb_free_clken), .l1clk(sb_free_clk), .*);
+   mcu_rvoclkhdr dbg_free_cgc    (.en(dbg_free_clken), .l1clk(dbg_free_clk), .*);
+   mcu_rvoclkhdr sb_free_cgc     (.en(sb_free_clken), .l1clk(sb_free_clk), .*);
 
    // end clocking section
 
@@ -274,7 +274,7 @@ import mcu_el2_pkg::*;
    assign dbg_core_rst_l = ~dmcontrol_reg[1] | scan_mode;
 
    // synchronize the rst
-   rvsyncss #(1) rstl_syncff (.din(rst_l), .dout(rst_l_sync), .clk(free_clk), .rst_l(dbg_rst_l));
+   mcu_rvsyncss #(1) rstl_syncff (.din(rst_l), .dout(rst_l_sync), .clk(free_clk), .rst_l(dbg_rst_l));
 
    // system bus register
    // sbcs[31:29], sbcs - [22]:sbbusyerror, [21]: sbbusy, [20]:sbreadonaddr, [19:17]:sbaccess, [16]:sbautoincrement, [15]:sbreadondata, [14:12]:sberror, sbsize=32, 128=0, 64/32/16/8 are legal
@@ -288,12 +288,12 @@ import mcu_el2_pkg::*;
                                          (sbcs_reg[21] & dmi_reg_en & ((dmi_reg_wr_en & (dmi_reg_addr == 7'h39)) | (dmi_reg_addr == 7'h3c) | (dmi_reg_addr == 7'h3d)));
    assign        sbcs_sbbusyerror_din = ~(sbcs_wren & dmi_reg_wdata[22]);   // Clear when writing one
 
-   rvdffs #(1) sbcs_sbbusyerror_reg  (.din(sbcs_sbbusyerror_din),  .dout(sbcs_reg[22]),    .en(sbcs_sbbusyerror_wren), .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
-   rvdffs #(1) sbcs_sbbusy_reg       (.din(sbcs_sbbusy_din),       .dout(sbcs_reg[21]),    .en(sbcs_sbbusy_wren),      .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
-   rvdffs #(1) sbcs_sbreadonaddr_reg (.din(dmi_reg_wdata[20]),     .dout(sbcs_reg[20]),    .en(sbcs_wren),             .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
-   rvdffs #(5) sbcs_misc_reg         (.din({dmi_reg_wdata[19],~dmi_reg_wdata[18],dmi_reg_wdata[17:15]}),
+   mcu_rvdffs #(1) sbcs_sbbusyerror_reg  (.din(sbcs_sbbusyerror_din),  .dout(sbcs_reg[22]),    .en(sbcs_sbbusyerror_wren), .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
+   mcu_rvdffs #(1) sbcs_sbbusy_reg       (.din(sbcs_sbbusy_din),       .dout(sbcs_reg[21]),    .en(sbcs_sbbusy_wren),      .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
+   mcu_rvdffs #(1) sbcs_sbreadonaddr_reg (.din(dmi_reg_wdata[20]),     .dout(sbcs_reg[20]),    .en(sbcs_wren),             .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
+   mcu_rvdffs #(5) sbcs_misc_reg         (.din({dmi_reg_wdata[19],~dmi_reg_wdata[18],dmi_reg_wdata[17:15]}),
                                       .dout(sbcs_reg_int[19:15]), .en(sbcs_wren),             .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
-   rvdffs #(3) sbcs_error_reg        (.din(sbcs_sberror_din[2:0]), .dout(sbcs_reg[14:12]), .en(sbcs_sberror_wren),     .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
+   mcu_rvdffs #(3) sbcs_error_reg        (.din(sbcs_sberror_din[2:0]), .dout(sbcs_reg[14:12]), .en(sbcs_sberror_wren),     .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
 
    assign sbcs_unaligned =    ((sbcs_reg[19:17] == 3'b001) &  sbaddress0_reg[0]) |
                               ((sbcs_reg[19:17] == 3'b010) &  (|sbaddress0_reg[1:0])) |
@@ -320,15 +320,15 @@ import mcu_el2_pkg::*;
    assign        sbdata1_din[31:0]   = ({32{sbdata1_reg_wren0}} & dmi_reg_wdata[31:0]) |
                                        ({32{sbdata1_reg_wren1}} & sb_bus_rdata[63:32]);
 
-   rvdffe #(32)    dbg_sbdata0_reg    (.*, .din(sbdata0_din[31:0]), .dout(sbdata0_reg[31:0]), .en(sbdata0_reg_wren), .rst_l(dbg_dm_rst_l));
-   rvdffe #(32)    dbg_sbdata1_reg    (.*, .din(sbdata1_din[31:0]), .dout(sbdata1_reg[31:0]), .en(sbdata1_reg_wren), .rst_l(dbg_dm_rst_l));
+   mcu_rvdffe #(32)    dbg_sbdata0_reg    (.*, .din(sbdata0_din[31:0]), .dout(sbdata0_reg[31:0]), .en(sbdata0_reg_wren), .rst_l(dbg_dm_rst_l));
+   mcu_rvdffe #(32)    dbg_sbdata1_reg    (.*, .din(sbdata1_din[31:0]), .dout(sbdata1_reg[31:0]), .en(sbdata1_reg_wren), .rst_l(dbg_dm_rst_l));
 
     // sbaddress
    assign        sbaddress0_reg_wren0   = dmi_reg_en & dmi_reg_wr_en & (dmi_reg_addr == 7'h39);
    assign        sbaddress0_reg_wren    = sbaddress0_reg_wren0 | sbaddress0_reg_wren1;
    assign        sbaddress0_reg_din[31:0]= ({32{sbaddress0_reg_wren0}} & dmi_reg_wdata[31:0]) |
                                            ({32{sbaddress0_reg_wren1}} & (32'(sbaddress0_reg[31:0] + {28'b0,sbaddress0_incr[3:0]})));
-   rvdffe #(32)    dbg_sbaddress0_reg    (.*, .din(sbaddress0_reg_din[31:0]), .dout(sbaddress0_reg[31:0]), .en(sbaddress0_reg_wren), .rst_l(dbg_dm_rst_l));
+   mcu_rvdffe #(32)    dbg_sbaddress0_reg    (.*, .din(sbaddress0_reg_din[31:0]), .dout(sbaddress0_reg[31:0]), .en(sbaddress0_reg_wren), .rst_l(dbg_dm_rst_l));
 
    assign sbreadonaddr_access = dmi_reg_en & dmi_reg_wr_en & (dmi_reg_addr == 7'h39) & sbcs_reg[20];   // if readonaddr is set the next command will start upon writing of addr0
    assign sbreadondata_access = dmi_reg_en & ~dmi_reg_wr_en & (dmi_reg_addr == 7'h3c) & sbcs_reg[15];  // if readondata is set the next command will start upon reading of data0
@@ -342,9 +342,9 @@ import mcu_el2_pkg::*;
    assign dmcontrol_reg[29]   = '0;
    assign dmcontrol_reg[27:2] = '0;
    assign resumereq           = dmcontrol_reg[30] & ~dmcontrol_reg[31] & dmcontrol_wren_Q;
-   rvdffs #(4) dmcontrolff (.din({dmi_reg_wdata[31:30],dmi_reg_wdata[28],dmi_reg_wdata[1]}), .dout({dmcontrol_reg[31:30], dmcontrol_reg[28], dmcontrol_reg[1]}), .en(dmcontrol_wren), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
-   rvdffs #(1) dmcontrol_dmactive_ff (.din(dmi_reg_wdata[0]), .dout(dmcontrol_reg[0]), .en(dmcontrol_wren), .rst_l(dbg_rst_l), .clk(dbg_free_clk));
-   rvdff  #(1) dmcontrol_wrenff(.din(dmcontrol_wren), .dout(dmcontrol_wren_Q), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
+   mcu_rvdffs #(4) dmcontrolff (.din({dmi_reg_wdata[31:30],dmi_reg_wdata[28],dmi_reg_wdata[1]}), .dout({dmcontrol_reg[31:30], dmcontrol_reg[28], dmcontrol_reg[1]}), .en(dmcontrol_wren), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
+   mcu_rvdffs #(1) dmcontrol_dmactive_ff (.din(dmi_reg_wdata[0]), .dout(dmcontrol_reg[0]), .en(dmcontrol_wren), .rst_l(dbg_rst_l), .clk(dbg_free_clk));
+   mcu_rvdff  #(1) dmcontrol_wrenff(.din(dmcontrol_wren), .dout(dmcontrol_wren_Q), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
 
    // dmstatus register bits that are implemented
    // [19:18]-havereset,[17:16]-resume ack, [9:8]-halted, [3:0]-version
@@ -370,9 +370,9 @@ import mcu_el2_pkg::*;
    assign dmstatus_unavail = dmcontrol_reg[1] | ~rst_l_sync;
    assign dmstatus_running = ~(dmstatus_unavail | dmstatus_halted);
 
-   rvdffs  #(1) dmstatus_resumeack_reg  (.din(dmstatus_resumeack_din), .dout(dmstatus_resumeack), .en(dmstatus_resumeack_wren), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
-   rvdff   #(1) dmstatus_halted_reg     (.din(dec_tlu_dbg_halted & ~dec_tlu_mpc_halted_only),     .dout(dmstatus_halted), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
-   rvdffs  #(1) dmstatus_haveresetn_reg (.din(1'b1), .dout(dmstatus_haveresetn), .en(dmstatus_haveresetn_wren), .rst_l(rst_l), .clk(dbg_free_clk));
+   mcu_rvdffs  #(1) dmstatus_resumeack_reg  (.din(dmstatus_resumeack_din), .dout(dmstatus_resumeack), .en(dmstatus_resumeack_wren), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
+   mcu_rvdff   #(1) dmstatus_halted_reg     (.din(dec_tlu_dbg_halted & ~dec_tlu_mpc_halted_only),     .dout(dmstatus_halted), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
+   mcu_rvdffs  #(1) dmstatus_haveresetn_reg (.din(1'b1), .dout(dmstatus_haveresetn), .en(dmstatus_haveresetn_wren), .rst_l(rst_l), .clk(dbg_free_clk));
 
    // haltsum0 register
    assign haltsum0_reg[31:1] = '0;
@@ -410,12 +410,12 @@ import mcu_el2_pkg::*;
                                                                 abstractcs_error_sel6 ? (~dmi_reg_wdata[10:8] & abstractcs_reg[10:8]) :   //W1C
                                                                                         abstractcs_reg[10:8];                             //hold
 
-   rvdffs #(1) dmabstractcs_busy_reg  (.din(abstractcs_busy_din), .dout(abstractcs_reg[12]), .en(abstractcs_busy_wren), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
-   rvdff  #(3) dmabstractcs_error_reg (.din(abstractcs_error_din[2:0]), .dout(abstractcs_reg[10:8]), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
+   mcu_rvdffs #(1) dmabstractcs_busy_reg  (.din(abstractcs_busy_din), .dout(abstractcs_reg[12]), .en(abstractcs_busy_wren), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
+   mcu_rvdff  #(3) dmabstractcs_error_reg (.din(abstractcs_error_din[2:0]), .dout(abstractcs_reg[10:8]), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
 
     // abstract auto reg
    assign abstractauto_reg_wren  = dmi_reg_en & dmi_reg_wr_en & (dmi_reg_addr == 7'h18) & ~abstractcs_reg[12];
-   rvdffs #(2) dbg_abstractauto_reg (.*, .din(dmi_reg_wdata[1:0]), .dout(abstractauto_reg[1:0]), .en(abstractauto_reg_wren), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
+   mcu_rvdffs #(2) dbg_abstractauto_reg (.*, .din(dmi_reg_wdata[1:0]), .dout(abstractauto_reg[1:0]), .en(abstractauto_reg_wren), .rst_l(dbg_dm_rst_l), .clk(dbg_free_clk));
 
    // command register - implemented all the bits in this register
    // command[16] = 1: write, 0: read
@@ -427,9 +427,9 @@ import mcu_el2_pkg::*;
    assign command_transfer_din = (dmi_reg_wdata[31:24] == 8'h0) & dmi_reg_wdata[17];
    assign command_din[31:16] = {dmi_reg_wdata[31:24],1'b0,dmi_reg_wdata[22:19],command_postexec_din,command_transfer_din, dmi_reg_wdata[16]};
    assign command_din[15:0] =  command_wren ? dmi_reg_wdata[15:0] : dbg_cmd_next_addr[15:0];
-   rvdff  #(1)  execute_commandff   (.*, .din(execute_command_ns), .dout(execute_command), .clk(dbg_free_clk), .rst_l(dbg_dm_rst_l));
-   rvdffe #(16) dmcommand_reg       (.*, .din(command_din[31:16]), .dout(command_reg[31:16]), .en(command_wren), .rst_l(dbg_dm_rst_l));
-   rvdffe #(16) dmcommand_regno_reg (.*, .din(command_din[15:0]),  .dout(command_reg[15:0]),  .en(command_regno_wren), .rst_l(dbg_dm_rst_l));
+   mcu_rvdff  #(1)  execute_commandff   (.*, .din(execute_command_ns), .dout(execute_command), .clk(dbg_free_clk), .rst_l(dbg_dm_rst_l));
+   mcu_rvdffe #(16) dmcommand_reg       (.*, .din(command_din[31:16]), .dout(command_reg[31:16]), .en(command_wren), .rst_l(dbg_dm_rst_l));
+   mcu_rvdffe #(16) dmcommand_regno_reg (.*, .din(command_din[15:0]),  .dout(command_reg[15:0]),  .en(command_regno_wren), .rst_l(dbg_dm_rst_l));
 
   // data0 reg
    assign data0_reg_wren0   = (dmi_reg_en & dmi_reg_wr_en & (dmi_reg_addr == 7'h4) & (dbg_state == HALTED) & ~abstractcs_reg[12]);
@@ -440,7 +440,7 @@ import mcu_el2_pkg::*;
                               ({32{data0_reg_wren1}} & core_dbg_rddata[31:0]) |
                               ({32{data0_reg_wren2}} & sb_bus_rdata[31:0]);
 
-   rvdffe #(32) dbg_data0_reg (.*, .din(data0_din[31:0]), .dout(data0_reg[31:0]), .en(data0_reg_wren), .rst_l(dbg_dm_rst_l));
+   mcu_rvdffe #(32) dbg_data0_reg (.*, .din(data0_din[31:0]), .dout(data0_reg[31:0]), .en(data0_reg_wren), .rst_l(dbg_dm_rst_l));
 
    // data 1
    assign data1_reg_wren0   = (dmi_reg_en & dmi_reg_wr_en & (dmi_reg_addr == 7'h5) & (dbg_state == HALTED) & ~abstractcs_reg[12]);
@@ -450,10 +450,10 @@ import mcu_el2_pkg::*;
    assign data1_din[31:0]   = ({32{data1_reg_wren0}} & dmi_reg_wdata[31:0]) |
                               ({32{data1_reg_wren1}} & dbg_cmd_next_addr[31:0]);
 
-   rvdffe #(32)    dbg_data1_reg    (.*, .din(data1_din[31:0]), .dout(data1_reg[31:0]), .en(data1_reg_wren), .rst_l(dbg_dm_rst_l));
+   mcu_rvdffe #(32)    dbg_data1_reg    (.*, .din(data1_din[31:0]), .dout(data1_reg[31:0]), .en(data1_reg_wren), .rst_l(dbg_dm_rst_l));
 
-   rvdffs #(1) sb_abmem_cmd_doneff  (.din(sb_abmem_cmd_done_in),  .dout(sb_abmem_cmd_done),  .en(sb_abmem_cmd_done_en),  .clk(dbg_free_clk), .rst_l(dbg_dm_rst_l), .*);
-   rvdffs #(1) sb_abmem_data_doneff (.din(sb_abmem_data_done_in), .dout(sb_abmem_data_done), .en(sb_abmem_data_done_en), .clk(dbg_free_clk), .rst_l(dbg_dm_rst_l), .*);
+   mcu_rvdffs #(1) sb_abmem_cmd_doneff  (.din(sb_abmem_cmd_done_in),  .dout(sb_abmem_cmd_done),  .en(sb_abmem_cmd_done_en),  .clk(dbg_free_clk), .rst_l(dbg_dm_rst_l), .*);
+   mcu_rvdffs #(1) sb_abmem_data_doneff (.din(sb_abmem_data_done_in), .dout(sb_abmem_data_done), .en(sb_abmem_data_done_en), .clk(dbg_free_clk), .rst_l(dbg_dm_rst_l), .*);
 
    // FSM to control the debug mode entry, command send/recieve, and Resume flow.
    always_comb begin
@@ -561,8 +561,8 @@ import mcu_el2_pkg::*;
                                     ({32{dmi_reg_addr == 7'h3d}} & sbdata1_reg[31:0]);
 
 
-   rvdffs #($bits(state_t)) dbg_state_reg    (.din(dbg_nxtstate), .dout({dbg_state}), .en(dbg_state_en), .rst_l(dbg_dm_rst_l & rst_l), .clk(dbg_free_clk));
-   rvdffe #(32)             dmi_rddata_reg   (.din(dmi_reg_rdata_din[31:0]), .dout(dmi_reg_rdata[31:0]), .en(dmi_reg_en), .rst_l(dbg_dm_rst_l), .clk(clk), .*);
+   mcu_rvdffs #($bits(state_t)) dbg_state_reg    (.din(dbg_nxtstate), .dout({dbg_state}), .en(dbg_state_en), .rst_l(dbg_dm_rst_l & rst_l), .clk(dbg_free_clk));
+   mcu_rvdffe #(32)             dmi_rddata_reg   (.din(dmi_reg_rdata_din[31:0]), .dout(dmi_reg_rdata[31:0]), .en(dmi_reg_en), .rst_l(dbg_dm_rst_l), .clk(clk), .*);
 
    assign abmem_addr[31:0]      = data1_reg[31:0];
    assign abmem_addr_core_local = (abmem_addr_in_dccm_region | abmem_addr_in_iccm_region | abmem_addr_in_pic_region);
@@ -668,7 +668,7 @@ import mcu_el2_pkg::*;
          endcase
    end // always_comb begin
 
-   rvdffs #($bits(sb_state_t)) sb_state_reg (.din(sb_nxtstate), .dout({sb_state}), .en(sb_state_en), .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
+   mcu_rvdffs #($bits(sb_state_t)) sb_state_reg (.din(sb_nxtstate), .dout({sb_state}), .en(sb_state_en), .rst_l(dbg_dm_rst_l), .clk(sb_free_clk));
 
    assign sb_abmem_cmd_write      = command_reg[16];
    assign sb_abmem_cmd_size[2:0]  = {1'b0, command_reg[21:20]};

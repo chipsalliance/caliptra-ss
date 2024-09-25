@@ -351,7 +351,7 @@ logic exu_flush_final_d1;
                                                ({2{fetch_start_f[1]}} & {tag_match_way1_expanded_p1_f[0], tag_match_way1_expanded_f[1]}) );
 
 
-   rvdffe #(LRU_SIZE) btb_lru_ff (.*, .en(ifc_fetch_req_f | exu_mp_valid),
+   mcu_rvdffe #(LRU_SIZE) btb_lru_ff (.*, .en(ifc_fetch_req_f | exu_mp_valid),
                                     .din(btb_lru_b0_ns[(LRU_SIZE)-1:0]),
                                    .dout(btb_lru_b0_f[(LRU_SIZE)-1:0]));
 
@@ -464,7 +464,7 @@ logic exu_flush_final_d1;
                                          ({mcu_pt.BHT_GHR_SIZE{~exu_flush_final_d1 & ifc_fetch_req_f & ic_hit_f & ~leak_one_f_d1}} & merged_ghr[mcu_pt.BHT_GHR_SIZE-1:0]) |
                                          ({mcu_pt.BHT_GHR_SIZE{~exu_flush_final_d1 & ~(ifc_fetch_req_f & ic_hit_f & ~leak_one_f_d1)}} & fghr[mcu_pt.BHT_GHR_SIZE-1:0]));
 
-   rvdffie #(.WIDTH(mcu_pt.BHT_GHR_SIZE+3),.OVERRIDE(1)) fetchghr (.*,
+   mcu_rvdffie #(.WIDTH(mcu_pt.BHT_GHR_SIZE+3),.OVERRIDE(1)) fetchghr (.*,
                                           .din ({exu_flush_final, exu_mp_way, leak_one_f, fghr_ns[mcu_pt.BHT_GHR_SIZE-1:0]}),
                                           .dout({exu_flush_final_d1, exu_mp_way_f, leak_one_f_d1, fghr[mcu_pt.BHT_GHR_SIZE-1:0]}));
 
@@ -513,7 +513,7 @@ assign use_fa_plus = (~bht_dir_f[0] & ~fetch_start_f[0] & ~btb_rd_pc4_f);
    assign bp_total_branch_offset_f =  bloc_f[1] ^ btb_rd_pc4_f;
 
    logic [31:2] adder_pc_in_f, ifc_fetch_adder_prior;
-   rvdfflie #(.WIDTH(30), .LEFT(19)) faddrf_ff (.*, .en(ifc_fetch_req_f & ~ifu_bp_hit_taken_f & ic_hit_f), .din(ifc_fetch_addr_f[31:2]), .dout(ifc_fetch_adder_prior[31:2]));
+   mcu_rvdfflie #(.WIDTH(30), .LEFT(19)) faddrf_ff (.*, .en(ifc_fetch_req_f & ~ifu_bp_hit_taken_f & ic_hit_f), .din(ifc_fetch_addr_f[31:2]), .dout(ifc_fetch_adder_prior[31:2]));
 
 
    assign ifu_bp_poffset_f[11:0] = btb_rd_tgt_f[11:0];
@@ -522,7 +522,7 @@ assign use_fa_plus = (~bht_dir_f[0] & ~fetch_start_f[0] & ~btb_rd_pc4_f);
                                    ({30{ btb_fg_crossing_f}} & ifc_fetch_adder_prior[31:2]) |
                                    ({30{~btb_fg_crossing_f & ~use_fa_plus}} & ifc_fetch_addr_f[31:2]));
 
-   rvbradder predtgt_addr (.pc({adder_pc_in_f[31:2], bp_total_branch_offset_f}),
+   mcu_rvbradder predtgt_addr (.pc({adder_pc_in_f[31:2], bp_total_branch_offset_f}),
                          .offset(btb_rd_tgt_f[11:0]),
                          .dout(bp_btb_target_adder_f[31:1])
                          );
@@ -535,7 +535,7 @@ assign use_fa_plus = (~bht_dir_f[0] & ~fetch_start_f[0] & ~btb_rd_pc4_f);
    // Return Stack
    // ----------------------------------------------------------------------
 
-   rvbradder rs_addr (.pc({adder_pc_in_f[31:2], bp_total_branch_offset_f}),
+   mcu_rvbradder rs_addr (.pc({adder_pc_in_f[31:2], bp_total_branch_offset_f}),
                     .offset({11'b0,  ~btb_rd_pc4_f}),
                     .dout(bp_rs_call_target_f[31:1])
                          );
@@ -564,7 +564,7 @@ assign use_fa_plus = (~bht_dir_f[0] & ~fetch_start_f[0] & ~btb_rd_pc4_f);
                                     ({32{rs_pop}}  & rets_out[i+1][31:0]) );
          assign rsenable[i] = rs_push | rs_pop;
       end
-      rvdffe #(32) rets_ff (.*, .en(rsenable[i]), .din(rets_in[i][31:0]), .dout(rets_out[i][31:0]));
+      mcu_rvdffe #(32) rets_ff (.*, .en(rsenable[i]), .din(rets_in[i][31:0]), .dout(rets_out[i][31:0]));
 
    end : retstack
 
@@ -652,13 +652,13 @@ assign use_fa_plus = (~bht_dir_f[0] & ~fetch_start_f[0] & ~btb_rd_pc4_f);
 
       for (j=0 ; j<LRU_SIZE ; j++) begin : BTB_FLOPS
          // Way 0
-         rvdffe #(17+mcu_pt.BTB_BTAG_SIZE) btb_bank0_way0 (.*,
+         mcu_rvdffe #(17+mcu_pt.BTB_BTAG_SIZE) btb_bank0_way0 (.*,
                     .en(((btb_wr_addr[mcu_pt.BTB_ADDR_HI:mcu_pt.BTB_ADDR_LO] == j) & btb_wr_en_way0)),
                     .din        (btb_wr_data[BTB_DWIDTH-1:0]),
                     .dout       (btb_bank0_rd_data_way0_out[j]));
 
          // Way 1
-         rvdffe #(17+mcu_pt.BTB_BTAG_SIZE) btb_bank0_way1 (.*,
+         mcu_rvdffe #(17+mcu_pt.BTB_BTAG_SIZE) btb_bank0_way1 (.*,
                     .en(((btb_wr_addr[mcu_pt.BTB_ADDR_HI:mcu_pt.BTB_ADDR_LO] == j) & btb_wr_en_way1)),
                     .din        (btb_wr_data[BTB_DWIDTH-1:0]),
                     .dout       (btb_bank0_rd_data_way1_out[j]));
@@ -793,7 +793,7 @@ end // if (!mcu_pt.BTB_FULLYA)
       assign wr0_en[j] = ((btb_fa_wr_addr0[BTB_FA_INDEX:0] == j) & (exu_mp_valid_write & ~exu_mp_pkt.way)) |
                          ((dec_fa_error_index == j) & dec_tlu_error_wb);
 
-      rvdffe #(BTB_DWIDTH) btb_fa (.*, .clk(clk),
+      mcu_rvdffe #(BTB_DWIDTH) btb_fa (.*, .clk(clk),
                                    .en  (wr0_en[j]),
                                    .din (btb_wr_data[BTB_DWIDTH-1:0]),
                                    .dout(btbdata[j]));
@@ -813,7 +813,7 @@ end // if (!mcu_pt.BTB_FULLYA)
    assign write_used = btb_used_reset | ifu_bp_hit_taken_f | exu_mp_valid_write | dec_tlu_error_wb;
 
 
-   rvdffe #(mcu_pt.BTB_SIZE) btb_usedf (.*, .clk(clk),
+   mcu_rvdffe #(mcu_pt.BTB_SIZE) btb_usedf (.*, .clk(clk),
                     .en  (write_used),
                     .din (btb_used_ns[mcu_pt.BTB_SIZE-1:0]),
                     .dout(btb_used[mcu_pt.BTB_SIZE-1:0]));
@@ -857,7 +857,7 @@ end // block: fa
 
 
 
-          rvdffs_fpga #(2) bht_bank (.*,
+          mcu_rvdffs_fpga #(2) bht_bank (.*,
                     .clk        (bht_bank_clk[i][k]),
                     .en         (bank_sel),
                     .rawclk     (clk),

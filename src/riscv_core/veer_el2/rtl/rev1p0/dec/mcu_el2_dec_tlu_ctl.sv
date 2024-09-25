@@ -499,24 +499,24 @@ import mcu_el2_pkg::*;
    assign clk_override = dec_tlu_dec_clk_override;
 
    // Async inputs to the core have to be sync'd to the core clock.
-   rvsyncss #(7) syncro_ff(.*,
+   mcu_rvsyncss #(7) syncro_ff(.*,
                            .clk(free_clk),
                            .din ({nmi_int,      timer_int,      soft_int,      i_cpu_halt_req,      i_cpu_run_req,      mpc_debug_halt_req,          mpc_debug_run_req}),
                            .dout({nmi_int_sync, timer_int_sync, soft_int_sync, i_cpu_halt_req_sync, i_cpu_run_req_sync, mpc_debug_halt_req_sync_raw, mpc_debug_run_req_sync}));
 
    // for CSRs that have inpipe writes only
 
-   rvoclkhdr csrwr_r_cgc   ( .en(dec_csr_wen_r_mod | clk_override), .l1clk(csr_wr_clk), .* );
+   mcu_rvoclkhdr csrwr_r_cgc   ( .en(dec_csr_wen_r_mod | clk_override), .l1clk(csr_wr_clk), .* );
 
    assign e4_valid = dec_tlu_i0_valid_r;
    assign e4e5_valid = e4_valid | e5_valid;
    assign flush_clkvalid = internal_dbg_halt_mode_f | i_cpu_run_req_d1 | interrupt_valid_r | interrupt_valid_r_d1 |
                            reset_delayed | pause_expired_r | pause_expired_wb | ic_perr_r | iccm_sbecc_r |
                            clk_override;
-   rvoclkhdr e4e5_cgc     ( .en(e4e5_valid | clk_override), .l1clk(e4e5_clk), .* );
-   rvoclkhdr e4e5_int_cgc ( .en(e4e5_valid | flush_clkvalid), .l1clk(e4e5_int_clk), .* );
+   mcu_rvoclkhdr e4e5_cgc     ( .en(e4e5_valid | clk_override), .l1clk(e4e5_clk), .* );
+   mcu_rvoclkhdr e4e5_int_cgc ( .en(e4e5_valid | flush_clkvalid), .l1clk(e4e5_int_clk), .* );
 
-   rvdffie #(11)  freeff (.*, .clk(free_l2clk),
+   mcu_rvdffie #(11)  freeff (.*, .clk(free_l2clk),
                           .din ({ifu_ic_error_start, ifu_iccm_rd_ecc_single_err, iccm_repair_state_ns, e4_valid, internal_dbg_halt_mode,
                                  lsu_pmu_load_external_m, lsu_pmu_store_external_m, tlu_flush_lower_r,  tlu_i0_kill_writeb_r,
                                  internal_dbg_halt_mode_f, force_halt}),
@@ -587,7 +587,7 @@ localparam MSECCFG_MML   = 0;
    // fast ints in progress have priority
    assign mpc_debug_halt_req_sync = mpc_debug_halt_req_sync_raw & ~ext_int_freeze_d1;
 
-    rvdffie #(16)  mpvhalt_ff (.*, .clk(free_l2clk),
+    mcu_rvdffie #(16)  mpvhalt_ff (.*, .clk(free_l2clk),
                                  .din({1'b1, reset_detect,
                                        nmi_int_sync, nmi_int_detected, nmi_lsu_load_type, nmi_lsu_store_type,
                                        mpc_debug_halt_req_sync, mpc_debug_run_req_sync,
@@ -688,7 +688,7 @@ localparam MSECCFG_MML   = 0;
 
    assign request_debug_mode_done = (request_debug_mode_r_d1 | request_debug_mode_done_f) & ~dbg_tlu_halted_f;
 
-    rvdffie #(18)  halt_ff (.*, .clk(free_l2clk),
+    mcu_rvdffie #(18)  halt_ff (.*, .clk(free_l2clk),
                           .din({dec_tlu_flush_noredir_r, halt_taken, lsu_idle_any, ifu_miss_state_idle, dbg_tlu_halted,
                                 resume_ack_ns, debug_halt_req_ns, debug_resume_req, trigger_hit_dmode_r,
                                 dcsr_single_step_done, debug_halt_req, dec_tlu_wr_pause_r, dec_pause_state,
@@ -828,7 +828,7 @@ localparam MTDATA1_LD    = 0;
    assign i_cpu_halt_req_sync_qual = i_cpu_halt_req_sync & ~dec_tlu_debug_mode & ~ext_int_freeze_d1;
    assign i_cpu_run_req_sync_qual = i_cpu_run_req_sync & ~dec_tlu_debug_mode & pmu_fw_tlu_halted_f & ~ext_int_freeze_d1;
 
-   rvdffie #(10) exthaltff (.*, .clk(free_l2clk), .din({i_cpu_halt_req_sync_qual, i_cpu_run_req_sync_qual,   cpu_halt_status,
+   mcu_rvdffie #(10) exthaltff (.*, .clk(free_l2clk), .din({i_cpu_halt_req_sync_qual, i_cpu_run_req_sync_qual,   cpu_halt_status,
                                                    cpu_halt_ack,   cpu_run_ack, internal_pmu_fw_halt_mode,
                                                    pmu_fw_halt_req_ns, pmu_fw_tlu_halted,
                                                    int_timer0_int_hold, int_timer1_int_hold}),
@@ -976,7 +976,7 @@ end // else: !if(mcu_pt.BTB_ENABLE==1)
 
    assign       ebreak_to_debug_mode_r = (dec_tlu_packet_r.pmu_i0_itype == EBREAK)  & dec_tlu_i0_valid_r & ~i0_trigger_hit_r & dcsr[DCSR_EBREAKM] & ~rfpc_i0_r;
 
-   rvdff #(1)  exctype_wb_ff (.*, .clk(e4e5_clk),
+   mcu_rvdff #(1)  exctype_wb_ff (.*, .clk(e4e5_clk),
                                 .din (ebreak_to_debug_mode_r   ),
                                 .dout(ebreak_to_debug_mode_r_d1));
 
@@ -1193,7 +1193,7 @@ end
                                       ({31{~take_nmi & debug_resume_req_f}} & dpc[31:1]) |
                                       ({31{~take_nmi & sel_npc_resume}} & npc_r_d1[31:1]) );
 
-   rvdffpcie #(31)  flush_lower_ff (.*, .en(tlu_flush_lower_r),
+   mcu_rvdffpcie #(31)  flush_lower_ff (.*, .en(tlu_flush_lower_r),
                                  .din({tlu_flush_path_r[31:1]}),
                                  .dout({tlu_flush_path_r_d1[31:1]}));
 
@@ -1206,7 +1206,7 @@ end
    assign exc_or_int_valid_r = lsu_exc_valid_r | i0_exception_valid_r | interrupt_valid_r | (i0_trigger_hit_r & ~trigger_hit_dmode_r);
 
 
-   rvdffie #(12)  excinfo_wb_ff (.*,
+   mcu_rvdffie #(12)  excinfo_wb_ff (.*,
                                  .din({interrupt_valid_r, i0_exception_valid_r, exc_or_int_valid_r,
                                        exc_cause_r[4:0], tlu_i0_commit_cmt & ~illegal_r, i0_trigger_hit_r,
                                        take_nmi, pause_expired_r }),
@@ -1222,7 +1222,7 @@ end
                          (exc_or_int_valid_r & 1'b0 ) |
                          ((~mret_r & ~exc_or_int_valid_r) & priv_mode);
 
-   rvdff #(1) priv_ff (
+   mcu_rvdff #(1) priv_ff (
         .clk    (free_l2clk),
         .rst_l  (rst_l),
         .din    (priv_mode_ns),
@@ -1315,7 +1315,7 @@ end
 
    assign wr_mtvec_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MTVEC);
    assign mtvec_ns[30:0] = {dec_csr_wrdata_r[31:2], dec_csr_wrdata_r[0]} ;
-   rvdffe #(31)  mtvec_ff (.*, .en(wr_mtvec_r), .din(mtvec_ns[30:0]), .dout(mtvec[30:0]));
+   mcu_rvdffe #(31)  mtvec_ff (.*, .en(wr_mtvec_r), .din(mtvec_ns[30:0]), .dout(mtvec[30:0]));
 
    // ----------------------------------------------------------------------
    // MIP (RW)
@@ -1344,7 +1344,7 @@ end
 
    assign wr_mie_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MIE);
    assign mie_ns[5:0] = wr_mie_r ? {dec_csr_wrdata_r[30:28], dec_csr_wrdata_r[11], dec_csr_wrdata_r[7], dec_csr_wrdata_r[3]} : mie[5:0];
-   rvdff #(6)  mie_ff (.*, .clk(csr_wr_clk), .din(mie_ns[5:0]), .dout(mie[5:0]));
+   mcu_rvdff #(6)  mie_ff (.*, .clk(csr_wr_clk), .din(mie_ns[5:0]), .dout(mie[5:0]));
 
 
    // ----------------------------------------------------------------------
@@ -1366,8 +1366,8 @@ end
 
    assign mcyclel_ns[31:0] = wr_mcyclel_r ? dec_csr_wrdata_r[31:0] : mcyclel_inc[31:0];
 
-   rvdffe #(24) mcyclel_bff      (.*, .clk(free_l2clk), .en(wr_mcyclel_r | (mcyclela_cout & mcyclel_cout_in)),    .din(mcyclel_ns[31:8]), .dout(mcyclel[31:8]));
-   rvdffe #(8)  mcyclel_aff      (.*, .clk(free_l2clk), .en(wr_mcyclel_r | mcyclel_cout_in),  .din(mcyclel_ns[7:0]),  .dout(mcyclel[7:0]));
+   mcu_rvdffe #(24) mcyclel_bff      (.*, .clk(free_l2clk), .en(wr_mcyclel_r | (mcyclela_cout & mcyclel_cout_in)),    .din(mcyclel_ns[31:8]), .dout(mcyclel[31:8]));
+   mcu_rvdffe #(8)  mcyclel_aff      (.*, .clk(free_l2clk), .en(wr_mcyclel_r | mcyclel_cout_in),  .din(mcyclel_ns[7:0]),  .dout(mcyclel[7:0]));
 
    // ----------------------------------------------------------------------
    // MCYCLEH (RW)
@@ -1382,7 +1382,7 @@ end
    assign mcycleh_inc[31:0] = mcycleh[31:0] + {31'b0, mcyclel_cout_f};
    assign mcycleh_ns[31:0]  = wr_mcycleh_r ? dec_csr_wrdata_r[31:0] : mcycleh_inc[31:0];
 
-   rvdffe #(32)  mcycleh_ff (.*, .clk(free_l2clk), .en(wr_mcycleh_r | mcyclel_cout_f), .din(mcycleh_ns[31:0]), .dout(mcycleh[31:0]));
+   mcu_rvdffe #(32)  mcycleh_ff (.*, .clk(free_l2clk), .en(wr_mcycleh_r | mcyclel_cout_f), .din(mcycleh_ns[31:0]), .dout(mcycleh[31:0]));
 
    // ----------------------------------------------------------------------
    // MINSTRETL (RW)
@@ -1408,9 +1408,9 @@ end
    assign minstretl_cout_ns = minstretl_cout & ~wr_minstreth_r & i0_valid_no_ebreak_ecall_r & ~dec_tlu_dbg_halted;
 
    assign minstretl_ns[31:0] = wr_minstretl_r ? dec_csr_wrdata_r[31:0] : minstretl_inc[31:0];
-   rvdffe #(24)  minstretl_bff (.*, .en(wr_minstretl_r | (minstretl_couta & minstret_enable)),
+   mcu_rvdffe #(24)  minstretl_bff (.*, .en(wr_minstretl_r | (minstretl_couta & minstret_enable)),
                                 .din(minstretl_ns[31:8]), .dout(minstretl[31:8]));
-   rvdffe #(8)   minstretl_aff (.*, .en(minstret_enable),
+   mcu_rvdffe #(8)   minstretl_aff (.*, .en(minstret_enable),
                                 .din(minstretl_ns[7:0]),  .dout(minstretl[7:0]));
 
 
@@ -1427,7 +1427,7 @@ end
 
    assign minstreth_inc[31:0] = minstreth[31:0] + {31'b0, minstretl_cout_f};
    assign minstreth_ns[31:0]  = wr_minstreth_r ? dec_csr_wrdata_r[31:0] : minstreth_inc[31:0];
-   rvdffe #(32)  minstreth_ff (.*, .en((minstret_enable_f & minstretl_cout_f) | wr_minstreth_r), .din(minstreth_ns[31:0]), .dout(minstreth[31:0]));
+   mcu_rvdffe #(32)  minstreth_ff (.*, .en((minstret_enable_f & minstretl_cout_f) | wr_minstreth_r), .din(minstreth_ns[31:0]), .dout(minstreth[31:0]));
 
    assign minstreth_read[31:0] = minstreth_inc[31:0];
 
@@ -1438,7 +1438,7 @@ end
 
    assign wr_mscratch_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MSCRATCH);
 
-   rvdffe #(32)  mscratch_ff (.*, .en(wr_mscratch_r), .din(dec_csr_wrdata_r[31:0]), .dout(mscratch[31:0]));
+   mcu_rvdffe #(32)  mscratch_ff (.*, .en(wr_mscratch_r), .din(dec_csr_wrdata_r[31:0]), .dout(mscratch[31:0]));
 
    // ----------------------------------------------------------------------
    // MEPC (RW)
@@ -1456,7 +1456,7 @@ end
                            ({31{(sel_flush_npc_r)}} & tlu_flush_path_r_d1[31:1]) |
                            ({31{(sel_hold_npc_r)}} & npc_r_d1[31:1]) );
 
-   rvdffpcie #(31)  npwbc_ff (.*, .en(sel_exu_npc_r | sel_flush_npc_r | reset_delayed), .din(npc_r[31:1]), .dout(npc_r_d1[31:1]));
+   mcu_rvdffpcie #(31)  npwbc_ff (.*, .en(sel_exu_npc_r | sel_flush_npc_r | reset_delayed), .din(npc_r[31:1]), .dout(npc_r_d1[31:1]));
 
    // PC has to be captured for exceptions and interrupts. For MRET, we could execute it and then take an
    // interrupt before the next instruction.
@@ -1465,7 +1465,7 @@ end
    assign pc_r[31:1]  = ( ({31{ pc0_valid_r}} & dec_tlu_i0_pc_r[31:1]) |
                           ({31{~pc0_valid_r}} & pc_r_d1[31:1]));
 
-   rvdffpcie #(31)  pwbc_ff (.*, .en(pc0_valid_r), .din(pc_r[31:1]), .dout(pc_r_d1[31:1]));
+   mcu_rvdffpcie #(31)  pwbc_ff (.*, .en(pc0_valid_r), .din(pc_r[31:1]), .dout(pc_r_d1[31:1]));
 
    assign wr_mepc_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MEPC);
 
@@ -1475,7 +1475,7 @@ end
                             ({31{~wr_mepc_r & ~exc_or_int_valid_r}} & mepc[31:1]) );
 
 
-   rvdffe #(31)  mepc_ff (.*, .en(i0_exception_valid_r | lsu_exc_valid_r | mepc_trigger_hit_sel_pc_r | interrupt_valid_r | wr_mepc_r), .din(mepc_ns[31:1]), .dout(mepc[31:1]));
+   mcu_rvdffe #(31)  mepc_ff (.*, .en(i0_exception_valid_r | lsu_exc_valid_r | mepc_trigger_hit_sel_pc_r | interrupt_valid_r | wr_mepc_r), .din(mepc_ns[31:1]), .dout(mepc[31:1]));
 
    // ----------------------------------------------------------------------
    // MCAUSE (RW)
@@ -1500,7 +1500,7 @@ end
                               ({32{wr_mcause_r & ~exc_or_int_valid_r}} & dec_csr_wrdata_r[31:0]) |
                               ({32{~wr_mcause_r & ~exc_or_int_valid_r}} & mcause[31:0]) );
 
-   rvdffe #(32)  mcause_ff (.*, .en(exc_or_int_valid_r | wr_mcause_r), .din(mcause_ns[31:0]), .dout(mcause[31:0]));
+   mcu_rvdffe #(32)  mcause_ff (.*, .en(exc_or_int_valid_r | wr_mcause_r), .din(mcause_ns[31:0]), .dout(mcause[31:0]));
    // ----------------------------------------------------------------------
    // MSCAUSE (RW)
    // [2:0] : Secondary exception Cause
@@ -1522,7 +1522,7 @@ end
                               ({4{~wr_mscause_r & ~exc_or_int_valid_r}} & mscause[3:0])
                              );
 
-   rvdff #(4)  mscause_ff (.*, .clk(e4e5_int_clk), .din(mscause_ns[3:0]), .dout(mscause[3:0]));
+   mcu_rvdff #(4)  mscause_ff (.*, .clk(e4e5_int_clk), .din(mscause_ns[3:0]), .dout(mscause[3:0]));
    // ----------------------------------------------------------------------
    // MTVAL (RW)
    // [31:0] : Exception address if relevant
@@ -1544,7 +1544,7 @@ end
                             ({32{~take_nmi & ~wr_mtval_r & ~mtval_capture_pc_r & ~mtval_capture_inst_r & ~mtval_clear_r & ~mtval_capture_lsu_r}} & mtval[31:0]) );
 
 
-   rvdffe #(32)  mtval_ff (.*, .en(tlu_flush_lower_r | wr_mtval_r), .din(mtval_ns[31:0]), .dout(mtval[31:0]));
+   mcu_rvdffe #(32)  mtval_ff (.*, .en(tlu_flush_lower_r | wr_mtval_r), .din(mtval_ns[31:0]), .dout(mtval[31:0]));
 
    // ----------------------------------------------------------------------
    // MSECCFG
@@ -1570,7 +1570,7 @@ end
 
    // mseccfg
    assign wr_mseccfg_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MSECCFG);
-   rvdffs #(3) mseccfg_ff (.*, .clk(csr_wr_clk), .en(wr_mseccfg_r), .din(mseccfg_ns), .dout(mseccfg));
+   mcu_rvdffs #(3) mseccfg_ff (.*, .clk(csr_wr_clk), .en(wr_mseccfg_r), .din(mseccfg_ns), .dout(mseccfg));
 
    assign mseccfg_ns = {
      pmp_any_region_locked ?
@@ -1599,7 +1599,7 @@ end
    assign wr_mcgc_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MCGC);
 
    assign mcgc_ns[9:0] = wr_mcgc_r ? {~dec_csr_wrdata_r[9], dec_csr_wrdata_r[8:0]} : mcgc_int[9:0];
-   rvdffe #(10)  mcgc_ff (.*, .en(wr_mcgc_r), .din(mcgc_ns[9:0]), .dout(mcgc_int[9:0]));
+   mcu_rvdffe #(10)  mcgc_ff (.*, .en(wr_mcgc_r), .din(mcgc_ns[9:0]), .dout(mcgc_int[9:0]));
 
    assign mcgc[9:0] = {~mcgc_int[9], mcgc_int[8:0]};
 
@@ -1637,7 +1637,7 @@ end
 
    assign wr_mfdc_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MFDC);
 
-   rvdffe #(16)  mfdc_ff (.*, .en(wr_mfdc_r), .din({mfdc_ns[15:0]}), .dout(mfdc_int[15:0]));
+   mcu_rvdffe #(16)  mfdc_ff (.*, .en(wr_mfdc_r), .din({mfdc_ns[15:0]}), .dout(mfdc_int[15:0]));
 
    // flip poweron value of bit 6 for AXI build
    if(mcu_pt.BUILD_AXI4==1) begin : axi4
@@ -1692,7 +1692,7 @@ end
                            dec_csr_wrdata_r[3], dec_csr_wrdata_r[2] & ~dec_csr_wrdata_r[3],
                            dec_csr_wrdata_r[1], dec_csr_wrdata_r[0] & ~dec_csr_wrdata_r[1]};
 
-   rvdffe #(32)  mrac_ff (.*, .en(wr_mrac_r), .din(mrac_in[31:0]), .dout(mrac[31:0]));
+   mcu_rvdffe #(32)  mrac_ff (.*, .en(wr_mrac_r), .din(mrac_in[31:0]), .dout(mrac[31:0]));
 
    // drive to LSU/IFU
    assign dec_tlu_mrac_ff[31:0] = mrac[31:0];
@@ -1717,7 +1717,7 @@ end
 
    assign mdseac_en = (lsu_imprecise_error_store_any | lsu_imprecise_error_load_any) & ~nmi_int_detected_f & ~mdseac_locked_f;
 
-   rvdffe #(32)  mdseac_ff (.*, .en(mdseac_en), .din(lsu_imprecise_error_addr_any[31:0]), .dout(mdseac[31:0]));
+   mcu_rvdffe #(32)  mdseac_ff (.*, .en(mdseac_en), .din(lsu_imprecise_error_addr_any[31:0]), .dout(mdseac[31:0]));
 
    // ----------------------------------------------------------------------
    // MPMC (R0W1)
@@ -1734,7 +1734,7 @@ end
 
    assign fw_halted_ns = (fw_halt_req | fw_halted) & ~set_mie_pmu_fw_halt;
    assign mpmc_b_ns[1] = wr_mpmc_r ? ~dec_csr_wrdata_r[1] : ~mpmc[1];
-   rvdff #(1)  mpmc_ff (.*, .clk(csr_wr_clk), .din(mpmc_b_ns[1]), .dout(mpmc_b[1]));
+   mcu_rvdff #(1)  mpmc_ff (.*, .clk(csr_wr_clk), .din(mpmc_b_ns[1]), .dout(mpmc_b[1]));
    assign mpmc[1] = ~mpmc_b[1];
 
    // ----------------------------------------------------------------------
@@ -1749,7 +1749,7 @@ end
    assign micect_inc[26:0] = micect[26:0] + {26'b0, ic_perr_r};
    assign micect_ns =  wr_micect_r ? {csr_sat[31:27], dec_csr_wrdata_r[26:0]} : {micect[31:27], micect_inc[26:0]};
 
-   rvdffe #(32)  micect_ff (.*, .en(wr_micect_r | ic_perr_r), .din(micect_ns[31:0]), .dout(micect[31:0]));
+   mcu_rvdffe #(32)  micect_ff (.*, .en(wr_micect_r | ic_perr_r), .din(micect_ns[31:0]), .dout(micect[31:0]));
 
    assign mice_ce_req = |({32'hffffffff << micect[31:27]} & {5'b0, micect[26:0]});
 
@@ -1763,7 +1763,7 @@ end
    assign miccmect_inc[26:0] = miccmect[26:0] + {26'b0, iccm_sbecc_r | iccm_dma_sb_error};
    assign miccmect_ns        = wr_miccmect_r ? {csr_sat[31:27], dec_csr_wrdata_r[26:0]} : {miccmect[31:27], miccmect_inc[26:0]};
 
-   rvdffe #(32)  miccmect_ff (.*, .clk(free_l2clk), .en(wr_miccmect_r | iccm_sbecc_r | iccm_dma_sb_error), .din(miccmect_ns[31:0]), .dout(miccmect[31:0]));
+   mcu_rvdffe #(32)  miccmect_ff (.*, .clk(free_l2clk), .en(wr_miccmect_r | iccm_sbecc_r | iccm_dma_sb_error), .din(miccmect_ns[31:0]), .dout(miccmect[31:0]));
 
    assign miccme_ce_req = |({32'hffffffff << miccmect[31:27]} & {5'b0, miccmect[26:0]});
 
@@ -1777,7 +1777,7 @@ end
    assign mdccmect_inc[26:0] = mdccmect[26:0] + {26'b0, lsu_single_ecc_error_r_d1};
    assign mdccmect_ns        = wr_mdccmect_r ? {csr_sat[31:27], dec_csr_wrdata_r[26:0]} : {mdccmect[31:27], mdccmect_inc[26:0]};
 
-   rvdffe #(32)  mdccmect_ff (.*, .clk(free_l2clk), .en(wr_mdccmect_r | lsu_single_ecc_error_r_d1), .din(mdccmect_ns[31:0]), .dout(mdccmect[31:0]));
+   mcu_rvdffe #(32)  mdccmect_ff (.*, .clk(free_l2clk), .en(wr_mdccmect_r | lsu_single_ecc_error_r_d1), .din(mdccmect_ns[31:0]), .dout(mdccmect[31:0]));
 
    assign mdccme_ce_req = |({32'hffffffff << mdccmect[31:27]} & {5'b0, mdccmect[26:0]});
 
@@ -1792,7 +1792,7 @@ end
 
    assign mfdht_ns[5:0] = wr_mfdht_r ? dec_csr_wrdata_r[5:0] : mfdht[5:0];
 
-   rvdffs #(6)  mfdht_ff (.*, .clk(csr_wr_clk), .en(wr_mfdht_r), .din(mfdht_ns[5:0]), .dout(mfdht[5:0]));
+   mcu_rvdffs #(6)  mfdht_ff (.*, .clk(csr_wr_clk), .en(wr_mfdht_r), .din(mfdht_ns[5:0]), .dout(mfdht[5:0]));
 
     // ----------------------------------------------------------------------
    // MFDHS(RW)
@@ -1805,11 +1805,11 @@ end
 
    assign mfdhs_ns[1:0] = wr_mfdhs_r ? dec_csr_wrdata_r[1:0] : ((dbg_tlu_halted & ~dbg_tlu_halted_f) ? {~lsu_idle_any_f, ~ifu_miss_state_idle_f} : mfdhs[1:0]);
 
-   rvdffs #(2)  mfdhs_ff (.*, .clk(free_clk), .en(wr_mfdhs_r | dbg_tlu_halted), .din(mfdhs_ns[1:0]), .dout(mfdhs[1:0]));
+   mcu_rvdffs #(2)  mfdhs_ff (.*, .clk(free_clk), .en(wr_mfdhs_r | dbg_tlu_halted), .din(mfdhs_ns[1:0]), .dout(mfdhs[1:0]));
 
    assign force_halt_ctr[31:0] = debug_halt_req_f ? (force_halt_ctr_f[31:0] + 32'b1) : (dbg_tlu_halted_f ? 32'b0 : force_halt_ctr_f[31:0]);
 
-   rvdffe #(32)  forcehaltctr_ff (.*, .en(mfdht[0]), .din(force_halt_ctr[31:0]), .dout(force_halt_ctr_f[31:0]));
+   mcu_rvdffe #(32)  forcehaltctr_ff (.*, .en(mfdht[0]), .din(force_halt_ctr[31:0]), .dout(force_halt_ctr_f[31:0]));
 
    assign force_halt = mfdht[0] & |(force_halt_ctr_f[31:0] & (32'hffffffff << mfdht[5:1]));
 
@@ -1822,7 +1822,7 @@ end
 
    assign wr_meivt_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MEIVT);
 
-   rvdffe #(22)  meivt_ff (.*, .en(wr_meivt_r), .din(dec_csr_wrdata_r[31:10]), .dout(meivt[31:10]));
+   mcu_rvdffe #(22)  meivt_ff (.*, .en(wr_meivt_r), .din(dec_csr_wrdata_r[31:10]), .dout(meivt[31:10]));
 
 
    // ----------------------------------------------------------------------
@@ -1834,7 +1834,7 @@ end
 
    assign wr_meihap_r = wr_meicpct_r;
 
-   rvdffe #(8)  meihap_ff (.*, .en(wr_meihap_r), .din(pic_claimid[7:0]), .dout(meihap[9:2]));
+   mcu_rvdffe #(8)  meihap_ff (.*, .en(wr_meihap_r), .din(pic_claimid[7:0]), .dout(meihap[9:2]));
 
    assign dec_tlu_meihap[31:2] = {meivt[31:10], meihap[9:2]};
    // ----------------------------------------------------------------------
@@ -1846,7 +1846,7 @@ end
    assign wr_meicurpl_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MEICURPL);
    assign meicurpl_ns[3:0] = wr_meicurpl_r ? dec_csr_wrdata_r[3:0] : meicurpl[3:0];
 
-   rvdff #(4)  meicurpl_ff (.*, .clk(csr_wr_clk), .din(meicurpl_ns[3:0]), .dout(meicurpl[3:0]));
+   mcu_rvdff #(4)  meicurpl_ff (.*, .clk(csr_wr_clk), .din(meicurpl_ns[3:0]), .dout(meicurpl[3:0]));
 
    // PIC needs this reg
    assign dec_tlu_meicurpl[3:0] = meicurpl[3:0];
@@ -1880,7 +1880,7 @@ end
    assign wr_meipt_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MEIPT);
    assign meipt_ns[3:0] = wr_meipt_r ? dec_csr_wrdata_r[3:0] : meipt[3:0];
 
-   rvdff #(4)  meipt_ff (.*, .clk(csr_wr_clk), .din(meipt_ns[3:0]), .dout(meipt[3:0]));
+   mcu_rvdff #(4)  meipt_ff (.*, .clk(csr_wr_clk), .din(meipt_ns[3:0]), .dout(meipt[3:0]));
 
    // to PIC
    assign dec_tlu_meipt[3:0] = meipt[3:0];
@@ -1928,7 +1928,7 @@ end
                           (wr_dcsr_r ? {dec_csr_wrdata_r[15], 3'b0, dec_csr_wrdata_r[11:10], 1'b0, dcsr[8:6], 2'b00, nmi_in_debug_mode | dcsr[3], dec_csr_wrdata_r[2]} :
                            {dcsr[15:4], nmi_in_debug_mode, dcsr[2]});
 
-   rvdffe #(14)  dcsr_ff (.*, .clk(free_l2clk), .en(enter_debug_halt_req_le | wr_dcsr_r | internal_dbg_halt_mode | take_nmi), .din(dcsr_ns[15:2]), .dout(dcsr[15:2]));
+   mcu_rvdffe #(14)  dcsr_ff (.*, .clk(free_l2clk), .en(enter_debug_halt_req_le | wr_dcsr_r | internal_dbg_halt_mode | take_nmi), .din(dcsr_ns[15:2]), .dout(dcsr[15:2]));
 
    // ----------------------------------------------------------------------
    // DPC (R/W) (Only accessible in debug mode)
@@ -1943,7 +1943,7 @@ end
                            ({31{dpc_capture_pc}} & pc_r[31:1]) |
                            ({31{~dpc_capture_pc & dpc_capture_npc}} & npc_r[31:1]) );
 
-   rvdffe #(31)  dpc_ff (.*, .en(wr_dpc_r | dpc_capture_pc | dpc_capture_npc), .din(dpc_ns[31:1]), .dout(dpc[31:1]));
+   mcu_rvdffe #(31)  dpc_ff (.*, .en(wr_dpc_r | dpc_capture_pc | dpc_capture_npc), .din(dpc_ns[31:1]), .dout(dpc[31:1]));
 
    // ----------------------------------------------------------------------
    // DICAWICS (R/W) (Only accessible in debug mode)
@@ -1959,7 +1959,7 @@ end
    assign dicawics_ns[16:0] = {dec_csr_wrdata_r[24], dec_csr_wrdata_r[21:20], dec_csr_wrdata_r[16:3]};
    assign wr_dicawics_r = allow_dbg_halt_csr_write & dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == DICAWICS);
 
-   rvdffe #(17)  dicawics_ff (.*, .en(wr_dicawics_r), .din(dicawics_ns[16:0]), .dout(dicawics[16:0]));
+   mcu_rvdffe #(17)  dicawics_ff (.*, .en(wr_dicawics_r), .din(dicawics_ns[16:0]), .dout(dicawics[16:0]));
 
    // ----------------------------------------------------------------------
    // DICAD0 (R/W) (Only accessible in debug mode)
@@ -1979,7 +1979,7 @@ end
 
    assign wr_dicad0_r = allow_dbg_halt_csr_write & dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == DICAD0);
 
-   rvdffe #(32)  dicad0_ff (.*, .en(wr_dicad0_r | ifu_ic_debug_rd_data_valid), .din(dicad0_ns[31:0]), .dout(dicad0[31:0]));
+   mcu_rvdffe #(32)  dicad0_ff (.*, .en(wr_dicad0_r | ifu_ic_debug_rd_data_valid), .din(dicad0_ns[31:0]), .dout(dicad0[31:0]));
 
    // ----------------------------------------------------------------------
    // DICAD0H (R/W) (Only accessible in debug mode)
@@ -1993,7 +1993,7 @@ end
 
    assign wr_dicad0h_r = allow_dbg_halt_csr_write & dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == DICAD0H);
 
-   rvdffe #(32)  dicad0h_ff (.*, .en(wr_dicad0h_r | ifu_ic_debug_rd_data_valid), .din(dicad0h_ns[31:0]), .dout(dicad0h[31:0]));
+   mcu_rvdffe #(32)  dicad0h_ff (.*, .en(wr_dicad0h_r | ifu_ic_debug_rd_data_valid), .din(dicad0h_ns[31:0]), .dout(dicad0h[31:0]));
 
 
 if (mcu_pt.ICACHE_ECC == 1) begin : genblock1
@@ -2006,7 +2006,7 @@ if (mcu_pt.ICACHE_ECC == 1) begin : genblock1
 
    assign wr_dicad1_r = allow_dbg_halt_csr_write & dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == DICAD1);
 
-   rvdffe #(.WIDTH(7), .OVERRIDE(1))  dicad1_ff (.*, .en(wr_dicad1_r | ifu_ic_debug_rd_data_valid), .din(dicad1_ns[6:0]), .dout(dicad1_raw[6:0]));
+   mcu_rvdffe #(.WIDTH(7), .OVERRIDE(1))  dicad1_ff (.*, .en(wr_dicad1_r | ifu_ic_debug_rd_data_valid), .din(dicad1_ns[6:0]), .dout(dicad1_raw[6:0]));
 
    assign dicad1[31:0] = {25'b0, dicad1_raw[6:0]};
 
@@ -2021,7 +2021,7 @@ else begin : genblock1
 
    assign wr_dicad1_r = allow_dbg_halt_csr_write & dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == DICAD1);
 
-   rvdffs #(4)  dicad1_ff (.*, .clk(free_clk), .en(wr_dicad1_r | ifu_ic_debug_rd_data_valid), .din(dicad1_ns[3:0]), .dout(dicad1_raw[3:0]));
+   mcu_rvdffs #(4)  dicad1_ff (.*, .clk(free_clk), .en(wr_dicad1_r | ifu_ic_debug_rd_data_valid), .din(dicad1_ns[3:0]), .dout(dicad1_raw[3:0]));
 
    assign dicad1[31:0] = {28'b0, dicad1_raw[3:0]};
 end
@@ -2053,7 +2053,7 @@ else
    assign wr_mtsel_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MTSEL);
    assign mtsel_ns[1:0] = wr_mtsel_r ? {dec_csr_wrdata_r[1:0]} : mtsel[1:0];
 
-   rvdff #(2)  mtsel_ff (.*, .clk(csr_wr_clk), .din(mtsel_ns[1:0]), .dout(mtsel[1:0]));
+   mcu_rvdff #(2)  mtsel_ff (.*, .clk(csr_wr_clk), .din(mtsel_ns[1:0]), .dout(mtsel[1:0]));
 
    // ----------------------------------------------------------------------
    // MTDATA1 (R/W)
@@ -2133,10 +2133,10 @@ else
                                 {mtdata1_t3[9], update_hit_bit_r[3] | mtdata1_t3[8], mtdata1_t3[7:0]};
 
 
-   rvdffe #(10)  mtdata1_t0_ff (.*, .en(trigger_enabled[0] | wr_mtdata1_t0_r), .din(mtdata1_t0_ns[9:0]), .dout(mtdata1_t0[9:0]));
-   rvdffe #(10)  mtdata1_t1_ff (.*, .en(trigger_enabled[1] | wr_mtdata1_t1_r), .din(mtdata1_t1_ns[9:0]), .dout(mtdata1_t1[9:0]));
-   rvdffe #(10)  mtdata1_t2_ff (.*, .en(trigger_enabled[2] | wr_mtdata1_t2_r), .din(mtdata1_t2_ns[9:0]), .dout(mtdata1_t2[9:0]));
-   rvdffe #(10)  mtdata1_t3_ff (.*, .en(trigger_enabled[3] | wr_mtdata1_t3_r), .din(mtdata1_t3_ns[9:0]), .dout(mtdata1_t3[9:0]));
+   mcu_rvdffe #(10)  mtdata1_t0_ff (.*, .en(trigger_enabled[0] | wr_mtdata1_t0_r), .din(mtdata1_t0_ns[9:0]), .dout(mtdata1_t0[9:0]));
+   mcu_rvdffe #(10)  mtdata1_t1_ff (.*, .en(trigger_enabled[1] | wr_mtdata1_t1_r), .din(mtdata1_t1_ns[9:0]), .dout(mtdata1_t1[9:0]));
+   mcu_rvdffe #(10)  mtdata1_t2_ff (.*, .en(trigger_enabled[2] | wr_mtdata1_t2_r), .din(mtdata1_t2_ns[9:0]), .dout(mtdata1_t2[9:0]));
+   mcu_rvdffe #(10)  mtdata1_t3_ff (.*, .en(trigger_enabled[3] | wr_mtdata1_t3_r), .din(mtdata1_t3_ns[9:0]), .dout(mtdata1_t3[9:0]));
 
    assign mtdata1_tsel_out[31:0] = ( ({32{(mtsel[1:0] == 2'b00)}} & {4'h2, mtdata1_t0[9], 6'b011111, mtdata1_t0[8:7], 6'b0, mtdata1_t0[6:5], 3'b0, mtdata1_t0[4:3], 3'b0, mtdata1_t0[2:0]}) |
                                      ({32{(mtsel[1:0] == 2'b01)}} & {4'h2, mtdata1_t1[9], 6'b011111, mtdata1_t1[8:7], 6'b0, mtdata1_t1[6:5], 3'b0, mtdata1_t1[4:3], 3'b0, mtdata1_t1[2:0]}) |
@@ -2186,10 +2186,10 @@ else
    assign wr_mtdata2_t2_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MTDATA2) & (mtsel[1:0] == 2'b10) & (~mtdata1_t2[MTDATA1_DMODE] | dbg_tlu_halted_f);
    assign wr_mtdata2_t3_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MTDATA2) & (mtsel[1:0] == 2'b11) & (~mtdata1_t3[MTDATA1_DMODE] | dbg_tlu_halted_f);
 
-   rvdffe #(32)  mtdata2_t0_ff (.*, .en(wr_mtdata2_t0_r), .din(dec_csr_wrdata_r[31:0]), .dout(mtdata2_t0[31:0]));
-   rvdffe #(32)  mtdata2_t1_ff (.*, .en(wr_mtdata2_t1_r), .din(dec_csr_wrdata_r[31:0]), .dout(mtdata2_t1[31:0]));
-   rvdffe #(32)  mtdata2_t2_ff (.*, .en(wr_mtdata2_t2_r), .din(dec_csr_wrdata_r[31:0]), .dout(mtdata2_t2[31:0]));
-   rvdffe #(32)  mtdata2_t3_ff (.*, .en(wr_mtdata2_t3_r), .din(dec_csr_wrdata_r[31:0]), .dout(mtdata2_t3[31:0]));
+   mcu_rvdffe #(32)  mtdata2_t0_ff (.*, .en(wr_mtdata2_t0_r), .din(dec_csr_wrdata_r[31:0]), .dout(mtdata2_t0[31:0]));
+   mcu_rvdffe #(32)  mtdata2_t1_ff (.*, .en(wr_mtdata2_t1_r), .din(dec_csr_wrdata_r[31:0]), .dout(mtdata2_t1[31:0]));
+   mcu_rvdffe #(32)  mtdata2_t2_ff (.*, .en(wr_mtdata2_t2_r), .din(dec_csr_wrdata_r[31:0]), .dout(mtdata2_t2[31:0]));
+   mcu_rvdffe #(32)  mtdata2_t3_ff (.*, .en(wr_mtdata2_t3_r), .din(dec_csr_wrdata_r[31:0]), .dout(mtdata2_t3[31:0]));
 
    assign mtdata2_tsel_out[31:0] = ( ({32{(mtsel[1:0] == 2'b00)}} & mtdata2_t0[31:0]) |
                                      ({32{(mtsel[1:0] == 2'b01)}} & mtdata2_t1[31:0]) |
@@ -2345,7 +2345,7 @@ else
    if(mcu_pt.FAST_INTERRUPT_REDIRECT) begin : genblock2
 
 `ifdef MCU_RV_USER_MODE
-   rvdffie #(33)  mstatus_ff (.*, .clk(free_l2clk),
+   mcu_rvdffie #(33)  mstatus_ff (.*, .clk(free_l2clk),
                              .din({mdseac_locked_ns, lsu_single_ecc_error_r, lsu_exc_valid_r, lsu_i0_exc_r,
                                    take_ext_int_start,    take_ext_int_start_d1, take_ext_int_start_d2, ext_int_freeze,
                                    mip_ns[5:0], mcyclel_cout & ~wr_mcycleh_r & mcyclel_cout_in,
@@ -2359,7 +2359,7 @@ else
                                     mhpmc_inc_r_d1[3:0], perfcnt_halted_d1,
                                     mstatus[3:0]}));
 `else
-   rvdffie #(31)  mstatus_ff (.*, .clk(free_l2clk),
+   mcu_rvdffie #(31)  mstatus_ff (.*, .clk(free_l2clk),
                              .din({mdseac_locked_ns, lsu_single_ecc_error_r, lsu_exc_valid_r, lsu_i0_exc_r,
                                    take_ext_int_start,    take_ext_int_start_d1, take_ext_int_start_d2, ext_int_freeze,
                                    mip_ns[5:0], mcyclel_cout & ~wr_mcycleh_r & mcyclel_cout_in,
@@ -2378,7 +2378,7 @@ else
    end
    else begin : genblock2
 `ifdef MCU_RV_USER_MODE
-   rvdffie #(29)  mstatus_ff (.*, .clk(free_l2clk),
+   mcu_rvdffie #(29)  mstatus_ff (.*, .clk(free_l2clk),
                              .din({mdseac_locked_ns, lsu_single_ecc_error_r, lsu_exc_valid_r, lsu_i0_exc_r,
                                    mip_ns[5:0], mcyclel_cout & ~wr_mcycleh_r & mcyclel_cout_in,
                                    minstret_enable, minstretl_cout_ns, fw_halted_ns,
@@ -2390,7 +2390,7 @@ else
                                     mhpmc_inc_r_d1[3:0], perfcnt_halted_d1,
                                     mstatus[3:0]}));
 `else
-   rvdffie #(27)  mstatus_ff (.*, .clk(free_l2clk),
+   mcu_rvdffie #(27)  mstatus_ff (.*, .clk(free_l2clk),
                              .din({mdseac_locked_ns, lsu_single_ecc_error_r, lsu_exc_valid_r, lsu_i0_exc_r,
                                    mip_ns[5:0], mcyclel_cout & ~wr_mcycleh_r & mcyclel_cout_in,
                                    minstret_enable, minstretl_cout_ns, fw_halted_ns,
@@ -2427,12 +2427,12 @@ else
    assign mhpmc3_wr_en  = mhpmc3_wr_en0 | mhpmc3_wr_en1;
    assign mhpmc3_incr[63:0] = {mhpmc3h[31:0],mhpmc3[31:0]} + {63'b0, 1'b1};
    assign mhpmc3_ns[31:0] = mhpmc3_wr_en0 ? dec_csr_wrdata_r[31:0] : mhpmc3_incr[31:0];
-   rvdffe #(32)  mhpmc3_ff (.*, .clk(free_l2clk), .en(mhpmc3_wr_en), .din(mhpmc3_ns[31:0]), .dout(mhpmc3[31:0]));
+   mcu_rvdffe #(32)  mhpmc3_ff (.*, .clk(free_l2clk), .en(mhpmc3_wr_en), .din(mhpmc3_ns[31:0]), .dout(mhpmc3[31:0]));
 
    assign mhpmc3h_wr_en0 = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPMC3H);
    assign mhpmc3h_wr_en  = mhpmc3h_wr_en0 | mhpmc3_wr_en1;
    assign mhpmc3h_ns[31:0] = mhpmc3h_wr_en0 ? dec_csr_wrdata_r[31:0] : mhpmc3_incr[63:32];
-   rvdffe #(32)  mhpmc3h_ff (.*, .clk(free_l2clk), .en(mhpmc3h_wr_en), .din(mhpmc3h_ns[31:0]), .dout(mhpmc3h[31:0]));
+   mcu_rvdffe #(32)  mhpmc3h_ff (.*, .clk(free_l2clk), .en(mhpmc3h_wr_en), .din(mhpmc3h_ns[31:0]), .dout(mhpmc3h[31:0]));
 
    // ----------------------------------------------------------------------
    // MHPMC4H(RW), MHPMC4(RW)
@@ -2449,12 +2449,12 @@ else
    assign mhpmc4_wr_en  = mhpmc4_wr_en0 | mhpmc4_wr_en1;
    assign mhpmc4_incr[63:0] = {mhpmc4h[31:0],mhpmc4[31:0]} + {63'b0,1'b1};
    assign mhpmc4_ns[31:0] = mhpmc4_wr_en0 ? dec_csr_wrdata_r[31:0] : mhpmc4_incr[31:0];
-   rvdffe #(32)  mhpmc4_ff (.*, .clk(free_l2clk), .en(mhpmc4_wr_en), .din(mhpmc4_ns[31:0]), .dout(mhpmc4[31:0]));
+   mcu_rvdffe #(32)  mhpmc4_ff (.*, .clk(free_l2clk), .en(mhpmc4_wr_en), .din(mhpmc4_ns[31:0]), .dout(mhpmc4[31:0]));
 
    assign mhpmc4h_wr_en0 = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPMC4H);
    assign mhpmc4h_wr_en  = mhpmc4h_wr_en0 | mhpmc4_wr_en1;
    assign mhpmc4h_ns[31:0] = mhpmc4h_wr_en0 ? dec_csr_wrdata_r[31:0] : mhpmc4_incr[63:32];
-   rvdffe #(32)  mhpmc4h_ff (.*, .clk(free_l2clk), .en(mhpmc4h_wr_en), .din(mhpmc4h_ns[31:0]), .dout(mhpmc4h[31:0]));
+   mcu_rvdffe #(32)  mhpmc4h_ff (.*, .clk(free_l2clk), .en(mhpmc4h_wr_en), .din(mhpmc4h_ns[31:0]), .dout(mhpmc4h[31:0]));
 
    // ----------------------------------------------------------------------
    // MHPMC5H(RW), MHPMC5(RW)
@@ -2471,12 +2471,12 @@ else
    assign mhpmc5_wr_en  = mhpmc5_wr_en0 | mhpmc5_wr_en1;
    assign mhpmc5_incr[63:0] = {mhpmc5h[31:0],mhpmc5[31:0]} + {63'b0,1'b1};
    assign mhpmc5_ns[31:0] = mhpmc5_wr_en0 ? dec_csr_wrdata_r[31:0] : mhpmc5_incr[31:0];
-   rvdffe #(32)  mhpmc5_ff (.*, .clk(free_l2clk), .en(mhpmc5_wr_en), .din(mhpmc5_ns[31:0]), .dout(mhpmc5[31:0]));
+   mcu_rvdffe #(32)  mhpmc5_ff (.*, .clk(free_l2clk), .en(mhpmc5_wr_en), .din(mhpmc5_ns[31:0]), .dout(mhpmc5[31:0]));
 
    assign mhpmc5h_wr_en0 = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPMC5H);
    assign mhpmc5h_wr_en  = mhpmc5h_wr_en0 | mhpmc5_wr_en1;
    assign mhpmc5h_ns[31:0] = mhpmc5h_wr_en0 ? dec_csr_wrdata_r[31:0] : mhpmc5_incr[63:32];
-   rvdffe #(32)  mhpmc5h_ff (.*, .clk(free_l2clk), .en(mhpmc5h_wr_en), .din(mhpmc5h_ns[31:0]), .dout(mhpmc5h[31:0]));
+   mcu_rvdffe #(32)  mhpmc5h_ff (.*, .clk(free_l2clk), .en(mhpmc5h_wr_en), .din(mhpmc5h_ns[31:0]), .dout(mhpmc5h[31:0]));
 
    // ----------------------------------------------------------------------
    // MHPMC6H(RW), MHPMC6(RW)
@@ -2493,12 +2493,12 @@ else
    assign mhpmc6_wr_en  = mhpmc6_wr_en0 | mhpmc6_wr_en1;
    assign mhpmc6_incr[63:0] = {mhpmc6h[31:0],mhpmc6[31:0]} + {63'b0,1'b1};
    assign mhpmc6_ns[31:0] = mhpmc6_wr_en0 ? dec_csr_wrdata_r[31:0] : mhpmc6_incr[31:0];
-   rvdffe #(32)  mhpmc6_ff (.*, .clk(free_l2clk), .en(mhpmc6_wr_en), .din(mhpmc6_ns[31:0]), .dout(mhpmc6[31:0]));
+   mcu_rvdffe #(32)  mhpmc6_ff (.*, .clk(free_l2clk), .en(mhpmc6_wr_en), .din(mhpmc6_ns[31:0]), .dout(mhpmc6[31:0]));
 
    assign mhpmc6h_wr_en0 = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPMC6H);
    assign mhpmc6h_wr_en  = mhpmc6h_wr_en0 | mhpmc6_wr_en1;
    assign mhpmc6h_ns[31:0] = mhpmc6h_wr_en0 ? dec_csr_wrdata_r[31:0] : mhpmc6_incr[63:32];
-   rvdffe #(32)  mhpmc6h_ff (.*, .clk(free_l2clk), .en(mhpmc6h_wr_en), .din(mhpmc6h_ns[31:0]), .dout(mhpmc6h[31:0]));
+   mcu_rvdffe #(32)  mhpmc6h_ff (.*, .clk(free_l2clk), .en(mhpmc6h_wr_en), .din(mhpmc6h_ns[31:0]), .dout(mhpmc6h[31:0]));
 
    // ----------------------------------------------------------------------
    // MHPME3(RW)
@@ -2517,28 +2517,28 @@ else
    assign event_r[9:0] = zero_event_r ? '0 : dec_csr_wrdata_r[9:0];
 
    assign wr_mhpme3_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPME3);
-   rvdffe #(10)  mhpme3_ff (.*, .en(wr_mhpme3_r), .din(event_r[9:0]), .dout(mhpme3[9:0]));
+   mcu_rvdffe #(10)  mhpme3_ff (.*, .en(wr_mhpme3_r), .din(event_r[9:0]), .dout(mhpme3[9:0]));
    // ----------------------------------------------------------------------
    // MHPME4(RW)
    // [9:0] : Hardware Performance Monitor Event 4
    localparam MHPME4        = 12'h324;
 
    assign wr_mhpme4_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPME4);
-   rvdffe #(10)  mhpme4_ff (.*, .en(wr_mhpme4_r), .din(event_r[9:0]), .dout(mhpme4[9:0]));
+   mcu_rvdffe #(10)  mhpme4_ff (.*, .en(wr_mhpme4_r), .din(event_r[9:0]), .dout(mhpme4[9:0]));
    // ----------------------------------------------------------------------
    // MHPME5(RW)
    // [9:0] : Hardware Performance Monitor Event 5
    localparam MHPME5        = 12'h325;
 
    assign wr_mhpme5_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPME5);
-   rvdffe #(10)  mhpme5_ff (.*, .en(wr_mhpme5_r), .din(event_r[9:0]), .dout(mhpme5[9:0]));
+   mcu_rvdffe #(10)  mhpme5_ff (.*, .en(wr_mhpme5_r), .din(event_r[9:0]), .dout(mhpme5[9:0]));
    // ----------------------------------------------------------------------
    // MHPME6(RW)
    // [9:0] : Hardware Performance Monitor Event 6
    localparam MHPME6        = 12'h326;
 
    assign wr_mhpme6_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPME6);
-   rvdffe #(10)  mhpme6_ff (.*, .en(wr_mhpme6_r), .din(event_r[9:0]), .dout(mhpme6[9:0]));
+   mcu_rvdffe #(10)  mhpme6_ff (.*, .en(wr_mhpme6_r), .din(event_r[9:0]), .dout(mhpme6[9:0]));
 
    //----------------------------------------------------------------------
    // Performance Monitor Counters section ends
@@ -2557,7 +2557,7 @@ else
    localparam MCOUNTEREN                = 12'h306;
 
    assign wr_mcounteren_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MCOUNTEREN);
-   rvdffs #(6) mcounteren_ff (.*, .clk(csr_wr_clk), .en(wr_mcounteren_r), .din({dec_csr_wrdata_r[6:2], dec_csr_wrdata_r[0]}), .dout(mcounteren));
+   mcu_rvdffs #(6) mcounteren_ff (.*, .clk(csr_wr_clk), .en(wr_mcounteren_r), .din({dec_csr_wrdata_r[6:2], dec_csr_wrdata_r[0]}), .dout(mcounteren));
 
 `endif
 
@@ -2574,7 +2574,7 @@ else
    localparam MCOUNTINHIBIT             = 12'h320;
 
    assign wr_mcountinhibit_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MCOUNTINHIBIT);
-   rvdffs #(6)  mcountinhibit_ff (.*, .clk(csr_wr_clk), .en(wr_mcountinhibit_r), .din({dec_csr_wrdata_r[6:2], dec_csr_wrdata_r[0]}), .dout({mcountinhibit[6:2], mcountinhibit[0]}));
+   mcu_rvdffs #(6)  mcountinhibit_ff (.*, .clk(csr_wr_clk), .en(wr_mcountinhibit_r), .din({dec_csr_wrdata_r[6:2], dec_csr_wrdata_r[0]}), .dout({mcountinhibit[6:2], mcountinhibit[0]}));
    assign mcountinhibit[1] = 1'b0;
 
    //--------------------------------------------------------------------------------
@@ -2594,7 +2594,7 @@ else
 
 
   // skid buffer for ints, reduces trace port count by 1
-   rvdffie #(.WIDTH(6), .OVERRIDE(1))  traceskidff (.*,  .clk(clk),
+   mcu_rvdffie #(.WIDTH(6), .OVERRIDE(1))  traceskidff (.*,  .clk(clk),
                         .din ({dec_tlu_exc_cause_wb1_raw[4:0],
                                dec_tlu_int_valid_wb1_raw}),
                         .dout({dec_tlu_exc_cause_wb2[4:0],
@@ -2788,8 +2788,8 @@ import mcu_el2_pkg::*;
 
    assign mitcnt0_ns[31:0]  = wr_mitcnt0_r ? dec_csr_wrdata_r[31:0] : mit0_match_ns ? 'b0 : mitcnt0_inc[31:0];
 
-   rvdffe #(24) mitcnt0_ffb      (.*, .clk(free_l2clk), .en(wr_mitcnt0_r | (mitcnt0_inc_ok & mitcnt0_inc_cout) | mit0_match_ns), .din(mitcnt0_ns[31:8]), .dout(mitcnt0[31:8]));
-   rvdffe #(8)  mitcnt0_ffa      (.*, .clk(free_l2clk), .en(wr_mitcnt0_r | mitcnt0_inc_ok | mit0_match_ns),                       .din(mitcnt0_ns[7:0]), .dout(mitcnt0[7:0]));
+   mcu_rvdffe #(24) mitcnt0_ffb      (.*, .clk(free_l2clk), .en(wr_mitcnt0_r | (mitcnt0_inc_ok & mitcnt0_inc_cout) | mit0_match_ns), .din(mitcnt0_ns[31:8]), .dout(mitcnt0[31:8]));
+   mcu_rvdffe #(8)  mitcnt0_ffa      (.*, .clk(free_l2clk), .en(wr_mitcnt0_r | mitcnt0_inc_ok | mit0_match_ns),                       .din(mitcnt0_ns[7:0]), .dout(mitcnt0[7:0]));
 
    // ----------------------------------------------------------------------
    // MITCNT1 (RW)
@@ -2811,8 +2811,8 @@ import mcu_el2_pkg::*;
 
    assign mitcnt1_ns[31:0]  = wr_mitcnt1_r ? dec_csr_wrdata_r[31:0] : mit1_match_ns ? 'b0 : mitcnt1_inc[31:0];
 
-   rvdffe #(24) mitcnt1_ffb      (.*, .clk(free_l2clk), .en(wr_mitcnt1_r | (mitcnt1_inc_ok & mitcnt1_inc_cout) | mit1_match_ns), .din(mitcnt1_ns[31:8]), .dout(mitcnt1[31:8]));
-   rvdffe #(8)  mitcnt1_ffa      (.*, .clk(free_l2clk), .en(wr_mitcnt1_r | mitcnt1_inc_ok | mit1_match_ns),                       .din(mitcnt1_ns[7:0]), .dout(mitcnt1[7:0]));
+   mcu_rvdffe #(24) mitcnt1_ffb      (.*, .clk(free_l2clk), .en(wr_mitcnt1_r | (mitcnt1_inc_ok & mitcnt1_inc_cout) | mit1_match_ns), .din(mitcnt1_ns[31:8]), .dout(mitcnt1[31:8]));
+   mcu_rvdffe #(8)  mitcnt1_ffa      (.*, .clk(free_l2clk), .en(wr_mitcnt1_r | mitcnt1_inc_ok | mit1_match_ns),                       .din(mitcnt1_ns[7:0]), .dout(mitcnt1[7:0]));
 
 
    // ----------------------------------------------------------------------
@@ -2823,7 +2823,7 @@ import mcu_el2_pkg::*;
 
    assign wr_mitb0_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MITB0);
 
-   rvdffe #(32) mitb0_ff      (.*, .en(wr_mitb0_r), .din(~dec_csr_wrdata_r[31:0]), .dout(mitb0_b[31:0]));
+   mcu_rvdffe #(32) mitb0_ff      (.*, .en(wr_mitb0_r), .din(~dec_csr_wrdata_r[31:0]), .dout(mitb0_b[31:0]));
    assign mitb0[31:0] = ~mitb0_b[31:0];
 
    // ----------------------------------------------------------------------
@@ -2834,7 +2834,7 @@ import mcu_el2_pkg::*;
 
    assign wr_mitb1_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MITB1);
 
-   rvdffe #(32) mitb1_ff      (.*, .en(wr_mitb1_r), .din(~dec_csr_wrdata_r[31:0]), .dout(mitb1_b[31:0]));
+   mcu_rvdffe #(32) mitb1_ff      (.*, .en(wr_mitb1_r), .din(~dec_csr_wrdata_r[31:0]), .dout(mitb1_b[31:0]));
    assign mitb1[31:0] = ~mitb1_b[31:0];
 
    // ----------------------------------------------------------------------
@@ -2850,7 +2850,7 @@ import mcu_el2_pkg::*;
    assign mitctl0_ns[2:0] = wr_mitctl0_r ? {dec_csr_wrdata_r[2:0]} : {mitctl0[2:0]};
 
    assign mitctl0_0_b_ns = ~mitctl0_ns[0];
-   rvdffs #(3) mitctl0_ff      (.*, .clk(csr_wr_clk), .en(wr_mitctl0_r), .din({mitctl0_ns[2:1], mitctl0_0_b_ns}), .dout({mitctl0[2:1], mitctl0_0_b}));
+   mcu_rvdffs #(3) mitctl0_ff      (.*, .clk(csr_wr_clk), .en(wr_mitctl0_r), .din({mitctl0_ns[2:1], mitctl0_0_b_ns}), .dout({mitctl0[2:1], mitctl0_0_b}));
    assign mitctl0[0] = ~mitctl0_0_b;
 
    // ----------------------------------------------------------------------
@@ -2867,7 +2867,7 @@ import mcu_el2_pkg::*;
    assign mitctl1_ns[3:0] = wr_mitctl1_r ? {dec_csr_wrdata_r[3:0]} : {mitctl1[3:0]};
 
    assign mitctl1_0_b_ns = ~mitctl1_ns[0];
-   rvdffs #(4) mitctl1_ff      (.*, .clk(csr_wr_clk), .en(wr_mitctl1_r), .din({mitctl1_ns[3:1], mitctl1_0_b_ns}), .dout({mitctl1[3:1], mitctl1_0_b}));
+   mcu_rvdffs #(4) mitctl1_ff      (.*, .clk(csr_wr_clk), .en(wr_mitctl1_r), .din({mitctl1_ns[3:1], mitctl1_0_b_ns}), .dout({mitctl1[3:1], mitctl1_0_b}));
    assign mitctl1[0] = ~mitctl1_0_b;
    assign dec_timer_read_d = csr_mitcnt1 | csr_mitcnt0 | csr_mitb1 | csr_mitb0 | csr_mitctl0 | csr_mitctl1;
    assign dec_timer_rddata_d[31:0] = ( ({32{csr_mitcnt0}}      & mitcnt0[31:0]) |

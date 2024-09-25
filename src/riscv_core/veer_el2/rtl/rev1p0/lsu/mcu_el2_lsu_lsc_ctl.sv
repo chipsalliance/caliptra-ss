@@ -156,7 +156,7 @@ import mcu_el2_pkg::*;
    assign rs1_d[31:0] = (lsu_pkt_d.load_ldst_bypass_d) ? lsu_result_m[31:0] : rs1_d_raw[31:0];
 
    // generate the ls address
-   rvlsadder   lsadder  (.rs1(rs1_d[31:0]),
+   mcu_rvlsadder   lsadder  (.rs1(rs1_d[31:0]),
                        .offset(offset_d[11:0]),
                        .dout(full_addr_d[31:0])
                        );
@@ -194,11 +194,11 @@ import mcu_el2_pkg::*;
 
       assign lsu_fir_error[1:0] = fir_nondccm_access_error_r ? 2'b11 : (fir_dccm_access_error_r ? 2'b10 : ((lsu_pkt_r.fast_int & lsu_double_ecc_error_r) ? 2'b01 : 2'b00));
 
-      rvdff #(1) access_fault_rff             (.din(access_fault_m),             .dout(access_fault_r),             .clk(lsu_c1_r_clk), .*);
-      rvdff #(1) misaligned_fault_rff         (.din(misaligned_fault_m),         .dout(misaligned_fault_r),         .clk(lsu_c1_r_clk), .*);
-      rvdff #(4) exc_mscause_rff              (.din(exc_mscause_m[3:0]),         .dout(exc_mscause_r[3:0]),         .clk(lsu_c1_r_clk), .*);
-      rvdff #(1) fir_dccm_access_error_mff    (.din(fir_dccm_access_error_m),    .dout(fir_dccm_access_error_r),    .clk(lsu_c1_r_clk), .*);
-      rvdff #(1) fir_nondccm_access_error_mff (.din(fir_nondccm_access_error_m), .dout(fir_nondccm_access_error_r), .clk(lsu_c1_r_clk), .*);
+      mcu_rvdff #(1) access_fault_rff             (.din(access_fault_m),             .dout(access_fault_r),             .clk(lsu_c1_r_clk), .*);
+      mcu_rvdff #(1) misaligned_fault_rff         (.din(misaligned_fault_m),         .dout(misaligned_fault_r),         .clk(lsu_c1_r_clk), .*);
+      mcu_rvdff #(4) exc_mscause_rff              (.din(exc_mscause_m[3:0]),         .dout(exc_mscause_r[3:0]),         .clk(lsu_c1_r_clk), .*);
+      mcu_rvdff #(1) fir_dccm_access_error_mff    (.din(fir_dccm_access_error_m),    .dout(fir_dccm_access_error_r),    .clk(lsu_c1_r_clk), .*);
+      mcu_rvdff #(1) fir_nondccm_access_error_mff (.din(fir_nondccm_access_error_m), .dout(fir_nondccm_access_error_r), .clk(lsu_c1_r_clk), .*);
 
    end else begin: L2U_Plus1_0
       logic [1:0] lsu_fir_error_m;
@@ -213,10 +213,10 @@ import mcu_el2_pkg::*;
 
       assign lsu_fir_error_m[1:0] = fir_nondccm_access_error_m ? 2'b11 : (fir_dccm_access_error_m ? 2'b10 : ((lsu_pkt_m.fast_int & lsu_double_ecc_error_m) ? 2'b01 : 2'b00));
 
-      rvdff  #(1)                             lsu_exc_valid_rff       (.*, .din(lsu_error_pkt_m.exc_valid),                        .dout(lsu_error_pkt_r.exc_valid),                        .clk(lsu_c2_r_clk));
-      rvdff  #(1)                             lsu_single_ecc_error_rff(.*, .din(lsu_error_pkt_m.single_ecc_error),                 .dout(lsu_error_pkt_r.single_ecc_error),                 .clk(lsu_c2_r_clk));
-      rvdffe #($bits(mcu_el2_lsu_error_pkt_t)-2) lsu_error_pkt_rff       (.*, .din(lsu_error_pkt_m[$bits(mcu_el2_lsu_error_pkt_t)-1:2]), .dout(lsu_error_pkt_r[$bits(mcu_el2_lsu_error_pkt_t)-1:2]), .en(lsu_error_pkt_m.exc_valid | lsu_error_pkt_m.single_ecc_error | clk_override));
-      rvdff #(2)                              lsu_fir_error_rff       (.*, .din(lsu_fir_error_m[1:0]),                             .dout(lsu_fir_error[1:0]),                               .clk(lsu_c2_r_clk));
+      mcu_rvdff  #(1)                             lsu_exc_valid_rff       (.*, .din(lsu_error_pkt_m.exc_valid),                        .dout(lsu_error_pkt_r.exc_valid),                        .clk(lsu_c2_r_clk));
+      mcu_rvdff  #(1)                             lsu_single_ecc_error_rff(.*, .din(lsu_error_pkt_m.single_ecc_error),                 .dout(lsu_error_pkt_r.single_ecc_error),                 .clk(lsu_c2_r_clk));
+      mcu_rvdffe #($bits(mcu_el2_lsu_error_pkt_t)-2) lsu_error_pkt_rff       (.*, .din(lsu_error_pkt_m[$bits(mcu_el2_lsu_error_pkt_t)-1:2]), .dout(lsu_error_pkt_r[$bits(mcu_el2_lsu_error_pkt_t)-1:2]), .en(lsu_error_pkt_m.exc_valid | lsu_error_pkt_m.single_ecc_error | clk_override));
+      mcu_rvdff #(2)                              lsu_fir_error_rff       (.*, .din(lsu_fir_error_m[1:0]),                             .dout(lsu_fir_error[1:0]),                               .clk(lsu_c2_r_clk));
    end
 
    //Create DMA packet
@@ -243,11 +243,11 @@ import mcu_el2_pkg::*;
    end
 
    // C2 clock for valid and C1 for other bits of packet
-   rvdff #(1) lsu_pkt_vldmff (.*, .din(lsu_pkt_m_in.valid), .dout(lsu_pkt_m.valid), .clk(lsu_c2_m_clk));
-   rvdff #(1) lsu_pkt_vldrff (.*, .din(lsu_pkt_r_in.valid), .dout(lsu_pkt_r.valid), .clk(lsu_c2_r_clk));
+   mcu_rvdff #(1) lsu_pkt_vldmff (.*, .din(lsu_pkt_m_in.valid), .dout(lsu_pkt_m.valid), .clk(lsu_c2_m_clk));
+   mcu_rvdff #(1) lsu_pkt_vldrff (.*, .din(lsu_pkt_r_in.valid), .dout(lsu_pkt_r.valid), .clk(lsu_c2_r_clk));
 
-   rvdff #($bits(mcu_el2_lsu_pkt_t)-1) lsu_pkt_mff (.*, .din(lsu_pkt_m_in[$bits(mcu_el2_lsu_pkt_t)-1:1]), .dout(lsu_pkt_m[$bits(mcu_el2_lsu_pkt_t)-1:1]), .clk(lsu_c1_m_clk));
-   rvdff #($bits(mcu_el2_lsu_pkt_t)-1) lsu_pkt_rff (.*, .din(lsu_pkt_r_in[$bits(mcu_el2_lsu_pkt_t)-1:1]), .dout(lsu_pkt_r[$bits(mcu_el2_lsu_pkt_t)-1:1]), .clk(lsu_c1_r_clk));
+   mcu_rvdff #($bits(mcu_el2_lsu_pkt_t)-1) lsu_pkt_mff (.*, .din(lsu_pkt_m_in[$bits(mcu_el2_lsu_pkt_t)-1:1]), .dout(lsu_pkt_m[$bits(mcu_el2_lsu_pkt_t)-1:1]), .clk(lsu_c1_m_clk));
+   mcu_rvdff #($bits(mcu_el2_lsu_pkt_t)-1) lsu_pkt_rff (.*, .din(lsu_pkt_r_in[$bits(mcu_el2_lsu_pkt_t)-1:1]), .dout(lsu_pkt_r[$bits(mcu_el2_lsu_pkt_t)-1:1]), .clk(lsu_c1_r_clk));
 
 
 
@@ -309,36 +309,36 @@ import mcu_el2_pkg::*;
    assign store_data_m[31:0] = (picm_mask_data_m[31:0] | {32{~addr_in_pic_m}}) & ((lsu_pkt_m.store_data_bypass_m) ? lsu_result_m[31:0] : store_data_pre_m[31:0]);
 
 
-   rvdff #(32)  sdmff (.*, .din(store_data_m_in[31:0]), .dout(store_data_pre_m[31:0]),                       .clk(lsu_store_c1_m_clk));
+   mcu_rvdff #(32)  sdmff (.*, .din(store_data_m_in[31:0]), .dout(store_data_pre_m[31:0]),                       .clk(lsu_store_c1_m_clk));
 
-   rvdff #(32) samff (.*, .din(lsu_addr_d[31:0]), .dout(lsu_addr_m[31:0]), .clk(lsu_c1_m_clk));
-   rvdff #(32) sarff (.*, .din(lsu_addr_m[31:0]), .dout(lsu_addr_r[31:0]), .clk(lsu_c1_r_clk));
+   mcu_rvdff #(32) samff (.*, .din(lsu_addr_d[31:0]), .dout(lsu_addr_m[31:0]), .clk(lsu_c1_m_clk));
+   mcu_rvdff #(32) sarff (.*, .din(lsu_addr_m[31:0]), .dout(lsu_addr_r[31:0]), .clk(lsu_c1_r_clk));
 
    assign end_addr_m[31:3] = ldst_dual_m ? end_addr_pre_m[31:3] : lsu_addr_m[31:3];       // This is for power saving
    assign end_addr_r[31:3] = ldst_dual_r ? end_addr_pre_r[31:3] : lsu_addr_r[31:3];       // This is for power saving
 
-   rvdffe #(29) end_addr_hi_mff (.*, .din(end_addr_d[31:3]), .dout(end_addr_pre_m[31:3]), .en((lsu_pkt_d.valid & ldst_dual_d) | clk_override));
-   rvdffe #(29) end_addr_hi_rff (.*, .din(end_addr_m[31:3]), .dout(end_addr_pre_r[31:3]), .en((lsu_pkt_m.valid & ldst_dual_m) | clk_override));
+   mcu_rvdffe #(29) end_addr_hi_mff (.*, .din(end_addr_d[31:3]), .dout(end_addr_pre_m[31:3]), .en((lsu_pkt_d.valid & ldst_dual_d) | clk_override));
+   mcu_rvdffe #(29) end_addr_hi_rff (.*, .din(end_addr_m[31:3]), .dout(end_addr_pre_r[31:3]), .en((lsu_pkt_m.valid & ldst_dual_m) | clk_override));
 
-   rvdff #(3)  end_addr_lo_mff (.*, .din(end_addr_d[2:0]), .dout(end_addr_m[2:0]), .clk(lsu_c1_m_clk));
-   rvdff #(3)  end_addr_lo_rff (.*, .din(end_addr_m[2:0]), .dout(end_addr_r[2:0]), .clk(lsu_c1_r_clk));
+   mcu_rvdff #(3)  end_addr_lo_mff (.*, .din(end_addr_d[2:0]), .dout(end_addr_m[2:0]), .clk(lsu_c1_m_clk));
+   mcu_rvdff #(3)  end_addr_lo_rff (.*, .din(end_addr_m[2:0]), .dout(end_addr_r[2:0]), .clk(lsu_c1_r_clk));
 
-   rvdff #(1) addr_in_dccm_mff(.din(addr_in_dccm_d), .dout(addr_in_dccm_m), .clk(lsu_c1_m_clk), .*);
-   rvdff #(1) addr_in_dccm_rff(.din(addr_in_dccm_m), .dout(addr_in_dccm_r), .clk(lsu_c1_r_clk), .*);
+   mcu_rvdff #(1) addr_in_dccm_mff(.din(addr_in_dccm_d), .dout(addr_in_dccm_m), .clk(lsu_c1_m_clk), .*);
+   mcu_rvdff #(1) addr_in_dccm_rff(.din(addr_in_dccm_m), .dout(addr_in_dccm_r), .clk(lsu_c1_r_clk), .*);
 
-   rvdff #(1) addr_in_pic_mff(.din(addr_in_pic_d), .dout(addr_in_pic_m), .clk(lsu_c1_m_clk), .*);
-   rvdff #(1) addr_in_pic_rff(.din(addr_in_pic_m), .dout(addr_in_pic_r), .clk(lsu_c1_r_clk), .*);
+   mcu_rvdff #(1) addr_in_pic_mff(.din(addr_in_pic_d), .dout(addr_in_pic_m), .clk(lsu_c1_m_clk), .*);
+   mcu_rvdff #(1) addr_in_pic_rff(.din(addr_in_pic_m), .dout(addr_in_pic_r), .clk(lsu_c1_r_clk), .*);
 
-   rvdff #(1) addr_external_mff(.din(addr_external_d), .dout(addr_external_m), .clk(lsu_c1_m_clk), .*);
-   rvdff #(1) addr_external_rff(.din(addr_external_m), .dout(addr_external_r), .clk(lsu_c1_r_clk), .*);
+   mcu_rvdff #(1) addr_external_mff(.din(addr_external_d), .dout(addr_external_m), .clk(lsu_c1_m_clk), .*);
+   mcu_rvdff #(1) addr_external_rff(.din(addr_external_m), .dout(addr_external_r), .clk(lsu_c1_r_clk), .*);
 
-   rvdff #(1) access_fault_mff     (.din(access_fault_d),     .dout(access_fault_m),     .clk(lsu_c1_m_clk), .*);
-   rvdff #(1) misaligned_fault_mff (.din(misaligned_fault_d), .dout(misaligned_fault_m), .clk(lsu_c1_m_clk), .*);
-   rvdff #(4) exc_mscause_mff      (.din(exc_mscause_d[3:0]), .dout(exc_mscause_m[3:0]), .clk(lsu_c1_m_clk), .*);
+   mcu_rvdff #(1) access_fault_mff     (.din(access_fault_d),     .dout(access_fault_m),     .clk(lsu_c1_m_clk), .*);
+   mcu_rvdff #(1) misaligned_fault_mff (.din(misaligned_fault_d), .dout(misaligned_fault_m), .clk(lsu_c1_m_clk), .*);
+   mcu_rvdff #(4) exc_mscause_mff      (.din(exc_mscause_d[3:0]), .dout(exc_mscause_m[3:0]), .clk(lsu_c1_m_clk), .*);
 
-   rvdff #(1) fir_dccm_access_error_mff    (.din(fir_dccm_access_error_d),    .dout(fir_dccm_access_error_m),    .clk(lsu_c1_m_clk), .*);
-   rvdff #(1) fir_nondccm_access_error_mff (.din(fir_nondccm_access_error_d), .dout(fir_nondccm_access_error_m), .clk(lsu_c1_m_clk), .*);
+   mcu_rvdff #(1) fir_dccm_access_error_mff    (.din(fir_dccm_access_error_d),    .dout(fir_dccm_access_error_m),    .clk(lsu_c1_m_clk), .*);
+   mcu_rvdff #(1) fir_nondccm_access_error_mff (.din(fir_nondccm_access_error_d), .dout(fir_nondccm_access_error_m), .clk(lsu_c1_m_clk), .*);
 
-   rvdffe #(32) bus_read_data_r_ff (.*, .din(bus_read_data_m[31:0]), .dout(bus_read_data_r[31:0]), .en(addr_external_m | clk_override));
+   mcu_rvdffe #(32) bus_read_data_r_ff (.*, .din(bus_read_data_m[31:0]), .dout(bus_read_data_r[31:0]), .en(addr_external_m | clk_override));
 
 endmodule

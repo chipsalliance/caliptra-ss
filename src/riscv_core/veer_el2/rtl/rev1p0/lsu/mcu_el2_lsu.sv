@@ -395,8 +395,8 @@ import mcu_el2_pkg::*;
    );
 
    //Flops
-   rvdff #(3) dma_mem_tag_mff     (.*, .din(dma_mem_tag_d[2:0]), .dout(dma_mem_tag_m[2:0]), .clk(lsu_c1_m_clk));
-   rvdff #(2) lsu_raw_fwd_r_ff    (.*, .din({lsu_raw_fwd_hi_m, lsu_raw_fwd_lo_m}),     .dout({lsu_raw_fwd_hi_r, lsu_raw_fwd_lo_r}),     .clk(lsu_c2_r_clk));
+   mcu_rvdff #(3) dma_mem_tag_mff     (.*, .din(dma_mem_tag_d[2:0]), .dout(dma_mem_tag_m[2:0]), .clk(lsu_c1_m_clk));
+   mcu_rvdff #(2) lsu_raw_fwd_r_ff    (.*, .din({lsu_raw_fwd_hi_m, lsu_raw_fwd_lo_m}),     .dout({lsu_raw_fwd_hi_r, lsu_raw_fwd_lo_r}),     .clk(lsu_c2_r_clk));
 
 `ifdef MCU_RV_ASSERT_ON
    logic [1:0] store_data_bypass_sel;

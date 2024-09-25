@@ -90,7 +90,7 @@ import mcu_el2_pkg::*;
 );
 
    logic active_clk;
-   rvoclkhdr active_cg   ( .en(1'b1),         .l1clk(active_clk), .* );
+   mcu_rvoclkhdr active_cg   ( .en(1'b1),         .l1clk(active_clk), .* );
 
    mcu_el2_mem_if mem_export_local ();
 

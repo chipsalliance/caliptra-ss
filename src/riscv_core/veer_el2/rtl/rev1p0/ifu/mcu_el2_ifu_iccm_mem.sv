@@ -83,7 +83,7 @@ import mcu_el2_pkg::*;
    //   assign      flip_in = (iccm_rw_addr[3:2] != 2'b00);    // dont flip when bank0 - this is to make some progress in DMA streaming cases
    //   assign      flip_en = iccm_rden;
    //
-   //   rvdffs #(1) flipmatch  (.*,
+   //   mcu_rvdffs #(1) flipmatch  (.*,
    //                   .clk(clk),
    //                   .din(flip_in),
    //                   .en(flip_en),
@@ -127,12 +127,12 @@ import mcu_el2_pkg::*;
     assign sel_red0[i]  = (redundant_valid[0]  & (((iccm_rw_addr[mcu_pt.ICCM_BITS-1:2] == redundant_address[0][mcu_pt.ICCM_BITS-1:2]) & (iccm_rw_addr[3:2] == i)) |
                                                  ((addr_bank_inc[mcu_pt.ICCM_BITS-1:2]== redundant_address[0][mcu_pt.ICCM_BITS-1:2]) & (addr_bank_inc[3:2] == i))));
 
-   rvdff #(1) selred0  (.*,
+   mcu_rvdff #(1) selred0  (.*,
                    .clk(active_clk),
                    .din(sel_red0[i]),
                    .dout(sel_red0_q[i]));
 
-   rvdff #(1) selred1  (.*,
+   mcu_rvdff #(1) selred1  (.*,
                    .clk(active_clk),
                    .din(sel_red1[i]),
                    .dout(sel_red1_q[i]));
@@ -152,31 +152,31 @@ import mcu_el2_pkg::*;
    assign redundant_lru_en         = iccm_buf_correct_ecc | (((|sel_red0[mcu_pt.ICCM_NUM_BANKS-1:0]) | (|sel_red1[mcu_pt.ICCM_NUM_BANKS-1:0])) & iccm_rden & iccm_correction_state);
    assign redundant_lru_in        = iccm_buf_correct_ecc ? ~redundant_lru : (|sel_red0[mcu_pt.ICCM_NUM_BANKS-1:0]) ? 1'b1 : 1'b0;
 
-   rvdffs #() red_lru  (.*,                               // LRU flop for the redundant replacements
+   mcu_rvdffs #() red_lru  (.*,                               // LRU flop for the redundant replacements
                    .clk(active_clk),
                    .en(redundant_lru_en),
                    .din(redundant_lru_in),
                    .dout(redundant_lru));
 
-    rvdffs #(mcu_pt.ICCM_BITS-2) r0_address  (.*,                 // Redundant Row 0 address
+    mcu_rvdffs #(mcu_pt.ICCM_BITS-2) r0_address  (.*,                 // Redundant Row 0 address
                    .clk(active_clk),
                    .en(r0_addr_en),
                    .din(iccm_rw_addr[mcu_pt.ICCM_BITS-1:2]),
                    .dout(redundant_address[0][mcu_pt.ICCM_BITS-1:2]));
 
-   rvdffs #(mcu_pt.ICCM_BITS-2) r1_address  (.*,                   // Redundant Row 0 address
+   mcu_rvdffs #(mcu_pt.ICCM_BITS-2) r1_address  (.*,                   // Redundant Row 0 address
                    .clk(active_clk),
                    .en(r1_addr_en),
                    .din(iccm_rw_addr[mcu_pt.ICCM_BITS-1:2]),
                    .dout(redundant_address[1][mcu_pt.ICCM_BITS-1:2]));
 
-    rvdffs #(1) r0_valid  (.*,
+    mcu_rvdffs #(1) r0_valid  (.*,
                    .clk(active_clk),                                  // Redundant Row 0 Valid
                    .en(r0_addr_en),
                    .din(1'b1),
                    .dout(redundant_valid[0]));
 
-   rvdffs #(1) r1_valid  (.*,                                   // Redundant Row 1 Valid
+   mcu_rvdffs #(1) r1_valid  (.*,                                   // Redundant Row 1 Valid
                    .clk(active_clk),
                    .en(r1_addr_en),
                    .din(1'b1),
@@ -193,7 +193,7 @@ import mcu_el2_pkg::*;
 
     assign redundant_data0_in[38:0] = (((iccm_rw_addr[2] == redundant_address[0][2]) & iccm_rw_addr[2]) | (redundant_address[0][2] & (iccm_wr_size[1:0] == 2'b11))) ? iccm_wr_data[77:39]  : iccm_wr_data[38:0];
 
-    rvdffs #(39) r0_data  (.*,                                 // Redundant Row 1 data
+    mcu_rvdffs #(39) r0_data  (.*,                                 // Redundant Row 1 data
                    .clk(active_clk),
                    .en(redundant_data0_en),
                    .din(redundant_data0_in[38:0]),
@@ -204,15 +204,15 @@ import mcu_el2_pkg::*;
 
    assign redundant_data1_in[38:0] = (((iccm_rw_addr[2] == redundant_address[1][2]) & iccm_rw_addr[2]) | (redundant_address[1][2] & (iccm_wr_size[1:0] == 2'b11))) ? iccm_wr_data[77:39]  : iccm_wr_data[38:0];
 
-    rvdffs #(39) r1_data  (.*,                                  // Redundant Row 1 data
+    mcu_rvdffs #(39) r1_data  (.*,                                  // Redundant Row 1 data
                    .clk(active_clk),
                    .en(redundant_data1_en),
                    .din(redundant_data1_in[38:0]),
                    .dout(redundant_data[1][38:0]));
 
 
-   rvdffs  #(mcu_pt.ICCM_BANK_HI)   rd_addr_lo_ff (.*, .clk(active_clk), .din(iccm_rw_addr [mcu_pt.ICCM_BANK_HI:1]), .dout(iccm_rd_addr_lo_q[mcu_pt.ICCM_BANK_HI:1]), .en(1'b1));   // bit 0 of address is always 0
-   rvdffs  #(mcu_pt.ICCM_BANK_BITS) rd_addr_hi_ff (.*, .clk(active_clk), .din(addr_bank_inc[mcu_pt.ICCM_BANK_HI:2]), .dout(iccm_rd_addr_hi_q[mcu_pt.ICCM_BANK_HI:2]), .en(1'b1));
+   mcu_rvdffs  #(mcu_pt.ICCM_BANK_HI)   rd_addr_lo_ff (.*, .clk(active_clk), .din(iccm_rw_addr [mcu_pt.ICCM_BANK_HI:1]), .dout(iccm_rd_addr_lo_q[mcu_pt.ICCM_BANK_HI:1]), .en(1'b1));   // bit 0 of address is always 0
+   mcu_rvdffs  #(mcu_pt.ICCM_BANK_BITS) rd_addr_hi_ff (.*, .clk(active_clk), .din(addr_bank_inc[mcu_pt.ICCM_BANK_HI:2]), .dout(iccm_rd_addr_hi_q[mcu_pt.ICCM_BANK_HI:2]), .en(1'b1));
 
    assign iccm_rd_data_pre[63:0] = {iccm_bank_dout_fn[iccm_rd_addr_hi_q][31:0], iccm_bank_dout_fn[iccm_rd_addr_lo_q[mcu_pt.ICCM_BANK_HI:2]][31:0]};
    assign iccm_data[63:0]        = 64'({16'b0, (iccm_rd_data_pre[63:0] >> (16*iccm_rd_addr_lo_q[1]))});

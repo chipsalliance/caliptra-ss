@@ -204,28 +204,28 @@ import mcu_el2_pkg::*;
 
    assign error_stall_in = (error_stall | ifu_async_error_start) & ~exu_flush_final;
 
-   rvdff #(.WIDTH(7))  bundle1ff (.*,
+   mcu_rvdff #(.WIDTH(7))  bundle1ff (.*,
                                   .clk(active_clk),
                                   .din ({wrptr_in[1:0],rdptr_in[1:0],q2off_in,q1off_in,q0off_in}),
                                   .dout({wrptr[1:0],   rdptr[1:0],   q2off,   q1off,   q0off})
                                   );
 
-   rvdffie #(.WIDTH(7),.OVERRIDE(1))  bundle2ff (.*,
+   mcu_rvdffie #(.WIDTH(7),.OVERRIDE(1))  bundle2ff (.*,
                                                  .din ({error_stall_in,f2val_in[1:0],f1val_in[1:0],f0val_in[1:0]}),
                                                  .dout({error_stall,   f2val[1:0],   f1val[1:0],   f0val[1:0]   })
                                                  );
 
 if(mcu_pt.BTB_ENABLE==1) begin : genblock1
-   rvdffe #(BRDATA_SIZE)  brdata2ff   (.*, .clk(clk), .en(qwen[2]),        .din(brdata_in[BRDATA_SIZE-1:0]), .dout(brdata2[BRDATA_SIZE-1:0]));
-   rvdffe #(BRDATA_SIZE)  brdata1ff   (.*, .clk(clk), .en(qwen[1]),        .din(brdata_in[BRDATA_SIZE-1:0]), .dout(brdata1[BRDATA_SIZE-1:0]));
-   rvdffe #(BRDATA_SIZE)  brdata0ff   (.*, .clk(clk), .en(qwen[0]),        .din(brdata_in[BRDATA_SIZE-1:0]), .dout(brdata0[BRDATA_SIZE-1:0]));
-   rvdffe #(MSIZE)        misc2ff     (.*, .clk(clk), .en(qwen[2]),        .din(misc_data_in[MHI:0]),        .dout(misc2[MHI:0]));
-   rvdffe #(MSIZE)        misc1ff     (.*, .clk(clk), .en(qwen[1]),        .din(misc_data_in[MHI:0]),        .dout(misc1[MHI:0]));
-   rvdffe #(MSIZE)        misc0ff     (.*, .clk(clk), .en(qwen[0]),        .din(misc_data_in[MHI:0]),        .dout(misc0[MHI:0]));
+   mcu_rvdffe #(BRDATA_SIZE)  brdata2ff   (.*, .clk(clk), .en(qwen[2]),        .din(brdata_in[BRDATA_SIZE-1:0]), .dout(brdata2[BRDATA_SIZE-1:0]));
+   mcu_rvdffe #(BRDATA_SIZE)  brdata1ff   (.*, .clk(clk), .en(qwen[1]),        .din(brdata_in[BRDATA_SIZE-1:0]), .dout(brdata1[BRDATA_SIZE-1:0]));
+   mcu_rvdffe #(BRDATA_SIZE)  brdata0ff   (.*, .clk(clk), .en(qwen[0]),        .din(brdata_in[BRDATA_SIZE-1:0]), .dout(brdata0[BRDATA_SIZE-1:0]));
+   mcu_rvdffe #(MSIZE)        misc2ff     (.*, .clk(clk), .en(qwen[2]),        .din(misc_data_in[MHI:0]),        .dout(misc2[MHI:0]));
+   mcu_rvdffe #(MSIZE)        misc1ff     (.*, .clk(clk), .en(qwen[1]),        .din(misc_data_in[MHI:0]),        .dout(misc1[MHI:0]));
+   mcu_rvdffe #(MSIZE)        misc0ff     (.*, .clk(clk), .en(qwen[0]),        .din(misc_data_in[MHI:0]),        .dout(misc0[MHI:0]));
 end
 else begin : genblock1
 
-   rvdffie #((MSIZE*3)+(BRDATA_SIZE*3))    miscff      (.*,
+   mcu_rvdffie #((MSIZE*3)+(BRDATA_SIZE*3))    miscff      (.*,
                                                         .din({qwen[2] ? {misc_data_in[MHI:0], brdata_in[BRDATA_SIZE-1:0]} : {misc2[MHI:0], brdata2[BRDATA_SIZE-1:0]},
                                                               qwen[1] ? {misc_data_in[MHI:0], brdata_in[BRDATA_SIZE-1:0]} : {misc1[MHI:0], brdata1[BRDATA_SIZE-1:0]},
                                                               qwen[0] ? {misc_data_in[MHI:0], brdata_in[BRDATA_SIZE-1:0]} : {misc0[MHI:0], brdata0[BRDATA_SIZE-1:0]}}),
@@ -237,13 +237,13 @@ end
 
   logic [31:1] q2pc, q1pc, q0pc;
 
-   rvdffe #(31)           q2pcff        (.*, .clk(clk), .en(qwen[2]),        .din(ifu_fetch_pc[31:1]),     .dout(q2pc[31:1]));
-   rvdffe #(31)           q1pcff        (.*, .clk(clk), .en(qwen[1]),        .din(ifu_fetch_pc[31:1]),     .dout(q1pc[31:1]));
-   rvdffe #(31)           q0pcff        (.*, .clk(clk), .en(qwen[0]),        .din(ifu_fetch_pc[31:1]),     .dout(q0pc[31:1]));
+   mcu_rvdffe #(31)           q2pcff        (.*, .clk(clk), .en(qwen[2]),        .din(ifu_fetch_pc[31:1]),     .dout(q2pc[31:1]));
+   mcu_rvdffe #(31)           q1pcff        (.*, .clk(clk), .en(qwen[1]),        .din(ifu_fetch_pc[31:1]),     .dout(q1pc[31:1]));
+   mcu_rvdffe #(31)           q0pcff        (.*, .clk(clk), .en(qwen[0]),        .din(ifu_fetch_pc[31:1]),     .dout(q0pc[31:1]));
 
-   rvdffe #(32)           q2ff        (.*, .clk(clk), .en(qwen[2]),        .din(ifu_fetch_data_f[31:0]),     .dout(q2[31:0]));
-   rvdffe #(32)           q1ff        (.*, .clk(clk), .en(qwen[1]),        .din(ifu_fetch_data_f[31:0]),     .dout(q1[31:0]));
-   rvdffe #(32)           q0ff        (.*, .clk(clk), .en(qwen[0]),        .din(ifu_fetch_data_f[31:0]),     .dout(q0[31:0]));
+   mcu_rvdffe #(32)           q2ff        (.*, .clk(clk), .en(qwen[2]),        .din(ifu_fetch_data_f[31:0]),     .dout(q2[31:0]));
+   mcu_rvdffe #(32)           q1ff        (.*, .clk(clk), .en(qwen[1]),        .din(ifu_fetch_data_f[31:0]),     .dout(q1[31:0]));
+   mcu_rvdffe #(32)           q0ff        (.*, .clk(clk), .en(qwen[0]),        .din(ifu_fetch_data_f[31:0]),     .dout(q0[31:0]));
 
 
    // new queue control logic

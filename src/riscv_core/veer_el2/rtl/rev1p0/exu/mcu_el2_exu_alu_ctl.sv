@@ -206,8 +206,8 @@ import mcu_el2_pkg::*;
 
 
 
-   rvdffpcie #(31) i_pc_ff      (.*, .clk(clk), .en(enable),              .din(pc_in[31:1]),    .dout(pc_ff[31:1]));   // any PC is run through here - doesn't have to be alu
-   rvdffe    #(32) i_result_ff  (.*, .clk(clk), .en(enable & valid_in),   .din(result[31:0]),   .dout(result_ff[31:0]));
+   mcu_rvdffpcie #(31) i_pc_ff      (.*, .clk(clk), .en(enable),              .din(pc_in[31:1]),    .dout(pc_ff[31:1]));   // any PC is run through here - doesn't have to be alu
+   mcu_rvdffe    #(32) i_result_ff  (.*, .clk(clk), .en(enable & valid_in),   .din(result[31:0]),   .dout(result_ff[31:0]));
 
 
 
@@ -512,7 +512,7 @@ import mcu_el2_pkg::*;
    // for a conditional br pcout[] will be the opposite of the branch prediction
    // for jal or pcall, it will be the link address pc+2 or pc+4
 
-   rvbradder ibradder (
+   mcu_rvbradder ibradder (
                      .pc     ( pc_in[31:1]    ),
                      .offset ( brimm_in[12:1] ),
                      .dout   ( pcout[31:1]    ));

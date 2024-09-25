@@ -159,12 +159,12 @@ import mcu_el2_pkg::*;
       assign lsu_double_ecc_error_m                      = double_ecc_error_hi_m   | double_ecc_error_lo_m;
 
       // Flops
-      rvdff  #(1) lsu_single_ecc_err_r    (.din(lsu_single_ecc_error_m), .dout(lsu_single_ecc_error_r), .clk(lsu_c2_r_clk), .*);
-      rvdff  #(1) lsu_double_ecc_err_r    (.din(lsu_double_ecc_error_m), .dout(lsu_double_ecc_error_r), .clk(lsu_c2_r_clk), .*);
-      rvdff  #(.WIDTH(1)) ldst_sec_lo_rff (.din(single_ecc_error_lo_any),  .dout(single_ecc_error_lo_r),  .clk(lsu_c2_r_clk), .*);
-      rvdff  #(.WIDTH(1)) ldst_sec_hi_rff (.din(single_ecc_error_hi_any),  .dout(single_ecc_error_hi_r),  .clk(lsu_c2_r_clk), .*);
-      rvdffe #(.WIDTH(mcu_pt.DCCM_DATA_WIDTH)) sec_data_hi_rff (.din(sec_data_hi_m[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(sec_data_hi_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(lsu_single_ecc_error_m | clk_override), .*);
-      rvdffe #(.WIDTH(mcu_pt.DCCM_DATA_WIDTH)) sec_data_lo_rff (.din(sec_data_lo_m[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(sec_data_lo_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(lsu_single_ecc_error_m | clk_override), .*);
+      mcu_rvdff  #(1) lsu_single_ecc_err_r    (.din(lsu_single_ecc_error_m), .dout(lsu_single_ecc_error_r), .clk(lsu_c2_r_clk), .*);
+      mcu_rvdff  #(1) lsu_double_ecc_err_r    (.din(lsu_double_ecc_error_m), .dout(lsu_double_ecc_error_r), .clk(lsu_c2_r_clk), .*);
+      mcu_rvdff  #(.WIDTH(1)) ldst_sec_lo_rff (.din(single_ecc_error_lo_any),  .dout(single_ecc_error_lo_r),  .clk(lsu_c2_r_clk), .*);
+      mcu_rvdff  #(.WIDTH(1)) ldst_sec_hi_rff (.din(single_ecc_error_hi_any),  .dout(single_ecc_error_hi_r),  .clk(lsu_c2_r_clk), .*);
+      mcu_rvdffe #(.WIDTH(mcu_pt.DCCM_DATA_WIDTH)) sec_data_hi_rff (.din(sec_data_hi_m[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(sec_data_hi_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(lsu_single_ecc_error_m | clk_override), .*);
+      mcu_rvdffe #(.WIDTH(mcu_pt.DCCM_DATA_WIDTH)) sec_data_lo_rff (.din(sec_data_lo_m[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(sec_data_lo_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(lsu_single_ecc_error_m | clk_override), .*);
 
    end
 
@@ -182,7 +182,7 @@ import mcu_el2_pkg::*;
    if (mcu_pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
 
       //Detect/Repair for Hi
-      rvecc_decode lsu_ecc_decode_hi (
+      mcu_rvecc_decode lsu_ecc_decode_hi (
          // Inputs
          .en(is_ldst_hi_any),
          .sed_ded (1'b0),    // 1 : means only detection
@@ -197,7 +197,7 @@ import mcu_el2_pkg::*;
       );
 
       //Detect/Repair for Lo
-      rvecc_decode lsu_ecc_decode_lo (
+      mcu_rvecc_decode lsu_ecc_decode_lo (
          // Inputs
          .en(is_ldst_lo_any),
          .sed_ded (1'b0),    // 1 : means only detection
@@ -211,14 +211,14 @@ import mcu_el2_pkg::*;
          .*
       );
 
-      rvecc_encode lsu_ecc_encode_hi (
+      mcu_rvecc_encode lsu_ecc_encode_hi (
          //Inputs
          .din(dccm_wdata_hi_any[mcu_pt.DCCM_DATA_WIDTH-1:0]),
          //Outputs
          .ecc_out(dccm_wdata_ecc_hi_any[mcu_pt.DCCM_ECC_WIDTH-1:0]),
          .*
       );
-      rvecc_encode lsu_ecc_encode_lo (
+      mcu_rvecc_encode lsu_ecc_encode_lo (
          //Inputs
          .din(dccm_wdata_lo_any[mcu_pt.DCCM_DATA_WIDTH-1:0]),
          //Outputs
@@ -234,8 +234,8 @@ import mcu_el2_pkg::*;
       assign double_ecc_error_lo_any = '0;
    end
 
-   rvdffe #(.WIDTH(mcu_pt.DCCM_DATA_WIDTH)) sec_data_hi_rplus1ff (.din(sec_data_hi_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(sec_data_hi_r_ff[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(ld_single_ecc_error_r | clk_override), .clk(clk), .*);
-   rvdffe #(.WIDTH(mcu_pt.DCCM_DATA_WIDTH)) sec_data_lo_rplus1ff (.din(sec_data_lo_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(sec_data_lo_r_ff[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(ld_single_ecc_error_r | clk_override), .clk(clk), .*);
+   mcu_rvdffe #(.WIDTH(mcu_pt.DCCM_DATA_WIDTH)) sec_data_hi_rplus1ff (.din(sec_data_hi_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(sec_data_hi_r_ff[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(ld_single_ecc_error_r | clk_override), .clk(clk), .*);
+   mcu_rvdffe #(.WIDTH(mcu_pt.DCCM_DATA_WIDTH)) sec_data_lo_rplus1ff (.din(sec_data_lo_r[mcu_pt.DCCM_DATA_WIDTH-1:0]), .dout(sec_data_lo_r_ff[mcu_pt.DCCM_DATA_WIDTH-1:0]), .en(ld_single_ecc_error_r | clk_override), .clk(clk), .*);
 
 
 endmodule // mcu_el2_lsu_ecc
