@@ -1876,13 +1876,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         end
     end
     for (genvar i=0; i<pt.DCCM_NUM_BANKS; i++) begin: dccm_loop
-        // --- new --- assign dccm_wr_fdata_bank[i][pt.DCCM_DATA_WIDTH-1:0] = mcu_el2_mem_export.dccm_wr_data_bank[i];
-        // --- new --- assign dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:pt.DCCM_DATA_WIDTH] = mcu_el2_mem_export.dccm_wr_ecc_bank[i];
-        // --- new --- assign mcu_el2_mem_export.dccm_bank_dout[i] = dccm_bank_fdout[i][31:0];
-        // --- new --- assign mcu_el2_mem_export.dccm_bank_ecc[i] = dccm_bank_fdout[i][38:32];
-        //assign mcu_el2_mem_export.dccm_wr_data_bank[i] = dccm_wr_fdata_bank[i][pt.DCCM_DATA_WIDTH-1:0];
-        //assign mcu_el2_mem_export.dccm_wr_ecc_bank[i] = dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:pt.DCCM_DATA_WIDTH];
-        //assign dccm_bank_fdout[i] = {mcu_el2_mem_export.dccm_bank_ecc[i], mcu_el2_mem_export.dccm_bank_dout[i]};
+
+        assign dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0] = {mcu_el2_mem_export.dccm_wr_ecc_bank[i], mcu_el2_mem_export.dccm_wr_data_bank[i]} ^ dccm_wdata_bitflip[i];
+        assign mcu_el2_mem_export.dccm_bank_dout[i] = dccm_bank_fdout[i][31:0];
+        assign mcu_el2_mem_export.dccm_bank_ecc[i] = dccm_bank_fdout[i][38:32];
 
     `ifdef VERILATOR
 
