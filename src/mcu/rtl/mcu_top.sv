@@ -12,7 +12,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License../src/riscv_core/veer_el2/rtl/z_rev1p0
+// limitations under the License.
 //********************************************************************************
 
 module mcu_top
