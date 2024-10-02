@@ -1,7 +1,7 @@
 provides: [mcu_top]
 schema_version: 2.4.0
 requires:
-  - veer_el2_rtl_pkg
+  - css_mcu0_veer_el2_rtl_pkg
 targets:
   rtl:
     directories: [$COMPILE_ROOT/rtl]

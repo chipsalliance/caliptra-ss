@@ -1,5 +1,5 @@
 ---
-provides: [veer_el2_defines_pkg]
+provides: [css_mcu0_veer_el2_defines_pkg]
 schema_version: 2.4.0
 # requires: [soc_ifc_pkg]
 targets:
@@ -24,9 +24,9 @@ targets:
       - $COMPILE_ROOT/rtl/defines/css_mcu0_common_defines.vh
       - $COMPILE_ROOT/rtl/design/lib/beh_lib.sv
 ---
-provides: [veer_el2_rtl_pkg]
+provides: [css_mcu0_veer_el2_rtl_pkg]
 schema_version: 2.4.0
-requires: [veer_el2_defines_pkg]
+requires: [css_mcu0_veer_el2_defines_pkg]
 targets:
   rtl:
     directories:
