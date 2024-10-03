@@ -2,7 +2,7 @@ provides: [caliptra_ss_top]
 schema_version: 2.4.0
 requires:
   - mcu_top
-  - mcu_el2_veer_wrapper
+  - css_mcu0_veer_el2_rtl_pkg
   - caliptra_top_tb_pkg
 targets:
   tb:

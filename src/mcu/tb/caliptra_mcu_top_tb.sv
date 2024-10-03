@@ -1248,36 +1248,36 @@ caliptra_mcu_top_tb_services #(
 `define MCU_RV_IDMA_RESP_INST caliptra_mcu_top_dut.responder_inst[`CALIPTRA_SLAVE_SEL_IDMA]
 `define MCU_RV_DDMA_RESP_INST caliptra_mcu_top_dut.responder_inst[`CALIPTRA_SLAVE_SEL_DDMA]
 task force_ahb_dma_read(input logic [31:0] address);
-    while(`MCU_RV_INST.dma_hsel) @(posedge core_clk);
-    force `MCU_RV_IDMA_RESP_INST.hreadyout = 1'b0;
-    force `MCU_RV_DDMA_RESP_INST.hreadyout = 1'b0;
+    while(`css_mcu0_RV_INST.dma_hsel) @(posedge core_clk);
+    force `css_mcu0_RV_IDMA_RESP_INST.hreadyout = 1'b0;
+    force `css_mcu0_RV_DDMA_RESP_INST.hreadyout = 1'b0;
 
-    force `MCU_RV_INST.dma_haddr = address;
-    force `MCU_RV_INST.dma_hsize = 3'b010; // 4-bytes
-    force `MCU_RV_INST.dma_hwrite = 1'b0;
-    force `MCU_RV_INST.dma_hwdata = '0;
-    force `MCU_RV_INST.dma_hreadyin = 1'b1;
-    force `MCU_RV_INST.dma_hsel = 1'b1;
-    force `MCU_RV_INST.dma_htrans = 2'b10;
+    force `css_mcu0_RV_INST.dma_haddr = address;
+    force `css_mcu0_RV_INST.dma_hsize = 3'b010; // 4-bytes
+    force `css_mcu0_RV_INST.dma_hwrite = 1'b0;
+    force `css_mcu0_RV_INST.dma_hwdata = '0;
+    force `css_mcu0_RV_INST.dma_hreadyin = 1'b1;
+    force `css_mcu0_RV_INST.dma_hsel = 1'b1;
+    force `css_mcu0_RV_INST.dma_htrans = 2'b10;
 
     // Wait for command to be accepted
-    do @(posedge core_clk); while(!`MCU_RV_INST.dma_hreadyout);
-    force   `MCU_RV_INST.dma_htrans = 2'b00;
+    do @(posedge core_clk); while(!`css_mcu0_RV_INST.dma_hreadyout);
+    force   `css_mcu0_RV_INST.dma_htrans = 2'b00;
     // Wait for response to be provided
-    do @(posedge core_clk); while(!`MCU_RV_INST.dma_hreadyout);
-    $display("[%t] AHB DMA FORCE READ: Address 0x%x Data 0x%x Resp 0x%x", $time, address, `MCU_RV_INST.dma_hrdata, `MCU_RV_INST.dma_hresp);
-    if (`MCU_RV_INST.dma_hresp) 
+    do @(posedge core_clk); while(!`css_mcu0_RV_INST.dma_hreadyout);
+    $display("[%t] AHB DMA FORCE READ: Address 0x%x Data 0x%x Resp 0x%x", $time, address, `css_mcu0_RV_INST.dma_hrdata, `css_mcu0_RV_INST.dma_hresp);
+    if (`css_mcu0_RV_INST.dma_hresp) 
         rv_dma_resp_error = 1'b1;
-    release `MCU_RV_IDMA_RESP_INST.hreadyout;
-    release `MCU_RV_DDMA_RESP_INST.hreadyout;
+    release `css_mcu0_RV_IDMA_RESP_INST.hreadyout;
+    release `css_mcu0_RV_DDMA_RESP_INST.hreadyout;
 
-    release `MCU_RV_INST.dma_htrans;
-    release `MCU_RV_INST.dma_haddr;
-    release `MCU_RV_INST.dma_hsize;
-    release `MCU_RV_INST.dma_hwrite;
-    release `MCU_RV_INST.dma_hwdata;
-    release `MCU_RV_INST.dma_hsel;
-    release `MCU_RV_INST.dma_hreadyin;
+    release `css_mcu0_RV_INST.dma_htrans;
+    release `css_mcu0_RV_INST.dma_haddr;
+    release `css_mcu0_RV_INST.dma_hsize;
+    release `css_mcu0_RV_INST.dma_hwrite;
+    release `css_mcu0_RV_INST.dma_hwdata;
+    release `css_mcu0_RV_INST.dma_hsel;
+    release `css_mcu0_RV_INST.dma_hreadyin;
 endtask
 
 task force_ahb_dma_loop_read(input logic [31:0] start_addr, input logic [19:0] count);
