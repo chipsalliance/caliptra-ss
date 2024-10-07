@@ -302,7 +302,7 @@ addrmap mci_reg {
                 [br]With a value of 0, only the Caliptra AXI ID is allowed to access the Updateable Execution SRAM region in the MCU.
                 [br]Writing 1 to this register enables the MCU LSU and IFU AXI IDs to access the Updateable Execution SRAM Region.
                 AXI IDs are provided as integration parameter/macro to MCU. 
-                Observing a value of 1 in this register (after exiting a reset) also indicates to MCU ROM that it may perform context switch to RT image."
+                Observing a value of 1 in this register (after exiting a reset) also indicates to MCU ROM that it may perform context switch to RT image.";
         field {/*TODO*/ sw=rw;} lock=0;
     } RUNTIME_LOCK;
 
@@ -366,4 +366,4 @@ addrmap mci_reg {
         desc = "Set of reserved registers for survivability";
         field {sw=rw; resetsignal=mci_pwrgood;} LOCK[32]=0;
     } RSVD_RW_L_S_REG_LOCK[2];
-}
+};
