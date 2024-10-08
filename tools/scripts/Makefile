@@ -302,12 +302,16 @@ else
 mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	@echo Building $(TESTNAME)
 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
-	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+	-$(GCC_PREFIX)-objcopy --dump-section .dccm=dccm_section.bin $(TESTNAME).exe
+	-$(GCC_PREFIX)-objcopy -O verilog -I binary dccm_section.bin mcu_dccm.hex
+	$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
 	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
 	@echo Completed building $(TESTNAME)
 
+
+# $(GCC_PREFIX)-objcopy -O verilog -j .dccm --change-section-lma .dccm-0x50000000 --no-change-warnings $(TESTNAME).exe mcu_dccm.hex
 # cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.dis mcu_hello_world.dis
 # cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.sym mcu_hello_world.sym
 # cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.exe mcu_hello_world.exe
