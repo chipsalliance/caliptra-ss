@@ -10,9 +10,9 @@ SECTIONS {
   . = 0x80000000;
   .text   : { *(.text*) }
   _text_end = .;
-  
+
   . = 0x80010000;
-  .data  :  { *(.*data) *(.rodata*) *(.srodata*) *(.sbss) }
+  .data  :  { *(.data*) }
   _data_end = .;
 
   . = 0x80011000;
@@ -22,6 +22,5 @@ SECTIONS {
   STACK = ALIGN(16) + 0x1000;
   
   . = 0xd0580000;
-  .data.io .  : { *(.data.io) }
-
+  .data.io : { *(.data.io) }
 }
