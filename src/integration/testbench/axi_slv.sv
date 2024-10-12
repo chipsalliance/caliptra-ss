@@ -43,7 +43,7 @@ module axi_slv #(
   bit [7:0] mem[bit [31:0]];
   bit [63:0] memdata;
   bit        rlast_local;
-  logic [31:0]            awaddr_aligned;
+  logic [31:0]            awaddr_aligned,awaddr_aligned_r;
   logic [31:0]            araddr_aligned;
   always_comb begin
       awaddr_aligned = {awaddr[31:3],3'b000};
@@ -87,7 +87,8 @@ module axi_slv #(
       rlast_local  <= 1'b0;
     end
 
-    if(awvalid) begin
+    if(awvalid) awaddr_aligned_r <= awaddr_aligned;
+    if(awvalid&&wvalid) begin
         if(wstrb[7]) mem[awaddr_aligned+7] = wdata[63:56];
         if(wstrb[6]) mem[awaddr_aligned+6] = wdata[55:48];
         if(wstrb[5]) mem[awaddr_aligned+5] = wdata[47:40];
@@ -96,6 +97,16 @@ module axi_slv #(
         if(wstrb[2]) mem[awaddr_aligned+2] = wdata[23:16];
         if(wstrb[1]) mem[awaddr_aligned+1] = wdata[15:08];
         if(wstrb[0]) mem[awaddr_aligned+0] = wdata[07:00];
+    end
+    else if(wvalid) begin
+        if(wstrb[7]) mem[awaddr_aligned_r+7] = wdata[63:56];
+        if(wstrb[6]) mem[awaddr_aligned_r+6] = wdata[55:48];
+        if(wstrb[5]) mem[awaddr_aligned_r+5] = wdata[47:40];
+        if(wstrb[4]) mem[awaddr_aligned_r+4] = wdata[39:32];
+        if(wstrb[3]) mem[awaddr_aligned_r+3] = wdata[31:24];
+        if(wstrb[2]) mem[awaddr_aligned_r+2] = wdata[23:16];
+        if(wstrb[1]) mem[awaddr_aligned_r+1] = wdata[15:08];
+        if(wstrb[0]) mem[awaddr_aligned_r+0] = wdata[07:00];
     end
   end
 
