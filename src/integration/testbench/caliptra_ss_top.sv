@@ -348,8 +348,8 @@ import caliptra_top_tb_pkg::*;
 
     `endif
         string                      abi_reg[32]; // ABI register names
-        mcu_el2_mem_if                  mcu_el2_mem_export ();
-        el2_mem_if                  caliptra_el2_mem_export ();        
+        css_mcu0_el2_mem_if         css_mcu0_el2_mem_export ();
+        el2_mem_if                  caliptra_el2_mem_export (); 
 
         logic [pt.ICCM_NUM_BANKS-1:0][                   38:0] iccm_bank_wr_fdata;
         logic [pt.ICCM_NUM_BANKS-1:0][                   38:0] iccm_bank_fdout;
@@ -367,6 +367,7 @@ import caliptra_top_tb_pkg::*;
         assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
 
         parameter MAX_CYCLES = 200_000;
+        bit       hex_file_is_empty;
 
         integer fd, tp, el;
 
@@ -429,6 +430,10 @@ import caliptra_top_tb_pkg::*;
                 $display("Disable ECC error injection");
                 error_injection_mode <= '0;
             end
+            // ECC error injection - FIXME
+            error_injection_mode.dccm_single_bit_error <= 1'b0;
+            error_injection_mode.dccm_double_bit_error <= 1'b0;
+
             // Memory signature dump
             if(mailbox_write && (mailbox_data[7:0] == 8'hFF || mailbox_data[7:0] == 8'h01)) begin
                 if (mem_signature_begin < mem_signature_end) begin
@@ -530,12 +535,19 @@ import caliptra_top_tb_pkg::*;
 
             $readmemh("mcu_lmem.hex",     lmem.mem);
             $readmemh("mcu_program.hex",  imem.mem);
+
             tp = $fopen("trace_port.csv","w");
             el = $fopen("mcu_exec.log","w");
             $fwrite (el, "//   Cycle : #inst    0    pc    opcode    reg=value    csr=value     ; mnemonic\n");
             fd = $fopen("mcu_console.log","w");
             commit_count = 0;
-            preload_dccm();
+
+            css_mcu0_dummy_dccm_preloader.ram = '{default:8'h0};
+            hex_file_is_empty = $system("test -s mcu_dccm.hex");
+            if (!hex_file_is_empty) $readmemh("mcu_dccm.hex",css_mcu0_dummy_dccm_preloader.ram,0,32'h0001_FFFF);
+
+            // preload_dccm();
+            preload_css_mcu0_dccm();
             preload_iccm();
 
     // `ifndef VERILATOR
@@ -659,7 +671,7 @@ import caliptra_top_tb_pkg::*;
         logic assert_rst_flag_from_service;
         logic deassert_rst_flag_from_service;
 
-        el2_mem_if el2_mem_export ();
+        
 
         caliptra_top_tb_soc_bfm #(
             .SKIP_BRINGUP(1)
@@ -753,7 +765,7 @@ import caliptra_top_tb_pkg::*;
             .uart_rx(uart_loopback),
         `endif
 
-            .el2_mem_export(el2_mem_export.veer_sram_src),
+            .el2_mem_export(caliptra_el2_mem_export.veer_sram_src),
 
             .ready_for_fuses(ready_for_fuses),
             .ready_for_fw_push(ready_for_fw_push),
@@ -820,7 +832,7 @@ import caliptra_top_tb_pkg::*;
             .cptra_rst_b(cptra_rst_b),
 
             // Caliptra Memory Export Interface
-            .el2_mem_export (el2_mem_export.veer_sram_sink),
+            .el2_mem_export (caliptra_el2_mem_export.veer_sram_sink),
 
             //SRAM interface for mbox
             .mbox_sram_cs   (mbox_sram_cs   ),
@@ -1344,23 +1356,23 @@ import caliptra_top_tb_pkg::*;
         .dec_tlu_perfcnt2       (),
         .dec_tlu_perfcnt3       (),
 
-        .mem_clk                (mcu_el2_mem_export.clk),
+        .mem_clk                (css_mcu0_el2_mem_export.clk),
 
-        .iccm_clken             (mcu_el2_mem_export.iccm_clken),
-        .iccm_wren_bank         (mcu_el2_mem_export.iccm_wren_bank),
-        .iccm_addr_bank         (mcu_el2_mem_export.iccm_addr_bank),
-        .iccm_bank_wr_data      (mcu_el2_mem_export.iccm_bank_wr_data),
-        .iccm_bank_wr_ecc       (mcu_el2_mem_export.iccm_bank_wr_ecc),
-        .iccm_bank_dout         (mcu_el2_mem_export.iccm_bank_dout),
-        .iccm_bank_ecc          (mcu_el2_mem_export.iccm_bank_ecc),
+        .iccm_clken             (css_mcu0_el2_mem_export.iccm_clken),
+        .iccm_wren_bank         (css_mcu0_el2_mem_export.iccm_wren_bank),
+        .iccm_addr_bank         (css_mcu0_el2_mem_export.iccm_addr_bank),
+        .iccm_bank_wr_data      (css_mcu0_el2_mem_export.iccm_bank_wr_data),
+        .iccm_bank_wr_ecc       (css_mcu0_el2_mem_export.iccm_bank_wr_ecc),
+        .iccm_bank_dout         (css_mcu0_el2_mem_export.iccm_bank_dout),
+        .iccm_bank_ecc          (css_mcu0_el2_mem_export.iccm_bank_ecc),
 
-        .dccm_clken             (mcu_el2_mem_export.dccm_clken),
-        .dccm_wren_bank         (mcu_el2_mem_export.dccm_wren_bank),
-        .dccm_addr_bank         (mcu_el2_mem_export.dccm_addr_bank),
-        .dccm_wr_data_bank      (mcu_el2_mem_export.dccm_wr_data_bank),
-        .dccm_wr_ecc_bank       (mcu_el2_mem_export.dccm_wr_ecc_bank),
-        .dccm_bank_dout         (mcu_el2_mem_export.dccm_bank_dout),
-        .dccm_bank_ecc          (mcu_el2_mem_export.dccm_bank_ecc),
+        .dccm_clken             (css_mcu0_el2_mem_export.dccm_clken),
+        .dccm_wren_bank         (css_mcu0_el2_mem_export.dccm_wren_bank),
+        .dccm_addr_bank         (css_mcu0_el2_mem_export.dccm_addr_bank),
+        .dccm_wr_data_bank      (css_mcu0_el2_mem_export.dccm_wr_data_bank),
+        .dccm_wr_ecc_bank       (css_mcu0_el2_mem_export.dccm_wr_ecc_bank),
+        .dccm_bank_dout         (css_mcu0_el2_mem_export.dccm_bank_dout),
+        .dccm_bank_ecc          (css_mcu0_el2_mem_export.dccm_bank_ecc),
 
         .iccm_ecc_single_error  (),
         .iccm_ecc_double_error  (),
@@ -1491,9 +1503,9 @@ import caliptra_top_tb_pkg::*;
 
 
     //=========================================================================-
-    // AXI MEM instance
+    // AXI MEM instance : IMEM
     //=========================================================================-
-
+    //axi_slv #(.TAGW(`css_mcu0_RV_LSU_BUS_TAG)) imem(
 
     axi_slv #(.TAGW(8)) imem(
 
@@ -1539,9 +1551,14 @@ import caliptra_top_tb_pkg::*;
 
     // defparam lmem.TAGW =`css_mcu0_RV_LSU_BUS_TAG;
 
-    //axi_slv #(.TAGW(`css_mcu0_RV_LSU_BUS_TAG)) lmem(
-    // -- Addtional 3 required for QVIP Interconnect
+
+    //=========================================================================-
+    // AXI MEM instance : LMEM
+    // Addtional 3 required for QVIP Interconnect
     // `css_mcu0_RV_LSU_BUS_TAG + 3
+    //=========================================================================-
+    //axi_slv #(.TAGW(`css_mcu0_RV_LSU_BUS_TAG)) lmem(
+
     axi_slv #(.TAGW(8)) lmem(
         .aclk(core_clk),
         .rst_l(rst_l),
@@ -1616,69 +1633,47 @@ task preload_iccm;
 endtask
 
 
-task preload_dccm;
-    bit[31:0] data;
-    bit[31:0] addr, saddr, eaddr;
+// task preload_dccm;
+//     bit[31:0] data;
+//     bit[31:0] addr, saddr, eaddr;
 
-    /*
-    addresses:
-     0xffff_fff8 - DCCM start address to load
-     0xffff_fffc - DCCM end address to load
-    */
+//     /*
+//     addresses:
+//      0xffff_fff8 - DCCM start address to load
+//      0xffff_fffc - DCCM end address to load
+//     */
 
-    addr = 'hffff_fff8;
-    saddr = {lmem.mem[addr+3],lmem.mem[addr+2],lmem.mem[addr+1],lmem.mem[addr]};
-    if (saddr < `css_mcu0_RV_DCCM_SADR || saddr > `css_mcu0_RV_DCCM_EADR) return;
-    `ifndef MCU_RV_DCCM_ENABLE
-        $display("********************************************************");
-        $display("DCCM preload: there is no DCCM in VeeR, terminating !!!");
-        $display("********************************************************");
-        $finish;
-    `endif
-    addr += 4;
-    eaddr = {lmem.mem[addr+3],lmem.mem[addr+2],lmem.mem[addr+1],lmem.mem[addr]};
-    $display("DCCM pre-load from %h to %h", saddr, eaddr);
+//     addr = 'hffff_fff8;
+//     saddr = {lmem.mem[addr+3],lmem.mem[addr+2],lmem.mem[addr+1],lmem.mem[addr]};
+//     if (saddr < `css_mcu0_RV_DCCM_SADR || saddr > `css_mcu0_RV_DCCM_EADR) return;
+//     `ifndef MCU_RV_DCCM_ENABLE
+//         $display("********************************************************");
+//         $display("DCCM preload: there is no DCCM in VeeR, terminating !!!");
+//         $display("********************************************************");
+//         $finish;
+//     `endif
+//     addr += 4;
+//     eaddr = {lmem.mem[addr+3],lmem.mem[addr+2],lmem.mem[addr+1],lmem.mem[addr]};
+//     $display("DCCM pre-load from %h to %h", saddr, eaddr);
 
-    for(addr=saddr; addr <= eaddr; addr+=4) begin
-        data = {lmem.mem[addr+3],lmem.mem[addr+2],lmem.mem[addr+1],lmem.mem[addr]};
-        slam_dccm_ram(addr, data == 0 ? 0 : {riscv_ecc32(data),data});
-    end
-endtask
+//     for(addr=saddr; addr <= eaddr; addr+=4) begin
+//         data = {lmem.mem[addr+3],lmem.mem[addr+2],lmem.mem[addr+1],lmem.mem[addr]};
+//         slam_dccm_ram(addr, data == 0 ? 0 : {riscv_ecc32(data),data});
+//     end
+// endtask
 
 
 
 `ifdef VERILATOR
-`define MCU_DRAM(bk) Gen_dccm_enable.dccm_loop[bk].ram.ram_core
+`define MCU_DRAM(bk) css_mcu0_dccm_enable.dccm_loop[bk].ram.ram_core
 `define MCU_IRAM(bk) Gen_iccm_enable.iccm_loop[bk].iccm_bank.ram_core
 `else
-`define MCU_DRAM(bk) Gen_dccm_enable.dccm_loop[bk].dccm.dccm_bank.ram_core
+`define MCU_DRAM(bk) css_mcu0_dccm_enable.dccm_loop[bk].dccm.dccm_bank.ram_core
 `define MCU_IRAM(bk) Gen_iccm_enable.iccm_loop[bk].iccm.iccm_bank.ram_core
 `endif
 
 
-task slam_dccm_ram(input [31:0] addr, input[38:0] data);
-    int bank, indx;
-    bank = get_dccm_bank(addr, indx);
-    `ifdef MCU_RV_DCCM_ENABLE
-    case(bank)
-    0: `MCU_DRAM(0)[indx] = data;
-    1: `MCU_DRAM(1)[indx] = data;
-    `ifdef MCU_RV_DCCM_NUM_BANKS_4
-    2: `MCU_DRAM(2)[indx] = data;
-    3: `MCU_DRAM(3)[indx] = data;
-    `endif
-    `ifdef MCU_RV_DCCM_NUM_BANKS_8
-    2: `MCU_DRAM(2)[indx] = data;
-    3: `MCU_DRAM(3)[indx] = data;
-    4: `MCU_DRAM(4)[indx] = data;
-    5: `MCU_DRAM(5)[indx] = data;
-    6: `MCU_DRAM(6)[indx] = data;
-    7: `MCU_DRAM(7)[indx] = data;
-    `endif
-    endcase
-    `endif
-    //$display("Writing bank %0d indx=%0d A=%h, D=%h",bank, indx, addr, data);
-endtask
+
 
 
 task slam_iccm_ram( input[31:0] addr, input[38:0] data);
@@ -1768,13 +1763,13 @@ function[6:0] riscv_ecc32(input[31:0] data);
 endfunction
 
 function int get_dccm_bank(input[31:0] addr,  output int bank_idx);
-    `ifdef MCU_RV_DCCM_NUM_BANKS_2
+    `ifdef css_mcu0_RV_DCCM_NUM_BANKS_2
         bank_idx = int'(addr[`css_mcu0_RV_DCCM_BITS-1:3]);
         return int'( addr[2]);
-    `elsif MCU_RV_DCCM_NUM_BANKS_4
+    `elsif css_mcu0_RV_DCCM_NUM_BANKS_4
         bank_idx = int'(addr[`css_mcu0_RV_DCCM_BITS-1:4]);
         return int'(addr[3:2]);
-    `elsif MCU_RV_DCCM_NUM_BANKS_8
+    `elsif css_mcu0_RV_DCCM_NUM_BANKS_8
         bank_idx = int'(addr[`css_mcu0_RV_DCCM_BITS-1:5]);
         return int'( addr[4:2]);
     `endif
@@ -1848,10 +1843,101 @@ task dump_signature ();
         $fclose(fp);
 endtask
 
+
+
+// -- DCCM PRELOAD
+caliptra_sram #(
+     .DEPTH     (16384        ), // 128KiB
+     .DATA_WIDTH(64           ),
+     .ADDR_WIDTH($clog2(16384))
+
+) css_mcu0_dummy_dccm_preloader (
+    .clk_i   (core_clk),
+
+    .cs_i    (        ),
+    .we_i    (        ),
+    .addr_i  (        ),
+    .wdata_i (        ),
+    .rdata_o (        )
+);
+
+task static init_css_mcu0_dccm;
+    `ifdef css_mcu0_RV_DCCM_ENABLE
+        `MCU_DRAM(0) = '{default:39'h0};
+        `MCU_DRAM(1) = '{default:39'h0};
+    `ifdef css_mcu0_RV_DCCM_NUM_BANKS_4
+        `MCU_DRAM(2) = '{default:39'h0};
+        `MCU_DRAM(3) = '{default:39'h0};
+    `endif
+    `ifdef css_mcu0_RV_DCCM_NUM_BANKS_8
+        `MCU_DRAM(4) = '{default:39'h0};
+        `MCU_DRAM(5) = '{default:39'h0};
+        `MCU_DRAM(6) = '{default:39'h0};
+        `MCU_DRAM(7) = '{default:39'h0};
+    `endif
+    `endif
+endtask
+
+task slam_dccm_ram(input [31:0] addr, input[38:0] data);
+    int bank, indx;
+    bank = get_dccm_bank(addr, indx);
+    `ifdef css_mcu0_RV_DCCM_ENABLE
+    case(bank)
+    0: `MCU_DRAM(0)[indx] = data;
+    1: `MCU_DRAM(1)[indx] = data;
+    `ifdef css_mcu0_RV_DCCM_NUM_BANKS_4
+    2: `MCU_DRAM(2)[indx] = data;
+    3: `MCU_DRAM(3)[indx] = data;
+    `endif
+    `ifdef css_mcu0_RV_DCCM_NUM_BANKS_8
+    2: `MCU_DRAM(2)[indx] = data;
+    3: `MCU_DRAM(3)[indx] = data;
+    4: `MCU_DRAM(4)[indx] = data;
+    5: `MCU_DRAM(5)[indx] = data;
+    6: `MCU_DRAM(6)[indx] = data;
+    7: `MCU_DRAM(7)[indx] = data;
+    `endif
+    endcase
+    `endif
+    //$display("Writing bank %0d indx=%0d A=%h, D=%h",bank, indx, addr, data);
+endtask
+
+task static preload_css_mcu0_dccm;
+    bit[31:0] data;
+    bit[31:0] addr, saddr, eaddr;
+
+    `ifndef VERILATOR
+    init_css_mcu0_dccm();
+    `endif
+    saddr = `css_mcu0_RV_DCCM_SADR;
+    if (saddr < `css_mcu0_RV_DCCM_SADR || saddr > `css_mcu0_RV_DCCM_EADR) return;
+    `ifndef css_mcu0_RV_DCCM_ENABLE
+        $display("********************************************************");
+        $display("DCCM preload: there is no DCCM in VeeR, terminating !!!");
+        $display("********************************************************");
+        $finish;
+    `endif
+    eaddr = `css_mcu0_RV_DCCM_EADR;
+    $display("CSS MCU0 DCCM pre-load from %h to %h", saddr, eaddr);
+
+    for(addr=saddr; addr <= eaddr; addr+=4) begin
+        // FIXME hardcoded address indices?
+        data = {css_mcu0_dummy_dccm_preloader.ram [addr[16:3]] [{addr[2],2'h3}],
+                css_mcu0_dummy_dccm_preloader.ram [addr[16:3]] [{addr[2],2'h2}],
+                css_mcu0_dummy_dccm_preloader.ram [addr[16:3]] [{addr[2],2'h1}],
+                css_mcu0_dummy_dccm_preloader.ram [addr[16:3]] [{addr[2],2'h0}]};
+        slam_dccm_ram(addr, data == 0 ? 0 : {riscv_ecc32(data),data});
+    end
+    $display("CSS MCU0 DCCM pre-load completed");
+
+endtask
+
+
+
 //////////////////////////////////////////////////////
 // DCCM
 //
-if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
+if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
     `define MCU_LOCAL_DCCM_RAM_TEST_PORTS   .TEST1   (1'b0   ), \
                                             .RME     (1'b0   ), \
                                             .RM      (4'b0000), \
@@ -1866,29 +1952,30 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
     int ii;
     localparam DCCM_INDEX_DEPTH = ((pt.DCCM_SIZE)*1024)/((pt.DCCM_BYTE_WIDTH)*(pt.DCCM_NUM_BANKS));  // Depth of memory bank
     // 8 Banks, 16KB each (2048 x 72)
-    always_ff @(mcu_el2_mem_export.clk) begin : inject_dccm_ecc_error
-        if (~error_injection_mode.dccm_single_bit_error && ~error_injection_mode.dccm_double_bit_error) begin
-            dccm_wdata_bitflip <= '{default:0};
-        end else if (mcu_el2_mem_export.dccm_clken & mcu_el2_mem_export.dccm_wren_bank) begin
-            for (ii=0; ii<pt.DCCM_NUM_BANKS; ii++) begin: dccm_bitflip_injection_loop
-                dccm_wdata_bitflip[ii] <= get_bitflip_mask(error_injection_mode.dccm_double_bit_error);
-            end
-        end
+    always_ff @(css_mcu0_el2_mem_export.clk) begin : inject_dccm_ecc_error
+        // if (~error_injection_mode.dccm_single_bit_error && ~error_injection_mode.dccm_double_bit_error) begin
+        //     dccm_wdata_bitflip <= '{default:0};
+        // end else if (css_mcu0_el2_mem_export.dccm_clken & css_mcu0_el2_mem_export.dccm_wren_bank) begin
+        //     for (ii=0; ii<pt.DCCM_NUM_BANKS; ii++) begin: dccm_bitflip_injection_loop
+        //         dccm_wdata_bitflip[ii] <= get_bitflip_mask(error_injection_mode.dccm_double_bit_error);
+        //     end
+        // end
+        dccm_wdata_bitflip <= '{default:0};
     end
     for (genvar i=0; i<pt.DCCM_NUM_BANKS; i++) begin: dccm_loop
 
-        assign dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0] = {mcu_el2_mem_export.dccm_wr_ecc_bank[i], mcu_el2_mem_export.dccm_wr_data_bank[i]} ^ dccm_wdata_bitflip[i];
-        assign mcu_el2_mem_export.dccm_bank_dout[i] = dccm_bank_fdout[i][31:0];
-        assign mcu_el2_mem_export.dccm_bank_ecc[i] = dccm_bank_fdout[i][38:32];
+        assign dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0] = {css_mcu0_el2_mem_export.dccm_wr_ecc_bank[i], css_mcu0_el2_mem_export.dccm_wr_data_bank[i]} ^ dccm_wdata_bitflip[i];
+        assign css_mcu0_el2_mem_export.dccm_bank_dout[i] = dccm_bank_fdout[i][31:0];
+        assign css_mcu0_el2_mem_export.dccm_bank_ecc[i] = dccm_bank_fdout[i][38:32];
 
     `ifdef VERILATOR
 
             el2_ram #(DCCM_INDEX_DEPTH,39)  ram (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -1901,10 +1988,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         if (DCCM_INDEX_DEPTH == 32768) begin : dccm
 	 	 	 	 css_mcu0_ram_32768x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -1916,10 +2003,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         else if (DCCM_INDEX_DEPTH == 16384) begin : dccm
 	 	 	 	 css_mcu0_ram_16384x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -1931,10 +2018,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         else if (DCCM_INDEX_DEPTH == 8192) begin : dccm
 	 	 	 	 css_mcu0_ram_8192x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -1946,10 +2033,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         else if (DCCM_INDEX_DEPTH == 4096) begin : dccm
 	 	 	 	 css_mcu0_ram_4096x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -1961,10 +2048,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         else if (DCCM_INDEX_DEPTH == 3072) begin : dccm
 	 	 	 	 css_mcu0_ram_3072x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -1976,10 +2063,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         else if (DCCM_INDEX_DEPTH == 2048) begin : dccm
 	 	 	 	 css_mcu0_ram_2048x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -1991,10 +2078,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         else if (DCCM_INDEX_DEPTH == 1024) begin : dccm
 	 	 	 	 css_mcu0_ram_1024x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2006,10 +2093,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         else if (DCCM_INDEX_DEPTH == 512) begin : dccm
 	 	 	 	 css_mcu0_ram_512x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2021,10 +2108,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         else if (DCCM_INDEX_DEPTH == 256) begin : dccm
 	 	 	 	 css_mcu0_ram_256x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2036,10 +2123,10 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         else if (DCCM_INDEX_DEPTH == 128) begin : dccm
 	 	 	 	 css_mcu0_ram_128x39  dccm_bank (
                                     // Primary ports
-                                    .ME(mcu_el2_mem_export.dccm_clken[i]),
-                                    .CLK(mcu_el2_mem_export.clk),
-                                    .WE(mcu_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(mcu_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(css_mcu0_el2_mem_export.clk),
+                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2050,7 +2137,7 @@ if (pt.DCCM_ENABLE == 1) begin: Gen_dccm_enable
         end
     `endif
     end : dccm_loop
-end :Gen_dccm_enable
+end :css_mcu0_dccm_enable
 
 //////////////////////////////////////////////////////
 // ICCM
@@ -2059,32 +2146,32 @@ if (pt.ICCM_ENABLE) begin : Gen_iccm_enable
 
 logic [pt.ICCM_NUM_BANKS-1:0] [38:0] iccm_wdata_bitflip;
 int jj;
-always_ff @(mcu_el2_mem_export.clk) begin : inject_iccm_ecc_error
+always_ff @(css_mcu0_el2_mem_export.clk) begin : inject_iccm_ecc_error
     if (~error_injection_mode.iccm_single_bit_error && ~error_injection_mode.iccm_double_bit_error) begin
         iccm_wdata_bitflip <= '{default:0};
-    end else if (mcu_el2_mem_export.iccm_clken & mcu_el2_mem_export.iccm_wren_bank) begin
+    end else if (css_mcu0_el2_mem_export.iccm_clken & css_mcu0_el2_mem_export.iccm_wren_bank) begin
         for (jj=0; jj<pt.ICCM_NUM_BANKS; jj++) begin: iccm_bitflip_injection_loop
             iccm_wdata_bitflip[jj] <= get_bitflip_mask(error_injection_mode.iccm_double_bit_error);
         end
     end
 end
 for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
-    // -- new --- assign iccm_bank_wr_fdata[i][31:0] = mcu_el2_mem_export.iccm_bank_wr_data[i];
-    // -- new --- assign iccm_bank_wr_fdata[i][38:32] = mcu_el2_mem_export.iccm_bank_wr_ecc[i];
-    // -- new --- assign mcu_el2_mem_export.iccm_bank_dout[i] = iccm_bank_fdout[i][31:0];
-    // -- new --- assign mcu_el2_mem_export.iccm_bank_ecc[i] = iccm_bank_fdout[i][38:32];
-    //assign mcu_el2_mem_export.iccm_bank_wr_data[i] = iccm_bank_wr_fdata[i][31:0];
-    //assign mcu_el2_mem_export.iccm_bank_wr_ecc[i] = iccm_bank_wr_fdata[i][37:32];
-    //assign iccm_bank_fdout[i] = {mcu_el2_mem_export.iccm_bank_ecc[i], mcu_el2_mem_export.iccm_bank_dout[i]};
+    // -- new --- assign iccm_bank_wr_fdata[i][31:0] = css_mcu0_el2_mem_export.iccm_bank_wr_data[i];
+    // -- new --- assign iccm_bank_wr_fdata[i][38:32] = css_mcu0_el2_mem_export.iccm_bank_wr_ecc[i];
+    // -- new --- assign css_mcu0_el2_mem_export.iccm_bank_dout[i] = iccm_bank_fdout[i][31:0];
+    // -- new --- assign css_mcu0_el2_mem_export.iccm_bank_ecc[i] = iccm_bank_fdout[i][38:32];
+    //assign css_mcu0_el2_mem_export.iccm_bank_wr_data[i] = iccm_bank_wr_fdata[i][31:0];
+    //assign css_mcu0_el2_mem_export.iccm_bank_wr_ecc[i] = iccm_bank_wr_fdata[i][37:32];
+    //assign iccm_bank_fdout[i] = {css_mcu0_el2_mem_export.iccm_bank_ecc[i], css_mcu0_el2_mem_export.iccm_bank_dout[i]};
 
     `ifdef VERILATOR
 
     el2_ram #(.depth(1<<pt.ICCM_INDEX_BITS), .width(39)) iccm_bank (
                                         // Primary ports
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2105,10 +2192,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         if (pt.ICCM_INDEX_BITS == 6 ) begin : iccm
 	 	 	 	 css_mcu0_ram_64x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2129,10 +2216,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
     else if (pt.ICCM_INDEX_BITS == 7 ) begin : iccm
 	 	 	 	 css_mcu0_ram_128x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2153,10 +2240,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 8 ) begin : iccm
 	 	 	 	 css_mcu0_ram_256x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2176,10 +2263,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 9 ) begin : iccm
 	 	 	 	 css_mcu0_ram_512x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2199,10 +2286,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 10 ) begin : iccm
 	 	 	 	 css_mcu0_ram_1024x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2222,10 +2309,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 11 ) begin : iccm
 	 	 	 	 css_mcu0_ram_2048x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2245,10 +2332,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 12 ) begin : iccm
 	 	 	 	 css_mcu0_ram_4096x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2268,10 +2355,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 13 ) begin : iccm
 	 	 	 	 css_mcu0_ram_8192x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2291,10 +2378,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 14 ) begin : iccm
 	 	 	 	 css_mcu0_ram_16384x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2314,10 +2401,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else begin : iccm
 	 	 	 	 css_mcu0_ram_32768x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(mcu_el2_mem_export.clk),
-                                        .ME(mcu_el2_mem_export.iccm_clken[i]),
-                                        .WE(mcu_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(mcu_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(css_mcu0_el2_mem_export.clk),
+                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
