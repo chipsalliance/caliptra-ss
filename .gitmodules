@@ -1,4 +1,10 @@
-[submodule "caliptra-rtl"]
-	path = caliptra-rtl
-	url = git@github.com:chipsalliance/caliptra-rtl.git
+[submodule "third_party/caliptra-rtl"]
+	path = third_party/caliptra-rtl
+	url = https://github.com/chipsalliance/caliptra-rtl
 	branch = main
+[submodule "third_party/i3c-core"]
+	path = third_party/i3c-core
+	url = https://github.com/chipsalliance/i3c-core.git
+[submodule "third_party/cocotbext-i3c"]
+	path = third_party/cocotbext-i3c
+	url = https://github.com/antmicro/cocotbext-i3c.git
