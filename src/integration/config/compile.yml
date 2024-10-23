@@ -42,7 +42,6 @@ global:
         - +define+CPTRA_TOP_PATH=caliptra_ss_top.caliptra_top_dut
         - +define+MCU_RV_BUILD_AXI4
         - +define+MCU_RV_OPENSOURCE
-        - +define+MCU_RV_DCCM_ENABLE
         - +define+AVERY_VCS
         - +define+AVERY_CLOCK=5
         - +define+FOUR_OUTSTANDING
