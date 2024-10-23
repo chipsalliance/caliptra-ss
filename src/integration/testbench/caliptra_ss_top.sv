@@ -20,6 +20,7 @@
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
+`include "i3c_defines.svh"
 
 module caliptra_ss_top
     import tb_top_pkg::*;
@@ -31,6 +32,17 @@ module caliptra_ss_top
     input bit [31:0]            mem_signature_end,
     input bit [31:0]            mem_mailbox
     `endif // VERILATOR
+    // I3C Interface
+`ifdef VERILATOR
+    input  logic scl_i,
+    input  logic sda_i,
+    output logic scl_o,
+    output logic sda_o,
+    output logic sel_od_pp_o
+`else
+    inout  wire  i3c_scl_io,
+    inout  wire  i3c_sda_io
+`endif
 );
 import axi_pkg::*;
 import soc_ifc_pkg::*;
@@ -97,6 +109,20 @@ import caliptra_top_tb_pkg::*;
         logic        [63:0]         sb_hwdata       ;
         logic                       sb_hready       ;
         logic                       sb_hresp        ;
+
+    `ifdef I3C_USE_AHB
+        logic        [31:0]         i3c_haddr;
+        logic        [2:0]          i3c_hburst;
+        logic                       i3c_hmastlock;
+        logic        [3:0]          i3c_hprot;
+        logic        [2:0]          i3c_hsize;
+        logic        [1:0]          i3c_htrans;
+        logic                       i3c_hwrite;
+        logic        [63:0]         i3c_hrdata;
+        logic        [63:0]         i3c_hwdata;
+        logic                       i3c_hready;
+        logic                       i3c_hresp;
+    `endif
 
         logic        [31:0]         trace_rv_i_insn_ip;
         logic        [31:0]         trace_rv_i_address_ip;
@@ -345,7 +371,65 @@ import caliptra_top_tb_pkg::*;
         wire                        lmem_axi_bvalid;
         wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lmem_axi_bid;
         wire                        lmem_axi_bready;
+    //-------------------------- I3C AXI signals--------------------------
+    /*
+    // AXI Write Channels
+        wire                        i3c_axi_awvalid;
+        wire                        i3c_axi_awready;
+        wire [`MCU_RV_DMA_BUS_TAG:0]  i3c_axi_awid;
+        wire [31:0]                 i3c_axi_awaddr;
+        wire [2:0]                  i3c_axi_awsize;
+        wire [2:0]                  i3c_axi_awprot;
+        wire [7:0]                  i3c_axi_awlen;
+        wire [1:0]                  i3c_axi_awburst;
 
+
+        wire                        i3c_axi_wvalid;
+        wire                        i3c_axi_wready;
+        wire [63:0]                 i3c_axi_wdata;
+        wire [7:0]                  i3c_axi_wstrb;
+        wire                        i3c_axi_wlast;
+
+        wire                        i3c_axi_bvalid;
+        wire                        i3c_axi_bready;
+        wire [1:0]                  i3c_axi_bresp;
+        wire [`MCU_RV_DMA_BUS_TAG:0]  i3c_axi_bid;
+
+        // AXI Read Channels
+        wire                        i3c_axi_arvalid;
+        wire                        i3c_axi_arready;
+        wire [`MCU_RV_DMA_BUS_TAG:0]  i3c_axi_arid;
+        wire [31:0]                 i3c_axi_araddr;
+        wire [2:0]                  i3c_axi_arsize;
+        wire [2:0]                  i3c_axi_arprot;
+        wire [7:0]                  i3c_axi_arlen;
+        wire [1:0]                  i3c_axi_arburst;
+
+        wire                        i3c_axi_rvalid;
+        wire                        i3c_axi_rready;
+        wire [`MCU_RV_DMA_BUS_TAG:0]  i3c_axi_rid;
+        wire [63:0]                 i3c_axi_rdata;
+        wire [1:0]                  i3c_axi_rresp;
+        wire                        i3c_axi_rlast;
+
+        wire                        i3c_axi_rvalid;
+        wire [`MCU_RV_LSU_BUS_TAG:0]  i3c_axi_rid;
+        wire [1:0]                  i3c_axi_rresp;
+        wire [63:0]                 i3c_axi_rdata;
+        wire                        i3c_axi_rlast;
+        wire                        i3c_axi_rready;
+
+        wire                        i3c_axi_awvalid;
+        wire                        i3c_axi_awready;
+
+        wire                        i3c_axi_wvalid;
+        wire                        i3c_axi_wready;
+
+        wire [1:0]                  i3c_axi_bresp;
+        wire                        i3c_axi_bvalid;
+        wire [`MCU_RV_LSU_BUS_TAG:0]  i3c_axi_bid;
+        wire                        i3c_axi_bready;
+        */
     `endif
         string                      abi_reg[32]; // ABI register names
         css_mcu0_el2_mem_if         css_mcu0_el2_mem_export ();
@@ -376,6 +460,9 @@ import caliptra_top_tb_pkg::*;
             if( mailbox_data_val & mailbox_write) begin
                 $fwrite(fd,"%c", mailbox_data[7:0]);
                 $write("%c", mailbox_data[7:0]);
+                if (mailbox_data[7:0] inside {8'h0A,8'h0D}) begin // CR/LF
+                    $fflush(fd);
+                end
             end
             // Interrupt signals control
             // data[7:0] == 0x80 - clear ext irq line index given by data[15:8]
@@ -618,12 +705,12 @@ import caliptra_top_tb_pkg::*;
             .UW(`CALIPTRA_AXI_USER_WIDTH)
         ) s_axi_if (.clk(core_clk), .rst_n(cptra_rst_b));
 
-        axi_if #(
-            .AW(AXI_SRAM_ADDR_WIDTH),
-            .DW(CPTRA_AXI_DMA_DATA_WIDTH),
-            .IW(CPTRA_AXI_DMA_ID_WIDTH + 3),
-            .UW(CPTRA_AXI_DMA_USER_WIDTH)
-        ) axi_sram_if (.clk(core_clk), .rst_n(cptra_rst_b));
+//        axi_if #(
+//            .AW(AXI_SRAM_ADDR_WIDTH),
+//            .DW(CPTRA_AXI_DMA_DATA_WIDTH),
+//            .IW(CPTRA_AXI_DMA_ID_WIDTH + 3),
+//            .UW(CPTRA_AXI_DMA_USER_WIDTH)
+//        ) axi_sram_if (.clk(core_clk), .rst_n(cptra_rst_b));
 
         // QSPI Interface
         logic                                qspi_clk;
@@ -873,26 +960,26 @@ import caliptra_top_tb_pkg::*;
 
         );
 
-        // Fake "MCU" SRAM block
-        caliptra_axi_sram #(
-            .AW(AXI_SRAM_ADDR_WIDTH),
-            .DW(CPTRA_AXI_DMA_DATA_WIDTH),
-            .UW(CPTRA_AXI_DMA_USER_WIDTH),
-            .IW(CPTRA_AXI_DMA_ID_WIDTH + 3),
-            .EX_EN(0)
-        ) i_axi_sram (
-            .clk(core_clk),
-            .rst_n(cptra_rst_b),
-
-            // AXI INF
-            .s_axi_w_if(axi_sram_if.w_sub),
-            .s_axi_r_if(axi_sram_if.r_sub)
-        );
-        `ifdef VERILATOR
-        initial i_axi_sram.i_sram.ram = '{default:'{default:8'h00}};
-        `else
-        initial i_axi_sram.i_sram.ram = '{default:8'h00};
-        `endif
+//        // Fake "MCU" SRAM block
+//        caliptra_axi_sram #(
+//            .AW(AXI_SRAM_ADDR_WIDTH),
+//            .DW(CPTRA_AXI_DMA_DATA_WIDTH),
+//            .UW(CPTRA_AXI_DMA_USER_WIDTH),
+//            .IW(CPTRA_AXI_DMA_ID_WIDTH + 3),
+//            .EX_EN(0)
+//        ) i_axi_sram (
+//            .clk(core_clk),
+//            .rst_n(cptra_rst_b),
+//
+//            // AXI INF
+//            .s_axi_w_if(axi_sram_if.w_sub),
+//            .s_axi_r_if(axi_sram_if.r_sub)
+//        );
+//        `ifdef VERILATOR
+//        initial i_axi_sram.i_sram.ram = '{default:'{default:8'h00}};
+//        `else
+//        initial i_axi_sram.i_sram.ram = '{default:8'h00};
+//        `endif
 
         caliptra_top_sva sva();
 
@@ -953,46 +1040,46 @@ import caliptra_top_tb_pkg::*;
         assign axi_interconnect.sintf_arr[3].RID     = s_axi_if.rid;
         assign axi_interconnect.sintf_arr[3].RLAST   = s_axi_if.rlast;
         assign s_axi_if.rready                       = axi_interconnect.sintf_arr[3].RREADY;
-        
+
         // -- CALIPTRA SRAM 
-        // AXI Interconnect connections
-        assign axi_sram_if.awvalid                     = axi_interconnect.sintf_arr[4].AWVALID;
-        assign axi_sram_if.awaddr                      = axi_interconnect.sintf_arr[4].AWADDR;
-        assign axi_sram_if.awid                        = axi_interconnect.sintf_arr[4].AWID;
-        assign axi_sram_if.awlen                       = axi_interconnect.sintf_arr[4].AWLEN;
-        assign axi_sram_if.awsize                      = axi_interconnect.sintf_arr[4].AWSIZE;
-        assign axi_sram_if.awburst                     = axi_interconnect.sintf_arr[4].AWBURST;
-        assign axi_sram_if.awlock                      = axi_interconnect.sintf_arr[4].AWLOCK;
-        assign axi_sram_if.awuser                      = axi_interconnect.sintf_arr[4].AWUSER;
-        assign axi_interconnect.sintf_arr[4].AWREADY   = axi_sram_if.awready;
-
-        assign axi_sram_if.wvalid                      = axi_interconnect.sintf_arr[4].WVALID;
-        assign axi_sram_if.wdata                       = axi_interconnect.sintf_arr[4].WDATA;
-        assign axi_sram_if.wstrb                       = axi_interconnect.sintf_arr[4].WSTRB;
-        assign axi_sram_if.wlast                       = axi_interconnect.sintf_arr[4].WLAST;
-        assign axi_interconnect.sintf_arr[4].WREADY    = axi_sram_if.wready;
-
-        assign axi_interconnect.sintf_arr[4].BVALID    = axi_sram_if.bvalid;
-        assign axi_interconnect.sintf_arr[4].BRESP     = axi_sram_if.bresp;
-        assign axi_interconnect.sintf_arr[4].BID       = axi_sram_if.bid;
-        assign axi_sram_if.bready                      = axi_interconnect.sintf_arr[4].BREADY;
-
-        assign axi_sram_if.arvalid                     = axi_interconnect.sintf_arr[4].ARVALID;
-        assign axi_sram_if.araddr                      = axi_interconnect.sintf_arr[4].ARADDR;
-        assign axi_sram_if.arid                        = axi_interconnect.sintf_arr[4].ARID;
-        assign axi_sram_if.arlen                       = axi_interconnect.sintf_arr[4].ARLEN;
-        assign axi_sram_if.arsize                      = axi_interconnect.sintf_arr[4].ARSIZE;
-        assign axi_sram_if.arburst                     = axi_interconnect.sintf_arr[4].ARBURST;
-        assign axi_sram_if.arlock                      = axi_interconnect.sintf_arr[4].ARLOCK;
-        assign axi_sram_if.aruser                      = axi_interconnect.sintf_arr[4].ARUSER;
-        assign axi_interconnect.sintf_arr[4].ARREADY   = axi_sram_if.arready;
-
-        assign axi_interconnect.sintf_arr[4].RVALID    = axi_sram_if.rvalid;
-        assign axi_interconnect.sintf_arr[4].RDATA     = axi_sram_if.rdata;
-        assign axi_interconnect.sintf_arr[4].RRESP     = axi_sram_if.rresp;
-        assign axi_interconnect.sintf_arr[4].RID       = axi_sram_if.rid;
-        assign axi_interconnect.sintf_arr[4].RLAST     = axi_sram_if.rlast;
-        assign axi_sram_if.rready                      = axi_interconnect.sintf_arr[4].RREADY;
+//        // AXI Interconnect connections
+//        assign axi_sram_if.awvalid                     = axi_interconnect.sintf_arr[4].AWVALID;
+//        assign axi_sram_if.awaddr                      = axi_interconnect.sintf_arr[4].AWADDR;
+//        assign axi_sram_if.awid                        = axi_interconnect.sintf_arr[4].AWID;
+//        assign axi_sram_if.awlen                       = axi_interconnect.sintf_arr[4].AWLEN;
+//        assign axi_sram_if.awsize                      = axi_interconnect.sintf_arr[4].AWSIZE;
+//        assign axi_sram_if.awburst                     = axi_interconnect.sintf_arr[4].AWBURST;
+//        assign axi_sram_if.awlock                      = axi_interconnect.sintf_arr[4].AWLOCK;
+//        assign axi_sram_if.awuser                      = axi_interconnect.sintf_arr[4].AWUSER;
+//        assign axi_interconnect.sintf_arr[4].AWREADY   = axi_sram_if.awready;
+//
+//        assign axi_sram_if.wvalid                      = axi_interconnect.sintf_arr[4].WVALID;
+//        assign axi_sram_if.wdata                       = axi_interconnect.sintf_arr[4].WDATA;
+//        assign axi_sram_if.wstrb                       = axi_interconnect.sintf_arr[4].WSTRB;
+//        assign axi_sram_if.wlast                       = axi_interconnect.sintf_arr[4].WLAST;
+//        assign axi_interconnect.sintf_arr[4].WREADY    = axi_sram_if.wready;
+//
+//        assign axi_interconnect.sintf_arr[4].BVALID    = axi_sram_if.bvalid;
+//        assign axi_interconnect.sintf_arr[4].BRESP     = axi_sram_if.bresp;
+//        assign axi_interconnect.sintf_arr[4].BID       = axi_sram_if.bid;
+//        assign axi_sram_if.bready                      = axi_interconnect.sintf_arr[4].BREADY;
+//
+//        assign axi_sram_if.arvalid                     = axi_interconnect.sintf_arr[4].ARVALID;
+//        assign axi_sram_if.araddr                      = axi_interconnect.sintf_arr[4].ARADDR;
+//        assign axi_sram_if.arid                        = axi_interconnect.sintf_arr[4].ARID;
+//        assign axi_sram_if.arlen                       = axi_interconnect.sintf_arr[4].ARLEN;
+//        assign axi_sram_if.arsize                      = axi_interconnect.sintf_arr[4].ARSIZE;
+//        assign axi_sram_if.arburst                     = axi_interconnect.sintf_arr[4].ARBURST;
+//        assign axi_sram_if.arlock                      = axi_interconnect.sintf_arr[4].ARLOCK;
+//        assign axi_sram_if.aruser                      = axi_interconnect.sintf_arr[4].ARUSER;
+//        assign axi_interconnect.sintf_arr[4].ARREADY   = axi_sram_if.arready;
+//
+//        assign axi_interconnect.sintf_arr[4].RVALID    = axi_sram_if.rvalid;
+//        assign axi_interconnect.sintf_arr[4].RDATA     = axi_sram_if.rdata;
+//        assign axi_interconnect.sintf_arr[4].RRESP     = axi_sram_if.rresp;
+//        assign axi_interconnect.sintf_arr[4].RID       = axi_sram_if.rid;
+//        assign axi_interconnect.sintf_arr[4].RLAST     = axi_sram_if.rlast;
+//        assign axi_sram_if.rready                      = axi_interconnect.sintf_arr[4].RREADY;
         
 
 
@@ -1036,6 +1123,22 @@ import caliptra_top_tb_pkg::*;
         assign axi_interconnect.mintf_arr[2].RREADY = '0;
 
         // AXI Interconnect connections
+        logic m_axi_if_rd_is_upper_dw_latched;
+        logic m_axi_if_wr_is_upper_dw_latched;
+        // FIXME this is a gross hack for data width conversion
+        always@(posedge core_clk or negedge rst_l)
+            if (!rst_l)
+                m_axi_if_wr_is_upper_dw_latched <= 0;
+            else if (m_axi_if.awvalid && m_axi_if.awready)
+                m_axi_if_wr_is_upper_dw_latched <= m_axi_if.awaddr[2] && (m_axi_if.awsize < 3);
+        `CALIPTRA_ASSERT(CPTRA_AXI_DMA_WR_32BIT, (m_axi_if.awvalid && m_axi_if.awready) -> (m_axi_if.awsize < 3), core_clk, !rst_l)
+        // FIXME this is a gross hack for data width conversion
+        always@(posedge core_clk or negedge rst_l)
+            if (!rst_l)
+                m_axi_if_rd_is_upper_dw_latched <= 0;
+            else if (m_axi_if.arvalid && m_axi_if.arready)
+                m_axi_if_rd_is_upper_dw_latched <= m_axi_if.araddr[2] && (m_axi_if.arsize < 3);
+        `CALIPTRA_ASSERT(CPTRA_AXI_DMA_RD_32BIT, (m_axi_if.arvalid && m_axi_if.arready) -> (m_axi_if.arsize < 3), core_clk, !rst_l)
         assign axi_interconnect.mintf_arr[3].AWVALID = m_axi_if.awvalid;
         assign axi_interconnect.mintf_arr[3].AWADDR  = m_axi_if.awaddr;
         assign axi_interconnect.mintf_arr[3].AWID    = m_axi_if.awid;
@@ -1047,8 +1150,8 @@ import caliptra_top_tb_pkg::*;
         assign m_axi_if.awready                      = axi_interconnect.mintf_arr[3].AWREADY;
 
         assign axi_interconnect.mintf_arr[3].WVALID  = m_axi_if.wvalid;
-        assign axi_interconnect.mintf_arr[3].WDATA   = m_axi_if.wdata;
-        assign axi_interconnect.mintf_arr[3].WSTRB   = m_axi_if.wstrb;
+        assign axi_interconnect.mintf_arr[3].WDATA   = m_axi_if.wdata << (m_axi_if_wr_is_upper_dw_latched ? 32 : 0);
+        assign axi_interconnect.mintf_arr[3].WSTRB   = m_axi_if.wstrb << (m_axi_if_wr_is_upper_dw_latched ?  4 : 0);
         assign axi_interconnect.mintf_arr[3].WLAST   = m_axi_if.wlast;
         assign m_axi_if.wready                       = axi_interconnect.mintf_arr[3].WREADY;
 
@@ -1068,7 +1171,7 @@ import caliptra_top_tb_pkg::*;
         assign m_axi_if.arready                      = axi_interconnect.mintf_arr[3].ARREADY;
 
         assign m_axi_if.rvalid                       = axi_interconnect.mintf_arr[3].RVALID;
-        assign m_axi_if.rdata                        = axi_interconnect.mintf_arr[3].RDATA;
+        assign m_axi_if.rdata                        = axi_interconnect.mintf_arr[3].RDATA >> (m_axi_if_rd_is_upper_dw_latched ? 32 : 0);
         assign m_axi_if.rresp                        = axi_interconnect.mintf_arr[3].RRESP;
         assign m_axi_if.rid                          = axi_interconnect.mintf_arr[3].RID;
         assign m_axi_if.rlast                        = axi_interconnect.mintf_arr[3].RLAST;
@@ -1112,8 +1215,12 @@ import caliptra_top_tb_pkg::*;
         assign m_axi_bfm_if.rid                       = axi_interconnect.mintf_arr[4].RID;
         assign m_axi_bfm_if.rlast                     = axi_interconnect.mintf_arr[4].RLAST;
         assign axi_interconnect.mintf_arr[4].RREADY   = m_axi_bfm_if.rready;
-        
 
+        logic i3c_axi_rd_is_upper_dw_latched; // FIXME
+        logic i3c_axi_wr_is_upper_dw_latched; // FIXME
+        logic [31:0] i3c_axi_rdata_32; // FIXME
+        logic [31:0] i3c_axi_wdata_32; // FIXME
+        logic [3:0]  i3c_axi_wstrb_4; // FIXME
         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_arid_req;
         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_arid_req_r [pt.LSU_BUS_TAG];
         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_awid_req;
@@ -1395,6 +1502,67 @@ import caliptra_top_tb_pkg::*;
         .dmi_uncore_rdata       ()
 
     );
+
+// TODO i3c core instance here
+`ifdef I3C_USE_AHB
+    // I3C
+      .i3c_haddr(i3c_haddr),
+      .i3c_hburst(i3c_hburst),
+      .i3c_hprot(i3c_hprot),
+      .i3c_hwdata(i3c_hwdata),
+      .i3c_hsel(i3c_hsel),
+      .i3c_hwstrb(i3c_hwstrb),
+      .i3c_hwrite(i3c_hwrite),
+      .i3c_hready(i3c_hready),
+      .i3c_htrans(i3c_htrans),
+      .i3c_hsize(i3c_hsize),
+      .i3c_hresp(i3c_hresp),
+      .i3c_hreadyout(i3c_hreadyout),
+      .i3c_hrdata(i3c_hrdata),
+`elsif I3C_USE_AXI
+      .i3c_axi_awvalid        (axi_interconnect.sintf_arr[4].AWVALID),
+      .i3c_axi_awready        (axi_interconnect.sintf_arr[4].AWREADY),
+      .i3c_axi_awid           (axi_interconnect.sintf_arr[4].AWID),
+      .i3c_axi_awaddr         (axi_interconnect.sintf_arr[4].AWADDR[31:0]),
+      .i3c_axi_awsize         (axi_interconnect.sintf_arr[4].AWSIZE),
+      .i3c_axi_awprot         (axi_interconnect.sintf_arr[4].AWPROT),
+      .i3c_axi_awlen          (axi_interconnect.sintf_arr[4].AWLEN),
+      .i3c_axi_awburst        (axi_interconnect.sintf_arr[4].AWBURST),
+      .i3c_axi_wvalid         (axi_interconnect.sintf_arr[4].WVALID),
+      .i3c_axi_wready         (axi_interconnect.sintf_arr[4].WREADY),
+      .i3c_axi_wdata          (i3c_axi_wdata_32),
+      .i3c_axi_wstrb          (i3c_axi_wstrb_4),
+      .i3c_axi_wlast          (axi_interconnect.sintf_arr[4].WLAST),
+      .i3c_axi_bvalid         (axi_interconnect.sintf_arr[4].BVALID),
+      .i3c_axi_bready         (axi_interconnect.sintf_arr[4].BREADY),
+      .i3c_axi_bresp          (axi_interconnect.sintf_arr[4].BRESP),
+      .i3c_axi_bid            (axi_interconnect.sintf_arr[4].BID),
+      .i3c_axi_arvalid        (axi_interconnect.sintf_arr[4].ARVALID),
+      .i3c_axi_arready        (axi_interconnect.sintf_arr[4].ARREADY),
+      .i3c_axi_arid           (axi_interconnect.sintf_arr[4].ARID),
+      .i3c_axi_araddr         (axi_interconnect.sintf_arr[4].ARADDR[31:0]),
+      .i3c_axi_arsize         (axi_interconnect.sintf_arr[4].ARSIZE),
+      .i3c_axi_arprot         (axi_interconnect.sintf_arr[4].ARPROT),
+      .i3c_axi_arlen          (axi_interconnect.sintf_arr[4].ARLEN),
+      .i3c_axi_arburst        (axi_interconnect.sintf_arr[4].ARBURST),
+      .i3c_axi_rvalid         (axi_interconnect.sintf_arr[4].RVALID),
+      .i3c_axi_rready         (axi_interconnect.sintf_arr[4].RREADY),
+      .i3c_axi_rid            (axi_interconnect.sintf_arr[4].RID),
+      .i3c_axi_rdata          (i3c_axi_rdata_32),
+      .i3c_axi_rresp          (axi_interconnect.sintf_arr[4].RRESP),
+      .i3c_axi_rlast          (axi_interconnect.sintf_arr[4].RLAST),
+`endif
+`ifdef VERILATOR
+    .scl_i(scl_i),
+    .sda_i(sda_i),
+    .scl_o(scl_o),
+    .sda_o(sda_o),
+    .sel_od_pp_o(sel_od_pp_o)
+`else
+    .i3c_scl_io(i3c_scl_io),
+    .i3c_sda_io(i3c_sda_io)
+`endif
+// END TODO
     assign axi_interconnect.mintf_arr[0].ARID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
     assign axi_interconnect.mintf_arr[0].AWID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
     assign axi_interconnect.mintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
@@ -1407,6 +1575,22 @@ import caliptra_top_tb_pkg::*;
     assign axi_interconnect.sintf_arr[2].BID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
     assign axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
     assign axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    // FIXME data width conversion hack
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            i3c_axi_wr_is_upper_dw_latched <= 0;
+        else if (axi_interconnect.sintf_arr[4].AWVALID && axi_interconnect.sintf_arr[4].AWREADY)
+            i3c_axi_wr_is_upper_dw_latched <= axi_interconnect.sintf_arr[4].AWADDR[2] && (axi_interconnect.sintf_arr[4].AWSIZE < 3);
+    `CALIPTRA_ASSERT(I3C_AXI_WR_32BIT, (axi_interconnect.sintf_arr[4].AWVALID && axi_interconnect.sintf_arr[4].AWREADY) -> (axi_interconnect.sintf_arr[4].AWSIZE < 3), core_clk, !rst_l)
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            i3c_axi_rd_is_upper_dw_latched <= 0;
+        else if (axi_interconnect.sintf_arr[4].ARVALID && axi_interconnect.sintf_arr[4].ARREADY)
+            i3c_axi_rd_is_upper_dw_latched <= axi_interconnect.sintf_arr[4].ARADDR[2] && (axi_interconnect.sintf_arr[4].ARSIZE < 3);
+    `CALIPTRA_ASSERT(I3C_AXI_RD_32BIT, (axi_interconnect.sintf_arr[4].ARVALID && axi_interconnect.sintf_arr[4].ARREADY) -> (axi_interconnect.sintf_arr[4].ARSIZE < 3), core_clk, !rst_l)
+    assign axi_interconnect.sintf_arr[4].RDATA = 64'(i3c_axi_rdata_32) << (i3c_axi_rd_is_upper_dw_latched ? 32 : 0);
+    assign i3c_axi_wdata_32                    = axi_interconnect.sintf_arr[4].WDATA >> (i3c_axi_wr_is_upper_dw_latched ? 32 : 0);
+    assign i3c_axi_wstrb_4                     = axi_interconnect.sintf_arr[4].WSTRB >> (i3c_axi_wr_is_upper_dw_latched ? 4  : 0);
     // FIXME This hacky FIFO is to ensure the same AXI ID is used throughout a mailbox transfer.
     //       We need an ability to deterministically use the same AXI ID from the VeeR executable
     int ar_count;

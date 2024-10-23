@@ -16,6 +16,10 @@
 
 .set    mfdc, 0x7f9
 .set    mrac, 0x7c0
+.set    mcause, 0x342
+.set    mscause, 0x7ff
+.set    mepc, 0x341
+.set    mtval, 0x343
 .section .text.init
 .align 4
 .global _start
@@ -36,8 +40,8 @@ _start:
         //  - DCCM       @ 0x5000_0000: no SE
         //  - PIC        @ 0x6000_0000:    SE
         //  - [UNMAPPED] @ 0x7000_0000:    SE
-        //  - imem/lmem  @ 0x8000_0000: no SE
-        //  - [UNMAPPED] @ 0x9000_0000:    SE
+        //  - imem       @ 0x8000_0000: no SE, +Cache
+        //  - lmem       @ 0x9000_0000:    SE
         //  - ...
         //  - [UNMAPPED] @ 0xC000_0000:    SE
         //  - STDOUT     @ 0xD000_0000:    SE
@@ -66,8 +70,53 @@ _finish:
         nop
         .endr
 
+.macro putnibble 
+    srli t1, a0, 28
+    andi t2, t1, 0xf
+    addi t3, t2, 0x30
+    sb t3, 0(t0)
+    slli a0, a0, 4
+.endm
 .align 4
 _trap:
+    la t0, tohost
+    // sep '.'
+    li a0, 0x2e
+    sb a0, 0(t0)
+    // mcause
+    csrr a0, mcause
+    fence.i
+.rept 8
+    putnibble
+.endr
+    // sep '.'
+    li a0, 0x2e
+    sb a0, 0(t0)
+    // mscause
+    csrr a0, mscause
+    fence.i
+.rept 8
+    putnibble
+.endr
+    // sep '.'
+    li a0, 0x2e
+    sb a0, 0(t0)
+    // mepc
+    csrr a0, mepc
+    fence.i
+.rept 8
+    putnibble
+.endr
+    // sep '.'
+    li a0, 0x2e
+    sb a0, 0(t0)
+    // mtval
+    csrr a0, mtval
+    fence.i
+.rept 8
+    putnibble
+.endr
+    // Failure
     li a0, 1 # failure
     j _finish
 
