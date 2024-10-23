@@ -12,7 +12,7 @@ SECTIONS {
   _text_end = .;
 
   . = 0x80010000;
-  .data  :  { *(.data*) }
+  .data : { *(.*data) *(.rodata*) *(.srodata*) *(.sbss) }
   _data_end = .;
 
   . = 0x80011000;

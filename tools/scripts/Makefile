@@ -304,8 +304,10 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
 	-$(GCC_PREFIX)-objcopy --dump-section .dccm=dccm_section.bin $(TESTNAME).exe
 	-$(GCC_PREFIX)-objcopy -O verilog -I binary dccm_section.bin mcu_dccm.hex
-	$(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
-	$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+# $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
 	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
 	@echo Completed building $(TESTNAME)
