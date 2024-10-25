@@ -3,6 +3,7 @@ schema_version: 2.4.0
 requires:
   - mcu_top
   - css_mcu0_veer_el2_rtl_pkg
+  - i3c-core
   - caliptra_top_tb_pkg
 targets:
   tb:

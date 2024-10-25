@@ -110,19 +110,20 @@ import caliptra_top_tb_pkg::*;
         logic                       sb_hready       ;
         logic                       sb_hresp        ;
 
-    `ifdef I3C_USE_AHB
-        logic        [31:0]         i3c_haddr;
-        logic        [2:0]          i3c_hburst;
-        logic                       i3c_hmastlock;
-        logic        [3:0]          i3c_hprot;
-        logic        [2:0]          i3c_hsize;
-        logic        [1:0]          i3c_htrans;
-        logic                       i3c_hwrite;
-        logic        [63:0]         i3c_hrdata;
-        logic        [63:0]         i3c_hwdata;
-        logic                       i3c_hready;
-        logic                       i3c_hresp;
-    `endif
+//    `ifdef I3C_USE_AHB
+//        logic        [31:0]         i3c_haddr;
+//        logic        [2:0]          i3c_hburst;
+//        logic                       i3c_hmastlock;
+//        logic        [3:0]          i3c_hprot;
+//        logic        [2:0]          i3c_hsize;
+//        logic        [1:0]          i3c_htrans;
+//        logic                       i3c_hwrite;
+//        logic        [63:0]         i3c_hrdata;
+//        logic        [63:0]         i3c_hwdata;
+//        logic                       i3c_hready;
+//        logic                       i3c_hreadyout;
+//        logic                       i3c_hresp;
+//    `endif
 
         logic        [31:0]         trace_rv_i_insn_ip;
         logic        [31:0]         trace_rv_i_address_ip;
@@ -371,66 +372,48 @@ import caliptra_top_tb_pkg::*;
         wire                        lmem_axi_bvalid;
         wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lmem_axi_bid;
         wire                        lmem_axi_bready;
-    //-------------------------- I3C AXI signals--------------------------
-    /*
-    // AXI Write Channels
-        wire                        i3c_axi_awvalid;
-        wire                        i3c_axi_awready;
-        wire [`MCU_RV_DMA_BUS_TAG:0]  i3c_axi_awid;
-        wire [31:0]                 i3c_axi_awaddr;
-        wire [2:0]                  i3c_axi_awsize;
-        wire [2:0]                  i3c_axi_awprot;
-        wire [7:0]                  i3c_axi_awlen;
-        wire [1:0]                  i3c_axi_awburst;
+`endif
 
+//    //-------------------------- I3C AXI signals--------------------------
+//    // AXI Write Channels
+//        wire                        i3c_axi_awvalid;
+//        wire                        i3c_axi_awready;
+//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_awid;
+//        wire [31:0]                 i3c_axi_awaddr;
+//        wire [2:0]                  i3c_axi_awsize;
+//        wire [2:0]                  i3c_axi_awprot;
+//        wire [7:0]                  i3c_axi_awlen;
+//        wire [1:0]                  i3c_axi_awburst;
+//
+//
+//        wire                        i3c_axi_wvalid;
+//        wire                        i3c_axi_wready;
+//        wire [63:0]                 i3c_axi_wdata;
+//        wire [7:0]                  i3c_axi_wstrb;
+//        wire                        i3c_axi_wlast;
+//
+//        wire                             i3c_axi_bvalid;
+//        wire                             i3c_axi_bready;
+//        wire [1:0]                       i3c_axi_bresp;
+//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_bid;
+//
+//        // AXI Read Channels
+//        wire                             i3c_axi_arvalid;
+//        wire                             i3c_axi_arready;
+//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_arid;
+//        wire [31:0]                      i3c_axi_araddr;
+//        wire [2:0]                       i3c_axi_arsize;
+//        wire [2:0]                       i3c_axi_arprot;
+//        wire [7:0]                       i3c_axi_arlen;
+//        wire [1:0]                       i3c_axi_arburst;
+//
+//        wire                             i3c_axi_rvalid;
+//        wire                             i3c_axi_rready;
+//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_rid;
+//        wire [63:0]                      i3c_axi_rdata;
+//        wire [1:0]                       i3c_axi_rresp;
+//        wire                             i3c_axi_rlast;
 
-        wire                        i3c_axi_wvalid;
-        wire                        i3c_axi_wready;
-        wire [63:0]                 i3c_axi_wdata;
-        wire [7:0]                  i3c_axi_wstrb;
-        wire                        i3c_axi_wlast;
-
-        wire                        i3c_axi_bvalid;
-        wire                        i3c_axi_bready;
-        wire [1:0]                  i3c_axi_bresp;
-        wire [`MCU_RV_DMA_BUS_TAG:0]  i3c_axi_bid;
-
-        // AXI Read Channels
-        wire                        i3c_axi_arvalid;
-        wire                        i3c_axi_arready;
-        wire [`MCU_RV_DMA_BUS_TAG:0]  i3c_axi_arid;
-        wire [31:0]                 i3c_axi_araddr;
-        wire [2:0]                  i3c_axi_arsize;
-        wire [2:0]                  i3c_axi_arprot;
-        wire [7:0]                  i3c_axi_arlen;
-        wire [1:0]                  i3c_axi_arburst;
-
-        wire                        i3c_axi_rvalid;
-        wire                        i3c_axi_rready;
-        wire [`MCU_RV_DMA_BUS_TAG:0]  i3c_axi_rid;
-        wire [63:0]                 i3c_axi_rdata;
-        wire [1:0]                  i3c_axi_rresp;
-        wire                        i3c_axi_rlast;
-
-        wire                        i3c_axi_rvalid;
-        wire [`MCU_RV_LSU_BUS_TAG:0]  i3c_axi_rid;
-        wire [1:0]                  i3c_axi_rresp;
-        wire [63:0]                 i3c_axi_rdata;
-        wire                        i3c_axi_rlast;
-        wire                        i3c_axi_rready;
-
-        wire                        i3c_axi_awvalid;
-        wire                        i3c_axi_awready;
-
-        wire                        i3c_axi_wvalid;
-        wire                        i3c_axi_wready;
-
-        wire [1:0]                  i3c_axi_bresp;
-        wire                        i3c_axi_bvalid;
-        wire [`MCU_RV_LSU_BUS_TAG:0]  i3c_axi_bid;
-        wire                        i3c_axi_bready;
-        */
-    `endif
         string                      abi_reg[32]; // ABI register names
         css_mcu0_el2_mem_if         css_mcu0_el2_mem_export ();
         el2_mem_if                  caliptra_el2_mem_export (); 
@@ -1216,11 +1199,6 @@ import caliptra_top_tb_pkg::*;
         assign m_axi_bfm_if.rlast                     = axi_interconnect.mintf_arr[4].RLAST;
         assign axi_interconnect.mintf_arr[4].RREADY   = m_axi_bfm_if.rready;
 
-        logic i3c_axi_rd_is_upper_dw_latched; // FIXME
-        logic i3c_axi_wr_is_upper_dw_latched; // FIXME
-        logic [31:0] i3c_axi_rdata_32; // FIXME
-        logic [31:0] i3c_axi_wdata_32; // FIXME
-        logic [3:0]  i3c_axi_wstrb_4; // FIXME
         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_arid_req;
         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_arid_req_r [pt.LSU_BUS_TAG];
         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_awid_req;
@@ -1503,66 +1481,6 @@ import caliptra_top_tb_pkg::*;
 
     );
 
-// TODO i3c core instance here
-`ifdef I3C_USE_AHB
-    // I3C
-      .i3c_haddr(i3c_haddr),
-      .i3c_hburst(i3c_hburst),
-      .i3c_hprot(i3c_hprot),
-      .i3c_hwdata(i3c_hwdata),
-      .i3c_hsel(i3c_hsel),
-      .i3c_hwstrb(i3c_hwstrb),
-      .i3c_hwrite(i3c_hwrite),
-      .i3c_hready(i3c_hready),
-      .i3c_htrans(i3c_htrans),
-      .i3c_hsize(i3c_hsize),
-      .i3c_hresp(i3c_hresp),
-      .i3c_hreadyout(i3c_hreadyout),
-      .i3c_hrdata(i3c_hrdata),
-`elsif I3C_USE_AXI
-      .i3c_axi_awvalid        (axi_interconnect.sintf_arr[4].AWVALID),
-      .i3c_axi_awready        (axi_interconnect.sintf_arr[4].AWREADY),
-      .i3c_axi_awid           (axi_interconnect.sintf_arr[4].AWID),
-      .i3c_axi_awaddr         (axi_interconnect.sintf_arr[4].AWADDR[31:0]),
-      .i3c_axi_awsize         (axi_interconnect.sintf_arr[4].AWSIZE),
-      .i3c_axi_awprot         (axi_interconnect.sintf_arr[4].AWPROT),
-      .i3c_axi_awlen          (axi_interconnect.sintf_arr[4].AWLEN),
-      .i3c_axi_awburst        (axi_interconnect.sintf_arr[4].AWBURST),
-      .i3c_axi_wvalid         (axi_interconnect.sintf_arr[4].WVALID),
-      .i3c_axi_wready         (axi_interconnect.sintf_arr[4].WREADY),
-      .i3c_axi_wdata          (i3c_axi_wdata_32),
-      .i3c_axi_wstrb          (i3c_axi_wstrb_4),
-      .i3c_axi_wlast          (axi_interconnect.sintf_arr[4].WLAST),
-      .i3c_axi_bvalid         (axi_interconnect.sintf_arr[4].BVALID),
-      .i3c_axi_bready         (axi_interconnect.sintf_arr[4].BREADY),
-      .i3c_axi_bresp          (axi_interconnect.sintf_arr[4].BRESP),
-      .i3c_axi_bid            (axi_interconnect.sintf_arr[4].BID),
-      .i3c_axi_arvalid        (axi_interconnect.sintf_arr[4].ARVALID),
-      .i3c_axi_arready        (axi_interconnect.sintf_arr[4].ARREADY),
-      .i3c_axi_arid           (axi_interconnect.sintf_arr[4].ARID),
-      .i3c_axi_araddr         (axi_interconnect.sintf_arr[4].ARADDR[31:0]),
-      .i3c_axi_arsize         (axi_interconnect.sintf_arr[4].ARSIZE),
-      .i3c_axi_arprot         (axi_interconnect.sintf_arr[4].ARPROT),
-      .i3c_axi_arlen          (axi_interconnect.sintf_arr[4].ARLEN),
-      .i3c_axi_arburst        (axi_interconnect.sintf_arr[4].ARBURST),
-      .i3c_axi_rvalid         (axi_interconnect.sintf_arr[4].RVALID),
-      .i3c_axi_rready         (axi_interconnect.sintf_arr[4].RREADY),
-      .i3c_axi_rid            (axi_interconnect.sintf_arr[4].RID),
-      .i3c_axi_rdata          (i3c_axi_rdata_32),
-      .i3c_axi_rresp          (axi_interconnect.sintf_arr[4].RRESP),
-      .i3c_axi_rlast          (axi_interconnect.sintf_arr[4].RLAST),
-`endif
-`ifdef VERILATOR
-    .scl_i(scl_i),
-    .sda_i(sda_i),
-    .scl_o(scl_o),
-    .sda_o(sda_o),
-    .sel_od_pp_o(sel_od_pp_o)
-`else
-    .i3c_scl_io(i3c_scl_io),
-    .i3c_sda_io(i3c_sda_io)
-`endif
-// END TODO
     assign axi_interconnect.mintf_arr[0].ARID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
     assign axi_interconnect.mintf_arr[0].AWID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
     assign axi_interconnect.mintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
@@ -1575,22 +1493,7 @@ import caliptra_top_tb_pkg::*;
     assign axi_interconnect.sintf_arr[2].BID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
     assign axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
     assign axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
-    // FIXME data width conversion hack
-    always@(posedge core_clk or negedge rst_l)
-        if (!rst_l)
-            i3c_axi_wr_is_upper_dw_latched <= 0;
-        else if (axi_interconnect.sintf_arr[4].AWVALID && axi_interconnect.sintf_arr[4].AWREADY)
-            i3c_axi_wr_is_upper_dw_latched <= axi_interconnect.sintf_arr[4].AWADDR[2] && (axi_interconnect.sintf_arr[4].AWSIZE < 3);
-    `CALIPTRA_ASSERT(I3C_AXI_WR_32BIT, (axi_interconnect.sintf_arr[4].AWVALID && axi_interconnect.sintf_arr[4].AWREADY) -> (axi_interconnect.sintf_arr[4].AWSIZE < 3), core_clk, !rst_l)
-    always@(posedge core_clk or negedge rst_l)
-        if (!rst_l)
-            i3c_axi_rd_is_upper_dw_latched <= 0;
-        else if (axi_interconnect.sintf_arr[4].ARVALID && axi_interconnect.sintf_arr[4].ARREADY)
-            i3c_axi_rd_is_upper_dw_latched <= axi_interconnect.sintf_arr[4].ARADDR[2] && (axi_interconnect.sintf_arr[4].ARSIZE < 3);
-    `CALIPTRA_ASSERT(I3C_AXI_RD_32BIT, (axi_interconnect.sintf_arr[4].ARVALID && axi_interconnect.sintf_arr[4].ARREADY) -> (axi_interconnect.sintf_arr[4].ARSIZE < 3), core_clk, !rst_l)
-    assign axi_interconnect.sintf_arr[4].RDATA = 64'(i3c_axi_rdata_32) << (i3c_axi_rd_is_upper_dw_latched ? 32 : 0);
-    assign i3c_axi_wdata_32                    = axi_interconnect.sintf_arr[4].WDATA >> (i3c_axi_wr_is_upper_dw_latched ? 32 : 0);
-    assign i3c_axi_wstrb_4                     = axi_interconnect.sintf_arr[4].WSTRB >> (i3c_axi_wr_is_upper_dw_latched ? 4  : 0);
+
     // FIXME This hacky FIFO is to ensure the same AXI ID is used throughout a mailbox transfer.
     //       We need an ability to deterministically use the same AXI ID from the VeeR executable
     int ar_count;
@@ -1684,6 +1587,105 @@ import caliptra_top_tb_pkg::*;
             endcase
         end
     end
+
+    //=========================================================================-
+    // I3C-Core Instance
+    //=========================================================================-
+    logic i3c_axi_rd_is_upper_dw_latched; // FIXME
+    logic i3c_axi_wr_is_upper_dw_latched; // FIXME
+    logic [31:0] i3c_axi_rdata_32; // FIXME
+    logic [31:0] i3c_axi_wdata_32; // FIXME
+    logic [3:0]  i3c_axi_wstrb_4; // FIXME
+
+    i3c_wrapper #(
+`ifdef I3C_USE_AHB
+        .AhbDataWidth(`AHB_DATA_WIDTH),
+        .AhbAddrWidth(`AHB_ADDR_WIDTH)
+`elsif I3C_USE_AXI
+        .AxiDataWidth(`AXI_DATA_WIDTH),
+        .AxiAddrWidth(`AXI_ADDR_WIDTH),
+        .AxiUserWidth(`AXI_USER_WIDTH),
+        .AxiIdWidth  (`AXI_ID_WIDTH  )
+`endif
+    ) i3c (
+        .clk_i(clk),
+        .rst_ni(rst_l),
+
+`ifdef I3C_USE_AHB
+      .i3c_haddr(i3c_haddr),
+      .i3c_hburst(i3c_hburst),
+      .i3c_hprot(i3c_hprot),
+      .i3c_hwdata(i3c_hwdata),
+      .i3c_hsel(i3c_hsel),
+      .i3c_hwstrb(i3c_hwstrb),
+      .i3c_hwrite(i3c_hwrite),
+      .i3c_hready(i3c_hready),
+      .i3c_htrans(i3c_htrans),
+      .i3c_hsize(i3c_hsize),
+      .i3c_hresp(i3c_hresp),
+      .i3c_hreadyout(i3c_hreadyout),
+      .i3c_hrdata(i3c_hrdata),
+`elsif I3C_USE_AXI
+      .i3c_axi_awvalid        (axi_interconnect.sintf_arr[4].AWVALID),
+      .i3c_axi_awready        (axi_interconnect.sintf_arr[4].AWREADY),
+      .i3c_axi_awid           (axi_interconnect.sintf_arr[4].AWID),
+      .i3c_axi_awaddr         (axi_interconnect.sintf_arr[4].AWADDR[31:0]),
+      .i3c_axi_awsize         (axi_interconnect.sintf_arr[4].AWSIZE),
+      .i3c_axi_awprot         (axi_interconnect.sintf_arr[4].AWPROT),
+      .i3c_axi_awlen          (axi_interconnect.sintf_arr[4].AWLEN),
+      .i3c_axi_awburst        (axi_interconnect.sintf_arr[4].AWBURST),
+      .i3c_axi_wvalid         (axi_interconnect.sintf_arr[4].WVALID),
+      .i3c_axi_wready         (axi_interconnect.sintf_arr[4].WREADY),
+      .i3c_axi_wdata          (i3c_axi_wdata_32),
+      .i3c_axi_wstrb          (i3c_axi_wstrb_4),
+      .i3c_axi_wlast          (axi_interconnect.sintf_arr[4].WLAST),
+      .i3c_axi_bvalid         (axi_interconnect.sintf_arr[4].BVALID),
+      .i3c_axi_bready         (axi_interconnect.sintf_arr[4].BREADY),
+      .i3c_axi_bresp          (axi_interconnect.sintf_arr[4].BRESP),
+      .i3c_axi_bid            (axi_interconnect.sintf_arr[4].BID),
+      .i3c_axi_arvalid        (axi_interconnect.sintf_arr[4].ARVALID),
+      .i3c_axi_arready        (axi_interconnect.sintf_arr[4].ARREADY),
+      .i3c_axi_arid           (axi_interconnect.sintf_arr[4].ARID),
+      .i3c_axi_araddr         (axi_interconnect.sintf_arr[4].ARADDR[31:0]),
+      .i3c_axi_arsize         (axi_interconnect.sintf_arr[4].ARSIZE),
+      .i3c_axi_arprot         (axi_interconnect.sintf_arr[4].ARPROT),
+      .i3c_axi_arlen          (axi_interconnect.sintf_arr[4].ARLEN),
+      .i3c_axi_arburst        (axi_interconnect.sintf_arr[4].ARBURST),
+      .i3c_axi_rvalid         (axi_interconnect.sintf_arr[4].RVALID),
+      .i3c_axi_rready         (axi_interconnect.sintf_arr[4].RREADY),
+      .i3c_axi_rid            (axi_interconnect.sintf_arr[4].RID),
+      .i3c_axi_rdata          (i3c_axi_rdata_32),
+      .i3c_axi_rresp          (axi_interconnect.sintf_arr[4].RRESP),
+      .i3c_axi_rlast          (axi_interconnect.sintf_arr[4].RLAST),
+`endif
+`ifdef VERILATOR
+    .scl_i(scl_i),
+    .sda_i(sda_i),
+    .scl_o(scl_o),
+    .sda_o(sda_o),
+    .sel_od_pp_o(sel_od_pp_o)
+`else
+    .i3c_scl_io(i3c_scl_io),
+    .i3c_sda_io(i3c_sda_io)
+`endif
+    )
+
+    // FIXME data width conversion hack
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            i3c_axi_wr_is_upper_dw_latched <= 0;
+        else if (axi_interconnect.sintf_arr[4].AWVALID && axi_interconnect.sintf_arr[4].AWREADY)
+            i3c_axi_wr_is_upper_dw_latched <= axi_interconnect.sintf_arr[4].AWADDR[2] && (axi_interconnect.sintf_arr[4].AWSIZE < 3);
+    `CALIPTRA_ASSERT(I3C_AXI_WR_32BIT, (axi_interconnect.sintf_arr[4].AWVALID && axi_interconnect.sintf_arr[4].AWREADY) -> (axi_interconnect.sintf_arr[4].AWSIZE < 3), core_clk, !rst_l)
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            i3c_axi_rd_is_upper_dw_latched <= 0;
+        else if (axi_interconnect.sintf_arr[4].ARVALID && axi_interconnect.sintf_arr[4].ARREADY)
+            i3c_axi_rd_is_upper_dw_latched <= axi_interconnect.sintf_arr[4].ARADDR[2] && (axi_interconnect.sintf_arr[4].ARSIZE < 3);
+    `CALIPTRA_ASSERT(I3C_AXI_RD_32BIT, (axi_interconnect.sintf_arr[4].ARVALID && axi_interconnect.sintf_arr[4].ARREADY) -> (axi_interconnect.sintf_arr[4].ARSIZE < 3), core_clk, !rst_l)
+    assign axi_interconnect.sintf_arr[4].RDATA = 64'(i3c_axi_rdata_32) << (i3c_axi_rd_is_upper_dw_latched ? 32 : 0);
+    assign i3c_axi_wdata_32                    = axi_interconnect.sintf_arr[4].WDATA >> (i3c_axi_wr_is_upper_dw_latched ? 32 : 0);
+    assign i3c_axi_wstrb_4                     = axi_interconnect.sintf_arr[4].WSTRB >> (i3c_axi_wr_is_upper_dw_latched ? 4  : 0);
 
 
     //=========================================================================-

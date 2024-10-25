@@ -382,5 +382,4 @@ module mcu_top
   );
 
 
-  endmodule
-  
+endmodule
