@@ -57,12 +57,12 @@ global:
         - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
         - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
       elab:
-        #FIXME
+        #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c-core
         - '+warn=noIWNF'
         - '+warn=noPCWM-W'
         - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
         - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
-        #FIXME
+        #FIXME unique case violations in i3c-core
         - '-ignore unique_checks'
       sim:
         # Uncomment for debug prints
