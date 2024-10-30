@@ -632,7 +632,7 @@ module caliptra_ss_top
         forever  core_clk = #5 ~core_clk;
     end
 
-    assign rst_l = cycleCnt < 2 ? 1'b1 : (cycleCnt > 5 ? 1'b1 : 1'b0);
+    assign rst_l = cycleCnt > 5 ? 1'b1 : 1'b0;
     assign porst_l = cycleCnt > 2;
 
    //=========================================================================
