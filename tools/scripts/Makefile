@@ -48,9 +48,9 @@ PRINTF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/printf
 
 DUT ?= caliptra_mcu_top_tb
 
-CALIPTRA_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites
+CALIPTRA_DIR = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/test_suites
 SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
-CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
+CALIPTRA_RTL = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/rtl
 
 # Determine test directory
 #ifneq (,$(wildcard $(TBDIR)/tests/$(TEST)))
