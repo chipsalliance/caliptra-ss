@@ -37,17 +37,20 @@ endif
 
 # Define test name
 TESTNAME ?= iccm_lock
-CALIPTRA_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites
-TEST_DIR = $(CALIPTRA_SS)/src/integration/test_suites/$(TESTNAME)
+TEST_DIR ?= $(CALIPTRA_SS)/src/integration/test_suites/$(TESTNAME)
 HEX_DIR = $(CALIPTRA_SS)/src/integration/test_suites/hex
 INCLUDES_DIR = $(CALIPTRA_SS)/src/integration/test_suites/includes
-TBDIR = $(CALIPTRA_SS)/src/integration/tb
+RTL_DIR = $(CALIPTRA_SS)/src/integration/rtl
+TBDIR ?= $(CALIPTRA_SS)/src/integration/testbench
 RISCV_HW_IF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/riscv_hw_if
 #ISR_DIR    = $(CALIPTRA_SS)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
 PRINTF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/printf
-SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
-CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
+
 DUT ?= caliptra_mcu_top_tb
+
+CALIPTRA_DIR = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/test_suites
+SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
+CALIPTRA_RTL = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/rtl
 
 # Determine test directory
 #ifneq (,$(wildcard $(TBDIR)/tests/$(TEST)))
@@ -67,7 +70,7 @@ DUT ?= caliptra_mcu_top_tb
 # 		  clk_gate \
 # 		  wdt
 # COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_SS)/src/integration/test_suites/libs/$(name))
-HEADER_FILES := $(CALIPTRA_RTL)/caliptra_reg.h \
+HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
@@ -305,10 +308,12 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	-$(GCC_PREFIX)-objcopy --dump-section .dccm=dccm_section.bin $(TESTNAME).exe
 	-$(GCC_PREFIX)-objcopy -O verilog -I binary dccm_section.bin mcu_dccm.hex
 	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0xC000 --no-change-warnings $(TESTNAME).exe mcu_program.bin
 	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 # $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 # $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
+	$(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
 	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
 	@echo Completed building $(TESTNAME)
 
