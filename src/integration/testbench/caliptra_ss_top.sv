@@ -652,6 +652,7 @@ module caliptra_ss_top
     logic                       scan_mode;
 
     logic [`CLP_OBF_KEY_DWORDS-1:0][31:0]          cptra_obf_key;
+    logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0]     cptra_csr_hmac_key;
     
     logic [0:`CLP_OBF_UDS_DWORDS-1][31:0]          cptra_uds_rand;
     logic [0:`CLP_OBF_FE_DWORDS-1][31:0]           cptra_fe_rand;
@@ -743,7 +744,8 @@ module caliptra_ss_top
         .BootFSM_BrkPoint(BootFSM_BrkPoint),
         .cycleCnt        (cycleCnt        ),
 
-        .cptra_obf_key   (cptra_obf_key   ),
+        .cptra_obf_key     (cptra_obf_key     ),
+        .cptra_csr_hmac_key(cptra_csr_hmac_key),
 
         .cptra_uds_rand  (cptra_uds_rand  ),
         .cptra_fe_rand   (cptra_fe_rand   ),
@@ -796,7 +798,8 @@ module caliptra_ss_top
         .cptra_rst_b                (cptra_rst_b),
         .clk                        (core_clk),
 
-        .cptra_obf_key              (cptra_obf_key),
+        .cptra_obf_key              (cptra_obf_key     ),
+        .cptra_csr_hmac_key         (cptra_csr_hmac_key),
 
         .jtag_tck   (cptra_jtag_tck   ),
         .jtag_tdi   (cptra_jtag_tdi   ),
