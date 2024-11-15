@@ -17,7 +17,7 @@ _start:
     csrw 0x7c0, x1
 
     # Jump to main in RAM
-    la a0, 0x80010000    # Load the address of the main program in RAM into a0
+    la a0, 0x90010000    # Load the address of the main program in RAM into a0
     jalr ra, 0(a0)       # Jump to the address in a0 and link return address to ra
 
 _finish:
