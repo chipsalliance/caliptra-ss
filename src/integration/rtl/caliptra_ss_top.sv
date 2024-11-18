@@ -16,7 +16,7 @@
 `define MCU_RV_LSU_BUS_TAG_local 1
 `define INCLUDE_FUSE_CTRL = 1
 
-`default_nettype none
+//`default_nettype none
 
 `include "common_defines.sv"
 `include "config_defines.svh"
@@ -24,6 +24,7 @@
 `include "caliptra_macros.svh"
 `include "i3c_defines.svh"
 `include "caliptra_ss_includes.svh"
+`include "css_mcu0_common_defines.vh"
 
 module caliptra_ss_top
     import axi_pkg::*;
@@ -39,6 +40,8 @@ module caliptra_ss_top
     ,parameter MCU_SRAM_SIZE_KB = 512
 ) (
     input logic cptra_ss_clk_i,
+    // TODO: Hacking in this i3c clock
+    input logic cptra_i3c_clk_i,
     input logic cptra_ss_pwrgood_i,
     input logic cptra_ss_rst_b_i,
 
@@ -1039,13 +1042,13 @@ module caliptra_ss_top
         .AxiUserWidth(`AXI_USER_WIDTH),
         .AxiIdWidth  (`AXI_ID_WIDTH  )
     ) i3c (
-        .clk_i (cptra_ss_clk_i),
+        .clk_i (cptra_i3c_clk_i),
         .rst_ni(cptra_ss_rst_b_i),
 
         .arvalid_i  (cptra_ss_i3c_s_axi_if.arvalid),
         .arready_o  (cptra_ss_i3c_s_axi_if.arready),
         .arid_i     (cptra_ss_i3c_s_axi_if.arid),
-        .araddr_i   (cptra_ss_i3c_s_axi_if.araddr[`AXI_ADDR_WIDTH:0]),
+        .araddr_i   (cptra_ss_i3c_s_axi_if.araddr[`AXI_ADDR_WIDTH-1:0]),
         .arsize_i   (cptra_ss_i3c_s_axi_if.arsize),
         .aruser_i   (cptra_ss_i3c_s_axi_if.aruser),
         .arlen_i    (cptra_ss_i3c_s_axi_if.arlen),
@@ -1060,7 +1063,7 @@ module caliptra_ss_top
         .awvalid_i  (cptra_ss_i3c_s_axi_if.awvalid),
         .awready_o  (cptra_ss_i3c_s_axi_if.awready),
         .awid_i     (cptra_ss_i3c_s_axi_if.awid),
-        .awaddr_i   (cptra_ss_i3c_s_axi_if.awaddr[`AXI_ADDR_WIDTH:0]),
+        .awaddr_i   (cptra_ss_i3c_s_axi_if.awaddr[`AXI_ADDR_WIDTH-1:0]),
         .awsize_i   (cptra_ss_i3c_s_axi_if.awsize),
         .awuser_i   (cptra_ss_i3c_s_axi_if.awuser),
         .awlen_i    (cptra_ss_i3c_s_axi_if.awlen),

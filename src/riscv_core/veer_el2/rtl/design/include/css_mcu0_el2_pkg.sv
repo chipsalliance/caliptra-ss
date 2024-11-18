@@ -13,12 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Trying to see if this resolves the weird compile problem with css_mcu0_el2_param_t not being defined
+// This seemed to work
+`include "css_mcu0_el2_pdef.vh"
+
 // performance monitor stuff
 //`ifndef EL2_DEF_SV
 //`define EL2_DEF_SV
 package css_mcu0_el2_pkg;
 
-`include "css_mcu0_el2_pdef.vh"
+// `include "css_mcu0_el2_pdef.vh"
 
 typedef struct packed {
                        logic  trace_rv_i_valid_ip;
