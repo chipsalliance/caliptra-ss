@@ -239,7 +239,7 @@ Finally, the Caliptra_SS_uCTAP_HW_DEBUG_EN signal is introduced to manage the mi
 
 *: Caliptra can enter debug mode and update these signals even though LCC is in MANUF or PROD states. This case is explained in “How does Caliptra enable uCTAP_UNLOCK?” and “SoC Debug Flow and Architecture for Production Mode”.
 
-**: Caliptra_SS_uCTAP_HW_DEBUG_EN can be high if Caliptra SS grants debug mode (either manufacturing or production). This case is explained in “How does Caliptra enable uCTAP_UNLOCK?” and “SoC Debug Flow and Architecture for Production Mode”. SOC_HW_DEBUG_EN and DEF_EN can be also set high to open CLTAP and enable DFT by SoC design support. However, this condition also needs to go through the flow described in “SoC Debug Flow and Architecture for Production Mode”.
+**: Caliptra_SS_uCTAP_HW_DEBUG_EN can be high if Caliptra SS grants debug mode (either manufacturing or production). This case is explained in “How does Caliptra enable uCTAP_UNLOCK?” and “SoC Debug Flow and Architecture for Production Mode”. SOC_HW_DEBUG_EN and DEF_EN can be also set high to open CLTAP and enable DFT by SoC design support. However, this condition also needs to go through the flow described in “SoC Debug Flow and Architecture for Production Mode”. Caliptra Subsystem state should be set to either the manufacturing mode or Level 0 of the production debug unlock to enable access to the Caliptra and MCU uCTAPs.
 
 ## TAP Pin Muxing
 The LCC includes a TAP interface, which operates on its own dedicated clock and is used for injecting tokens into the LCC. Notably, the LCC TAP interface remains accessible in all life cycle states, providing a consistent entry point for test and debug operations. This TAP interface can be driven by either the TAP GPIO pins or internal chip-level wires, depending on the system's current configuration.
@@ -421,7 +421,7 @@ The private keys corresponding to these public keys are stored securely on an ex
 ### Caliptra Requirement List for Production Debug Unlock Architecture
 
 * Wiring DEBUG_INTENT_STRAP to Caliptra debug mode logic to trigger debug preparation·
-* Caliptra Mailbox is open to TAP interface to read/write only if DEBUG_INTENT_STRAP is set and if any of the DBG_SERVICE_REQ bits are set
+* Caliptra Mailbox is open to TAP interface to read/write only if DEBUG_INTENT_STRAP is set.
 * Separate Request and Response registers exposed for JTAG/TAP access in Debug locked mode and over AXI.
 * Functionality to communicate with MCU to ask hashed public key by using “SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET”, “SS_NUM_OF_DEBUG_AUTH_PK_HASHES” (default is 8) and “i” values
 * Mailbox command & payloads are defined by Caliptra ROM spec (includes MLDSA and ECC infrastructure for payload commands)
