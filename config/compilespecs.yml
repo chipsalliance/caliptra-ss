@@ -1,4 +1,4 @@
-name: caliptra-ss_lib
+name: caliptra_ss_lib
 files:
   # Components
   - src/mcu/config/compile.yml
