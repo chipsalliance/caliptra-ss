@@ -425,12 +425,15 @@ module caliptra_ss_top
     logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-1:0] dccm_wr_fdata_bank;
     logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-1:0] dccm_bank_fdout;
 
+    logic fuse_ctrl_rdy;
+    
     tb_top_pkg::veer_sram_error_injection_mode_t error_injection_mode;
 
     `define MCU_DEC rvtop_wrapper.rvtop.veer.dec
 
 
-    assign mailbox_write    = lmem.awvalid && (lmem.awaddr == mem_mailbox) && rst_l;
+    // Wait for FC to be initialized before MCU starts executing
+    assign mailbox_write    = lmem.awvalid && (lmem.awaddr == mem_mailbox) && rst_l && fuse_ctrl_rdy;
     assign mailbox_data     = lmem.wdata;
 
     assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
@@ -732,6 +735,7 @@ module caliptra_ss_top
     logic deassert_hard_rst_flag;
     logic assert_rst_flag_from_service;
     logic deassert_rst_flag_from_service;
+
 
     
 
@@ -1963,7 +1967,8 @@ module caliptra_ss_top
         .lc_dft_en_i         (lc_dft_en_i         ),
         .lc_escalate_en_i    (lc_escalate_en_i    ),
         .lc_check_byp_en_i   (lc_check_byp_en_i   ),
-        .otp_lc_data_o_valid (otp_lc_data_o_valid )
+        .otp_lc_data_o_valid (otp_lc_data_o_valid ),
+        .fuse_ctrl_rdy       (fuse_ctrl_rdy       )
     );
 
     assign otp_lc_data_o_valid = otp_lc_data_o.valid;

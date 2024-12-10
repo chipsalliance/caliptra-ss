@@ -15,7 +15,7 @@
 
 module fuse_ctrl_bfm
     import lc_ctrl_pkg::*;
-    import caliptra_top_tb_pkg::*;
+    //import caliptra_top_tb_pkg::*;
     //import global_fuse_ctrl_init_done_event_pkg::*;
     (
         input logic         core_clk,
@@ -24,16 +24,20 @@ module fuse_ctrl_bfm
         output lc_tx_t      lc_dft_en_i,
         output lc_tx_t      lc_escalate_en_i,
         output lc_tx_t      lc_check_byp_en_i,
-        input logic         otp_lc_data_o_valid
+        input logic         otp_lc_data_o_valid,
+        output logic        fuse_ctrl_rdy
     );
 
     initial begin
         fuse_ctrl_rst();
+        fuse_ctrl_rdy = 0;
         wait(cptra_pwrgood == 1);
         $display("Fuse Controller (fuse_ctrl_init_flow): Forcing fc_partition_init = 1.");
         force fc_partition_init = 1'b1;
         wait(otp_lc_data_o_valid == 1);
-        ->caliptra_top_tb_pkg::fuse_ctrl_init_done; //Signal that fuse controler initialization is done
+        //->caliptra_top_tb_pkg::fuse_ctrl_init_done; //Signal that fuse controler initialization is done
+        fuse_ctrl_rdy = 1;
+        $display("Fuse Controller (fuse_ctrl_init_flow): All partitions initialized.");
         $display("Fuse Controller (fuse_ctrl_init_flow): Releasing fc_partition_init = 1. ");
         release fc_partition_init;
     end
