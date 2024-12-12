@@ -47,7 +47,6 @@ global:
       default:
         - '-assert svaext'
         - '-sverilog -full64'
-        - '-debug_access+all'
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top
         - +define+CPTRA_TOP_PATH=caliptra_ss_top.caliptra_top_dut

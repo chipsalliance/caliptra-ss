@@ -739,17 +739,17 @@ module caliptra_ss_top
 
     
 
-
+    logic cptra_soc_bfm_rst_b;
 
 
     caliptra_top_tb_soc_bfm #(
-        .SKIP_BRINGUP(1),
+        .SKIP_BRINGUP(0),
         .SKIP_FUSE_CTRL(0)
     ) soc_bfm_inst (
         .core_clk        (core_clk        ),
 
         .cptra_pwrgood   (cptra_pwrgood   ),
-        .cptra_rst_b     (cptra_rst_b     ),
+        .cptra_rst_b     (cptra_soc_bfm_rst_b     ),
 
         .BootFSM_BrkPoint(BootFSM_BrkPoint),
         .cycleCnt        (cycleCnt        ),
@@ -1972,6 +1972,9 @@ module caliptra_ss_top
     );
 
     assign otp_lc_data_o_valid = otp_lc_data_o.valid;
+
+    // De-assert cptra_rst_b only after fuse_ctrl has initialized
+    assign cptra_rst_b = fuse_ctrl_rdy ? cptra_soc_bfm_rst_b : 1'b0;
 
 task preload_iccm;
     bit[31:0] data;
