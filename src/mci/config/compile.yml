@@ -10,12 +10,12 @@ targets:
     files:
       - $COMPILE_ROOT/rtl/mci_pkg.sv
 ---
-provides: [mci]
+provides: [mci_top]
 schema_version: 2.4.0
 requires:
   - caliptra_prim
   - axi_sub
-  - soc_ifc
+  - soc_ifc_top
   - mci_pkg
 targets:
   rtl:
