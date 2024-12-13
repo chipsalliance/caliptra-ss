@@ -305,6 +305,45 @@ addrmap mci_reg {
          // TODO
     } MCU_CLK_GATING_EN;
 
+    reg {
+        name = "mtime low";
+        desc = "RISC-V Standard Machine-mode Time Counter, lower 32-bits.
+                [br]Frequency of counter is indicated in MCU_TIMER_CONFIG.clk_period.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "Counter Low" ; sw = rw; precedence = sw; swmod = true; hw = r; swwe = mcu_req; counter = true; incrvalue = 1; overflow = true; resetsignal = mci_pwrgood;} count_l[32] = 32'h0;
+    } MCU_RV_MTIME_L;
+
+    reg {
+        name = "mtime high";
+        desc = "RISC-V Standard Machine-mode Time Counter, upper 32-bits.
+                [br]Frequency of counter is indicated in MCU_TIMER_CONFIG.clk_period.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "Counter High"; sw = rw; precedence = sw; swmod = true; hw = r; swwe = mcu_req; counter = true; incrvalue = 1;                  resetsignal = mci_pwrgood;} count_h[32] = 32'h0;
+    } MCU_RV_MTIME_H;
+
+    reg {
+        name = "mtimecmp low";
+        desc = "RISC-V Standard Machine-mode Time Counter Compare Value, lower 32-bits.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "Count Compare Low" ; sw = rw; hw = r; swwe = mcu_req; resetsignal = mci_pwrgood;} compare_l[32] = 32'h0;
+    } MCU_RV_MTIMECMP_L;
+
+    reg {
+        name = "mtimecmp high";
+        desc = "RISC-V Standard Machine-mode Time Counter Compare Value, upper 32-bits.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "Count Compare High"; sw = rw; hw = r; swwe = mcu_req; resetsignal = mci_pwrgood;} compare_h[32] = 32'h0;
+    } MCU_RV_MTIMECMP_H;
+
+
     // ----------------------------------------
     // ----------- RESET/BOOT MGMT ------------
     reg {
