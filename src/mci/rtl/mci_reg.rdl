@@ -212,6 +212,8 @@ addrmap mci_reg {
         field {resetsignal = mci_pwrgood; hw=r;} error_info[32]=0; 
     } FW_EXTENDED_ERROR_INFO[8];
 
+    // TODO add FW/HW ERROR masks (like in Caliptra)?
+
     // ----------------------------------------
     // ----------------- WDT ------------------
     //Timer1
@@ -387,6 +389,8 @@ addrmap mci_reg {
                 Observing a value of 1 in this register (after exiting a reset) also indicates to MCU ROM that it may perform context switch to RT image.";
         field {/*TODO*/ sw=rw;} lock=0;
     } RUNTIME_LOCK;
+
+    // TODO nmi_vector, reset_vector
 
     // ----------------------------------------
     // ------------ AxUSER CONFIG -------------
