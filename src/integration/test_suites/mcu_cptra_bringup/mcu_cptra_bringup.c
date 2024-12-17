@@ -68,7 +68,7 @@ void main (void) {
     // Mailbox command test
     //
 
-    // MBOX: Wait for ready_for_fw
+    // MBOX: Wait for ready_for_mb_processing
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
         for (uint8_t ii = 0; ii < 16; ii++) {
             __asm__ volatile ("nop"); // Sleep loop as "nop"
@@ -76,8 +76,8 @@ void main (void) {
     }
     VPRINTF(LOW, "MCU: Ready for FW\n");
 
-    // MBOX: Setup valid AXI ID
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0);
+    // MBOX: Setup valid AXI USER
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0xffffffff);
 //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_1, 1);
 //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_2, 2);
 //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_3, 3);
