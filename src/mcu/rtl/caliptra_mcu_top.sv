@@ -19,9 +19,9 @@
 
 module caliptra_mcu_top
     import soc_ifc_pkg::*;
-    import lc_ctrl_state_pkg::*;
-    import lc_ctrl_reg_pkg::*;
-    import lc_ctrl_pkg::*;
+    import caliptra_ss_lc_ctrl_state_pkg::*;
+    import caliptra_ss_lc_ctrl_reg_pkg::*;
+    import caliptra_ss_lc_ctrl_pkg::*;
 `ifdef CALIPTRA_INTERNAL_TRNG
     import entropy_src_pkg::*;
     import csrng_pkg::*;
@@ -846,7 +846,7 @@ csrng #(
      // OTP Interface
     .otp_en_csrng_sw_app_read_i(caliptra_prim_mubi_pkg::MuBi8True),
     // Lifecycle broadcast inputs
-    .lc_hw_debug_en_i       (lc_ctrl_pkg::On),
+    .caliptra_ss_lc_hw_debug_en_i       (caliptra_ss_lc_ctrl_pkg::On),
     // Entropy Interface
     .entropy_src_hw_if_o    (entropy_src_hw_if_req),
     .entropy_src_hw_if_i    (entropy_src_hw_if_rsp),
