@@ -74,7 +74,8 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
-		$(PRINTF_DIR)/printf.h
+		$(PRINTF_DIR)/printf.h \
+		$(RTL_DIR)/fuse_ctrl_address_map.h 
 #		$(ISR_DIR)/riscv-csr.h \
 #		$(ISR_DIR)/riscv-interrupts.h \
 #		$(ISR_DIR)/veer-csr.h
