@@ -1,0 +1,215 @@
+otp_ctrl.json
+{'MemInitFile': '""', 'NumSramKeyReqSlots': '4', 'OtpByteAddrWidth': '12', 'NumErrorEntries': '9', 'NumDaiWords': '2', 'NumDigestWords': '2', 'NumSwCfgWindowWords': '1024', 'NumPart': '7', 'NumPartUnbuf': '2', 'NumPartBuf': '5', 'VendorTestOffset': '0', 'VendorTestSize': '64', 'ScratchOffset': '0', 'ScratchSize': '56', 'VendorTestDigestOffset': '56', 'VendorTestDigestSize': '8', 'NonSecretFusesOffset': '64', 'NonSecretFusesSize': '3736', 'FmcKeyManifestSvnOffset': '64', 'FmcKeyManifestSvnSize': '4', 'RuntimeSvnOffset': '68', 'RuntimeSvnSize': '16', 'LmsVerifyOffset': '84', 'LmsVerifySize': '4', 'LmsRevocationOffset': '88', 'LmsRevocationSize': '4', 'KeyManifestPkHashMaskOffset': '92', 'KeyManifestPkHashMaskSize': '4', 'OwnerPkHashOffset': '96', 'OwnerPkHashSize': '48', 'IdevidCertAttrOffset': '144', 'IdevidCertAttrSize': '96', 'IdevidManufHsmIdOffset': '240', 'IdevidManufHsmIdSize': '16', 'SocSteppingIdOffset': '256', 'SocSteppingIdSize': '4', 'NonSecretFusesDigestOffset': '3792', 'NonSecretFusesDigestSize': '8', 'Secret0Offset': '3800', 'Secret0Size': '40', 'TestUnlockTokenOffset': '3800', 'TestUnlockTokenSize': '16', 'TestExitTokenOffset': '3816', 'TestExitTokenSize': '16', 'Secret0DigestOffset': '3832', 'Secret0DigestSize': '8', 'Secret1Offset': '3840', 'Secret1Size': '56', 'UdsSeedOffset': '3840', 'UdsSeedSize': '48', 'Secret1DigestOffset': '3888', 'Secret1DigestSize': '8', 'Secret2Offset': '3896', 'Secret2Size': '40', 'FieldEntropyOffset': '3896', 'FieldEntropySize': '32', 'Secret2DigestOffset': '3928', 'Secret2DigestSize': '8', 'Secret3Offset': '3936', 'Secret3Size': '72', 'KeyManifestPkHashOffset': '3936', 'KeyManifestPkHashSize': '48', 'RmaTokenOffset': '3984', 'RmaTokenSize': '16', 'Secret3DigestOffset': '4000', 'Secret3DigestSize': '8', 'LifeCycleOffset': '4008', 'LifeCycleSize': '88', 'LcTransitionCntOffset': '4008', 'LcTransitionCntSize': '48', 'LcStateOffset': '4056', 'LcStateSize': '40'}
+Register: INTERRUPT_STATE		Address: 0x0
+Next Address coming up: 0x4 
+Register: INTERRUPT_ENABLE		Address: 0x4
+Next Address coming up: 0x8 
+Register: INTERRUPT_TEST		Address: 0x8
+Next Address coming up: 0xC 
+Register: ALERT_TEST		Address: 0xC
+Next Address coming up: 0x10 
+Number of registers is  21
+core
+Register: STATUS		Address: 0x10
+Reg Name: STATUS Address: 0x10
+Next Address coming up: 0x14 
+In decode_addrmap, calling decode_multireg. Addr = 0x14
+DEBUG: MULTIREG
+Address offset = 14
+Register: ERR_CODE_0		Address: 0x14
+Reg Name: ERR_CODE_0 Address: 0x14
+Register: ERR_CODE_1		Address: 0x18
+Reg Name: ERR_CODE_1 Address: 0x18
+Register: ERR_CODE_2		Address: 0x1C
+Reg Name: ERR_CODE_2 Address: 0x1C
+Register: ERR_CODE_3		Address: 0x20
+Reg Name: ERR_CODE_3 Address: 0x20
+Register: ERR_CODE_4		Address: 0x24
+Reg Name: ERR_CODE_4 Address: 0x24
+Register: ERR_CODE_5		Address: 0x28
+Reg Name: ERR_CODE_5 Address: 0x28
+Register: ERR_CODE_6		Address: 0x2C
+Reg Name: ERR_CODE_6 Address: 0x2C
+Register: ERR_CODE_7		Address: 0x30
+Reg Name: ERR_CODE_7 Address: 0x30
+Register: ERR_CODE_8		Address: 0x34
+Reg Name: ERR_CODE_8 Address: 0x34
+Instance name: ERR_CODE
+Array Stride: None
+Addr Offset: 0x14
+Is Array: False
+Num Array Elements: 1
+False
+Next Address coming up: 0x38 
+Register: DIRECT_ACCESS_REGWEN		Address: 0x38
+Reg Name: DIRECT_ACCESS_REGWEN Address: 0x38
+Next Address coming up: 0x3C 
+Register: DIRECT_ACCESS_CMD		Address: 0x3C
+Reg Name: DIRECT_ACCESS_CMD Address: 0x3C
+Next Address coming up: 0x40 
+Register: DIRECT_ACCESS_ADDRESS		Address: 0x40
+Reg Name: DIRECT_ACCESS_ADDRESS Address: 0x40
+Next Address coming up: 0x44 
+In decode_addrmap, calling decode_multireg. Addr = 0x44
+DEBUG: MULTIREG
+Address offset = 44
+Register: DIRECT_ACCESS_WDATA_0		Address: 0x44
+Reg Name: DIRECT_ACCESS_WDATA_0 Address: 0x44
+Register: DIRECT_ACCESS_WDATA_1		Address: 0x48
+Reg Name: DIRECT_ACCESS_WDATA_1 Address: 0x48
+Instance name: DIRECT_ACCESS_WDATA
+Array Stride: None
+Addr Offset: 0x44
+Is Array: False
+Num Array Elements: 1
+False
+Next Address coming up: 0x4C 
+In decode_addrmap, calling decode_multireg. Addr = 0x4C
+DEBUG: MULTIREG
+Address offset = 4C
+Register: DIRECT_ACCESS_RDATA_0		Address: 0x4C
+Reg Name: DIRECT_ACCESS_RDATA_0 Address: 0x4C
+Register: DIRECT_ACCESS_RDATA_1		Address: 0x50
+Reg Name: DIRECT_ACCESS_RDATA_1 Address: 0x50
+Instance name: DIRECT_ACCESS_RDATA
+Array Stride: None
+Addr Offset: 0x4C
+Is Array: False
+Num Array Elements: 1
+False
+Next Address coming up: 0x54 
+Register: CHECK_TRIGGER_REGWEN		Address: 0x54
+Reg Name: CHECK_TRIGGER_REGWEN Address: 0x54
+Next Address coming up: 0x58 
+Register: CHECK_TRIGGER		Address: 0x58
+Reg Name: CHECK_TRIGGER Address: 0x58
+Next Address coming up: 0x5C 
+Register: CHECK_REGWEN		Address: 0x5C
+Reg Name: CHECK_REGWEN Address: 0x5C
+Next Address coming up: 0x60 
+Register: CHECK_TIMEOUT		Address: 0x60
+Reg Name: CHECK_TIMEOUT Address: 0x60
+Next Address coming up: 0x64 
+Register: INTEGRITY_CHECK_PERIOD		Address: 0x64
+Reg Name: INTEGRITY_CHECK_PERIOD Address: 0x64
+Next Address coming up: 0x68 
+Register: CONSISTENCY_CHECK_PERIOD		Address: 0x68
+Reg Name: CONSISTENCY_CHECK_PERIOD Address: 0x68
+Next Address coming up: 0x6C 
+Register: VENDOR_TEST_READ_LOCK		Address: 0x6C
+Reg Name: VENDOR_TEST_READ_LOCK Address: 0x6C
+Next Address coming up: 0x70 
+Register: NON_SECRET_FUSES_READ_LOCK		Address: 0x70
+Reg Name: NON_SECRET_FUSES_READ_LOCK Address: 0x70
+Next Address coming up: 0x74 
+In decode_addrmap, calling decode_multireg. Addr = 0x74
+DEBUG: MULTIREG
+Address offset = 74
+Register: VENDOR_TEST_DIGEST_0		Address: 0x74
+Reg Name: VENDOR_TEST_DIGEST_0 Address: 0x74
+Register: VENDOR_TEST_DIGEST_1		Address: 0x78
+Reg Name: VENDOR_TEST_DIGEST_1 Address: 0x78
+Instance name: VENDOR_TEST_DIGEST
+Array Stride: None
+Addr Offset: 0x74
+Is Array: False
+Num Array Elements: 1
+False
+Next Address coming up: 0x7C 
+In decode_addrmap, calling decode_multireg. Addr = 0x7C
+DEBUG: MULTIREG
+Address offset = 7C
+Register: NON_SECRET_FUSES_DIGEST_0		Address: 0x7C
+Reg Name: NON_SECRET_FUSES_DIGEST_0 Address: 0x7C
+Register: NON_SECRET_FUSES_DIGEST_1		Address: 0x80
+Reg Name: NON_SECRET_FUSES_DIGEST_1 Address: 0x80
+Instance name: NON_SECRET_FUSES_DIGEST
+Array Stride: None
+Addr Offset: 0x7C
+Is Array: False
+Num Array Elements: 1
+False
+Next Address coming up: 0x84 
+In decode_addrmap, calling decode_multireg. Addr = 0x84
+DEBUG: MULTIREG
+Address offset = 84
+Register: SECRET0_DIGEST_0		Address: 0x84
+Reg Name: SECRET0_DIGEST_0 Address: 0x84
+Register: SECRET0_DIGEST_1		Address: 0x88
+Reg Name: SECRET0_DIGEST_1 Address: 0x88
+Instance name: SECRET0_DIGEST
+Array Stride: None
+Addr Offset: 0x84
+Is Array: False
+Num Array Elements: 1
+False
+Next Address coming up: 0x8C 
+In decode_addrmap, calling decode_multireg. Addr = 0x8C
+DEBUG: MULTIREG
+Address offset = 8C
+Register: SECRET1_DIGEST_0		Address: 0x8C
+Reg Name: SECRET1_DIGEST_0 Address: 0x8C
+Register: SECRET1_DIGEST_1		Address: 0x90
+Reg Name: SECRET1_DIGEST_1 Address: 0x90
+Instance name: SECRET1_DIGEST
+Array Stride: None
+Addr Offset: 0x8C
+Is Array: False
+Num Array Elements: 1
+False
+Next Address coming up: 0x94 
+In decode_addrmap, calling decode_multireg. Addr = 0x94
+DEBUG: MULTIREG
+Address offset = 94
+Register: SECRET2_DIGEST_0		Address: 0x94
+Reg Name: SECRET2_DIGEST_0 Address: 0x94
+Register: SECRET2_DIGEST_1		Address: 0x98
+Reg Name: SECRET2_DIGEST_1 Address: 0x98
+Instance name: SECRET2_DIGEST
+Array Stride: None
+Addr Offset: 0x94
+Is Array: False
+Num Array Elements: 1
+False
+Next Address coming up: 0x9C 
+In decode_addrmap, calling decode_multireg. Addr = 0x9C
+DEBUG: MULTIREG
+Address offset = 9C
+Register: SECRET3_DIGEST_0		Address: 0x9C
+Reg Name: SECRET3_DIGEST_0 Address: 0x9C
+Register: SECRET3_DIGEST_1		Address: 0xA0
+Reg Name: SECRET3_DIGEST_1 Address: 0xA0
+Instance name: SECRET3_DIGEST
+Array Stride: None
+Addr Offset: 0x9C
+Is Array: False
+Num Array Elements: 1
+False
+Next Address coming up: 0xA4 
+Number of registers is  8
+prim
+Register: CSR0		Address: 0xA4
+Reg Name: CSR0 Address: 0xA4
+Next Address coming up: 0xA8 
+Register: CSR1		Address: 0xA8
+Reg Name: CSR1 Address: 0xA8
+Next Address coming up: 0xAC 
+Register: CSR2		Address: 0xAC
+Reg Name: CSR2 Address: 0xAC
+Next Address coming up: 0xB0 
+Register: CSR3		Address: 0xB0
+Reg Name: CSR3 Address: 0xB0
+Next Address coming up: 0xB4 
+Register: CSR4		Address: 0xB4
+Reg Name: CSR4 Address: 0xB4
+Next Address coming up: 0xB8 
+Register: CSR5		Address: 0xB8
+Reg Name: CSR5 Address: 0xB8
+Next Address coming up: 0xBC 
+Register: CSR6		Address: 0xBC
+Reg Name: CSR6 Address: 0xBC
+Next Address coming up: 0xC0 
+Register: CSR7		Address: 0xC0
+Reg Name: CSR7 Address: 0xC0
+Next Address coming up: 0xC4 
+Compilation or elaboration error: Elaborate aborted due to previous errors

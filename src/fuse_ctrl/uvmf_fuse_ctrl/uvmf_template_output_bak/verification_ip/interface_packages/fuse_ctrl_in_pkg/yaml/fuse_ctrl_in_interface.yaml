@@ -1,0 +1,65 @@
+uvmf:
+  interfaces:
+    fuse_ctrl_in:
+      clock: clk_i
+      config_constraints: []
+      config_vars: []
+      existing_library_component: 'True'
+      gen_inbound_streaming_driver: 'False'
+      hdl_pkg_parameters: []
+      hdl_typedefs: []
+      hvl_pkg_parameters: []
+      hvl_typedefs: []
+      parameters:
+      - name: AlertSyncOn
+        type: int
+        value: '3'
+      - name: RndConstLfrSeed
+        type: caliptra_otp_ctrl_pkg::lfsr_seed_t
+        value: caliptra_otp_ctrl_pkg::RndCnstLfsrSeedDefault
+      - name: RndCnstLfsrPerm
+        type: caliptra_otp_ctrl_pkg::lfsr_perm_t
+        value: caliptra_otp_ctrl_pkg::RndCnstLfsrPermDefault
+      - name: MemInitFile
+        type: string
+        value: /home/ws/caliptra/anjpar/ws1/chipsalliance/caliptra-rtl/src/fuse_ctrl/data/otp-img.2048.vmem
+      ports:
+      - dir: output
+        name: edn_i
+        reset_value: '''bz'
+        width: '[''$bits(edn_pkg::edn_req_t)'']'
+      - dir: output
+        name: alert_rx_i
+        reset_value: '''bz'
+        width: '[''ast_pkg::NumAlerts * $bits(caliptra_prim_alert_pkg::alert_rx_t)'']'
+      - dir: output
+        name: obs_ctrl_i
+        reset_value: '''bz'
+        width: '[''$bits(ast_pkg::ast_obs_ctrl_t)'']'
+      - dir: output
+        name: otp_ast_pwr_seq_h_i
+        reset_value: '''bz'
+        width: '[''$bits(caliptra_otp_ctrl_pkg::otp_ast_req_t)'']'
+      - dir: output
+        name: scan_en_i
+        reset_value: '''bz'
+        width: '1'
+      - dir: output
+        name: scan_rst_ni
+        reset_value: '''bz'
+        width: '1'
+      - dir: output
+        name: scanmode_i
+        reset_value: '''bz'
+        width: '1'
+      reset: rst_ni
+      reset_assertion_level: 'False'
+      transaction_constraints: []
+      transaction_vars:
+      - comment: ''
+        iscompare: 'False'
+        isrand: 'False'
+        name: set_alert_rx_i
+        type: caliptra_prim_alert_pkg::alert_rx_t
+        unpacked_dimension: ''
+      use_dpi_link: 'False'
