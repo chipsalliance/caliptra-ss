@@ -164,8 +164,8 @@ initial begin
     for (int i=0; i<AAXI_INTC_SLAVE_CNT; i++) begin
 	    // instantiates Slave BFMs
         slave[i].cfg_info.passive_mode= 1; 
-        slave[i].cfg_info.opt_awuser_enable = 0; // optional, axi4_interconn_routings.sv need it
-        slave[i].cfg_info.opt_aruser_enable = 0; // optional, axi4_interconn_routings.sv need it
+        slave[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         // slave[i].add_fifo(64'habcc+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'ha000_0000+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'hb000_0001+i*64'h100_0000, 4);
@@ -203,8 +203,8 @@ initial begin
 
         //-- Caliptra SoC IFC Sub
         slave[3].cfg_info.passive_mode= 1; 
-        slave[3].cfg_info.opt_awuser_enable = 0; // optional, axi4_interconn_routings.sv need it
-        slave[3].cfg_info.opt_aruser_enable = 0; // optional, axi4_interconn_routings.sv need it
+        slave[3].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[3].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.base_address[0] = 64'h3000_0000;
         slave[3].cfg_info.limit_address[0] = 64'h3FFF_FFFF;
         // slave[3].cfg_info.fifo_address[0] = 64'hc000_0000;
@@ -229,8 +229,8 @@ initial begin
 
         //-- I3C
         slave[4].cfg_info.passive_mode= 1; 
-        slave[4].cfg_info.opt_awuser_enable = 0; // optional, axi4_interconn_routings.sv need it
-        slave[4].cfg_info.opt_aruser_enable = 0; // optional, axi4_interconn_routings.sv need it
+        slave[4].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[4].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.base_address[0] = 64'h2000_4000;
         slave[4].cfg_info.limit_address[0] = 64'h2000_4FFF;
         slave[4].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH

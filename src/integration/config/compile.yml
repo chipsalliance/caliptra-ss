@@ -12,20 +12,19 @@ targets:
   tb:
     directories:
       - $COMPILE_ROOT/vip
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi.VCS
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//checker/BP063-BU-01000-r0p1-00rel0/sva
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//testbench
-      - $COMPILE_ROOT/testbench
+      - $AVERY_HOME/axixactor-2.1e.230314//src.axi.VCS
+      - $AVERY_HOME/axixactor-2.1e.230314//src.axi
+      - $AVERY_HOME/axixactor-2.1e.230314//checker/BP063-BU-01000-r0p1-00rel0/sva
+      - $AVERY_HOME/axixactor-2.1e.230314//testbench
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src/avery_pkg.sv
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src/avery_pkg_test.sv
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_pkg.sv
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_pkg_xactor.sv
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_class_pll.sv
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_pkg_test.sv
-      - /cad/tools/mentor/avery/2023.2/axixactor-2.1e.230314//src.axi/aaxi_intf.sv
+      - $AVERY_HOME/axixactor-2.1e.230314//src/avery_pkg.sv
+      - $AVERY_HOME/axixactor-2.1e.230314//src/avery_pkg_test.sv
+      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_pkg.sv
+      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_pkg_xactor.sv
+      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_class_pll.sv
+      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_pkg_test.sv
+      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_intf.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
       - $COMPILE_ROOT/testbench/axi_slv.sv
       - $COMPILE_ROOT/testbench/dasm.svi
@@ -60,18 +59,20 @@ global:
         - +define+AAXI_MAX_DATA_WIDTH=64
         - +define+AAXI_MAX_ADDR_WIDTH=64
         - +define+AAXI_MAX_ID_WIDTH=5
+        - +define+AAXI_MAX_ARUSER_WIDTH=32
+        - +define+AAXI_MAX_AWUSER_WIDTH=32
         - +define+CALIPTRA_INTERNAL_UART
         - '-noinherit_timescale=1ns/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=7
-        - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
-        - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
+        - +define+AAXI_INTC_SLAVE_CNT=5
+        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
+        - '-P $AVERY_PLI/tb_vcs64.tab'
       elab:
         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c-core
         - '+warn=noIWNF'
         - '+warn=noPCWM-W'
-        - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
-        - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
+        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
+        - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME unique case violations in i3c-core
         - '-ignore unique_checks'
       sim:
