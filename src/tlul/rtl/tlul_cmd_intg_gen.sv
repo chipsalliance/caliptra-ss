@@ -21,7 +21,7 @@ module tlul_cmd_intg_gen import tlul_pkg::*; #(
   logic [H2DCmdMaxWidth-1:0] unused_cmd_payload;
 
   logic [H2DCmdIntgWidth-1:0] cmd_intg;
-  prim_secded_inv_64_57_enc u_cmd_gen (
+ caliptra_prim_secded_inv_64_57_enc u_cmd_gen (
     .data_i(H2DCmdMaxWidth'(cmd)),
     .data_o({cmd_intg, unused_cmd_payload})
   );
@@ -33,7 +33,7 @@ module tlul_cmd_intg_gen import tlul_pkg::*; #(
     assign data_final = tl_i.a_data;
 
     logic [DataMaxWidth-1:0] unused_data;
-    prim_secded_inv_39_32_enc u_data_gen (
+   caliptra_prim_secded_inv_39_32_enc u_data_gen (
       .data_i(DataMaxWidth'(data_final)),
       .data_o({data_intg, unused_data})
     );
