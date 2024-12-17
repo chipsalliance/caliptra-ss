@@ -22,7 +22,7 @@ module otp_ctrl_part_unbuf
   output logic                        init_done_o,
   // Escalation input. This moves the FSM into a terminal state and locks down
   // the partition.
-  input  lc_ctrl_pkg::lc_tx_t         escalate_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t         escalate_en_i,
   // Output error state of partition, to be consumed by OTP error/alert logic.
   // Note that most errors are not recoverable and move the partition FSM into
   // a terminal error state.
@@ -318,7 +318,7 @@ module otp_ctrl_part_unbuf
       end
     end
     // SEC_CM: PART.FSM.GLOBAL_ESC
-    if (lc_ctrl_pkg::lc_tx_test_true_loose(escalate_en_i)) begin
+    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(escalate_en_i)) begin
       state_d = ErrorSt;
       fsm_err_o = 1'b1;
       if (state_q != ErrorSt) begin

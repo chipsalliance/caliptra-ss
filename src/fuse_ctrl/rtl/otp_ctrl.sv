@@ -62,22 +62,22 @@ module otp_ctrl
   input  pwrmgr_pkg::pwr_otp_req_t                   pwr_otp_i,
   output pwrmgr_pkg::pwr_otp_rsp_t                   pwr_otp_o,
   // Macro-specific test registers going to lifecycle TAP
-  input  lc_otp_vendor_test_req_t                    lc_otp_vendor_test_i,
-  output lc_otp_vendor_test_rsp_t                    lc_otp_vendor_test_o,
+  input  caliptra_ss_lc_otp_vendor_test_req_t                    caliptra_ss_lc_otp_vendor_test_i,
+  output caliptra_ss_lc_otp_vendor_test_rsp_t                    caliptra_ss_lc_otp_vendor_test_o,
   // Lifecycle transition command interface
-  input  lc_otp_program_req_t                        lc_otp_program_i,
-  output lc_otp_program_rsp_t                        lc_otp_program_o,
+  input  caliptra_ss_lc_otp_program_req_t                        caliptra_ss_lc_otp_program_i,
+  output caliptra_ss_lc_otp_program_rsp_t                        caliptra_ss_lc_otp_program_o,
   // Lifecycle broadcast inputs
   // SEC_CM: LC_CTRL.INTERSIG.MUBI
-  input  lc_ctrl_pkg::lc_tx_t                        lc_creator_seed_sw_rw_en_i,
-  input  lc_ctrl_pkg::lc_tx_t                        lc_owner_seed_sw_rw_en_i,
-  input  lc_ctrl_pkg::lc_tx_t                        lc_seed_hw_rd_en_i,
-  input  lc_ctrl_pkg::lc_tx_t                        lc_dft_en_i,
-  input  lc_ctrl_pkg::lc_tx_t                        lc_escalate_en_i,
-  input  lc_ctrl_pkg::lc_tx_t                        lc_check_byp_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t                        caliptra_ss_lc_creator_seed_sw_rw_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t                        caliptra_ss_lc_owner_seed_sw_rw_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t                        caliptra_ss_lc_seed_hw_rd_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t                        caliptra_ss_lc_dft_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t                        caliptra_ss_lc_escalate_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t                        caliptra_ss_lc_check_byp_en_i,
   // OTP broadcast outputs
   // SEC_CM: TOKEN_VALID.CTRL.MUBI
-  output otp_lc_data_t                               otp_lc_data_o,
+  output otp_caliptra_ss_lc_data_t                               otp_caliptra_ss_lc_data_o,
   output otp_keymgr_key_t                            otp_keymgr_key_o,
   // Scrambling key requests
   input  flash_otp_key_req_t                         flash_otp_key_i,
@@ -276,66 +276,66 @@ module otp_ctrl
   // Life Cycle Signal Synchronization //
   ///////////////////////////////////////
 
-  lc_ctrl_pkg::lc_tx_t       lc_creator_seed_sw_rw_en, lc_owner_seed_sw_rw_en,
-                             lc_seed_hw_rd_en, lc_check_byp_en;
-  lc_ctrl_pkg::lc_tx_t [2:0] lc_dft_en;
+  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t       caliptra_ss_lc_creator_seed_sw_rw_en, caliptra_ss_lc_owner_seed_sw_rw_en,
+                             caliptra_ss_lc_seed_hw_rd_en, caliptra_ss_lc_check_byp_en;
+  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t [2:0] caliptra_ss_lc_dft_en;
   // NumAgents + lfsr timer and scrambling datapath.
-  lc_ctrl_pkg::lc_tx_t [NumAgentsIdx+1:0] lc_escalate_en, lc_escalate_en_synced;
+  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t [NumAgentsIdx+1:0] caliptra_ss_lc_escalate_en, caliptra_ss_lc_escalate_en_synced;
   // Single wire for gating assertions in arbitration and CDC primitives.
-  logic lc_escalate_en_any;
+  logic caliptra_ss_lc_escalate_en_any;
 
   caliptra_prim_lc_sync #(
     .NumCopies(NumAgentsIdx+2)
-  ) u_prim_lc_sync_escalate_en (
+  ) u_prim_caliptra_ss_lc_sync_escalate_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(lc_escalate_en_i),
-    .lc_en_o(lc_escalate_en_synced)
+    .lc_en_i(caliptra_ss_lc_escalate_en_i),
+    .lc_en_o(caliptra_ss_lc_escalate_en_synced)
   );
 
   caliptra_prim_lc_sync #(
     .NumCopies(1)
-  ) u_prim_lc_sync_creator_seed_sw_rw_en (
+  ) u_prim_caliptra_ss_lc_sync_creator_seed_sw_rw_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(lc_creator_seed_sw_rw_en_i),
-    .lc_en_o({lc_creator_seed_sw_rw_en})
+    .lc_en_i(caliptra_ss_lc_creator_seed_sw_rw_en_i),
+    .lc_en_o({caliptra_ss_lc_creator_seed_sw_rw_en})
   );
 
   caliptra_prim_lc_sync #(
     .NumCopies(1)
-  ) u_prim_lc_sync_owner_seed_sw_rw_en (
+  ) u_prim_caliptra_ss_lc_sync_owner_seed_sw_rw_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(lc_owner_seed_sw_rw_en_i),
-    .lc_en_o({lc_owner_seed_sw_rw_en})
+    .lc_en_i(caliptra_ss_lc_owner_seed_sw_rw_en_i),
+    .lc_en_o({caliptra_ss_lc_owner_seed_sw_rw_en})
   );
 
   caliptra_prim_lc_sync #(
     .NumCopies(1)
-  ) u_prim_lc_sync_seed_hw_rd_en (
+  ) u_prim_caliptra_ss_lc_sync_seed_hw_rd_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(lc_seed_hw_rd_en_i),
-    .lc_en_o({lc_seed_hw_rd_en})
+    .lc_en_i(caliptra_ss_lc_seed_hw_rd_en_i),
+    .lc_en_o({caliptra_ss_lc_seed_hw_rd_en})
   );
 
   caliptra_prim_lc_sync #(
     .NumCopies(3)
-  ) u_prim_lc_sync_dft_en (
+  ) u_prim_caliptra_ss_lc_sync_dft_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(lc_dft_en_i),
-    .lc_en_o(lc_dft_en)
+    .lc_en_i(caliptra_ss_lc_dft_en_i),
+    .lc_en_o(caliptra_ss_lc_dft_en)
   );
 
   caliptra_prim_lc_sync #(
     .NumCopies(1)
-  ) u_prim_lc_sync_check_byp_en (
+  ) u_prim_caliptra_ss_lc_sync_check_byp_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(lc_check_byp_en_i),
-    .lc_en_o({lc_check_byp_en})
+    .lc_en_i(caliptra_ss_lc_check_byp_en_i),
+    .lc_en_o({caliptra_ss_lc_check_byp_en})
   );
 
   /////////////////////////////////////
@@ -468,14 +468,14 @@ module otp_ctrl
 
     // Special partitions for keymgr material only become writable when
     // provisioning is enabled.
-    if (lc_ctrl_pkg::lc_tx_test_false_loose(lc_creator_seed_sw_rw_en)) begin
+    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_false_loose(caliptra_ss_lc_creator_seed_sw_rw_en)) begin
       for (int k = 0; k < NumPart; k++) begin
         if (PartInfo[k].iskeymgr_creator) begin
           part_access_pre[k] = {2{caliptra_prim_mubi_pkg::MuBi8True}};
         end
       end
     end
-    if (lc_ctrl_pkg::lc_tx_test_false_loose(lc_owner_seed_sw_rw_en)) begin
+    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_false_loose(caliptra_ss_lc_owner_seed_sw_rw_en)) begin
       for (int k = 0; k < NumPart; k++) begin
         if (PartInfo[k].iskeymgr_owner) begin
           part_access_pre[k] = {2{caliptra_prim_mubi_pkg::MuBi8True}};
@@ -572,9 +572,9 @@ module otp_ctrl
     fatal_check_error_d = fatal_check_error_q;
     fatal_bus_integ_error_d = fatal_bus_integ_error_q | (|intg_error);
     // These are the per-partition buffered escalation inputs
-    lc_escalate_en = lc_escalate_en_synced;
+    caliptra_ss_lc_escalate_en = caliptra_ss_lc_escalate_en_synced;
     // Need a single wire for gating assertions in arbitration and CDC primitives.
-    lc_escalate_en_any = 1'b0;
+    caliptra_ss_lc_escalate_en_any = 1'b0;
 
     // Aggregate all the macro alerts from the partitions
     for (int k = 0; k < NumPart; k++) begin
@@ -604,10 +604,10 @@ module otp_ctrl
       // we locally trigger escalation within OTP, which moves all FSMs
       // to a terminal error state.
       if (fatal_macro_error_q || fatal_check_error_q) begin
-        lc_escalate_en[k] = lc_ctrl_pkg::On;
+        caliptra_ss_lc_escalate_en[k] = caliptra_ss_lc_ctrl_pkg::On;
       end
-      if (lc_ctrl_pkg::lc_tx_test_true_strict(lc_escalate_en[k])) begin
-        lc_escalate_en_any = 1'b1;
+      if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_escalate_en[k])) begin
+        caliptra_ss_lc_escalate_en_any = 1'b1;
       end
     end
 
@@ -813,7 +813,7 @@ end
     .cnsty_chk_req_o    ( cnsty_chk_req             ),
     .integ_chk_ack_i    ( integ_chk_ack             ),
     .cnsty_chk_ack_i    ( cnsty_chk_ack             ),
-    .escalate_en_i      ( lc_escalate_en[NumAgents] ),
+    .escalate_en_i      ( caliptra_ss_lc_escalate_en[NumAgents] ),
     .chk_timeout_o      ( chk_timeout               ),
     .fsm_err_o          ( lfsr_fsm_err              )
   );
@@ -832,7 +832,7 @@ end
   ) u_edn_arb (
     .clk_i,
     .rst_ni,
-    .req_chk_i ( ~lc_escalate_en_any         ),
+    .req_chk_i ( ~caliptra_ss_lc_escalate_en_any         ),
     .req_i     ( {lfsr_edn_req, key_edn_req} ),
     .data_i    ( '{default: '0}              ),
     .gnt_o     ( {lfsr_edn_ack, key_edn_ack} ),
@@ -849,7 +849,7 @@ end
   ) u_prim_edn_req (
     .clk_i,
     .rst_ni,
-    .req_chk_i ( ~lc_escalate_en_any ),
+    .req_chk_i ( ~caliptra_ss_lc_escalate_en_any ),
     .req_i     ( edn_req             ),
     .ack_o     ( edn_ack             ),
     .data_o    ( edn_data            ),
@@ -888,7 +888,7 @@ end
   ) u_otp_arb (
     .clk_i,
     .rst_ni,
-    .req_chk_i ( ~lc_escalate_en_any ),
+    .req_chk_i ( ~caliptra_ss_lc_escalate_en_any ),
     .req_i     ( part_otp_arb_req    ),
     .data_i    ( part_otp_arb_bundle ),
     .gnt_o     ( part_otp_arb_gnt    ),
@@ -912,16 +912,16 @@ end
   // Life cycle qualification of TL-UL test interface.
   // SEC_CM: TEST.BUS.LC_GATED
   // SEC_CM: TEST_TL_LC_GATE.FSM.SPARSE
-  tlul_lc_gate #(
+  tlul_caliptra_ss_lc_gate #(
     .NumGatesPerDirection(2)
-  ) u_tlul_lc_gate (
+  ) u_tlul_caliptra_ss_lc_gate (
     .clk_i,
     .rst_ni,
     .tl_h2d_i(prim_tl_i),
     .tl_d2h_o(prim_tl_o),
     .tl_h2d_o(prim_tl_h2d_gated),
     .tl_d2h_i(prim_tl_d2h_gated),
-    .lc_en_i (lc_dft_en[0]),
+    .lc_en_i (caliptra_ss_lc_dft_en[0]),
     .flush_req_i('0),
     .flush_ack_o(),
     .resp_pending_o(),
@@ -931,9 +931,9 @@ end
   // Test-related GPIOs.
   // SEC_CM: TEST.BUS.LC_GATED
   logic [OtpTestVectWidth-1:0] otp_test_vect;
-  assign cio_test_o    = (lc_ctrl_pkg::lc_tx_test_true_strict(lc_dft_en[1])) ?
+  assign cio_test_o    = (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_dft_en[1])) ?
                          otp_test_vect            : '0;
-  assign cio_test_en_o = (lc_ctrl_pkg::lc_tx_test_true_strict(lc_dft_en[2])) ?
+  assign cio_test_en_o = (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_dft_en[2])) ?
                          {OtpTestVectWidth{1'b1}} : '0;
 
   // SEC_CM: MACRO.MEM.CM, MACRO.MEM.INTEGRITY
@@ -959,8 +959,8 @@ end
     .pwr_seq_h_i      ( otp_ast_pwr_seq_h_i.pwr_seq_h ),
     .ext_voltage_io   ( otp_ext_voltage_h_io          ),
     // Test interface
-    .test_ctrl_i      ( lc_otp_vendor_test_i.ctrl     ),
-    .test_status_o    ( lc_otp_vendor_test_o.status   ),
+    .test_ctrl_i      ( caliptra_ss_lc_otp_vendor_test_i.ctrl     ),
+    .test_status_o    ( caliptra_ss_lc_otp_vendor_test_o.status   ),
     .test_vect_o      ( otp_test_vect                 ),
     .test_tl_i        ( prim_tl_h2d_gated             ),
     .test_tl_o        ( prim_tl_d2h_gated             ),
@@ -1089,7 +1089,7 @@ end
     .ready_o       ( scrmbl_arb_req_ready        ),
     .data_o        ( part_scrmbl_rsp_data        ),
     .valid_o       ( scrmbl_arb_rsp_valid        ),
-    .escalate_en_i ( lc_escalate_en[NumAgents+1] ),
+    .escalate_en_i ( caliptra_ss_lc_escalate_en[NumAgents+1] ),
     .fsm_err_o     ( scrmbl_fsm_err              )
   );
 
@@ -1139,7 +1139,7 @@ end
     .init_done_o      ( pwr_otp_rsp_d                         ),
     .part_init_req_o  ( part_init_req                         ),
     .part_init_done_i ( part_init_done                        ),
-    .escalate_en_i    ( lc_escalate_en[DaiIdx]                ),
+    .escalate_en_i    ( caliptra_ss_lc_escalate_en[DaiIdx]                ),
     .error_o          ( part_error[DaiIdx]                    ),
     .fsm_err_o        ( part_fsm_err[DaiIdx]                  ),
     .part_access_i    ( part_access_dai                       ),
@@ -1176,11 +1176,11 @@ end
   // Lifecycle Transition Interface //
   ////////////////////////////////////
 
-  logic [PartInfo[LifeCycleIdx].size-1:0][7:0] lc_otp_program_data;
-  assign lc_otp_program_data[LcStateOffset-LifeCycleOffset +: LcStateSize] =
-      lc_otp_program_i.state;
-  assign lc_otp_program_data[LcTransitionCntOffset-LifeCycleOffset +: LcTransitionCntSize] =
-      lc_otp_program_i.count;
+  logic [PartInfo[LifeCycleIdx].size-1:0][7:0] caliptra_ss_lc_otp_program_data;
+  assign caliptra_ss_lc_otp_program_data[LcStateOffset-LifeCycleOffset +: LcStateSize] =
+      caliptra_ss_lc_otp_program_i.state;
+  assign caliptra_ss_lc_otp_program_data[LcTransitionCntOffset-LifeCycleOffset +: LcTransitionCntSize] =
+      caliptra_ss_lc_otp_program_i.count;
 
   otp_ctrl_lci #(
     .Info(PartInfo[LifeCycleIdx])
@@ -1188,14 +1188,14 @@ end
     .clk_i,
     .rst_ni,
     .lci_en_i         ( pwr_otp_o.otp_done                ),
-    .escalate_en_i    ( lc_escalate_en[LciIdx]            ),
+    .escalate_en_i    ( caliptra_ss_lc_escalate_en[LciIdx]            ),
     .error_o          ( part_error[LciIdx]                ),
     .fsm_err_o        ( part_fsm_err[LciIdx]              ),
     .lci_prog_idle_o  ( lci_prog_idle                     ),
-    .lc_req_i         ( lc_otp_program_i.req              ),
-    .lc_data_i        ( lc_otp_program_data               ),
-    .lc_ack_o         ( lc_otp_program_o.ack              ),
-    .lc_err_o         ( lc_otp_program_o.err              ),
+    .caliptra_ss_lc_req_i         ( caliptra_ss_lc_otp_program_i.req              ),
+    .caliptra_ss_lc_data_i        ( caliptra_ss_lc_otp_program_data               ),
+    .caliptra_ss_lc_ack_o         ( caliptra_ss_lc_otp_program_o.ack              ),
+    .caliptra_ss_lc_err_o         ( caliptra_ss_lc_otp_program_o.err              ),
     .otp_req_o        ( part_otp_arb_req[LciIdx]          ),
     .otp_cmd_o        ( part_otp_arb_bundle[LciIdx].cmd   ),
     .otp_size_o       ( part_otp_arb_bundle[LciIdx].size  ),
@@ -1231,7 +1231,7 @@ end
     .clk_i,
     .rst_ni,
     .kdi_en_i                ( pwr_otp_o.otp_done      ),
-    .escalate_en_i           ( lc_escalate_en[KdiIdx]  ),
+    .escalate_en_i           ( caliptra_ss_lc_escalate_en[KdiIdx]  ),
     .fsm_err_o               ( part_fsm_err[KdiIdx]    ),
     .scrmbl_key_seed_valid_i ( scrmbl_key_seed_valid   ),
     .flash_data_key_seed_i   ( flash_data_key_seed     ),
@@ -1283,7 +1283,7 @@ end
         .rst_ni,
         .init_req_i    ( part_init_req                ),
         .init_done_o   ( part_init_done[k]            ),
-        .escalate_en_i ( lc_escalate_en[k]            ),
+        .escalate_en_i ( caliptra_ss_lc_escalate_en[k]            ),
         .error_o       ( part_error[k]                ),
         .fsm_err_o     ( part_fsm_err[k]              ),
         .access_i      ( part_access[k]               ),
@@ -1342,9 +1342,9 @@ end
         .integ_chk_ack_o   ( integ_chk_ack[k]                ),
         .cnsty_chk_req_i   ( cnsty_chk_req[k]                ),
         .cnsty_chk_ack_o   ( cnsty_chk_ack[k]                ),
-        .escalate_en_i     ( lc_escalate_en[k]               ),
+        .escalate_en_i     ( caliptra_ss_lc_escalate_en[k]               ),
         // Only supported by life cycle partition (see further below).
-        .check_byp_en_i    ( lc_ctrl_pkg::Off                ),
+        .check_byp_en_i    ( caliptra_ss_lc_ctrl_pkg::Off                ),
         .error_o           ( part_error[k]                   ),
         .fsm_err_o         ( part_fsm_err[k]                 ),
         .access_i          ( part_access[k]                  ),
@@ -1399,11 +1399,11 @@ end
         .integ_chk_ack_o   ( integ_chk_ack[k]                ),
         .cnsty_chk_req_i   ( cnsty_chk_req[k]                ),
         .cnsty_chk_ack_o   ( cnsty_chk_ack[k]                ),
-        .escalate_en_i     ( lc_escalate_en[k]               ),
+        .escalate_en_i     ( caliptra_ss_lc_escalate_en[k]               ),
         // This is only supported by the life cycle partition. We need to prevent this partition
         // from escalating once the life cycle state in memory is being updated (and hence not
         // consistent with the values in the buffer regs anymore).
-        .check_byp_en_i    ( lc_check_byp_en                 ),
+        .check_byp_en_i    ( caliptra_ss_lc_check_byp_en                 ),
         .error_o           ( part_error[k]                   ),
         .fsm_err_o         ( part_fsm_err[k]                 ),
         .access_i          ( part_access[k]                  ),
@@ -1473,8 +1473,8 @@ end
   assign otp_broadcast = named_broadcast_assign(part_init_done, part_buf_data);
 
   // Make sure the broadcast valid is flopped before sending it out.
-  lc_ctrl_pkg::lc_tx_t otp_broadcast_valid_q;
-  caliptra_prim_lc_sender u_prim_lc_sender_otp_broadcast_valid (
+  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t otp_broadcast_valid_q;
+  caliptra_prim_lc_sender u_prim_caliptra_ss_lc_sender_otp_broadcast_valid (
     .clk_i,
     .rst_ni,
     .lc_en_i(otp_broadcast.valid),
@@ -1494,11 +1494,11 @@ end
   // parameterized accordingly (via SV parameters) to consume the correct key material.
   //
   // The key material valid signals are set to true if the corresponding digest is nonzero and the
-  // partition is initialized. On top of that, the entire output is gated by lc_seed_hw_rd_en.
+  // partition is initialized. On top of that, the entire output is gated by caliptra_ss_lc_seed_hw_rd_en.
   otp_keymgr_key_t otp_keymgr_key;
   assign otp_keymgr_key = named_keymgr_key_assign(part_digest,
                                                   part_buf_data,
-                                                  lc_seed_hw_rd_en);
+                                                  caliptra_ss_lc_seed_hw_rd_en);
 
   // Note regarding these breakouts: named_keymgr_key_assign will tie off unused key material /
   // valid signals to '0. This is the case for instance in system configurations that keep the seed
@@ -1536,22 +1536,22 @@ end
     otp_keymgr_key_o.owner_seed_valid              = owner_seed_valid_q;
   end
 
-  // Check that the lc_seed_hw_rd_en remains stable, once the key material is valid.
+  // Check that the caliptra_ss_lc_seed_hw_rd_en remains stable, once the key material is valid.
   `CALIPTRA_ASSERT(LcSeedHwRdEnStable0_A,
-    $rose(creator_root_key_share0_valid_q) |=> $stable(lc_seed_hw_rd_en) [*1:$],
-    clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
+    $rose(creator_root_key_share0_valid_q) |=> $stable(caliptra_ss_lc_seed_hw_rd_en) [*1:$],
+    clk_i, !rst_ni || caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en_i) // Disable if escalating
   )
   `CALIPTRA_ASSERT(LcSeedHwRdEnStable1_A,
-    $rose(creator_root_key_share1_valid_q) |=> $stable(lc_seed_hw_rd_en) [*1:$],
-    clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
+    $rose(creator_root_key_share1_valid_q) |=> $stable(caliptra_ss_lc_seed_hw_rd_en) [*1:$],
+    clk_i, !rst_ni || caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en_i) // Disable if escalating
   )
   `CALIPTRA_ASSERT(LcSeedHwRdEnStable2_A,
-    $rose(creator_seed_valid_q) |=> $stable(lc_seed_hw_rd_en) [*1:$],
-    clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
+    $rose(creator_seed_valid_q) |=> $stable(caliptra_ss_lc_seed_hw_rd_en) [*1:$],
+    clk_i, !rst_ni || caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en_i) // Disable if escalating
   )
   `CALIPTRA_ASSERT(LcSeedHwRdEnStable3_A,
-    $rose(owner_seed_valid_q) |=> $stable(lc_seed_hw_rd_en) [*1:$],
-    clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
+    $rose(owner_seed_valid_q) |=> $stable(caliptra_ss_lc_seed_hw_rd_en) [*1:$],
+    clk_i, !rst_ni || caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en_i) // Disable if escalating
   )
 
   // Scrambling Keys
@@ -1564,62 +1564,62 @@ end
                                                FlashAddrKeySeedSize];
 
   // Test unlock and exit tokens and RMA token
-  assign otp_lc_data_o.test_exit_token   = part_buf_data[TestExitTokenOffset +:
+  assign otp_caliptra_ss_lc_data_o.test_exit_token   = part_buf_data[TestExitTokenOffset +:
                                                          TestExitTokenSize];
-  assign otp_lc_data_o.test_unlock_token = part_buf_data[TestUnlockTokenOffset +:
+  assign otp_caliptra_ss_lc_data_o.test_unlock_token = part_buf_data[TestUnlockTokenOffset +:
                                                          TestUnlockTokenSize];
-  assign otp_lc_data_o.rma_token         = part_buf_data[RmaTokenOffset +:
+  assign otp_caliptra_ss_lc_data_o.rma_token         = part_buf_data[RmaTokenOffset +:
                                                          RmaTokenSize];
 
-  lc_ctrl_pkg::lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
+  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
   // The test tokens have been provisioned.
-  assign test_tokens_valid = (part_digest[Secret0Idx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign test_tokens_valid = (part_digest[Secret0Idx] != '0) ? caliptra_ss_lc_ctrl_pkg::On : caliptra_ss_lc_ctrl_pkg::Off;
   // The rma token has been provisioned.
-  assign rma_token_valid = (part_digest[Secret2Idx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign rma_token_valid = (part_digest[Secret2Idx] != '0) ? caliptra_ss_lc_ctrl_pkg::On : caliptra_ss_lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
-  assign secrets_valid = (part_digest[Secret2Idx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign secrets_valid = (part_digest[Secret2Idx] != '0) ? caliptra_ss_lc_ctrl_pkg::On : caliptra_ss_lc_ctrl_pkg::Off;
 
   // Buffer these constants in order to ensure that synthesis does not try to optimize the encoding.
   // SEC_CM: TOKEN_VALID.CTRL.MUBI
   caliptra_prim_lc_sender #(
     .AsyncOn(0)
-  ) u_prim_lc_sender_test_tokens_valid (
+  ) u_prim_caliptra_ss_lc_sender_test_tokens_valid (
     .clk_i,
     .rst_ni,
     .lc_en_i(test_tokens_valid),
-    .lc_en_o(otp_lc_data_o.test_tokens_valid)
+    .lc_en_o(otp_caliptra_ss_lc_data_o.test_tokens_valid)
   );
 
   caliptra_prim_lc_sender #(
     .AsyncOn(0)
-  ) u_prim_lc_sender_rma_token_valid (
+  ) u_prim_caliptra_ss_lc_sender_rma_token_valid (
     .clk_i,
     .rst_ni,
     .lc_en_i(rma_token_valid),
-    .lc_en_o(otp_lc_data_o.rma_token_valid)
+    .lc_en_o(otp_caliptra_ss_lc_data_o.rma_token_valid)
   );
 
   caliptra_prim_lc_sender #(
     .AsyncOn(0)
-  ) u_prim_lc_sender_secrets_valid (
+  ) u_prim_caliptra_ss_lc_sender_secrets_valid (
     .clk_i,
     .rst_ni,
     .lc_en_i(secrets_valid),
-    .lc_en_o(otp_lc_data_o.secrets_valid)
+    .lc_en_o(otp_caliptra_ss_lc_data_o.secrets_valid)
   );
 
   // Lifecycle state
-  assign otp_lc_data_o.state = lc_ctrl_state_pkg::lc_state_e'(part_buf_data[LcStateOffset +:
+  assign otp_caliptra_ss_lc_data_o.state = caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_state_e'(part_buf_data[LcStateOffset +:
                                                                             LcStateSize]);
-  assign otp_lc_data_o.count = lc_ctrl_state_pkg::lc_cnt_e'(part_buf_data[LcTransitionCntOffset +:
+  assign otp_caliptra_ss_lc_data_o.count = caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_cnt_e'(part_buf_data[LcTransitionCntOffset +:
                                                                           LcTransitionCntSize]);
 
   // Assert life cycle state valid signal only when all partitions have initialized.
-  assign otp_lc_data_o.valid    = &part_init_done;
+  assign otp_caliptra_ss_lc_data_o.valid    = &part_init_done;
   // Signal whether there are any errors in the life cycle partition (both correctable and
   // uncorrectable ones). This bit is made available via the JTAG TAP, which is useful for
   // production testing in RAW life cycle state where the OTP regs are not accessible.
-  assign otp_lc_data_o.error    = |part_error[LifeCycleIdx];
+  assign otp_caliptra_ss_lc_data_o.error    = |part_error[LifeCycleIdx];
 
   // Not all bits of part_buf_data are used here.
   logic unused_buf_data;
@@ -1635,11 +1635,11 @@ end
   `CALIPTRA_ASSERT_INIT(FlashAddrKeySeedSize_A,     FlashKeySeedWidth == FlashAddrKeySeedSize * 8)
   `CALIPTRA_ASSERT_INIT(SramDataKeySeedSize_A,      SramKeySeedWidth == SramDataKeySeedSize * 8)
 
-  `CALIPTRA_ASSERT_INIT(RmaTokenSize_A,        lc_ctrl_state_pkg::LcTokenWidth == RmaTokenSize * 8)
-  `CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, lc_ctrl_state_pkg::LcTokenWidth == TestUnlockTokenSize * 8)
-  `CALIPTRA_ASSERT_INIT(TestExitTokenSize_A,   lc_ctrl_state_pkg::LcTokenWidth == TestExitTokenSize * 8)
-  `CALIPTRA_ASSERT_INIT(LcStateSize_A,         lc_ctrl_state_pkg::LcStateWidth == LcStateSize * 8)
-  `CALIPTRA_ASSERT_INIT(LcTransitionCntSize_A, lc_ctrl_state_pkg::LcCountWidth == LcTransitionCntSize * 8)
+  `CALIPTRA_ASSERT_INIT(RmaTokenSize_A,        caliptra_ss_lc_ctrl_state_pkg::LcTokenWidth == RmaTokenSize * 8)
+  `CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, caliptra_ss_lc_ctrl_state_pkg::LcTokenWidth == TestUnlockTokenSize * 8)
+  `CALIPTRA_ASSERT_INIT(TestExitTokenSize_A,   caliptra_ss_lc_ctrl_state_pkg::LcTokenWidth == TestExitTokenSize * 8)
+  `CALIPTRA_ASSERT_INIT(LcStateSize_A,         caliptra_ss_lc_ctrl_state_pkg::LcStateWidth == LcStateSize * 8)
+  `CALIPTRA_ASSERT_INIT(LcTransitionCntSize_A, caliptra_ss_lc_ctrl_state_pkg::LcCountWidth == LcTransitionCntSize * 8)
 
   `CALIPTRA_ASSERT_KNOWN(OtpAstPwrSeqKnown_A,         otp_ast_pwr_seq_o)
   `CALIPTRA_ASSERT_KNOWN(CoreTlOutKnown_A,            core_tl_o)
@@ -1648,8 +1648,8 @@ end
   `CALIPTRA_ASSERT_KNOWN(IntrOtpErrorKnown_A,         intr_otp_error_o)
   `CALIPTRA_ASSERT_KNOWN(AlertTxKnown_A,              alert_tx_o)
   `CALIPTRA_ASSERT_KNOWN(PwrOtpInitRspKnown_A,        pwr_otp_o)
-  `CALIPTRA_ASSERT_KNOWN(LcOtpProgramRspKnown_A,      lc_otp_program_o)
-  `CALIPTRA_ASSERT_KNOWN(OtpLcDataKnown_A,            otp_lc_data_o)
+  `CALIPTRA_ASSERT_KNOWN(LcOtpProgramRspKnown_A,      caliptra_ss_lc_otp_program_o)
+  `CALIPTRA_ASSERT_KNOWN(OtpLcDataKnown_A,            otp_caliptra_ss_lc_data_o)
   `CALIPTRA_ASSERT_KNOWN(OtpKeymgrKeyKnown_A,         otp_keymgr_key_o)
   `CALIPTRA_ASSERT_KNOWN(FlashOtpKeyRspKnown_A,       flash_otp_key_o)
   `CALIPTRA_ASSERT_KNOWN(OtpSramKeyKnown_A,           sram_otp_key_o)
@@ -1684,7 +1684,7 @@ end
   `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntScrmblCheck_A,
       u_otp_ctrl_scrmbl.u_prim_count, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(TlLcGateFsm_A,
-      u_tlul_lc_gate.u_state_regs, alert_tx_o[2])
+      u_tlul_caliptra_ss_lc_gate.u_state_regs, alert_tx_o[2])
 
   // Alert assertions for double LFSR.
   `CALIPTRA_ASSERT_PRIM_DOUBLE_LFSR_ERROR_TRIGGER_ALERT(DoubleLfsrCheck_A,

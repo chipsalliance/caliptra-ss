@@ -29,10 +29,10 @@ module otp_ctrl_part_buf
   output logic                        cnsty_chk_ack_o,
   // Escalation input. This moves the FSM into a terminal state and locks down
   // the partition.
-  input  lc_ctrl_pkg::lc_tx_t         escalate_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t         escalate_en_i,
   // Check bypass enable. This bypasses integrity and consistency checks and
   // acknowledges all incoming check requests (only used by life cycle).
-  input  lc_ctrl_pkg::lc_tx_t         check_byp_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t         check_byp_en_i,
   // Output error state of partition, to be consumed by OTP error/alert logic.
   // Note that most errors are not recoverable and move the partition FSM into
   // a terminal error state.
@@ -104,8 +104,8 @@ module otp_ctrl_part_buf
 
   // This feature is only supposed to be used with partitions that are not scrambled
   // and that do not have a digest.
-  `CALIPTRA_ASSERT(BypassEnable0_A, Info.secret    |-> lc_ctrl_pkg::lc_tx_test_false_strict(check_byp_en_i))
-  `CALIPTRA_ASSERT(BypassEnable1_A, Info.hw_digest |-> lc_ctrl_pkg::lc_tx_test_false_strict(check_byp_en_i))
+  `CALIPTRA_ASSERT(BypassEnable0_A, Info.secret    |-> caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_false_strict(check_byp_en_i))
+  `CALIPTRA_ASSERT(BypassEnable1_A, Info.hw_digest |-> caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_false_strict(check_byp_en_i))
 
   ///////////////////////
   // OTP Partition FSM //
@@ -379,7 +379,7 @@ module otp_ctrl_part_buf
               // Check whether the read data corresponds with the data buffered in regs.
               // Note that this particular check can be bypassed in case a transition is ongoing.
               if (scrmbl_data_o == data_mux ||
-                  lc_ctrl_pkg::lc_tx_test_true_strict(check_byp_en_i)) begin
+                  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_strict(check_byp_en_i)) begin
                 // Can go back to idle and acknowledge the
                 // request if this is the last block.
                 if (cnt == LastScrmblBlock) begin
@@ -599,7 +599,7 @@ module otp_ctrl_part_buf
       end
     end
     // SEC_CM: PART.FSM.LOCAL_ESC, PART.FSM.GLOBAL_ESC
-    if (lc_ctrl_pkg::lc_tx_test_true_loose(escalate_en_i) || cnt_err) begin
+    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(escalate_en_i) || cnt_err) begin
       state_d = ErrorSt;
       fsm_err_o = 1'b1;
       if (state_q != ErrorSt) begin

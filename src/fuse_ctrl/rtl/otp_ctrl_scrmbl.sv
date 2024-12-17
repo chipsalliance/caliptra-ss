@@ -87,7 +87,7 @@ module otp_ctrl_scrmbl
   output logic [ScrmblBlockWidth-1:0] data_o,
   output logic                        valid_o,
   // escalation input and FSM error indication
-  input  lc_ctrl_pkg::lc_tx_t         escalate_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t         escalate_en_i,
   output logic                        fsm_err_o
 );
 
@@ -431,7 +431,7 @@ module otp_ctrl_scrmbl
 
     // Unconditionally jump into the terminal error state in case of escalation.
     // SEC_CM: SCRMBL.FSM.LOCAL_ESC, SCRMBL.FSM.GLOBAL_ESC
-    if (lc_ctrl_pkg::lc_tx_test_true_loose(escalate_en_i) || cnt_err) begin
+    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(escalate_en_i) || cnt_err) begin
       state_d = ErrorSt;
       fsm_err_o = 1'b1;
     end

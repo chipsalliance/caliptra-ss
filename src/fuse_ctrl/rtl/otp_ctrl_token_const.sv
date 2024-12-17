@@ -13,10 +13,10 @@ module otp_ctrl_token_const
   // Compile time random constants, to be overriden by topgen.
   parameter digest_const_array_t    RndCnstDigestConst    = RndCnstDigestConstDefault,
   parameter digest_iv_array_t       RndCnstDigestIV       = RndCnstDigestIVDefault,
-  parameter lc_ctrl_state_pkg::lc_token_t RndCnstRawUnlockToken = lc_ctrl_state_pkg::RndCnstRawUnlockTokenDefault
+  parameter caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_token_t RndCnstRawUnlockToken = caliptra_ss_lc_ctrl_state_pkg::RndCnstRawUnlockTokenDefault
 ) (
-  output lc_ctrl_state_pkg::lc_token_t all_zero_token_hashed_o,
-  output lc_ctrl_state_pkg::lc_token_t raw_unlock_token_hashed_o
+  output caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_token_t all_zero_token_hashed_o,
+  output caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_token_t raw_unlock_token_hashed_o
 );
 
   localparam int NumHashes = 2;

@@ -53,7 +53,7 @@ module otp_ctrl_lfsr_timer
   output logic [NumPart-1:0]       cnsty_chk_req_o,    // request to all partitions
   input        [NumPart-1:0]       integ_chk_ack_i,    // response from partitions
   input        [NumPart-1:0]       cnsty_chk_ack_i,    // response from partitions
-  input  lc_ctrl_pkg::lc_tx_t      escalate_en_i,      // escalation input, moves FSM into ErrorSt
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t      escalate_en_i,      // escalation input, moves FSM into ErrorSt
   output logic                     chk_timeout_o,      // a check has timed out
   output logic                     fsm_err_o           // the FSM has reached an invalid state
 );
@@ -354,7 +354,7 @@ module otp_ctrl_lfsr_timer
     // or if the two LFSR or counter states do not agree.
     // SEC_CM: TIMER.FSM.LOCAL_ESC, TIMER.FSM.GLOBAL_ESC
     if (lfsr_err || integ_cnt_err || cnsty_cnt_err ||
-        lc_ctrl_pkg::lc_tx_test_true_loose(escalate_en_i)) begin
+        caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(escalate_en_i)) begin
        state_d = ErrorSt;
        fsm_err_o = 1'b1;
     end

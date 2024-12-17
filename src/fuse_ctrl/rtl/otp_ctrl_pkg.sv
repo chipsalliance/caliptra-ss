@@ -105,73 +105,73 @@ package otp_ctrl_pkg;
   typedef struct packed {
     logic                            valid;
     logic                            error;
-    // Use lc_state_t and lc_cnt_t here as very wide enumerations ( > 64 bits )
+    // Use caliptra_ss_lc_state_t and caliptra_ss_lc_cnt_t here as very wide enumerations ( > 64 bits )
     // are not supported for virtual interfaces by Excelium yet
     // https://github.com/lowRISC/opentitan/issues/8884 (Cadence issue: cds_46570160)
-    // The enumeration types lc_state_e and lc_cnt_e are still ok in other circumstances
-    lc_ctrl_state_pkg::lc_state_t    state;
-    lc_ctrl_state_pkg::lc_cnt_t      count;
+    // The enumeration types caliptra_ss_lc_state_e and caliptra_ss_lc_cnt_e are still ok in other circumstances
+    caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_state_t    state;
+    caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_cnt_t      count;
     // This is set to "On" if the partition containing the
     // root secrets have been locked. In that case, the device
     // is considered "personalized".
-    lc_ctrl_pkg::lc_tx_t             secrets_valid;
+    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t             secrets_valid;
     // This is set to "On" if the partition containing the
     // test tokens has been locked.
-    lc_ctrl_pkg::lc_tx_t             test_tokens_valid;
-    lc_ctrl_state_pkg::lc_token_t    test_unlock_token;
-    lc_ctrl_state_pkg::lc_token_t    test_exit_token;
+    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t             test_tokens_valid;
+    caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_token_t    test_unlock_token;
+    caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_token_t    test_exit_token;
     // This is set to "On" if the partition containing the
     // rma token has been locked.
-    lc_ctrl_pkg::lc_tx_t             rma_token_valid;
-    lc_ctrl_state_pkg::lc_token_t    rma_token;
-  } otp_lc_data_t;
+    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t             rma_token_valid;
+    caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_token_t    rma_token;
+  } otp_caliptra_ss_lc_data_t;
 
   // Default for dangling connection.
   // Note that we put the life cycle into
   // TEST_UNLOCKED0 by default such that top levels without
   // the OTP controller can still function.
-  parameter otp_lc_data_t OTP_LC_DATA_DEFAULT = '{
+  parameter otp_caliptra_ss_lc_data_t OTP_LC_DATA_DEFAULT = '{
     valid: 1'b1,
     error: 1'b0,
-    state: lc_ctrl_state_pkg::LcStTestUnlocked0,
-    count: lc_ctrl_state_pkg::LcCnt1,
-    secrets_valid: lc_ctrl_pkg::Off,
-    test_tokens_valid: lc_ctrl_pkg::Off,
+    state: caliptra_ss_lc_ctrl_state_pkg::LcStTestUnlocked0,
+    count: caliptra_ss_lc_ctrl_state_pkg::LcCnt1,
+    secrets_valid: caliptra_ss_lc_ctrl_pkg::Off,
+    test_tokens_valid: caliptra_ss_lc_ctrl_pkg::Off,
     test_unlock_token: '0,
     test_exit_token: '0,
-    rma_token_valid: lc_ctrl_pkg::Off,
+    rma_token_valid: caliptra_ss_lc_ctrl_pkg::Off,
     rma_token: '0
   };
 
   typedef struct packed {
     logic req;
-    lc_ctrl_state_pkg::lc_state_e state;
-    lc_ctrl_state_pkg::lc_cnt_e   count;
-  } lc_otp_program_req_t;
+    caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_state_e state;
+    caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_cnt_e   count;
+  } caliptra_ss_lc_otp_program_req_t;
 
   typedef struct packed {
     logic err;
     logic ack;
-  } lc_otp_program_rsp_t;
+  } caliptra_ss_lc_otp_program_rsp_t;
 
   // RAW unlock token hashing request.
   typedef struct packed {
     logic req;
-    lc_ctrl_state_pkg::lc_token_t token_input;
-  } lc_otp_token_req_t;
+    caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_token_t token_input;
+  } caliptra_ss_lc_otp_token_req_t;
 
   typedef struct packed {
     logic ack;
-    lc_ctrl_state_pkg::lc_token_t hashed_token;
-  } lc_otp_token_rsp_t;
+    caliptra_ss_lc_ctrl_state_pkg::caliptra_ss_lc_token_t hashed_token;
+  } caliptra_ss_lc_otp_token_rsp_t;
 
   typedef struct packed {
     logic [OtpTestCtrlWidth-1:0] ctrl;
-  } lc_otp_vendor_test_req_t;
+  } caliptra_ss_lc_otp_vendor_test_req_t;
 
   typedef struct packed {
     logic [OtpTestStatusWidth-1:0] status;
-  } lc_otp_vendor_test_rsp_t;
+  } caliptra_ss_lc_otp_vendor_test_rsp_t;
 
   ////////////////////////////////
   // Typedefs for Key Broadcast //

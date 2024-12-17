@@ -22,7 +22,7 @@ module otp_ctrl_dai
   input  [NumPart-1:0]                   part_init_done_i,
   // Escalation input. This moves the FSM into a terminal state and locks down
   // the DAI.
-  input lc_ctrl_pkg::lc_tx_t             escalate_en_i,
+  input caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t             escalate_en_i,
   // Output error state of DAI, to be consumed by OTP error/alert logic.
   // Note that most errors are not recoverable and move the DAI FSM into
   // a terminal error state.
@@ -681,7 +681,7 @@ module otp_ctrl_dai
 
     // Unconditionally jump into the terminal error state in case of escalation.
     // SEC_CM: DAI.FSM.LOCAL_ESC, DAI.FSM.GLOBAL_ESC
-    if (lc_ctrl_pkg::lc_tx_test_true_loose(escalate_en_i) || cnt_err) begin
+    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(escalate_en_i) || cnt_err) begin
       state_d = ErrorSt;
       fsm_err_o = 1'b1;
       if (state_q != ErrorSt) begin

@@ -20,16 +20,16 @@ module otp_ctrl_lci
   input                                     lci_en_i,
   // Escalation input. This moves the FSM into a terminal state and locks down
   // the partition.
-  input  lc_ctrl_pkg::lc_tx_t               escalate_en_i,
+  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t               escalate_en_i,
   // Life cycle transition request. In order to perform a state transition,
   // the LC controller signals the new count and state. The OTP wrapper then
   // only programs bits that have not been programmed before.
   // Note that a transition request will fail if the request attempts to
   // clear already programmed bits within OTP.
-  input                                     lc_req_i,
-  input  logic [Info.size*8-1:0]            lc_data_i,
-  output logic                              lc_ack_o,
-  output logic                              lc_err_o,
+  input                                     caliptra_ss_lc_req_i,
+  input  logic [Info.size*8-1:0]            caliptra_ss_lc_data_i,
+  output logic                              caliptra_ss_lc_ack_o,
+  output logic                              caliptra_ss_lc_err_o,
   // Output error state of partition, to be consumed by OTP error/alert logic.
   // Note that most errors are not recoverable and move the partition FSM into
   // a terminal error state.
@@ -67,7 +67,7 @@ module otp_ctrl_lci
   localparam bit [CntWidth-1:0] LastLcOtpWord = LastLcOtpWordInt[CntWidth-1:0];
 
   // This is required, since each native OTP word can only be programmed once.
-  `CALIPTRA_ASSERT_INIT(LcValueMustBeWiderThanNativeOtpWidth_A, lc_ctrl_state_pkg::LcValueWidth >= OtpWidth)
+  `CALIPTRA_ASSERT_INIT(LcValueMustBeWiderThanNativeOtpWidth_A, caliptra_ss_lc_ctrl_state_pkg::LcValueWidth >= OtpWidth)
 
   ////////////////////
   // Controller FSM //
@@ -128,8 +128,8 @@ module otp_ctrl_lci
     otp_cmd_o = caliptra_prim_otp_pkg::Read;
 
     // Response to LC controller
-    lc_err_o = 1'b0;
-    lc_ack_o = 1'b0;
+    caliptra_ss_lc_err_o = 1'b0;
+    caliptra_ss_lc_ack_o = 1'b0;
 
     // Error Register
     error_d = error_q;
@@ -147,7 +147,7 @@ module otp_ctrl_lci
       ///////////////////////////////////////////////////////////////////
       // Wait for a request from the life cycle controller
       IdleSt: begin
-        if (lc_req_i) begin
+        if (caliptra_ss_lc_req_i) begin
           state_d = WriteSt;
           cnt_clr = 1'b1;
         end
@@ -184,11 +184,11 @@ module otp_ctrl_lci
           // If yes, we are done and can go back to idle.
           if (cnt == LastLcOtpWord) begin
             state_d = IdleSt;
-            lc_ack_o = 1'b1;
+            caliptra_ss_lc_ack_o = 1'b1;
             // If in any of the words a programming error has occurred,
             // we signal that accordingly and go to the error state.
             if (error_d != NoError) begin
-              lc_err_o = 1'b1;
+              caliptra_ss_lc_err_o = 1'b1;
               state_d = ErrorSt;
             end
           // Otherwise we increase the OTP word counter.
@@ -219,7 +219,7 @@ module otp_ctrl_lci
 
     // Unconditionally jump into the terminal error state in case of escalation.
     // SEC_CM: LCI.FSM.LOCAL_ESC, LCI.FSM.GLOBAL_ESC
-    if (lc_ctrl_pkg::lc_tx_test_true_loose(escalate_en_i) || cnt_err) begin
+    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(escalate_en_i) || cnt_err) begin
       state_d = ErrorSt;
       fsm_err_o = 1'b1;
       if (error_q == NoError) begin
@@ -261,7 +261,7 @@ module otp_ctrl_lci
   assign otp_size_o = '0;
 
   logic [NumLcOtpWords-1:0][OtpWidth-1:0] data;
-  assign data        = lc_data_i;
+  assign data        = caliptra_ss_lc_data_i;
   assign otp_wdata_o = (otp_req_o) ? OtpIfWidth'(data[cnt]) : '0;
 
   logic unused_rdata;
@@ -285,8 +285,8 @@ module otp_ctrl_lci
   // Assertions //
   ////////////////
 
-  `CALIPTRA_ASSERT_KNOWN(LcAckKnown_A,    lc_ack_o)
-  `CALIPTRA_ASSERT_KNOWN(LcErrKnown_A,    lc_err_o)
+  `CALIPTRA_ASSERT_KNOWN(LcAckKnown_A,    caliptra_ss_lc_ack_o)
+  `CALIPTRA_ASSERT_KNOWN(LcErrKnown_A,    caliptra_ss_lc_err_o)
   `CALIPTRA_ASSERT_KNOWN(ErrorKnown_A,    error_o)
   `CALIPTRA_ASSERT_KNOWN(LciIdleKnown_A,  lci_prog_idle_o)
   `CALIPTRA_ASSERT_KNOWN(OtpReqKnown_A,   otp_req_o)
