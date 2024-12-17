@@ -48,11 +48,11 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
   input otp_idle_i,
 
   // lc
-  output logic lc_init_o,
-  input lc_done_i,
-  input lc_idle_i,
-  input lc_ctrl_pkg::lc_tx_t lc_dft_en_i,
-  input lc_ctrl_pkg::lc_tx_t lc_hw_debug_en_i,
+  output logic caliptra_ss_lc_init_o,
+  input caliptra_ss_lc_done_i,
+  input caliptra_ss_lc_idle_i,
+  input caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_dft_en_i,
+  input caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_hw_debug_en_i,
 
   // flash
   input flash_idle_i,
@@ -66,15 +66,15 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
   output logic low_power_o,
 
   // processing elements
-  output lc_ctrl_pkg::lc_tx_t fetch_en_o
+  output caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t fetch_en_o
 );
 
   import prim_mubi_pkg::mubi4_t;
   import prim_mubi_pkg::mubi4_test_true_strict;
   import prim_mubi_pkg::mubi4_or_hi;
   import prim_mubi_pkg::mubi4_and_hi;
-  import lc_ctrl_pkg::lc_tx_and_hi;
-  import lc_ctrl_pkg::lc_tx_test_true_strict;
+  import caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_and_hi;
+  import caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_strict;
 
   // The code below always assumes the always on domain is index 0
   `ASSERT_INIT(AlwaysOnIndex_A, ALWAYS_ON_DOMAIN == 0)
@@ -106,30 +106,30 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
   logic strap_sampled;
 
   // disable processing element fetching
-  lc_ctrl_pkg::lc_tx_t fetch_en_q, fetch_en_d;
+  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t fetch_en_q, fetch_en_d;
 
   fast_pwr_state_e state_d, state_q;
   logic reset_ongoing_q, reset_ongoing_d;
   logic req_pwrdn_q, req_pwrdn_d;
   logic ack_pwrup_q, ack_pwrup_d;
   logic ip_clk_en_q, ip_clk_en_d;
-  logic [PowerDomains-1:0] rst_lc_req_q, rst_sys_req_q;
-  logic [PowerDomains-1:0] rst_lc_req_d, rst_sys_req_d;
+  logic [PowerDomains-1:0] rst_caliptra_ss_lc_req_q, rst_sys_req_q;
+  logic [PowerDomains-1:0] rst_caliptra_ss_lc_req_d, rst_sys_req_d;
   logic otp_init;
-  logic lc_init;
+  logic caliptra_ss_lc_init;
   logic low_power_q, low_power_d;
 
-  assign pd_n_rsts_asserted = pwr_rst_i.rst_lc_src_n[PowerDomains-1:OffDomainSelStart] == '0 &
+  assign pd_n_rsts_asserted = pwr_rst_i.rst_caliptra_ss_lc_src_n[PowerDomains-1:OffDomainSelStart] == '0 &
                               pwr_rst_i.rst_sys_src_n[PowerDomains-1:OffDomainSelStart] == '0;
 
-  logic lc_rsts_valid;
-  assign lc_rsts_valid = ((rst_lc_req_q & ~pwr_rst_i.rst_lc_src_n) |
-                          (~rst_lc_req_q & pwr_rst_i.rst_lc_src_n)) == {PowerDomains{1'b1}};
+  logic caliptra_ss_lc_rsts_valid;
+  assign caliptra_ss_lc_rsts_valid = ((rst_caliptra_ss_lc_req_q & ~pwr_rst_i.rst_caliptra_ss_lc_src_n) |
+                          (~rst_caliptra_ss_lc_req_q & pwr_rst_i.rst_caliptra_ss_lc_src_n)) == {PowerDomains{1'b1}};
   logic sys_rsts_valid;
   assign sys_rsts_valid = ((rst_sys_req_q & ~pwr_rst_i.rst_sys_src_n) |
                            (~rst_sys_req_q & pwr_rst_i.rst_sys_src_n)) == {PowerDomains{1'b1}};
 
-  assign all_rsts_asserted = lc_rsts_valid & sys_rsts_valid;
+  assign all_rsts_asserted = caliptra_ss_lc_rsts_valid & sys_rsts_valid;
 
   // Any reset request was asserted.
   assign reset_req = |reset_reqs_i;
@@ -159,7 +159,7 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
       req_pwrdn_q <= 1'b0;
       reset_ongoing_q <= 1'b0;
       ip_clk_en_q <= 1'b0;
-      rst_lc_req_q <= {PowerDomains{1'b1}};
+      rst_caliptra_ss_lc_req_q <= {PowerDomains{1'b1}};
       rst_sys_req_q <= {PowerDomains{1'b1}};
       reset_cause_q <= ResetUndefined;
       low_power_q <= 1'b1;
@@ -168,7 +168,7 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
       req_pwrdn_q <= req_pwrdn_d;
       reset_ongoing_q <= reset_ongoing_d;
       ip_clk_en_q <= ip_clk_en_d;
-      rst_lc_req_q <= rst_lc_req_d;
+      rst_caliptra_ss_lc_req_q <= rst_caliptra_ss_lc_req_d;
       rst_sys_req_q <= rst_sys_req_d;
       reset_cause_q <= reset_cause_d;
       low_power_q <= low_power_d;
@@ -188,36 +188,36 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
     end
   end
 
-  prim_lc_sender u_fetch_en (
+  prim_caliptra_ss_lc_sender u_fetch_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(fetch_en_d),
-    .lc_en_o(fetch_en_q)
+    .caliptra_ss_lc_en_i(fetch_en_d),
+    .caliptra_ss_lc_en_o(fetch_en_q)
   );
   assign fetch_en_o = fetch_en_q;
 
   // Life cycle broadcast may take time to propagate through the system.
   // The sync below simulates that behavior using the slowest clock in the
   // system.
-  logic slow_lc_done;
-  logic lc_done;
+  logic slow_caliptra_ss_lc_done;
+  logic caliptra_ss_lc_done;
 
   prim_flop_2sync #(
     .Width(1)
-  ) u_slow_sync_lc_done (
+  ) u_slow_sync_caliptra_ss_lc_done (
     .clk_i(clk_slow_i),
     .rst_ni(rst_slow_ni),
-    .d_i(lc_done_i),
-    .q_o(slow_lc_done)
+    .d_i(caliptra_ss_lc_done_i),
+    .q_o(slow_caliptra_ss_lc_done)
   );
 
   prim_flop_2sync #(
     .Width(1)
-  ) u_sync_lc_done (
+  ) u_sync_caliptra_ss_lc_done (
     .clk_i,
     .rst_ni,
-    .d_i(slow_lc_done),
-    .q_o(lc_done)
+    .d_i(slow_caliptra_ss_lc_done),
+    .q_o(caliptra_ss_lc_done)
   );
 
 
@@ -247,7 +247,7 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
   // hw_debug_en is On
 
   mubi4_t rom_intg_chk_dis;
-  assign rom_intg_chk_dis = lc_tx_test_true_strict(lc_tx_and_hi(lc_dft_en_i, lc_hw_debug_en_i)) ?
+  assign rom_intg_chk_dis = caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_tx_and_hi(caliptra_ss_lc_dft_en_i, caliptra_ss_lc_hw_debug_en_i)) ?
                             prim_mubi_pkg::MuBi4True :
                             prim_mubi_pkg::MuBi4False;
 
@@ -259,7 +259,7 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
 
   always_comb begin
     otp_init = 1'b0;
-    lc_init = 1'b0;
+    caliptra_ss_lc_init = 1'b0;
     wkup_o = 1'b0;
     fall_through_o = 1'b0;
     abort_o = 1'b0;
@@ -273,7 +273,7 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
     req_pwrdn_d = req_pwrdn_q;
     reset_ongoing_d = reset_ongoing_q;
     ip_clk_en_d = ip_clk_en_q;
-    rst_lc_req_d = rst_lc_req_q;
+    rst_caliptra_ss_lc_req_d = rst_caliptra_ss_lc_req_q;
     rst_sys_req_d = rst_sys_req_q;
     reset_cause_d = reset_cause_q;
     low_power_d = low_power_q;
@@ -295,10 +295,10 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
       end
 
       FastPwrStateReleaseLcRst: begin
-        rst_lc_req_d = '0;  // release rst_lc_n for all power domains
+        rst_caliptra_ss_lc_req_d = '0;  // release rst_caliptra_ss_lc_n for all power domains
         rst_sys_req_d = '0; // release rst_sys_n for all power domains
         // once all resets are released continue to otp initialization
-        if (&pwr_rst_i.rst_lc_src_n) begin
+        if (&pwr_rst_i.rst_caliptra_ss_lc_src_n) begin
           state_d = FastPwrStateOtpInit;
         end
       end
@@ -312,9 +312,9 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
       end
 
       FastPwrStateLcInit: begin
-        lc_init = 1'b1;
+        caliptra_ss_lc_init = 1'b1;
 
-        if (lc_done) begin
+        if (caliptra_ss_lc_done) begin
           state_d = FastPwrStateAckPwrUp;
 
         end
@@ -361,12 +361,12 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
 
       FastPwrStateActive: begin
         // only in active state, allow processor to execute
-        fetch_en_d = lc_ctrl_pkg::On;
+        fetch_en_d = caliptra_ss_lc_ctrl_pkg::On;
 
         // when handling reset request or low power entry of any
         // kind, stop processor from fetching
         if (reset_req || low_power_entry_i) begin
-          fetch_en_d = lc_ctrl_pkg::Off;
+          fetch_en_d = caliptra_ss_lc_ctrl_pkg::Off;
           reset_cause_d = ResetUndefined;
           state_d = FastPwrStateDisClks;
         end
@@ -402,7 +402,7 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
 
       FastPwrStateNvmIdleChk: begin
 
-        if (otp_idle_i && lc_idle_i && flash_idle_i) begin
+        if (otp_idle_i && caliptra_ss_lc_idle_i && flash_idle_i) begin
           state_d = FastPwrStateLowPowerPrep;
         end else begin
           ip_clk_en_d = 1'b1;
@@ -420,7 +420,7 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
         // this includes the clock manager, which implies pwr/rst managers must
         // be fed directly from the source
         for (int i = OffDomainSelStart; i < PowerDomains; i++) begin
-          rst_lc_req_d[i] = ~main_pd_ni;
+          rst_caliptra_ss_lc_req_d[i] = ~main_pd_ni;
           rst_sys_req_d[i] = ~main_pd_ni;
         end
 
@@ -447,19 +447,19 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
 
       FastPwrStateResetPrep: begin
         reset_cause_d = HwReq;
-        rst_lc_req_d = {PowerDomains{1'b1}};
+        rst_caliptra_ss_lc_req_d = {PowerDomains{1'b1}};
         rst_sys_req_d = {PowerDomains{(hw_rst_req |
                                        direct_rst_req |
                                        sw_rst_req) |
                                       (ndmreset_req &
-                                       lc_ctrl_pkg::lc_tx_test_false_loose(lc_hw_debug_en_i))}};
+                                       caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_false_loose(caliptra_ss_lc_hw_debug_en_i))}};
 
 
         state_d = FastPwrStateResetWait;
       end
 
       FastPwrStateResetWait: begin
-        rst_lc_req_d = {PowerDomains{1'b1}};
+        rst_caliptra_ss_lc_req_d = {PowerDomains{1'b1}};
         clr_slow_req_o = reset_reqs_i[ResetMainPwrIdx];
         // The main power reset request is checked here specifically because it is
         // the only reset request in the system that operates on the POR domain.
@@ -480,7 +480,7 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
       // Terminal state, kill everything
       // SEC_CM: FSM.TERMINAL
       default: begin
-        rst_lc_req_d = {PowerDomains{1'b1}};
+        rst_caliptra_ss_lc_req_d = {PowerDomains{1'b1}};
         rst_sys_req_d = {PowerDomains{1'b1}};
         ip_clk_en_d = 1'b0;
       end
@@ -498,7 +498,7 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
   assign req_pwrdn_o = req_pwrdn_q;
   assign low_power_o = low_power_q;
 
-  assign pwr_rst_o.rst_lc_req = rst_lc_req_q;
+  assign pwr_rst_o.rst_caliptra_ss_lc_req = rst_caliptra_ss_lc_req_q;
   assign pwr_rst_o.rst_sys_req = rst_sys_req_q;
   assign pwr_rst_o.reset_cause = reset_cause_q;
   assign pwr_rst_o.rstreqs = reset_reqs_i[HwResetWidth-1:0];
@@ -531,11 +531,11 @@ module pwrmgr_fsm import pwrmgr_pkg::*; import pwrmgr_reg_pkg::*;(
   prim_flop #(
     .Width(1),
     .ResetValue(1'b0)
-  ) u_reg_lc_init (
+  ) u_reg_caliptra_ss_lc_init (
     .clk_i,
     .rst_ni,
-    .d_i(lc_init),
-    .q_o(lc_init_o)
+    .d_i(caliptra_ss_lc_init),
+    .q_o(caliptra_ss_lc_init_o)
   );
 
 

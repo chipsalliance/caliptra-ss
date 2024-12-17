@@ -71,7 +71,7 @@ package pwrmgr_pkg;
 
   // pwrmgr to rstmgr
   typedef struct packed {
-    logic [PowerDomains-1:0] rst_lc_req;
+    logic [PowerDomains-1:0] rst_caliptra_ss_lc_req;
     logic [PowerDomains-1:0] rst_sys_req;
     logic [HwResetWidth-1:0] rstreqs;
     reset_cause_e reset_cause;
@@ -79,13 +79,13 @@ package pwrmgr_pkg;
 
   // rstmgr to pwrmgr
   typedef struct packed {
-    logic [PowerDomains-1:0] rst_lc_src_n;
+    logic [PowerDomains-1:0] rst_caliptra_ss_lc_src_n;
     logic [PowerDomains-1:0] rst_sys_src_n;
   } pwr_rst_rsp_t;
 
   // default value (for dangling ports)
   parameter pwr_rst_rsp_t PWR_RST_RSP_DEFAULT = '{
-    rst_lc_src_n: {PowerDomains{1'b1}},
+    rst_caliptra_ss_lc_src_n: {PowerDomains{1'b1}},
     rst_sys_src_n: {PowerDomains{1'b1}}
   };
 
@@ -122,19 +122,19 @@ package pwrmgr_pkg;
 
   // pwrmgr to lifecycle
   typedef struct packed {
-    logic lc_init;
-  } pwr_lc_req_t;
+    logic caliptra_ss_lc_init;
+  } pwr_caliptra_ss_lc_req_t;
 
   // lifecycle to pwrmgr
   typedef struct packed {
-    logic lc_done;
-    logic lc_idle;
-  } pwr_lc_rsp_t;
+    logic caliptra_ss_lc_done;
+    logic caliptra_ss_lc_idle;
+  } pwr_caliptra_ss_lc_rsp_t;
 
   // default value (for dangling ports)
-  parameter pwr_lc_rsp_t PWR_LC_RSP_DEFAULT = '{
-    lc_done: 1'b1,
-    lc_idle: 1'b1
+  parameter pwr_caliptra_ss_lc_rsp_t PWR_LC_RSP_DEFAULT = '{
+    caliptra_ss_lc_done: 1'b1,
+    caliptra_ss_lc_idle: 1'b1
   };
 
   typedef struct packed {
