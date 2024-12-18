@@ -1,0 +1,27 @@
+---
+provides: [dm_pkg]
+schema_version: 2.4.0
+requires:
+  - caliptra_prim_pkg
+targets:
+  rtl:
+    directories: [$COMPILE_ROOT/rtl]
+    files:
+      - $COMPILE_ROOT/rtl/dm_pkg.sv
+  tb:
+    directories: [$COMPILE_ROOT/rtl]
+    files:
+      - $COMPILE_ROOT/rtl/dm_pkg.sv
+---
+provides: [dmi_jtag]
+schema_version: 2.4.0
+requires:
+  - dm_pkg
+targets:
+  rtl:
+    directories: [$COMPILE_ROOT/rtl]
+    files:
+      - $COMPILE_ROOT/rtl/dmi_jtag_tap.sv
+      - $COMPILE_ROOT/rtl/dmi_cdc.sv
+      - $COMPILE_ROOT/rtl/dmi_jtag.sv
+    tops: [dmi_jtag]
