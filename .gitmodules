@@ -1,7 +1,7 @@
 [submodule "third_party/caliptra-rtl"]
 	path = third_party/caliptra-rtl
 	url = https://github.com/chipsalliance/caliptra-rtl.git
-	branch = user/anjpar/fuse_ctrl_changes 
+	branch = main
 [submodule "third_party/i3c-core"]
 	path = third_party/i3c-core
 	url = https://github.com/chipsalliance/i3c-core.git
