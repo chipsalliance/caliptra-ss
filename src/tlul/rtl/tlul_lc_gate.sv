@@ -7,11 +7,11 @@
 // In all other cases (lc_en_i != ON) incoming transactions return a bus error.
 //
 // Note that the lc_en_i should be synchronized and buffered outside of this module using
-// an instance of prim_caliptra_ss_lc_sync.
+// an instance of prim_lc_sync.
 
-module tlul_caliptra_ss_lc_gate
+module tlul_lc_gate
   import tlul_pkg::*;
-  import caliptra_ss_lc_ctrl_pkg::*;
+  import lc_ctrl_pkg::*;
 #(
   // Number of LC gating muxes in each direction.
   // It is recommended to set this parameter to 2, which results
@@ -43,7 +43,7 @@ module tlul_caliptra_ss_lc_gate
   output logic resp_pending_o,
 
   // LC control signal
-  input  caliptra_ss_lc_tx_t  lc_en_i,
+  input  lc_tx_t  lc_en_i,
   output logic err_o
 );
 
@@ -51,8 +51,8 @@ module tlul_caliptra_ss_lc_gate
   // Access Gates //
   //////////////////
 
-  caliptra_ss_lc_tx_t err_en;
-  caliptra_ss_lc_tx_t [NumGatesPerDirection-1:0] err_en_buf;
+  lc_tx_t err_en;
+  lc_tx_t [NumGatesPerDirection-1:0] err_en_buf;
 
   caliptra_prim_lc_sync #(
     .NumCopies(NumGatesPerDirection),
@@ -66,13 +66,13 @@ module tlul_caliptra_ss_lc_gate
 
   tl_h2d_t tl_h2d_int [NumGatesPerDirection+1];
   tl_d2h_t tl_d2h_int [NumGatesPerDirection+1];
-  for (genvar k = 0; k < NumGatesPerDirection; k++) begin : gen_caliptra_ss_lc_gating_muxes
+  for (genvar k = 0; k < NumGatesPerDirection; k++) begin : gen_lc_gating_muxes
     // H -> D path.
     caliptra_prim_blanker #(
       .Width($bits(tl_h2d_t))
     ) u_prim_blanker_h2d (
       .in_i(tl_h2d_int[k]),
-      .en_i(caliptra_ss_lc_tx_test_false_strict(err_en_buf[k])),
+      .en_i(lc_tx_test_false_strict(err_en_buf[k])),
       .out_o(tl_h2d_int[k+1])
     );
 
@@ -81,7 +81,7 @@ module tlul_caliptra_ss_lc_gate
       .Width($bits(tl_d2h_t))
     ) u_prim_blanker_d2h (
       .in_i(tl_d2h_int[k+1]),
-      .en_i(caliptra_ss_lc_tx_test_false_strict(err_en_buf[k])),
+      .en_i(lc_tx_test_false_strict(err_en_buf[k])),
       .out_o(tl_d2h_int[k])
     );
   end
@@ -176,7 +176,7 @@ module tlul_caliptra_ss_lc_gate
 
     unique case (state_q)
       StActive: begin
-        if (caliptra_ss_lc_tx_test_false_loose(lc_en_i) || flush_req_i) begin
+        if (lc_tx_test_false_loose(lc_en_i) || flush_req_i) begin
           state_d = StOutstanding;
         end
         if (outstanding_txn != '0) begin
@@ -187,7 +187,7 @@ module tlul_caliptra_ss_lc_gate
       StOutstanding: begin
         block_cmd = 1'b1;
         if (outstanding_txn == '0) begin
-          state_d = caliptra_ss_lc_tx_test_false_loose(lc_en_i) ? StError : StFlush;
+          state_d = lc_tx_test_false_loose(lc_en_i) ? StError : StFlush;
         end else begin
           resp_pending_o = 1'b1;
         end
@@ -196,7 +196,7 @@ module tlul_caliptra_ss_lc_gate
       StFlush: begin
         block_cmd = 1'b1;
         flush_ack_o = 1'b1;
-        if (caliptra_ss_lc_tx_test_false_loose(lc_en_i)) begin
+        if (lc_tx_test_false_loose(lc_en_i)) begin
           state_d = StError;
         end else if (!flush_req_i) begin
           state_d = StActive;
@@ -205,7 +205,7 @@ module tlul_caliptra_ss_lc_gate
 
       StError: begin
         err_en = On;
-        if (caliptra_ss_lc_tx_test_true_strict(lc_en_i)) begin
+        if (lc_tx_test_true_strict(lc_en_i)) begin
           state_d = StErrorOutstanding;
         end
       end
@@ -237,7 +237,7 @@ module tlul_caliptra_ss_lc_gate
     tl_d2h_o      = tl_d2h_int[0];
     tl_h2d_error  = '0;
 
-    if (caliptra_ss_lc_tx_test_true_loose(err_en)) begin
+    if (lc_tx_test_true_loose(err_en)) begin
       tl_h2d_error  = tl_h2d_i;
       tl_d2h_o      = tl_d2h_error;
     end
@@ -261,4 +261,4 @@ module tlul_caliptra_ss_lc_gate
   // Add assertion
   `CALIPTRA_ASSERT(OutStandingOvfl_A, &outstanding_txn |-> ~a_ack)
 
-endmodule : tlul_caliptra_ss_lc_gate
+endmodule : tlul_lc_gate

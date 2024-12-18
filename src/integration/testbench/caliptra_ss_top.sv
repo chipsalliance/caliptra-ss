@@ -425,6 +425,8 @@ module caliptra_ss_top
     logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-1:0] dccm_wr_fdata_bank;
     logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-1:0] dccm_bank_fdout;
 
+    logic fuse_ctrl_rdy;
+    
     tb_top_pkg::veer_sram_error_injection_mode_t error_injection_mode;
 
     `define MCU_DEC rvtop_wrapper.rvtop.veer.dec
@@ -733,9 +735,10 @@ module caliptra_ss_top
     logic assert_rst_flag_from_service;
     logic deassert_rst_flag_from_service;
 
+
     
 
-
+    logic cptra_soc_bfm_rst_b;
 
 
     caliptra_top_tb_soc_bfm #(
@@ -745,7 +748,7 @@ module caliptra_ss_top
         .core_clk        (core_clk        ),
 
         .cptra_pwrgood   (cptra_pwrgood   ),
-        .cptra_rst_b     (cptra_rst_b     ),
+        .cptra_rst_b     (cptra_soc_bfm_rst_b     ),
 
         .BootFSM_BrkPoint(BootFSM_BrkPoint),
         .cycleCnt        (cycleCnt        ),
@@ -1132,6 +1135,25 @@ module caliptra_ss_top
         else if (m_axi_if.arvalid && m_axi_if.arready)
             m_axi_if_rd_is_upper_dw_latched <= m_axi_if.araddr[2] && (m_axi_if.arsize < 3);
     `CALIPTRA_ASSERT(CPTRA_AXI_DMA_RD_32BIT, (m_axi_if.arvalid && m_axi_if.arready) -> (m_axi_if.arsize < 3), core_clk, !rst_l)
+    
+    // AXI Interconnect connections
+    logic m_axi_bfm_if_rd_is_upper_dw_latched;
+    logic m_axi_bfm_if_wr_is_upper_dw_latched;
+    // FIXME this is a gross hack for data width conversion
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            m_axi_bfm_if_wr_is_upper_dw_latched <= 0;
+        else if (m_axi_bfm_if.awvalid && m_axi_bfm_if.awready)
+            m_axi_bfm_if_wr_is_upper_dw_latched <= m_axi_bfm_if.awaddr[2] && (m_axi_bfm_if.awsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_DMA_WR_32BIT, (m_axi_bfm_if.awvalid && m_axi_bfm_if.awready) -> (m_axi_bfm_if.awsize < 3), core_clk, !rst_l)
+    // FIXME this is a gross hack for data width conversion
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            m_axi_bfm_if_rd_is_upper_dw_latched <= 0;
+        else if (m_axi_bfm_if.arvalid && m_axi_bfm_if.arready)
+            m_axi_bfm_if_rd_is_upper_dw_latched <= m_axi_bfm_if.araddr[2] && (m_axi_bfm_if.arsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_DMA_RD_32BIT, (m_axi_bfm_if.arvalid && m_axi_bfm_if.arready) -> (m_axi_bfm_if.arsize < 3), core_clk, !rst_l)
+    
     assign axi_interconnect.mintf_arr[3].AWVALID = m_axi_if.awvalid;
     assign axi_interconnect.mintf_arr[3].AWADDR  = m_axi_if.awaddr;
     assign axi_interconnect.mintf_arr[3].AWID    = m_axi_if.awid;
@@ -1182,8 +1204,8 @@ module caliptra_ss_top
     assign m_axi_bfm_if.awready                   = axi_interconnect.mintf_arr[4].AWREADY;
 
     assign axi_interconnect.mintf_arr[4].WVALID   = m_axi_bfm_if.wvalid;
-    assign axi_interconnect.mintf_arr[4].WDATA    = m_axi_bfm_if.wdata;
-    assign axi_interconnect.mintf_arr[4].WSTRB    = m_axi_bfm_if.wstrb;
+    assign axi_interconnect.mintf_arr[4].WDATA    = m_axi_bfm_if.wdata << (m_axi_bfm_if_wr_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.mintf_arr[4].WSTRB    = m_axi_bfm_if.wstrb << (m_axi_bfm_if_wr_is_upper_dw_latched ?  4 : 0);
     assign axi_interconnect.mintf_arr[4].WLAST    = m_axi_bfm_if.wlast;
     assign m_axi_bfm_if.wready                    = axi_interconnect.mintf_arr[4].WREADY;
 
@@ -1203,7 +1225,7 @@ module caliptra_ss_top
     assign m_axi_bfm_if.arready                   = axi_interconnect.mintf_arr[4].ARREADY;
 
     assign m_axi_bfm_if.rvalid                    = axi_interconnect.mintf_arr[4].RVALID;
-    assign m_axi_bfm_if.rdata                     = axi_interconnect.mintf_arr[4].RDATA;
+    assign m_axi_bfm_if.rdata                     = axi_interconnect.mintf_arr[4].RDATA >> (m_axi_bfm_if_rd_is_upper_dw_latched ? 32 : 0);
     assign m_axi_bfm_if.rresp                     = axi_interconnect.mintf_arr[4].RRESP;
     assign m_axi_bfm_if.rid                       = axi_interconnect.mintf_arr[4].RID;
     assign m_axi_bfm_if.rlast                     = axi_interconnect.mintf_arr[4].RLAST;
@@ -1491,20 +1513,41 @@ module caliptra_ss_top
 
     );
 
-    assign axi_interconnect.mintf_arr[0].ARID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
-    assign axi_interconnect.mintf_arr[0].AWID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
-    assign axi_interconnect.mintf_arr[0].ARUSER[aaxi_pkg::AAXI_ARUSER_WIDTH-1:0]             = '1;
-    assign axi_interconnect.mintf_arr[0].AWUSER[aaxi_pkg::AAXI_AWUSER_WIDTH-1:0]             = '1;
-    assign axi_interconnect.mintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
-    assign axi_interconnect.mintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
-    assign axi_interconnect.mintf_arr[1].ARID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
-    assign axi_interconnect.mintf_arr[1].AWID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
-    assign axi_interconnect.mintf_arr[1].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
-    assign axi_interconnect.mintf_arr[1].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
-    assign axi_interconnect.sintf_arr[2].RID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
-    assign axi_interconnect.sintf_arr[2].BID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
-    assign axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
-    assign axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    // assign axi_interconnect.mintf_arr[0].AWUSER                                              = 32'hFFFF_FFFF;
+    // assign axi_interconnect.mintf_arr[0].ARUSER                                              = 32'hFFFF_FFFF;
+    // assign axi_interconnect.mintf_arr[0].ARID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
+    // assign axi_interconnect.mintf_arr[0].AWID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
+    // assign axi_interconnect.mintf_arr[0].ARUSER[aaxi_pkg::AAXI_ARUSER_WIDTH-1:0]             = '1;
+    // assign axi_interconnect.mintf_arr[0].AWUSER[aaxi_pkg::AAXI_AWUSER_WIDTH-1:0]             = '1;
+    // assign axi_interconnect.mintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    // assign axi_interconnect.mintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    // assign axi_interconnect.mintf_arr[1].ARID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
+    // assign axi_interconnect.mintf_arr[1].AWID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
+    // assign axi_interconnect.mintf_arr[1].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    // assign axi_interconnect.mintf_arr[1].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    // assign axi_interconnect.sintf_arr[2].RID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
+    // assign axi_interconnect.sintf_arr[2].BID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
+    // assign axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    // assign axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    always_comb begin
+        axi_interconnect.mintf_arr[0].AWUSER                                              = 32'hFFFF_FFFF;
+        axi_interconnect.mintf_arr[0].ARUSER                                              = 32'hFFFF_FFFF;
+        axi_interconnect.mintf_arr[0].ARID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
+        axi_interconnect.mintf_arr[0].AWID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
+        axi_interconnect.mintf_arr[0].ARUSER[aaxi_pkg::AAXI_ARUSER_WIDTH-1:0]             = '1;
+        axi_interconnect.mintf_arr[0].AWUSER[aaxi_pkg::AAXI_AWUSER_WIDTH-1:0]             = '1;
+        axi_interconnect.mintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        axi_interconnect.mintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        axi_interconnect.mintf_arr[1].ARID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
+        axi_interconnect.mintf_arr[1].AWID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
+        axi_interconnect.mintf_arr[1].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        axi_interconnect.mintf_arr[1].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        axi_interconnect.sintf_arr[2].RID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
+        axi_interconnect.sintf_arr[2].BID[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
+        axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+    end
+    
 
     // FIXME This hacky FIFO is to ensure the same AXI ID is used throughout a mailbox transfer.
     //       We need an ability to deterministically use the same AXI ID from the VeeR executable
@@ -1805,12 +1848,22 @@ module caliptra_ss_top
     // 
     //=========================================================================-
 
-    lc_ctrl_pkg::lc_tx_t lc_dft_en_i;
-    lc_ctrl_pkg::lc_tx_t lc_escalate_en_i;
-    lc_ctrl_pkg::lc_tx_t lc_check_byp_en_i;
-    otp_ctrl_pkg::otp_lc_data_t otp_lc_data_o;
+    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_dft_en_i;
+    logic [$bits(caliptra_ss_lc_dft_en_i)-1:0] caliptra_ss_lc_dft_en_i_tb;
+    assign caliptra_ss_lc_dft_en_i = caliptra_ss_lc_dft_en_i_tb;
+
+    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_escalate_en_i;
+    logic [$bits(caliptra_ss_lc_escalate_en_i)-1:0] caliptra_ss_lc_escalate_en_i_tb;
+    assign caliptra_ss_lc_escalate_en_i = caliptra_ss_lc_escalate_en_i_tb;
+
+    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_check_byp_en_i;
+    logic [$bits(caliptra_ss_lc_check_byp_en_i)-1:0] caliptra_ss_lc_check_byp_en_i_tb;
+    assign caliptra_ss_lc_check_byp_en_i = caliptra_ss_lc_check_byp_en_i_tb;
+
+    otp_ctrl_pkg::otp_caliptra_ss_lc_data_t otp_caliptra_ss_lc_data_o;
+    logic [$bits(otp_caliptra_ss_lc_data_o)-1:0] otp_caliptra_ss_lc_data_o_tb;
     
-    logic otp_lc_data_o_valid;
+    // logic otp_caliptra_ss_lc_data_o_valid;
     logic pwr_otp_init_i;
 
     axi_struct_pkg::axi_wr_req_t core_axi_wr_req;
@@ -1855,17 +1908,17 @@ module caliptra_ss_top
         .otp_ast_pwr_seq_h_i        (),
         .pwr_otp_i                  (pwr_otp_init_i),
         .pwr_otp_o                  (),
-        .lc_otp_vendor_test_i       (),
-        .lc_otp_vendor_test_o       (),
-        .lc_otp_program_i           (),
-        .lc_otp_program_o           (),
-        .lc_creator_seed_sw_rw_en_i (),
-        .lc_owner_seed_sw_rw_en_i   (),
-        .lc_seed_hw_rd_en_i         (),
-        .lc_dft_en_i                (lc_dft_en_i),
-        .lc_escalate_en_i           (lc_escalate_en_i),
-        .lc_check_byp_en_i          (lc_check_byp_en_i),
-        .otp_lc_data_o              (otp_lc_data_o),
+        .caliptra_ss_lc_otp_vendor_test_i       (),
+        .caliptra_ss_lc_otp_vendor_test_o       (),
+        .caliptra_ss_lc_otp_program_i           (),
+        .caliptra_ss_lc_otp_program_o           (),
+        .caliptra_ss_lc_creator_seed_sw_rw_en_i (),
+        .caliptra_ss_lc_owner_seed_sw_rw_en_i   (),
+        .caliptra_ss_lc_seed_hw_rd_en_i         (),
+        .caliptra_ss_lc_dft_en_i                (caliptra_ss_lc_dft_en_i_tb),
+        .caliptra_ss_lc_escalate_en_i           (caliptra_ss_lc_escalate_en_i_tb),
+        .caliptra_ss_lc_check_byp_en_i          (caliptra_ss_lc_check_byp_en_i_tb),
+        .otp_caliptra_ss_lc_data_o              (otp_caliptra_ss_lc_data_o_tb),
         .otp_keymgr_key_o           (),
         .flash_otp_key_i            (),
         .flash_otp_key_o            (),
@@ -1963,13 +2016,18 @@ module caliptra_ss_top
         .core_clk            (core_clk            ),
         .cptra_pwrgood       (cptra_pwrgood       ),
         .fc_partition_init   (pwr_otp_init_i      ),
-        .lc_dft_en_i         (lc_dft_en_i         ),
-        .lc_escalate_en_i    (lc_escalate_en_i    ),
-        .lc_check_byp_en_i   (lc_check_byp_en_i   ),
-        .otp_lc_data_o_valid (otp_lc_data_o_valid )
+        .caliptra_ss_lc_dft_en_i         (caliptra_ss_lc_dft_en_i_tb         ),
+        .caliptra_ss_lc_escalate_en_i    (caliptra_ss_lc_escalate_en_i_tb    ),
+        .caliptra_ss_lc_check_byp_en_i   (caliptra_ss_lc_check_byp_en_i_tb   ),
+        .otp_caliptra_ss_lc_data_o (otp_caliptra_ss_lc_data_o_tb),
+        .fuse_ctrl_rdy       (fuse_ctrl_rdy       )
     );
 
-    assign otp_lc_data_o_valid = otp_lc_data_o.valid;
+    // assign otp_caliptra_ss_lc_data_o_valid = otp_caliptra_ss_lc_data_o.valid;
+
+    // assign fuse_ctrl_rdy = 1;
+    // De-assert cptra_rst_b only after fuse_ctrl has initialized
+    assign cptra_rst_b = fuse_ctrl_rdy ? cptra_soc_bfm_rst_b : 1'b0;
 
 task preload_iccm;
     bit[31:0] data;

@@ -1,6 +1,7 @@
 provides: [caliptra_ss_top]
 schema_version: 2.4.0
 requires:
+  - caliptra_ss_lc_ctrl_pkg
   - mcu_top
   - css_mcu0_veer_el2_rtl_pkg
   - i3c-core
@@ -16,6 +17,7 @@ targets:
       - $AVERY_HOME/axixactor-2.1e.230314//src.axi
       - $AVERY_HOME/axixactor-2.1e.230314//checker/BP063-BU-01000-r0p1-00rel0/sva
       - $AVERY_HOME/axixactor-2.1e.230314//testbench
+      - $COMPILE_ROOT/testbench
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
       - $AVERY_HOME/axixactor-2.1e.230314//src/avery_pkg.sv
@@ -27,7 +29,7 @@ targets:
       - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_intf.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
       - $COMPILE_ROOT/testbench/axi_slv.sv
-      - $COMPILE_ROOT/testbench/dasm.svi
+      # - $COMPILE_ROOT/testbench/dasm.svi
       - $COMPILE_ROOT/testbench/aaxi_pkg_caliptra_test.sv
       - $COMPILE_ROOT/testbench/aaxi4_interconnect.sv
       - $COMPILE_ROOT/testbench/fuse_ctrl_bfm.sv
@@ -64,7 +66,7 @@ global:
         - +define+CALIPTRA_INTERNAL_UART
         - '-noinherit_timescale=1ns/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=5
+        - +define+AAXI_INTC_SLAVE_CNT=7
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
       elab:

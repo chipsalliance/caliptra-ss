@@ -27,7 +27,7 @@ requires:
   - caliptra_prim_generic
   - edn_pkg
   - pwrmgr_pkg
-  - lc_ctrl_pkg
+  # - caliptra_ss_lc_ctrl_pkg
   - fuse_ctrl_pkg
 targets:
   rtl:

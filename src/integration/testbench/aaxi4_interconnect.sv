@@ -239,8 +239,8 @@ initial begin
 
         //-- Fuse Controller Core AXI 
         slave[5].cfg_info.passive_mode = 1; 
-        slave[5].cfg_info.opt_awuser_enable = 0; // optional, axi4_interconn_routings.sv need it
-        slave[5].cfg_info.opt_aruser_enable = 0; // optional, axi4_interconn_routings.sv need it
+        slave[5].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[5].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[5].cfg_info.base_address[0] = 64'h5000_0000;
         slave[5].cfg_info.limit_address[0] = 64'h5000_FFFF;
         slave[5].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
@@ -249,8 +249,8 @@ initial begin
 
         //-- Fuse Controller Prim AXI 
         slave[6].cfg_info.passive_mode = 1; 
-        slave[6].cfg_info.opt_awuser_enable = 0; // optional, axi4_interconn_routings.sv need it
-        slave[6].cfg_info.opt_aruser_enable = 0; // optional, axi4_interconn_routings.sv need it
+        slave[6].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[6].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[6].cfg_info.base_address[0] = 64'h6000_0000;
         slave[6].cfg_info.limit_address[0] = 64'h6000_FFFF;
         slave[6].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH

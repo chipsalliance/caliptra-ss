@@ -425,4 +425,9 @@ package caliptra_ss_lc_ctrl_state_pkg;
     128'hf12a_5911_4217_48a2_adfc_9693_ef1f_adea
   };
 
+
+  parameter caliptra_ss_lc_token_t RndCnstRawUnlockTokenDefault = {
+    128'hEA2B3F32CBE77554E43C8EA7EBF197C2
+  };
+
 endpackage : caliptra_ss_lc_ctrl_state_pkg
