@@ -121,7 +121,7 @@ module sub2tlul
     assign tl_o.a_source    = id;
     assign tl_o.a_mask      = mask_local;
     assign tl_o.a_data      = wdata;
-    assign tl_o.a_size      = size;
+    assign tl_o.a_size      = size[1:0];
 
     // TL-UL TO AXI SUB RESPONSE
     assign rdata        = (dv && tl_i.d_valid && (tl_i.d_source == id)) ? tl_i.d_data : 0;
@@ -149,7 +149,8 @@ module sub2tlul
         .data_intg      (data_intg) 
     );
 
-    assign tl_o.a_user = {  instr_type, 
+    assign tl_o.a_user = {  {RsvdWidth{1'b0}}, 
+                            instr_type, 
                             cmd_intg,
                             data_intg };
 
