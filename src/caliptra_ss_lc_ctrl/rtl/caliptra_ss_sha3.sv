@@ -4,12 +4,12 @@
 //
 // SHA3 core is a fully functional SHA3/SHAKE/cSHAKE hashing module.
 //
-// It instantiates a keccak_round with 1600 bits of the state.
+// It instantiates a caliptra_ss_keccak_round with 1600 bits of the state.
 
 `include "caliptra_prim_assert.sv"
 
-module sha3
-  import sha3_pkg::*;
+module caliptra_ss_sha3
+  import caliptra_ss_sha3_pkg::*;
 #(
   // Enable Masked Keccak if 1
   parameter  bit EnMasking = 0,
@@ -34,7 +34,7 @@ module sha3
   output logic              rand_consumed_o,
 
   // N, S: Used in cSHAKE mode only
-  input [NSRegisterSize*8-1:0] ns_data_i, // See sha3_pkg for details
+  input [NSRegisterSize*8-1:0] ns_data_i, // See caliptra_ss_sha3_pkg for details
 
   // configurations
   input sha3_mode_e       mode_i,     // see sha3pad for details
@@ -44,7 +44,7 @@ module sha3
   input start_i,   // see sha3pad for details
   input process_i, // see sha3pad for details
 
-  // run_i is a pulse signal to trigger the keccak_round manually by SW.
+  // run_i is a pulse signal to trigger the caliptra_ss_keccak_round manually by SW.
   // It is used to run additional keccak_f after sponge absorbing is completed.
   // See `keccak_run` signal
   input                        run_i,
@@ -117,7 +117,7 @@ module sha3
 
   // `squeezing` is a status indicator that SHA3 core is in sponge squeezing
   // stage. In this stage, the state output is valid, and software can manually
-  // trigger keccak_round logic to get more digest outputs in case the output
+  // trigger caliptra_ss_keccak_round logic to get more digest outputs in case the output
   // length is bigger than the block limit.
   logic squeezing;
 
@@ -412,7 +412,7 @@ module sha3
   ///////////////
 
   // SHA3 pad logic
-  sha3pad #(
+  caliptra_ss_sha3pad #(
     .EnMasking (EnMasking)
   ) u_pad (
     .clk_i,
@@ -455,9 +455,9 @@ module sha3
   );
 
   // Keccak round logic
-  keccak_round #(
-    .Width    (sha3_pkg::StateW),
-    .DInWidth (sha3_pkg::MsgWidth),
+  caliptra_ss_keccak_round #(
+    .Width    (caliptra_ss_sha3_pkg::StateW),
+    .DInWidth (caliptra_ss_sha3_pkg::MsgWidth),
 
     .EnMasking  (EnMasking)
   ) u_keccak (

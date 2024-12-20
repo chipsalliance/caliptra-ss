@@ -35,7 +35,7 @@
 
 `include "caliptra_prim_assert.sv"
 
-module keccak_round
+module caliptra_ss_keccak_round
   import caliptra_prim_mubi_pkg::*;
 #(
   parameter int Width = 1600, // b= {25, 50, 100, 200, 400, 800, 1600}
@@ -96,7 +96,7 @@ module keccak_round
   input  caliptra_prim_mubi_pkg::mubi4_t clear_i     // Clear internal state to '0
 );
 
-  import sha3_pkg::*;
+  import caliptra_ss_sha3_pkg::*;
 
   /////////////////////
   // Control signals //
@@ -264,7 +264,7 @@ module keccak_round
         // randomness required for Phase2 will be available in the next clock
         // cycle.
         //
-        // It's important that the DOM multipliers inside keccak_2share are
+        // It's important that the DOM multipliers inside caliptra_ss_keccak_2share are
         // presented the new state (updated with update_storage) at the same
         // time as the new randomness (updated with rand_update_o). Otherwise,
         // stale entropy is paired with fresh data or vice versa. This could
@@ -293,7 +293,7 @@ module keccak_round
         dom_update = 1'b 1;
 
         // Trigger randomness update for next cycle.
-        // It's important that the DOM multipliers inside keccak_2share are
+        // It's important that the DOM multipliers inside caliptra_ss_keccak_2share are
         // presented the second lane halves at the same time as the new
         // randomness (updated with rand_update_o). Otherwise, stale entropy
         // is paired with fresh data or vice versa. This could lead to
@@ -318,7 +318,7 @@ module keccak_round
         dom_update = 1'b 1;
 
         // Trigger randomness update for next cycle.
-        // It's important that the DOM multipliers inside keccak_2share are
+        // It's important that the DOM multipliers inside caliptra_ss_keccak_2share are
         // presented the updated state at the same as the new randomness
         // (updated with rand_update_o) - even if the DOM multipliers don't
         // update the pipeline registers in the next cycle. Otherwise, stale
@@ -354,7 +354,7 @@ module keccak_round
 
         // Update second lane halves.
         // We don't need fresh randomness for the next cycle as the DOM
-        // multipliers inside keccak_2share will keep seeing the first
+        // multipliers inside caliptra_ss_keccak_2share will keep seeing the first
         // lane halves in the next cycle. If we updated the randomness,
         // old data got combined with frash randomness which is not
         // desirable as it could lead to SCA leakage.
@@ -444,8 +444,8 @@ module keccak_round
     assign dom_in_rand_ext_q = 1'b 0;
   end
 
-  // Ready indicates the keccak_round is able to receive new message.
-  // While keccak_round is processing the data, it blocks the new message to be
+  // Ready indicates the caliptra_ss_keccak_round is able to receive new message.
+  // While caliptra_ss_keccak_round is processing the data, it blocks the new message to be
   // XORed into the current state.
   assign ready_o = (keccak_st == KeccakStIdle) ? 1'b 1 : 1'b 0;
 
@@ -520,7 +520,7 @@ module keccak_round
   //////////////
   // Datapath //
   //////////////
-  keccak_2share #(
+  caliptra_ss_keccak_2share #(
     .Width(Width),
     .EnMasking(EnMasking),
     .ForceRandExt(ForceRandExt)

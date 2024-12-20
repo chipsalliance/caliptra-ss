@@ -10,7 +10,7 @@
 module kmac_reduced
   import kmac_pkg::*;
   import kmac_reg_pkg::*;
-  import sha3_pkg::*;
+  import caliptra_ss_sha3_pkg::*;
 #(
   // EnMasking: Enable masking security hardening inside keccak_round.
   parameter bit EnMasking = 1,
@@ -57,11 +57,11 @@ module kmac_reduced
   // Inputs driven with constant values for evaluation but we want to avoid synthesis optimizing
   // them.
   // SHA3 configuration
-  input sha3_mode_e                    mode_i,      // e.g. sha3_pkg::Sha3
-  input keccak_strength_e              strength_i,  // e.g. sha3_pkg::L256
+  input sha3_mode_e                    mode_i,      // e.g. caliptra_ss_sha3_pkg::Sha3
+  input keccak_strength_e              strength_i,  // e.g. caliptra_ss_sha3_pkg::L256
   input logic [NSRegisterSize*8-1:0]   ns_prefix_i, // Ignored for Sha3,
                                                     // 48'h4341_4D4B_2001 for CShake
-  input logic [sha3_pkg::MsgStrbW-1:0] msg_strb_i,  // drive to all-1
+  input logic [caliptra_ss_sha3_pkg::MsgStrbW-1:0] msg_strb_i,  // drive to all-1
 
   // Entropy configuration
   input logic          msg_mask_en_i,          // drive to 1
@@ -98,14 +98,14 @@ module kmac_reduced
   // Message unpacking & injection //
   ///////////////////////////////////
   // Message packer FIFO
-  logic [sha3_pkg::MsgWidth-1:0] msg [NumShares];
+  logic [caliptra_ss_sha3_pkg::MsgWidth-1:0] msg [NumShares];
   logic [NumShares-1:0] msg_valid_shares;
   logic [NumShares-1:0] msg_ready_shares;
   logic msg_valid, msg_ready;
 
   caliptra_prim_packer_fifo #(
     .InW(MsgLen),
-    .OutW(sha3_pkg::MsgWidth),
+    .OutW(caliptra_ss_sha3_pkg::MsgWidth),
     .ClearOnRead(1'b1)
   ) u_msg_unpacker_share0 (
     .clk_i,
@@ -122,7 +122,7 @@ module kmac_reduced
 
   caliptra_prim_packer_fifo #(
     .InW(MsgLen),
-    .OutW(sha3_pkg::MsgWidth),
+    .OutW(caliptra_ss_sha3_pkg::MsgWidth),
     .ClearOnRead(1'b1)
   ) u_msg_unpacker_share1 (
     .clk_i,
@@ -145,13 +145,13 @@ module kmac_reduced
   // Message (re-)masking //
   //////////////////////////
   logic msg_mask_en;
-  logic [sha3_pkg::MsgWidth-1:0] msg_mask, msg_mask_permuted;
-  logic [sha3_pkg::MsgWidth-1:0] msg_masked [NumShares];
+  logic [caliptra_ss_sha3_pkg::MsgWidth-1:0] msg_mask, msg_mask_permuted;
+  logic [caliptra_ss_sha3_pkg::MsgWidth-1:0] msg_masked [NumShares];
 
   // Permute the PRNG output.
   always_comb begin
     msg_mask_permuted = '0;
-    for (int unsigned i = 0 ; i < sha3_pkg::MsgWidth ; i++) begin
+    for (int unsigned i = 0 ; i < caliptra_ss_sha3_pkg::MsgWidth ; i++) begin
       // Loop through the MsgPerm constant and swap between the bits
       msg_mask_permuted[i] = msg_mask[RndCnstMsgPerm[i]];
     end
@@ -160,7 +160,7 @@ module kmac_reduced
   // Perform the actual (re-)masking
   for (genvar i = 0; i < NumShares; i++) begin: gen_msg_masking
     assign msg_masked[i] =
-        msg[i] ^ ({sha3_pkg::MsgWidth{msg_mask_en_i}} & msg_mask_permuted);
+        msg[i] ^ ({caliptra_ss_sha3_pkg::MsgWidth{msg_mask_en_i}} & msg_mask_permuted);
   end
 
   assign msg_mask_en = msg_mask_en_i & msg_valid & msg_ready;
@@ -185,7 +185,7 @@ module kmac_reduced
   );
 
   // Error signals
-  sha3_pkg::err_t sha3_err, entropy_err;
+  caliptra_ss_sha3_pkg::err_t sha3_err, entropy_err;
   logic sha3_state_error, sha3_count_error, sha3_storage_rst_error;
   logic entropy_state_error, entropy_hash_counter_error;
 
