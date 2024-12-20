@@ -257,6 +257,16 @@ initial begin
         slave[6].cfg_info.total_outstanding_depth = 4;
         slave[6].cfg_info.id_outstanding_depth = 4;
 
+        //-- Life-cycle Controller Core AXI 
+        slave[7].cfg_info.passive_mode = 1; 
+        slave[7].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[7].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[7].cfg_info.base_address[0] = 64'h7000_0000;
+        slave[7].cfg_info.limit_address[0] = 64'h7000_FFFF;
+        slave[7].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
+        slave[7].cfg_info.total_outstanding_depth = 4;
+        slave[7].cfg_info.id_outstanding_depth = 4;
+
 //#1;
 //do not sure what feature of #1
     // connect devices to the Interconnect
