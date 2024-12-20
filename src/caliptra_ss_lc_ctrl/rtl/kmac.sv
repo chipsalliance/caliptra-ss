@@ -167,19 +167,19 @@ module kmac
   caliptra_prim_mubi_pkg::mubi4_t app_absorbed;
   logic event_absorbed;
 
-  sha3_pkg::sha3_st_e sha3_fsm;
+  caliptra_ss_sha3_pkg::sha3_st_e sha3_fsm;
 
   // Prefix: kmac_pkg defines Prefix based on N size and S size.
   // Then computes left_encode(len(N)) size and left_encode(len(S))
   // For given default value 32, 256 bits, the max
   // encode_string(N) || encode_string(S) is 328. So 11 Prefix registers are
   // created.
-  logic [sha3_pkg::NSRegisterSize*8-1:0] reg_ns_prefix;
-  logic [sha3_pkg::NSRegisterSize*8-1:0] ns_prefix;
+  logic [caliptra_ss_sha3_pkg::NSRegisterSize*8-1:0] reg_ns_prefix;
+  logic [caliptra_ss_sha3_pkg::NSRegisterSize*8-1:0] ns_prefix;
 
   // NumWordsPrefix from kmac_reg_pkg
   `CALIPTRA_ASSERT_INIT(PrefixRegSameToPrefixPkg_A,
-               kmac_reg_pkg::NumWordsPrefix*4 == sha3_pkg::NSRegisterSize)
+               kmac_reg_pkg::NumWordsPrefix*4 == caliptra_ss_sha3_pkg::NSRegisterSize)
 
   // NumEntriesMsgFifo from kmac_reg_pkg must match calculated MsgFifoDepth
   // from kmac_pkg.
@@ -194,16 +194,16 @@ module kmac
   // Output state: this is used to redirect the digest to KeyMgr or Software
   // depends on the configuration.
   logic state_valid;
-  logic [sha3_pkg::StateW-1:0] state [Share];
+  logic [caliptra_ss_sha3_pkg::StateW-1:0] state [Share];
 
   // state is de-muxed in keymgr interface logic.
   // the output from keymgr logic goes into staterd module to be visible to SW
   logic reg_state_valid;
-  logic [sha3_pkg::StateW-1:0] reg_state [Share];
+  logic [caliptra_ss_sha3_pkg::StateW-1:0] reg_state [Share];
 
   // SHA3 Entropy interface
   logic sha3_rand_valid, sha3_rand_early, sha3_rand_update, sha3_rand_consumed;
-  logic [sha3_pkg::StateW/2-1:0] sha3_rand_data;
+  logic [caliptra_ss_sha3_pkg::StateW/2-1:0] sha3_rand_data;
   logic sha3_rand_aux;
 
   // FIFO related signals
@@ -270,8 +270,8 @@ module kmac
 
   // SHA3 Mode, Strength, KMAC enable for app interface
   logic                       reg_kmac_en,         app_kmac_en;
-  sha3_pkg::sha3_mode_e       reg_sha3_mode,       app_sha3_mode;
-  sha3_pkg::keccak_strength_e reg_keccak_strength, app_keccak_strength;
+  caliptra_ss_sha3_pkg::sha3_mode_e       reg_sha3_mode,       app_sha3_mode;
+  caliptra_ss_sha3_pkg::keccak_strength_e reg_keccak_strength, app_keccak_strength;
 
   // RegIF of enabling unsupported mode & strength
   logic cfg_en_unsupported_modestrength;
@@ -313,7 +313,7 @@ module kmac
   logic [MsgWidth-1:0] msg_mask;
 
   // SHA3 Error response
-  sha3_pkg::err_t sha3_err;
+  caliptra_ss_sha3_pkg::err_t sha3_err;
 
   // KeyMgr Error response
   kmac_pkg::err_t app_err;
@@ -463,9 +463,9 @@ module kmac
   // status.squeeze is valid only when SHA3 engine completes the Absorb and not
   // running the manual keccak rounds. This status is for SW to determine when
   // to read the STATE values.
-  assign hw2reg.status.sha3_idle.d     = sha3_fsm == sha3_pkg::StIdle;
-  assign hw2reg.status.sha3_absorb.d   = sha3_fsm == sha3_pkg::StAbsorb;
-  assign hw2reg.status.sha3_squeeze.d  = sha3_fsm == sha3_pkg::StSqueeze;
+  assign hw2reg.status.sha3_idle.d     = sha3_fsm == caliptra_ss_sha3_pkg::StIdle;
+  assign hw2reg.status.sha3_absorb.d   = sha3_fsm == caliptra_ss_sha3_pkg::StAbsorb;
+  assign hw2reg.status.sha3_squeeze.d  = sha3_fsm == caliptra_ss_sha3_pkg::StSqueeze;
 
   // FIFO related status
   assign hw2reg.status.fifo_depth.d[MsgFifoDepthW-1:0] = msgfifo_depth;
@@ -477,7 +477,7 @@ module kmac
 
   // Configuration Register
   logic engine_stable;
-  assign engine_stable = sha3_fsm == sha3_pkg::StIdle;
+  assign engine_stable = sha3_fsm == caliptra_ss_sha3_pkg::StIdle;
 
   // SEC_CM: CFG_SHADOWED.CONFIG.REGWEN
   assign hw2reg.cfg_regwen.d = engine_stable;
@@ -562,7 +562,7 @@ module kmac
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       idle_o <= caliptra_prim_mubi_pkg::MuBi4True;
-    end else if ((sha3_fsm == sha3_pkg::StIdle) && (msgfifo_empty || SecIdleAcceptSwMsg)) begin
+    end else if ((sha3_fsm == caliptra_ss_sha3_pkg::StIdle) && (msgfifo_empty || SecIdleAcceptSwMsg)) begin
       idle_o <= caliptra_prim_mubi_pkg::MuBi4True;
     end else begin
       idle_o <= caliptra_prim_mubi_pkg::MuBi4False;
@@ -577,8 +577,8 @@ module kmac
 
   // App mode, strength, kmac_en
   assign reg_kmac_en         = reg2hw.cfg_shadowed.kmac_en.q;
-  assign reg_sha3_mode       = sha3_pkg::sha3_mode_e'(reg2hw.cfg_shadowed.mode.q);
-  assign reg_keccak_strength = sha3_pkg::keccak_strength_e'(reg2hw.cfg_shadowed.kstrength.q);
+  assign reg_sha3_mode       = caliptra_ss_sha3_pkg::sha3_mode_e'(reg2hw.cfg_shadowed.mode.q);
+  assign reg_keccak_strength = caliptra_ss_sha3_pkg::keccak_strength_e'(reg2hw.cfg_shadowed.kstrength.q);
 
   ///////////////
   // Interrupt //
@@ -644,7 +644,7 @@ module kmac
   // FIFO together with the empty signal.
   assign msgfifo_empty_gate =
       app_active                     ? 1'b 1 :
-      sha3_fsm != sha3_pkg::StAbsorb ? 1'b 1 :
+      sha3_fsm != caliptra_ss_sha3_pkg::StAbsorb ? 1'b 1 :
       msgfifo2kmac_process           ? 1'b 1 : ~msgfifo_full_seen_q;
 
   assign status_msgfifo_empty = msgfifo_empty_gate ? 1'b 0 : msgfifo_empty;
@@ -777,7 +777,7 @@ module kmac
       KmacIdle: begin
         if (kmac_cmd == CmdStart) begin
           // If cSHAKE turned on
-          if (sha3_pkg::CShake == app_sha3_mode) begin
+          if (caliptra_ss_sha3_pkg::CShake == app_sha3_mode) begin
             kmac_st_d = KmacPrefix;
           end else begin
             // Jump to Msg feed directly
@@ -924,7 +924,7 @@ module kmac
     logic unused_msgmask;
     assign unused_msgmask = ^{msg_mask, cfg_msg_mask, msg_mask_en};
   end
-  sha3 #(
+  caliptra_ss_sha3 #(
     .EnMasking (EnMasking)
   ) u_sha3 (
     .clk_i,
@@ -1160,7 +1160,7 @@ module kmac
     .err_o (msgfifo_err)
   );
 
-  logic [sha3_pkg::StateW-1:0] reg_state_tl [Share];
+  logic [caliptra_ss_sha3_pkg::StateW-1:0] reg_state_tl [Share];
   always_comb begin
     for (int i = 0 ; i < Share; i++) begin
       reg_state_tl[i] = reg_state_valid ? reg_state[i] : 'b0;
