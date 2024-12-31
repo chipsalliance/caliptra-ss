@@ -122,7 +122,7 @@ mci_reg i_mci_reg (
         .s_cpuif_wr_data        (cif_resp_if.req_data.wdata),
         .s_cpuif_wr_biten       (c_cpuif_wr_biten),
         .s_cpuif_req_stall_wr   (),     // FIXME why isn't this used?
-        .s_cpuif_req_stall_rd   ('0),   // FIXME why isn't this connected?
+        .s_cpuif_req_stall_rd   (),   // FIXME why isn't this connected?
         .s_cpuif_rd_ack         (),     // FIXME why isn't this used?
         .s_cpuif_rd_err         (mci_reg_read_error),
         .s_cpuif_rd_data        (cif_resp_if.rdata),   // FIXME should this be masked for security?

@@ -13,7 +13,8 @@
 // limitations under the License.
 
 module mci_top 
-    import mci_reg_pkg::*
+    import mci_reg_pkg::*;
+    import mci_pkg::*;
     #(
     parameter MCU_SRAM_SIZE_KB = 1024 // FIXME - write assertion ensuring this size 
                                       // is compatible with the MCU SRAM IF parameters
@@ -32,13 +33,22 @@ module mci_top
     mci_mcu_sram_if.request mci_mcu_sram_req_if 
 
     );
-
+    
     localparam AXI_ADDR_WIDTH = s_axi_w_if.AW;
     localparam AXI_DATA_WIDTH = s_axi_w_if.DW;
     localparam AXI_USER_WIDTH = s_axi_w_if.UW;
     localparam AXI_ID_WIDTH   = s_axi_w_if.IW;
     
     mci_reg__out_t mci_reg_hwif_out;
+
+
+    // WDT signals
+    logic timer1_en;
+    logic timer2_en;
+    logic timer1_restart;
+    logic timer2_restart;
+    logic [WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer1_timeout_period;
+    logic [WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer2_timeout_period;
 
 
 
@@ -65,6 +75,7 @@ cif_if #(
 ) mci_reg_req_if(
     .clk, 
     .rst_b(mci_rst_b));
+
 
 //AXI Interface
 //This module contains the logic for interfacing with the SoC over the AXI Interface
@@ -127,21 +138,54 @@ mci_mcu_sram_ctrl #(
     .mci_mcu_sram_req_if(mci_mcu_sram_req_if)
 );
 
+
+// MCI WDT
+
+assign timer1_en = mci_reg_hwif_out.WDT_TIMER1_EN.timer1_en.value;
+assign timer2_en = mci_reg_hwif_out.WDT_TIMER2_EN.timer2_en.value;
+assign timer1_restart = mci_reg_hwif_out.WDT_TIMER1_CTRL.timer1_restart.value;
+assign timer2_restart = mci_reg_hwif_out.WDT_TIMER2_CTRL.timer2_restart.value;
+
+for (genvar i = 0; i < WDT_TIMEOUT_PERIOD_NUM_DWORDS; i++) begin
+    assign timer1_timeout_period[i] = mci_reg_hwif_out.WDT_TIMER1_TIMEOUT_PERIOD[i].timer1_timeout_period.value;
+    assign timer2_timeout_period[i] = mci_reg_hwif_out.WDT_TIMER2_TIMEOUT_PERIOD[i].timer2_timeout_period.value;
+end
+
+mci_wdt_top i_mci_wdt_top (
+    .clk    (clk),
+
+    // MCI Resets
+    .rst_b (mci_rst_b),
+
+    //Timer inputs
+    .timer1_en (timer1_en),
+    .timer2_en (timer2_en),
+    .timer1_restart (timer1_restart),
+    .timer2_restart (timer2_restart),
+    .timer1_timeout_period(timer1_timeout_period),
+    .timer2_timeout_period(timer2_timeout_period),
+    //Interrupts
+    .wdt_timer1_timeout_serviced('0), // FIXME need to connect to interrupt from CSR 
+    .wdt_timer2_timeout_serviced('0), // FIXME need to connect to interrupt from CSR 
+    //WDT STATUS bits pulse
+    .t1_timeout_p (), // FIXME connect to interrupt from CSR
+    .t2_timeout_p ()  // FIXME connect to interrupt from CSR
+);
+
 // MCI Reg
 // MCI CSR bank
-mci_top i_mci_top (
+mci_reg_top i_mci_reg_top (
     .clk    (clk),
 
     // MCI Resets
     .mci_rst_b      (mci_rst_b),// FIXME: Need to sync reset
-    .mcu_rst_b      ('0),       // FIXME: is this really needed?
     .mci_pwrgood    ('0),       // FIXME: need to add
 
     // REG HWIF signals
     .mci_reg_hwif_out (mci_reg_hwif_out),
     
     // Caliptra internal fabric response interface
-    .cif_resp_if (mci_reg_req_if.response),
+    .cif_resp_if (mci_reg_req_if.response)
 
 );
 

@@ -31,6 +31,10 @@ targets:
       - $COMPILE_ROOT/rtl/mci_mcu_sram_ctrl.sv
       - $COMPILE_ROOT/rtl/mci_mcu_sram_if.sv
       - $COMPILE_ROOT/rtl/cif_if.sv
+      - $COMPILE_ROOT/rtl/mci_wdt_top.sv
+      - $COMPILE_ROOT/rtl/mci_wdt.sv
+      - $COMPILE_ROOT/rtl/mci_reg_top.sv
+      - $COMPILE_ROOT/rtl/mci_reg.sv
     tops: [mci_top]
   rtl_lint:
     directories: [$COMPILE_ROOT/config/design_lint]
@@ -80,3 +84,19 @@ targets:
     waiver_files:
       - $MSFT_REPO_ROOT/src/mci/config/design_lint/mci/sglint_waivers
     tops: [mci_axi_sub_top]
+---
+provides: [mci_wdt_top]
+schema_version: 2.4.0
+targets:
+  rtl:
+    directories:
+      - $COMPILE_ROOT/rtl
+    files:
+      - $COMPILE_ROOT/rtl/mci_wdt_top.sv
+      - $COMPILE_ROOT/rtl/mci_wdt.sv
+    tops: [mci_wdt_top]
+  rtl_lint:
+    directories: [$COMPILE_ROOT/config/design_lint]
+    waiver_files:
+      - $MSFT_REPO_ROOT/src/mci/config/design_lint/mci/sglint_waivers
+    tops: [mci_wdt_top]
