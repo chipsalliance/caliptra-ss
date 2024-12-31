@@ -13,6 +13,7 @@
 // limitations under the License.
 
 module mci_top 
+    import mci_reg_pkg::*
     #(
     parameter MCU_SRAM_SIZE_KB = 1024 // FIXME - write assertion ensuring this size 
                                       // is compatible with the MCU SRAM IF parameters
@@ -36,6 +37,9 @@ module mci_top
     localparam AXI_DATA_WIDTH = s_axi_w_if.DW;
     localparam AXI_USER_WIDTH = s_axi_w_if.UW;
     localparam AXI_ID_WIDTH   = s_axi_w_if.IW;
+    
+    mci_reg__out_t mci_reg_hwif_out;
+
 
 
 // Caliptra internal fabric interface for MCU SRAM 
@@ -47,6 +51,18 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mcu_sram_req_if(
+    .clk, 
+    .rst_b(mci_rst_b));
+
+// Caliptra internal fabric interface for MCI REG 
+// Address width is set to AXI_ADDR_WIDTH and MCI REG
+// will mask out upper bits that are "don't care"
+cif_if #(
+    .ADDR_WIDTH(AXI_ADDR_WIDTH)
+    ,.DATA_WIDTH(AXI_DATA_WIDTH)
+    ,.ID_WIDTH(AXI_ID_WIDTH)
+    ,.USER_WIDTH(AXI_USER_WIDTH)
+) mci_reg_req_if(
     .clk, 
     .rst_b(mci_rst_b));
 
@@ -69,6 +85,9 @@ mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
     // AXI INF
     .s_axi_w_if(s_axi_w_if),
     .s_axi_r_if(s_axi_r_if),
+
+    // MCI REG Interface
+    .mci_reg_req_if( mci_reg_req_if.request ),
 
     // MCU SRAM Interface
     .mcu_sram_req_if( mcu_sram_req_if.request )
@@ -107,5 +126,25 @@ mci_mcu_sram_ctrl #(
     // Interface with SRAM
     .mci_mcu_sram_req_if(mci_mcu_sram_req_if)
 );
+
+// MCI Reg
+// MCI CSR bank
+mci_top i_mci_top (
+    .clk    (clk),
+
+    // MCI Resets
+    .mci_rst_b      (mci_rst_b),// FIXME: Need to sync reset
+    .mcu_rst_b      ('0),       // FIXME: is this really needed?
+    .mci_pwrgood    ('0),       // FIXME: need to add
+
+    // REG HWIF signals
+    .mci_reg_hwif_out (mci_reg_hwif_out),
+    
+    // Caliptra internal fabric response interface
+    .cif_resp_if (mci_reg_req_if.response),
+
+);
+
+
 
 endmodule

@@ -35,6 +35,9 @@ module mci_axi_sub_top
     axi_if.r_sub s_axi_r_if,
 
     // MCU SRAM Interface
+    cif_if.request  mci_reg_req_if,
+
+    // MCU SRAM Interface
     cif_if.request  mcu_sram_req_if
 
     );
@@ -105,6 +108,9 @@ mci_axi_sub_decode #(
 ) i_mci_axi_sub_decode (
     //SOC inf
     .soc_resp_if        (soc_resp_if.response),
+
+    //MCI reg inf
+    .mci_reg_req_if     (mci_reg_req_if),
 
     //MCU SRAM inf
     .mcu_sram_req_if    (mcu_sram_req_if)

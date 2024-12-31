@@ -102,7 +102,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc="Generic Status";                                            sw=rw; swwe = mci_req; hw=r ; resetsignal = mci_rst_b;} status[24]=0;
+        field {desc="Generic Status";                                            sw=rw; swwe = mcu_req; hw=r ; resetsignal = mci_rst_b;} status[24]=0;
         field {desc="DEV ID CSR ready";                                          sw=r;                         /* no storage, no reset */} rsvd[3]=0;
         field {desc="Boot FSM State";                                            sw=r;                  hw=w ; /* no storage, no reset */} boot_fsm_ps[5];
     } FLOW_STATUS;
@@ -304,6 +304,7 @@ addrmap mci_reg {
     } MCU_TIMER_CONFIG @0xC0;
     reg {
         name = "MCU Clock Gating En";
+        field {sw=rw; hw=na; resetsignal = mci_rst_b;} FIXME=0;
          // TODO
     } MCU_CLK_GATING_EN;
 
@@ -403,8 +404,12 @@ addrmap mci_reg {
     // ------------ DEBUG/GENERIC -------------
     reg { field {/*TODO*/sw=r;  hw=w;} wires[32]=32'b0; } GENERIC_INPUT_WIRES[2] @0x400;
     reg { field {/*TODO*/sw=rw; hw=r;} wires[32]=32'b0; } GENERIC_OUTPUT_WIRES[2];
-    reg { } DEBUG_IN; // i.e. stdin
-    reg { } DEBUG_OUT; // i.e. stdout
+    reg { 
+        field {sw=rw; hw=na; resetsignal = mci_rst_b;} FIXME=0;
+    } DEBUG_IN; // i.e. stdin
+    reg { 
+        field {sw=rw; hw=na; resetsignal = mci_rst_b;} FIXME=0;
+    } DEBUG_OUT; // i.e. stdout
 
     reg {
         name = "FUSE Write Done";
@@ -417,102 +422,102 @@ addrmap mci_reg {
         field {sw = rw; hw=r; swwel; swmod=true; resetsignal = mci_pwrgood;} done=1'h0; // TODO
     } FUSE_WR_DONE @0x440;
 
-    reg {
-        name = "Production Debug Unlock PK HASH";
-        desc = "Production Debug Unlock PK HASH. Initialized from strap inputs, overwritable by MCU until FUSE_WR_DONE is set.
-                Once FUSE_WR_DONE is set value persists until cold reset.
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {sw = rw; hw = rw; we; swwel; resetsignal = mci_pwrgood;} hash[32]=32'h0; // TODO
-    } PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12] @0x480;
+    // FIXME Remove???reg {
+    // FIXME Remove???    name = "Production Debug Unlock PK HASH";
+    // FIXME Remove???    desc = "Production Debug Unlock PK HASH. Initialized from strap inputs, overwritable by MCU until FUSE_WR_DONE is set.
+    // FIXME Remove???            Once FUSE_WR_DONE is set value persists until cold reset.
+    // FIXME Remove???            [br]Caliptra Access: RO
+    // FIXME Remove???            [br]MCU Access:      RW
+    // FIXME Remove???            [br]SOC Access:      RO";
+    // FIXME Remove???    field {sw = rw; hw = rw; we; swwel; resetsignal = mci_pwrgood;} hash[32]=32'h0; // TODO
+    // FIXME Remove???} PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12] @0x480;
 
     // ----------------------------------------
     // ----- DATA_VAULT/SCRATCH/RESERVED ------
-    reg {
-        name = "STICKY DATA VAULT CTRL";
-        desc = "Controls for the Sticky Data Vault Entries (cleared on cold reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
-               sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0; //TODO Shoud reflect STICKY_DV_NUM_ENTRIES from dv_defines_pkg.sv
-    } STICKY_DATA_VAULT_CTRL[10] @0x800;
+    // FIXME Remove??? reg {
+    // FIXME Remove???     name = "STICKY DATA VAULT CTRL";
+    // FIXME Remove???     desc = "Controls for the Sticky Data Vault Entries (cleared on cold reset)
+    // FIXME Remove???             [br]Caliptra Access: RO
+    // FIXME Remove???             [br]MCU Access:      RW
+    // FIXME Remove???             [br]SOC Access:      RO";
+    // FIXME Remove???     field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
+    // FIXME Remove???            sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0; //TODO Shoud reflect STICKY_DV_NUM_ENTRIES from dv_defines_pkg.sv
+    // FIXME Remove??? } STICKY_DATA_VAULT_CTRL[10] @0x800;
 
-    reg {
-        name = "STICKY DATA VAULT ENTRY";
-        desc = "Sticky Data Vault Entry (cleared on cold reset). Lockable.
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;};
-    } STICKY_DATA_VAULT_ENTRY[10][12];//TODO Shoud reflect STICKY_DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    // FIXME Remove??? reg {
+    // FIXME Remove???     name = "STICKY DATA VAULT ENTRY";
+    // FIXME Remove???     desc = "Sticky Data Vault Entry (cleared on cold reset). Lockable.
+    // FIXME Remove???             [br]Caliptra Access: RO
+    // FIXME Remove???             [br]MCU Access:      RW
+    // FIXME Remove???             [br]SOC Access:      RO";
+    // FIXME Remove???     field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
+    // FIXME Remove??? } STICKY_DATA_VAULT_ENTRY[10][12];//TODO Shoud reflect STICKY_DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
 
-    reg {
-        name = "DATA VAULT CTRL";
-        desc = "Controls for the Data Vault Entries (cleared on warm reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
-               sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0; // TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
-    } DATA_VAULT_CTRL[10];// CAREFUL with the address extensions
+    // FIXME Remove??? reg {
+    // FIXME Remove???     name = "DATA VAULT CTRL";
+    // FIXME Remove???     desc = "Controls for the Data Vault Entries (cleared on warm reset)
+    // FIXME Remove???             [br]Caliptra Access: RO
+    // FIXME Remove???             [br]MCU Access:      RW
+    // FIXME Remove???             [br]SOC Access:      RO";
+    // FIXME Remove???     field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
+    // FIXME Remove???            sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0; // TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    // FIXME Remove??? } DATA_VAULT_CTRL[10];// CAREFUL with the address extensions
 
-    reg {
-        name = "DATA VAULT ENTRY";
-        desc = "Data Vault Entry (cleared on cold reset). Lockable.
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;};
-    } DATA_VAULT_ENTRY[10][12];// TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    // FIXME Remove??? reg {
+    // FIXME Remove???     name = "DATA VAULT ENTRY";
+    // FIXME Remove???     desc = "Data Vault Entry (cleared on cold reset). Lockable.
+    // FIXME Remove???             [br]Caliptra Access: RO
+    // FIXME Remove???             [br]MCU Access:      RW
+    // FIXME Remove???             [br]SOC Access:      RO";
+    // FIXME Remove???     field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
+    // FIXME Remove??? } DATA_VAULT_ENTRY[10][12];// TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
 
-    reg {
-        name = "STICKY LOCKABLE SCRATCH REG CTRL";
-        desc = "Sticky Scratch Register Controls (cleared on cold reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
-               sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0;
-    } STICKY_LOCKABLE_SCRATCH_REG_CTRL[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
+    // FIXME Remove??? reg {
+    // FIXME Remove???     name = "STICKY LOCKABLE SCRATCH REG CTRL";
+    // FIXME Remove???     desc = "Sticky Scratch Register Controls (cleared on cold reset)
+    // FIXME Remove???             [br]Caliptra Access: RO
+    // FIXME Remove???             [br]MCU Access:      RW
+    // FIXME Remove???             [br]SOC Access:      RO";
+    // FIXME Remove???     field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
+    // FIXME Remove???            sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0;
+    // FIXME Remove??? } STICKY_LOCKABLE_SCRATCH_REG_CTRL[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
 
-    reg {
-        name = "STICKY LOCKABLE SCRATCH REG";
-        desc = "Sticky Scratch Register Entries (cleared on cold reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
-    } STICKY_LOCKABLE_SCRATCH_REG[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
+    // FIXME Remove???reg {
+    // FIXME Remove???    name = "STICKY LOCKABLE SCRATCH REG";
+    // FIXME Remove???    desc = "Sticky Scratch Register Entries (cleared on cold reset)
+    // FIXME Remove???            [br]Caliptra Access: RO
+    // FIXME Remove???            [br]MCU Access:      RW
+    // FIXME Remove???            [br]SOC Access:      RO";
+    // FIXME Remove???    field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
+    // FIXME Remove???} STICKY_LOCKABLE_SCRATCH_REG[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
 
-    reg {
-        name = "LOCKABLE SCRATCH REG CTRL";
-        desc = "Scratch Register Controls (cleared on warm reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
-               sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0;
-    } LOCKABLE_SCRATCH_REG_CTRL[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
+    // FIXME Remove???reg {
+    // FIXME Remove???    name = "LOCKABLE SCRATCH REG CTRL";
+    // FIXME Remove???    desc = "Scratch Register Controls (cleared on warm reset)
+    // FIXME Remove???            [br]Caliptra Access: RO
+    // FIXME Remove???            [br]MCU Access:      RW
+    // FIXME Remove???            [br]SOC Access:      RO";
+    // FIXME Remove???    field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
+    // FIXME Remove???           sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0;
+    // FIXME Remove???} LOCKABLE_SCRATCH_REG_CTRL[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
 
-    reg {
-        name = "LOCKABLE SCRATCH REG";
-        desc = "Scratch Register Entry (cleared on cold reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
-    } LOCKABLE_SCRATCH_REG[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv
+    // FIXME Remove???reg {
+    // FIXME Remove???    name = "LOCKABLE SCRATCH REG";
+    // FIXME Remove???    desc = "Scratch Register Entry (cleared on cold reset)
+    // FIXME Remove???            [br]Caliptra Access: RO
+    // FIXME Remove???            [br]MCU Access:      RW
+    // FIXME Remove???            [br]SOC Access:      RO";
+    // FIXME Remove???    field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
+    // FIXME Remove???} LOCKABLE_SCRATCH_REG[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv
 
-    reg {
-        name = "NON STICKY GENERIC SCRATCH REG";
-        desc = "
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {sw=rw; hw=na; resetsignal=mci_rst_b;} data[32]=0; // FIXME mcu_rst_b instead?
-    } NON_STICKY_GENERIC_SCRATCH_REG[8]; // TODO Shoud reflect NONSTICKY_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
+    // FIXME Remove??? reg {
+    // FIXME Remove???     name = "NON STICKY GENERIC SCRATCH REG";
+    // FIXME Remove???     desc = "
+    // FIXME Remove???             [br]Caliptra Access: RO
+    // FIXME Remove???             [br]MCU Access:      RW
+    // FIXME Remove???             [br]SOC Access:      RO";
+    // FIXME Remove???     field {sw=rw; hw=na; resetsignal=mci_rst_b;} data[32]=0; // FIXME mcu_rst_b instead?
+    // FIXME Remove??? } NON_STICKY_GENERIC_SCRATCH_REG[8]; // TODO Shoud reflect NONSTICKY_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
 
     // ------------ TODO interrupts @0x1000 ------------
 };
