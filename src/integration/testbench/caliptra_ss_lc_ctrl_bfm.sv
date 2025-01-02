@@ -25,7 +25,7 @@ module caliptra_ss_lc_ctrl_bfm
     // Power manager interface
     output pwrmgr_pkg::pwr_caliptra_ss_lc_req_t pwr_caliptra_ss_lc_i,
     input  pwrmgr_pkg::pwr_caliptra_ss_lc_rsp_t pwr_caliptra_ss_lc_o,
-    input  logic                                pwr_otp_init_i,
+    input  logic                                cptra_pwrgood,
 
     // TL-UL Interface
     output tlul_pkg::tl_h2d_t caliptra_ss_lc_ctrl_dmi_tl_h2d,
@@ -51,7 +51,7 @@ module caliptra_ss_lc_ctrl_bfm
 );
 
     // Internal signals
-    logic [8:0] clk_counter;
+    logic [35:0] clk_counter;
     logic pwr_caliptra_ss_lc_i_active;
     pwrmgr_pkg::pwr_caliptra_ss_lc_req_t pwr_caliptra_ss_lc_i_internal;
 
@@ -74,18 +74,13 @@ module caliptra_ss_lc_ctrl_bfm
         if (!reset_n) begin
             clk_counter <= 0;
             pwr_caliptra_ss_lc_i_internal = '{default: '0};
-        end else if (pwr_otp_init_i) begin
-            if (clk_counter < 50) begin
+        end else if (cptra_pwrgood) begin
+            if (clk_counter < 500) begin
                 clk_counter <= clk_counter + 1;
                 pwr_caliptra_ss_lc_i_internal.caliptra_ss_lc_init = 1'b0;
-            end
-            else if (clk_counter == 50) begin
-                clk_counter <= clk_counter + 1;
+            end else begin
+                clk_counter <= clk_counter;
                 pwr_caliptra_ss_lc_i_internal.caliptra_ss_lc_init = 1'b1;
-            end
-            else begin
-                clk_counter <= 51;
-                pwr_caliptra_ss_lc_i_internal.caliptra_ss_lc_init = 1'b0;
             end
         end
     end

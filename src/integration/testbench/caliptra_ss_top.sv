@@ -2011,7 +2011,7 @@ module caliptra_ss_top
         // Power manager interface
         .pwr_caliptra_ss_lc_i(),
         .pwr_caliptra_ss_lc_o(pwrmgr_pkg::pwr_caliptra_ss_lc_rsp_t'(pwr_caliptra_ss_lc_o_tb)),
-        .pwr_otp_init_i(pwr_otp_init_i),
+        .cptra_pwrgood(cptra_pwrgood),
 
         // Clock manager interface
         .caliptra_ss_lc_clk_byp_req_o(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(caliptra_ss_lc_clk_byp_req_tb)),

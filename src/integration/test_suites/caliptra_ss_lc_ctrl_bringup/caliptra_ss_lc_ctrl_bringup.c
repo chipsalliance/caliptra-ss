@@ -41,7 +41,7 @@ void main (void) {
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
     
-    VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n");
 
     ////////////////////////////////////
     // Fuse and Boot Bringup
@@ -52,10 +52,21 @@ void main (void) {
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
-
-    while(!(lsu_read_32(LC_CTRL_STATUS_OFFSET) & CALIPTRA_SS_LC_CTRL_READY_MASK));
+    uint32_t reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+    uint32_t loop_ctrl = reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK; 
+    while(!loop_ctrl){
+        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_READY_MASK); 
+        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+        loop_ctrl = reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK; 
+    }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is ready!\n");
-    while(!((lsu_read_32(LC_CTRL_STATUS_OFFSET) & CALIPTRA_SS_LC_CTRL_INIT_MASK)>>1)&1);
+    reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+    loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1) & 1; 
+    while(!loop_ctrl){
+        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1) & 1; 
+    }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
 
     SEND_STDOUT_CTRL(0xff);

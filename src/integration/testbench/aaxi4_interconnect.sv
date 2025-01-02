@@ -345,6 +345,7 @@ initial begin
         slave[4].set("mem_uninitialized_value", 0);
         slave[5].set("mem_uninitialized_value", 0);
         slave[6].set("mem_uninitialized_value", 0);
+        slave[7].set("mem_uninitialized_value", 0);
 
 
         test.slave0= slave[0];
@@ -354,6 +355,7 @@ initial begin
         test.slave4= slave[4];
         test.slave5= slave[5];
         test.slave6= slave[6];
+        test.slave6= slave[7];
 
         for (int i=0; i< AAXI_INTC_SLAVE_CNT; i++)
             test.slv_bfms.push_back(slave[i]);
