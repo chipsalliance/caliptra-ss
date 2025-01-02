@@ -2,9 +2,9 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 //
-// sha3_pkg
+// caliptra_ss_sha3_pkg
 
-package sha3_pkg;
+package caliptra_ss_sha3_pkg;
 
   // StateW represents the width of Keccak state variable.
   // As Sha3 assume the state value as 1600, this shouldn't be modified.
@@ -291,4 +291,4 @@ package sha3_pkg;
   endfunction : encode_bytepad_len
 
 
-endpackage : sha3_pkg
+endpackage : caliptra_ss_sha3_pkg
