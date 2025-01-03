@@ -73,6 +73,7 @@ assign cif_resp_if.hold = '0;
 
 // Resets
 assign mci_reg_hwif_in.mci_rst_b = mci_rst_b;
+assign mci_reg_hwif_in.mcu_rst_b = '0; // FIXME
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
@@ -98,15 +99,15 @@ assign mci_reg_hwif_in.CALIPTRA_AXI_ID = '0; // FIXME
 assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE = '0; // FIXME
 assign mci_reg_hwif_in.GENERIC_INPUT_WIRES = '0; // FIXME
 assign mci_reg_hwif_in.FUSE_WR_DONE = '0; // FIXME
-// FIXME remove ?? assign mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG = '0; // FIXME
-// FIXME remove ?? assign mci_reg_hwif_in.STICKY_DATA_VAULT_CTRL = '0; // FIXME
-// FIXME remove ?? assign mci_reg_hwif_in.STICKY_DATA_VAULT_ENTRY = '0; // FIXME
-// FIXME remove ?? assign mci_reg_hwif_in.DATA_VAULT_CTRL = '0; // FIXME
-// FIXME remove ?? assign mci_reg_hwif_in.DATA_VAULT_ENTRY = '0; // FIXME
-// FIXME remove ?? assign mci_reg_hwif_in.STICKY_LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
-// FIXME remove ?? assign mci_reg_hwif_in.STICKY_LOCKABLE_SCRATCH_REG = '0; // FIXME
-// FIXME remove ?? assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
-// FIXME remove ?? assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG = '0; // FIXME
+assign mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG = '0; // FIXME
+assign mci_reg_hwif_in.STICKY_DATA_VAULT_CTRL = '0; // FIXME
+assign mci_reg_hwif_in.STICKY_DATA_VAULT_ENTRY = '0; // FIXME
+assign mci_reg_hwif_in.DATA_VAULT_CTRL = '0; // FIXME
+assign mci_reg_hwif_in.DATA_VAULT_ENTRY = '0; // FIXME
+assign mci_reg_hwif_in.STICKY_LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
+assign mci_reg_hwif_in.STICKY_LOCKABLE_SCRATCH_REG = '0; // FIXME
+assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
+assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG = '0; // FIXME
 
 ///////////////////////////////////////////////
 // MCI REG Module      

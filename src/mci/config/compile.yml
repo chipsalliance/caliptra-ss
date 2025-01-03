@@ -35,7 +35,7 @@ targets:
   rtl_lint:
     directories: [$COMPILE_ROOT/config/design_lint]
     waiver_files:
-      - $MSFT_REPO_ROOT/src/mci/config/design_lint/mci/sglint_waivers
+      - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
     tops: [mci_top]
 
 ---
@@ -56,7 +56,7 @@ targets:
   rtl_lint:
     directories: [$COMPILE_ROOT/config/design_lint]
     waiver_files:
-      - $MSFT_REPO_ROOT/src/mci/config/design_lint/mci/sglint_waivers
+      - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
     tops: [mci_reg_top]
 
 ---
@@ -78,5 +78,5 @@ targets:
   rtl_lint:
     directories: [$COMPILE_ROOT/config/design_lint]
     waiver_files:
-      - $MSFT_REPO_ROOT/src/mci/config/design_lint/mci/sglint_waivers
+      - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
     tops: [mci_axi_sub_top]

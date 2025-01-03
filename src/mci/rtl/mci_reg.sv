@@ -7,7 +7,7 @@ module mci_reg (
 
         input wire s_cpuif_req,
         input wire s_cpuif_req_is_wr,
-        input wire [10:0] s_cpuif_addr,
+        input wire [11:0] s_cpuif_addr,
         input wire [31:0] s_cpuif_wr_data,
         input wire [31:0] s_cpuif_wr_biten,
         output wire s_cpuif_req_stall_wr,
@@ -27,7 +27,7 @@ module mci_reg (
     //--------------------------------------------------------------------------
     logic cpuif_req;
     logic cpuif_req_is_wr;
-    logic [10:0] cpuif_addr;
+    logic [11:0] cpuif_addr;
     logic [31:0] cpuif_wr_data;
     logic [31:0] cpuif_wr_biten;
     logic cpuif_req_stall_wr;
@@ -100,15 +100,25 @@ module mci_reg (
         logic CALIPTRA_AXI_ID;
         logic FW_SRAM_EXEC_REGION_SIZE;
         logic RUNTIME_LOCK;
-        logic [4:0]MBOX0_VALID_AXI_ID;
-        logic [4:0]MBOX0_VALID_AXI_ID_LOCK;
-        logic [4:0]MBOX1_VALID_AXI_ID;
-        logic [4:0]MBOX1_VALID_AXI_ID_LOCK;
+        logic [5-1:0]MBOX0_VALID_AXI_ID;
+        logic [5-1:0]MBOX0_VALID_AXI_ID_LOCK;
+        logic [5-1:0]MBOX1_VALID_AXI_ID;
+        logic [5-1:0]MBOX1_VALID_AXI_ID_LOCK;
         logic [2-1:0]GENERIC_INPUT_WIRES;
         logic [2-1:0]GENERIC_OUTPUT_WIRES;
         logic DEBUG_IN;
         logic DEBUG_OUT;
         logic FUSE_WR_DONE;
+        logic [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
+        logic [10-1:0]STICKY_DATA_VAULT_CTRL;
+        logic [10-1:0][12-1:0]STICKY_DATA_VAULT_ENTRY;
+        logic [10-1:0]DATA_VAULT_CTRL;
+        logic [10-1:0][12-1:0]DATA_VAULT_ENTRY;
+        logic [8-1:0]STICKY_LOCKABLE_SCRATCH_REG_CTRL;
+        logic [8-1:0]STICKY_LOCKABLE_SCRATCH_REG;
+        logic [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
+        logic [10-1:0]LOCKABLE_SCRATCH_REG;
+        logic [8-1:0]NON_STICKY_GENERIC_SCRATCH_REG;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
     logic decoded_req;
@@ -117,71 +127,107 @@ module mci_reg (
     logic [31:0] decoded_wr_biten;
 
     always_comb begin
-        decoded_reg_strb.CAPABILITIES = cpuif_req_masked & (cpuif_addr == 11'h0);
-        decoded_reg_strb.HW_REV_ID = cpuif_req_masked & (cpuif_addr == 11'h4);
+        decoded_reg_strb.CAPABILITIES = cpuif_req_masked & (cpuif_addr == 12'h0);
+        decoded_reg_strb.HW_REV_ID = cpuif_req_masked & (cpuif_addr == 12'h4);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.FW_REV_ID[i0] = cpuif_req_masked & (cpuif_addr == 11'h8 + i0*11'h4);
+            decoded_reg_strb.FW_REV_ID[i0] = cpuif_req_masked & (cpuif_addr == 12'h8 + i0*12'h4);
         end
-        decoded_reg_strb.HW_CONFIG = cpuif_req_masked & (cpuif_addr == 11'h10);
-        decoded_reg_strb.BOOT_STATUS = cpuif_req_masked & (cpuif_addr == 11'h20);
-        decoded_reg_strb.FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 11'h24);
-        decoded_reg_strb.RESET_REASON = cpuif_req_masked & (cpuif_addr == 11'h28);
-        decoded_reg_strb.HW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 11'h40);
-        decoded_reg_strb.HW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 11'h44);
-        decoded_reg_strb.FW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 11'h48);
-        decoded_reg_strb.FW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 11'h4c);
-        decoded_reg_strb.HW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 11'h50);
-        decoded_reg_strb.FW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 11'h54);
+        decoded_reg_strb.HW_CONFIG = cpuif_req_masked & (cpuif_addr == 12'h10);
+        decoded_reg_strb.BOOT_STATUS = cpuif_req_masked & (cpuif_addr == 12'h20);
+        decoded_reg_strb.FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 12'h24);
+        decoded_reg_strb.RESET_REASON = cpuif_req_masked & (cpuif_addr == 12'h28);
+        decoded_reg_strb.HW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 12'h40);
+        decoded_reg_strb.HW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 12'h44);
+        decoded_reg_strb.FW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 12'h48);
+        decoded_reg_strb.FW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 12'h4c);
+        decoded_reg_strb.HW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 12'h50);
+        decoded_reg_strb.FW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 12'h54);
         for(int i0=0; i0<8; i0++) begin
-            decoded_reg_strb.FW_EXTENDED_ERROR_INFO[i0] = cpuif_req_masked & (cpuif_addr == 11'h58 + i0*11'h4);
+            decoded_reg_strb.FW_EXTENDED_ERROR_INFO[i0] = cpuif_req_masked & (cpuif_addr == 12'h58 + i0*12'h4);
         end
-        decoded_reg_strb.WDT_TIMER1_EN = cpuif_req_masked & (cpuif_addr == 11'h80);
-        decoded_reg_strb.WDT_TIMER1_CTRL = cpuif_req_masked & (cpuif_addr == 11'h84);
+        decoded_reg_strb.WDT_TIMER1_EN = cpuif_req_masked & (cpuif_addr == 12'h80);
+        decoded_reg_strb.WDT_TIMER1_CTRL = cpuif_req_masked & (cpuif_addr == 12'h84);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.WDT_TIMER1_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 11'h88 + i0*11'h4);
+            decoded_reg_strb.WDT_TIMER1_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 12'h88 + i0*12'h4);
         end
-        decoded_reg_strb.WDT_TIMER2_EN = cpuif_req_masked & (cpuif_addr == 11'h90);
-        decoded_reg_strb.WDT_TIMER2_CTRL = cpuif_req_masked & (cpuif_addr == 11'h94);
+        decoded_reg_strb.WDT_TIMER2_EN = cpuif_req_masked & (cpuif_addr == 12'h90);
+        decoded_reg_strb.WDT_TIMER2_CTRL = cpuif_req_masked & (cpuif_addr == 12'h94);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.WDT_TIMER2_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 11'h98 + i0*11'h4);
+            decoded_reg_strb.WDT_TIMER2_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 12'h98 + i0*12'h4);
         end
-        decoded_reg_strb.WDT_STATUS = cpuif_req_masked & (cpuif_addr == 11'ha0);
+        decoded_reg_strb.WDT_STATUS = cpuif_req_masked & (cpuif_addr == 12'ha0);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.WDT_CFG[i0] = cpuif_req_masked & (cpuif_addr == 11'hb0 + i0*11'h4);
+            decoded_reg_strb.WDT_CFG[i0] = cpuif_req_masked & (cpuif_addr == 12'hb0 + i0*12'h4);
         end
-        decoded_reg_strb.MCU_TIMER_CONFIG = cpuif_req_masked & (cpuif_addr == 11'hc0);
-        decoded_reg_strb.MCU_CLK_GATING_EN = cpuif_req_masked & (cpuif_addr == 11'hc4);
-        decoded_reg_strb.MCU_RV_MTIME_L = cpuif_req_masked & (cpuif_addr == 11'hc8);
-        decoded_reg_strb.MCU_RV_MTIME_H = cpuif_req_masked & (cpuif_addr == 11'hcc);
-        decoded_reg_strb.MCU_RV_MTIMECMP_L = cpuif_req_masked & (cpuif_addr == 11'hd0);
-        decoded_reg_strb.MCU_RV_MTIMECMP_H = cpuif_req_masked & (cpuif_addr == 11'hd4);
-        decoded_reg_strb.RESET_REQUEST = cpuif_req_masked & (cpuif_addr == 11'h100);
-        decoded_reg_strb.RESET_ACK = cpuif_req_masked & (cpuif_addr == 11'h104);
-        decoded_reg_strb.CALIPTRA_BOOT_GO = cpuif_req_masked & (cpuif_addr == 11'h108);
-        decoded_reg_strb.CALIPTRA_AXI_ID = cpuif_req_masked & (cpuif_addr == 11'h10c);
-        decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE = cpuif_req_masked & (cpuif_addr == 11'h110);
-        decoded_reg_strb.RUNTIME_LOCK = cpuif_req_masked & (cpuif_addr == 11'h114);
+        decoded_reg_strb.MCU_TIMER_CONFIG = cpuif_req_masked & (cpuif_addr == 12'hc0);
+        decoded_reg_strb.MCU_CLK_GATING_EN = cpuif_req_masked & (cpuif_addr == 12'hc4);
+        decoded_reg_strb.MCU_RV_MTIME_L = cpuif_req_masked & (cpuif_addr == 12'hc8);
+        decoded_reg_strb.MCU_RV_MTIME_H = cpuif_req_masked & (cpuif_addr == 12'hcc);
+        decoded_reg_strb.MCU_RV_MTIMECMP_L = cpuif_req_masked & (cpuif_addr == 12'hd0);
+        decoded_reg_strb.MCU_RV_MTIMECMP_H = cpuif_req_masked & (cpuif_addr == 12'hd4);
+        decoded_reg_strb.RESET_REQUEST = cpuif_req_masked & (cpuif_addr == 12'h100);
+        decoded_reg_strb.RESET_ACK = cpuif_req_masked & (cpuif_addr == 12'h104);
+        decoded_reg_strb.CALIPTRA_BOOT_GO = cpuif_req_masked & (cpuif_addr == 12'h108);
+        decoded_reg_strb.CALIPTRA_AXI_ID = cpuif_req_masked & (cpuif_addr == 12'h10c);
+        decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE = cpuif_req_masked & (cpuif_addr == 12'h110);
+        decoded_reg_strb.RUNTIME_LOCK = cpuif_req_masked & (cpuif_addr == 12'h114);
         for(int i0=0; i0<5; i0++) begin
-            decoded_reg_strb.MBOX0_VALID_AXI_ID[i0] = cpuif_req_masked & (cpuif_addr == 11'h180 + i0*11'h4);
-        end
-        for(int i0=0; i0<5; i0++) begin
-            decoded_reg_strb.MBOX0_VALID_AXI_ID_LOCK[i0] = cpuif_req_masked & (cpuif_addr == 11'h1a0 + i0*11'h4);
+            decoded_reg_strb.MBOX0_VALID_AXI_ID[i0] = cpuif_req_masked & (cpuif_addr == 12'h180 + i0*12'h4);
         end
         for(int i0=0; i0<5; i0++) begin
-            decoded_reg_strb.MBOX1_VALID_AXI_ID[i0] = cpuif_req_masked & (cpuif_addr == 11'h1c0 + i0*11'h4);
+            decoded_reg_strb.MBOX0_VALID_AXI_ID_LOCK[i0] = cpuif_req_masked & (cpuif_addr == 12'h1a0 + i0*12'h4);
         end
         for(int i0=0; i0<5; i0++) begin
-            decoded_reg_strb.MBOX1_VALID_AXI_ID_LOCK[i0] = cpuif_req_masked & (cpuif_addr == 11'h1e0 + i0*11'h4);
+            decoded_reg_strb.MBOX1_VALID_AXI_ID[i0] = cpuif_req_masked & (cpuif_addr == 12'h1c0 + i0*12'h4);
+        end
+        for(int i0=0; i0<5; i0++) begin
+            decoded_reg_strb.MBOX1_VALID_AXI_ID_LOCK[i0] = cpuif_req_masked & (cpuif_addr == 12'h1e0 + i0*12'h4);
         end
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.GENERIC_INPUT_WIRES[i0] = cpuif_req_masked & (cpuif_addr == 11'h400 + i0*11'h4);
+            decoded_reg_strb.GENERIC_INPUT_WIRES[i0] = cpuif_req_masked & (cpuif_addr == 12'h400 + i0*12'h4);
         end
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.GENERIC_OUTPUT_WIRES[i0] = cpuif_req_masked & (cpuif_addr == 11'h408 + i0*11'h4);
+            decoded_reg_strb.GENERIC_OUTPUT_WIRES[i0] = cpuif_req_masked & (cpuif_addr == 12'h408 + i0*12'h4);
         end
-        decoded_reg_strb.DEBUG_IN = cpuif_req_masked & (cpuif_addr == 11'h410);
-        decoded_reg_strb.DEBUG_OUT = cpuif_req_masked & (cpuif_addr == 11'h414);
-        decoded_reg_strb.FUSE_WR_DONE = cpuif_req_masked & (cpuif_addr == 11'h440);
+        decoded_reg_strb.DEBUG_IN = cpuif_req_masked & (cpuif_addr == 12'h410);
+        decoded_reg_strb.DEBUG_OUT = cpuif_req_masked & (cpuif_addr == 12'h414);
+        decoded_reg_strb.FUSE_WR_DONE = cpuif_req_masked & (cpuif_addr == 12'h440);
+        for(int i0=0; i0<8; i0++) begin
+            for(int i1=0; i1<12; i1++) begin
+                decoded_reg_strb.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] = cpuif_req_masked & (cpuif_addr == 12'h480 + i0*12'h30 + i1*12'h4);
+            end
+        end
+        for(int i0=0; i0<10; i0++) begin
+            decoded_reg_strb.STICKY_DATA_VAULT_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 12'h800 + i0*12'h4);
+        end
+        for(int i0=0; i0<10; i0++) begin
+            for(int i1=0; i1<12; i1++) begin
+                decoded_reg_strb.STICKY_DATA_VAULT_ENTRY[i0][i1] = cpuif_req_masked & (cpuif_addr == 12'h828 + i0*12'h30 + i1*12'h4);
+            end
+        end
+        for(int i0=0; i0<10; i0++) begin
+            decoded_reg_strb.DATA_VAULT_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 12'ha08 + i0*12'h4);
+        end
+        for(int i0=0; i0<10; i0++) begin
+            for(int i1=0; i1<12; i1++) begin
+                decoded_reg_strb.DATA_VAULT_ENTRY[i0][i1] = cpuif_req_masked & (cpuif_addr == 12'ha30 + i0*12'h30 + i1*12'h4);
+            end
+        end
+        for(int i0=0; i0<8; i0++) begin
+            decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 12'hc10 + i0*12'h4);
+        end
+        for(int i0=0; i0<8; i0++) begin
+            decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG[i0] = cpuif_req_masked & (cpuif_addr == 12'hc30 + i0*12'h4);
+        end
+        for(int i0=0; i0<10; i0++) begin
+            decoded_reg_strb.LOCKABLE_SCRATCH_REG_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 12'hc50 + i0*12'h4);
+        end
+        for(int i0=0; i0<10; i0++) begin
+            decoded_reg_strb.LOCKABLE_SCRATCH_REG[i0] = cpuif_req_masked & (cpuif_addr == 12'hc78 + i0*12'h4);
+        end
+        for(int i0=0; i0<8; i0++) begin
+            decoded_reg_strb.NON_STICKY_GENERIC_SCRATCH_REG[i0] = cpuif_req_masked & (cpuif_addr == 12'hca0 + i0*12'h4);
+        end
     end
 
     // Pass down signals to next stage
@@ -395,25 +441,25 @@ module mci_reg (
                 logic [31:0] next;
                 logic load_next;
             } id;
-        } [4:0]MBOX0_VALID_AXI_ID;
+        } [5-1:0]MBOX0_VALID_AXI_ID;
         struct packed{
             struct packed{
                 logic next;
                 logic load_next;
             } lock;
-        } [4:0]MBOX0_VALID_AXI_ID_LOCK;
+        } [5-1:0]MBOX0_VALID_AXI_ID_LOCK;
         struct packed{
             struct packed{
                 logic [31:0] next;
                 logic load_next;
             } id;
-        } [4:0]MBOX1_VALID_AXI_ID;
+        } [5-1:0]MBOX1_VALID_AXI_ID;
         struct packed{
             struct packed{
                 logic next;
                 logic load_next;
             } lock;
-        } [4:0]MBOX1_VALID_AXI_ID_LOCK;
+        } [5-1:0]MBOX1_VALID_AXI_ID_LOCK;
         struct packed{
             struct packed{
                 logic [31:0] next;
@@ -438,6 +484,66 @@ module mci_reg (
                 logic load_next;
             } done;
         } FUSE_WR_DONE;
+        struct packed{
+            struct packed{
+                logic [31:0] next;
+                logic load_next;
+            } hash;
+        } [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
+        struct packed{
+            struct packed{
+                logic next;
+                logic load_next;
+            } lock_entry;
+        } [10-1:0]STICKY_DATA_VAULT_CTRL;
+        struct packed{
+            struct packed{
+                logic next;
+                logic load_next;
+            } lock_entry;
+        } [10-1:0][12-1:0]STICKY_DATA_VAULT_ENTRY;
+        struct packed{
+            struct packed{
+                logic next;
+                logic load_next;
+            } lock_entry;
+        } [10-1:0]DATA_VAULT_CTRL;
+        struct packed{
+            struct packed{
+                logic next;
+                logic load_next;
+            } lock_entry;
+        } [10-1:0][12-1:0]DATA_VAULT_ENTRY;
+        struct packed{
+            struct packed{
+                logic next;
+                logic load_next;
+            } lock_entry;
+        } [8-1:0]STICKY_LOCKABLE_SCRATCH_REG_CTRL;
+        struct packed{
+            struct packed{
+                logic [31:0] next;
+                logic load_next;
+            } data;
+        } [8-1:0]STICKY_LOCKABLE_SCRATCH_REG;
+        struct packed{
+            struct packed{
+                logic next;
+                logic load_next;
+            } lock_entry;
+        } [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
+        struct packed{
+            struct packed{
+                logic [31:0] next;
+                logic load_next;
+            } data;
+        } [10-1:0]LOCKABLE_SCRATCH_REG;
+        struct packed{
+            struct packed{
+                logic [31:0] next;
+                logic load_next;
+            } data;
+        } [8-1:0]NON_STICKY_GENERIC_SCRATCH_REG;
     } field_combo_t;
     field_combo_t field_combo;
 
@@ -605,22 +711,22 @@ module mci_reg (
             struct packed{
                 logic [31:0] value;
             } id;
-        } [4:0]MBOX0_VALID_AXI_ID;
+        } [5-1:0]MBOX0_VALID_AXI_ID;
         struct packed{
             struct packed{
                 logic value;
             } lock;
-        } [4:0]MBOX0_VALID_AXI_ID_LOCK;
+        } [5-1:0]MBOX0_VALID_AXI_ID_LOCK;
         struct packed{
             struct packed{
                 logic [31:0] value;
             } id;
-        } [4:0]MBOX1_VALID_AXI_ID;
+        } [5-1:0]MBOX1_VALID_AXI_ID;
         struct packed{
             struct packed{
                 logic value;
             } lock;
-        } [4:0]MBOX1_VALID_AXI_ID_LOCK;
+        } [5-1:0]MBOX1_VALID_AXI_ID_LOCK;
         struct packed{
             struct packed{
                 logic [31:0] value;
@@ -641,6 +747,56 @@ module mci_reg (
                 logic value;
             } done;
         } FUSE_WR_DONE;
+        struct packed{
+            struct packed{
+                logic [31:0] value;
+            } hash;
+        } [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
+        struct packed{
+            struct packed{
+                logic value;
+            } lock_entry;
+        } [10-1:0]STICKY_DATA_VAULT_CTRL;
+        struct packed{
+            struct packed{
+                logic value;
+            } lock_entry;
+        } [10-1:0][12-1:0]STICKY_DATA_VAULT_ENTRY;
+        struct packed{
+            struct packed{
+                logic value;
+            } lock_entry;
+        } [10-1:0]DATA_VAULT_CTRL;
+        struct packed{
+            struct packed{
+                logic value;
+            } lock_entry;
+        } [10-1:0][12-1:0]DATA_VAULT_ENTRY;
+        struct packed{
+            struct packed{
+                logic value;
+            } lock_entry;
+        } [8-1:0]STICKY_LOCKABLE_SCRATCH_REG_CTRL;
+        struct packed{
+            struct packed{
+                logic [31:0] value;
+            } data;
+        } [8-1:0]STICKY_LOCKABLE_SCRATCH_REG;
+        struct packed{
+            struct packed{
+                logic value;
+            } lock_entry;
+        } [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
+        struct packed{
+            struct packed{
+                logic [31:0] value;
+            } data;
+        } [10-1:0]LOCKABLE_SCRATCH_REG;
+        struct packed{
+            struct packed{
+                logic [31:0] value;
+            } data;
+        } [8-1:0]NON_STICKY_GENERIC_SCRATCH_REG;
     } field_storage_t;
     field_storage_t field_storage;
 
@@ -1484,6 +1640,220 @@ module mci_reg (
     end
     assign hwif_out.FUSE_WR_DONE.done.value = field_storage.FUSE_WR_DONE.done.value;
     assign hwif_out.FUSE_WR_DONE.done.swmod = decoded_reg_strb.FUSE_WR_DONE && decoded_req_is_wr;
+    for(genvar i0=0; i0<8; i0++) begin
+        for(genvar i1=0; i1<12; i1++) begin
+            // Field: mci_reg.PROD_DEBUG_UNLOCK_PK_HASH_REG[][].hash
+            always_comb begin
+                automatic logic [31:0] next_c = field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value;
+                automatic logic load_next_c = '0;
+                if(decoded_reg_strb.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] && decoded_req_is_wr && !(hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.swwel)) begin // SW write
+                    next_c = (field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+                    load_next_c = '1;
+                end else if(hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.we) begin // HW Write - we
+                    next_c = hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.next;
+                    load_next_c = '1;
+                end
+                field_combo.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.next = next_c;
+                field_combo.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.load_next = load_next_c;
+            end
+            always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+                if(~hwif_in.mci_pwrgood) begin
+                    field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value <= 32'h0;
+                end else if(field_combo.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.load_next) begin
+                    field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value <= field_combo.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.next;
+                end
+            end
+            assign hwif_out.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value = field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value;
+        end
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        // Field: mci_reg.STICKY_DATA_VAULT_CTRL[].lock_entry
+        always_comb begin
+            automatic logic [0:0] next_c = field_storage.STICKY_DATA_VAULT_CTRL[i0].lock_entry.value;
+            automatic logic load_next_c = '0;
+            if(decoded_reg_strb.STICKY_DATA_VAULT_CTRL[i0] && decoded_req_is_wr && !(hwif_in.STICKY_DATA_VAULT_CTRL[i0].lock_entry.swwel)) begin // SW write
+                next_c = (field_storage.STICKY_DATA_VAULT_CTRL[i0].lock_entry.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+                load_next_c = '1;
+            end
+            field_combo.STICKY_DATA_VAULT_CTRL[i0].lock_entry.next = next_c;
+            field_combo.STICKY_DATA_VAULT_CTRL[i0].lock_entry.load_next = load_next_c;
+        end
+        always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+            if(~hwif_in.mci_pwrgood) begin
+                field_storage.STICKY_DATA_VAULT_CTRL[i0].lock_entry.value <= 1'h0;
+            end else if(field_combo.STICKY_DATA_VAULT_CTRL[i0].lock_entry.load_next) begin
+                field_storage.STICKY_DATA_VAULT_CTRL[i0].lock_entry.value <= field_combo.STICKY_DATA_VAULT_CTRL[i0].lock_entry.next;
+            end
+        end
+        assign hwif_out.STICKY_DATA_VAULT_CTRL[i0].lock_entry.value = field_storage.STICKY_DATA_VAULT_CTRL[i0].lock_entry.value;
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        for(genvar i1=0; i1<12; i1++) begin
+            // Field: mci_reg.STICKY_DATA_VAULT_ENTRY[][].lock_entry
+            always_comb begin
+                automatic logic [0:0] next_c = field_storage.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.value;
+                automatic logic load_next_c = '0;
+                if(decoded_reg_strb.STICKY_DATA_VAULT_ENTRY[i0][i1] && decoded_req_is_wr && !(hwif_in.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.swwel)) begin // SW write
+                    next_c = (field_storage.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+                    load_next_c = '1;
+                end
+                field_combo.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.next = next_c;
+                field_combo.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.load_next = load_next_c;
+            end
+            always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+                if(~hwif_in.mci_pwrgood) begin
+                    field_storage.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.value <= 1'h0;
+                end else if(field_combo.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.load_next) begin
+                    field_storage.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.value <= field_combo.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.next;
+                end
+            end
+        end
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        // Field: mci_reg.DATA_VAULT_CTRL[].lock_entry
+        always_comb begin
+            automatic logic [0:0] next_c = field_storage.DATA_VAULT_CTRL[i0].lock_entry.value;
+            automatic logic load_next_c = '0;
+            if(decoded_reg_strb.DATA_VAULT_CTRL[i0] && decoded_req_is_wr && !(hwif_in.DATA_VAULT_CTRL[i0].lock_entry.swwel)) begin // SW write
+                next_c = (field_storage.DATA_VAULT_CTRL[i0].lock_entry.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+                load_next_c = '1;
+            end
+            field_combo.DATA_VAULT_CTRL[i0].lock_entry.next = next_c;
+            field_combo.DATA_VAULT_CTRL[i0].lock_entry.load_next = load_next_c;
+        end
+        always_ff @(posedge clk or negedge hwif_in.mcu_rst_b) begin
+            if(~hwif_in.mcu_rst_b) begin
+                field_storage.DATA_VAULT_CTRL[i0].lock_entry.value <= 1'h0;
+            end else if(field_combo.DATA_VAULT_CTRL[i0].lock_entry.load_next) begin
+                field_storage.DATA_VAULT_CTRL[i0].lock_entry.value <= field_combo.DATA_VAULT_CTRL[i0].lock_entry.next;
+            end
+        end
+        assign hwif_out.DATA_VAULT_CTRL[i0].lock_entry.value = field_storage.DATA_VAULT_CTRL[i0].lock_entry.value;
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        for(genvar i1=0; i1<12; i1++) begin
+            // Field: mci_reg.DATA_VAULT_ENTRY[][].lock_entry
+            always_comb begin
+                automatic logic [0:0] next_c = field_storage.DATA_VAULT_ENTRY[i0][i1].lock_entry.value;
+                automatic logic load_next_c = '0;
+                if(decoded_reg_strb.DATA_VAULT_ENTRY[i0][i1] && decoded_req_is_wr && !(hwif_in.DATA_VAULT_ENTRY[i0][i1].lock_entry.swwel)) begin // SW write
+                    next_c = (field_storage.DATA_VAULT_ENTRY[i0][i1].lock_entry.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+                    load_next_c = '1;
+                end
+                field_combo.DATA_VAULT_ENTRY[i0][i1].lock_entry.next = next_c;
+                field_combo.DATA_VAULT_ENTRY[i0][i1].lock_entry.load_next = load_next_c;
+            end
+            always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+                if(~hwif_in.mci_pwrgood) begin
+                    field_storage.DATA_VAULT_ENTRY[i0][i1].lock_entry.value <= 1'h0;
+                end else if(field_combo.DATA_VAULT_ENTRY[i0][i1].lock_entry.load_next) begin
+                    field_storage.DATA_VAULT_ENTRY[i0][i1].lock_entry.value <= field_combo.DATA_VAULT_ENTRY[i0][i1].lock_entry.next;
+                end
+            end
+        end
+    end
+    for(genvar i0=0; i0<8; i0++) begin
+        // Field: mci_reg.STICKY_LOCKABLE_SCRATCH_REG_CTRL[].lock_entry
+        always_comb begin
+            automatic logic [0:0] next_c = field_storage.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value;
+            automatic logic load_next_c = '0;
+            if(decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0] && decoded_req_is_wr && !(hwif_in.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.swwel)) begin // SW write
+                next_c = (field_storage.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+                load_next_c = '1;
+            end
+            field_combo.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.next = next_c;
+            field_combo.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.load_next = load_next_c;
+        end
+        always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+            if(~hwif_in.mci_pwrgood) begin
+                field_storage.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value <= 1'h0;
+            end else if(field_combo.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.load_next) begin
+                field_storage.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value <= field_combo.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.next;
+            end
+        end
+        assign hwif_out.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value = field_storage.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value;
+    end
+    for(genvar i0=0; i0<8; i0++) begin
+        // Field: mci_reg.STICKY_LOCKABLE_SCRATCH_REG[].data
+        always_comb begin
+            automatic logic [31:0] next_c = field_storage.STICKY_LOCKABLE_SCRATCH_REG[i0].data.value;
+            automatic logic load_next_c = '0;
+            if(decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG[i0] && decoded_req_is_wr && !(hwif_in.STICKY_LOCKABLE_SCRATCH_REG[i0].data.swwel)) begin // SW write
+                next_c = (field_storage.STICKY_LOCKABLE_SCRATCH_REG[i0].data.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+                load_next_c = '1;
+            end
+            field_combo.STICKY_LOCKABLE_SCRATCH_REG[i0].data.next = next_c;
+            field_combo.STICKY_LOCKABLE_SCRATCH_REG[i0].data.load_next = load_next_c;
+        end
+        always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+            if(~hwif_in.mci_pwrgood) begin
+                field_storage.STICKY_LOCKABLE_SCRATCH_REG[i0].data.value <= 32'h0;
+            end else if(field_combo.STICKY_LOCKABLE_SCRATCH_REG[i0].data.load_next) begin
+                field_storage.STICKY_LOCKABLE_SCRATCH_REG[i0].data.value <= field_combo.STICKY_LOCKABLE_SCRATCH_REG[i0].data.next;
+            end
+        end
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        // Field: mci_reg.LOCKABLE_SCRATCH_REG_CTRL[].lock_entry
+        always_comb begin
+            automatic logic [0:0] next_c = field_storage.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value;
+            automatic logic load_next_c = '0;
+            if(decoded_reg_strb.LOCKABLE_SCRATCH_REG_CTRL[i0] && decoded_req_is_wr && !(hwif_in.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.swwel)) begin // SW write
+                next_c = (field_storage.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+                load_next_c = '1;
+            end
+            field_combo.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.next = next_c;
+            field_combo.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.load_next = load_next_c;
+        end
+        always_ff @(posedge clk or negedge hwif_in.mcu_rst_b) begin
+            if(~hwif_in.mcu_rst_b) begin
+                field_storage.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value <= 1'h0;
+            end else if(field_combo.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.load_next) begin
+                field_storage.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value <= field_combo.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.next;
+            end
+        end
+        assign hwif_out.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value = field_storage.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value;
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        // Field: mci_reg.LOCKABLE_SCRATCH_REG[].data
+        always_comb begin
+            automatic logic [31:0] next_c = field_storage.LOCKABLE_SCRATCH_REG[i0].data.value;
+            automatic logic load_next_c = '0;
+            if(decoded_reg_strb.LOCKABLE_SCRATCH_REG[i0] && decoded_req_is_wr && !(hwif_in.LOCKABLE_SCRATCH_REG[i0].data.swwel)) begin // SW write
+                next_c = (field_storage.LOCKABLE_SCRATCH_REG[i0].data.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+                load_next_c = '1;
+            end
+            field_combo.LOCKABLE_SCRATCH_REG[i0].data.next = next_c;
+            field_combo.LOCKABLE_SCRATCH_REG[i0].data.load_next = load_next_c;
+        end
+        always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+            if(~hwif_in.mci_pwrgood) begin
+                field_storage.LOCKABLE_SCRATCH_REG[i0].data.value <= 32'h0;
+            end else if(field_combo.LOCKABLE_SCRATCH_REG[i0].data.load_next) begin
+                field_storage.LOCKABLE_SCRATCH_REG[i0].data.value <= field_combo.LOCKABLE_SCRATCH_REG[i0].data.next;
+            end
+        end
+    end
+    for(genvar i0=0; i0<8; i0++) begin
+        // Field: mci_reg.NON_STICKY_GENERIC_SCRATCH_REG[].data
+        always_comb begin
+            automatic logic [31:0] next_c = field_storage.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.value;
+            automatic logic load_next_c = '0;
+            if(decoded_reg_strb.NON_STICKY_GENERIC_SCRATCH_REG[i0] && decoded_req_is_wr) begin // SW write
+                next_c = (field_storage.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+                load_next_c = '1;
+            end
+            field_combo.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.next = next_c;
+            field_combo.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.load_next = load_next_c;
+        end
+        always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+            if(~hwif_in.mci_rst_b) begin
+                field_storage.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.value <= 32'h0;
+            end else if(field_combo.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.load_next) begin
+                field_storage.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.value <= field_combo.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.next;
+            end
+        end
+    end
 
     //--------------------------------------------------------------------------
     // Write response
@@ -1501,7 +1871,7 @@ module mci_reg (
     logic [31:0] readback_data;
     
     // Assign readback values to a flattened array
-    logic [72-1:0][31:0] readback_array;
+    logic [472-1:0][31:0] readback_array;
     assign readback_array[0][3:0] = (decoded_reg_strb.CAPABILITIES && !decoded_req_is_wr) ? hwif_in.CAPABILITIES.NUM_MBOX.next : '0;
     assign readback_array[0][31:4] = '0;
     assign readback_array[1][15:0] = (decoded_reg_strb.HW_REV_ID && !decoded_req_is_wr) ? 'h1000 : '0;
@@ -1595,6 +1965,48 @@ module mci_reg (
     assign readback_array[70][31:1] = '0;
     assign readback_array[71][0:0] = (decoded_reg_strb.FUSE_WR_DONE && !decoded_req_is_wr) ? field_storage.FUSE_WR_DONE.done.value : '0;
     assign readback_array[71][31:1] = '0;
+    for(genvar i0=0; i0<8; i0++) begin
+        for(genvar i1=0; i1<12; i1++) begin
+            assign readback_array[i0*12 + i1*1 + 72][31:0] = (decoded_reg_strb.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] && !decoded_req_is_wr) ? field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value : '0;
+        end
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        assign readback_array[i0*1 + 168][0:0] = (decoded_reg_strb.STICKY_DATA_VAULT_CTRL[i0] && !decoded_req_is_wr) ? field_storage.STICKY_DATA_VAULT_CTRL[i0].lock_entry.value : '0;
+        assign readback_array[i0*1 + 168][31:1] = '0;
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        for(genvar i1=0; i1<12; i1++) begin
+            assign readback_array[i0*12 + i1*1 + 178][0:0] = (decoded_reg_strb.STICKY_DATA_VAULT_ENTRY[i0][i1] && !decoded_req_is_wr) ? field_storage.STICKY_DATA_VAULT_ENTRY[i0][i1].lock_entry.value : '0;
+            assign readback_array[i0*12 + i1*1 + 178][31:1] = '0;
+        end
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        assign readback_array[i0*1 + 298][0:0] = (decoded_reg_strb.DATA_VAULT_CTRL[i0] && !decoded_req_is_wr) ? field_storage.DATA_VAULT_CTRL[i0].lock_entry.value : '0;
+        assign readback_array[i0*1 + 298][31:1] = '0;
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        for(genvar i1=0; i1<12; i1++) begin
+            assign readback_array[i0*12 + i1*1 + 308][0:0] = (decoded_reg_strb.DATA_VAULT_ENTRY[i0][i1] && !decoded_req_is_wr) ? field_storage.DATA_VAULT_ENTRY[i0][i1].lock_entry.value : '0;
+            assign readback_array[i0*12 + i1*1 + 308][31:1] = '0;
+        end
+    end
+    for(genvar i0=0; i0<8; i0++) begin
+        assign readback_array[i0*1 + 428][0:0] = (decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0] && !decoded_req_is_wr) ? field_storage.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value : '0;
+        assign readback_array[i0*1 + 428][31:1] = '0;
+    end
+    for(genvar i0=0; i0<8; i0++) begin
+        assign readback_array[i0*1 + 436][31:0] = (decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG[i0] && !decoded_req_is_wr) ? field_storage.STICKY_LOCKABLE_SCRATCH_REG[i0].data.value : '0;
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        assign readback_array[i0*1 + 444][0:0] = (decoded_reg_strb.LOCKABLE_SCRATCH_REG_CTRL[i0] && !decoded_req_is_wr) ? field_storage.LOCKABLE_SCRATCH_REG_CTRL[i0].lock_entry.value : '0;
+        assign readback_array[i0*1 + 444][31:1] = '0;
+    end
+    for(genvar i0=0; i0<10; i0++) begin
+        assign readback_array[i0*1 + 454][31:0] = (decoded_reg_strb.LOCKABLE_SCRATCH_REG[i0] && !decoded_req_is_wr) ? field_storage.LOCKABLE_SCRATCH_REG[i0].data.value : '0;
+    end
+    for(genvar i0=0; i0<8; i0++) begin
+        assign readback_array[i0*1 + 464][31:0] = (decoded_reg_strb.NON_STICKY_GENERIC_SCRATCH_REG[i0] && !decoded_req_is_wr) ? field_storage.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.value : '0;
+    end
 
     // Reduce the array
     always_comb begin
@@ -1602,7 +2014,7 @@ module mci_reg (
         readback_done = decoded_req & ~decoded_req_is_wr;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<72; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<472; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 
