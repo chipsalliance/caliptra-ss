@@ -19,12 +19,12 @@
 
 module mci_axi_sub_decode 
     import mci_pkg::*;
-    import mci_reg_pkg::*;
     #(
     // Configurable memory blocks
     parameter MCU_SRAM_SIZE_KB = 1024,
     parameter MBOX0_SIZE_KB    = 4, // KB
     parameter MBOX1_SIZE_KB    = 4, // KB
+
 
     ///////////////////////////////////////////////////////////
     // MCI Memory Map
@@ -37,8 +37,7 @@ module mci_axi_sub_decode
     localparam MBOX1_START_ADDR      = MBOX0_END_ADDR + 32'h0000_0001, // FIXME: Do we want B2B
     localparam MBOX1_END_ADDR        = MBOX1_START_ADDR + (MBOX1_SIZE_KB * KB) - 1,
     localparam MCU_SRAM_START_ADDR   = 32'h0002_0000,
-    localparam MCU_SRAM_END_ADDR     = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1
-
+    localparam MCU_SRAM_END_ADDR     = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1 
         
     )
     (

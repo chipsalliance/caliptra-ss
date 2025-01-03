@@ -29,6 +29,14 @@ module mci_top
     axi_if.w_sub s_axi_w_if,
     axi_if.r_sub s_axi_r_if,
     
+    // Straps
+    input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_mcu_ifu_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_clp_axi_user,
+
+    // SRAM ADHOC connections
+    input logic mcu_sram_fw_exec_region_lock,
+    
     // MCU SRAM Interface
     mci_mcu_sram_if.request mci_mcu_sram_req_if 
 
@@ -123,12 +131,12 @@ mci_mcu_sram_ctrl #(
     .cif_resp_if (mcu_sram_req_if.response),
 
     // AXI users
-    .strap_mcu_lsu_axi_user('0),   // FIXME
-    .strap_mcu_ifu_axi_user('0),   // FIXME
-    .strap_clp_axi_user('0),   // FIXME
+    .strap_mcu_lsu_axi_user,   
+    .strap_mcu_ifu_axi_user,   
+    .strap_clp_axi_user, 
 
     // Access lock interface
-    .mcu_sram_fw_exec_region_lock('0),  // FIXME
+    .mcu_sram_fw_exec_region_lock,  // FIXME
 
     // ECC Status
     .sram_single_ecc_error(),   // FIXME
