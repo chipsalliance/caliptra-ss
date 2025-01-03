@@ -16,6 +16,10 @@
     `define MCI_PKG
 
 package mci_pkg;
+    localparam KB = 1024;
+    localparam KB_BASE0 = KB - 1;
+    localparam MB = KB * 1024;
+    localparam MB_BASE0 = MB - 1;
 
     // Assert reset for 10 cycles then deassert
     // to facilitate the hitless update
@@ -31,8 +35,8 @@ package mci_pkg;
         BOOT_WAIT_CPTRA    = 4'b0110,
         BOOT_CPTRA         = 4'b0111,
         BOOT_WAIT_UPDATE   = 4'b1000,
-        BOOT_RST_MCU       = 4'b1001,
+        BOOT_RST_MCU       = 4'b1001
     } mci_boot_fsm_state_e;
 
-endmodule
+endpackage
 `endif /*MCI_PKG*/
