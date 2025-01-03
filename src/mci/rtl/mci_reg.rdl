@@ -1,0 +1,518 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////
+// MCI Registers
+addrmap mci_reg {
+
+    ////////////////////////////////////////////////////////////////
+    // Properties
+    desc="Address map for Manufacturer Control Interface Block architectural registers";
+
+    addressing = regalign; // This is the default if not specified
+    lsb0 = true; // lsb0 property is implicit/default. See docs for
+                 // SystemRDL 2.0 sections 9.1 and 13.4
+    littleendian = true;
+
+    default hw = na;
+    signal {activelow; async; cpuif_reset; field_reset;} mci_rst_b;
+    signal {activelow; async;} mcu_rst_b; // uC reset only
+    signal {activelow; async;} mci_pwrgood;
+
+    //signal to indicate request origin
+    // TODO need these?
+    signal {} cptra_req;
+    signal {} mcu_req;
+
+    //defined fields by access type
+    // TODO
+    field rw_rw_sticky_hw { sw=rw; hw=rw; we=true; woclr = true; resetsignal = mci_pwrgood;}; //W1C            - used by HW ERROR regs
+    field rw_rw_sticky    { sw=rw; hw=rw; we=true; swmod = true; resetsignal = mci_pwrgood;}; //writes enabled - used by FW ERROR regs
+
+    ////////////////////////////////////////////////////////////////
+    // Registers
+
+    // ----------------------------------------
+    // ------------ IDENTIFICATION ------------
+    reg {
+        name = "Manufacturer Control Interface Capabilities";
+        desc = "Reports configuration and build options for MCI.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RO
+                [br]SoC Access:      RO";
+        field {desc = "Number of Mailboxes in MCI"; hw=w; sw=r;} NUM_MBOX[4];
+    } CAPABILITIES;
+    reg {
+        name = "MCI/MCU HW RevID";
+        desc = "HW revision ID for Manufacturer Control components (MCU & MCI) that matches the official
+                final release milestone of Caliptra Subsystem.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO";
+        field {desc = "Official release version. Bit field encoding is:
+                       [br][lb]15:12[rb] Major version
+                       [br][lb]11: 8[rb] Minor version
+                       [br][lb] 7: 0[rb] Patch version";
+               sw=r;} MC_GENERATION[16]=0x1000;
+        field {sw=r; hw=w; resetsignal = mci_rst_b;} SOC_STEPPING_ID[16]=0; // TODO
+    } HW_REV_ID;
+    reg {
+        name = "MCU FW RevID";
+        desc = "MCU FW revision ID
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {sw=rw; swwe = mcu_req; resetsignal = mci_rst_b;} REV_ID[32]=0;
+    } FW_REV_ID[2];
+    reg {
+        name = "MCU HW Config";
+        desc = "MCU HW Configuration
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO";
+        // No storage, i.e. no resetsignal
+        field {sw=r; hw=w;} RSVD_en;
+    } HW_CONFIG;
+
+    // ----------------------------------------
+    // ---------------- STATUS ----------------
+    reg {
+        name = "Boot Status";
+        desc = "Reports the boot status.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug/manuf mode]: RO";
+        field {swwe = mcu_req; hw=r; resetsignal = mci_rst_b;} status[32]=0;
+    } BOOT_STATUS @0x20;
+    reg {
+        name = "Flow Status";
+        desc = "Reports the status of the firmware flows.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc="Generic Status";                                            sw=rw; swwe = mci_req; hw=r ; resetsignal = mci_rst_b;} status[24]=0;
+        field {desc="DEV ID CSR ready";                                          sw=r;                         /* no storage, no reset */} rsvd[3]=0;
+        field {desc="Boot FSM State";                                            sw=r;                  hw=w ; /* no storage, no reset */} boot_fsm_ps[5];
+    } FLOW_STATUS;
+    reg {
+        name = "Reset Reason";
+        desc = "Indicates to ROM the originating cause for the PC to be reset to 0.
+                Firmware Update Reset indicator is reset by the warm reset.
+                Warm Reset indicator is reset by the cold reset.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO";
+        field {desc = "FW update reset has been executed"; sw=r; hw=rw; we=true; resetsignal = mci_rst_b;  } FW_UPD_RESET=0;
+        field {desc = "Warm reset has been executed";      sw=r; hw=rw;          resetsignal = mci_pwrgood;} WARM_RESET=0;
+    } RESET_REASON;
+
+    // ----------------------------------------
+    // ---------------- ERROR -----------------
+    reg {
+        name = "Hardware Error Fatal";
+        desc = "Indicates fatal hardware error. Assertion of any bit in this
+                register results in the assertion of the SoC interrupt pin,
+                mci_error_fatal, unless that bit is masked using the internal
+                mask register. After the output interrupt is asserted, clearing
+                the bit in this register will not cause the interrupt to deassert.
+                Only an MCI reset will clear the fatal error interrupt.
+                [br]Caliptra Access: RW1C
+                [br]MCU Access:      RW1C
+                [br]SOC Access:      RW1C";
+        rw_rw_sticky_hw RSVD=1'b0;
+    } HW_ERROR_FATAL @0x40;
+    reg {
+        name = "Hardware Error Non-Fatal";
+        desc = "Indicates non-fatal hardware error. Assertion of any bit in this
+                register results in the assertion of the SoC interrupt pin,
+                mci_error_non_fatal, unless that bit is masked using the internal
+                mask register. After the output interrupt is asserted, any
+                change by firmware that results in all set non-fatal errors
+                being masked will immediately deassert the interrupt output. This means
+                that firmware may cause the mci_error_non_fatal signal to deassert by
+                writing to any of these registers, if the write results in all error
+                bits being cleared or masked:
+                [br][list]
+                [br] [*] HW_ERROR_NON_FATAL
+                [br] [*] FW_ERROR_NON_FATAL
+                [br] [*] hw_error_non_fatal_mask
+                [br] [*] fw_error_non_fatal_mask 
+                [/list]
+                [br]Caliptra Access: RW1C
+                [br]MCU Access:      RW1C
+                [br]SOC Access:      RW1C";
+        rw_rw_sticky_hw RSVD=1'b0;
+    } HW_ERROR_NON_FATAL;
+    reg {
+        name = "Firmware Error Fatal";
+        desc = "Indicates fatal firmware error. Assertion of any bit in this
+                register results in the assertion of the SoC interrupt pin,
+                mci_error_fatal, unless that bit is masked using the internal
+                mask register. After the output interrupt is asserted, clearing
+                the bit in this register will not cause the interrupt to deassert.
+                Only an MCI reset will clear the fatal error interrupt.
+                [br]Caliptra Access: RW
+                [br]MCU Access:      RW
+                [br]SOC Access:      RW";
+        rw_rw_sticky error_code[32]=0; 
+    } FW_ERROR_FATAL;
+    reg {
+        name = "Firmware Error Non-Fatal";
+        desc = "Indicates non-fatal firmware error. Assertion of any bit in this
+                register results in the assertion of the SoC interrupt pin,
+                mci_error_non_fatal, unless that bit is masked using the internal
+                mask register. After the output interrupt is asserted, any
+                change by firmware that results in all set non-fatal errors
+                being masked will immediately deassert the interrupt output. This means
+                that firmware may cause the mci_error_non_fatal signal to deassert by
+                writing to any of these registers, if the write results in all error
+                bits being cleared or masked:
+                [br][list]
+                [br] [*] HW_ERROR_NON_FATAL
+                [br] [*] FW_ERROR_NON_FATAL
+                [br] [*] hw_error_non_fatal_mask
+                [br] [*] fw_error_non_fatal_mask
+                [/list]
+                [br]Caliptra Access: RW
+                [br]MCU Access:      RW
+                [br]SOC Access:      RW";
+        rw_rw_sticky error_code[32]=0; 
+    } FW_ERROR_NON_FATAL;
+    reg {
+        name = "Hardware Error Encoding";
+        desc = "Encoded error value for hardware errors.
+                [br]Caliptra Access: RW
+                [br]SOC Access:      RW";
+         field {resetsignal = mci_pwrgood; hw=r;}error_code[32]=0; 
+    } HW_ERROR_ENC;
+    reg {
+        name = "Firmware Error Encoding";
+        desc = "Encoded error value for firmware errors.
+                [br]Caliptra Access: RW
+                [br]SOC Access:      RW";
+        field {resetsignal = mci_pwrgood; hw=r;} error_code[32]=0; 
+    } FW_ERROR_ENC;
+    reg {
+        name = "Firmware Extended Error Information";
+        desc = "Firmware Extended Error information for firmware errors.
+                [br]Caliptra Access: RW
+                [br]SOC Access:      RW";
+        field {resetsignal = mci_pwrgood; hw=r;} error_info[32]=0; 
+    } FW_EXTENDED_ERROR_INFO[8];
+
+    // TODO add FW/HW ERROR masks (like in Caliptra)?
+
+    // ----------------------------------------
+    // ----------------- WDT ------------------
+    //Timer1
+    reg {
+        name = "WDT Timer1 EN register";
+        desc = "Watchdog timer1 enable register
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SoC Access:      RO";
+        field {desc = "WDT timer1 enable"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer1_en = 1'b0;
+    } WDT_TIMER1_EN @0x80;
+
+    reg {
+        name = "WDT Timer1 CTRL register";
+        desc = "Watchdog timer1 control register
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "WDT timer1 restart"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b; singlepulse;} timer1_restart = 1'b0;
+    } WDT_TIMER1_CTRL;
+
+    reg {
+        name = "WDT Timer1 Timeout Period register";
+        desc = "Watchdog timer1 timeout register
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "WDT timer1 timeout period"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer1_timeout_period[32] = 32'hFFFFFFFF;
+    } WDT_TIMER1_TIMEOUT_PERIOD[2]; // This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in FIXME _pkg
+
+    //Timer2
+    reg {
+        name = "WDT Timer2 EN register";
+        desc = "Watchdog timer2 enable register. Note: Setting this to 1 will disable the default cascaded mode and will have both timers count independently.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO ";
+        field {desc = "WDT timer2 enable"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer2_en = 1'b0;
+    } WDT_TIMER2_EN;
+
+    reg {
+        name = "WDT Timer2 CTRL register";
+        desc = "Watchdog timer2 control register
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "WDT timer2 restart"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b; singlepulse;} timer2_restart = 1'b0;
+    } WDT_TIMER2_CTRL;
+
+    reg {
+        name = "WDT Timer2 Timeout Period register";
+        desc = "Watchdog timer2 timeout register
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "WDT timer2 timeout period"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer2_timeout_period[32] = 32'hFFFFFFFF;
+    } WDT_TIMER2_TIMEOUT_PERIOD[2]; //This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in FIXME _pkg
+
+    //Status
+    reg {
+        name = "WDT STATUS register";
+        desc = "Watchdog timer status register
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "Timer1 timed out, timer2 enabled"; hw = rw; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} t1_timeout = 1'b0;
+        field {desc = "Timer2 timed out"; hw = rw; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} t2_timeout = 1'b0;
+    } WDT_STATUS;
+
+    // Req
+    reg {
+        name = "WDT1 Config";
+        desc = "SOC provided count in cycles for WDT1 timeout.
+                [br]Caliptra Access: RW
+                [br]MCU Access:      RW
+                [br]SOC Access:      RW";
+        field {sw=rw; hw=na; resetsignal = mci_pwrgood;} TIMEOUT[32]=0;
+    } WDT_CFG[2] @0xB0;
+
+    // ----------------------------------------
+    // ---------------- TIMER -----------------
+    reg {
+        name = "Timer Config";
+        desc = "Provides the clock period of the system clock.
+                Used to standardize the RISC-V Standard MTIME count register.
+                Clock Period is indicated as an integer number of picoseconds.";
+        field {desc = "Period in (ps)"; sw=rw; hw=na; resetsignal = mci_pwrgood;} clk_period[32] = 32'h0;
+    } MCU_TIMER_CONFIG @0xC0;
+    reg {
+        name = "MCU Clock Gating En";
+         // TODO
+    } MCU_CLK_GATING_EN;
+
+    reg {
+        name = "mtime low";
+        desc = "RISC-V Standard Machine-mode Time Counter, lower 32-bits.
+                [br]Frequency of counter is indicated in MCU_TIMER_CONFIG.clk_period.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "Counter Low" ; sw = rw; precedence = sw; swmod = true; hw = r; swwe = mcu_req; counter = true; incrvalue = 1; overflow = true; resetsignal = mci_pwrgood;} count_l[32] = 32'h0;
+    } MCU_RV_MTIME_L;
+
+    reg {
+        name = "mtime high";
+        desc = "RISC-V Standard Machine-mode Time Counter, upper 32-bits.
+                [br]Frequency of counter is indicated in MCU_TIMER_CONFIG.clk_period.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "Counter High"; sw = rw; precedence = sw; swmod = true; hw = r; swwe = mcu_req; counter = true; incrvalue = 1;                  resetsignal = mci_pwrgood;} count_h[32] = 32'h0;
+    } MCU_RV_MTIME_H;
+
+    reg {
+        name = "mtimecmp low";
+        desc = "RISC-V Standard Machine-mode Time Counter Compare Value, lower 32-bits.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "Count Compare Low" ; sw = rw; hw = r; swwe = mcu_req; resetsignal = mci_pwrgood;} compare_l[32] = 32'h0;
+    } MCU_RV_MTIMECMP_L;
+
+    reg {
+        name = "mtimecmp high";
+        desc = "RISC-V Standard Machine-mode Time Counter Compare Value, upper 32-bits.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc = "Count Compare High"; sw = rw; hw = r; swwe = mcu_req; resetsignal = mci_pwrgood;} compare_h[32] = 32'h0;
+    } MCU_RV_MTIMECMP_H;
+
+
+    // ----------------------------------------
+    // ----------- RESET/BOOT MGMT ------------
+    reg {
+        name = "Reset Request";
+        desc = "Used by Caliptra to request an MCU reset to facilitate firmware updates.
+                Reset request is the first step in a handshake protocol between Caliptra and
+                the MCU before the MCU is reset and executes updated firmware.
+                [br]Caliptra Access: RW
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO";
+        field { desc = "Request. Writable by Caliptra. Causes MCU interrupt to assert."; sw=rw; hw=r; hwclr=true; swwe=cptra_req; resetsignal=mci_rst_b; } req=1'b0;
+        field { desc = "Clear. Writable by Caliptra. On set, this bit autoclears, RESET_REQUEST.req clears, and MCU reset deasserts."; sw=rw; hw=r; swwe=cptra_req; onwrite=woset; singlepulse=true; resetsignal=mci_rst_b; } clr=1'b0;
+    } RESET_REQUEST @0x100;
+    reg {
+        name = "Reset Ack";
+        desc = "Used by MCU to acknowledge reset request by Caliptra for a firmware update.
+                If RESET_REQUEST.req is set, a write by MCU to set the ack bit causes the MCU reset to assert.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field { desc = "Ack. Writable by MCU. Causes MCU reset to assert (if RESET_REQUEST.req is also set)"; sw=rw; hw=r; hwclr=true; swwe=mcu_req; resetsignal=mci_rst_b; } ack=1'b0;
+    } RESET_ACK;
+// TODO finish desc for these
+    reg {
+        field { desc="fixme";} go=1'b0;
+    } CALIPTRA_BOOT_GO;
+    reg {
+        field {sw=r; hw=w; } id;
+    } CALIPTRA_AXI_ID;
+    reg {
+        name = "Firmware SRAM Exec Region Size";
+        desc = "Dynamic size assignment for the region of sram that contains executable instructions for MCU.";
+        field { desc="Size (in multiples of 4KiB)"; sw=rw; swwe=true; } size;
+    } FW_SRAM_EXEC_REGION_SIZE;
+    reg {
+        name = "Runtime Lock";
+        desc = "Writable only by Caliptra, only when already at 0. (W1S, cleared only by MCU FW Update reset).
+                [br]With a value of 0, only the Caliptra AXI ID is allowed to access the Updateable Execution SRAM region in the MCU.
+                [br]Writing 1 to this register enables the MCU LSU and IFU AXI IDs to access the Updateable Execution SRAM Region.
+                AXI IDs are provided as integration parameter/macro to MCU. 
+                Observing a value of 1 in this register (after exiting a reset) also indicates to MCU ROM that it may perform context switch to RT image.";
+        field {/*TODO*/ sw=rw;} lock=0;
+    } RUNTIME_LOCK;
+
+    // TODO nmi_vector, reset_vector
+
+    // ----------------------------------------
+    // ------------ AxUSER CONFIG -------------
+    reg { field {sw=rw;/*TODO*/ } id[32]=0;} MBOX0_VALID_AXI_ID [5] @0x180;
+    reg { field {sw=rw;/*TODO*/ } lock=0;  } MBOX0_VALID_AXI_ID_LOCK [5] @0x1A0;
+    reg { field {sw=rw;/*TODO*/ } id[32]=0;} MBOX1_VALID_AXI_ID [5] @0x1C0;
+    reg { field {sw=rw;/*TODO*/ } lock=0;  } MBOX1_VALID_AXI_ID_LOCK [5] @0x1E0;
+
+    // ----------------------------------------
+    // ------------ DEBUG/GENERIC -------------
+    reg { field {/*TODO*/sw=r;  hw=w;} wires[32]=32'b0; } GENERIC_INPUT_WIRES[2] @0x400;
+    reg { field {/*TODO*/sw=rw; hw=r;} wires[32]=32'b0; } GENERIC_OUTPUT_WIRES[2];
+    reg { } DEBUG_IN; // i.e. stdin
+    reg { } DEBUG_OUT; // i.e. stdout
+
+    reg {
+        name = "FUSE Write Done";
+        desc = "Set to indicate that all fuse registers have been populated in MCI.
+                Locks fuse registers from further modification.
+                Sticky until cold reset once set.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {sw = rw; hw=r; swwel; swmod=true; resetsignal = mci_pwrgood;} done=1'h0; // TODO
+    } FUSE_WR_DONE @0x440;
+
+    reg {
+        name = "Production Debug Unlock PK HASH";
+        desc = "Production Debug Unlock PK HASH. Initialized from strap inputs, overwritable by MCU until FUSE_WR_DONE is set.
+                Once FUSE_WR_DONE is set value persists until cold reset.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {sw = rw; hw = rw; we; swwel; resetsignal = mci_pwrgood;} hash[32]=32'h0; // TODO
+    } PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12] @0x480;
+
+    // ----------------------------------------
+    // ----- DATA_VAULT/SCRATCH/RESERVED ------
+    reg {
+        name = "STICKY DATA VAULT CTRL";
+        desc = "Controls for the Sticky Data Vault Entries (cleared on cold reset)
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
+               sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0; //TODO Shoud reflect STICKY_DV_NUM_ENTRIES from dv_defines_pkg.sv
+    } STICKY_DATA_VAULT_CTRL[10] @0x800;
+
+    reg {
+        name = "STICKY DATA VAULT ENTRY";
+        desc = "Sticky Data Vault Entry (cleared on cold reset). Lockable.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;};
+    } STICKY_DATA_VAULT_ENTRY[10][12];//TODO Shoud reflect STICKY_DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+
+    reg {
+        name = "DATA VAULT CTRL";
+        desc = "Controls for the Data Vault Entries (cleared on warm reset)
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
+               sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0; // TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    } DATA_VAULT_CTRL[10];// CAREFUL with the address extensions
+
+    reg {
+        name = "DATA VAULT ENTRY";
+        desc = "Data Vault Entry (cleared on cold reset). Lockable.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;};
+    } DATA_VAULT_ENTRY[10][12];// TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+
+    reg {
+        name = "STICKY LOCKABLE SCRATCH REG CTRL";
+        desc = "Sticky Scratch Register Controls (cleared on cold reset)
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
+               sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0;
+    } STICKY_LOCKABLE_SCRATCH_REG_CTRL[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
+
+    reg {
+        name = "STICKY LOCKABLE SCRATCH REG";
+        desc = "Sticky Scratch Register Entries (cleared on cold reset)
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
+    } STICKY_LOCKABLE_SCRATCH_REG[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
+
+    reg {
+        name = "LOCKABLE SCRATCH REG CTRL";
+        desc = "Scratch Register Controls (cleared on warm reset)
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
+               sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0;
+    } LOCKABLE_SCRATCH_REG_CTRL[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
+
+    reg {
+        name = "LOCKABLE SCRATCH REG";
+        desc = "Scratch Register Entry (cleared on cold reset)
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
+    } LOCKABLE_SCRATCH_REG[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv
+
+    reg {
+        name = "NON STICKY GENERIC SCRATCH REG";
+        desc = "
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {sw=rw; hw=na; resetsignal=mci_rst_b;} data[32]=0; // FIXME mcu_rst_b instead?
+    } NON_STICKY_GENERIC_SCRATCH_REG[8]; // TODO Shoud reflect NONSTICKY_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
+
+    // ------------ TODO interrupts @0x1000 ------------
+};
