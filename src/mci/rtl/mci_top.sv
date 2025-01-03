@@ -23,9 +23,16 @@ module mci_top
     // MCI Resets
     input logic mci_rst_b,
 
+
+
     // MCI AXI Interface
     axi_if.w_sub s_axi_w_if,
     axi_if.r_sub s_axi_r_if,
+    
+    // Straps
+    input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_mcu_ifu_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_clp_axi_user,
     
     // MCU SRAM Interface
     mci_mcu_sram_if.request mci_mcu_sram_req_if 
@@ -87,15 +94,15 @@ mci_mcu_sram_ctrl #(
     .rst_b (mci_rst_b), // FIXME: Need to sync reset
 
     // Interface
-    .fw_sram_exec_region_size('0), // FIXME
+    .fw_sram_exec_region_size(16'h3), // FIXME
 
     // Caliptra internal fabric response interface
     .cif_resp_if (mcu_sram_req_if.response),
 
     // AXI users
-    .strap_mcu_lsu_axi_user('0),   // FIXME
-    .strap_mcu_ifu_axi_user('0),   // FIXME
-    .strap_clp_axi_user('0),   // FIXME
+    .strap_mcu_lsu_axi_user,   
+    .strap_mcu_ifu_axi_user,   
+    .strap_clp_axi_user, 
 
     // Access lock interface
     .mcu_sram_fw_exec_region_lock('0),  // FIXME
