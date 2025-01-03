@@ -19,6 +19,7 @@
 
 module mci_axi_sub_decode 
     import mci_pkg::*;
+    import mci_reg_pkg::*;
     #(
     // Configurable memory blocks
     parameter MCU_SRAM_SIZE_KB = 1024,
