@@ -422,7 +422,7 @@ package caliptra_ss_lc_ctrl_state_pkg;
   };
   parameter caliptra_ss_lc_token_t RndCnstRawUnlockTokenHashed = {
     // 128'hF8FE11B88C36C8140252F036D23804DB
-    128'hf12a_5911_4217_48a2_adfc_9693_ef1f_adea
+    128'hd714_17dc_4be9_28f6_33dd_1e38_b9be_ec48
   };
 
 

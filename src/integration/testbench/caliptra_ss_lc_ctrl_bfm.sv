@@ -15,12 +15,21 @@
 
 
 module caliptra_ss_lc_ctrl_bfm 
+    import otp_ctrl_pkg::*;
     import caliptra_ss_lc_ctrl_pkg::*;
     import caliptra_ss_lc_ctrl_reg_pkg::*;
     import caliptra_ss_lc_ctrl_state_pkg::*;
 (
     input  logic clk,
     input  logic reset_n,
+
+    
+    input axi_struct_pkg::axi_rd_req_t caliptra_ss_lc_axi_rd_req,
+    input axi_struct_pkg::axi_rd_rsp_t caliptra_ss_lc_axi_rd_rsp,
+    output logic fake_reset,
+    output logic RMA_strap,
+    output logic [7:0] from_bfm_caliptra_ss_lc_flash_rma_ack,
+    input  [3:0]        to_bfm_caliptra_ss_lc_flash_rma_req_o,
 
     // Power manager interface
     output pwrmgr_pkg::pwr_caliptra_ss_lc_req_t pwr_caliptra_ss_lc_i,
@@ -39,6 +48,10 @@ module caliptra_ss_lc_ctrl_bfm
     output caliptra_prim_alert_pkg::alert_rx_t [NumAlerts-1:0] caliptra_ss_lc_ctrl_alert_rx,
     input  caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0] caliptra_ss_lc_ctrl_alert_tx,
 
+    // OTP Hack
+    output otp_ctrl_pkg::otp_caliptra_ss_lc_data_t   otp_caliptra_ss_lc_data_o,
+    input otp_ctrl_pkg::otp_caliptra_ss_lc_data_t   from_otp_caliptra_ss_lc_data_i,
+
     // Escape State Interface
     output  caliptra_prim_esc_pkg::esc_rx_t esc_scrap_state0_tx_i,
     input caliptra_prim_esc_pkg::esc_tx_t esc_scrap_state0_rx_o,
@@ -52,10 +65,17 @@ module caliptra_ss_lc_ctrl_bfm
 
     // Internal signals
     logic [35:0] clk_counter;
+    // Declare the shift register for buffering
+    logic power_and_reset_indication;
+    logic [19:0] power_and_reset_buffer;
+    // Buffered signal
+    logic power_and_reset_indication_buffered;
+
+
     logic pwr_caliptra_ss_lc_i_active;
     pwrmgr_pkg::pwr_caliptra_ss_lc_req_t pwr_caliptra_ss_lc_i_internal;
 
-    logic caliptra_ss_lc_clk_byp_ack_internal;
+    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_clk_byp_ack_internal;
     assign caliptra_ss_lc_clk_byp_ack_i = caliptra_ss_lc_clk_byp_ack_internal;
     assign caliptra_ss_lc_ctrl_scan_rst_ni = 1;
     assign pwr_caliptra_ss_lc_i = pwr_caliptra_ss_lc_i_internal;
@@ -69,18 +89,70 @@ module caliptra_ss_lc_ctrl_bfm
     assign esc_scrap_state1_tx_i.resp_p = 1'b0;
     assign esc_scrap_state1_tx_i.resp_n = 1'b1;
 
+    //OTP assignments
+    assign otp_caliptra_ss_lc_data_o.valid = from_otp_caliptra_ss_lc_data_i.valid;
+    assign otp_caliptra_ss_lc_data_o.error = from_otp_caliptra_ss_lc_data_i.error;
+    assign otp_caliptra_ss_lc_data_o.state = from_otp_caliptra_ss_lc_data_i.state;
+    assign otp_caliptra_ss_lc_data_o.count = from_otp_caliptra_ss_lc_data_i.count;
+    assign otp_caliptra_ss_lc_data_o.secrets_valid = from_otp_caliptra_ss_lc_data_i.secrets_valid;//caliptra_ss_lc_tx_t'(On);
+    assign otp_caliptra_ss_lc_data_o.test_tokens_valid = caliptra_ss_lc_tx_t'(On); //from_otp_caliptra_ss_lc_data_i.test_tokens_valid;//caliptra_ss_lc_tx_t'(On);
+    assign otp_caliptra_ss_lc_data_o.test_unlock_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+    assign otp_caliptra_ss_lc_data_o.test_exit_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+    assign otp_caliptra_ss_lc_data_o.rma_token_valid = caliptra_ss_lc_tx_t'(On);//from_otp_caliptra_ss_lc_data_i.rma_token_valid;//caliptra_ss_lc_tx_t'(On);
+    assign otp_caliptra_ss_lc_data_o.rma_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+
+    assign from_bfm_caliptra_ss_lc_flash_rma_ack = (to_bfm_caliptra_ss_lc_flash_rma_req_o==3'h5) ? 8'h55 : 8'hAA;
+
+
+    // TODO: This is used for keeping RMA strap to a desired value
+    //-------------------------------------------------------------------
+    always@(posedge clk or negedge reset_n) begin
+        if (!reset_n)
+            RMA_strap <= 0;
+        else if (caliptra_ss_lc_axi_rd_req.arvalid && caliptra_ss_lc_axi_rd_rsp.arready && caliptra_ss_lc_axi_rd_req.araddr == 32'h7000_0048 && !power_and_reset_indication)
+            RMA_strap <= ~RMA_strap;
+    end
+    //-------------------------------------------------------------------
+
+    
+    // TODO: This is used for reset and power init, a temporal solution
+    //-------------------------------------------------------------------
+    always@(posedge clk or negedge reset_n) begin
+        if (!reset_n)
+            power_and_reset_indication <= 0;
+        else if (caliptra_ss_lc_axi_rd_req.arvalid && caliptra_ss_lc_axi_rd_rsp.arready && caliptra_ss_lc_axi_rd_req.araddr == 32'h7000_0044 && !power_and_reset_indication)
+            power_and_reset_indication <= 1;
+        else
+            power_and_reset_indication <= 0;
+    end
+    //-------------------------------------------------------------------
+
     // Power Management Logic
     always_ff @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
             clk_counter <= 0;
             pwr_caliptra_ss_lc_i_internal = '{default: '0};
+            fake_reset  <= 1'b1;
+            power_and_reset_buffer <= 20'b0; // Reset the buffer
+            power_and_reset_indication_buffered <= 1'b0;
         end else if (cptra_pwrgood) begin
+            // Update the shift register
+            power_and_reset_buffer <= {power_and_reset_buffer[18:0], power_and_reset_indication};
+            power_and_reset_indication_buffered <= power_and_reset_buffer[19]; // Use the buffered value
             if (clk_counter < 500) begin
                 clk_counter <= clk_counter + 1;
                 pwr_caliptra_ss_lc_i_internal.caliptra_ss_lc_init = 1'b0;
-            end else begin
+                fake_reset  <= fake_reset;
+            end
+            else if (power_and_reset_indication_buffered) begin
+                clk_counter <= 0;
+                pwr_caliptra_ss_lc_i_internal.caliptra_ss_lc_init = 1'b0;
+                fake_reset  <= 1'b0;
+            end            
+            else begin
                 clk_counter <= clk_counter;
                 pwr_caliptra_ss_lc_i_internal.caliptra_ss_lc_init = 1'b1;
+                fake_reset  <= 1'b1;
             end
         end
     end

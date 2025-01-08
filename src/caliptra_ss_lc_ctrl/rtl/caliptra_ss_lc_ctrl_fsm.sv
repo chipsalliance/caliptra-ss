@@ -23,6 +23,7 @@ module caliptra_ss_lc_ctrl_fsm
   // need the clock and reset for the assertions.
   input                         clk_i,
   input                         rst_ni,
+  input                         RMA_strap,
   // Initialization request from power manager.
   input                         init_req_i,
   output logic                  init_done_o,
@@ -463,7 +464,7 @@ module caliptra_ss_lc_ctrl_fsm
       // Flash RMA state. Note that we check the flash response again
       // two times later below.
       FlashRmaSt: begin
-        if (trans_target_i == {DecLcStateNumRep{DecLcStRma}}) begin
+        if (trans_target_i == {DecLcStateNumRep{DecLcStRma}} && RMA_strap) begin
           caliptra_ss_lc_flash_rma_req = On;
           if (caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_flash_rma_ack_buf[0])) begin
             fsm_state_d = TokenCheck0St;
@@ -489,7 +490,8 @@ module caliptra_ss_lc_ctrl_fsm
                caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_flash_rma_ack_buf[1])) ||
               (trans_target_i == {DecLcStateNumRep{DecLcStRma}} &&
                caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_flash_rma_req_o) &&
-               caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_flash_rma_ack_buf[1]))) begin
+               caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_flash_rma_ack_buf[1])
+               && RMA_strap)) begin
             if (hashed_token_i == hashed_token_mux &&
                 !token_hash_err_i &&
                 &hashed_token_valid_mux) begin
@@ -529,7 +531,8 @@ module caliptra_ss_lc_ctrl_fsm
         end else if ((trans_target_i != {DecLcStateNumRep{DecLcStRma}} &&
                       (caliptra_ss_lc_flash_rma_req_o != Off || caliptra_ss_lc_flash_rma_ack_buf[2] != Off)) ||
                      (trans_target_i == {DecLcStateNumRep{DecLcStRma}} &&
-                      (caliptra_ss_lc_flash_rma_req_o != On || caliptra_ss_lc_flash_rma_ack_buf[2] != On))) begin
+                      (caliptra_ss_lc_flash_rma_req_o != On || caliptra_ss_lc_flash_rma_ack_buf[2] != On)
+                      && RMA_strap)) begin
           fsm_state_d = PostTransSt;
           flash_rma_error_o = 1'b1;
         end else if (otp_prog_ack_i) begin
