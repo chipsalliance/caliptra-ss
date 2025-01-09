@@ -9,7 +9,7 @@ files:
   - src/tlul/config/compile.yml
   - src/dmi/config/compile.yml
   - src/axi2tlul/config/compile.yml
-  - src/caliptra_ss_lc_ctrl/config/compile.yml
+  - src/lc_ctrl/config/compile.yml
   - src/fuse_ctrl/config/compile.yml
   - third_party/caliptra-rtl/src/libs/config/compile.yml
   - third_party/caliptra-rtl/src/ahb_lite_bus/config/compile.yml

@@ -19,8 +19,8 @@ module pwrmgr
   input rst_slow_ni,
   input rst_ni,
   input rst_main_ni,
-  input clk_caliptra_ss_lc_i,
-  input rst_caliptra_ss_lc_ni,
+  input clk_lc_i,
+  input rst_lc_ni,
   input clk_esc_i,
   input rst_esc_ni,
 
@@ -49,8 +49,8 @@ module pwrmgr
   output pwr_otp_req_t pwr_otp_o,
 
   // life cycle interface
-  input  pwr_caliptra_ss_lc_rsp_t pwr_caliptra_ss_lc_i,
-  output pwr_caliptra_ss_lc_req_t pwr_caliptra_ss_lc_o,
+  input  pwr_lc_rsp_t pwr_lc_i,
+  output pwr_lc_req_t pwr_lc_o,
 
   // flash interface
   input  pwr_flash_t pwr_flash_i,
@@ -58,9 +58,9 @@ module pwrmgr
   // processor interface
   input  pwr_cpu_t pwr_cpu_i,
   // SEC_CM: LC_CTRL.INTERSIG.MUBI
-  output caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t fetch_en_o,
-  input caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_hw_debug_en_i,
-  input caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_dft_en_i,
+  output lc_ctrl_pkg::lc_tx_t fetch_en_o,
+  input lc_ctrl_pkg::lc_tx_t lc_hw_debug_en_i,
+  input lc_ctrl_pkg::lc_tx_t lc_dft_en_i,
 
   // peripherals wakeup and reset requests
   input  [NumWkups-1:0] wakeups_i,
@@ -112,9 +112,9 @@ module pwrmgr
   ////////////////////////////
 
   logic clk_lc;
-  logic rst_caliptra_ss_lc_n;
-  assign clk_lc = clk_caliptra_ss_lc_i;
-  assign rst_caliptra_ss_lc_n = rst_caliptra_ss_lc_ni;
+  logic rst_lc_n;
+  assign clk_lc = clk_lc_i;
+  assign rst_lc_n = rst_lc_ni;
 
   logic clk_esc;
   logic rst_esc_n;
@@ -152,7 +152,7 @@ module pwrmgr
   // two flop synchronizers. There are two CDCs in the path from escalation reset to the fast fsm
   // receiving it, one to the slow clock, and one back to the fast one. And there are additional
   // cycles in the fast fsm to generate outputs. However, esc_rst_req_q can be dropped due to
-  // rst_caliptra_ss_lc_n.
+  // rst_lc_n.
   `ASSERT(PwrmgrSecCmEscToSlowResetReq_A,
           esc_rst_req_q |-> ##[1:5] !esc_rst_req_q || slow_peri_reqs_masked.rstreqs[ResetEscIdx],
           clk_slow_i, !rst_slow_ni)
@@ -162,7 +162,7 @@ module pwrmgr
 `else
   `ASSERT(PwrmgrSecCmEscToSlowResetReq_A,
           esc_rst_req_d |-> ##[2:3] (
-              (!esc_rst_req_d && caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_false_loose(fetch_en_o)) ||
+              (!esc_rst_req_d && lc_ctrl_pkg::lc_tx_test_false_loose(fetch_en_o)) ||
               slow_peri_reqs_masked.rstreqs[ResetEscIdx]
           ), clk_slow_i, !rst_slow_ni)
   `ASSERT(PwrmgrSlowResetReqToFsmResetReq_A,
@@ -171,11 +171,11 @@ module pwrmgr
 `endif
 
   `ASSERT(PwrmgrSecCmEscToLCReset_A, u_fsm.reset_reqs_i[ResetEscIdx] &&
-          u_fsm.state_q == FastPwrStateActive |-> ##4 pwr_rst_o.rst_caliptra_ss_lc_req == 2'b11,
+          u_fsm.state_q == FastPwrStateActive |-> ##4 pwr_rst_o.rst_lc_req == 2'b11,
           clk_i, !rst_ni)
 
-  always_ff @(posedge clk_lc or negedge rst_caliptra_ss_lc_n) begin
-    if (!rst_caliptra_ss_lc_n) begin
+  always_ff @(posedge clk_lc or negedge rst_lc_n) begin
+    if (!rst_lc_n) begin
       esc_rst_req_q <= '0;
     end else if (esc_rst_req_d) begin
       // once latched, do not clear until reset
@@ -184,7 +184,7 @@ module pwrmgr
   end
 
   localparam int EscTimeOutCnt = 128;
-  logic esc_timeout, esc_timeout_caliptra_ss_lc_d, esc_timeout_caliptra_ss_lc_q;
+  logic esc_timeout, esc_timeout_lc_d, esc_timeout_lc_q;
   // SEC_CM: ESC_RX.CLK.BKGN_CHK, ESC_RX.CLK.LOCAL_ESC
   prim_clock_timeout #(
     .TimeOutCnt(EscTimeOutCnt)
@@ -204,17 +204,17 @@ module pwrmgr
     .ResetValue('0)
   ) u_esc_timeout_sync (
     .clk_i(clk_lc),
-    .rst_ni(rst_caliptra_ss_lc_n),
+    .rst_ni(rst_lc_n),
     .d_i(esc_timeout),
-    .q_o(esc_timeout_caliptra_ss_lc_d)
+    .q_o(esc_timeout_lc_d)
   );
 
-  always_ff @(posedge clk_lc or negedge rst_caliptra_ss_lc_n) begin
-    if (!rst_caliptra_ss_lc_n) begin
-      esc_timeout_caliptra_ss_lc_q <= '0;
-    end else if (esc_timeout_caliptra_ss_lc_d) begin
+  always_ff @(posedge clk_lc or negedge rst_lc_n) begin
+    if (!rst_lc_n) begin
+      esc_timeout_lc_q <= '0;
+    end else if (esc_timeout_lc_d) begin
       // once latched, do not clear until reset
-      esc_timeout_caliptra_ss_lc_q <= 1'b1;
+      esc_timeout_lc_q <= 1'b1;
     end
   end
 
@@ -229,7 +229,7 @@ module pwrmgr
   assign peri_reqs_raw.rstreqs[NumRstReqs-1:0] = rstreqs_i;
   assign peri_reqs_raw.rstreqs[ResetMainPwrIdx] = slow_rst_req;
   // SEC_CM: ESC_RX.CLK.LOCAL_ESC, CTRL_FLOW.GLOBAL_ESC
-  assign peri_reqs_raw.rstreqs[ResetEscIdx] = esc_rst_req_q | esc_timeout_caliptra_ss_lc_q;
+  assign peri_reqs_raw.rstreqs[ResetEscIdx] = esc_rst_req_q | esc_timeout_lc_q;
   assign peri_reqs_raw.rstreqs[ResetNdmIdx] = ndm_req_valid;
 
   ////////////////////////////
@@ -320,8 +320,8 @@ module pwrmgr
   pwrmgr_reg_top u_reg (
     .clk_i,
     .rst_ni,
-    .clk_caliptra_ss_lc_i  (clk_lc  ),
-    .rst_caliptra_ss_lc_ni (rst_caliptra_ss_lc_n),
+    .clk_lc_i  (clk_lc  ),
+    .rst_lc_ni (rst_lc_n),
     .tl_i,
     .tl_o,
     .reg2hw,
@@ -347,7 +347,7 @@ module pwrmgr
 
   assign hw2reg.fault_status.reg_intg_err.de    = reg_intg_err;
   assign hw2reg.fault_status.reg_intg_err.d     = 1'b1;
-  assign hw2reg.fault_status.esc_timeout.de     = esc_timeout_caliptra_ss_lc_q;
+  assign hw2reg.fault_status.esc_timeout.de     = esc_timeout_lc_q;
   assign hw2reg.fault_status.esc_timeout.d      = 1'b1;
 
   // The main power domain glitch automatically causes a reset, so regsitering
@@ -359,7 +359,7 @@ module pwrmgr
                                                   reg2hw.fault_status.main_pd_glitch.q;
 
   `ASSERT(GlitchStatusPersist_A, $rose(reg2hw.fault_status.main_pd_glitch.q) |->
-          reg2hw.fault_status.main_pd_glitch.q until !rst_caliptra_ss_lc_ni)
+          reg2hw.fault_status.main_pd_glitch.q until !rst_lc_ni)
 
   ////////////////////////////
   ///  alerts
@@ -384,7 +384,7 @@ module pwrmgr
       .IsFatal(1'b1)
     ) u_prim_alert_sender (
       .clk_i         ( clk_lc        ),
-      .rst_ni        ( rst_caliptra_ss_lc_n      ),
+      .rst_ni        ( rst_lc_n      ),
       .alert_test_i  ( alert_test[i] ),
       .alert_req_i   ( alerts[i]     ),
       .alert_ack_o   (               ),
@@ -555,20 +555,20 @@ module pwrmgr
     .ast_o                (pwr_ast_o)
   );
 
-  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_dft_en;
-  prim_caliptra_ss_lc_sync u_prim_caliptra_ss_lc_sync_dft_en (
+  lc_ctrl_pkg::lc_tx_t lc_dft_en;
+  prim_lc_sync u_prim_lc_sync_dft_en (
     .clk_i,
     .rst_ni,
-    .caliptra_ss_lc_en_i(caliptra_ss_lc_dft_en_i),
-    .caliptra_ss_lc_en_o({caliptra_ss_lc_dft_en})
+    .lc_en_i(lc_dft_en_i),
+    .lc_en_o({lc_dft_en})
   );
 
-  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_hw_debug_en;
-  prim_caliptra_ss_lc_sync u_prim_caliptra_ss_lc_sync_hw_debug_en (
+  lc_ctrl_pkg::lc_tx_t lc_hw_debug_en;
+  prim_lc_sync u_prim_lc_sync_hw_debug_en (
     .clk_i,
     .rst_ni,
-    .caliptra_ss_lc_en_i(caliptra_ss_lc_hw_debug_en_i),
-    .caliptra_ss_lc_en_o({caliptra_ss_lc_hw_debug_en})
+    .lc_en_i(lc_hw_debug_en_i),
+    .lc_en_o({lc_hw_debug_en})
   );
 
   ////////////////////////////
@@ -620,11 +620,11 @@ module pwrmgr
     .otp_idle_i        (otp_rsp.otp_idle),
 
     // lc
-    .caliptra_ss_lc_init_o         (pwr_caliptra_ss_lc_o.caliptra_ss_lc_init),
-    .caliptra_ss_lc_done_i         (pwr_caliptra_ss_lc_i.caliptra_ss_lc_done),
-    .caliptra_ss_lc_idle_i         (pwr_caliptra_ss_lc_i.caliptra_ss_lc_idle),
-    .caliptra_ss_lc_dft_en_i       (caliptra_ss_lc_dft_en),
-    .caliptra_ss_lc_hw_debug_en_i  (caliptra_ss_lc_hw_debug_en),
+    .lc_init_o         (pwr_lc_o.lc_init),
+    .lc_done_i         (pwr_lc_i.lc_done),
+    .lc_idle_i         (pwr_lc_i.lc_idle),
+    .lc_dft_en_i       (lc_dft_en),
+    .lc_hw_debug_en_i  (lc_hw_debug_en),
 
     // flash
     .flash_idle_i      (flash_rsp.flash_idle),
@@ -700,7 +700,7 @@ module pwrmgr
   `ASSERT_KNOWN(RstKnownO_A,       pwr_rst_o        )
   `ASSERT_KNOWN(ClkKnownO_A,       pwr_clk_o        )
   `ASSERT_KNOWN(OtpKnownO_A,       pwr_otp_o        )
-  `ASSERT_KNOWN(LcKnownO_A,        pwr_caliptra_ss_lc_o         )
+  `ASSERT_KNOWN(LcKnownO_A,        pwr_lc_o         )
   `ASSERT_KNOWN(IntrKnownO_A,      intr_wakeup_o    )
 
   // EscTimeOutCnt also sets the required clock ratios between escalator and local clock
@@ -709,7 +709,7 @@ module pwrmgr
   //VCS coverage off
   // pragma coverage off
   logic effective_rst_n;
-  assign effective_rst_n = clk_caliptra_ss_lc_i && rst_ni;
+  assign effective_rst_n = clk_lc_i && rst_ni;
 
   logic [31:0] cnt;
   always_ff @(posedge clk_i or negedge effective_rst_n) begin
@@ -727,7 +727,7 @@ module pwrmgr
   `endif
 
   `ASSERT_PRIM_FSM_ERROR_TRIGGER_ERR(FsmCheck_A, u_fsm.u_state_regs,
-      pwr_rst_o.rst_caliptra_ss_lc_req && pwr_rst_o.rst_sys_req)
+      pwr_rst_o.rst_lc_req && pwr_rst_o.rst_sys_req)
   `ASSERT_PRIM_FSM_ERROR_TRIGGER_ERR(SlowFsmCheck_A, u_slow_fsm.u_state_regs,
       pwr_ast_o.pwr_clamp && !pwr_ast_o.main_pd_n, 0, 2,
       clk_slow_i, !rst_slow_ni)

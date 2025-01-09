@@ -357,14 +357,14 @@ package otp_ctrl_part_pkg;
   };
   typedef struct packed {
     // This reuses the same encoding as the life cycle signals for indicating valid status.
-    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t valid;
+    lc_ctrl_pkg::lc_tx_t valid;
     otp_hw_cfg1_data_t hw_cfg1_data;
     otp_hw_cfg0_data_t hw_cfg0_data;
   } otp_broadcast_t;
 
   // default value for intermodule
   parameter otp_broadcast_t OTP_BROADCAST_DEFAULT = '{
-    valid: caliptra_ss_lc_ctrl_pkg::Off,
+    valid: lc_ctrl_pkg::Off,
     hw_cfg1_data: OTP_HW_CFG1_DATA_DEFAULT,
     hw_cfg0_data: OTP_HW_CFG0_DATA_DEFAULT
   };
@@ -608,14 +608,14 @@ package otp_ctrl_part_pkg;
     // LIFE_CYCLE
     unused ^= ^{part_init_done[LifeCycleIdx],
                 part_buf_data[LifeCycleOffset +: LifeCycleSize]};
-    otp_broadcast.valid = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_bool_to_caliptra_ss_lc_tx(valid);
+    otp_broadcast.valid = lc_ctrl_pkg::lc_tx_bool_to_lc_tx(valid);
     return otp_broadcast;
   endfunction : named_broadcast_assign
 
   function automatic otp_keymgr_key_t named_keymgr_key_assign(
       logic [NumPart-1:0][ScrmblBlockWidth-1:0] part_digest,
       logic [$bits(PartInvDefault)/8-1:0][7:0] part_buf_data,
-      caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_seed_hw_rd_en);
+      lc_ctrl_pkg::lc_tx_t lc_seed_hw_rd_en);
     otp_keymgr_key_t otp_keymgr_key;
     logic valid, unused;
     unused = 1'b0;
@@ -654,7 +654,7 @@ package otp_ctrl_part_pkg;
     valid = (part_digest[Secret2Idx] != 0);
     unused ^= ^part_buf_data[RmaTokenOffset +: RmaTokenSize];
     otp_keymgr_key.creator_root_key_share0_valid = valid;
-    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_seed_hw_rd_en)) begin
+    if (lc_ctrl_pkg::lc_tx_test_true_strict(lc_seed_hw_rd_en)) begin
       otp_keymgr_key.creator_root_key_share0 =
           part_buf_data[CreatorRootKeyShare0Offset +: CreatorRootKeyShare0Size];
     end else begin
@@ -662,7 +662,7 @@ package otp_ctrl_part_pkg;
           PartInvDefault[CreatorRootKeyShare0Offset*8 +: CreatorRootKeyShare0Size*8];
     end
     otp_keymgr_key.creator_root_key_share1_valid = valid;
-    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_seed_hw_rd_en)) begin
+    if (lc_ctrl_pkg::lc_tx_test_true_strict(lc_seed_hw_rd_en)) begin
       otp_keymgr_key.creator_root_key_share1 =
           part_buf_data[CreatorRootKeyShare1Offset +: CreatorRootKeyShare1Size];
     end else begin
