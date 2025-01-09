@@ -283,7 +283,10 @@ package caliptra_ss_lc_ctrl_state_pkg;
   // are not supported for virtual interfaces by Excelium yet
   // https://github.com/lowRISC/opentitan/issues/8884 (Cadence issue: cds_46570160)
   // The enumeration types caliptra_ss_lc_state_e and caliptra_ss_lc_cnt_e are still ok in other circumstances
-
+  // NOTE: Caliptra-SS required the following change in this decoding:
+  // LcStProd          = {XX, XX, XX, XX, A15 -> B15, XX, ...} This allows LC to switch from DEV to PROD
+  // LcStProdEnd       = {XX, XX, XX, A16->B16, A15 -> B15, XX, ...} This allows LC to switch from DEV to PROD_END or PROD to PROD_END
+  // However, PROD_END can branch only to SCARP and nothing else
   typedef logic [LcStateWidth-1:0] caliptra_ss_lc_state_t;
   typedef enum caliptra_ss_lc_state_t {
     LcStRaw           = {ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO},

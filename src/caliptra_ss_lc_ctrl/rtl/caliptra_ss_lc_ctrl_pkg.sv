@@ -334,7 +334,7 @@ package caliptra_ss_lc_ctrl_pkg;
     // DEV
     ZeroTokenIdx,          // -> SCRAP
     RmaTokenIdx,           // -> RMA
-
+    // NOTE:
     // {19{InvalidTokenIdx}}, // -> TEST_LOCKED0-6, TEST_UNLOCKED0-7, DEV, PROD, PROD_END
 
     // ============== This is how we enable from DEV to PROD ==============================

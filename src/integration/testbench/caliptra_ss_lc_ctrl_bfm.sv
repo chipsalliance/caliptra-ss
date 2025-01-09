@@ -45,19 +45,16 @@ module caliptra_ss_lc_ctrl_bfm
     output caliptra_prim_mubi_pkg::mubi4_t caliptra_ss_lc_ctrl_scanmode_i,
 
     // Alert Handler Interface
-    output caliptra_prim_alert_pkg::alert_rx_t [NumAlerts-1:0] caliptra_ss_lc_ctrl_alert_rx,
-    input  caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0] caliptra_ss_lc_ctrl_alert_tx,
+    input [caliptra_ss_lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o,
+
+    // Escalation State Interface
+    output  esc_scrap_state0,
+    output  esc_scrap_state1,
+
 
     // OTP Hack
     output otp_ctrl_pkg::otp_caliptra_ss_lc_data_t   otp_caliptra_ss_lc_data_o,
     input otp_ctrl_pkg::otp_caliptra_ss_lc_data_t   from_otp_caliptra_ss_lc_data_i,
-
-    // Escape State Interface
-    output  caliptra_prim_esc_pkg::esc_rx_t esc_scrap_state0_tx_i,
-    input caliptra_prim_esc_pkg::esc_tx_t esc_scrap_state0_rx_o,
-    output  caliptra_prim_esc_pkg::esc_rx_t esc_scrap_state1_tx_i,
-    input caliptra_prim_esc_pkg::esc_tx_t esc_scrap_state1_rx_o,
-
     // Clock manager interface
     input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_clk_byp_req_o,
     output caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_clk_byp_ack_i
@@ -83,11 +80,7 @@ module caliptra_ss_lc_ctrl_bfm
     // Default values
     assign caliptra_ss_lc_ctrl_dmi_tl_h2d = tlul_pkg::TL_H2D_DEFAULT;
     assign caliptra_ss_lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
-    assign caliptra_ss_lc_ctrl_alert_rx = '{default: caliptra_prim_alert_pkg::ALERT_RX_DEFAULT};
-    assign esc_scrap_state0_tx_i.resp_p = 1'b0;
-    assign esc_scrap_state0_tx_i.resp_n = 1'b1;
-    assign esc_scrap_state1_tx_i.resp_p = 1'b0;
-    assign esc_scrap_state1_tx_i.resp_n = 1'b1;
+    
 
     //OTP assignments
     assign otp_caliptra_ss_lc_data_o.valid = from_otp_caliptra_ss_lc_data_i.valid;
@@ -102,6 +95,9 @@ module caliptra_ss_lc_ctrl_bfm
     assign otp_caliptra_ss_lc_data_o.rma_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
 
     assign from_bfm_caliptra_ss_lc_flash_rma_ack = (to_bfm_caliptra_ss_lc_flash_rma_req_o==3'h5) ? 8'h55 : 8'hAA;
+
+    assign esc_scrap_state0 = (|lc_alerts_o)? 1'b1: 1'b0;
+    assign esc_scrap_state1 = (|lc_alerts_o)? 1'b1: 1'b0;
 
 
     // TODO: This is used for keeping RMA strap to a desired value
