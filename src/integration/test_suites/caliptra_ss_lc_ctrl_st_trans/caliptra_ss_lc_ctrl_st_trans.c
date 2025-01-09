@@ -239,6 +239,56 @@ void TESTUNLOCK0_to_DEV(){
 
 }
 
+void TESTUNLOCK0_to_PROD(){
+    uint32_t reg_value;
+    uint32_t status_val;
+    uint32_t loop_ctrl;
+
+    uint32_t next_lc_state = 17; // PROD
+    uint32_t next_lc_state_5bit = next_lc_state & 0x1F; // Extract 5-bit value (DecLcStateWidth = 5)
+    uint32_t targeted_state_5 = 
+        (next_lc_state_5bit << 25) | 
+        (next_lc_state_5bit << 20) | 
+        (next_lc_state_5bit << 15) | 
+        (next_lc_state_5bit << 10) | 
+        (next_lc_state_5bit << 5)  | 
+        next_lc_state_5bit;
+
+    sw_transition_req(targeted_state_5, 0x0, 0x0, 0x0, 0x0, 1); //DEV, tokenmsb, tokenlsb, conditional
+    reg_value = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm
+    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is under reset!\n");
+    for (uint8_t ii = 0; ii < 160; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in PROD state!\n");
+
+}
+
+void DEV_to_PROD(){
+    uint32_t reg_value;
+    uint32_t status_val;
+    uint32_t loop_ctrl;
+
+    uint32_t next_lc_state = 17; // PROD
+    uint32_t next_lc_state_5bit = next_lc_state & 0x1F; // Extract 5-bit value (DecLcStateWidth = 5)
+    uint32_t targeted_state_5 = 
+        (next_lc_state_5bit << 25) | 
+        (next_lc_state_5bit << 20) | 
+        (next_lc_state_5bit << 15) | 
+        (next_lc_state_5bit << 10) | 
+        (next_lc_state_5bit << 5)  | 
+        next_lc_state_5bit;
+
+    sw_transition_req(targeted_state_5, 0x0, 0x0, 0x0, 0x0, 1); //DEV, tokenmsb, tokenlsb, conditional
+    reg_value = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm
+    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is under reset!\n");
+    for (uint8_t ii = 0; ii < 160; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in PROD state!\n");
+
+}
+
 void DEV_to_RMA(){
     uint32_t reg_value;
     uint32_t status_val;
@@ -337,7 +387,11 @@ void main (void) {
     
     RAW_to_TESTUNLOCK0();
 
+    // TESTUNLOCK0_to_PROD();
+
     TESTUNLOCK0_to_DEV();
+
+    DEV_to_PROD();
 
     DEV_to_RMA_without_STRAP();
 

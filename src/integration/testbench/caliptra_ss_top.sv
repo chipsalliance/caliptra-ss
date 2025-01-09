@@ -2014,7 +2014,7 @@ module caliptra_ss_top
     logic [7:0] from_bfm_caliptra_ss_lc_flash_rma_ack;
     assign caliptra_ss_lc_flash_rma_ack_tb = from_bfm_caliptra_ss_lc_flash_rma_ack;
 
-    logic RMA_strap;
+    logic Allow_RMA_on_PPD;
     logic fake_reset;
 
     logic [3:0]  to_bfm_caliptra_ss_lc_flash_rma_req_o;
@@ -2030,7 +2030,7 @@ module caliptra_ss_top
         .caliptra_ss_lc_axi_rd_req(caliptra_ss_lc_axi_rd_req),
         .caliptra_ss_lc_axi_rd_rsp(caliptra_ss_lc_axi_rd_rsp),
         .fake_reset(fake_reset),
-        .RMA_strap(RMA_strap),
+        .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
         .from_bfm_caliptra_ss_lc_flash_rma_ack(from_bfm_caliptra_ss_lc_flash_rma_ack),
         .to_bfm_caliptra_ss_lc_flash_rma_req_o(to_bfm_caliptra_ss_lc_flash_rma_req_o),
 
@@ -2087,7 +2087,7 @@ module caliptra_ss_top
         ) */ u_caliptra_ss_lc_ctrl (
             .clk_i(core_clk),
             .rst_ni(rst_l & fake_reset),
-            .RMA_strap(RMA_strap),
+            .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
             .axi_wr_req(caliptra_ss_lc_axi_wr_req),
             .axi_wr_rsp(caliptra_ss_lc_axi_wr_rsp),
             .axi_rd_req(caliptra_ss_lc_axi_rd_req),

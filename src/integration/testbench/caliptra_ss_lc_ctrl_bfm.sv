@@ -27,7 +27,7 @@ module caliptra_ss_lc_ctrl_bfm
     input axi_struct_pkg::axi_rd_req_t caliptra_ss_lc_axi_rd_req,
     input axi_struct_pkg::axi_rd_rsp_t caliptra_ss_lc_axi_rd_rsp,
     output logic fake_reset,
-    output logic RMA_strap,
+    output logic Allow_RMA_on_PPD,
     output logic [7:0] from_bfm_caliptra_ss_lc_flash_rma_ack,
     input  [3:0]        to_bfm_caliptra_ss_lc_flash_rma_req_o,
 
@@ -108,9 +108,9 @@ module caliptra_ss_lc_ctrl_bfm
     //-------------------------------------------------------------------
     always@(posedge clk or negedge reset_n) begin
         if (!reset_n)
-            RMA_strap <= 0;
+            Allow_RMA_on_PPD <= 0;
         else if (caliptra_ss_lc_axi_rd_req.arvalid && caliptra_ss_lc_axi_rd_rsp.arready && caliptra_ss_lc_axi_rd_req.araddr == 32'h7000_0048 && !power_and_reset_indication)
-            RMA_strap <= ~RMA_strap;
+            Allow_RMA_on_PPD <= ~Allow_RMA_on_PPD;
     end
     //-------------------------------------------------------------------
 
