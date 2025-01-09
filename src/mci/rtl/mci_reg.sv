@@ -7,7 +7,7 @@ module mci_reg (
 
         input wire s_cpuif_req,
         input wire s_cpuif_req_is_wr,
-        input wire [11:0] s_cpuif_addr,
+        input wire [12:0] s_cpuif_addr,
         input wire [31:0] s_cpuif_wr_data,
         input wire [31:0] s_cpuif_wr_biten,
         output wire s_cpuif_req_stall_wr,
@@ -27,7 +27,7 @@ module mci_reg (
     //--------------------------------------------------------------------------
     logic cpuif_req;
     logic cpuif_req_is_wr;
-    logic [11:0] cpuif_addr;
+    logic [12:0] cpuif_addr;
     logic [31:0] cpuif_wr_data;
     logic [31:0] cpuif_wr_biten;
     logic cpuif_req_stall_wr;
@@ -119,6 +119,23 @@ module mci_reg (
         logic [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
         logic [10-1:0]LOCKABLE_SCRATCH_REG;
         logic [8-1:0]NON_STICKY_GENERIC_SCRATCH_REG;
+        struct packed{
+            logic global_intr_en_r;
+            logic error_intr_en_r;
+            logic notif_intr_en_r;
+            logic error_global_intr_r;
+            logic notif_global_intr_r;
+            logic error_internal_intr_r;
+            logic notif_internal_intr_r;
+            logic error_intr_trig_r;
+            logic notif_intr_trig_r;
+            logic error_wdt_timer1_timeout_intr_count_r;
+            logic error_wdt_timer2_timeout_intr_count_r;
+            logic notif_mcu_sram_ecc_cor_intr_count_r;
+            logic error_wdt_timer1_timeout_intr_count_incr_r;
+            logic error_wdt_timer2_timeout_intr_count_incr_r;
+            logic notif_mcu_sram_ecc_cor_intr_count_incr_r;
+        } intr_block_rf;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
     logic decoded_req;
@@ -127,107 +144,122 @@ module mci_reg (
     logic [31:0] decoded_wr_biten;
 
     always_comb begin
-        decoded_reg_strb.CAPABILITIES = cpuif_req_masked & (cpuif_addr == 12'h0);
-        decoded_reg_strb.HW_REV_ID = cpuif_req_masked & (cpuif_addr == 12'h4);
+        decoded_reg_strb.CAPABILITIES = cpuif_req_masked & (cpuif_addr == 13'h0);
+        decoded_reg_strb.HW_REV_ID = cpuif_req_masked & (cpuif_addr == 13'h4);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.FW_REV_ID[i0] = cpuif_req_masked & (cpuif_addr == 12'h8 + i0*12'h4);
+            decoded_reg_strb.FW_REV_ID[i0] = cpuif_req_masked & (cpuif_addr == 13'h8 + i0*13'h4);
         end
-        decoded_reg_strb.HW_CONFIG = cpuif_req_masked & (cpuif_addr == 12'h10);
-        decoded_reg_strb.BOOT_STATUS = cpuif_req_masked & (cpuif_addr == 12'h20);
-        decoded_reg_strb.FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 12'h24);
-        decoded_reg_strb.RESET_REASON = cpuif_req_masked & (cpuif_addr == 12'h28);
-        decoded_reg_strb.HW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 12'h40);
-        decoded_reg_strb.HW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 12'h44);
-        decoded_reg_strb.FW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 12'h48);
-        decoded_reg_strb.FW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 12'h4c);
-        decoded_reg_strb.HW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 12'h50);
-        decoded_reg_strb.FW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 12'h54);
+        decoded_reg_strb.HW_CONFIG = cpuif_req_masked & (cpuif_addr == 13'h10);
+        decoded_reg_strb.BOOT_STATUS = cpuif_req_masked & (cpuif_addr == 13'h20);
+        decoded_reg_strb.FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 13'h24);
+        decoded_reg_strb.RESET_REASON = cpuif_req_masked & (cpuif_addr == 13'h28);
+        decoded_reg_strb.HW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 13'h40);
+        decoded_reg_strb.HW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 13'h44);
+        decoded_reg_strb.FW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 13'h48);
+        decoded_reg_strb.FW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 13'h4c);
+        decoded_reg_strb.HW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 13'h50);
+        decoded_reg_strb.FW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 13'h54);
         for(int i0=0; i0<8; i0++) begin
-            decoded_reg_strb.FW_EXTENDED_ERROR_INFO[i0] = cpuif_req_masked & (cpuif_addr == 12'h58 + i0*12'h4);
+            decoded_reg_strb.FW_EXTENDED_ERROR_INFO[i0] = cpuif_req_masked & (cpuif_addr == 13'h58 + i0*13'h4);
         end
-        decoded_reg_strb.WDT_TIMER1_EN = cpuif_req_masked & (cpuif_addr == 12'h80);
-        decoded_reg_strb.WDT_TIMER1_CTRL = cpuif_req_masked & (cpuif_addr == 12'h84);
+        decoded_reg_strb.WDT_TIMER1_EN = cpuif_req_masked & (cpuif_addr == 13'h80);
+        decoded_reg_strb.WDT_TIMER1_CTRL = cpuif_req_masked & (cpuif_addr == 13'h84);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.WDT_TIMER1_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 12'h88 + i0*12'h4);
+            decoded_reg_strb.WDT_TIMER1_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 13'h88 + i0*13'h4);
         end
-        decoded_reg_strb.WDT_TIMER2_EN = cpuif_req_masked & (cpuif_addr == 12'h90);
-        decoded_reg_strb.WDT_TIMER2_CTRL = cpuif_req_masked & (cpuif_addr == 12'h94);
+        decoded_reg_strb.WDT_TIMER2_EN = cpuif_req_masked & (cpuif_addr == 13'h90);
+        decoded_reg_strb.WDT_TIMER2_CTRL = cpuif_req_masked & (cpuif_addr == 13'h94);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.WDT_TIMER2_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 12'h98 + i0*12'h4);
+            decoded_reg_strb.WDT_TIMER2_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 13'h98 + i0*13'h4);
         end
-        decoded_reg_strb.WDT_STATUS = cpuif_req_masked & (cpuif_addr == 12'ha0);
+        decoded_reg_strb.WDT_STATUS = cpuif_req_masked & (cpuif_addr == 13'ha0);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.WDT_CFG[i0] = cpuif_req_masked & (cpuif_addr == 12'hb0 + i0*12'h4);
+            decoded_reg_strb.WDT_CFG[i0] = cpuif_req_masked & (cpuif_addr == 13'hb0 + i0*13'h4);
         end
-        decoded_reg_strb.MCU_TIMER_CONFIG = cpuif_req_masked & (cpuif_addr == 12'hc0);
-        decoded_reg_strb.MCU_CLK_GATING_EN = cpuif_req_masked & (cpuif_addr == 12'hc4);
-        decoded_reg_strb.MCU_RV_MTIME_L = cpuif_req_masked & (cpuif_addr == 12'hc8);
-        decoded_reg_strb.MCU_RV_MTIME_H = cpuif_req_masked & (cpuif_addr == 12'hcc);
-        decoded_reg_strb.MCU_RV_MTIMECMP_L = cpuif_req_masked & (cpuif_addr == 12'hd0);
-        decoded_reg_strb.MCU_RV_MTIMECMP_H = cpuif_req_masked & (cpuif_addr == 12'hd4);
-        decoded_reg_strb.RESET_REQUEST = cpuif_req_masked & (cpuif_addr == 12'h100);
-        decoded_reg_strb.RESET_ACK = cpuif_req_masked & (cpuif_addr == 12'h104);
-        decoded_reg_strb.CALIPTRA_BOOT_GO = cpuif_req_masked & (cpuif_addr == 12'h108);
-        decoded_reg_strb.CALIPTRA_AXI_ID = cpuif_req_masked & (cpuif_addr == 12'h10c);
-        decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE = cpuif_req_masked & (cpuif_addr == 12'h110);
-        decoded_reg_strb.RUNTIME_LOCK = cpuif_req_masked & (cpuif_addr == 12'h114);
+        decoded_reg_strb.MCU_TIMER_CONFIG = cpuif_req_masked & (cpuif_addr == 13'hc0);
+        decoded_reg_strb.MCU_CLK_GATING_EN = cpuif_req_masked & (cpuif_addr == 13'hc4);
+        decoded_reg_strb.MCU_RV_MTIME_L = cpuif_req_masked & (cpuif_addr == 13'hc8);
+        decoded_reg_strb.MCU_RV_MTIME_H = cpuif_req_masked & (cpuif_addr == 13'hcc);
+        decoded_reg_strb.MCU_RV_MTIMECMP_L = cpuif_req_masked & (cpuif_addr == 13'hd0);
+        decoded_reg_strb.MCU_RV_MTIMECMP_H = cpuif_req_masked & (cpuif_addr == 13'hd4);
+        decoded_reg_strb.RESET_REQUEST = cpuif_req_masked & (cpuif_addr == 13'h100);
+        decoded_reg_strb.RESET_ACK = cpuif_req_masked & (cpuif_addr == 13'h104);
+        decoded_reg_strb.CALIPTRA_BOOT_GO = cpuif_req_masked & (cpuif_addr == 13'h108);
+        decoded_reg_strb.CALIPTRA_AXI_ID = cpuif_req_masked & (cpuif_addr == 13'h10c);
+        decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE = cpuif_req_masked & (cpuif_addr == 13'h110);
+        decoded_reg_strb.RUNTIME_LOCK = cpuif_req_masked & (cpuif_addr == 13'h114);
         for(int i0=0; i0<5; i0++) begin
-            decoded_reg_strb.MBOX0_VALID_AXI_ID[i0] = cpuif_req_masked & (cpuif_addr == 12'h180 + i0*12'h4);
-        end
-        for(int i0=0; i0<5; i0++) begin
-            decoded_reg_strb.MBOX0_VALID_AXI_ID_LOCK[i0] = cpuif_req_masked & (cpuif_addr == 12'h1a0 + i0*12'h4);
+            decoded_reg_strb.MBOX0_VALID_AXI_ID[i0] = cpuif_req_masked & (cpuif_addr == 13'h180 + i0*13'h4);
         end
         for(int i0=0; i0<5; i0++) begin
-            decoded_reg_strb.MBOX1_VALID_AXI_ID[i0] = cpuif_req_masked & (cpuif_addr == 12'h1c0 + i0*12'h4);
+            decoded_reg_strb.MBOX0_VALID_AXI_ID_LOCK[i0] = cpuif_req_masked & (cpuif_addr == 13'h1a0 + i0*13'h4);
         end
         for(int i0=0; i0<5; i0++) begin
-            decoded_reg_strb.MBOX1_VALID_AXI_ID_LOCK[i0] = cpuif_req_masked & (cpuif_addr == 12'h1e0 + i0*12'h4);
+            decoded_reg_strb.MBOX1_VALID_AXI_ID[i0] = cpuif_req_masked & (cpuif_addr == 13'h1c0 + i0*13'h4);
+        end
+        for(int i0=0; i0<5; i0++) begin
+            decoded_reg_strb.MBOX1_VALID_AXI_ID_LOCK[i0] = cpuif_req_masked & (cpuif_addr == 13'h1e0 + i0*13'h4);
         end
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.GENERIC_INPUT_WIRES[i0] = cpuif_req_masked & (cpuif_addr == 12'h400 + i0*12'h4);
+            decoded_reg_strb.GENERIC_INPUT_WIRES[i0] = cpuif_req_masked & (cpuif_addr == 13'h400 + i0*13'h4);
         end
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.GENERIC_OUTPUT_WIRES[i0] = cpuif_req_masked & (cpuif_addr == 12'h408 + i0*12'h4);
+            decoded_reg_strb.GENERIC_OUTPUT_WIRES[i0] = cpuif_req_masked & (cpuif_addr == 13'h408 + i0*13'h4);
         end
-        decoded_reg_strb.DEBUG_IN = cpuif_req_masked & (cpuif_addr == 12'h410);
-        decoded_reg_strb.DEBUG_OUT = cpuif_req_masked & (cpuif_addr == 12'h414);
-        decoded_reg_strb.FUSE_WR_DONE = cpuif_req_masked & (cpuif_addr == 12'h440);
+        decoded_reg_strb.DEBUG_IN = cpuif_req_masked & (cpuif_addr == 13'h410);
+        decoded_reg_strb.DEBUG_OUT = cpuif_req_masked & (cpuif_addr == 13'h414);
+        decoded_reg_strb.FUSE_WR_DONE = cpuif_req_masked & (cpuif_addr == 13'h440);
         for(int i0=0; i0<8; i0++) begin
             for(int i1=0; i1<12; i1++) begin
-                decoded_reg_strb.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] = cpuif_req_masked & (cpuif_addr == 12'h480 + i0*12'h30 + i1*12'h4);
+                decoded_reg_strb.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] = cpuif_req_masked & (cpuif_addr == 13'h480 + i0*13'h30 + i1*13'h4);
             end
         end
         for(int i0=0; i0<10; i0++) begin
-            decoded_reg_strb.STICKY_DATA_VAULT_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 12'h800 + i0*12'h4);
+            decoded_reg_strb.STICKY_DATA_VAULT_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 13'h800 + i0*13'h4);
         end
         for(int i0=0; i0<10; i0++) begin
             for(int i1=0; i1<12; i1++) begin
-                decoded_reg_strb.STICKY_DATA_VAULT_ENTRY[i0][i1] = cpuif_req_masked & (cpuif_addr == 12'h828 + i0*12'h30 + i1*12'h4);
+                decoded_reg_strb.STICKY_DATA_VAULT_ENTRY[i0][i1] = cpuif_req_masked & (cpuif_addr == 13'h828 + i0*13'h30 + i1*13'h4);
             end
         end
         for(int i0=0; i0<10; i0++) begin
-            decoded_reg_strb.DATA_VAULT_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 12'ha08 + i0*12'h4);
+            decoded_reg_strb.DATA_VAULT_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 13'ha08 + i0*13'h4);
         end
         for(int i0=0; i0<10; i0++) begin
             for(int i1=0; i1<12; i1++) begin
-                decoded_reg_strb.DATA_VAULT_ENTRY[i0][i1] = cpuif_req_masked & (cpuif_addr == 12'ha30 + i0*12'h30 + i1*12'h4);
+                decoded_reg_strb.DATA_VAULT_ENTRY[i0][i1] = cpuif_req_masked & (cpuif_addr == 13'ha30 + i0*13'h30 + i1*13'h4);
             end
         end
         for(int i0=0; i0<8; i0++) begin
-            decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 12'hc10 + i0*12'h4);
+            decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 13'hc10 + i0*13'h4);
         end
         for(int i0=0; i0<8; i0++) begin
-            decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG[i0] = cpuif_req_masked & (cpuif_addr == 12'hc30 + i0*12'h4);
+            decoded_reg_strb.STICKY_LOCKABLE_SCRATCH_REG[i0] = cpuif_req_masked & (cpuif_addr == 13'hc30 + i0*13'h4);
         end
         for(int i0=0; i0<10; i0++) begin
-            decoded_reg_strb.LOCKABLE_SCRATCH_REG_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 12'hc50 + i0*12'h4);
+            decoded_reg_strb.LOCKABLE_SCRATCH_REG_CTRL[i0] = cpuif_req_masked & (cpuif_addr == 13'hc50 + i0*13'h4);
         end
         for(int i0=0; i0<10; i0++) begin
-            decoded_reg_strb.LOCKABLE_SCRATCH_REG[i0] = cpuif_req_masked & (cpuif_addr == 12'hc78 + i0*12'h4);
+            decoded_reg_strb.LOCKABLE_SCRATCH_REG[i0] = cpuif_req_masked & (cpuif_addr == 13'hc78 + i0*13'h4);
         end
         for(int i0=0; i0<8; i0++) begin
-            decoded_reg_strb.NON_STICKY_GENERIC_SCRATCH_REG[i0] = cpuif_req_masked & (cpuif_addr == 12'hca0 + i0*12'h4);
+            decoded_reg_strb.NON_STICKY_GENERIC_SCRATCH_REG[i0] = cpuif_req_masked & (cpuif_addr == 13'hca0 + i0*13'h4);
         end
+        decoded_reg_strb.intr_block_rf.global_intr_en_r = cpuif_req_masked & (cpuif_addr == 13'h1000);
+        decoded_reg_strb.intr_block_rf.error_intr_en_r = cpuif_req_masked & (cpuif_addr == 13'h1004);
+        decoded_reg_strb.intr_block_rf.notif_intr_en_r = cpuif_req_masked & (cpuif_addr == 13'h1008);
+        decoded_reg_strb.intr_block_rf.error_global_intr_r = cpuif_req_masked & (cpuif_addr == 13'h100c);
+        decoded_reg_strb.intr_block_rf.notif_global_intr_r = cpuif_req_masked & (cpuif_addr == 13'h1010);
+        decoded_reg_strb.intr_block_rf.error_internal_intr_r = cpuif_req_masked & (cpuif_addr == 13'h1014);
+        decoded_reg_strb.intr_block_rf.notif_internal_intr_r = cpuif_req_masked & (cpuif_addr == 13'h1018);
+        decoded_reg_strb.intr_block_rf.error_intr_trig_r = cpuif_req_masked & (cpuif_addr == 13'h101c);
+        decoded_reg_strb.intr_block_rf.notif_intr_trig_r = cpuif_req_masked & (cpuif_addr == 13'h1020);
+        decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h1100);
+        decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h1104);
+        decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h1180);
+        decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1200);
+        decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1204);
+        decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1208);
     end
 
     // Pass down signals to next stage
@@ -426,7 +458,7 @@ module mci_reg (
         } CALIPTRA_BOOT_GO;
         struct packed{
             struct packed{
-                logic next;
+                logic [15:0] next;
                 logic load_next;
             } size;
         } FW_SRAM_EXEC_REGION_SIZE;
@@ -544,6 +576,126 @@ module mci_reg (
                 logic load_next;
             } data;
         } [8-1:0]NON_STICKY_GENERIC_SCRATCH_REG;
+        struct packed{
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } error_en;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_en;
+            } global_intr_en_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } error_wdt_timer1_timeout_en;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } error_wdt_timer2_timeout_en;
+            } error_intr_en_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_mcu_sram_ecc_cor_en;
+            } notif_intr_en_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } agg_sts;
+            } error_global_intr_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } agg_sts;
+            } notif_global_intr_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } error_wdt_timer1_timeout_sts;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } error_wdt_timer2_timeout_sts;
+            } error_internal_intr_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_mcu_sram_ecc_cor_sts;
+            } notif_internal_intr_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } error_wdt_timer1_timeout_trig;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } error_wdt_timer2_timeout_trig;
+            } error_intr_trig_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_mcu_sram_ecc_cor_trig;
+            } notif_intr_trig_r;
+            struct packed{
+                struct packed{
+                    logic [31:0] next;
+                    logic load_next;
+                    logic incrthreshold;
+                    logic incrsaturate;
+                } cnt;
+            } error_wdt_timer1_timeout_intr_count_r;
+            struct packed{
+                struct packed{
+                    logic [31:0] next;
+                    logic load_next;
+                    logic incrthreshold;
+                    logic incrsaturate;
+                } cnt;
+            } error_wdt_timer2_timeout_intr_count_r;
+            struct packed{
+                struct packed{
+                    logic [31:0] next;
+                    logic load_next;
+                    logic incrthreshold;
+                    logic incrsaturate;
+                } cnt;
+            } notif_mcu_sram_ecc_cor_intr_count_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                    logic decrthreshold;
+                    logic underflow;
+                } pulse;
+            } error_wdt_timer1_timeout_intr_count_incr_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                    logic decrthreshold;
+                    logic underflow;
+                } pulse;
+            } error_wdt_timer2_timeout_intr_count_incr_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                    logic decrthreshold;
+                    logic underflow;
+                } pulse;
+            } notif_mcu_sram_ecc_cor_intr_count_incr_r;
+        } intr_block_rf;
     } field_combo_t;
     field_combo_t field_combo;
 
@@ -699,7 +851,7 @@ module mci_reg (
         } CALIPTRA_BOOT_GO;
         struct packed{
             struct packed{
-                logic value;
+                logic [15:0] value;
             } size;
         } FW_SRAM_EXEC_REGION_SIZE;
         struct packed{
@@ -797,6 +949,95 @@ module mci_reg (
                 logic [31:0] value;
             } data;
         } [8-1:0]NON_STICKY_GENERIC_SCRATCH_REG;
+        struct packed{
+            struct packed{
+                struct packed{
+                    logic value;
+                } error_en;
+                struct packed{
+                    logic value;
+                } notif_en;
+            } global_intr_en_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } error_wdt_timer1_timeout_en;
+                struct packed{
+                    logic value;
+                } error_wdt_timer2_timeout_en;
+            } error_intr_en_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } notif_mcu_sram_ecc_cor_en;
+            } notif_intr_en_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } agg_sts;
+            } error_global_intr_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } agg_sts;
+            } notif_global_intr_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } error_wdt_timer1_timeout_sts;
+                struct packed{
+                    logic value;
+                } error_wdt_timer2_timeout_sts;
+            } error_internal_intr_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } notif_mcu_sram_ecc_cor_sts;
+            } notif_internal_intr_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } error_wdt_timer1_timeout_trig;
+                struct packed{
+                    logic value;
+                } error_wdt_timer2_timeout_trig;
+            } error_intr_trig_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } notif_mcu_sram_ecc_cor_trig;
+            } notif_intr_trig_r;
+            struct packed{
+                struct packed{
+                    logic [31:0] value;
+                } cnt;
+            } error_wdt_timer1_timeout_intr_count_r;
+            struct packed{
+                struct packed{
+                    logic [31:0] value;
+                } cnt;
+            } error_wdt_timer2_timeout_intr_count_r;
+            struct packed{
+                struct packed{
+                    logic [31:0] value;
+                } cnt;
+            } notif_mcu_sram_ecc_cor_intr_count_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } pulse;
+            } error_wdt_timer1_timeout_intr_count_incr_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } pulse;
+            } error_wdt_timer2_timeout_intr_count_incr_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } pulse;
+            } notif_mcu_sram_ecc_cor_intr_count_incr_r;
+        } intr_block_rf;
     } field_storage_t;
     field_storage_t field_storage;
 
@@ -1450,21 +1691,23 @@ module mci_reg (
     end
     // Field: mci_reg.FW_SRAM_EXEC_REGION_SIZE.size
     always_comb begin
-        automatic logic [0:0] next_c = field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value;
+        automatic logic [15:0] next_c = field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value;
         automatic logic load_next_c = '0;
         if(decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE && decoded_req_is_wr && hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.swwe) begin // SW write
-            next_c = (field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            next_c = (field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value & ~decoded_wr_biten[15:0]) | (decoded_wr_data[15:0] & decoded_wr_biten[15:0]);
             load_next_c = '1;
         end
         field_combo.FW_SRAM_EXEC_REGION_SIZE.size.next = next_c;
         field_combo.FW_SRAM_EXEC_REGION_SIZE.size.load_next = load_next_c;
     end
-
-    always_ff @(posedge clk) begin
-        if(field_combo.FW_SRAM_EXEC_REGION_SIZE.size.load_next) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value <= 16'h0;
+        end else if(field_combo.FW_SRAM_EXEC_REGION_SIZE.size.load_next) begin
             field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value <= field_combo.FW_SRAM_EXEC_REGION_SIZE.size.next;
         end
     end
+    assign hwif_out.FW_SRAM_EXEC_REGION_SIZE.size.value = field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value;
     // Field: mci_reg.RUNTIME_LOCK.lock
     always_comb begin
         automatic logic [0:0] next_c = field_storage.RUNTIME_LOCK.lock.value;
@@ -1854,6 +2097,459 @@ module mci_reg (
             end
         end
     end
+    // Field: mci_reg.intr_block_rf.global_intr_en_r.error_en
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.global_intr_en_r.error_en.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.global_intr_en_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write
+            next_c = (field_storage.intr_block_rf.global_intr_en_r.error_en.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.global_intr_en_r.error_en.next = next_c;
+        field_combo.intr_block_rf.global_intr_en_r.error_en.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.global_intr_en_r.error_en.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.global_intr_en_r.error_en.load_next) begin
+            field_storage.intr_block_rf.global_intr_en_r.error_en.value <= field_combo.intr_block_rf.global_intr_en_r.error_en.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.global_intr_en_r.notif_en
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.global_intr_en_r.notif_en.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.global_intr_en_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write
+            next_c = (field_storage.intr_block_rf.global_intr_en_r.notif_en.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.global_intr_en_r.notif_en.next = next_c;
+        field_combo.intr_block_rf.global_intr_en_r.notif_en.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.global_intr_en_r.notif_en.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.global_intr_en_r.notif_en.load_next) begin
+            field_storage.intr_block_rf.global_intr_en_r.notif_en.value <= field_combo.intr_block_rf.global_intr_en_r.notif_en.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.error_intr_en_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write
+            next_c = (field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.next = next_c;
+        field_combo.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.load_next) begin
+            field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.value <= field_combo.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.error_intr_en_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write
+            next_c = (field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.next = next_c;
+        field_combo.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.load_next) begin
+            field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.value <= field_combo.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.notif_intr_en_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write
+            next_c = (field_storage.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.next = next_c;
+        field_combo.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.load_next) begin
+            field_storage.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.value <= field_combo.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.error_global_intr_r.agg_sts
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.error_global_intr_r.agg_sts.value;
+        automatic logic load_next_c = '0;
+        
+        // HW Write
+        next_c = hwif_out.intr_block_rf.error_internal_intr_r.intr;
+        load_next_c = '1;
+        field_combo.intr_block_rf.error_global_intr_r.agg_sts.next = next_c;
+        field_combo.intr_block_rf.error_global_intr_r.agg_sts.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.error_global_intr_r.agg_sts.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.error_global_intr_r.agg_sts.load_next) begin
+            field_storage.intr_block_rf.error_global_intr_r.agg_sts.value <= field_combo.intr_block_rf.error_global_intr_r.agg_sts.next;
+        end
+    end
+    assign hwif_out.intr_block_rf.error_global_intr_r.intr =
+        |(field_storage.intr_block_rf.error_global_intr_r.agg_sts.value & field_storage.intr_block_rf.global_intr_en_r.error_en.value);
+    // Field: mci_reg.intr_block_rf.notif_global_intr_r.agg_sts
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.notif_global_intr_r.agg_sts.value;
+        automatic logic load_next_c = '0;
+        
+        // HW Write
+        next_c = hwif_out.intr_block_rf.notif_internal_intr_r.intr;
+        load_next_c = '1;
+        field_combo.intr_block_rf.notif_global_intr_r.agg_sts.next = next_c;
+        field_combo.intr_block_rf.notif_global_intr_r.agg_sts.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_global_intr_r.agg_sts.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif_global_intr_r.agg_sts.load_next) begin
+            field_storage.intr_block_rf.notif_global_intr_r.agg_sts.value <= field_combo.intr_block_rf.notif_global_intr_r.agg_sts.next;
+        end
+    end
+    assign hwif_out.intr_block_rf.notif_global_intr_r.intr =
+        |(field_storage.intr_block_rf.notif_global_intr_r.agg_sts.value & field_storage.intr_block_rf.global_intr_en_r.notif_en.value);
+    // Field: mci_reg.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value;
+        automatic logic load_next_c = '0;
+        if(field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.value != '0) begin // stickybit
+            next_c = field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value | field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end else if(decoded_reg_strb.intr_block_rf.error_internal_intr_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write 1 clear
+            next_c = field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.next = next_c;
+        field_combo.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.load_next) begin
+            field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value <= field_combo.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value;
+        automatic logic load_next_c = '0;
+        if(field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.value != '0) begin // stickybit
+            next_c = field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value | field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end else if(decoded_reg_strb.intr_block_rf.error_internal_intr_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write 1 clear
+            next_c = field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value & ~(decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.next = next_c;
+        field_combo.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.load_next) begin
+            field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value <= field_combo.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.next;
+        end
+    end
+    assign hwif_out.intr_block_rf.error_internal_intr_r.intr =
+        |(field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value & field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.value)
+        || |(field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value & field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.value);
+    // Field: mci_reg.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value;
+        automatic logic load_next_c = '0;
+        if(field_storage.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value != '0) begin // stickybit
+            next_c = field_storage.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value | field_storage.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end else if(decoded_reg_strb.intr_block_rf.notif_internal_intr_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write 1 clear
+            next_c = field_storage.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.next = next_c;
+        field_combo.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.load_next) begin
+            field_storage.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value <= field_combo.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.next;
+        end
+    end
+    assign hwif_out.intr_block_rf.notif_internal_intr_r.intr =
+        |(field_storage.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value & field_storage.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.value);
+    // Field: mci_reg.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.error_intr_trig_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write 1 set
+            next_c = field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.value | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end else begin // singlepulse clears back to 0
+            next_c = '0;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.next = next_c;
+        field_combo.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.load_next) begin
+            field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.value <= field_combo.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.error_intr_trig_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write 1 set
+            next_c = field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.value | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end else begin // singlepulse clears back to 0
+            next_c = '0;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.next = next_c;
+        field_combo.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.load_next) begin
+            field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.value <= field_combo.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.notif_intr_trig_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write 1 set
+            next_c = field_storage.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end else begin // singlepulse clears back to 0
+            next_c = '0;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.next = next_c;
+        field_combo.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.load_next) begin
+            field_storage.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value <= field_combo.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt
+    always_comb begin
+        automatic logic [31:0] next_c = field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write
+            next_c = (field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value) begin // increment
+            if(((33)'(next_c) + 32'h1) > 32'hffffffff) begin // up-counter saturated
+                next_c = 32'hffffffff;
+            end else begin
+                next_c = next_c + 32'h1;
+            end
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.incrthreshold = (field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.value >= 32'hffffffff);
+        field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.incrsaturate = (field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.value >= 32'hffffffff);
+        if(next_c > 32'hffffffff) begin
+            next_c = 32'hffffffff;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.next = next_c;
+        field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.value <= 32'h0;
+        end else if(field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.load_next) begin
+            field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.value <= field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt
+    always_comb begin
+        automatic logic [31:0] next_c = field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write
+            next_c = (field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value) begin // increment
+            if(((33)'(next_c) + 32'h1) > 32'hffffffff) begin // up-counter saturated
+                next_c = 32'hffffffff;
+            end else begin
+                next_c = next_c + 32'h1;
+            end
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.incrthreshold = (field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.value >= 32'hffffffff);
+        field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.incrsaturate = (field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.value >= 32'hffffffff);
+        if(next_c > 32'hffffffff) begin
+            next_c = 32'hffffffff;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.next = next_c;
+        field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.value <= 32'h0;
+        end else if(field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.load_next) begin
+            field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.value <= field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt
+    always_comb begin
+        automatic logic [31:0] next_c = field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r && decoded_req_is_wr && !(hwif_in.soc_req)) begin // SW write
+            next_c = (field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value) begin // increment
+            if(((33)'(next_c) + 32'h1) > 32'hffffffff) begin // up-counter saturated
+                next_c = 32'hffffffff;
+            end else begin
+                next_c = next_c + 32'h1;
+            end
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.incrthreshold = (field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.value >= 32'hffffffff);
+        field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.incrsaturate = (field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.value >= 32'hffffffff);
+        if(next_c > 32'hffffffff) begin
+            next_c = 32'hffffffff;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.next = next_c;
+        field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.value <= 32'h0;
+        end else if(field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.load_next) begin
+            field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.value <= field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value;
+        automatic logic load_next_c = '0;
+        if(field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.value) begin // HW Write - we
+            next_c = field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value) begin // decrement
+            field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.underflow = (next_c < (1'h1));
+            next_c = next_c - 1'h1;
+            load_next_c = '1;
+        end else begin
+            field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.underflow = '0;
+        end
+        field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.decrthreshold = (field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value <= 1'd0);
+        field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.next = next_c;
+        field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.load_next) begin
+            field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value <= field_combo.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value;
+        automatic logic load_next_c = '0;
+        if(field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.value) begin // HW Write - we
+            next_c = field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value) begin // decrement
+            field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.underflow = (next_c < (1'h1));
+            next_c = next_c - 1'h1;
+            load_next_c = '1;
+        end else begin
+            field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.underflow = '0;
+        end
+        field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.decrthreshold = (field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value <= 1'd0);
+        field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.next = next_c;
+        field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.load_next) begin
+            field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value <= field_combo.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value;
+        automatic logic load_next_c = '0;
+        if(field_storage.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value) begin // HW Write - we
+            next_c = field_storage.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value) begin // decrement
+            field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.underflow = (next_c < (1'h1));
+            next_c = next_c - 1'h1;
+            load_next_c = '1;
+        end else begin
+            field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.underflow = '0;
+        end
+        field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.decrthreshold = (field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value <= 1'd0);
+        field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.next = next_c;
+        field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.load_next) begin
+            field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value <= field_combo.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.next;
+        end
+    end
 
     //--------------------------------------------------------------------------
     // Write response
@@ -1871,7 +2567,7 @@ module mci_reg (
     logic [31:0] readback_data;
     
     // Assign readback values to a flattened array
-    logic [472-1:0][31:0] readback_array;
+    logic [487-1:0][31:0] readback_array;
     assign readback_array[0][3:0] = (decoded_reg_strb.CAPABILITIES && !decoded_req_is_wr) ? hwif_in.CAPABILITIES.NUM_MBOX.next : '0;
     assign readback_array[0][31:4] = '0;
     assign readback_array[1][15:0] = (decoded_reg_strb.HW_REV_ID && !decoded_req_is_wr) ? 'h1000 : '0;
@@ -1935,8 +2631,8 @@ module mci_reg (
     assign readback_array[41][31:1] = '0;
     assign readback_array[42][0:0] = (decoded_reg_strb.CALIPTRA_AXI_ID && !decoded_req_is_wr) ? hwif_in.CALIPTRA_AXI_ID.id.next : '0;
     assign readback_array[42][31:1] = '0;
-    assign readback_array[43][0:0] = (decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE && !decoded_req_is_wr) ? field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value : '0;
-    assign readback_array[43][31:1] = '0;
+    assign readback_array[43][15:0] = (decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE && !decoded_req_is_wr) ? field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value : '0;
+    assign readback_array[43][31:16] = '0;
     assign readback_array[44][0:0] = (decoded_reg_strb.RUNTIME_LOCK && !decoded_req_is_wr) ? field_storage.RUNTIME_LOCK.lock.value : '0;
     assign readback_array[44][31:1] = '0;
     for(genvar i0=0; i0<5; i0++) begin
@@ -2007,6 +2703,37 @@ module mci_reg (
     for(genvar i0=0; i0<8; i0++) begin
         assign readback_array[i0*1 + 464][31:0] = (decoded_reg_strb.NON_STICKY_GENERIC_SCRATCH_REG[i0] && !decoded_req_is_wr) ? field_storage.NON_STICKY_GENERIC_SCRATCH_REG[i0].data.value : '0;
     end
+    assign readback_array[472][0:0] = (decoded_reg_strb.intr_block_rf.global_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.global_intr_en_r.error_en.value : '0;
+    assign readback_array[472][1:1] = (decoded_reg_strb.intr_block_rf.global_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.global_intr_en_r.notif_en.value : '0;
+    assign readback_array[472][31:2] = '0;
+    assign readback_array[473][0:0] = (decoded_reg_strb.intr_block_rf.error_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer1_timeout_en.value : '0;
+    assign readback_array[473][1:1] = (decoded_reg_strb.intr_block_rf.error_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_intr_en_r.error_wdt_timer2_timeout_en.value : '0;
+    assign readback_array[473][31:2] = '0;
+    assign readback_array[474][0:0] = (decoded_reg_strb.intr_block_rf.notif_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_intr_en_r.notif_mcu_sram_ecc_cor_en.value : '0;
+    assign readback_array[474][31:1] = '0;
+    assign readback_array[475][0:0] = (decoded_reg_strb.intr_block_rf.error_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_global_intr_r.agg_sts.value : '0;
+    assign readback_array[475][31:1] = '0;
+    assign readback_array[476][0:0] = (decoded_reg_strb.intr_block_rf.notif_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_global_intr_r.agg_sts.value : '0;
+    assign readback_array[476][31:1] = '0;
+    assign readback_array[477][0:0] = (decoded_reg_strb.intr_block_rf.error_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value : '0;
+    assign readback_array[477][1:1] = (decoded_reg_strb.intr_block_rf.error_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value : '0;
+    assign readback_array[477][31:2] = '0;
+    assign readback_array[478][0:0] = (decoded_reg_strb.intr_block_rf.notif_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value : '0;
+    assign readback_array[478][31:1] = '0;
+    assign readback_array[479][0:0] = (decoded_reg_strb.intr_block_rf.error_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer1_timeout_trig.value : '0;
+    assign readback_array[479][1:1] = (decoded_reg_strb.intr_block_rf.error_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_intr_trig_r.error_wdt_timer2_timeout_trig.value : '0;
+    assign readback_array[479][31:2] = '0;
+    assign readback_array[480][0:0] = (decoded_reg_strb.intr_block_rf.notif_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value : '0;
+    assign readback_array[480][31:1] = '0;
+    assign readback_array[481][31:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.value : '0;
+    assign readback_array[482][31:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.value : '0;
+    assign readback_array[483][31:0] = (decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.value : '0;
+    assign readback_array[484][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[484][31:1] = '0;
+    assign readback_array[485][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[485][31:1] = '0;
+    assign readback_array[486][0:0] = (decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[486][31:1] = '0;
 
     // Reduce the array
     always_comb begin
@@ -2014,7 +2741,7 @@ module mci_reg (
         readback_done = decoded_req & ~decoded_req_is_wr;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<472; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<487; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 

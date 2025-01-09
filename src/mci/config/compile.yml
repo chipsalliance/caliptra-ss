@@ -32,7 +32,7 @@ targets:
       - $COMPILE_ROOT/rtl/mci_mcu_sram_if.sv
       - $COMPILE_ROOT/rtl/cif_if.sv
       - $COMPILE_ROOT/rtl/mci_wdt_top.sv
-      - $COMPILE_ROOT/rtl/mci_wdt.sv
+      - $COMPILE_ROOT/rtl/wdt.sv # FIXME REMOVE
       - $COMPILE_ROOT/rtl/mci_reg_top.sv
       - $COMPILE_ROOT/rtl/mci_reg.sv
     tops: [mci_top]

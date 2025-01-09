@@ -1000,7 +1000,7 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__FW_SRAM_EXEC_REGION_SIZE_bit_cg size_bit_cg[1];
+        mci_reg__FW_SRAM_EXEC_REGION_SIZE_bit_cg size_bit_cg[16];
         mci_reg__FW_SRAM_EXEC_REGION_SIZE_fld_cg fld_cg;
         rand uvm_reg_field size;
 
@@ -1015,7 +1015,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.size = new("size");
-            this.size.configure(this, 1, 0, "RW", 0, 'h0, 0, 1, 0);
+            this.size.configure(this, 16, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(size_bit_cg[bt]) size_bit_cg[bt] = new();
             end
@@ -1624,6 +1624,578 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__NON_STICKY_GENERIC_SCRATCH_REG
 
+    // Reg - mci_reg::intr_block_t::global_intr_en_t
+    class mci_reg__intr_block_t__global_intr_en_t extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__global_intr_en_t_bit_cg error_en_bit_cg[1];
+        mci_reg__intr_block_t__global_intr_en_t_bit_cg notif_en_bit_cg[1];
+        mci_reg__intr_block_t__global_intr_en_t_fld_cg fld_cg;
+        rand uvm_reg_field error_en;
+        rand uvm_reg_field notif_en;
+
+        function new(string name = "mci_reg__intr_block_t__global_intr_en_t");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.error_en = new("error_en");
+            this.error_en.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.notif_en = new("notif_en");
+            this.notif_en.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(error_en_bit_cg[bt]) error_en_bit_cg[bt] = new();
+                foreach(notif_en_bit_cg[bt]) notif_en_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__global_intr_en_t
+
+    // Reg - mci_reg::intr_block_t::error_intr_en_t
+    class mci_reg__intr_block_t__error_intr_en_t extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__error_intr_en_t_bit_cg error_wdt_timer1_timeout_en_bit_cg[1];
+        mci_reg__intr_block_t__error_intr_en_t_bit_cg error_wdt_timer2_timeout_en_bit_cg[1];
+        mci_reg__intr_block_t__error_intr_en_t_fld_cg fld_cg;
+        rand uvm_reg_field error_wdt_timer1_timeout_en;
+        rand uvm_reg_field error_wdt_timer2_timeout_en;
+
+        function new(string name = "mci_reg__intr_block_t__error_intr_en_t");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.error_wdt_timer1_timeout_en = new("error_wdt_timer1_timeout_en");
+            this.error_wdt_timer1_timeout_en.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.error_wdt_timer2_timeout_en = new("error_wdt_timer2_timeout_en");
+            this.error_wdt_timer2_timeout_en.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(error_wdt_timer1_timeout_en_bit_cg[bt]) error_wdt_timer1_timeout_en_bit_cg[bt] = new();
+                foreach(error_wdt_timer2_timeout_en_bit_cg[bt]) error_wdt_timer2_timeout_en_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__error_intr_en_t
+
+    // Reg - mci_reg::intr_block_t::notif_intr_en_t
+    class mci_reg__intr_block_t__notif_intr_en_t extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__notif_intr_en_t_bit_cg notif_mcu_sram_ecc_cor_en_bit_cg[1];
+        mci_reg__intr_block_t__notif_intr_en_t_fld_cg fld_cg;
+        rand uvm_reg_field notif_mcu_sram_ecc_cor_en;
+
+        function new(string name = "mci_reg__intr_block_t__notif_intr_en_t");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.notif_mcu_sram_ecc_cor_en = new("notif_mcu_sram_ecc_cor_en");
+            this.notif_mcu_sram_ecc_cor_en.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(notif_mcu_sram_ecc_cor_en_bit_cg[bt]) notif_mcu_sram_ecc_cor_en_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__notif_intr_en_t
+
+    // Reg - mci_reg::intr_block_t::global_intr_t_agg_sts_dd3dcf0a
+    class mci_reg__intr_block_t__global_intr_t_agg_sts_dd3dcf0a extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__global_intr_t_agg_sts_dd3dcf0a_bit_cg agg_sts_bit_cg[1];
+        mci_reg__intr_block_t__global_intr_t_agg_sts_dd3dcf0a_fld_cg fld_cg;
+        rand uvm_reg_field agg_sts;
+
+        function new(string name = "mci_reg__intr_block_t__global_intr_t_agg_sts_dd3dcf0a");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.agg_sts = new("agg_sts");
+            this.agg_sts.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(agg_sts_bit_cg[bt]) agg_sts_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__global_intr_t_agg_sts_dd3dcf0a
+
+    // Reg - mci_reg::intr_block_t::global_intr_t_agg_sts_e6399b4a
+    class mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a_bit_cg agg_sts_bit_cg[1];
+        mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a_fld_cg fld_cg;
+        rand uvm_reg_field agg_sts;
+
+        function new(string name = "mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.agg_sts = new("agg_sts");
+            this.agg_sts.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(agg_sts_bit_cg[bt]) agg_sts_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a
+
+    // Reg - mci_reg::intr_block_t::error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a
+    class mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a_bit_cg error_wdt_timer1_timeout_sts_bit_cg[1];
+        mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a_bit_cg error_wdt_timer2_timeout_sts_bit_cg[1];
+        mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a_fld_cg fld_cg;
+        rand uvm_reg_field error_wdt_timer1_timeout_sts;
+        rand uvm_reg_field error_wdt_timer2_timeout_sts;
+
+        function new(string name = "mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.error_wdt_timer1_timeout_sts = new("error_wdt_timer1_timeout_sts");
+            this.error_wdt_timer1_timeout_sts.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
+            this.error_wdt_timer2_timeout_sts = new("error_wdt_timer2_timeout_sts");
+            this.error_wdt_timer2_timeout_sts.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(error_wdt_timer1_timeout_sts_bit_cg[bt]) error_wdt_timer1_timeout_sts_bit_cg[bt] = new();
+                foreach(error_wdt_timer2_timeout_sts_bit_cg[bt]) error_wdt_timer2_timeout_sts_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a
+
+    // Reg - mci_reg::intr_block_t::notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a
+    class mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a_bit_cg notif_mcu_sram_ecc_cor_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a_fld_cg fld_cg;
+        rand uvm_reg_field notif_mcu_sram_ecc_cor_sts;
+
+        function new(string name = "mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.notif_mcu_sram_ecc_cor_sts = new("notif_mcu_sram_ecc_cor_sts");
+            this.notif_mcu_sram_ecc_cor_sts.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(notif_mcu_sram_ecc_cor_sts_bit_cg[bt]) notif_mcu_sram_ecc_cor_sts_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a
+
+    // Reg - mci_reg::intr_block_t::error_intr_trig_t
+    class mci_reg__intr_block_t__error_intr_trig_t extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__error_intr_trig_t_bit_cg error_wdt_timer1_timeout_trig_bit_cg[1];
+        mci_reg__intr_block_t__error_intr_trig_t_bit_cg error_wdt_timer2_timeout_trig_bit_cg[1];
+        mci_reg__intr_block_t__error_intr_trig_t_fld_cg fld_cg;
+        rand uvm_reg_field error_wdt_timer1_timeout_trig;
+        rand uvm_reg_field error_wdt_timer2_timeout_trig;
+
+        function new(string name = "mci_reg__intr_block_t__error_intr_trig_t");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.error_wdt_timer1_timeout_trig = new("error_wdt_timer1_timeout_trig");
+            this.error_wdt_timer1_timeout_trig.configure(this, 1, 0, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_wdt_timer2_timeout_trig = new("error_wdt_timer2_timeout_trig");
+            this.error_wdt_timer2_timeout_trig.configure(this, 1, 1, "W1S", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(error_wdt_timer1_timeout_trig_bit_cg[bt]) error_wdt_timer1_timeout_trig_bit_cg[bt] = new();
+                foreach(error_wdt_timer2_timeout_trig_bit_cg[bt]) error_wdt_timer2_timeout_trig_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__error_intr_trig_t
+
+    // Reg - mci_reg::intr_block_t::notif_intr_trig_t
+    class mci_reg__intr_block_t__notif_intr_trig_t extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__notif_intr_trig_t_bit_cg notif_mcu_sram_ecc_cor_trig_bit_cg[1];
+        mci_reg__intr_block_t__notif_intr_trig_t_fld_cg fld_cg;
+        rand uvm_reg_field notif_mcu_sram_ecc_cor_trig;
+
+        function new(string name = "mci_reg__intr_block_t__notif_intr_trig_t");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.notif_mcu_sram_ecc_cor_trig = new("notif_mcu_sram_ecc_cor_trig");
+            this.notif_mcu_sram_ecc_cor_trig.configure(this, 1, 0, "W1S", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(notif_mcu_sram_ecc_cor_trig_bit_cg[bt]) notif_mcu_sram_ecc_cor_trig_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__notif_intr_trig_t
+
+    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_8575f7c3
+    class mci_reg__intr_block_t__intr_count_t_cnt_8575f7c3 extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_t_cnt_8575f7c3_bit_cg cnt_bit_cg[32];
+        mci_reg__intr_block_t__intr_count_t_cnt_8575f7c3_fld_cg fld_cg;
+        rand uvm_reg_field cnt;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_t_cnt_8575f7c3");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.cnt = new("cnt");
+            this.cnt.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(cnt_bit_cg[bt]) cnt_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_t_cnt_8575f7c3
+
+    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_c6c5aac2
+    class mci_reg__intr_block_t__intr_count_t_cnt_c6c5aac2 extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_t_cnt_c6c5aac2_bit_cg cnt_bit_cg[32];
+        mci_reg__intr_block_t__intr_count_t_cnt_c6c5aac2_fld_cg fld_cg;
+        rand uvm_reg_field cnt;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_t_cnt_c6c5aac2");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.cnt = new("cnt");
+            this.cnt.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(cnt_bit_cg[bt]) cnt_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_t_cnt_c6c5aac2
+
+    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_9b47838c
+    class mci_reg__intr_block_t__intr_count_t_cnt_9b47838c extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_t_cnt_9b47838c_bit_cg cnt_bit_cg[32];
+        mci_reg__intr_block_t__intr_count_t_cnt_9b47838c_fld_cg fld_cg;
+        rand uvm_reg_field cnt;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_t_cnt_9b47838c");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.cnt = new("cnt");
+            this.cnt.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(cnt_bit_cg[bt]) cnt_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_t_cnt_9b47838c
+
+    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_aa999fdc
+    class mci_reg__intr_block_t__intr_count_incr_t_pulse_aa999fdc extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_aa999fdc_bit_cg pulse_bit_cg[1];
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_aa999fdc_fld_cg fld_cg;
+        rand uvm_reg_field pulse;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_incr_t_pulse_aa999fdc");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.pulse = new("pulse");
+            this.pulse.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(pulse_bit_cg[bt]) pulse_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_aa999fdc
+
+    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_404e12db
+    class mci_reg__intr_block_t__intr_count_incr_t_pulse_404e12db extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_404e12db_bit_cg pulse_bit_cg[1];
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_404e12db_fld_cg fld_cg;
+        rand uvm_reg_field pulse;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_incr_t_pulse_404e12db");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.pulse = new("pulse");
+            this.pulse.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(pulse_bit_cg[bt]) pulse_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_404e12db
+
+    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_2667a59b
+    class mci_reg__intr_block_t__intr_count_incr_t_pulse_2667a59b extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_2667a59b_bit_cg pulse_bit_cg[1];
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_2667a59b_fld_cg fld_cg;
+        rand uvm_reg_field pulse;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_incr_t_pulse_2667a59b");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.pulse = new("pulse");
+            this.pulse.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(pulse_bit_cg[bt]) pulse_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_2667a59b
+
+    // Regfile - mci_reg::intr_block_t
+    class mci_reg__intr_block_t extends uvm_reg_block;
+        rand mci_reg__intr_block_t__global_intr_en_t global_intr_en_r;
+        rand mci_reg__intr_block_t__error_intr_en_t error_intr_en_r;
+        rand mci_reg__intr_block_t__notif_intr_en_t notif_intr_en_r;
+        rand mci_reg__intr_block_t__global_intr_t_agg_sts_dd3dcf0a error_global_intr_r;
+        rand mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a notif_global_intr_r;
+        rand mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a error_internal_intr_r;
+        rand mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a notif_internal_intr_r;
+        rand mci_reg__intr_block_t__error_intr_trig_t error_intr_trig_r;
+        rand mci_reg__intr_block_t__notif_intr_trig_t notif_intr_trig_r;
+        rand mci_reg__intr_block_t__intr_count_t_cnt_8575f7c3 error_wdt_timer1_timeout_intr_count_r;
+        rand mci_reg__intr_block_t__intr_count_t_cnt_c6c5aac2 error_wdt_timer2_timeout_intr_count_r;
+        rand mci_reg__intr_block_t__intr_count_t_cnt_9b47838c notif_mcu_sram_ecc_cor_intr_count_r;
+        rand mci_reg__intr_block_t__intr_count_incr_t_pulse_aa999fdc error_wdt_timer1_timeout_intr_count_incr_r;
+        rand mci_reg__intr_block_t__intr_count_incr_t_pulse_404e12db error_wdt_timer2_timeout_intr_count_incr_r;
+        rand mci_reg__intr_block_t__intr_count_incr_t_pulse_2667a59b notif_mcu_sram_ecc_cor_intr_count_incr_r;
+
+        function new(string name = "mci_reg__intr_block_t");
+            super.new(name);
+        endfunction : new
+
+        virtual function void build();
+            this.default_map = create_map("reg_map", 0, 4, UVM_LITTLE_ENDIAN);
+            this.global_intr_en_r = new("global_intr_en_r");
+            this.global_intr_en_r.configure(this);
+
+            this.global_intr_en_r.build();
+            this.default_map.add_reg(this.global_intr_en_r, 'h0);
+            this.error_intr_en_r = new("error_intr_en_r");
+            this.error_intr_en_r.configure(this);
+
+            this.error_intr_en_r.build();
+            this.default_map.add_reg(this.error_intr_en_r, 'h4);
+            this.notif_intr_en_r = new("notif_intr_en_r");
+            this.notif_intr_en_r.configure(this);
+
+            this.notif_intr_en_r.build();
+            this.default_map.add_reg(this.notif_intr_en_r, 'h8);
+            this.error_global_intr_r = new("error_global_intr_r");
+            this.error_global_intr_r.configure(this);
+
+            this.error_global_intr_r.build();
+            this.default_map.add_reg(this.error_global_intr_r, 'hc);
+            this.notif_global_intr_r = new("notif_global_intr_r");
+            this.notif_global_intr_r.configure(this);
+
+            this.notif_global_intr_r.build();
+            this.default_map.add_reg(this.notif_global_intr_r, 'h10);
+            this.error_internal_intr_r = new("error_internal_intr_r");
+            this.error_internal_intr_r.configure(this);
+
+            this.error_internal_intr_r.build();
+            this.default_map.add_reg(this.error_internal_intr_r, 'h14);
+            this.notif_internal_intr_r = new("notif_internal_intr_r");
+            this.notif_internal_intr_r.configure(this);
+
+            this.notif_internal_intr_r.build();
+            this.default_map.add_reg(this.notif_internal_intr_r, 'h18);
+            this.error_intr_trig_r = new("error_intr_trig_r");
+            this.error_intr_trig_r.configure(this);
+
+            this.error_intr_trig_r.build();
+            this.default_map.add_reg(this.error_intr_trig_r, 'h1c);
+            this.notif_intr_trig_r = new("notif_intr_trig_r");
+            this.notif_intr_trig_r.configure(this);
+
+            this.notif_intr_trig_r.build();
+            this.default_map.add_reg(this.notif_intr_trig_r, 'h20);
+            this.error_wdt_timer1_timeout_intr_count_r = new("error_wdt_timer1_timeout_intr_count_r");
+            this.error_wdt_timer1_timeout_intr_count_r.configure(this);
+
+            this.error_wdt_timer1_timeout_intr_count_r.build();
+            this.default_map.add_reg(this.error_wdt_timer1_timeout_intr_count_r, 'h100);
+            this.error_wdt_timer2_timeout_intr_count_r = new("error_wdt_timer2_timeout_intr_count_r");
+            this.error_wdt_timer2_timeout_intr_count_r.configure(this);
+
+            this.error_wdt_timer2_timeout_intr_count_r.build();
+            this.default_map.add_reg(this.error_wdt_timer2_timeout_intr_count_r, 'h104);
+            this.notif_mcu_sram_ecc_cor_intr_count_r = new("notif_mcu_sram_ecc_cor_intr_count_r");
+            this.notif_mcu_sram_ecc_cor_intr_count_r.configure(this);
+
+            this.notif_mcu_sram_ecc_cor_intr_count_r.build();
+            this.default_map.add_reg(this.notif_mcu_sram_ecc_cor_intr_count_r, 'h180);
+            this.error_wdt_timer1_timeout_intr_count_incr_r = new("error_wdt_timer1_timeout_intr_count_incr_r");
+            this.error_wdt_timer1_timeout_intr_count_incr_r.configure(this);
+
+            this.error_wdt_timer1_timeout_intr_count_incr_r.build();
+            this.default_map.add_reg(this.error_wdt_timer1_timeout_intr_count_incr_r, 'h200);
+            this.error_wdt_timer2_timeout_intr_count_incr_r = new("error_wdt_timer2_timeout_intr_count_incr_r");
+            this.error_wdt_timer2_timeout_intr_count_incr_r.configure(this);
+
+            this.error_wdt_timer2_timeout_intr_count_incr_r.build();
+            this.default_map.add_reg(this.error_wdt_timer2_timeout_intr_count_incr_r, 'h204);
+            this.notif_mcu_sram_ecc_cor_intr_count_incr_r = new("notif_mcu_sram_ecc_cor_intr_count_incr_r");
+            this.notif_mcu_sram_ecc_cor_intr_count_incr_r.configure(this);
+
+            this.notif_mcu_sram_ecc_cor_intr_count_incr_r.build();
+            this.default_map.add_reg(this.notif_mcu_sram_ecc_cor_intr_count_incr_r, 'h208);
+        endfunction : build
+    endclass : mci_reg__intr_block_t
+
     // Addrmap - mci_reg
     class mci_reg extends uvm_reg_block;
         rand mci_reg__CAPABILITIES CAPABILITIES;
@@ -1679,6 +2251,7 @@ package mci_reg_uvm;
         rand mci_reg__LOCKABLE_SCRATCH_REG_CTRL LOCKABLE_SCRATCH_REG_CTRL[10];
         rand mci_reg__LOCKABLE_SCRATCH_REG LOCKABLE_SCRATCH_REG[10];
         rand mci_reg__NON_STICKY_GENERIC_SCRATCH_REG NON_STICKY_GENERIC_SCRATCH_REG[8];
+        rand mci_reg__intr_block_t intr_block_rf;
 
         function new(string name = "mci_reg");
             super.new(name);
@@ -1993,6 +2566,10 @@ package mci_reg_uvm;
                 this.NON_STICKY_GENERIC_SCRATCH_REG[i0].build();
                 this.default_map.add_reg(this.NON_STICKY_GENERIC_SCRATCH_REG[i0], 'hca0 + i0*'h4);
             end
+            this.intr_block_rf = new("intr_block_rf");
+            this.intr_block_rf.configure(this);
+            this.intr_block_rf.build();
+            this.default_map.add_submap(this.intr_block_rf.default_map, 'h1000);
         endfunction : build
     endclass : mci_reg
 

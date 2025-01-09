@@ -25,8 +25,8 @@ package mci_pkg;
     // to facilitate the hitless update
     parameter MCI_MCU_UPDATE_RESET_CYLES = 10;
 
-    parameter  WDT_TIMEOUT_PERIOD_NUM_DWORDS = 2;
-    localparam WDT_TIMEOUT_PERIOD_W = WDT_TIMEOUT_PERIOD_NUM_DWORDS * 32;
+    parameter  MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS = 2;
+    localparam MCI_WDT_TIMEOUT_PERIOD_W = MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS * 32;
 
     typedef enum logic [3:0] {
         BOOT_IDLE          = 4'b0000,

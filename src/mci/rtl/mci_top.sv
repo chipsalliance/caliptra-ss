@@ -49,14 +49,21 @@ module mci_top
     
     mci_reg__out_t mci_reg_hwif_out;
 
+    // MCU SRAM signals
+    logic mcu_sram_single_ecc_error;
+    logic mcu_sram_double_ecc_error;
 
     // WDT signals
     logic timer1_en;
     logic timer2_en;
     logic timer1_restart;
     logic timer2_restart;
-    logic [WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer1_timeout_period;
-    logic [WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer2_timeout_period;
+    logic wdt_timer1_timeout_serviced; 
+    logic wdt_timer2_timeout_serviced; 
+    logic t1_timeout_p;
+    logic t2_timeout_p;
+    logic [MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer1_timeout_period;
+    logic [MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer2_timeout_period;
 
 
 
@@ -119,13 +126,13 @@ mci_mcu_sram_ctrl #(
     .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
 ) i_mci_mcu_sram_ctrl (
     // MCI clk
-    .clk    (clk),
+    .clk,
 
     // MCI Resets
     .rst_b (mci_rst_b), // FIXME: Need to sync reset
 
     // Interface
-    .fw_sram_exec_region_size('0), // FIXME
+    .fw_sram_exec_region_size(mci_reg_hwif_out.FW_SRAM_EXEC_REGION_SIZE.size.value), 
 
     // Caliptra internal fabric response interface
     .cif_resp_if (mcu_sram_req_if.response),
@@ -136,11 +143,11 @@ mci_mcu_sram_ctrl #(
     .strap_clp_axi_user, 
 
     // Access lock interface
-    .mcu_sram_fw_exec_region_lock,  // FIXME
+    .mcu_sram_fw_exec_region_lock,  
 
     // ECC Status
-    .sram_single_ecc_error(),   // FIXME
-    .sram_double_ecc_error(),   // FIXME
+    .sram_single_ecc_error(mcu_sram_single_ecc_error),  
+    .sram_double_ecc_error(mcu_sram_double_ecc_error),  
 
     // Interface with SRAM
     .mci_mcu_sram_req_if(mci_mcu_sram_req_if)
@@ -154,43 +161,55 @@ assign timer2_en = mci_reg_hwif_out.WDT_TIMER2_EN.timer2_en.value;
 assign timer1_restart = mci_reg_hwif_out.WDT_TIMER1_CTRL.timer1_restart.value;
 assign timer2_restart = mci_reg_hwif_out.WDT_TIMER2_CTRL.timer2_restart.value;
 
-for (genvar i = 0; i < WDT_TIMEOUT_PERIOD_NUM_DWORDS; i++) begin
+for (genvar i = 0; i < MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS; i++) begin
     assign timer1_timeout_period[i] = mci_reg_hwif_out.WDT_TIMER1_TIMEOUT_PERIOD[i].timer1_timeout_period.value;
     assign timer2_timeout_period[i] = mci_reg_hwif_out.WDT_TIMER2_TIMEOUT_PERIOD[i].timer2_timeout_period.value;
 end
 
-mci_wdt_top i_mci_wdt_top (
-    .clk    (clk),
+mci_wdt_top #(
+    .WDT_TIMEOUT_PERIOD_NUM_DWORDS(MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS)
+) i_mci_wdt_top (
+    .clk,
 
     // MCI Resets
-    .rst_b (mci_rst_b),
+    .rst_b (mci_rst_b), // FIXME: Need to sync reset
 
     //Timer inputs
-    .timer1_en (timer1_en),
-    .timer2_en (timer2_en),
-    .timer1_restart (timer1_restart),
-    .timer2_restart (timer2_restart),
-    .timer1_timeout_period(timer1_timeout_period),
-    .timer2_timeout_period(timer2_timeout_period),
+    .timer1_en,
+    .timer2_en,
+    .timer1_restart,
+    .timer2_restart,
+    .timer1_timeout_period,
+    .timer2_timeout_period,
     //Interrupts
-    .wdt_timer1_timeout_serviced('0), // FIXME need to connect to interrupt from CSR 
-    .wdt_timer2_timeout_serviced('0), // FIXME need to connect to interrupt from CSR 
+    .wdt_timer1_timeout_serviced, 
+    .wdt_timer2_timeout_serviced, 
     //WDT STATUS bits pulse
-    .t1_timeout_p (), // FIXME connect to interrupt from CSR
-    .t2_timeout_p ()  // FIXME connect to interrupt from CSR
+    .t1_timeout_p, 
+    .t2_timeout_p  
 );
 
 // MCI Reg
 // MCI CSR bank
 mci_reg_top i_mci_reg_top (
-    .clk    (clk),
+    .clk,
 
     // MCI Resets
     .mci_rst_b      (mci_rst_b),// FIXME: Need to sync reset
     .mci_pwrgood    ('0),       // FIXME: need to add
 
     // REG HWIF signals
-    .mci_reg_hwif_out (mci_reg_hwif_out),
+    .mci_reg_hwif_out,
+
+    // WDT specific signals
+    .wdt_timer1_timeout_serviced, 
+    .wdt_timer2_timeout_serviced, 
+    .t1_timeout_p,
+    .t2_timeout_p,
+
+    // MCU SRAM specific signals
+    .mcu_sram_single_ecc_error,
+    .mcu_sram_double_ecc_error,
     
     // Caliptra internal fabric response interface
     .cif_resp_if (mci_reg_req_if.response)

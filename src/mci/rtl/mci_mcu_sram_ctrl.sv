@@ -87,7 +87,7 @@ logic exec_region_match;
 logic exec_region_req;
 logic prot_region_req;
 
-// Momory region mapping
+// Memory region mapping
 logic [28:0]                    exec_region_base; // TODO: Report to status register?
 logic [28:0]                    exec_region_end_calc;  
 logic [28:0]                    exec_region_end;  // TODO: Report to status register?
@@ -140,8 +140,8 @@ assign exec_region_end_calc     = exec_region_base + exec_region_size_bytes - 1;
 assign exec_region_overflow  = |exec_region_end_calc[28:MCU_SRAM_CIF_ADDR_W];
 // If there was overflow set to the MCU SRAM size.
 // Otherwise take the calculated value
-assign exec_region_end          = exec_region_overflow ? (MCU_SRAM_SIZE_BYTES-1) : 
-                                    exec_region_end_calc;  
+assign exec_region_end  = exec_region_overflow ? (MCU_SRAM_SIZE_BYTES-1) : 
+                            exec_region_end_calc;  
 
 
 
@@ -164,7 +164,7 @@ assign prot_region_req = cif_resp_if.dv & !exec_region_match;
 
 ///////////////////////////////////////////////
 // Determine if the user matches any of the  
-// previlaged users
+// privileged users
 ///////////////////////////////////////////////
 assign mcu_lsu_req = ~(|(cif_resp_if.req_data.user ^ strap_mcu_lsu_axi_user));
 assign mcu_ifu_req = ~(|(cif_resp_if.req_data.user ^ strap_mcu_ifu_axi_user));
@@ -303,7 +303,7 @@ rvecc_decode ecc_decode (
 );
 
 // Only send data back if we are in the sram_read_data_phase. Assumptions made:
-// 1. We will only have sram_read_data_phase if a privilaged agent is doing the read
+// 1. We will only have sram_read_data_phase if a privileged agent is doing the read
 // 2. If an ECC error is detected it is OK to send garbage data back.
 assign cif_resp_if.rdata = sram_read_data_phase ?  sram_rdata_cor : '0;
 
@@ -329,7 +329,7 @@ assign cif_resp_if.hold = sram_read_req_phase;
 // for DV.
 assign cif_resp_if.error = exec_region_filter_error | 
                            prot_region_filter_error | 
-                           sram_double_ecc_error; // FIXME any other error conditions? 
+                           sram_double_ecc_error; 
 
 
 endmodule

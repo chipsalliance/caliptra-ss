@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+`include "mci_reg_defines.svh"
+
 module mci_reg_top 
     import mci_reg_pkg::*;
     #(
@@ -25,6 +27,18 @@ module mci_reg_top
 
     // REG HWIF signals
     output mci_reg__out_t mci_reg_hwif_out,
+
+    // WDT specific signals
+    output logic wdt_timer1_timeout_serviced,
+    output logic wdt_timer2_timeout_serviced,
+    input  logic t1_timeout_p,
+    input  logic t2_timeout_p,
+
+    // MCU SRAM specific signals
+    input logic mcu_sram_single_ecc_error,
+    input logic mcu_sram_double_ecc_error,
+
+
     
     // Caliptra internal fabric response interface
     cif_if.response  cif_resp_if
@@ -63,7 +77,7 @@ assign cif_resp_if.error = mci_reg_read_error | mci_reg_write_error;
 // Hold response logic
 ///////////////////////////////////////////////
 
-// Reads and writes occure in 1 clock cycles
+// Reads and writes occur in 1 clock cycles
 assign cif_resp_if.hold = '0;
 
 
@@ -79,6 +93,7 @@ assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 // Agent requests
 assign mci_reg_hwif_in.cptra_req    = '0;     // FIXME
 assign mci_reg_hwif_in.mcu_req      = '0;      // FIXME
+assign mci_reg_hwif_in.soc_req = '0; // FIXME
 
 
 assign mci_reg_hwif_in.CAPABILITIES = '0; // FIXME
@@ -108,6 +123,37 @@ assign mci_reg_hwif_in.STICKY_LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
 assign mci_reg_hwif_in.STICKY_LOCKABLE_SCRATCH_REG = '0; // FIXME
 assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
 assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG = '0; // FIXME
+
+
+// WDT timeout Serviced
+// NOTE: Since error_internal_intr_r is Write-1-to-clear, capture writes to the
+//       WDT interrupt bits to detect the interrupt being serviced.
+//       It would be preferable to decode this from interrupt signals somehow,
+//       but that would require modifying interrupt register RDL which has been
+//       standardized.
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if(!mci_rst_b) begin
+        wdt_timer1_timeout_serviced <= 1'b0;
+        wdt_timer2_timeout_serviced <= 1'b0;
+    end
+    else if (cif_resp_if.dv && cif_resp_if.req_data.write && (cif_resp_if.req_data.addr[MCI_REG_MIN_ADDR_WIDTH-1:0] == MCI_REG_ADDR_WIDTH'(`MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R))) begin // FIXME should I be using a more global define than the MCI_REG_INTR?
+        wdt_timer1_timeout_serviced <= cif_resp_if.req_data.wdata[`MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_WDT_TIMER1_TIMEOUT_STS_LOW];
+        wdt_timer2_timeout_serviced <= cif_resp_if.req_data.wdata[`MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_WDT_TIMER2_TIMEOUT_STS_LOW];
+    end
+    else begin
+        wdt_timer1_timeout_serviced <= 1'b0;
+        wdt_timer2_timeout_serviced <= 1'b0;
+    end
+end
+
+
+// WDT timeout Interrupts
+assign mci_reg_hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.hwset = t1_timeout_p;
+assign mci_reg_hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.hwset = t2_timeout_p;
+
+
+// MCU SRAM Interrupts
+assign mci_reg_hwif_in.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.hwset = mcu_sram_single_ecc_error;
 
 ///////////////////////////////////////////////
 // MCI REG Module      

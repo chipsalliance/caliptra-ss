@@ -4,7 +4,7 @@
 package mci_reg_pkg;
 
     localparam MCI_REG_DATA_WIDTH = 32;
-    localparam MCI_REG_MIN_ADDR_WIDTH = 12;
+    localparam MCI_REG_MIN_ADDR_WIDTH = 13;
 
     typedef struct packed{
         logic [3:0] next;
@@ -230,11 +230,38 @@ package mci_reg_pkg;
     } mci_reg__LOCKABLE_SCRATCH_REG__in_t;
 
     typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__error_wdt_timer1_timeout_sts_enable_fa7e6d0f_next_293a6067_resetsignal_3e0ae056__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__error_wdt_timer2_timeout_sts_enable_38137b0c_next_1084f7bd_resetsignal_3e0ae056__in_t;
+
+    typedef struct packed{
+        mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__error_wdt_timer1_timeout_sts_enable_fa7e6d0f_next_293a6067_resetsignal_3e0ae056__in_t error_wdt_timer1_timeout_sts;
+        mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__error_wdt_timer2_timeout_sts_enable_38137b0c_next_1084f7bd_resetsignal_3e0ae056__in_t error_wdt_timer2_timeout_sts;
+    } mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__notif_mcu_sram_ecc_cor_sts_enable_d03e9c2f_next_0c3eb3de__in_t;
+
+    typedef struct packed{
+        mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__notif_mcu_sram_ecc_cor_sts_enable_d03e9c2f_next_0c3eb3de__in_t notif_mcu_sram_ecc_cor_sts;
+    } mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__in_t;
+
+    typedef struct packed{
+        mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__in_t error_internal_intr_r;
+        mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__in_t notif_internal_intr_r;
+    } mci_reg__intr_block_t__in_t;
+
+    typedef struct packed{
         logic mci_rst_b;
         logic mcu_rst_b;
         logic mci_pwrgood;
         logic cptra_req;
         logic mcu_req;
+        logic soc_req;
         mci_reg__CAPABILITIES__in_t CAPABILITIES;
         mci_reg__HW_REV_ID__in_t HW_REV_ID;
         mci_reg__HW_CONFIG__in_t HW_CONFIG;
@@ -262,6 +289,7 @@ package mci_reg_pkg;
         mci_reg__STICKY_LOCKABLE_SCRATCH_REG__in_t [8-1:0]STICKY_LOCKABLE_SCRATCH_REG;
         mci_reg__LOCKABLE_SCRATCH_REG_CTRL__in_t [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
         mci_reg__LOCKABLE_SCRATCH_REG__in_t [10-1:0]LOCKABLE_SCRATCH_REG;
+        mci_reg__intr_block_t__in_t intr_block_rf;
     } mci_reg__in_t;
 
     typedef struct packed{
@@ -460,6 +488,14 @@ package mci_reg_pkg;
     } mci_reg__RESET_ACK__out_t;
 
     typedef struct packed{
+        logic [15:0] value;
+    } mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__out_t;
+
+    typedef struct packed{
+        mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__out_t size;
+    } mci_reg__FW_SRAM_EXEC_REGION_SIZE__out_t;
+
+    typedef struct packed{
         logic [31:0] value;
     } mci_reg__GENERIC_OUTPUT_WIRES__wires__out_t;
 
@@ -517,6 +553,29 @@ package mci_reg_pkg;
     } mci_reg__LOCKABLE_SCRATCH_REG_CTRL__out_t;
 
     typedef struct packed{
+        logic intr;
+    } mci_reg__intr_block_t__global_intr_t_agg_sts_dd3dcf0a__out_t;
+
+    typedef struct packed{
+        logic intr;
+    } mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a__out_t;
+
+    typedef struct packed{
+        logic intr;
+    } mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__out_t;
+
+    typedef struct packed{
+        logic intr;
+    } mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__out_t;
+
+    typedef struct packed{
+        mci_reg__intr_block_t__global_intr_t_agg_sts_dd3dcf0a__out_t error_global_intr_r;
+        mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a__out_t notif_global_intr_r;
+        mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__out_t error_internal_intr_r;
+        mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__out_t notif_internal_intr_r;
+    } mci_reg__intr_block_t__out_t;
+
+    typedef struct packed{
         mci_reg__BOOT_STATUS__out_t BOOT_STATUS;
         mci_reg__FLOW_STATUS__out_t FLOW_STATUS;
         mci_reg__RESET_REASON__out_t RESET_REASON;
@@ -540,6 +599,7 @@ package mci_reg_pkg;
         mci_reg__MCU_RV_MTIMECMP_H__out_t MCU_RV_MTIMECMP_H;
         mci_reg__RESET_REQUEST__out_t RESET_REQUEST;
         mci_reg__RESET_ACK__out_t RESET_ACK;
+        mci_reg__FW_SRAM_EXEC_REGION_SIZE__out_t FW_SRAM_EXEC_REGION_SIZE;
         mci_reg__GENERIC_OUTPUT_WIRES__out_t [2-1:0]GENERIC_OUTPUT_WIRES;
         mci_reg__FUSE_WR_DONE__out_t FUSE_WR_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
@@ -547,8 +607,9 @@ package mci_reg_pkg;
         mci_reg__DATA_VAULT_CTRL__out_t [10-1:0]DATA_VAULT_CTRL;
         mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__out_t [8-1:0]STICKY_LOCKABLE_SCRATCH_REG_CTRL;
         mci_reg__LOCKABLE_SCRATCH_REG_CTRL__out_t [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
+        mci_reg__intr_block_t__out_t intr_block_rf;
     } mci_reg__out_t;
 
-    localparam MCI_REG_ADDR_WIDTH = 32'd12;
+    localparam MCI_REG_ADDR_WIDTH = 32'd13;
 
 endpackage

@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 // Description:
-//     Intantiate all WDTs and required glue logic 
+//     Instantiate all WDTs and required glue logic 
 //
 
 module mci_wdt_top 
@@ -39,7 +39,8 @@ module mci_wdt_top
     input  logic wdt_timer2_timeout_serviced,
     //WDT STATUS bits 
     output logic t1_timeout_p,
-    output logic t2_timeout_p
+    output logic t2_timeout_p,
+    output logic fatal_timeout
 
     );
     
@@ -61,14 +62,17 @@ always_ff @(posedge clk or negedge rst_b) begin
 end
 
 always_comb t1_timeout_p = t1_timeout & ~t1_timeout_f;
-always_comb t2_timeout_p = t2_timeout & ~t2_timeout_f;
+// Extra timer2_en qual because in cascade mode we don't want to trigger a typical interrupt.
+// We only trigger a fatal (nmi) interrupt
+always_comb t2_timeout_p = t2_timeout & ~t2_timeout_f & timer2_en; 
 
-mci_wdt #(
+//Generate t1 and t2 timeout interrupt pulse
+wdt #(
     .WDT_TIMEOUT_PERIOD_NUM_DWORDS(WDT_TIMEOUT_PERIOD_NUM_DWORDS)
-) i_mci_wdt (
+) i_wdt (
 
     .clk,
-    .rst_b,
+    .cptra_rst_b(rst_b),
 
     .timer1_en,
     .timer2_en,
@@ -81,7 +85,8 @@ mci_wdt #(
     .wdt_timer2_timeout_serviced,
     //WDT STATUS bits
     .t1_timeout,
-    .t2_timeout
+    .t2_timeout,
+    .fatal_timeout
 );
 
 
