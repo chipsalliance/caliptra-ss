@@ -1973,7 +1973,9 @@ module caliptra_ss_top
     assign lc_escalate_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_escalate_en_o);
     assign lc_check_byp_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_check_byp_en_o);
 
-    assign otp_lc_data_tb = otp_ctrl_pkg::otp_lc_data_t'(u_otp_ctrl.otp_lc_data_o);
+    // TODO: This port is hacked in LCC's BFM in order to have provisioned tokens
+    //assign otp_caliptra_ss_lc_data_tb = otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(u_otp_ctrl.otp_caliptra_ss_lc_data_o);
+    assign otp_lc_data_tb = otp_ctrl_pkg::otp_lc_data_t'(u_lc_ctrl_bfm.otp_lc_data_o);
 
     //--------------------------------------------------------------------------------------------
 
@@ -2006,9 +2008,31 @@ module caliptra_ss_top
     assign pwr_lc_o_tb = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o);
     logic pwr_otp_init_i;
 
+
+
+    logic [7:0] lc_flash_rma_ack_tb;
+    logic [7:0] from_bfm_lc_flash_rma_ack;
+    assign lc_flash_rma_ack_tb = from_bfm_lc_flash_rma_ack;
+
+    logic Allow_RMA_on_PPD;
+    logic fake_reset;
+
+    logic [3:0]  to_bfm_lc_flash_rma_req_o;
+    assign to_bfm_lc_flash_rma_req_o = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_flash_rma_req_o);
+
+    
+
     lc_ctrl_bfm u_lc_ctrl_bfm (
         .clk(core_clk),
         .reset_n(rst_l),
+
+
+        .caliptra_ss_lc_axi_rd_req(caliptra_ss_lc_axi_rd_req),
+        .caliptra_ss_lc_axi_rd_rsp(caliptra_ss_lc_axi_rd_rsp),
+        .fake_reset(fake_reset),
+        .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
+        .from_bfm_caliptra_ss_lc_flash_rma_ack(from_bfm_caliptra_ss_lc_flash_rma_ack),
+        .to_bfm_caliptra_ss_lc_flash_rma_req_o(to_bfm_caliptra_ss_lc_flash_rma_req_o),
 
         // TL-UL Interface
         .lc_ctrl_dmi_tl_h2d(),
@@ -2021,6 +2045,10 @@ module caliptra_ss_top
         // Alert Handler Interface
         .lc_ctrl_alert_rx(),
         .lc_ctrl_alert_tx(caliptra_prim_alert_pkg::alert_tx_t'(lc_ctrl_alert_tx_tb)),
+
+        // OTP hack
+        .otp_lc_data_o(),
+        .from_otp_lc_data_i(otp_ctrl_pkg::otp_lc_data_t'(u_otp_ctrl.otp_lc_data_o)),
 
         // Escape State Interface
         .esc_scrap_state0_tx_i(),
@@ -2058,7 +2086,8 @@ module caliptra_ss_top
             .SecVolatileRawUnlockEn(SecVolatileRawUnlockEn)
         ) */ u_lc_ctrl (
             .clk_i(core_clk),
-            .rst_ni(rst_l),
+            .rst_ni(rst_l & fake_reset),
+            .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
             .axi_wr_req(lc_axi_wr_req),
             .axi_wr_rsp(lc_axi_wr_rsp),
             .axi_rd_req(lc_axi_rd_req),
@@ -2116,7 +2145,7 @@ module caliptra_ss_top
             .lc_clk_byp_ack_i(lc_clk_byp_ack_tb),
             .lc_flash_rma_seed_o(), // We do not use flash
             .lc_flash_rma_req_o(),
-            .lc_flash_rma_ack_i('0),
+            .lc_flash_rma_ack_i(lc_flash_rma_ack_tb),
             .lc_keymgr_div_o(), // We do not use key manager
             .otp_device_id_i('0),
             .otp_manuf_state_i('0),
@@ -2148,7 +2177,7 @@ module caliptra_ss_top
         .MemInitFile ("/home/ws/caliptra/anjpar/caliptra_ws_1119/Caliptra/../chipsalliance/caliptra-ss/src/fuse_ctrl/data/otp-img.2048.vmem")
     ) u_otp_ctrl (
         .clk_i                      (core_clk),
-        .rst_ni                     (rst_l),
+        .rst_ni                     (rst_l & fake_reset),
         .clk_edn_i                  (),
         .rst_edn_ni                 (),
         .edn_o                      (),

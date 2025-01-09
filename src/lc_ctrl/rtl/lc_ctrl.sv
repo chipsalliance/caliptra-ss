@@ -34,6 +34,7 @@ module caliptra_ss_lc_ctrl
   // Life cycle controller clock
   input                                              clk_i,
   input                                              rst_ni,
+  input                                              Allow_RMA_on_PPD,
   // Clock for KMAC interface
   // input                                              clk_kmac_i,
   // input                                              rst_kmac_ni,
@@ -853,6 +854,7 @@ module caliptra_ss_lc_ctrl
   ) u_lc_ctrl_fsm (
     .clk_i,
     .rst_ni,
+    .Allow_RMA_on_PPD,
     .init_req_i             ( lc_init                          ),
     .init_done_o            ( lc_done_d                        ),
     .idle_o                 ( lc_idle_d                        ),
