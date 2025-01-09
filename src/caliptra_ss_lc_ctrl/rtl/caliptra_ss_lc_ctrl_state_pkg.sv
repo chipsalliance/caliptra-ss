@@ -287,6 +287,7 @@ package caliptra_ss_lc_ctrl_state_pkg;
   // LcStProd          = {XX, XX, XX, XX, A15 -> B15, XX, ...} This allows LC to switch from DEV to PROD
   // LcStProdEnd       = {XX, XX, XX, A16->B16, A15 -> B15, XX, ...} This allows LC to switch from DEV to PROD_END or PROD to PROD_END
   // However, PROD_END can branch only to SCARP and nothing else
+  // Note that the DEV state is being reused as MANUF state
   typedef logic [LcStateWidth-1:0] caliptra_ss_lc_state_t;
   typedef enum caliptra_ss_lc_state_t {
     LcStRaw           = {ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO, ZRO},
