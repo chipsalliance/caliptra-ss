@@ -31,6 +31,7 @@ files:
   - third_party/caliptra-rtl/src/caliptra_prim_generic/config/compile.yml
   - third_party/caliptra-rtl/src/caliptra_prim/config/compile.yml
   - third_party/caliptra-rtl/src/lc_ctrl/config/compile.yml
+  - third_party/caliptra-rtl/src/caliptra_tlul/config/compile.yml
   - third_party/caliptra-rtl/src/aes/config/compile.yml
   - third_party/caliptra-rtl/src/edn/config/compile.yml
   - third_party/caliptra-rtl/src/kmac/config/compile.yml
