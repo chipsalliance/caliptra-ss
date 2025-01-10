@@ -464,9 +464,9 @@ module lc_ctrl_fsm
       // Flash RMA state. Note that we check the flash response again
       // two times later below.
       FlashRmaSt: begin
-        if (trans_target_i == {DecLcStateNumRep{DecLcStRma}} && Allow_RMA_on_PPD) begin
-          caliptra_ss_lc_flash_rma_req = On;
-          if (caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_flash_rma_ack_buf[0])) begin
+        if (trans_target_i == {DecLcStateNumRep{DecLcStRma}} && Allow_RMA_on_PPD) begin // Note: Addded another condition to RMA transition 
+          lc_flash_rma_req = On;
+          if (lc_tx_test_true_strict(lc_flash_rma_ack_buf[0])) begin
             fsm_state_d = TokenCheck0St;
           end
         end else begin
@@ -491,7 +491,7 @@ module lc_ctrl_fsm
               (trans_target_i == {DecLcStateNumRep{DecLcStRma}} &&
                lc_tx_test_true_strict(lc_flash_rma_req_o) &&
                lc_tx_test_true_strict(lc_flash_rma_ack_buf[1])
-               && Allow_RMA_on_PPD)) begin
+               && Allow_RMA_on_PPD)) begin // Note: Addded another condition to RMA transition 
             if (hashed_token_i == hashed_token_mux &&
                 !token_hash_err_i &&
                 &hashed_token_valid_mux) begin
@@ -532,7 +532,7 @@ module lc_ctrl_fsm
                       (lc_flash_rma_req_o != Off || lc_flash_rma_ack_buf[2] != Off)) ||
                      (trans_target_i == {DecLcStateNumRep{DecLcStRma}} &&
                       (lc_flash_rma_req_o != On || lc_flash_rma_ack_buf[2] != On)
-                      && Allow_RMA_on_PPD)) begin
+                      && Allow_RMA_on_PPD)) begin // Note: Addded another condition to RMA transition 
           fsm_state_d = PostTransSt;
           flash_rma_error_o = 1'b1;
         end else if (otp_prog_ack_i) begin

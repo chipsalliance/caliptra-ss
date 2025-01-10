@@ -34,7 +34,9 @@ module caliptra_ss_lc_ctrl
   // Life cycle controller clock
   input                                              clk_i,
   input                                              rst_ni,
-  input                                              Allow_RMA_on_PPD,
+  input                                              Allow_RMA_on_PPD, // Note: Addded another condition to RMA transition with Physical presence Detect
+                                                                       // This is GPIO strap pin. This pin should be high until LC completes its state
+                                                                       // transition to RMA.  
   // Clock for KMAC interface
   // input                                              clk_kmac_i,
   // input                                              rst_kmac_ni,
@@ -60,16 +62,38 @@ module caliptra_ss_lc_ctrl
   // This bypasses the clock inverter inside the JTAG TAP for scanmmode.
   input                                              scan_rst_ni,
   input  caliptra_prim_mubi_pkg::mubi4_t                      scanmode_i,
+
+
   // Alert outputs.
-  input  caliptra_prim_alert_pkg::alert_rx_t [NumAlerts-1:0]  alert_rx_i,
-  output caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0]  alert_tx_o,
-  // Escalation inputs (severity 1 and 2).
-  // These need not be synchronized since the alert handler is
-  // in the same clock domain as the LC controller.
-  input  caliptra_prim_esc_pkg::esc_rx_t                      esc_scrap_state0_tx_i,
-  output caliptra_prim_esc_pkg::esc_tx_t                      esc_scrap_state0_rx_o,
-  input  caliptra_prim_esc_pkg::esc_rx_t                      esc_scrap_state1_tx_i,
-  output caliptra_prim_esc_pkg::esc_tx_t                      esc_scrap_state1_rx_o,
+  //----------------------------------------------------------------------------------
+  // NOTE: Caliptra-SS removed these differential alert sender signals. Caliptra-SS 
+  // uses "alerts" signal  instead of these pair signal set. SoC should take action if 
+  // there is at leastone of the error signals: fatal_bus_integ_error_q,
+  // fatal_state_error_q, or fatal_prog_error_q
+
+  output [NumAlerts-1:0] alerts,
+  // input  caliptra_prim_alert_pkg::alert_rx_t [NumAlerts-1:0]  alert_rx_i,
+  // output caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0]  alert_tx_o,
+
+  //-----------------------------------------------------------------------------------
+
+  //----------------------------------------------------------------------------------
+  // NOTE: Caliptra-SS removed these differential escalation signals. Instead of
+  // generating esc_scrap_state0 and esc_scrap_state1 with prim_esc_receiver, 
+  // Caliptra-SS delivers these signals to LC_CTRL
+
+  input esc_scrap_state0,
+  input esc_scrap_state1,
+  // // Escalation inputs (severity 1 and 2).
+  // // These need not be synchronized since the alert handler is
+  // // in the same clock domain as the LC controller.
+  // input  caliptra_prim_esc_pkg::esc_rx_t                      esc_scrap_state0_tx_i,
+  // output caliptra_prim_esc_pkg::esc_tx_t                      esc_scrap_state0_rx_o,
+  // input  caliptra_prim_esc_pkg::esc_rx_t                      esc_scrap_state1_tx_i,
+  // output caliptra_prim_esc_pkg::esc_tx_t                      esc_scrap_state1_rx_o,
+  //-----------------------------------------------------------------------------------
+
+
   // Power manager interface (inputs are synced to lifecycle clock domain).
   input  pwrmgr_pkg::pwr_lc_req_t                    pwr_lc_i,
   output pwrmgr_pkg::pwr_lc_rsp_t                    pwr_lc_o,
@@ -640,7 +664,7 @@ module caliptra_ss_lc_ctrl
   // Alert Sender //
   //////////////////
 
-  logic [NumAlerts-1:0] alerts;
+  // logic [NumAlerts-1:0] alerts;
   logic [NumAlerts-1:0] alert_test;
   logic [NumAlerts-1:0] tap_alert_test;
 
@@ -668,22 +692,30 @@ module caliptra_ss_lc_ctrl
     tap_reg2hw.alert_test.fatal_prog_error.qe
   };
 
-  for (genvar k = 0; k < NumAlerts; k++) begin : gen_alert_tx
-    caliptra_prim_alert_sender #(
-      .AsyncOn(AlertAsyncOn[k]),
-      .IsFatal(1)
-    ) u_prim_alert_sender (
-      .clk_i,
-      .rst_ni,
-      .alert_test_i  ( alert_test[k] |
-                       tap_alert_test[k] ),
-      .alert_req_i   ( alerts[k]         ),
-      .alert_ack_o   (                   ),
-      .alert_state_o (                   ),
-      .alert_rx_i    ( alert_rx_i[k]     ),
-      .alert_tx_o    ( alert_tx_o[k]     )
-    );
-  end
+// ------------------------Removing Alert sender module----------------------------
+// NOTE: Caliptra-SS wires out alerts[k] signals and makes them output of LC_CTRL
+// This action also removes the functionallity of alert test that can be done with
+// alert_test and tap_dmi_alert_test.
+  
+  // for (genvar k = 0; k < NumAlerts; k++) begin : gen_alert_tx
+  //   caliptra_prim_alert_sender #(
+  //     .AsyncOn(AlertAsyncOn[k]),
+  //     .IsFatal(1)
+  //   ) u_prim_alert_sender (
+  //     .clk_i,
+  //     .rst_ni,
+  //     .alert_test_i  ( alert_test[k] |
+  //                      tap_dmi_alert_test[k] ),
+  //     .alert_req_i   ( alerts[k]             ),
+  //     .alert_ack_o   (                       ),
+  //     .alert_state_o (                       ),
+  //     .alert_rx_i    ( alert_rx_i[k]         ),
+  //     .alert_tx_o    ( alert_tx_o[k]         )
+  //   );
+  // end
+
+//------------------------------------------------------------------------------------
+
 
   ///////////////////////////////
   // KMAC design Instance
@@ -744,47 +776,51 @@ module caliptra_ss_lc_ctrl
     .entropy_i          ('0)
   );
 
+//----------------------------------------------------------------------------------
+// NOTE: Caliptra-SS removed these differential esc_receiver signals and module. 
 
-  //////////////////////////
-  // Escalation Receivers //
-  //////////////////////////
+  // //////////////////////////
+  // // Escalation Receivers //
+  // //////////////////////////
 
-  // SEC_CM: MAIN.FSM.GLOBAL_ESC
-  // We still have two escalation receivers here for historical reasons.
-  // The two actions "wipe secrets" and "scrap lifecycle state" have been
-  // combined in order to simplify both DV and the design, as otherwise
-  // this separation of very intertwined actions would have caused too many
-  // unnecessary corner cases. The escalation receivers are now redundant and
-  // trigger both actions at once.
+  // // SEC_CM: MAIN.FSM.GLOBAL_ESC
+  // // We still have two escalation receivers here for historical reasons.
+  // // The two actions "wipe secrets" and "scrap lifecycle state" have been
+  // // combined in order to simplify both DV and the design, as otherwise
+  // // this separation of very intertwined actions would have caused too many
+  // // unnecessary corner cases. The escalation receivers are now redundant and
+  // // trigger both actions at once.
 
-  // This escalation action moves the life cycle
-  // state into a temporary "SCRAP" state named "ESCALATE",
-  // and asserts the lc_escalate_en life cycle control signal.
-  logic esc_scrap_state0;
-  caliptra_prim_esc_receiver #(
-    .N_ESC_SEV   (alert_handler_reg_pkg::N_ESC_SEV),
-    .PING_CNT_DW (alert_handler_reg_pkg::PING_CNT_DW)
-  ) u_prim_esc_receiver0 (
-    .clk_i,
-    .rst_ni,
-    .esc_req_o (esc_scrap_state0),
-    .esc_rx_o  (esc_scrap_state0_rx_o),
-    .esc_tx_i  (esc_scrap_state0_tx_i)
-  );
+  // // This escalation action moves the life cycle
+  // // state into a temporary "SCRAP" state named "ESCALATE",
+  // // and asserts the caliptra_ss_lc_escalate_en life cycle control signal.
+  // logic esc_scrap_state0;
+  // caliptra_prim_esc_receiver #(
+  //   .N_ESC_SEV   (alert_handler_reg_pkg::N_ESC_SEV),
+  //   .PING_CNT_DW (alert_handler_reg_pkg::PING_CNT_DW)
+  // ) u_prim_esc_receiver0 (
+  //   .clk_i,
+  //   .rst_ni,
+  //   .esc_req_o (esc_scrap_state0),
+  //   .esc_rx_o  (esc_scrap_state0_rx_o),
+  //   .esc_tx_i  (esc_scrap_state0_tx_i)
+  // );
 
-  // This escalation action moves the life cycle
-  // state into a temporary "SCRAP" state named "ESCALATE".
-  logic esc_scrap_state1;
-  caliptra_prim_esc_receiver #(
-    .N_ESC_SEV   (alert_handler_reg_pkg::N_ESC_SEV),
-    .PING_CNT_DW (alert_handler_reg_pkg::PING_CNT_DW)
-  ) u_prim_esc_receiver1 (
-    .clk_i,
-    .rst_ni,
-    .esc_req_o (esc_scrap_state1),
-    .esc_rx_o  (esc_scrap_state1_rx_o),
-    .esc_tx_i  (esc_scrap_state1_tx_i)
-  );
+  // // This escalation action moves the life cycle
+  // // state into a temporary "SCRAP" state named "ESCALATE".
+  // logic esc_scrap_state1;
+  // caliptra_prim_esc_receiver #(
+  //   .N_ESC_SEV   (alert_handler_reg_pkg::N_ESC_SEV),
+  //   .PING_CNT_DW (alert_handler_reg_pkg::PING_CNT_DW)
+  // ) u_prim_esc_receiver1 (
+  //   .clk_i,
+  //   .rst_ni,
+  //   .esc_req_o (esc_scrap_state1),
+  //   .esc_rx_o  (esc_scrap_state1_rx_o),
+  //   .esc_tx_i  (esc_scrap_state1_tx_i)
+  // );
+//----------------------------------------------------------------------------------
+
 
   ////////////////////////////
   // Synchronization of IOs //
@@ -922,7 +958,7 @@ module caliptra_ss_lc_ctrl
   ////////////////
 
   `CALIPTRA_ASSERT_KNOWN(TlOKnown,               tl_o                       )
-  `CALIPTRA_ASSERT_KNOWN(AlertTxKnown_A,         alert_tx_o                 )
+  //`CALIPTRA_ASSERT_KNOWN(AlertTxKnown_A,         alert_tx_o                 ) // -> NOTE: Removed since we do not use this port anymore
   `CALIPTRA_ASSERT_KNOWN(PwrLcKnown_A,           pwr_lc_o                   )
   `CALIPTRA_ASSERT_KNOWN(LcOtpProgramKnown_A,    lc_otp_program_o           )
   `CALIPTRA_ASSERT_KNOWN(LcOtpTokenKnown_A,      kmac_data_o                )
@@ -943,28 +979,80 @@ module caliptra_ss_lc_ctrl
   `CALIPTRA_ASSERT_KNOWN(LcFlashRmaReqKnown_A,   lc_flash_rma_req_o         )
   `CALIPTRA_ASSERT_KNOWN(LcKeymgrDiv_A,          lc_keymgr_div_o            )
 
+  
+  
+// ------------------------------------------------------------------------------------------
+// NOTE: Assertions have been updated since Caliptra-SS changed the alert and escalation
+// signals
+  
+  caliptra_prim_alert_pkg::alert_tx_t state_alert;
+  caliptra_prim_alert_pkg::alert_tx_t program_alert;
+
+  always_comb begin
+    if (fatal_state_error_q) begin
+      state_alert.alert_p = 1'b1;
+      state_alert.alert_n = 1'b0;
+    end else begin
+      state_alert.alert_p = 1'b0;
+      state_alert.alert_n = 1'b1;
+    end
+    if (fatal_prog_error_q) begin
+      program_alert.alert_p = 1'b1;
+      program_alert.alert_n = 1'b0;
+    end else begin
+      program_alert.alert_p = 1'b0;
+      program_alert.alert_n = 1'b1;
+    end
+  end
+
   // Alert assertions for sparse FSMs.
+  // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcFsmCheck_A,
+  //     u_caliptra_ss_lc_ctrl_fsm.u_fsm_state_regs, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcFsmCheck_A,
-      u_lc_ctrl_fsm.u_fsm_state_regs, alert_tx_o[1])
+      u_lc_ctrl_fsm.u_fsm_state_regs, state_alert)
+  // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcStateCheck_A,
+  //     u_caliptra_ss_lc_ctrl_fsm.u_state_regs, alert_tx_o[1],
+  //     !$past(otp_caliptra_ss_lc_data_i.valid) ||
+  //     u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
+  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
+  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcStateCheck_A,
-      u_lc_ctrl_fsm.u_state_regs, alert_tx_o[1],
+      u_lc_ctrl_fsm.u_state_regs, state_alert,
       !$past(otp_lc_data_i.valid) ||
       u_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
       u_lc_ctrl_fsm.esc_scrap_state0_i ||
       u_lc_ctrl_fsm.esc_scrap_state1_i)
+  // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcCntCheck_A,
+  //     u_caliptra_ss_lc_ctrl_fsm.u_cnt_regs, alert_tx_o[1],
+  //      !$past(otp_caliptra_ss_lc_data_i.valid) ||
+  //     u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
+  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
+  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcCntCheck_A,
-      u_lc_ctrl_fsm.u_cnt_regs, alert_tx_o[1],
+      u_lc_ctrl_fsm.u_cnt_regs, state_alert,
        !$past(otp_lc_data_i.valid) ||
       u_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
       u_lc_ctrl_fsm.esc_scrap_state0_i ||
       u_lc_ctrl_fsm.esc_scrap_state1_i)
- `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKmacIfFsmCheck_A,
-      u_lc_ctrl_kmac_if.u_state_regs, alert_tx_o[1],
+  //  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKmacIfFsmCheck_A,
+  //       u_caliptra_ss_lc_ctrl_kmac_if.u_state_regs, alert_tx_o[1],
+  //       u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {EscalateSt} ||
+  //       u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
+  //       u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKmacIfFsmCheck_A,
+      u_lc_ctrl_kmac_if.u_state_regs, state_alert,
       u_lc_ctrl_fsm.fsm_state_q inside {EscalateSt} ||
       u_lc_ctrl_fsm.esc_scrap_state0_i ||
       u_lc_ctrl_fsm.esc_scrap_state1_i)
 
   // Alert assertions for reg_we onehot check
-  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegWeOnehotCheck_A, u_reg, alert_tx_o[2])
-  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(TapRegWeOnehotCheck_A, u_reg_tap, alert_tx_o[2], 0)
+  // `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg_regs, alert_tx_o[2])
+  // `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(TapDmiWeOnehotCheck_A,
+  //                                                u_reg_tap_dmi, alert_tx_o[2], 0)
+  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg_regs, program_alert)
+  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(TapDmiWeOnehotCheck_A,
+                                                 u_reg_tap_dmi, program_alert, 0)
+
+// ------------------------------------------------------------------------------------------
+  
 endmodule : caliptra_ss_lc_ctrl

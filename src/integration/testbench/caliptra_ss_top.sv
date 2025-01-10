@@ -1925,23 +1925,7 @@ module caliptra_ss_top
     logic [$bits(caliptra_prim_mubi_pkg::mubi4_t)-1:0] lc_ctrl_scanmode_i_tb;
     assign lc_ctrl_scanmode_i_tb = caliptra_prim_mubi_pkg::mubi4_t'(u_lc_ctrl_bfm.lc_ctrl_scanmode_i);
 
-    // Alert Handler Interface
-    logic [$bits(caliptra_prim_alert_pkg::alert_rx_t)-1:0] [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_ctrl_alert_rx_tb;
-    assign lc_ctrl_alert_rx_tb = caliptra_prim_alert_pkg::alert_rx_t'(u_lc_ctrl_bfm.lc_ctrl_alert_rx);
-    logic [$bits(caliptra_prim_alert_pkg::alert_tx_t)-1:0] [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_ctrl_alert_tx_tb;
-    assign lc_ctrl_alert_tx_tb = caliptra_prim_alert_pkg::alert_tx_t'(u_lc_ctrl.alert_tx_o);
-    
-    // Escape State Interface
-    logic [$bits(caliptra_prim_esc_pkg::esc_rx_t)-1:0] esc_scrap_state0_tx_tb;
-    logic [$bits(caliptra_prim_esc_pkg::esc_tx_t)-1:0] esc_scrap_state0_rx_tb;
-    logic [$bits(caliptra_prim_esc_pkg::esc_rx_t)-1:0] esc_scrap_state1_tx_tb;
-    logic [$bits(caliptra_prim_esc_pkg::esc_tx_t)-1:0] esc_scrap_state1_rx_tb;
-
-    assign esc_scrap_state0_tx_tb = caliptra_prim_esc_pkg::esc_rx_t'(u_lc_ctrl_bfm.esc_scrap_state0_tx_i);
-    assign esc_scrap_state0_rx_tb = caliptra_prim_esc_pkg::esc_tx_t'(u_lc_ctrl.esc_scrap_state0_rx_o);
-    assign esc_scrap_state1_tx_tb = caliptra_prim_esc_pkg::esc_rx_t'(u_lc_ctrl_bfm.esc_scrap_state1_tx_i);
-    assign esc_scrap_state1_rx_tb = caliptra_prim_esc_pkg::esc_tx_t'(u_lc_ctrl.esc_scrap_state1_rx_o);
-    //--------------------------------------------------------------------------------------------
+   
 
 
     //--------------------------------------------------------------------------------------------
@@ -2020,6 +2004,10 @@ module caliptra_ss_top
     logic [3:0]  to_bfm_lc_flash_rma_req_o;
     assign to_bfm_lc_flash_rma_req_o = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_flash_rma_req_o);
 
+    logic [caliptra_ss_lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o;
+    logic esc_scrap_state0;
+    logic esc_scrap_state1;
+
     
 
     lc_ctrl_bfm u_lc_ctrl_bfm (
@@ -2043,18 +2031,15 @@ module caliptra_ss_top
         .lc_ctrl_scanmode_i(),
 
         // Alert Handler Interface
-        .lc_ctrl_alert_rx(),
-        .lc_ctrl_alert_tx(caliptra_prim_alert_pkg::alert_tx_t'(lc_ctrl_alert_tx_tb)),
+        .lc_alerts_o(lc_alerts_o),
+
+        // Escalation State Interface
+        .esc_scrap_state0(esc_scrap_state0),
+        .esc_scrap_state1(esc_scrap_state1),
 
         // OTP hack
-        .otp_lc_data_o(),
-        .from_otp_lc_data_i(otp_ctrl_pkg::otp_lc_data_t'(u_otp_ctrl.otp_lc_data_o)),
-
-        // Escape State Interface
-        .esc_scrap_state0_tx_i(),
-        .esc_scrap_state0_rx_o(caliptra_prim_esc_pkg::esc_tx_t'(esc_scrap_state0_rx_tb)),
-        .esc_scrap_state1_tx_i(),
-        .esc_scrap_state1_rx_o(caliptra_prim_esc_pkg::esc_tx_t'(esc_scrap_state1_rx_tb)),
+        .otp_caliptra_ss_lc_data_o(),
+        .from_otp_caliptra_ss_lc_data_i(otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(u_otp_ctrl.otp_caliptra_ss_lc_data_o)),
 
         // Power manager interface
         .pwr_lc_i(),
@@ -2102,12 +2087,15 @@ module caliptra_ss_top
             .scanmode_i(caliptra_prim_mubi_pkg::mubi4_t'(lc_ctrl_scanmode_i_tb)),
 
             // Alert Handler Interface
-            .alert_rx_i(caliptra_prim_alert_pkg::alert_rx_t'(lc_ctrl_alert_rx_tb)),
-            .alert_tx_o(),
-            .esc_scrap_state0_tx_i(caliptra_prim_esc_pkg::esc_rx_t'(esc_scrap_state0_tx_tb)),
-            .esc_scrap_state0_rx_o(),
-            .esc_scrap_state1_tx_i(caliptra_prim_esc_pkg::esc_rx_t'(esc_scrap_state1_tx_tb)),
-            .esc_scrap_state1_rx_o(),
+            // .alert_rx_i(caliptra_prim_alert_pkg::alert_rx_t'(caliptra_ss_lc_ctrl_alert_rx_tb)),
+            // .alert_tx_o(),
+            // .esc_scrap_state0_tx_i(caliptra_prim_esc_pkg::esc_rx_t'(esc_scrap_state0_tx_tb)),
+            // .esc_scrap_state0_rx_o(),
+            // .esc_scrap_state1_tx_i(caliptra_prim_esc_pkg::esc_rx_t'(esc_scrap_state1_tx_tb)),
+            // .esc_scrap_state1_rx_o(),
+            .alerts(lc_alerts_o),
+            .esc_scrap_state0(esc_scrap_state0),
+            .esc_scrap_state1(esc_scrap_state1),
 
 
             .pwr_lc_i(pwrmgr_pkg::pwr_lc_req_t'(pwr_lc_i_tb)),
