@@ -24,6 +24,7 @@ module mci_top
 
     // MCI Resets
     input logic mci_rst_b,
+    input logic mci_pwrgood,
 
     // MCI AXI Interface
     axi_if.w_sub s_axi_w_if,
@@ -227,7 +228,7 @@ mci_reg_top i_mci_reg_top (
 
     // MCI Resets
     .mci_rst_b      (mci_rst_b),// FIXME: Need to sync reset
-    .mci_pwrgood    ('0),       // FIXME: need to add
+    .mci_pwrgood    (mci_pwrgood),       // FIXME: Need to sync
 
     // REG HWIF signals
     .mci_reg_hwif_out,
