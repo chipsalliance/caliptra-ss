@@ -190,7 +190,7 @@ package tlul_pkg;
     tl_h2d_cmd_intg_t cmd;
     cmd = extract_h2d_cmd_intg(tl);
     {cmd_intg, unused_cmd_payload} =
-        caliptra_prim_secded_pkg::prim_secded_inv_64_57_enc(H2DCmdMaxWidth'(cmd));
+        caliptra_prim_secded_pkg::caliptra_prim_secded_inv_64_57_enc(H2DCmdMaxWidth'(cmd));
    return cmd_intg;
   endfunction  // get_cmd_intg
 
@@ -199,7 +199,7 @@ package tlul_pkg;
     logic [DataIntgWidth-1:0] data_intg;
     logic [TL_DW-1:0] unused_data;
     logic [DataIntgWidth + TL_DW - 1 : 0] enc_data;
-    enc_data = caliptra_prim_secded_pkg::prim_secded_inv_39_32_enc(data);
+    enc_data = caliptra_prim_secded_pkg::caliptra_prim_secded_inv_39_32_enc(data);
     data_intg = enc_data[DataIntgWidth + TL_DW - 1 : TL_DW];
     unused_data = enc_data[TL_DW - 1 : 0];
     return data_intg;
