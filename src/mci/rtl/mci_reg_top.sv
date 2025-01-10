@@ -28,11 +28,23 @@ module mci_reg_top
     // REG HWIF signals
     output mci_reg__out_t mci_reg_hwif_out,
 
+    // AXI Privileged requests
+    input logic clp_req,
+    input logic mcu_req,
+
     // WDT specific signals
     output logic wdt_timer1_timeout_serviced,
     output logic wdt_timer2_timeout_serviced,
+    input  logic t1_timeout,
+    input  logic t2_timeout,
     input  logic t1_timeout_p,
     input  logic t2_timeout_p,
+    
+    // SOC Interrupts
+    output logic error_fatal,
+
+    // input NMI
+    input logic nmi_intr,
 
     // MCU SRAM specific signals
     input logic mcu_sram_single_ecc_error,
@@ -48,10 +60,14 @@ module mci_reg_top
 // Error signals
 logic mci_reg_read_error;
 logic mci_reg_write_error;
+logic unmasked_hw_error_fatal_write;
 
 // REG HWIF signals
 mci_reg__in_t   mci_reg_hwif_in;
 
+// WDT signals
+logic   error_wdt_timer1_timeout_sts_prev;
+logic   error_wdt_timer2_timeout_sts_prev;
 
 // Byte Enable mapping
 logic [MCI_REG_DATA_WIDTH-1:0] c_cpuif_wr_biten;
@@ -91,9 +107,8 @@ assign mci_reg_hwif_in.mcu_rst_b = '0; // FIXME
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
-assign mci_reg_hwif_in.cptra_req    = '0;     // FIXME
-assign mci_reg_hwif_in.mcu_req      = '0;      // FIXME
-assign mci_reg_hwif_in.soc_req = '0; // FIXME
+assign mci_reg_hwif_in.cptra_req    = clp_req;
+assign mci_reg_hwif_in.mcu_req      = mcu_req;
 
 
 assign mci_reg_hwif_in.CAPABILITIES = '0; // FIXME
@@ -101,11 +116,7 @@ assign mci_reg_hwif_in.HW_REV_ID = '0; // FIXME
 assign mci_reg_hwif_in.HW_CONFIG = '0; // FIXME
 assign mci_reg_hwif_in.FLOW_STATUS = '0; // FIXME
 assign mci_reg_hwif_in.RESET_REASON = '0; // FIXME
-assign mci_reg_hwif_in.HW_ERROR_FATAL = '0; // FIXME
 assign mci_reg_hwif_in.HW_ERROR_NON_FATAL = '0; // FIXME
-assign mci_reg_hwif_in.FW_ERROR_FATAL = '0; // FIXME
-assign mci_reg_hwif_in.FW_ERROR_NON_FATAL = '0; // FIXME
-assign mci_reg_hwif_in.WDT_STATUS = '0; // FIXME
 assign mci_reg_hwif_in.MCU_RV_MTIME_L = '0; // FIXME
 assign mci_reg_hwif_in.MCU_RV_MTIME_H = '0; // FIXME
 assign mci_reg_hwif_in.RESET_REQUEST = '0; // FIXME
@@ -125,31 +136,87 @@ assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
 assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG = '0; // FIXME
 
 
-// WDT timeout Serviced
-// NOTE: Since error_internal_intr_r is Write-1-to-clear, capture writes to the
-//       WDT interrupt bits to detect the interrupt being serviced.
-//       It would be preferable to decode this from interrupt signals somehow,
-//       but that would require modifying interrupt register RDL which has been
-//       standardized.
-always_ff @(posedge clk or negedge mci_rst_b) begin
-    if(!mci_rst_b) begin
-        wdt_timer1_timeout_serviced <= 1'b0;
-        wdt_timer2_timeout_serviced <= 1'b0;
+////////////////////////////////////////////////////////
+// Write-enables for CPTRA_HW_ERROR_FATAL and CPTRA_HW_ERROR_NON_FATAL
+// Also calculate whether or not an unmasked event is being set, so we can
+// trigger the SOC interrupt signal
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_double_ecc_error; // FIXME do we need to add a reset window disable like in caliptra?
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      = nmi_intr;
+// Using we+next instead of hwset allows us to encode the reserved fields in some fashion
+// other than bit-hot in the future, if needed (e.g. we need to encode > 32 FATAL events)
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next    = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next        = 1'b1;
+// Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
+always_comb unmasked_hw_error_fatal_write = (mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      && |mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next) ||
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next);
+
+
+// Interrupt output is set, for any enabled conditions, when a new write
+// sets FW_ERROR_FATAL or when a HW condition occurs that sets a bit
+// in HW_ERROR_FATAL
+// Interrupt only deasserts on reset
+always_ff@(posedge clk or negedge mci_rst_b) begin
+    if(~mci_rst_b) begin
+        error_fatal <= 1'b0;
     end
-    else if (cif_resp_if.dv && cif_resp_if.req_data.write && (cif_resp_if.req_data.addr[MCI_REG_MIN_ADDR_WIDTH-1:0] == MCI_REG_ADDR_WIDTH'(`MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R))) begin // FIXME should I be using a more global define than the MCI_REG_INTR?
-        wdt_timer1_timeout_serviced <= cif_resp_if.req_data.wdata[`MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_WDT_TIMER1_TIMEOUT_STS_LOW];
-        wdt_timer2_timeout_serviced <= cif_resp_if.req_data.wdata[`MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_WDT_TIMER2_TIMEOUT_STS_LOW];
+    // FW write that SETS a new (non-masked) bit results in interrupt assertion
+    else if (cif_resp_if.dv &&
+             mci_reg_hwif_out.FW_ERROR_FATAL.error_code.swmod &&
+             |(cif_resp_if.req_data.wdata & ~mci_reg_hwif_out.FW_ERROR_FATAL.error_code.value)) begin // FIXME do I need to add FW mask like soc_ifc?
+        error_fatal <= 1'b1;
     end
+    // HW event that SETS a new (non-masked) bit results in interrupt assertion
+    else if (unmasked_hw_error_fatal_write) begin
+        error_fatal <= 1'b1;
+    end
+    // NOTE: There is no mechanism to clear interrupt assertion by design.
+    //       Platform MUST perform mci_rst_b in order to clear error_fatal
+    //       output signal, per the integration spec.
     else begin
-        wdt_timer1_timeout_serviced <= 1'b0;
-        wdt_timer2_timeout_serviced <= 1'b0;
+        error_fatal <= error_fatal;
     end
 end
+
+
+//TIE-OFFS
+always_comb begin
+    mci_reg_hwif_in.FW_ERROR_FATAL.error_code.we = 'b0;
+    mci_reg_hwif_in.FW_ERROR_FATAL.error_code.next = 'h0;
+    mci_reg_hwif_in.FW_ERROR_NON_FATAL.error_code.we = 'b0;
+    mci_reg_hwif_in.FW_ERROR_NON_FATAL.error_code.next = 'h0;
+end
+
+////////////////////////////////////////////////////////
+// WDT
+////////////////////////////////////////////////////////
+ 
+//  Looking for negedge on the wdt_timer*-timeout_sts register
+//  meaning the interrupt has been serviced by SW. We then 
+//  propagate this to the WDT to clear it's status
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if(!mci_rst_b) begin
+        error_wdt_timer1_timeout_sts_prev <= 1'b0;
+        error_wdt_timer2_timeout_sts_prev <= 1'b0;
+    end
+    else begin
+        error_wdt_timer1_timeout_sts_prev <= mci_reg_hwif_out.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value;
+        error_wdt_timer2_timeout_sts_prev <= mci_reg_hwif_out.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value;
+    end
+end
+
+assign wdt_timer1_timeout_serviced = error_wdt_timer1_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value;
+assign wdt_timer2_timeout_serviced = error_wdt_timer2_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value;;
 
 
 // WDT timeout Interrupts
 assign mci_reg_hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.hwset = t1_timeout_p;
 assign mci_reg_hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.hwset = t2_timeout_p;
+
+//Set WDT status reg
+always_comb begin
+    mci_reg_hwif_in.WDT_STATUS.t1_timeout.next = t1_timeout;
+    mci_reg_hwif_in.WDT_STATUS.t2_timeout.next = t2_timeout;
+end
 
 
 // MCU SRAM Interrupts

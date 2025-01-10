@@ -37,11 +37,14 @@ module mci_axi_sub_decode
     localparam MBOX0_END_ADDR        = MBOX0_START_ADDR + (MBOX0_SIZE_KB * KB) - 1,
     localparam MBOX1_START_ADDR      = MBOX0_END_ADDR + 32'h0000_0001, // FIXME: Do we want B2B
     localparam MBOX1_END_ADDR        = MBOX1_START_ADDR + (MBOX1_SIZE_KB * KB) - 1,
-    localparam MCU_SRAM_START_ADDR   = 32'h0002_0000,
+    localparam MCU_SRAM_START_ADDR   = 32'h0020_0000,
     localparam MCU_SRAM_END_ADDR     = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1 
         
     )
     (
+
+
+
     //SOC inf
     cif_if.response  soc_resp_if,
 
@@ -49,7 +52,20 @@ module mci_axi_sub_decode
     cif_if.request  mci_reg_req_if, 
 
     //MCU SRAM inf
-    cif_if.request  mcu_sram_req_if 
+    cif_if.request  mcu_sram_req_if,
+
+    // Privileged requests 
+    output logic mcu_lsu_req,
+    output logic mcu_ifu_req,
+    output logic mcu_req    ,
+    output logic clp_req    ,
+    output logic soc_req    ,
+
+    
+    // Privileged AXI users
+    input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_lsu_axi_user,
+    input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_ifu_axi_user,
+    input logic [soc_resp_if.USER_WIDTH-1:0] strap_clp_axi_user
 );
 
 // GRANT signals
@@ -121,5 +137,18 @@ always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_gnt | soc_mci_reg_gnt
 always_comb soc_resp_if.error = (soc_mcu_sram_gnt & mcu_sram_req_if.error) |
                                 (soc_mci_reg_gnt  & mci_reg_req_if.error)  |
                                 soc_req_miss;
+
+///////////////////////////////////////////////
+// Determine if the user matches any of the  
+// privileged users
+///////////////////////////////////////////////
+
+assign mcu_lsu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_lsu_axi_user));
+assign mcu_ifu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_ifu_axi_user));
+assign mcu_req      = mcu_lsu_req | mcu_ifu_req; 
+
+assign clp_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_clp_axi_user));
+
+assign soc_req      = soc_resp_if.dv & ~(mcu_req | clp_req);
 
 endmodule

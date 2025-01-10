@@ -240,9 +240,11 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__HW_ERROR_FATAL_bit_cg RSVD_bit_cg[1];
+        mci_reg__HW_ERROR_FATAL_bit_cg mcu_sram_ecc_unc_bit_cg[1];
+        mci_reg__HW_ERROR_FATAL_bit_cg nmi_pin_bit_cg[1];
         mci_reg__HW_ERROR_FATAL_fld_cg fld_cg;
-        rand uvm_reg_field RSVD;
+        rand uvm_reg_field mcu_sram_ecc_unc;
+        rand uvm_reg_field nmi_pin;
 
         function new(string name = "mci_reg__HW_ERROR_FATAL");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -254,10 +256,13 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.RSVD = new("RSVD");
-            this.RSVD.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
+            this.mcu_sram_ecc_unc = new("mcu_sram_ecc_unc");
+            this.mcu_sram_ecc_unc.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
+            this.nmi_pin = new("nmi_pin");
+            this.nmi_pin.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(RSVD_bit_cg[bt]) RSVD_bit_cg[bt] = new();
+                foreach(mcu_sram_ecc_unc_bit_cg[bt]) mcu_sram_ecc_unc_bit_cg[bt] = new();
+                foreach(nmi_pin_bit_cg[bt]) nmi_pin_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();

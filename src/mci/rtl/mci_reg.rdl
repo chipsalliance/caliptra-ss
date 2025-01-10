@@ -34,8 +34,6 @@ addrmap mci_reg {
     // TODO need these?
     signal {} cptra_req;
     signal {} mcu_req;
-    //signal to indicate request is coming from soc side
-    signal {} soc_req; // FIXME is this needed?
 
     //defined fields by access type
     // TODO
@@ -133,7 +131,8 @@ addrmap mci_reg {
                 [br]Caliptra Access: RW1C
                 [br]MCU Access:      RW1C
                 [br]SOC Access:      RW1C";
-        rw_rw_sticky_hw RSVD=1'b0;
+        rw_rw_sticky_hw mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
+        rw_rw_sticky_hw nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
     } HW_ERROR_FATAL @0x40;
     reg {
         name = "Hardware Error Non-Fatal";
@@ -548,7 +547,7 @@ regfile intr_block_t {
     default regwidth = 32; // reg property
     default accesswidth = 32; // reg property
     default hw = na; // field property
-    default swwel = soc_req; // Used in MBOX interrupt registers to avoid SoC write priv.
+    default swwe = mcu_req; // MCU should be the only entity that can control the interrupt registers
 
 
     /* -----------------------
@@ -626,8 +625,8 @@ regfile intr_block_t {
         // FIXME add back ? field {desc = "Bad Fuse received from SoC status bit";                           } error_bad_fuse_sts = 1'b0;
         // FIXME add back ? field {desc = "ICCM access blocked by lock status bit";                          } error_iccm_blocked_sts = 1'b0;
         // FIXME add back ? field {desc = "Mailbox ECC Double-bit Error (uncorrectable) status bit";         } error_mbox_ecc_unc_sts = 1'b0;
-        field {desc = "WDT Timer1 timeout status bit";                                   } error_wdt_timer1_timeout_sts = 1'b0;
-        field {desc = "WDT Timer2 timeout status bit";                                   } error_wdt_timer2_timeout_sts = 1'b0;
+        field {hw = rw; desc = "WDT Timer1 timeout status bit";                                   } error_wdt_timer1_timeout_sts = 1'b0;
+        field {hw = rw; desc = "WDT Timer2 timeout status bit";                                   } error_wdt_timer2_timeout_sts = 1'b0;
     };
 
     /* ---- Notification Interrupt Status ---- */

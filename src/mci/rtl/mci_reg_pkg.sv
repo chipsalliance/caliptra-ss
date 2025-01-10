@@ -58,7 +58,8 @@ package mci_reg_pkg;
     } mci_reg__rw_rw_sticky_hw__in_t;
 
     typedef struct packed{
-        mci_reg__rw_rw_sticky_hw__in_t RSVD;
+        mci_reg__rw_rw_sticky_hw__in_t mcu_sram_ecc_unc;
+        mci_reg__rw_rw_sticky_hw__in_t nmi_pin;
     } mci_reg__HW_ERROR_FATAL__in_t;
 
     typedef struct packed{
@@ -261,7 +262,6 @@ package mci_reg_pkg;
         logic mci_pwrgood;
         logic cptra_req;
         logic mcu_req;
-        logic soc_req;
         mci_reg__CAPABILITIES__in_t CAPABILITIES;
         mci_reg__HW_REV_ID__in_t HW_REV_ID;
         mci_reg__HW_CONFIG__in_t HW_CONFIG;
@@ -326,7 +326,8 @@ package mci_reg_pkg;
     } mci_reg__rw_rw_sticky_hw__out_t;
 
     typedef struct packed{
-        mci_reg__rw_rw_sticky_hw__out_t RSVD;
+        mci_reg__rw_rw_sticky_hw__out_t mcu_sram_ecc_unc;
+        mci_reg__rw_rw_sticky_hw__out_t nmi_pin;
     } mci_reg__HW_ERROR_FATAL__out_t;
 
     typedef struct packed{
@@ -561,6 +562,16 @@ package mci_reg_pkg;
     } mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a__out_t;
 
     typedef struct packed{
+        logic value;
+    } mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__error_wdt_timer1_timeout_sts_enable_fa7e6d0f_next_293a6067_resetsignal_3e0ae056__out_t;
+
+    typedef struct packed{
+        logic value;
+    } mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__error_wdt_timer2_timeout_sts_enable_38137b0c_next_1084f7bd_resetsignal_3e0ae056__out_t;
+
+    typedef struct packed{
+        mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__error_wdt_timer1_timeout_sts_enable_fa7e6d0f_next_293a6067_resetsignal_3e0ae056__out_t error_wdt_timer1_timeout_sts;
+        mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__error_wdt_timer2_timeout_sts_enable_38137b0c_next_1084f7bd_resetsignal_3e0ae056__out_t error_wdt_timer2_timeout_sts;
         logic intr;
     } mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__out_t;
 

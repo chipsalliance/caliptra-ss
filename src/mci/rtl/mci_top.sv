@@ -36,7 +36,13 @@ module mci_top
 
     // SRAM ADHOC connections
     input logic mcu_sram_fw_exec_region_lock,
-    
+
+    // SOC Interrupts
+    output logic error_fatal,
+
+    // NMI Vector 
+    output logic nmi_intr,
+
     // MCU SRAM Interface
     mci_mcu_sram_if.request mci_mcu_sram_req_if 
 
@@ -62,9 +68,17 @@ module mci_top
     logic wdt_timer2_timeout_serviced; 
     logic t1_timeout_p;
     logic t2_timeout_p;
+    logic t1_timeout;
+    logic t2_timeout;
     logic [MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer1_timeout_period;
     logic [MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer2_timeout_period;
 
+    // AXI SUB Privileged requests
+    logic mcu_lsu_req;
+    logic mcu_ifu_req;
+    logic mcu_req    ;
+    logic clp_req    ;
+    logic soc_req    ;
 
 
 // Caliptra internal fabric interface for MCU SRAM 
@@ -116,7 +130,21 @@ mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
     .mci_reg_req_if( mci_reg_req_if.request ),
 
     // MCU SRAM Interface
-    .mcu_sram_req_if( mcu_sram_req_if.request )
+    .mcu_sram_req_if( mcu_sram_req_if.request ),
+
+
+    // Privileged requests 
+    .mcu_lsu_req,
+    .mcu_ifu_req,
+    .mcu_req    ,
+    .clp_req    ,
+    .soc_req    ,
+
+    
+    // Privileged AXI users
+    .strap_mcu_lsu_axi_user,
+    .strap_mcu_ifu_axi_user,
+    .strap_clp_axi_user
 );
 
 
@@ -137,10 +165,10 @@ mci_mcu_sram_ctrl #(
     // Caliptra internal fabric response interface
     .cif_resp_if (mcu_sram_req_if.response),
 
-    // AXI users
-    .strap_mcu_lsu_axi_user,   
-    .strap_mcu_ifu_axi_user,   
-    .strap_clp_axi_user, 
+    // AXI Privileged requests
+    .mcu_lsu_req,
+    .mcu_ifu_req,
+    .clp_req    ,
 
     // Access lock interface
     .mcu_sram_fw_exec_region_lock,  
@@ -184,9 +212,12 @@ mci_wdt_top #(
     //Interrupts
     .wdt_timer1_timeout_serviced, 
     .wdt_timer2_timeout_serviced, 
-    //WDT STATUS bits pulse
+    //WDT STATUS
+    .t1_timeout, 
+    .t2_timeout,
     .t1_timeout_p, 
-    .t2_timeout_p  
+    .t2_timeout_p,
+    .fatal_timeout(nmi_intr)
 );
 
 // MCI Reg
@@ -200,12 +231,24 @@ mci_reg_top i_mci_reg_top (
 
     // REG HWIF signals
     .mci_reg_hwif_out,
+    
+    // AXI Privileged requests
+    .clp_req,
+    .mcu_req,
 
     // WDT specific signals
     .wdt_timer1_timeout_serviced, 
     .wdt_timer2_timeout_serviced, 
     .t1_timeout_p,
     .t2_timeout_p,
+    .t1_timeout,
+    .t2_timeout,
+
+    // SOC Interrupts
+    .error_fatal,
+
+    // NMI
+    .nmi_intr,
 
     // MCU SRAM specific signals
     .mcu_sram_single_ecc_error,

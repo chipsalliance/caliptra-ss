@@ -38,14 +38,14 @@ module mci_wdt_top
     input  logic wdt_timer1_timeout_serviced,
     input  logic wdt_timer2_timeout_serviced,
     //WDT STATUS bits 
+    output logic t1_timeout,
+    output logic t2_timeout,
     output logic t1_timeout_p,
     output logic t2_timeout_p,
     output logic fatal_timeout
 
     );
     
-logic t1_timeout;
-logic t2_timeout;
 logic t1_timeout_f;
 logic t2_timeout_f;
 

@@ -22,14 +22,14 @@
 //      requests to the MCU SRAM as this module cannot detect address aliasing.
 //
 //      Error handling:
-//      If an access vilation due to USER privilage issues is detected it 
+//      If an access violation due to USER privilege issues is detected it 
 //      will always return an error on the first cycle of the cif_if.
 //      ECC errors are returned on the read data phase (second clock cycle)
 //
 //      Region mapping:
 //      The lower address is mapped to the exec region. Upper address range is mapped
 //      to prot region. If fw_sram_exec_region_size is larger than the actual SRAM size 
-//      the entier SRAM is considered exec region and there is no prot region
+//      the entire SRAM is considered exec region and there is no prot region
 
 module mci_mcu_sram_ctrl 
     #(
@@ -47,10 +47,10 @@ module mci_mcu_sram_ctrl
     // Caliptra internal fabric response interface
     cif_if.response  cif_resp_if,
 
-    // AXI users
-    input logic [cif_resp_if.USER_WIDTH-1:0] strap_mcu_lsu_axi_user,
-    input logic [cif_resp_if.USER_WIDTH-1:0] strap_mcu_ifu_axi_user,
-    input logic [cif_resp_if.USER_WIDTH-1:0] strap_clp_axi_user,
+    // AXI Privileged requests
+    input logic mcu_lsu_req,
+    input logic mcu_ifu_req,
+    input logic clp_req ,
 
     // Access lock interface
     input logic mcu_sram_fw_exec_region_lock,
@@ -106,10 +106,6 @@ logic exec_region_filter_error;
 logic prot_region_filter_success;
 logic prot_region_filter_error; 
 
-// Agent request checks
-logic mcu_lsu_req;
-logic mcu_ifu_req;
-logic clp_req;
 
 // SRAM Read/Write request and phase signals
 logic mcu_sram_valid_req;
@@ -161,14 +157,6 @@ assign exec_region_match =  (cif_resp_if.req_data.addr[MCU_SRAM_CIF_ADDR_W-1:0] 
 assign exec_region_req = cif_resp_if.dv & exec_region_match;
 assign prot_region_req = cif_resp_if.dv & !exec_region_match; 
 
-
-///////////////////////////////////////////////
-// Determine if the user matches any of the  
-// privileged users
-///////////////////////////////////////////////
-assign mcu_lsu_req = ~(|(cif_resp_if.req_data.user ^ strap_mcu_lsu_axi_user));
-assign mcu_ifu_req = ~(|(cif_resp_if.req_data.user ^ strap_mcu_ifu_axi_user));
-assign clp_req = ~(|(cif_resp_if.req_data.user ^ strap_clp_axi_user));
 
 ///////////////////////////////////////////////
 // Protected data region access protection  
