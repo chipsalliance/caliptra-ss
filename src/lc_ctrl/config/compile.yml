@@ -1,24 +1,18 @@
 ---
 provides: [caliptra_ss_lc_ctrl_pkg]
 schema_version: 2.4.0
-requires:
+requires: 
   - caliptra_prim_pkg
 targets:
   rtl:
     directories: [$COMPILE_ROOT/rtl]
     files:
-#      - $COMPILE_ROOT/rtl/caliptra_ss_lc_ctrl_reg_pkg.sv
-#      - $COMPILE_ROOT/rtl/caliptra_ss_lc_ctrl_state_pkg.sv
-#      - $COMPILE_ROOT/rtl/caliptra_ss_lc_ctrl_pkg.sv
       - $COMPILE_ROOT/rtl/jtag_pkg.sv
       - $COMPILE_ROOT/rtl/top_pkg.sv
       - $COMPILE_ROOT/rtl/alert_handler_reg_pkg.sv
   tb:
     directories: [$COMPILE_ROOT/rtl]
     files:
-#      - $COMPILE_ROOT/rtl/caliptra_ss_lc_ctrl_reg_pkg.sv
-#      - $COMPILE_ROOT/rtl/caliptra_ss_lc_ctrl_state_pkg.sv
-#      - $COMPILE_ROOT/rtl/caliptra_ss_lc_ctrl_pkg.sv
       - $COMPILE_ROOT/rtl/jtag_pkg.sv
       - $COMPILE_ROOT/rtl/top_pkg.sv
       - $COMPILE_ROOT/rtl/alert_handler_reg_pkg.sv
