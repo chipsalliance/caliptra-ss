@@ -1849,98 +1849,303 @@ module caliptra_ss_top
     // 
     //=========================================================================-
 
-    // axi_struct_pkg::axi_wr_req_t axi_lc_axi_wr_req;
-    // axi_struct_pkg::axi_wr_rsp_t axi_lc_axi_wr_rsp;
-    // axi_struct_pkg::axi_rd_req_t axi_lc_axi_rd_req;
-    // axi_struct_pkg::axi_rd_rsp_t axi_lc_axi_rd_rsp;
+    logic caliptra_ss_lc_axi_rd_is_upper_dw_latched;
+    logic caliptra_ss_lc_axi_wr_is_upper_dw_latched;
 
-    // caliptra_ss_lc_ctrl /*#(
-    //         .AlertAsyncOn(AlertAsyncOn),
-    //         .SiliconCreatorId(SiliconCreatorId),
-    //         .ProductId(ProductId),
-    //         .RevisionId(RevisionId),
-    //         .IdcodeValue(IdcodeValue),
-    //         .UseDmiInterface(UseDmiInterface),
-    //         .RndCnstLcKeymgrDivInvalid(RndCnstLcKeymgrDivInvalid),
-    //         .RndCnstLcKeymgrDivTestUnlocked(RndCnstLcKeymgrDivTestUnlocked),
-    //         .RndCnstLcKeymgrDivDev(RndCnstLcKeymgrDivDev),
-    //         .RndCnstLcKeymgrDivProduction(RndCnstLcKeymgrDivProduction),
-    //         .RndCnstLcKeymgrDivRma(RndCnstLcKeymgrDivRma),
-    //         .RndCnstInvalidTokens(RndCnstInvalidTokens),
-    //         .SecVolatileRawUnlockEn(SecVolatileRawUnlockEn)
-    //     ) */ u_caliptra_ss_lc_ctrl (
-    //         .clk_i(core_clk),
-    //         .rst_ni(rst_l),
-    //         .axi_wr_req(axi_lc_axi_wr_req),
-    //         .axi_wr_rsp(axi_lc_axi_wr_rsp),
-    //         .axi_rd_req(axi_lc_axi_rd_req),
-    //         .axi_rd_rsp(axi_lc_axi_rd_rsp),
-    //         .dmi_tl_i(dmi_tl_i_ss),
-    //         .dmi_tl_o(dmi_tl_o_ss),
-    //         .jtag_i(jtag_i_ss),
-    //         .jtag_o(jtag_o_ss),
-    //         .scan_rst_ni(scan_rst_ni_ss),
-    //         .scanmode_i(scanmode_i_ss),
-    //         .alert_rx_i(alert_rx_i_ss),
-    //         .alert_tx_o(alert_tx_o_ss),
-    //         .esc_scrap_state0_tx_i(esc_scrap_state0_tx_i_ss),
-    //         .esc_scrap_state0_rx_o(esc_scrap_state0_rx_o_ss),
-    //         .esc_scrap_state1_tx_i(esc_scrap_state1_tx_i_ss),
-    //         .esc_scrap_state1_rx_o(esc_scrap_state1_rx_o_ss),
-    //         .pwr_caliptra_ss_lc_i(pwr_caliptra_ss_lc_i_ss),
-    //         .pwr_caliptra_ss_lc_o(pwr_caliptra_ss_lc_o_ss),
-    //         .strap_en_override_o(strap_en_override_o_ss),
-    //         .caliptra_ss_lc_otp_vendor_test_o(caliptra_ss_lc_otp_vendor_test_o_ss),
-    //         .caliptra_ss_lc_otp_vendor_test_i(caliptra_ss_lc_otp_vendor_test_i_ss),
-    //         .caliptra_ss_lc_otp_program_o(caliptra_ss_lc_otp_program_o_ss),
-    //         .caliptra_ss_lc_otp_program_i(caliptra_ss_lc_otp_program_i_ss),
-    //         .otp_caliptra_ss_lc_data_i(otp_caliptra_ss_lc_data_i_ss),
-    //         .caliptra_ss_lc_dft_en_o(caliptra_ss_lc_dft_en_o_ss),
-    //         .caliptra_ss_lc_nvm_debug_en_o(caliptra_ss_lc_nvm_debug_en_o_ss),
-    //         .caliptra_ss_lc_hw_debug_en_o(caliptra_ss_lc_hw_debug_en_o_ss),
-    //         .caliptra_ss_lc_cpu_en_o(caliptra_ss_lc_cpu_en_o_ss),
-    //         .caliptra_ss_lc_creator_seed_sw_rw_en_o(caliptra_ss_lc_creator_seed_sw_rw_en_o_ss),
-    //         .caliptra_ss_lc_owner_seed_sw_rw_en_o(caliptra_ss_lc_owner_seed_sw_rw_en_o_ss),
-    //         .caliptra_ss_lc_iso_part_sw_rd_en_o(caliptra_ss_lc_iso_part_sw_rd_en_o_ss),
-    //         .caliptra_ss_lc_iso_part_sw_wr_en_o(caliptra_ss_lc_iso_part_sw_wr_en_o_ss),
-    //         .caliptra_ss_lc_seed_hw_rd_en_o(caliptra_ss_lc_seed_hw_rd_en_o_ss),
-    //         .caliptra_ss_lc_keymgr_en_o(caliptra_ss_lc_keymgr_en_o_ss),
-    //         .caliptra_ss_lc_escalate_en_o(caliptra_ss_lc_escalate_en_o_ss),
-    //         .caliptra_ss_lc_check_byp_en_o(caliptra_ss_lc_check_byp_en_o_ss),
-    //         .caliptra_ss_lc_clk_byp_req_o(caliptra_ss_lc_clk_byp_req_o_ss),
-    //         .caliptra_ss_lc_clk_byp_ack_i(caliptra_ss_lc_clk_byp_ack_i_ss),
-    //         .caliptra_ss_lc_flash_rma_seed_o(caliptra_ss_lc_flash_rma_seed_o_ss),
-    //         .caliptra_ss_lc_flash_rma_req_o(caliptra_ss_lc_flash_rma_req_o_ss),
-    //         .caliptra_ss_lc_flash_rma_ack_i(caliptra_ss_lc_flash_rma_ack_i_ss),
-    //         .caliptra_ss_lc_keymgr_div_o(caliptra_ss_lc_keymgr_div_o_ss),
-    //         .otp_device_id_i(otp_device_id_i_ss),
-    //         .otp_manuf_state_i(otp_manuf_state_i_ss),
-    //         .hw_rev_o(hw_rev_o_ss)
-    //     );
+    axi_struct_pkg::axi_wr_req_t caliptra_ss_lc_axi_wr_req;
+    axi_struct_pkg::axi_wr_rsp_t caliptra_ss_lc_axi_wr_rsp;
+    axi_struct_pkg::axi_rd_req_t caliptra_ss_lc_axi_rd_req;
+    axi_struct_pkg::axi_rd_rsp_t caliptra_ss_lc_axi_rd_rsp;
+
+    assign caliptra_ss_lc_axi_wr_req.awvalid = axi_interconnect.sintf_arr[7].AWVALID;
+    assign caliptra_ss_lc_axi_wr_req.awaddr = axi_interconnect.sintf_arr[7].AWADDR;
+    assign caliptra_ss_lc_axi_wr_req.awid = axi_interconnect.sintf_arr[7].AWID;
+    assign caliptra_ss_lc_axi_wr_req.awlen = axi_interconnect.sintf_arr[7].AWLEN;
+    assign caliptra_ss_lc_axi_wr_req.awsize = axi_interconnect.sintf_arr[7].AWSIZE;
+    assign caliptra_ss_lc_axi_wr_req.awburst = axi_interconnect.sintf_arr[7].AWBURST;
+    assign caliptra_ss_lc_axi_wr_req.awlock = axi_interconnect.sintf_arr[7].AWLOCK;
+    assign caliptra_ss_lc_axi_wr_req.awuser = axi_interconnect.sintf_arr[7].AWUSER;
+    assign axi_interconnect.sintf_arr[7].AWREADY = caliptra_ss_lc_axi_wr_rsp.awready;
+    // FIXME this is a gross hack for data width conversion
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            caliptra_ss_lc_axi_wr_is_upper_dw_latched <= 0;
+        else if (caliptra_ss_lc_axi_wr_req.awvalid && caliptra_ss_lc_axi_wr_rsp.awready)
+            caliptra_ss_lc_axi_wr_is_upper_dw_latched <= caliptra_ss_lc_axi_wr_req.awaddr[2] && (caliptra_ss_lc_axi_wr_req.awsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT, (caliptra_ss_lc_axi_wr_req.awvalid && caliptra_ss_lc_axi_wr_rsp.awready) -> (caliptra_ss_lc_axi_wr_req.awsize < 3), core_clk, !rst_l)
+
+
+    assign caliptra_ss_lc_axi_wr_req.wvalid = axi_interconnect.sintf_arr[7].WVALID;
+    assign caliptra_ss_lc_axi_wr_req.wdata = axi_interconnect.sintf_arr[7].WDATA >> (caliptra_ss_lc_axi_wr_is_upper_dw_latched ? 32 : 0);
+    assign caliptra_ss_lc_axi_wr_req.wstrb = axi_interconnect.sintf_arr[7].WSTRB >> (caliptra_ss_lc_axi_wr_is_upper_dw_latched ? 4 : 0);
+    assign caliptra_ss_lc_axi_wr_req.wlast = axi_interconnect.sintf_arr[7].WLAST;
+
+    assign axi_interconnect.sintf_arr[7].WREADY = caliptra_ss_lc_axi_wr_rsp.wready;
+
+    assign axi_interconnect.sintf_arr[7].BRESP = caliptra_ss_lc_axi_wr_rsp.bresp;
+    assign axi_interconnect.sintf_arr[7].BID = caliptra_ss_lc_axi_wr_rsp.bid;
+    assign axi_interconnect.sintf_arr[7].BVALID = caliptra_ss_lc_axi_wr_rsp.bvalid;
+    assign caliptra_ss_lc_axi_wr_req.bready = axi_interconnect.sintf_arr[7].BREADY;
+
+    assign caliptra_ss_lc_axi_rd_req.arvalid = axi_interconnect.sintf_arr[7].ARVALID;
+    assign caliptra_ss_lc_axi_rd_req.araddr = axi_interconnect.sintf_arr[7].ARADDR;
+    assign caliptra_ss_lc_axi_rd_req.arid = axi_interconnect.sintf_arr[7].ARID;
+    assign caliptra_ss_lc_axi_rd_req.arlen = axi_interconnect.sintf_arr[7].ARLEN;
+    assign caliptra_ss_lc_axi_rd_req.arsize = axi_interconnect.sintf_arr[7].ARSIZE;
+    assign caliptra_ss_lc_axi_rd_req.arburst = axi_interconnect.sintf_arr[7].ARBURST;
+    assign caliptra_ss_lc_axi_rd_req.arlock = axi_interconnect.sintf_arr[7].ARLOCK;
+    assign caliptra_ss_lc_axi_rd_req.aruser = axi_interconnect.sintf_arr[7].ARUSER;
+    assign axi_interconnect.sintf_arr[7].ARREADY = caliptra_ss_lc_axi_rd_rsp.arready;
+    // FIXME this is a gross hack for data width conversion
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            caliptra_ss_lc_axi_rd_is_upper_dw_latched <= 0;
+        else if (caliptra_ss_lc_axi_rd_req.arvalid && caliptra_ss_lc_axi_rd_rsp.arready)
+            caliptra_ss_lc_axi_rd_is_upper_dw_latched <= caliptra_ss_lc_axi_rd_req.araddr[2] && (caliptra_ss_lc_axi_rd_req.arsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT, (caliptra_ss_lc_axi_rd_req.arvalid && caliptra_ss_lc_axi_rd_rsp.arready) -> (caliptra_ss_lc_axi_rd_req.arsize < 3), core_clk, !rst_l)
+
+    assign axi_interconnect.sintf_arr[7].RDATA = 64'(caliptra_ss_lc_axi_rd_rsp.rdata) << (caliptra_ss_lc_axi_rd_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.sintf_arr[7].RRESP = caliptra_ss_lc_axi_rd_rsp.rresp;
+    assign axi_interconnect.sintf_arr[7].RID = caliptra_ss_lc_axi_rd_rsp.rid;
+    assign axi_interconnect.sintf_arr[7].RLAST = caliptra_ss_lc_axi_rd_rsp.rlast;
+    assign axi_interconnect.sintf_arr[7].RVALID = caliptra_ss_lc_axi_rd_rsp.rvalid;
+    assign caliptra_ss_lc_axi_rd_req.rready = axi_interconnect.sintf_arr[7].RREADY;
+
+
+    //--------------------------------------------------------------------------------------------
+    // These are alert handler signals. We do not want them for the initial integrations
+    // TL-UL Interface
+    logic [$bits(tlul_pkg::tl_h2d_t)-1:0] caliptra_ss_lc_ctrl_dmi_tl_h2d_tb;
+    logic [$bits(tlul_pkg::tl_d2h_t)-1:0] caliptra_ss_lc_ctrl_dmi_tl_d2h_tb;
+    assign caliptra_ss_lc_ctrl_dmi_tl_d2h_tb = tlul_pkg::tl_d2h_t'(u_caliptra_ss_lc_ctrl.dmi_tl_o);
+    assign caliptra_ss_lc_ctrl_dmi_tl_h2d_tb = tlul_pkg::tl_h2d_t'(u_caliptra_ss_lc_ctrl_bfm.caliptra_ss_lc_ctrl_dmi_tl_h2d);
+
+    // Scan Interface
+    logic caliptra_ss_lc_ctrl_scan_rst_ni_tb;
+    logic [$bits(caliptra_prim_mubi_pkg::mubi4_t)-1:0] caliptra_ss_lc_ctrl_scanmode_i_tb;
+    assign caliptra_ss_lc_ctrl_scanmode_i_tb = caliptra_prim_mubi_pkg::mubi4_t'(u_caliptra_ss_lc_ctrl_bfm.caliptra_ss_lc_ctrl_scanmode_i);
+
+   
+
+
+    //--------------------------------------------------------------------------------------------
+    // These are shared signals between fuse controller and lc controller
+    logic [$bits(otp_ctrl_pkg::caliptra_ss_lc_otp_vendor_test_req_t)-1:0] caliptra_ss_lc_otp_vendor_test_o_tb;
+    logic [$bits(otp_ctrl_pkg::caliptra_ss_lc_otp_vendor_test_rsp_t)-1:0] caliptra_ss_lc_otp_vendor_test_i_tb;
+    logic [$bits(otp_ctrl_pkg::caliptra_ss_lc_otp_program_req_t)-1:0] caliptra_ss_lc_otp_program_o_tb;
+    logic [$bits(otp_ctrl_pkg::caliptra_ss_lc_otp_program_rsp_t)-1:0] caliptra_ss_lc_otp_program_i_tb;
+
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_creator_seed_sw_rw_en_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_owner_seed_sw_rw_en_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_seed_hw_rd_en_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_dft_en_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_escalate_en_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_check_byp_en_tb;
+    logic [$bits(otp_ctrl_pkg::otp_caliptra_ss_lc_data_t)-1:0] otp_caliptra_ss_lc_data_tb;
+
+    assign caliptra_ss_lc_otp_vendor_test_o_tb = otp_ctrl_pkg::caliptra_ss_lc_otp_vendor_test_req_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_otp_vendor_test_o);
+    assign caliptra_ss_lc_otp_vendor_test_i_tb = otp_ctrl_pkg::caliptra_ss_lc_otp_vendor_test_rsp_t'(u_otp_ctrl.caliptra_ss_lc_otp_vendor_test_o);
+
+
+    assign caliptra_ss_lc_otp_program_o_tb = otp_ctrl_pkg::caliptra_ss_lc_otp_program_req_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_otp_program_o);
+    assign caliptra_ss_lc_otp_program_i_tb = otp_ctrl_pkg::caliptra_ss_lc_otp_program_rsp_t'(u_otp_ctrl.caliptra_ss_lc_otp_program_o);
+
+    assign caliptra_ss_lc_creator_seed_sw_rw_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_creator_seed_sw_rw_en_o);
+    assign caliptra_ss_lc_owner_seed_sw_rw_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_owner_seed_sw_rw_en_o);
+    assign caliptra_ss_lc_seed_hw_rd_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_seed_hw_rd_en_o);
+    assign caliptra_ss_lc_dft_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_dft_en_o);
+    assign caliptra_ss_lc_escalate_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_escalate_en_o);
+    assign caliptra_ss_lc_check_byp_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_check_byp_en_o);
+
+    // TODO: This port is hacked in LCC's BFM in order to have provisioned tokens
+    //assign otp_caliptra_ss_lc_data_tb = otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(u_otp_ctrl.otp_caliptra_ss_lc_data_o);
+    assign otp_caliptra_ss_lc_data_tb = otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(u_caliptra_ss_lc_ctrl_bfm.otp_caliptra_ss_lc_data_o);
+
+    //--------------------------------------------------------------------------------------------
+
+    //--------------------------------------------------------------------------------------------
+    // These are going to be connected to SoC later on
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_nvm_debug_en_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_hw_debug_en_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_cpu_en_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_iso_part_sw_rd_en_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_iso_part_sw_wr_en_tb;
+    // Assignments for unused signals
+    assign caliptra_ss_lc_nvm_debug_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_nvm_debug_en_o);
+    assign caliptra_ss_lc_hw_debug_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_hw_debug_en_o);
+    assign caliptra_ss_lc_cpu_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_cpu_en_o);
+    assign caliptra_ss_lc_iso_part_sw_rd_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_iso_part_sw_rd_en_o);
+    assign caliptra_ss_lc_iso_part_sw_wr_en_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_iso_part_sw_wr_en_o);
+    //--------------------------------------------------------------------------------------------
+
+    //--------------------------------------------------------------------------------------------
+    // These are driven by the lc ctrl bfm
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_clk_byp_req_tb;
+    logic [$bits(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t)-1:0] caliptra_ss_lc_clk_byp_ack_tb;
+    assign caliptra_ss_lc_clk_byp_req_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_clk_byp_req_o);
+    assign caliptra_ss_lc_clk_byp_ack_tb = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl_bfm.caliptra_ss_lc_clk_byp_ack_i);
+
+    logic [$bits(pwrmgr_pkg::pwr_caliptra_ss_lc_req_t)-1:0] pwr_caliptra_ss_lc_i_tb;
+    logic [$bits(pwrmgr_pkg::pwr_caliptra_ss_lc_rsp_t)-1:0] pwr_caliptra_ss_lc_o_tb;
+    // Assignments for Power Manager Interface
+    assign pwr_caliptra_ss_lc_i_tb = pwrmgr_pkg::pwr_caliptra_ss_lc_req_t'(u_caliptra_ss_lc_ctrl_bfm.pwr_caliptra_ss_lc_i);
+    assign pwr_caliptra_ss_lc_o_tb = pwrmgr_pkg::pwr_caliptra_ss_lc_rsp_t'(u_caliptra_ss_lc_ctrl.pwr_caliptra_ss_lc_o);
+    logic pwr_otp_init_i;
+
+
+
+    logic [7:0] caliptra_ss_lc_flash_rma_ack_tb;
+    logic [7:0] from_bfm_caliptra_ss_lc_flash_rma_ack;
+    assign caliptra_ss_lc_flash_rma_ack_tb = from_bfm_caliptra_ss_lc_flash_rma_ack;
+
+    logic Allow_RMA_on_PPD;
+    logic fake_reset;
+
+    logic [3:0]  to_bfm_caliptra_ss_lc_flash_rma_req_o;
+    assign to_bfm_caliptra_ss_lc_flash_rma_req_o = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(u_caliptra_ss_lc_ctrl.caliptra_ss_lc_flash_rma_req_o);
+
+    logic [caliptra_ss_lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o;
+    logic esc_scrap_state0;
+    logic esc_scrap_state1;
+
+    caliptra_ss_lc_ctrl_bfm u_caliptra_ss_lc_ctrl_bfm (
+        .clk(core_clk),
+        .reset_n(rst_l),
+
+
+        .caliptra_ss_lc_axi_rd_req(caliptra_ss_lc_axi_rd_req),
+        .caliptra_ss_lc_axi_rd_rsp(caliptra_ss_lc_axi_rd_rsp),
+        .fake_reset(fake_reset),
+        .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
+        .from_bfm_caliptra_ss_lc_flash_rma_ack(from_bfm_caliptra_ss_lc_flash_rma_ack),
+        .to_bfm_caliptra_ss_lc_flash_rma_req_o(to_bfm_caliptra_ss_lc_flash_rma_req_o),
+
+        // TL-UL Interface
+        .caliptra_ss_lc_ctrl_dmi_tl_h2d(),
+        .caliptra_ss_lc_ctrl_dmi_tl_d2h(tlul_pkg::tl_d2h_t'(caliptra_ss_lc_ctrl_dmi_tl_d2h_tb)),
+
+        // Scan Interface
+        .caliptra_ss_lc_ctrl_scan_rst_ni(caliptra_ss_lc_ctrl_scan_rst_ni_tb),
+        .caliptra_ss_lc_ctrl_scanmode_i(),
+
+        // Alert Handler Interface
+        .lc_alerts_o(lc_alerts_o),
+
+        // Escalation State Interface
+        .esc_scrap_state0(esc_scrap_state0),
+        .esc_scrap_state1(esc_scrap_state1),
+
+        // OTP hack
+        .otp_caliptra_ss_lc_data_o(),
+        .from_otp_caliptra_ss_lc_data_i(otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(u_otp_ctrl.otp_caliptra_ss_lc_data_o)),
+
+        // Power manager interface
+        .pwr_caliptra_ss_lc_i(),
+        .pwr_caliptra_ss_lc_o(pwrmgr_pkg::pwr_caliptra_ss_lc_rsp_t'(pwr_caliptra_ss_lc_o_tb)),
+        .cptra_pwrgood(cptra_pwrgood),
+
+        // Clock manager interface
+        .caliptra_ss_lc_clk_byp_req_o(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(caliptra_ss_lc_clk_byp_req_tb)),
+        .caliptra_ss_lc_clk_byp_ack_i()
+    );
+
+    //--------------------------------------------------------------------------------------------
+
+
+
+    caliptra_ss_lc_ctrl /*#(
+            .AlertAsyncOn(AlertAsyncOn),
+            .SiliconCreatorId(SiliconCreatorId),
+            .ProductId(ProductId),
+            .RevisionId(RevisionId),
+            .IdcodeValue(IdcodeValue),
+            .UseDmiInterface(UseDmiInterface),
+            .RndCnstLcKeymgrDivInvalid(RndCnstLcKeymgrDivInvalid),
+            .RndCnstLcKeymgrDivTestUnlocked(RndCnstLcKeymgrDivTestUnlocked),
+            .RndCnstLcKeymgrDivDev(RndCnstLcKeymgrDivDev),
+            .RndCnstLcKeymgrDivProduction(RndCnstLcKeymgrDivProduction),
+            .RndCnstLcKeymgrDivRma(RndCnstLcKeymgrDivRma),
+            .RndCnstInvalidTokens(RndCnstInvalidTokens),
+            .SecVolatileRawUnlockEn(SecVolatileRawUnlockEn)
+        ) */ u_caliptra_ss_lc_ctrl (
+            .clk_i(core_clk),
+            .rst_ni(rst_l & fake_reset),
+            .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
+            .axi_wr_req(caliptra_ss_lc_axi_wr_req),
+            .axi_wr_rsp(caliptra_ss_lc_axi_wr_rsp),
+            .axi_rd_req(caliptra_ss_lc_axi_rd_req),
+            .axi_rd_rsp(caliptra_ss_lc_axi_rd_rsp),
+
+            .dmi_tl_i(tlul_pkg::tl_h2d_t'(caliptra_ss_lc_ctrl_dmi_tl_h2d_tb)),
+            .dmi_tl_o(),
+            .jtag_i('0),
+            .jtag_o(),
+            
+            .scan_rst_ni(caliptra_ss_lc_ctrl_scan_rst_ni_tb),
+            .scanmode_i(caliptra_prim_mubi_pkg::mubi4_t'(caliptra_ss_lc_ctrl_scanmode_i_tb)),
+
+            // Alert Handler Interface
+            // .alert_rx_i(caliptra_prim_alert_pkg::alert_rx_t'(caliptra_ss_lc_ctrl_alert_rx_tb)),
+            // .alert_tx_o(),
+            // .esc_scrap_state0_tx_i(caliptra_prim_esc_pkg::esc_rx_t'(esc_scrap_state0_tx_tb)),
+            // .esc_scrap_state0_rx_o(),
+            // .esc_scrap_state1_tx_i(caliptra_prim_esc_pkg::esc_rx_t'(esc_scrap_state1_tx_tb)),
+            // .esc_scrap_state1_rx_o(),
+            .alerts(lc_alerts_o),
+            .esc_scrap_state0(esc_scrap_state0),
+            .esc_scrap_state1(esc_scrap_state1),
+
+
+            .pwr_caliptra_ss_lc_i(pwrmgr_pkg::pwr_caliptra_ss_lc_req_t'(pwr_caliptra_ss_lc_i_tb)),
+            .pwr_caliptra_ss_lc_o(),
+
+
+            .strap_en_override_o(),
+
+            .caliptra_ss_lc_otp_vendor_test_o(),
+            .caliptra_ss_lc_otp_vendor_test_i(otp_ctrl_pkg::caliptra_ss_lc_otp_vendor_test_rsp_t'(caliptra_ss_lc_otp_vendor_test_i_tb)),
+            .caliptra_ss_lc_otp_program_o(),
+            .caliptra_ss_lc_otp_program_i(otp_ctrl_pkg::caliptra_ss_lc_otp_program_rsp_t'(caliptra_ss_lc_otp_program_i_tb)),
+
+            .otp_caliptra_ss_lc_data_i(otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(otp_caliptra_ss_lc_data_tb)),
+            .caliptra_ss_lc_dft_en_o(),
+            .caliptra_ss_lc_creator_seed_sw_rw_en_o(),
+            .caliptra_ss_lc_owner_seed_sw_rw_en_o(),
+            .caliptra_ss_lc_seed_hw_rd_en_o(),            
+            .caliptra_ss_lc_escalate_en_o(),
+            .caliptra_ss_lc_check_byp_en_o(),
+
+
+
+            .caliptra_ss_lc_nvm_debug_en_o(),
+            .caliptra_ss_lc_hw_debug_en_o(),
+            .caliptra_ss_lc_cpu_en_o(),
+            .caliptra_ss_lc_iso_part_sw_rd_en_o(),
+            .caliptra_ss_lc_iso_part_sw_wr_en_o(),
+
+
+
+            .caliptra_ss_lc_keymgr_en_o(), // We do not use key manager
+            .caliptra_ss_lc_clk_byp_req_o(),
+            // .caliptra_ss_lc_clk_byp_ack_i(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(caliptra_ss_lc_clk_byp_ack_tb)),
+            .caliptra_ss_lc_clk_byp_ack_i(caliptra_ss_lc_clk_byp_ack_tb),
+            .caliptra_ss_lc_flash_rma_seed_o(), // We do not use flash
+            .caliptra_ss_lc_flash_rma_req_o(),
+            .caliptra_ss_lc_flash_rma_ack_i(caliptra_ss_lc_flash_rma_ack_tb),
+            .caliptra_ss_lc_keymgr_div_o(), // We do not use key manager
+            .otp_device_id_i('0),
+            .otp_manuf_state_i('0),
+            .hw_rev_o()
+        );
 
 
     //=========================================================================-
     // Fuse Controller Instance : 
     // 
     //=========================================================================-
-
-    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_dft_en_i;
-    logic [$bits(caliptra_ss_lc_dft_en_i)-1:0] caliptra_ss_lc_dft_en_i_tb;
-    assign caliptra_ss_lc_dft_en_i = caliptra_ss_lc_dft_en_i_tb;
-
-    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_escalate_en_i;
-    logic [$bits(caliptra_ss_lc_escalate_en_i)-1:0] caliptra_ss_lc_escalate_en_i_tb;
-    assign caliptra_ss_lc_escalate_en_i = caliptra_ss_lc_escalate_en_i_tb;
-
-    caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_check_byp_en_i;
-    logic [$bits(caliptra_ss_lc_check_byp_en_i)-1:0] caliptra_ss_lc_check_byp_en_i_tb;
-    assign caliptra_ss_lc_check_byp_en_i = caliptra_ss_lc_check_byp_en_i_tb;
-
-    otp_ctrl_pkg::otp_caliptra_ss_lc_data_t otp_caliptra_ss_lc_data_o;
-    logic [$bits(otp_caliptra_ss_lc_data_o)-1:0] otp_caliptra_ss_lc_data_o_tb;
     
     // logic otp_caliptra_ss_lc_data_o_valid;
-    logic pwr_otp_init_i;
+    
 
     axi_struct_pkg::axi_wr_req_t core_axi_wr_req;
     axi_struct_pkg::axi_wr_rsp_t core_axi_wr_rsp;
@@ -1958,7 +2163,7 @@ module caliptra_ss_top
         .MemInitFile ("/home/ws/caliptra/anjpar/caliptra_ws_1119/Caliptra/../chipsalliance/caliptra-ss/src/fuse_ctrl/data/otp-img.2048.vmem")
     ) u_otp_ctrl (
         .clk_i                      (core_clk),
-        .rst_ni                     (rst_l),
+        .rst_ni                     (rst_l & fake_reset),
         .clk_edn_i                  (),
         .rst_edn_ni                 (),
         .edn_o                      (),
@@ -1984,17 +2189,32 @@ module caliptra_ss_top
         .otp_ast_pwr_seq_h_i        (),
         .pwr_otp_i                  (pwr_otp_init_i),
         .pwr_otp_o                  (),
-        .caliptra_ss_lc_otp_vendor_test_i       (),
-        .caliptra_ss_lc_otp_vendor_test_o       (),
-        .caliptra_ss_lc_otp_program_i           (),
-        .caliptra_ss_lc_otp_program_o           (),
-        .caliptra_ss_lc_creator_seed_sw_rw_en_i (),
-        .caliptra_ss_lc_owner_seed_sw_rw_en_i   (),
-        .caliptra_ss_lc_seed_hw_rd_en_i         (),
-        .caliptra_ss_lc_dft_en_i                (caliptra_ss_lc_dft_en_i_tb),
-        .caliptra_ss_lc_escalate_en_i           (caliptra_ss_lc_escalate_en_i_tb),
-        .caliptra_ss_lc_check_byp_en_i          (caliptra_ss_lc_check_byp_en_i_tb),
-        .otp_caliptra_ss_lc_data_o              (otp_caliptra_ss_lc_data_o_tb),
+
+        .caliptra_ss_lc_otp_vendor_test_i(otp_ctrl_pkg::caliptra_ss_lc_otp_vendor_test_req_t'(caliptra_ss_lc_otp_vendor_test_o_tb)),
+        .caliptra_ss_lc_otp_vendor_test_o(),
+        .caliptra_ss_lc_otp_program_i(otp_ctrl_pkg::caliptra_ss_lc_otp_program_req_t'(caliptra_ss_lc_otp_program_o_tb)),
+        .caliptra_ss_lc_otp_program_o(),
+
+
+
+    // .caliptra_ss_lc_creator_seed_sw_rw_en_i(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(caliptra_ss_lc_creator_seed_sw_rw_en_tb)),
+    // .caliptra_ss_lc_owner_seed_sw_rw_en_i(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(caliptra_ss_lc_owner_seed_sw_rw_en_tb)),
+    // .caliptra_ss_lc_seed_hw_rd_en_i(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(caliptra_ss_lc_seed_hw_rd_en_tb)),
+    // .caliptra_ss_lc_dft_en_i(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(caliptra_ss_lc_dft_en_tb)),
+    // .caliptra_ss_lc_escalate_en_i(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(caliptra_ss_lc_escalate_en_tb)),
+    // .caliptra_ss_lc_check_byp_en_i(caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t'(caliptra_ss_lc_check_byp_en_tb)),
+    // .otp_caliptra_ss_lc_data_o(otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(otp_caliptra_ss_lc_data_tb)),
+    
+
+    .caliptra_ss_lc_creator_seed_sw_rw_en_i(caliptra_ss_lc_creator_seed_sw_rw_en_tb),
+    .caliptra_ss_lc_owner_seed_sw_rw_en_i(caliptra_ss_lc_owner_seed_sw_rw_en_tb),
+    .caliptra_ss_lc_seed_hw_rd_en_i(caliptra_ss_lc_seed_hw_rd_en_tb),
+    .caliptra_ss_lc_dft_en_i(caliptra_ss_lc_dft_en_tb),
+    .caliptra_ss_lc_escalate_en_i(caliptra_ss_lc_escalate_en_tb),
+    .caliptra_ss_lc_check_byp_en_i(caliptra_ss_lc_check_byp_en_tb),
+    .otp_caliptra_ss_lc_data_o(),
+
+
         .otp_keymgr_key_o           (),
         .flash_otp_key_i            (),
         .flash_otp_key_o            (),
@@ -2092,10 +2312,10 @@ module caliptra_ss_top
         .core_clk            (core_clk            ),
         .cptra_pwrgood       (cptra_pwrgood       ),
         .fc_partition_init   (pwr_otp_init_i      ),
-        .caliptra_ss_lc_dft_en_i         (caliptra_ss_lc_dft_en_i_tb         ),
-        .caliptra_ss_lc_escalate_en_i    (caliptra_ss_lc_escalate_en_i_tb    ),
-        .caliptra_ss_lc_check_byp_en_i   (caliptra_ss_lc_check_byp_en_i_tb   ),
-        .otp_caliptra_ss_lc_data_o (otp_caliptra_ss_lc_data_o_tb),
+        .caliptra_ss_lc_dft_en_i         (),
+        .caliptra_ss_lc_escalate_en_i    (),
+        .caliptra_ss_lc_check_byp_en_i   (),
+        .otp_caliptra_ss_lc_data_o (otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(otp_caliptra_ss_lc_data_tb)),
         .fuse_ctrl_rdy       (fuse_ctrl_rdy       )
     );
 

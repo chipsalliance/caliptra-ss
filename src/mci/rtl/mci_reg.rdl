@@ -483,6 +483,7 @@ addrmap mci_reg {
                 sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0;
      } STICKY_LOCKABLE_SCRATCH_REG_CTRL[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
 
+
     reg {
         name = "STICKY LOCKABLE SCRATCH REG";
         desc = "Sticky Scratch Register Entries (cleared on cold reset)

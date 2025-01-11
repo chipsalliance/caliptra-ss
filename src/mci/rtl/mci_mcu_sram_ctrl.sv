@@ -31,6 +31,7 @@
 //      to prot region. If fw_sram_exec_region_size is larger than the actual SRAM size 
 //      the entire SRAM is considered exec region and there is no prot region
 
+
 module mci_mcu_sram_ctrl 
     #(
     parameter  MCU_SRAM_SIZE_KB = 1024
@@ -51,6 +52,7 @@ module mci_mcu_sram_ctrl
     input logic mcu_lsu_req,
     input logic mcu_ifu_req,
     input logic clp_req ,
+
 
     // Access lock interface
     input logic mcu_sram_fw_exec_region_lock,
@@ -107,6 +109,7 @@ logic prot_region_filter_success;
 logic prot_region_filter_error; 
 
 
+
 // SRAM Read/Write request and phase signals
 logic mcu_sram_valid_req;
 logic mcu_sram_read_req;
@@ -138,6 +141,7 @@ assign exec_region_overflow  = |exec_region_end_calc[28:MCU_SRAM_CIF_ADDR_W];
 // Otherwise take the calculated value
 assign exec_region_end  = exec_region_overflow ? (MCU_SRAM_SIZE_BYTES-1) : 
                             exec_region_end_calc;  
+
 
 
 
@@ -318,6 +322,7 @@ assign cif_resp_if.hold = sram_read_req_phase;
 assign cif_resp_if.error = exec_region_filter_error | 
                            prot_region_filter_error | 
                            sram_double_ecc_error; 
+
 
 
 endmodule

@@ -334,7 +334,15 @@ package caliptra_ss_lc_ctrl_pkg;
     // DEV
     ZeroTokenIdx,          // -> SCRAP
     RmaTokenIdx,           // -> RMA
-    {19{InvalidTokenIdx}}, // -> TEST_LOCKED0-6, TEST_UNLOCKED0-7, DEV, PROD, PROD_END
+    // ============== Enabling state trans from DEV to PROD ==============================
+    // NOTE: This is how we enable from DEV to PROD. The commented line shows the old version
+    // Next line shows Caliptra-SS's update
+    // {19{InvalidTokenIdx}}, // -> TEST_LOCKED0-6, TEST_UNLOCKED0-7, DEV, PROD, PROD_END
+    InvalidTokenIdx, // -> PROD_END
+    TestExitTokenIdx, // -> PROD
+    {17{InvalidTokenIdx}}, // -> TEST_LOCKED0-6, TEST_UNLOCKED0-7, DEV
+    // ====================================================================================
+
     // TEST_UNLOCKED0-7, TEST_LOCKED0-6
     `TEST_UNLOCKED(7),
     `TEST_LOCKED(6),

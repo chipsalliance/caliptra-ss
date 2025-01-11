@@ -72,6 +72,7 @@ module mci_axi_sub_decode
 logic soc_mcu_sram_gnt;
 logic soc_mci_reg_gnt;
 
+
 // MISC signals
 logic soc_req_miss;
 
@@ -96,6 +97,7 @@ always_comb mcu_sram_req_if.dv = soc_mcu_sram_gnt;
 // MCI REG 
 always_comb mci_reg_req_if.dv = soc_mci_reg_gnt;
 
+
 ///////////////////////////////////////////////////////////
 // Drive data and reqest to approriate destination.
 ///////////////////////////////////////////////////////////
@@ -105,6 +107,7 @@ always_comb mcu_sram_req_if.req_data = soc_resp_if.req_data;
 
 // MCI REG 
 always_comb mci_reg_req_if.req_data = soc_resp_if.req_data;
+
 
 
 
@@ -118,12 +121,14 @@ assign soc_resp_if.rdata =  soc_mcu_sram_gnt    ? mcu_sram_req_if.rdata :
 
 
 
+
 ///////////////////////////////////////////////////////////
 // Drive approriate hold back
 ///////////////////////////////////////////////////////////
 
 always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sram_req_if.hold)) |
                                 (soc_mci_reg_gnt & (~soc_mci_reg_gnt | mci_reg_req_if.hold));
+
 
 
 ///////////////////////////////////////////////////////////
@@ -150,5 +155,6 @@ assign mcu_req      = mcu_lsu_req | mcu_ifu_req;
 assign clp_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_clp_axi_user));
 
 assign soc_req      = soc_resp_if.dv & ~(mcu_req | clp_req);
+
 
 endmodule

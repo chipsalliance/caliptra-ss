@@ -55,6 +55,7 @@ module mci_axi_sub_top
     input logic [s_axi_w_if.UW-1:0] strap_clp_axi_user
 
 
+
     );
 
 localparam AXI_ADDR_WIDTH = s_axi_w_if.AW;
@@ -93,6 +94,7 @@ axi_sub #(
     // AXI INF
     .s_axi_w_if,
     .s_axi_r_if,
+
 
     //COMPONENT INF
     .dv    (soc_resp_if.dv  ),
@@ -142,6 +144,7 @@ mci_axi_sub_decode #(
     .strap_mcu_lsu_axi_user,
     .strap_mcu_ifu_axi_user,
     .strap_clp_axi_user
+
 );
 
 //req from axi is for soc always

@@ -48,7 +48,7 @@ module mci_top
     mci_mcu_sram_if.request mci_mcu_sram_req_if 
 
     );
-    
+
     localparam AXI_ADDR_WIDTH = s_axi_w_if.AW;
     localparam AXI_DATA_WIDTH = s_axi_w_if.DW;
     localparam AXI_USER_WIDTH = s_axi_w_if.UW;
