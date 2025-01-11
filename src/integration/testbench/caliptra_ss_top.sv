@@ -1958,7 +1958,7 @@ module caliptra_ss_top
     assign lc_check_byp_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_check_byp_en_o);
 
     // TODO: This port is hacked in LCC's BFM in order to have provisioned tokens
-    //assign otp_caliptra_ss_lc_data_tb = otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(u_otp_ctrl.otp_caliptra_ss_lc_data_o);
+    //assign otp_lc_data_tb = otp_ctrl_pkg::otp_lc_data_t'(u_otp_ctrl.otp_lc_data_o);
     assign otp_lc_data_tb = otp_ctrl_pkg::otp_lc_data_t'(u_lc_ctrl_bfm.otp_lc_data_o);
 
     //--------------------------------------------------------------------------------------------
@@ -2004,7 +2004,7 @@ module caliptra_ss_top
     logic [3:0]  to_bfm_lc_flash_rma_req_o;
     assign to_bfm_lc_flash_rma_req_o = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_flash_rma_req_o);
 
-    logic [caliptra_ss_lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o;
+    logic [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o;
     logic esc_scrap_state0;
     logic esc_scrap_state1;
 
@@ -2015,12 +2015,12 @@ module caliptra_ss_top
         .reset_n(rst_l),
 
 
-        .caliptra_ss_lc_axi_rd_req(caliptra_ss_lc_axi_rd_req),
-        .caliptra_ss_lc_axi_rd_rsp(caliptra_ss_lc_axi_rd_rsp),
+        .lc_axi_rd_req(lc_axi_rd_req),
+        .lc_axi_rd_rsp(lc_axi_rd_rsp),
         .fake_reset(fake_reset),
         .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
-        .from_bfm_caliptra_ss_lc_flash_rma_ack(from_bfm_caliptra_ss_lc_flash_rma_ack),
-        .to_bfm_caliptra_ss_lc_flash_rma_req_o(to_bfm_caliptra_ss_lc_flash_rma_req_o),
+        .from_bfm_lc_flash_rma_ack(from_bfm_lc_flash_rma_ack),
+        .to_bfm_lc_flash_rma_req_o(to_bfm_lc_flash_rma_req_o),
 
         // TL-UL Interface
         .lc_ctrl_dmi_tl_h2d(),
@@ -2038,8 +2038,8 @@ module caliptra_ss_top
         .esc_scrap_state1(esc_scrap_state1),
 
         // OTP hack
-        .otp_caliptra_ss_lc_data_o(),
-        .from_otp_caliptra_ss_lc_data_i(otp_ctrl_pkg::otp_caliptra_ss_lc_data_t'(u_otp_ctrl.otp_caliptra_ss_lc_data_o)),
+        .otp_lc_data_o(),
+        .from_otp_lc_data_i(otp_ctrl_pkg::otp_lc_data_t'(u_otp_ctrl.otp_lc_data_o)),
 
         // Power manager interface
         .pwr_lc_i(),
@@ -2087,7 +2087,7 @@ module caliptra_ss_top
             .scanmode_i(caliptra_prim_mubi_pkg::mubi4_t'(lc_ctrl_scanmode_i_tb)),
 
             // Alert Handler Interface
-            // .alert_rx_i(caliptra_prim_alert_pkg::alert_rx_t'(caliptra_ss_lc_ctrl_alert_rx_tb)),
+            // .alert_rx_i(caliptra_prim_alert_pkg::alert_rx_t'(lc_ctrl_alert_rx_tb)),
             // .alert_tx_o(),
             // .esc_scrap_state0_tx_i(caliptra_prim_esc_pkg::esc_rx_t'(esc_scrap_state0_tx_tb)),
             // .esc_scrap_state0_rx_o(),
@@ -2236,6 +2236,41 @@ module caliptra_ss_top
 
     assign scanmode_mubi = scan_mode ? caliptra_prim_mubi_pkg::MuBi4True : caliptra_prim_mubi_pkg::MuBi4False;
 
+    logic fuse_core_axi_rd_is_upper_dw_latched;
+    logic fuse_core_axi_wr_is_upper_dw_latched;
+    // FIXME this is a gross hack for data width conversion
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            fuse_core_axi_wr_is_upper_dw_latched <= 0;
+        else if (core_axi_wr_req.awvalid && core_axi_wr_rsp.awready)
+            fuse_core_axi_wr_is_upper_dw_latched <= core_axi_wr_req.awaddr[2] && (core_axi_wr_req.awsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT, (core_axi_wr_req.awvalid && core_axi_wr_rsp.awready) -> (core_axi_wr_req.awsize < 3), core_clk, !rst_l)
+    // FIXME this is a gross hack for data width conversion
+    always@(posedge core_clk or negedge rst_l)
+    if (!rst_l)
+        fuse_core_axi_rd_is_upper_dw_latched <= 0;
+    else if (core_axi_rd_req.arvalid && core_axi_rd_rsp.arready)
+        fuse_core_axi_rd_is_upper_dw_latched <= core_axi_rd_req.araddr[2] && (core_axi_rd_req.arsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT, (core_axi_rd_req.arvalid && core_axi_rd_rsp.arready) -> (core_axi_rd_req.arsize < 3), core_clk, !rst_l)
+    
+    logic fuse_prim_axi_rd_is_upper_dw_latched;
+    logic fuse_prim_axi_wr_is_upper_dw_latched;
+    // FIXME this is a gross hack for data width conversion
+    always@(posedge core_clk or negedge rst_l)
+        if (!rst_l)
+            fuse_prim_axi_wr_is_upper_dw_latched <= 0;
+        else if (prim_axi_wr_req.awvalid && prim_axi_wr_rsp.awready)
+            fuse_prim_axi_wr_is_upper_dw_latched <= prim_axi_wr_req.awaddr[2] && (prim_axi_wr_req.awsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT, (prim_axi_wr_req.awvalid && prim_axi_wr_rsp.awready) -> (prim_axi_wr_req.awsize < 3), prim_clk, !rst_l)
+    // FIXME this is a gross hack for data width conversion
+    always@(posedge core_clk or negedge rst_l)
+    if (!rst_l)
+        fuse_prim_axi_rd_is_upper_dw_latched <= 0;
+    else if (prim_axi_rd_req.arvalid && prim_axi_rd_rsp.arready)
+        fuse_prim_axi_rd_is_upper_dw_latched <= prim_axi_rd_req.araddr[2] && (prim_axi_rd_req.arsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT, (prim_axi_rd_req.arvalid && prim_axi_rd_rsp.arready) -> (prim_axi_rd_req.arsize < 3), prim_clk, !rst_l)
+    
+
     assign core_axi_wr_req.awaddr = axi_interconnect.sintf_arr[5].AWADDR;
     assign core_axi_wr_req.awburst = axi_interconnect.sintf_arr[5].AWBURST;
     assign core_axi_wr_req.awsize = axi_interconnect.sintf_arr[5].AWSIZE;
@@ -2244,8 +2279,8 @@ module caliptra_ss_top
     assign core_axi_wr_req.awid = axi_interconnect.sintf_arr[5].AWID;
     assign core_axi_wr_req.awlock = axi_interconnect.sintf_arr[5].AWLOCK;
     assign core_axi_wr_req.awvalid = axi_interconnect.sintf_arr[5].AWVALID;
-    assign core_axi_wr_req.wdata = axi_interconnect.sintf_arr[5].WDATA;
-    assign core_axi_wr_req.wstrb = axi_interconnect.sintf_arr[5].WSTRB;
+    assign core_axi_wr_req.wdata = axi_interconnect.sintf_arr[5].WDATA >> (fuse_core_axi_wr_is_upper_dw_latched ? 32 : 0);
+    assign core_axi_wr_req.wstrb = axi_interconnect.sintf_arr[5].WSTRB >> (fuse_core_axi_wr_is_upper_dw_latched ? 4 : 0);
     assign core_axi_wr_req.wlast = axi_interconnect.sintf_arr[5].WLAST;
     assign core_axi_wr_req.wvalid = axi_interconnect.sintf_arr[5].WVALID;
     assign core_axi_wr_req.bready = axi_interconnect.sintf_arr[5].BREADY;
@@ -2267,7 +2302,7 @@ module caliptra_ss_top
     assign core_axi_rd_req.rready = axi_interconnect.sintf_arr[5].RREADY;
 
     assign axi_interconnect.sintf_arr[5].ARREADY = core_axi_rd_rsp.arready;
-    assign axi_interconnect.sintf_arr[5].RDATA = core_axi_rd_rsp.rdata;
+    assign axi_interconnect.sintf_arr[5].RDATA = 64'(core_axi_rd_rsp.rdata) << (fuse_core_axi_rd_is_upper_dw_latched ? 32 : 0);;
     assign axi_interconnect.sintf_arr[5].RRESP = core_axi_rd_rsp.rresp;
     assign axi_interconnect.sintf_arr[5].RID = core_axi_rd_rsp.rid;
     assign axi_interconnect.sintf_arr[5].RLAST = core_axi_rd_rsp.rlast;
@@ -2281,8 +2316,8 @@ module caliptra_ss_top
     assign prim_axi_wr_req.awid = axi_interconnect.sintf_arr[6].AWID;
     assign prim_axi_wr_req.awlock = axi_interconnect.sintf_arr[6].AWLOCK;
     assign prim_axi_wr_req.awvalid = axi_interconnect.sintf_arr[6].AWVALID;
-    assign prim_axi_wr_req.wdata = axi_interconnect.sintf_arr[6].WDATA;
-    assign prim_axi_wr_req.wstrb = axi_interconnect.sintf_arr[6].WSTRB;
+    assign prim_axi_wr_req.wdata = axi_interconnect.sintf_arr[6].WDATA >> (fuse_prim_axi_wr_is_upper_dw_latched ? 32 : 0);
+    assign prim_axi_wr_req.wstrb = axi_interconnect.sintf_arr[6].WSTRB >> (fuse_prim_axi_wr_is_upper_dw_latched ? 4 : 0);
     assign prim_axi_wr_req.wlast = axi_interconnect.sintf_arr[6].WLAST;
     assign prim_axi_wr_req.wvalid = axi_interconnect.sintf_arr[6].WVALID;
     assign prim_axi_wr_req.bready = axi_interconnect.sintf_arr[6].BREADY;
@@ -2304,7 +2339,7 @@ module caliptra_ss_top
     assign prim_axi_rd_req.rready = axi_interconnect.sintf_arr[6].RREADY;
 
     assign axi_interconnect.sintf_arr[6].ARREADY = prim_axi_rd_rsp.arready;
-    assign axi_interconnect.sintf_arr[6].RDATA = prim_axi_rd_rsp.rdata;
+    assign axi_interconnect.sintf_arr[6].RDATA = 64'(prim_axi_rd_rsp.rdata) << (fuse_core_axi_rd_is_upper_dw_latched ? 32 : 0);;
     assign axi_interconnect.sintf_arr[6].RRESP = prim_axi_rd_rsp.rresp;
     assign axi_interconnect.sintf_arr[6].RID = prim_axi_rd_rsp.rid;
     assign axi_interconnect.sintf_arr[6].RLAST = prim_axi_rd_rsp.rlast;

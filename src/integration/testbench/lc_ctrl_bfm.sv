@@ -15,12 +15,21 @@
 
 
 module lc_ctrl_bfm 
+    import otp_ctrl_pkg::*;
     import lc_ctrl_pkg::*;
     import lc_ctrl_reg_pkg::*;
     import lc_ctrl_state_pkg::*;
 (
     input  logic clk,
     input  logic reset_n,
+
+    
+    input axi_struct_pkg::axi_rd_req_t lc_axi_rd_req,
+    input axi_struct_pkg::axi_rd_rsp_t lc_axi_rd_rsp,
+    output logic fake_reset,
+    output logic Allow_RMA_on_PPD,
+    output logic [7:0] from_bfm_lc_flash_rma_ack,
+    input  [3:0]        to_bfm_lc_flash_rma_req_o,
 
     // Power manager interface
     output pwrmgr_pkg::pwr_lc_req_t pwr_lc_i,
@@ -36,15 +45,16 @@ module lc_ctrl_bfm
     output caliptra_prim_mubi_pkg::mubi4_t lc_ctrl_scanmode_i,
 
     // Alert Handler Interface
-    output caliptra_prim_alert_pkg::alert_rx_t [NumAlerts-1:0] lc_ctrl_alert_rx,
-    input  caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0] lc_ctrl_alert_tx,
+    input [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o,
 
-    // Escape State Interface
-    output  caliptra_prim_esc_pkg::esc_rx_t esc_scrap_state0_tx_i,
-    input caliptra_prim_esc_pkg::esc_tx_t esc_scrap_state0_rx_o,
-    output  caliptra_prim_esc_pkg::esc_rx_t esc_scrap_state1_tx_i,
-    input caliptra_prim_esc_pkg::esc_tx_t esc_scrap_state1_rx_o,
+    // Escalation State Interface
+    output  esc_scrap_state0,
+    output  esc_scrap_state1,
 
+
+    // OTP Hack
+    output otp_ctrl_pkg::otp_lc_data_t   otp_lc_data_o,
+    input otp_ctrl_pkg::otp_lc_data_t   from_otp_lc_data_i,
     // Clock manager interface
     input  lc_ctrl_pkg::lc_tx_t lc_clk_byp_req_o,
     output lc_ctrl_pkg::lc_tx_t lc_clk_byp_ack_i
@@ -52,10 +62,17 @@ module lc_ctrl_bfm
 
     // Internal signals
     logic [35:0] clk_counter;
+    // Declare the shift register for buffering
+    logic power_and_reset_indication;
+    logic [19:0] power_and_reset_buffer;
+    // Buffered signal
+    logic power_and_reset_indication_buffered;
+
+
     logic pwr_lc_i_active;
     pwrmgr_pkg::pwr_lc_req_t pwr_lc_i_internal;
 
-    logic lc_clk_byp_ack_internal;
+    lc_ctrl_pkg::lc_tx_t lc_clk_byp_ack_internal;
     assign lc_clk_byp_ack_i = lc_clk_byp_ack_internal;
     assign lc_ctrl_scan_rst_ni = 1;
     assign pwr_lc_i = pwr_lc_i_internal;
@@ -63,24 +80,75 @@ module lc_ctrl_bfm
     // Default values
     assign lc_ctrl_dmi_tl_h2d = tlul_pkg::TL_H2D_DEFAULT;
     assign lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
-    assign lc_ctrl_alert_rx = '{default: caliptra_prim_alert_pkg::ALERT_RX_DEFAULT};
-    assign esc_scrap_state0_tx_i.resp_p = 1'b0;
-    assign esc_scrap_state0_tx_i.resp_n = 1'b1;
-    assign esc_scrap_state1_tx_i.resp_p = 1'b0;
-    assign esc_scrap_state1_tx_i.resp_n = 1'b1;
+    
+
+    //OTP assignments
+    assign otp_lc_data_o.valid = from_otp_lc_data_i.valid;
+    assign otp_lc_data_o.error = from_otp_lc_data_i.error;
+    assign otp_lc_data_o.state = from_otp_lc_data_i.state;
+    assign otp_lc_data_o.count = from_otp_lc_data_i.count;
+    assign otp_lc_data_o.secrets_valid = from_otp_lc_data_i.secrets_valid;//lc_tx_t'(On);
+    assign otp_lc_data_o.test_tokens_valid = lc_tx_t'(On); //from_otp_lc_data_i.test_tokens_valid;//lc_tx_t'(On);
+    assign otp_lc_data_o.test_unlock_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+    assign otp_lc_data_o.test_exit_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+    assign otp_lc_data_o.rma_token_valid = lc_tx_t'(On);//from_otp_lc_data_i.rma_token_valid;//lc_tx_t'(On);
+    assign otp_lc_data_o.rma_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+
+    assign from_bfm_lc_flash_rma_ack = (to_bfm_lc_flash_rma_req_o==3'h5) ? 8'h55 : 8'hAA;
+
+    assign esc_scrap_state0 = (|lc_alerts_o)? 1'b1: 1'b0;
+    assign esc_scrap_state1 = (|lc_alerts_o)? 1'b1: 1'b0;
+
+
+    // TODO: This is used for keeping RMA strap to a desired value
+    //-------------------------------------------------------------------
+    always@(posedge clk or negedge reset_n) begin
+        if (!reset_n)
+            Allow_RMA_on_PPD <= 0;
+        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0048 && !power_and_reset_indication)
+            Allow_RMA_on_PPD <= ~Allow_RMA_on_PPD;
+    end
+    //-------------------------------------------------------------------
+
+    
+    // TODO: This is used for reset and power init, a temporal solution
+    //-------------------------------------------------------------------
+    always@(posedge clk or negedge reset_n) begin
+        if (!reset_n)
+            power_and_reset_indication <= 0;
+        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0044 && !power_and_reset_indication)
+            power_and_reset_indication <= 1;
+        else
+            power_and_reset_indication <= 0;
+    end
+    //-------------------------------------------------------------------
 
     // Power Management Logic
     always_ff @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
             clk_counter <= 0;
             pwr_lc_i_internal = '{default: '0};
+            fake_reset  <= 1'b1;
+            power_and_reset_buffer <= 20'b0; // Reset the buffer
+            power_and_reset_indication_buffered <= 1'b0;
         end else if (cptra_pwrgood) begin
+            // Update the shift register
+            power_and_reset_buffer <= {power_and_reset_buffer[18:0], power_and_reset_indication};
+            power_and_reset_indication_buffered <= power_and_reset_buffer[19]; // Use the buffered value
             if (clk_counter < 500) begin
                 clk_counter <= clk_counter + 1;
                 pwr_lc_i_internal.lc_init = 1'b0;
-            end else begin
+                fake_reset  <= fake_reset;
+            end
+            else if (power_and_reset_indication_buffered) begin
+                clk_counter <= 0;
+                pwr_lc_i_internal.lc_init = 1'b0;
+                fake_reset  <= 1'b0;
+            end            
+            else begin
                 clk_counter <= clk_counter;
                 pwr_lc_i_internal.lc_init = 1'b1;
+                fake_reset  <= 1'b1;
             end
         end
     end
@@ -99,4 +167,3 @@ module lc_ctrl_bfm
     end
 
 endmodule
-

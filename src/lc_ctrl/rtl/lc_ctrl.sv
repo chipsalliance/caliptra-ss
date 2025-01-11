@@ -7,7 +7,7 @@
 
 `include "caliptra_prim_assert.sv"
 
-module caliptra_ss_lc_ctrl
+module lc_ctrl
   import lc_ctrl_pkg::*;
   import lc_ctrl_reg_pkg::*;
   import lc_ctrl_state_pkg::*;
@@ -351,7 +351,6 @@ module caliptra_ss_lc_ctrl
       .wdata_i      ( dmi_req.data                           ),
       .wdata_intg_i ('0                                      ),
       .be_i         ( {top_pkg::TL_DBW{1'b1}}                ),
-      .user_rsvd_i  ('0                                      ),
       .instr_type_i ( caliptra_prim_mubi_pkg::MuBi4False              ),
       .valid_o      ( dmi_resp_valid                         ),
       .rdata_o      ( dmi_resp.data                          ),
@@ -793,7 +792,7 @@ module caliptra_ss_lc_ctrl
 
   // // This escalation action moves the life cycle
   // // state into a temporary "SCRAP" state named "ESCALATE",
-  // // and asserts the caliptra_ss_lc_escalate_en life cycle control signal.
+  // // and asserts the lc_escalate_en life cycle control signal.
   // logic esc_scrap_state0;
   // caliptra_prim_esc_receiver #(
   //   .N_ESC_SEV   (alert_handler_reg_pkg::N_ESC_SEV),
@@ -1007,15 +1006,15 @@ module caliptra_ss_lc_ctrl
 
   // Alert assertions for sparse FSMs.
   // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcFsmCheck_A,
-  //     u_caliptra_ss_lc_ctrl_fsm.u_fsm_state_regs, alert_tx_o[1])
+  //     u_lc_ctrl_fsm.u_fsm_state_regs, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcFsmCheck_A,
       u_lc_ctrl_fsm.u_fsm_state_regs, state_alert)
   // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcStateCheck_A,
-  //     u_caliptra_ss_lc_ctrl_fsm.u_state_regs, alert_tx_o[1],
-  //     !$past(otp_caliptra_ss_lc_data_i.valid) ||
-  //     u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
-  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
-  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+  //     u_lc_ctrl_fsm.u_state_regs, alert_tx_o[1],
+  //     !$past(otp_lc_data_i.valid) ||
+  //     u_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
+  //     u_lc_ctrl_fsm.esc_scrap_state0_i ||
+  //     u_lc_ctrl_fsm.esc_scrap_state1_i)
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcStateCheck_A,
       u_lc_ctrl_fsm.u_state_regs, state_alert,
       !$past(otp_lc_data_i.valid) ||
@@ -1023,11 +1022,11 @@ module caliptra_ss_lc_ctrl
       u_lc_ctrl_fsm.esc_scrap_state0_i ||
       u_lc_ctrl_fsm.esc_scrap_state1_i)
   // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcCntCheck_A,
-  //     u_caliptra_ss_lc_ctrl_fsm.u_cnt_regs, alert_tx_o[1],
-  //      !$past(otp_caliptra_ss_lc_data_i.valid) ||
-  //     u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
-  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
-  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+  //     u_lc_ctrl_fsm.u_cnt_regs, alert_tx_o[1],
+  //      !$past(otp_lc_data_i.valid) ||
+  //     u_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
+  //     u_lc_ctrl_fsm.esc_scrap_state0_i ||
+  //     u_lc_ctrl_fsm.esc_scrap_state1_i)
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcCntCheck_A,
       u_lc_ctrl_fsm.u_cnt_regs, state_alert,
        !$past(otp_lc_data_i.valid) ||
@@ -1035,10 +1034,10 @@ module caliptra_ss_lc_ctrl
       u_lc_ctrl_fsm.esc_scrap_state0_i ||
       u_lc_ctrl_fsm.esc_scrap_state1_i)
   //  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKmacIfFsmCheck_A,
-  //       u_caliptra_ss_lc_ctrl_kmac_if.u_state_regs, alert_tx_o[1],
-  //       u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {EscalateSt} ||
-  //       u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
-  //       u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+  //       u_lc_ctrl_kmac_if.u_state_regs, alert_tx_o[1],
+  //       u_lc_ctrl_fsm.fsm_state_q inside {EscalateSt} ||
+  //       u_lc_ctrl_fsm.esc_scrap_state0_i ||
+  //       u_lc_ctrl_fsm.esc_scrap_state1_i)
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKmacIfFsmCheck_A,
       u_lc_ctrl_kmac_if.u_state_regs, state_alert,
       u_lc_ctrl_fsm.fsm_state_q inside {EscalateSt} ||
@@ -1046,13 +1045,13 @@ module caliptra_ss_lc_ctrl
       u_lc_ctrl_fsm.esc_scrap_state1_i)
 
   // Alert assertions for reg_we onehot check
-  // `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg_regs, alert_tx_o[2])
+  // `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg, alert_tx_o[2])
   // `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(TapDmiWeOnehotCheck_A,
   //                                                u_reg_tap_dmi, alert_tx_o[2], 0)
-  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg_regs, program_alert)
+  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg, program_alert)
   `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(TapDmiWeOnehotCheck_A,
-                                                 u_reg_tap_dmi, program_alert, 0)
+                                                 u_reg_tap, program_alert, 0)
 
 // ------------------------------------------------------------------------------------------
   
-endmodule : caliptra_ss_lc_ctrl
+endmodule : lc_ctrl

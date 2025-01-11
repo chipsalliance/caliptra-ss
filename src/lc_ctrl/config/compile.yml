@@ -78,3 +78,27 @@ targets:
       - $COMPILE_ROOT/rtl/lc_ctrl_state_transition.sv
       - $COMPILE_ROOT/rtl/lc_ctrl.sv 
     tops: [lc_ctrl]
+#  tb:
+#    directories: [$COMPILE_ROOT/rtl]
+#    files:
+#      - $COMPILE_ROOT/rtl/caliptra_ss_keccak_2share.sv
+#      - $COMPILE_ROOT/rtl/caliptra_ss_keccak_round.sv
+#      - $COMPILE_ROOT/rtl/caliptra_ss_sha3pad.sv
+#      - $COMPILE_ROOT/rtl/caliptra_ss_sha3.sv
+#      - $COMPILE_ROOT/rtl/kmac_app.sv
+#      - $COMPILE_ROOT/rtl/kmac_core.sv
+#      - $COMPILE_ROOT/rtl/kmac_entropy.sv
+#      - $COMPILE_ROOT/rtl/kmac_errchk.sv
+#      - $COMPILE_ROOT/rtl/kmac_msgfifo.sv
+#      - $COMPILE_ROOT/rtl/kmac_reduced.sv
+#      - $COMPILE_ROOT/rtl/kmac_reg_top.sv
+#      - $COMPILE_ROOT/rtl/kmac_staterd.sv
+#      - $COMPILE_ROOT/rtl/kmac.sv
+#      - $COMPILE_ROOT/rtl/lc_ctrl_fsm.sv
+#      - $COMPILE_ROOT/rtl/lc_ctrl_kmac_if.sv
+#      - $COMPILE_ROOT/rtl/lc_ctrl_reg_top.sv
+#      - $COMPILE_ROOT/rtl/lc_ctrl_signal_decode.sv
+#      - $COMPILE_ROOT/rtl/lc_ctrl_state_decode.sv
+#      - $COMPILE_ROOT/rtl/lc_ctrl_state_transition.sv
+#      - $COMPILE_ROOT/rtl/lc_ctrl.sv 
+#    tops: [lc_ctrl]
