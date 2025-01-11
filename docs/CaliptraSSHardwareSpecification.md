@@ -140,7 +140,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 *Figure: I3C Streaming Boot (Recovery) Interface Logic Block Diagram*
 
-![](https://github.com/chipsalliance/caliptra-ss/blob/bpillilli-main-spec-md-update/docs/images/I3C-Recovery-IFC.png)
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/I3C-Recovery-IFC.png)
 
 ## Hardware Registers
 Hardware registers size is fixed to multiple of 4 bytes, so that firmware can read or write with word boundary. Address offset will be programmed outside of the I3C device. Register access size must be restricted to individual register space and burst access with higher size must not be allowed.
@@ -163,7 +163,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 Please refer to [Caliptra Security Subsystem Recovery Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-recovery-sequence).
 
 *Figure: Caliptra Subsystem I3C Streaming Boot (Recovery) Flow*
-![](https://github.com/chipsalliance/caliptra-ss/blob/bpillilli-main-spec-md-update/docs/images/CSS-Recovery-Flow.png)
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/CSS-Recovery-Flow.png)
 
 ## Caliptra ROM Requirements
 Caliptra ROM & RT firmware must program DMA assist with correct image size (multiple of 4B) + FIXED Read + block size is 256B (burst / FIFO size). Caliptra ROM & RT Firmware must wait for "image_activated" signal to assert before processing the image. Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes. 
@@ -182,13 +182,13 @@ It is an overview of the architecture of the Life-Cycle Controller (LCC) Module 
 Figure below shows the Debug Architecture of the Caliptra Subsystem and some important high-level signals routed towards SOC. The table in Key Components and Interfaces section shows all the signals that are available to SOC (outside of Caliptra Subsystem usage).
 
 *Figure: Caliptra Subsystem & SOC Debug Architecture Interaction*
-![](https://github.com/chipsalliance/caliptra-ss/blob/bpillilli-main-spec-md-update/docs/images/LCC-SOC-View.png)
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/LCC-SOC-View.png)
 **Note:** SoC Debug Architecture of the Caliptra Subsystem with LCC; the red dashed circles highlight the newly added blocks and signals.
 
 The figure below shows the LCC state transition and Caliptra Subsystem enhancement on LCC state transitions. It illustrates the life cycle flow of Caliptra Subsystem.
 
 *Figure: Caliptra Subsystem Life Cycle Controller Summary*
-![](https://github.com/chipsalliance/caliptra-ss/blob/bpillilli-main-spec-md-update/docs/images/LCC-Summary.png)
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/LCC-Summary.png)
 
 **Note:** Caliptra Subsystem life cycle flow. This flow shows legal state transitions in life cycle controller by excluding its invalid states for simplicity.
 
@@ -245,7 +245,7 @@ Finally, the Caliptra_SS_uCTAP_HW_DEBUG_EN signal is introduced to manage the mi
 The LCC includes a TAP interface, which operates on its own dedicated clock and is used for injecting tokens into the LCC. Notably, the LCC TAP interface remains accessible in all life cycle states, providing a consistent entry point for test and debug operations. This TAP interface can be driven by either the TAP GPIO pins or internal chip-level wires, depending on the system's current configuration.
 
 *Figure: Caliptra Subsystem Life Cycle Controller Summary*
-![](https://github.com/chipsalliance/caliptra-ss/blob/bpillilli-main-spec-md-update/docs/images/TAP-Pin-Muxing.png)
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/TAP-Pin-Muxing.png)
 **Note:** Above figure of TAP pin muxing block diagram with a conceptual representation. SOCs may implement this in their own way
 
 SOC logic incorporates the TAP pin muxing to provide the integration support and manage the connection between the TAP GPIO pins and the Chip-Level TAP (CLTAP). As illustrated in figure above, this muxing logic determines the source that drives the LCC TAP interface. The selection between these two sources is controlled by the SOC_HW_DEBUG_EN signal. When SOC_HW_DEBUG_EN is set to high, control is handed over to the CLTAP, allowing for chip-level debug access through the TAP GPIO pins. Conversely, when SOC_HW_DEBUG_EN is low, the TAP GPIO pins take control, enabling external access to the LCC TAP interface.
@@ -263,7 +263,7 @@ TAP pin muxing also enables routing to Caliptra TAP. This selection happens when
 The figure below illustrates the logic used to control the Caliptra_SS_uCTAP_HW_DEBUG_EN signal, which is a critical part of enabling the microcontroller TAP (uCTAP) debugging interface in the Caliptra Subsystem. This diagram shows an illustration of how uCTAP opens. However, the functionality of this logic will be implemented in MCI. The Caliptra_SS_uCTAP_HW_DEBUG_EN signal is governed by two primary inputs: SOC_HW_DEBUG_EN and a control signal driven by Caliptra. This signal opens uCTAP for MCU and Caliptra.
 
 *Figure: Caliptra Subsystem Manuf Debug Unlock Hardware Logic*
-![](https://github.com/chipsalliance/caliptra-ss/blob/bpillilli-main-spec-md-update/docs/images/Manuf-Debug-Unlock.png)
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Manuf-Debug-Unlock.png)
 **Note:** This qualification logic is implemented within MCI block
 
 To assert Caliptra_SS_uCTAP_HW_DEBUG_EN high, the SOC_HW_DEBUG_EN signal must always be high, except SOC production debug mode case (see “SoC Debug Flow and Architecture for Production Mode” Section). This ensures that the uCTAP interface is only enabled when the system is in a secure and authorized state. According to the figure, SOC_HW_DEBUG_EN is derived from the LCC states. Specifically, SOC_HW_DEBUG_EN is high when the LCC is in the TEST_UNLOCKED, MANUF, or RMA states. These are the only states where hardware debugging via the uCTAP interface is permitted. However, SOC_HW_DEBUG_EN can be set high by SoC during the production debug mode (see “Masking Logic for Debugging Features in Production Debug Mode”).
@@ -279,7 +279,7 @@ The AND gate in the figure symbolizes this logic, showing that Caliptra_SS_uCTAP
 The following figure illustrates how Caliptra Subsystem enters the manufacturing debug mode. To enter this mode, LCC should be in MANUF state. While being in manufacturing debug mode, LCC does not change its state from MANUF to any other state. During the MANUF state, Caliptra Subsystem can enable manufacturing debug flow by following steps:
 
 *Figure: Caliptra Subsystem Manuf Debug Life Cycle View*
-![](https://github.com/chipsalliance/caliptra-ss/blob/bpillilli-main-spec-md-update/docs/images/Manuf-Debug-LifeCycle.png)
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Manuf-Debug-LifeCycle.png)
 **Note:** The flow diagram on the right side shows the LCC states (grey boxes) and their transitions, while the flow diagram on the left illustrates Caliptra SS’s enhancements to the LCC for the manufacturing phase. Specifically, the flow on the left depicts the routine for entering manufacturing debug mode.
 
 #### Flow Explanation:
@@ -360,7 +360,7 @@ If either the authentication or the hash comparison fails, Caliptra returns a fa
 This flow establishes a secure and controlled process for entering Caliptra’s production debug mode, ensuring that only authorized access is granted while maintaining the integrity and confidentiality of the system’s sensitive assets. The more details about the flow sequence as illustrated with flow figure and explanation of each steps in the flow.
 
 *Figure: Caliptra Subsystem Production Debug Life Cycle View*
-![](https://github.com/chipsalliance/caliptra-ss/blob/bpillilli-main-spec-md-update/docs/images/Prod-Debug-LifeCycle.png)
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Prod-Debug-LifeCycle.png)
 
 1. (Platform) DEBUG_INTENT_STRAP Assertion:
    * The process is initiated when the DEBUG_INTENT_STRAP pin, connected via the SoC's GPIO, is asserted high.
@@ -523,7 +523,121 @@ For conditional transitions, the LCC can also branch different states (RAW_UNLOC
 # Manufacturer Control Unit (MCU)
 
 # Manufacturer Control Interface (MCI)
+## Overview
+The Manufacturer Control Interface (MCI) is a critical hardware block designed to supplement the Manufacturer Control Unit (MCU) within a System on Chip (SoC). The primary functions of the MCI include providing an SRAM bank, facilitating restricted communication through a mailbox from external entities, and managing a bank of Control/Status Registers (CSRs). Additionally, the MCI incorporates a Watchdog Timer and a Boot Sequencing Finite State Machine (FSM) to manage timing and control during the SoC boot sequence after power application. This boot sequence encompasses reset deassertion, initialization of the Fuse Controller, initialization of the Lifecycle Controller, and enabling the JTAG block for debugging and manufacturing processes.
 
+The following diagram illustrates the internal components of the MCI.
+![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/MCI-block-diagram.png)
+
+## Sub-block Descriptions
+### Control/Status Registers (CSRs)
+The Control/Status Registers (CSRs) within the MCI are designed to provide critical control and status monitoring functions for the SoC. These registers include configuration settings, status indicators, and control bits that allow communication and management of the various operations of the MCI. The CSR bank is accessible via the AXI interface and is mapped into the memory space to facilitate straightforward access and manipulation.
+
+**FIXME the link:** caliptra-ss/src/mci/rtl/mci_reg.rdl
+
+### Subsystem Boot Finite State Machine (CSS-BootFSM)
+
+The Boot Sequencer FSM is responsible for the orderly and controlled boot process of the Caliptra Subsystem. This state machine ensures that all necessary initialization steps are completed in the correct sequence after power application. The boot sequence includes Reset deassertions, Fuse Controller Initialization, Lifecycle Controller Initialization and MCU bring up
+
+The following boot flow explains the Caliptra subsystem bootFSM sequence.
+
+**Note:** SOC may have other HW FSM steps that were done before Caliptra (CSS) is brought out of reset such as locking a PLL or calibrating a CRO, setting up GPIOs, test logic bring up etc. using SOC HW FSM.
+
+1. SOC asserts Caliptra SS powergood and desserts Caliptra SS reset to MCI
+   a. SOC may choose to connect the same signals to the AXI fabric or bring it out of reset using a different signals. But the requirement is that before MCU is out of reset, fabric should be operational.
+2. CSS-BootFSM will sample straps on the MCI and will drive its outputs to reset defaults.
+3. CSS-BootFSM will go through Caliptra Subsystem Fuse controller (CSS FC) Init Sequence Init Sequence/handshakes
+4. CSS-BootFSM will go through Caliptra Subsystem Life Cycle Controller (CSS LCC) Init Sequence/handshakes
+   a. **SOC Note:** Note that LCC shall start on an SOC generated internal clock to prevent clock stretch attacks
+   b. **SOC Note:** If the life cycle state is in RAW, TEST* or RMA, and if TRANSITION_CTRL.EXT_CLOCK_EN is set to one, the CLK_BYP_REQ signal is asserted in order to switch the main system clock to an external clock signal. This functionality is needed in certain life cycle states where the SOC internal clock source may not be fully calibrated yet, since the OTP macro requires a stable clock frequency in order to reliably program the fuse array. Note that the TRANSITION_CTRL.EXT_CLOCK_EN register can only be set to one if the transition interface has been claimed via the CLAIM_TRANSITION_IF mutex. This function is not available in production life cycle states.
+5. If MCU ROM Bypass mode is set, there is no other function for CSS-BootFSM to handle and the control is passed on to SOC to do the remaining steps and below MCU ROM steps are immaterial.
+   a. **Note:** MCU Reset Vector will be strapped to the MCU SRAM executable location at integration time.
+   b. **Note:** MCI will allow a “TEST AXI ID” to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
+6. If MCU ROM Bypass strap is not set, then CSS-BootFSM will bring MCU out of reset and MCU ROM will start executing.
+   a. **Note:** MCU ROM may be used by some SOCs for doing additional SOC specific initializations.An example of such a SoC construction is MCI, MCU, CSS Fabric are running on external clock initially. MCU brings up PLL, some GPIO peripherals, does I3C init sequence etc and then performs clock switch to internal PLL clock domain so that the fabric is running on the internal clock domain before secrets are read on it from the fuse controller.
+   c. **Note:** In allowed LCC states, MCU TAP will be open to use as soon as MCU is out of reset.
+7. MCU ROM will bring Caliptra out of reset by writing a MCI register
+8. Caliptra reset (cptra_rst_b) is deasserted
+9. Caliptra BootFSM will go through its own boot flow as documented in Caliptra spec, reads secret fuses and sets “ready_for_fuses” to MCI.
+10. MCU ROM will be polling for this indication
+11. MCU ROM will now read FC’s SW partition for all the required fuses including its own and also write Caliptra fuses. Note that only non-secret fuses are accessible for MCU ROM by fuse controller construction.
+    a. Note: All fuses will be zero if FC is not programmed
+12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here)
+13. MCU ROM will do a fuse_write_done write to Caliptra
+14. Caliptra ROM starts to execute from here on.
+
+**FIXME:** BootFSM pic
+
+### Watchdog Timer
+The Watchdog Timer within the MCI is a crucial component designed to enhance the reliability and robustness of the SoC. This timer monitors the operation of the system and can trigger a system reset if it detects that the system is not functioning correctly. The Watchdog Timer is configurable through CSRs and provides various timeout periods and control mechanisms to ensure the system operates within defined parameters.
+The Watchdog timer contains two different timers. These timers can be configured in two different modes:
+	1. Cascade
+	2. Independent
+
+In cascade mode when the first timer reaches a timeout two things will happen:
+	1. An error interrupt will be triggered
+	2. Timer 2 will start counting
+
+If the WDT is not serviced before Timer 2 times out two things happen:
+	1. NMI output pin is asserted
+	2. NMI HW_ERROR_FATAL is triggered which can assert an error_fatal on the MCI port.
+
+In Independent mode the two timers are completely independent of each other. When they timeout an error interrupt will be asserted. The NMI will never be asserted while in independent mode.
+
+### MCU Mailbox
+
+There are 2 mailboxes in the MCI. Each Mailbox component of the MCI allows for secure and restricted communication between external SoC entities and the MCU. This communication channel is essential for exchanging control messages, status updates, and other critical information that the MCU will use to monitor system boot, firmware updates, and security critical operations. Mailboxes are designed to ensure that only authorized entities can access and communicate through it, preserving the integrity and security of the SoC operations.
+
+Mailbox logic is adapted from the Caliptra Mailbox and follows the same programming flow and rules as defined for Caliptra.
+
+Each mailbox is paired with an SRAM to store staged data. These SRAMs are **configurable** with minimum size of 0 and a max size of 2MB. SOC depending on the services, it shall increase or decrease the sizes. It is possible that SOCs can disable these mailboxes by setting size=0 and implement its own mailbox mechanism (interrupts, corresponding FW etc.). Independent of reusing CSS mailbox or SOC's own mailbox implementation or both, SRAMs shall have ECC. Please see MCI error handling section for more details for MCI mailboxes.
+
+### MCU SRAM
+
+The MCU SRAM provides essential data and instruction memory for the Manufacturer Control Unit. This SRAM bank is utilized by the MCU to load firmware images, store application data structures, and create a runtime stack. The SRAM is accessible via the AXI interface and is mapped into the MCI's memory space for easy access and management. Exposing this SRAM via a restricted API through the SoC AXI interconnect enables seamless and secured Firmware Updates to be managed by Caliptra.
+
+AXI ID filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI_ID that is enabled through the MCU_RUNTIME_LOCK register (either the Caliptra AXI_ID, or the MCU IFU/LSU AXI IDs). Any write attempt by an invalid AXI_ID is discarded and returns an error status. Any read attempt returns 0 data and an error status.
+
+The MCU SRAM contains two regions, a Protected Data Region and an Updateable Execution Region, each with a different set of access rules.
+
+The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing is locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation.
+
+The Updateable Execution Region may only be read/written by Caliptra prior to setting the MCU_RUNTIME_LOCK register and may only be read/written by the MCU IFU or MCU LSU after MCU_RUNTIME_LOCK is set. The Protected Data Region may never be accessed by Caliptra or the MCU IFU. Only the MCU LSU is allowed to read or write to the Protected Data Region, regardless of whether MCU ROM or MCU Runtime firmware is running.
+
+The entire MCU SRAM has ECC protection. See error handling section for more details. Unlike MCI mailboxes, there is no configuration available to disable MCU SRAM for architectural reasons.
+
+### Interrupts
+
+All interrupt status and control registers live in the CSR block. Each interrupt has the following properties:
+	- Status: W1C for SW to clear
+	- Enable: Prevents status from propagating. It does not block the status from being set.
+	- SW Trigger: Ability for SW to manually trigger the interrupt. Typically used for debug.
+	- Counter: Counts number of times the interrupt event was detected (SW or HW). 
+
+There are two different groups of interrupts
+	- Error 
+	- Notification 
+
+Each group of interrupts has its own global status and enable registers that are an aggregate of all interrupts in the group. These status and enable registers have the same properties as the individual interrupt status and enable registers.  
+
+All interrupt groups are ORed and sent out on a signal mci_inter pin. 
+
+SW access to all interrupt registers are restricted to MCU.
+
+### MCI Error handling
+
+MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any error signals that fuse controller, i3c etc.) and provides subsystem level FATAL and NON FATAL error signals. For all the error information being collected from other subystem modules, MCI also provides masking capability for MCU FW to program/enable based on SOC specific architectures to provide maximux flexibility.
+![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/MCI-error-agg.png)
+
+MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
+![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/MCI-internal-error.png)
+
+
+### MCI Fuse Storage Support
+MCI also provides capability to store fuses required for Caliptra subsystem for Caliptra core's usage for production debug unlock feature. MCU will read the fuse controller for the production debug unlock hashes , write to the corresponding registers in the MCI block and lock the registers from being changed by MCU RT FW. Lock is done by writing to do a FUSE_WR_DONE (FIXME: Add specific register & bit names).
+
+### MCU Timer
+**FIXME**
 # Subsystem Memory Map
 
 # Subsystem HW Security
