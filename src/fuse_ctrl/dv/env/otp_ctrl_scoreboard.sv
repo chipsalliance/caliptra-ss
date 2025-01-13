@@ -97,29 +97,83 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
         otp_lc_data  = '{default:0};
         // secret partitions have been scrambled before writing to OTP.
         // here calculate the pre-srambled raw data when clearing internal OTP to all 0s.
-        data = descramble_data(0, Secret0Idx);
-        for (int i = Secret0Offset / TL_SIZE;
-             i <= Secret0DigestOffset / TL_SIZE - 1;
+        data = descramble_data(0, SecretManufPartitionIdx);
+        for (int i = SecretManufPartitionOffset / TL_SIZE;
+             i <= SecretManufPartitionDigestOffset / TL_SIZE - 1;
              i++) begin
-          otp_a[i] = ((i - Secret0Offset / TL_SIZE) % 2) ?
+          otp_a[i] = ((i - SecretManufPartitionOffset / TL_SIZE) % 2) ?
               data[SCRAMBLE_DATA_SIZE-1:TL_DW] : data[TL_DW-1:0];
         end
         // secret partitions have been scrambled before writing to OTP.
         // here calculate the pre-srambled raw data when clearing internal OTP to all 0s.
-        data = descramble_data(0, Secret1Idx);
-        for (int i = Secret1Offset / TL_SIZE;
-             i <= Secret1DigestOffset / TL_SIZE - 1;
+        data = descramble_data(0, SecretProdPartition0Idx);
+        for (int i = SecretProdPartition0Offset / TL_SIZE;
+             i <= SecretProdPartition0DigestOffset / TL_SIZE - 1;
              i++) begin
-          otp_a[i] = ((i - Secret1Offset / TL_SIZE) % 2) ?
+          otp_a[i] = ((i - SecretProdPartition0Offset / TL_SIZE) % 2) ?
               data[SCRAMBLE_DATA_SIZE-1:TL_DW] : data[TL_DW-1:0];
         end
         // secret partitions have been scrambled before writing to OTP.
         // here calculate the pre-srambled raw data when clearing internal OTP to all 0s.
-        data = descramble_data(0, Secret2Idx);
-        for (int i = Secret2Offset / TL_SIZE;
-             i <= Secret2DigestOffset / TL_SIZE - 1;
+        data = descramble_data(0, SecretProdPartition1Idx);
+        for (int i = SecretProdPartition1Offset / TL_SIZE;
+             i <= SecretProdPartition1DigestOffset / TL_SIZE - 1;
              i++) begin
-          otp_a[i] = ((i - Secret2Offset / TL_SIZE) % 2) ?
+          otp_a[i] = ((i - SecretProdPartition1Offset / TL_SIZE) % 2) ?
+              data[SCRAMBLE_DATA_SIZE-1:TL_DW] : data[TL_DW-1:0];
+        end
+        // secret partitions have been scrambled before writing to OTP.
+        // here calculate the pre-srambled raw data when clearing internal OTP to all 0s.
+        data = descramble_data(0, SecretProdPartition2Idx);
+        for (int i = SecretProdPartition2Offset / TL_SIZE;
+             i <= SecretProdPartition2DigestOffset / TL_SIZE - 1;
+             i++) begin
+          otp_a[i] = ((i - SecretProdPartition2Offset / TL_SIZE) % 2) ?
+              data[SCRAMBLE_DATA_SIZE-1:TL_DW] : data[TL_DW-1:0];
+        end
+        // secret partitions have been scrambled before writing to OTP.
+        // here calculate the pre-srambled raw data when clearing internal OTP to all 0s.
+        data = descramble_data(0, SecretProdPartition3Idx);
+        for (int i = SecretProdPartition3Offset / TL_SIZE;
+             i <= SecretProdPartition3DigestOffset / TL_SIZE - 1;
+             i++) begin
+          otp_a[i] = ((i - SecretProdPartition3Offset / TL_SIZE) % 2) ?
+              data[SCRAMBLE_DATA_SIZE-1:TL_DW] : data[TL_DW-1:0];
+        end
+        // secret partitions have been scrambled before writing to OTP.
+        // here calculate the pre-srambled raw data when clearing internal OTP to all 0s.
+        data = descramble_data(0, SecretLcUnlockPartitionIdx);
+        for (int i = SecretLcUnlockPartitionOffset / TL_SIZE;
+             i <= SecretLcUnlockPartitionDigestOffset / TL_SIZE - 1;
+             i++) begin
+          otp_a[i] = ((i - SecretLcUnlockPartitionOffset / TL_SIZE) % 2) ?
+              data[SCRAMBLE_DATA_SIZE-1:TL_DW] : data[TL_DW-1:0];
+        end
+        // secret partitions have been scrambled before writing to OTP.
+        // here calculate the pre-srambled raw data when clearing internal OTP to all 0s.
+        data = descramble_data(0, SecretLcManufPartitionIdx);
+        for (int i = SecretLcManufPartitionOffset / TL_SIZE;
+             i <= SecretLcManufPartitionDigestOffset / TL_SIZE - 1;
+             i++) begin
+          otp_a[i] = ((i - SecretLcManufPartitionOffset / TL_SIZE) % 2) ?
+              data[SCRAMBLE_DATA_SIZE-1:TL_DW] : data[TL_DW-1:0];
+        end
+        // secret partitions have been scrambled before writing to OTP.
+        // here calculate the pre-srambled raw data when clearing internal OTP to all 0s.
+        data = descramble_data(0, SecretLcProdPartitionIdx);
+        for (int i = SecretLcProdPartitionOffset / TL_SIZE;
+             i <= SecretLcProdPartitionDigestOffset / TL_SIZE - 1;
+             i++) begin
+          otp_a[i] = ((i - SecretLcProdPartitionOffset / TL_SIZE) % 2) ?
+              data[SCRAMBLE_DATA_SIZE-1:TL_DW] : data[TL_DW-1:0];
+        end
+        // secret partitions have been scrambled before writing to OTP.
+        // here calculate the pre-srambled raw data when clearing internal OTP to all 0s.
+        data = descramble_data(0, SecretLcRmaPartitionIdx);
+        for (int i = SecretLcRmaPartitionOffset / TL_SIZE;
+             i <= SecretLcRmaPartitionDigestOffset / TL_SIZE - 1;
+             i++) begin
+          otp_a[i] = ((i - SecretLcRmaPartitionOffset / TL_SIZE) % 2) ?
               data[SCRAMBLE_DATA_SIZE-1:TL_DW] : data[TL_DW-1:0];
         end
         `uvm_info(`gfn, "clear internal memory and digest", UVM_HIGH)
@@ -221,28 +275,6 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
             // Otp_keymgr outputs creator and owner keys from secret partitions.
             // Depends on lc_seed_hw_rd_en_i, it will output the real keys or a constant
             exp_keymgr_data = '0;
-            exp_keymgr_data.creator_root_key_share0_valid = get_otp_digest_val(Secret2Idx) != 0;
-            if (cfg.otp_ctrl_vif.lc_seed_hw_rd_en_i == lc_ctrl_pkg::On) begin
-              exp_keymgr_data.creator_root_key_share0 =
-                  {<<32 {otp_a[CreatorRootKeyShare0Offset/4 +: CreatorRootKeyShare0Size/4]}};
-            end else begin
-              exp_keymgr_data.creator_root_key_share0 =
-                  PartInvDefault[CreatorRootKeyShare0Offset*8 +: CreatorRootKeyShare0Size*8];
-            end
-            // Check otp_keymgr_key_t struct by item is easier to debug.
-            `DV_CHECK_EQ(cfg.otp_ctrl_vif.keymgr_key_o.creator_root_key_share0_valid,
-                         exp_keymgr_data.creator_root_key_share0_valid)
-            exp_keymgr_data.creator_root_key_share1_valid = get_otp_digest_val(Secret2Idx) != 0;
-            if (cfg.otp_ctrl_vif.lc_seed_hw_rd_en_i == lc_ctrl_pkg::On) begin
-              exp_keymgr_data.creator_root_key_share1 =
-                  {<<32 {otp_a[CreatorRootKeyShare1Offset/4 +: CreatorRootKeyShare1Size/4]}};
-            end else begin
-              exp_keymgr_data.creator_root_key_share1 =
-                  PartInvDefault[CreatorRootKeyShare1Offset*8 +: CreatorRootKeyShare1Size*8];
-            end
-            // Check otp_keymgr_key_t struct by item is easier to debug.
-            `DV_CHECK_EQ(cfg.otp_ctrl_vif.keymgr_key_o.creator_root_key_share1_valid,
-                         exp_keymgr_data.creator_root_key_share1_valid)
 
             // Check otp_keymgr_key_t struct all together in case there is any missed item.
             `DV_CHECK_EQ(cfg.otp_ctrl_vif.keymgr_key_o, exp_keymgr_data)
@@ -703,16 +735,14 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
 
           // Check if it is sw partition read lock - this can be used in `DaiRead` branch and also
           // coverage collection.
-          if (part_idx == VendorTestIdx) begin
-            sw_read_lock = `gmv(ral.vendor_test_read_lock) == 0;
-          end else if (part_idx == CreatorSwCfgIdx) begin
-            sw_read_lock = `gmv(ral.creator_sw_cfg_read_lock) == 0;
-          end else if (part_idx == OwnerSwCfgIdx) begin
-            sw_read_lock = `gmv(ral.owner_sw_cfg_read_lock) == 0;
-          end else if (part_idx == RotCreatorAuthCodesignIdx) begin
-            sw_read_lock = `gmv(ral.rot_creator_auth_codesign_read_lock) == 0;
-          end else if (part_idx == RotCreatorAuthStateIdx) begin
-            sw_read_lock = `gmv(ral.rot_creator_auth_state_read_lock) == 0;
+          if (part_idx == SwManufPartitionIdx) begin
+            sw_read_lock = `gmv(ral.sw_manuf_partition_read_lock) == 0;
+          end else if (part_idx == SwProdPartitionIdx) begin
+            sw_read_lock = `gmv(ral.sw_prod_partition_read_lock) == 0;
+          end else if (part_idx == SvnPartitionIdx) begin
+            sw_read_lock = `gmv(ral.svn_partition_read_lock) == 0;
+          end else if (part_idx == VendorTestPartitionIdx) begin
+            sw_read_lock = `gmv(ral.vendor_test_partition_read_lock) == 0;
           end
 
           // LC partition cannot be access via DAI
@@ -801,6 +831,9 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
                     predict_no_err(OtpDaiErrIdx);
                     predict_rdata(is_secret(dai_addr) || is_digest(dai_addr),
                                   read_out0, read_out1);
+                    // do not check direct_access_rdata_* on ECC errors in
+                    // non-integrity partitions
+                    check_dai_rd_data = 0;
                   end else begin
                     predict_no_err(OtpDaiErrIdx);
                     predict_rdata(is_secret(dai_addr) || is_digest(dai_addr),
@@ -1086,23 +1119,48 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
           cov.collect_err_code_cov(12, item.d_data, access_part_idx);
         end
       end
-      "vendor_test_digest_0", "vendor_test_digest_1",
-      "creator_sw_cfg_digest_0", "creator_sw_cfg_digest_1",
-      "owner_sw_cfg_digest_0", "owner_sw_cfg_digest_1",
-      "rot_creator_auth_codesign_digest_0", "rot_creator_auth_codesign_digest_1",
-      "rot_creator_auth_state_digest_0", "rot_creator_auth_state_digest_1",
-      "hw_cfg0_digest_0", "hw_cfg0_digest_1",
-      "hw_cfg1_digest_0", "hw_cfg1_digest_1",
-      "secret0_digest_0", "secret0_digest_1",
-      "secret1_digest_0", "secret1_digest_1",
-      "secret2_digest_0", "secret2_digest_1": begin
+      "err_code_13": begin
+        if (cfg.m_lc_prog_pull_agent_cfg.vif.req) do_read_check = 0;
+        if (cfg.en_cov && do_read_check && data_phase_read) begin
+          bit [TL_DW-1:0] dai_addr = `gmv(ral.direct_access_address) >> 2 << 2;
+          int access_part_idx = get_part_index(dai_addr);
+          cov.collect_err_code_cov(13, item.d_data, access_part_idx);
+        end
+      end
+      "err_code_14": begin
+        if (cfg.m_lc_prog_pull_agent_cfg.vif.req) do_read_check = 0;
+        if (cfg.en_cov && do_read_check && data_phase_read) begin
+          bit [TL_DW-1:0] dai_addr = `gmv(ral.direct_access_address) >> 2 << 2;
+          int access_part_idx = get_part_index(dai_addr);
+          cov.collect_err_code_cov(14, item.d_data, access_part_idx);
+        end
+      end
+      "err_code_15": begin
+        if (cfg.m_lc_prog_pull_agent_cfg.vif.req) do_read_check = 0;
+        if (cfg.en_cov && do_read_check && data_phase_read) begin
+          bit [TL_DW-1:0] dai_addr = `gmv(ral.direct_access_address) >> 2 << 2;
+          int access_part_idx = get_part_index(dai_addr);
+          cov.collect_err_code_cov(15, item.d_data, access_part_idx);
+        end
+      end
+      "secret_manuf_partition_digest_0", "secret_manuf_partition_digest_1",
+      "secret_prod_partition_0_digest_0", "secret_prod_partition_0_digest_1",
+      "secret_prod_partition_1_digest_0", "secret_prod_partition_1_digest_1",
+      "secret_prod_partition_2_digest_0", "secret_prod_partition_2_digest_1",
+      "secret_prod_partition_3_digest_0", "secret_prod_partition_3_digest_1",
+      "sw_manuf_partition_digest_0", "sw_manuf_partition_digest_1",
+      "sw_prod_partition_digest_0", "sw_prod_partition_digest_1",
+      "secret_lc_unlock_partition_digest_0", "secret_lc_unlock_partition_digest_1",
+      "secret_lc_manuf_partition_digest_0", "secret_lc_manuf_partition_digest_1",
+      "secret_lc_prod_partition_digest_0", "secret_lc_prod_partition_digest_1",
+      "secret_lc_rma_partition_digest_0", "secret_lc_rma_partition_digest_1",
+      "vendor_test_partition_digest_0", "vendor_test_partition_digest_1": begin
         if (ignore_digest_chk) do_read_check = 0;
       end
-      "vendor_test_read_lock",
-      "creator_sw_cfg_read_lock",
-      "owner_sw_cfg_read_lock",
-      "rot_creator_auth_codesign_read_lock",
-      "rot_creator_auth_state_read_lock",
+      "sw_manuf_partition_read_lock",
+      "sw_prod_partition_read_lock",
+      "svn_partition_read_lock",
+      "vendor_test_partition_read_lock",
       "direct_access_wdata_0",
       "direct_access_wdata_1",
       "direct_access_address",
@@ -1258,74 +1316,88 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
 
   // predict digest registers
   virtual function void predict_digest_csrs();
-    void'(ral.vendor_test_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[VendorTestIdx]]),
+    void'(ral.secret_manuf_partition_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretManufPartitionIdx]]),
           .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.vendor_test_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[VendorTestIdx] + 1]),
-          .kind(UVM_PREDICT_DIRECT)));
-
-    void'(ral.creator_sw_cfg_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[CreatorSwCfgIdx]]),
-          .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.creator_sw_cfg_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[CreatorSwCfgIdx] + 1]),
+    void'(ral.secret_manuf_partition_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretManufPartitionIdx] + 1]),
           .kind(UVM_PREDICT_DIRECT)));
 
-    void'(ral.owner_sw_cfg_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[OwnerSwCfgIdx]]),
+    void'(ral.secret_prod_partition_0_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretProdPartition0Idx]]),
           .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.owner_sw_cfg_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[OwnerSwCfgIdx] + 1]),
-          .kind(UVM_PREDICT_DIRECT)));
-
-    void'(ral.rot_creator_auth_codesign_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[RotCreatorAuthCodesignIdx]]),
-          .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.rot_creator_auth_codesign_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[RotCreatorAuthCodesignIdx] + 1]),
+    void'(ral.secret_prod_partition_0_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretProdPartition0Idx] + 1]),
           .kind(UVM_PREDICT_DIRECT)));
 
-    void'(ral.rot_creator_auth_state_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[RotCreatorAuthStateIdx]]),
+    void'(ral.secret_prod_partition_1_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretProdPartition1Idx]]),
           .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.rot_creator_auth_state_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[RotCreatorAuthStateIdx] + 1]),
-          .kind(UVM_PREDICT_DIRECT)));
-
-    void'(ral.hw_cfg0_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[HwCfg0Idx]]),
-          .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.hw_cfg0_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[HwCfg0Idx] + 1]),
+    void'(ral.secret_prod_partition_1_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretProdPartition1Idx] + 1]),
           .kind(UVM_PREDICT_DIRECT)));
 
-    void'(ral.hw_cfg1_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[HwCfg1Idx]]),
+    void'(ral.secret_prod_partition_2_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretProdPartition2Idx]]),
           .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.hw_cfg1_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[HwCfg1Idx] + 1]),
-          .kind(UVM_PREDICT_DIRECT)));
-
-    void'(ral.secret0_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[Secret0Idx]]),
-          .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.secret0_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[Secret0Idx] + 1]),
+    void'(ral.secret_prod_partition_2_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretProdPartition2Idx] + 1]),
           .kind(UVM_PREDICT_DIRECT)));
 
-    void'(ral.secret1_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[Secret1Idx]]),
+    void'(ral.secret_prod_partition_3_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretProdPartition3Idx]]),
           .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.secret1_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[Secret1Idx] + 1]),
+    void'(ral.secret_prod_partition_3_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretProdPartition3Idx] + 1]),
           .kind(UVM_PREDICT_DIRECT)));
 
-    void'(ral.secret2_digest[0].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[Secret2Idx]]),
+    void'(ral.sw_manuf_partition_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SwManufPartitionIdx]]),
           .kind(UVM_PREDICT_DIRECT)));
-    void'(ral.secret2_digest[1].predict(
-          .value(otp_a[PART_OTP_DIGEST_ADDRS[Secret2Idx] + 1]),
+    void'(ral.sw_manuf_partition_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SwManufPartitionIdx] + 1]),
+          .kind(UVM_PREDICT_DIRECT)));
+
+    void'(ral.sw_prod_partition_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SwProdPartitionIdx]]),
+          .kind(UVM_PREDICT_DIRECT)));
+    void'(ral.sw_prod_partition_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SwProdPartitionIdx] + 1]),
+          .kind(UVM_PREDICT_DIRECT)));
+
+    void'(ral.secret_lc_unlock_partition_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretLcUnlockPartitionIdx]]),
+          .kind(UVM_PREDICT_DIRECT)));
+    void'(ral.secret_lc_unlock_partition_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretLcUnlockPartitionIdx] + 1]),
+          .kind(UVM_PREDICT_DIRECT)));
+
+    void'(ral.secret_lc_manuf_partition_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretLcManufPartitionIdx]]),
+          .kind(UVM_PREDICT_DIRECT)));
+    void'(ral.secret_lc_manuf_partition_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretLcManufPartitionIdx] + 1]),
+          .kind(UVM_PREDICT_DIRECT)));
+
+    void'(ral.secret_lc_prod_partition_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretLcProdPartitionIdx]]),
+          .kind(UVM_PREDICT_DIRECT)));
+    void'(ral.secret_lc_prod_partition_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretLcProdPartitionIdx] + 1]),
+          .kind(UVM_PREDICT_DIRECT)));
+
+    void'(ral.secret_lc_rma_partition_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretLcRmaPartitionIdx]]),
+          .kind(UVM_PREDICT_DIRECT)));
+    void'(ral.secret_lc_rma_partition_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[SecretLcRmaPartitionIdx] + 1]),
+          .kind(UVM_PREDICT_DIRECT)));
+
+    void'(ral.vendor_test_partition_digest[0].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[VendorTestPartitionIdx]]),
+          .kind(UVM_PREDICT_DIRECT)));
+    void'(ral.vendor_test_partition_digest[1].predict(
+          .value(otp_a[PART_OTP_DIGEST_ADDRS[VendorTestPartitionIdx] + 1]),
           .kind(UVM_PREDICT_DIRECT)));
   endfunction
 
@@ -1367,11 +1439,15 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
       dai_digest_ip = part_idx;
     end
     case (part_idx)
-      HwCfg0Idx: mem_q = otp_a[HwCfg0Offset / TL_SIZE : HwCfg0DigestOffset / TL_SIZE - 1];
-      HwCfg1Idx: mem_q = otp_a[HwCfg1Offset / TL_SIZE : HwCfg1DigestOffset / TL_SIZE - 1];
-      Secret0Idx: mem_q = otp_a[Secret0Offset / TL_SIZE : Secret0DigestOffset / TL_SIZE - 1];
-      Secret1Idx: mem_q = otp_a[Secret1Offset / TL_SIZE : Secret1DigestOffset / TL_SIZE - 1];
-      Secret2Idx: mem_q = otp_a[Secret2Offset / TL_SIZE : Secret2DigestOffset / TL_SIZE - 1];
+      SecretManufPartitionIdx: mem_q = otp_a[SecretManufPartitionOffset / TL_SIZE : SecretManufPartitionDigestOffset / TL_SIZE - 1];
+      SecretProdPartition0Idx: mem_q = otp_a[SecretProdPartition0Offset / TL_SIZE : SecretProdPartition0DigestOffset / TL_SIZE - 1];
+      SecretProdPartition1Idx: mem_q = otp_a[SecretProdPartition1Offset / TL_SIZE : SecretProdPartition1DigestOffset / TL_SIZE - 1];
+      SecretProdPartition2Idx: mem_q = otp_a[SecretProdPartition2Offset / TL_SIZE : SecretProdPartition2DigestOffset / TL_SIZE - 1];
+      SecretProdPartition3Idx: mem_q = otp_a[SecretProdPartition3Offset / TL_SIZE : SecretProdPartition3DigestOffset / TL_SIZE - 1];
+      SecretLcUnlockPartitionIdx: mem_q = otp_a[SecretLcUnlockPartitionOffset / TL_SIZE : SecretLcUnlockPartitionDigestOffset / TL_SIZE - 1];
+      SecretLcManufPartitionIdx: mem_q = otp_a[SecretLcManufPartitionOffset / TL_SIZE : SecretLcManufPartitionDigestOffset / TL_SIZE - 1];
+      SecretLcProdPartitionIdx: mem_q = otp_a[SecretLcProdPartitionOffset / TL_SIZE : SecretLcProdPartitionDigestOffset / TL_SIZE - 1];
+      SecretLcRmaPartitionIdx: mem_q = otp_a[SecretLcRmaPartitionOffset / TL_SIZE : SecretLcRmaPartitionDigestOffset / TL_SIZE - 1];
       default: begin
         `uvm_fatal(`gfn, $sformatf("Access unexpected partition %0d", part_idx))
       end
@@ -1508,45 +1584,53 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
   virtual function bit [TL_DW*2-1:0] get_digest_reg_val(int part_idx);
     bit [TL_DW*2-1:0] digest;
     case (part_idx)
-      VendorTestIdx: begin
-        digest = {`gmv(ral.vendor_test_digest[1]),
-                  `gmv(ral.vendor_test_digest[0])};
+      SecretManufPartitionIdx: begin
+        digest = {`gmv(ral.secret_manuf_partition_digest[1]),
+                  `gmv(ral.secret_manuf_partition_digest[0])};
       end
-      CreatorSwCfgIdx: begin
-        digest = {`gmv(ral.creator_sw_cfg_digest[1]),
-                  `gmv(ral.creator_sw_cfg_digest[0])};
+      SecretProdPartition0Idx: begin
+        digest = {`gmv(ral.secret_prod_partition_0_digest[1]),
+                  `gmv(ral.secret_prod_partition_0_digest[0])};
       end
-      OwnerSwCfgIdx: begin
-        digest = {`gmv(ral.owner_sw_cfg_digest[1]),
-                  `gmv(ral.owner_sw_cfg_digest[0])};
+      SecretProdPartition1Idx: begin
+        digest = {`gmv(ral.secret_prod_partition_1_digest[1]),
+                  `gmv(ral.secret_prod_partition_1_digest[0])};
       end
-      RotCreatorAuthCodesignIdx: begin
-        digest = {`gmv(ral.rot_creator_auth_codesign_digest[1]),
-                  `gmv(ral.rot_creator_auth_codesign_digest[0])};
+      SecretProdPartition2Idx: begin
+        digest = {`gmv(ral.secret_prod_partition_2_digest[1]),
+                  `gmv(ral.secret_prod_partition_2_digest[0])};
       end
-      RotCreatorAuthStateIdx: begin
-        digest = {`gmv(ral.rot_creator_auth_state_digest[1]),
-                  `gmv(ral.rot_creator_auth_state_digest[0])};
+      SecretProdPartition3Idx: begin
+        digest = {`gmv(ral.secret_prod_partition_3_digest[1]),
+                  `gmv(ral.secret_prod_partition_3_digest[0])};
       end
-      HwCfg0Idx: begin
-        digest = {`gmv(ral.hw_cfg0_digest[1]),
-                  `gmv(ral.hw_cfg0_digest[0])};
+      SwManufPartitionIdx: begin
+        digest = {`gmv(ral.sw_manuf_partition_digest[1]),
+                  `gmv(ral.sw_manuf_partition_digest[0])};
       end
-      HwCfg1Idx: begin
-        digest = {`gmv(ral.hw_cfg1_digest[1]),
-                  `gmv(ral.hw_cfg1_digest[0])};
+      SwProdPartitionIdx: begin
+        digest = {`gmv(ral.sw_prod_partition_digest[1]),
+                  `gmv(ral.sw_prod_partition_digest[0])};
       end
-      Secret0Idx: begin
-        digest = {`gmv(ral.secret0_digest[1]),
-                  `gmv(ral.secret0_digest[0])};
+      SecretLcUnlockPartitionIdx: begin
+        digest = {`gmv(ral.secret_lc_unlock_partition_digest[1]),
+                  `gmv(ral.secret_lc_unlock_partition_digest[0])};
       end
-      Secret1Idx: begin
-        digest = {`gmv(ral.secret1_digest[1]),
-                  `gmv(ral.secret1_digest[0])};
+      SecretLcManufPartitionIdx: begin
+        digest = {`gmv(ral.secret_lc_manuf_partition_digest[1]),
+                  `gmv(ral.secret_lc_manuf_partition_digest[0])};
       end
-      Secret2Idx: begin
-        digest = {`gmv(ral.secret2_digest[1]),
-                  `gmv(ral.secret2_digest[0])};
+      SecretLcProdPartitionIdx: begin
+        digest = {`gmv(ral.secret_lc_prod_partition_digest[1]),
+                  `gmv(ral.secret_lc_prod_partition_digest[0])};
+      end
+      SecretLcRmaPartitionIdx: begin
+        digest = {`gmv(ral.secret_lc_rma_partition_digest[1]),
+                  `gmv(ral.secret_lc_rma_partition_digest[0])};
+      end
+      VendorTestPartitionIdx: begin
+        digest = {`gmv(ral.vendor_test_partition_digest[1]),
+                  `gmv(ral.vendor_test_partition_digest[0])};
       end
       default: `uvm_fatal(`gfn, $sformatf("Partition %0d does not have digest", part_idx))
     endcase
@@ -1577,77 +1661,64 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
         mem_access_allowed) begin
 
       // If sw partition is read locked, then access policy changes from RO to no access
-      if (`gmv(ral.vendor_test_read_lock) == 0 ||
+      if (`gmv(ral.sw_manuf_partition_read_lock) == 0 ||
           cfg.otp_ctrl_vif.under_error_states()) begin
         if (addr inside {
-            [cfg.ral_models[ral_name].mem_ranges[0].start_addr + VendorTestOffset :
-             cfg.ral_models[ral_name].mem_ranges[0].start_addr + VendorTestOffset +
-             VendorTestSize - 1]}) begin
-          predict_err(OtpVendorTestErrIdx, OtpAccessError);
+            [cfg.ral_models[ral_name].mem_ranges[0].start_addr + SwManufPartitionOffset :
+             cfg.ral_models[ral_name].mem_ranges[0].start_addr + SwManufPartitionOffset +
+             SwManufPartitionSize - 1]}) begin
+          predict_err(OtpSwManufPartitionErrIdx, OtpAccessError);
           custom_err = 1;
           if (cfg.en_cov) begin
-            cov.unbuf_access_lock_cg_wrap[VendorTestIdx].sample(.read_lock(1),
-                .write_lock(get_digest_reg_val(VendorTestIdx) != 0), .is_write(0));
+            cov.unbuf_access_lock_cg_wrap[SwManufPartitionIdx].sample(.read_lock(1),
+                .write_lock(get_digest_reg_val(SwManufPartitionIdx) != 0), .is_write(0));
           end
           return 0;
         end
       end
-      if (`gmv(ral.creator_sw_cfg_read_lock) == 0 ||
+      if (`gmv(ral.sw_prod_partition_read_lock) == 0 ||
           cfg.otp_ctrl_vif.under_error_states()) begin
         if (addr inside {
-            [cfg.ral_models[ral_name].mem_ranges[0].start_addr + CreatorSwCfgOffset :
-             cfg.ral_models[ral_name].mem_ranges[0].start_addr + CreatorSwCfgOffset +
-             CreatorSwCfgSize - 1]}) begin
-          predict_err(OtpCreatorSwCfgErrIdx, OtpAccessError);
+            [cfg.ral_models[ral_name].mem_ranges[0].start_addr + SwProdPartitionOffset :
+             cfg.ral_models[ral_name].mem_ranges[0].start_addr + SwProdPartitionOffset +
+             SwProdPartitionSize - 1]}) begin
+          predict_err(OtpSwProdPartitionErrIdx, OtpAccessError);
           custom_err = 1;
           if (cfg.en_cov) begin
-            cov.unbuf_access_lock_cg_wrap[CreatorSwCfgIdx].sample(.read_lock(1),
-                .write_lock(get_digest_reg_val(CreatorSwCfgIdx) != 0), .is_write(0));
+            cov.unbuf_access_lock_cg_wrap[SwProdPartitionIdx].sample(.read_lock(1),
+                .write_lock(get_digest_reg_val(SwProdPartitionIdx) != 0), .is_write(0));
           end
           return 0;
         end
       end
-      if (`gmv(ral.owner_sw_cfg_read_lock) == 0 ||
+      if (`gmv(ral.svn_partition_read_lock) == 0 ||
           cfg.otp_ctrl_vif.under_error_states()) begin
         if (addr inside {
-            [cfg.ral_models[ral_name].mem_ranges[0].start_addr + OwnerSwCfgOffset :
-             cfg.ral_models[ral_name].mem_ranges[0].start_addr + OwnerSwCfgOffset +
-             OwnerSwCfgSize - 1]}) begin
-          predict_err(OtpOwnerSwCfgErrIdx, OtpAccessError);
+            [cfg.ral_models[ral_name].mem_ranges[0].start_addr + SvnPartitionOffset :
+             cfg.ral_models[ral_name].mem_ranges[0].start_addr + SvnPartitionOffset +
+             SvnPartitionSize - 1]}) begin
+          predict_err(OtpSvnPartitionErrIdx, OtpAccessError);
           custom_err = 1;
           if (cfg.en_cov) begin
-            cov.unbuf_access_lock_cg_wrap[OwnerSwCfgIdx].sample(.read_lock(1),
-                .write_lock(get_digest_reg_val(OwnerSwCfgIdx) != 0), .is_write(0));
+            // TODO: we should probably create a different covergroup
+            // for unbuffered partitions without digest.
+            cov.unbuf_access_lock_cg_wrap[SvnPartitionIdx].sample(.read_lock(1),
+                .write_lock(0), .is_write(0));
           end
           return 0;
         end
       end
-      if (`gmv(ral.rot_creator_auth_codesign_read_lock) == 0 ||
+      if (`gmv(ral.vendor_test_partition_read_lock) == 0 ||
           cfg.otp_ctrl_vif.under_error_states()) begin
         if (addr inside {
-            [cfg.ral_models[ral_name].mem_ranges[0].start_addr + RotCreatorAuthCodesignOffset :
-             cfg.ral_models[ral_name].mem_ranges[0].start_addr + RotCreatorAuthCodesignOffset +
-             RotCreatorAuthCodesignSize - 1]}) begin
-          predict_err(OtpRotCreatorAuthCodesignErrIdx, OtpAccessError);
+            [cfg.ral_models[ral_name].mem_ranges[0].start_addr + VendorTestPartitionOffset :
+             cfg.ral_models[ral_name].mem_ranges[0].start_addr + VendorTestPartitionOffset +
+             VendorTestPartitionSize - 1]}) begin
+          predict_err(OtpVendorTestPartitionErrIdx, OtpAccessError);
           custom_err = 1;
           if (cfg.en_cov) begin
-            cov.unbuf_access_lock_cg_wrap[RotCreatorAuthCodesignIdx].sample(.read_lock(1),
-                .write_lock(get_digest_reg_val(RotCreatorAuthCodesignIdx) != 0), .is_write(0));
-          end
-          return 0;
-        end
-      end
-      if (`gmv(ral.rot_creator_auth_state_read_lock) == 0 ||
-          cfg.otp_ctrl_vif.under_error_states()) begin
-        if (addr inside {
-            [cfg.ral_models[ral_name].mem_ranges[0].start_addr + RotCreatorAuthStateOffset :
-             cfg.ral_models[ral_name].mem_ranges[0].start_addr + RotCreatorAuthStateOffset +
-             RotCreatorAuthStateSize - 1]}) begin
-          predict_err(OtpRotCreatorAuthStateErrIdx, OtpAccessError);
-          custom_err = 1;
-          if (cfg.en_cov) begin
-            cov.unbuf_access_lock_cg_wrap[RotCreatorAuthStateIdx].sample(.read_lock(1),
-                .write_lock(get_digest_reg_val(RotCreatorAuthStateIdx) != 0), .is_write(0));
+            cov.unbuf_access_lock_cg_wrap[VendorTestPartitionIdx].sample(.read_lock(1),
+                .write_lock(get_digest_reg_val(VendorTestPartitionIdx) != 0), .is_write(0));
           end
           return 0;
         end
