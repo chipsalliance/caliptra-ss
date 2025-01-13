@@ -6,21 +6,20 @@
 
 `include "caliptra_prim_assert.sv"
 
-module caliptra_ss_lc_ctrl_regs_reg_top 
-(
+module lc_ctrl_reg_top (
   input clk_i,
   input rst_ni,
   input  tlul_pkg::tl_h2d_t tl_i,
   output tlul_pkg::tl_d2h_t tl_o,
   // To HW
-  output caliptra_ss_lc_ctrl_reg_pkg::caliptra_ss_lc_ctrl_regs_reg2hw_t reg2hw, // Write
-  input  caliptra_ss_lc_ctrl_reg_pkg::caliptra_ss_lc_ctrl_regs_hw2reg_t hw2reg, // Read
+  output lc_ctrl_reg_pkg::lc_ctrl_reg2hw_t reg2hw, // Write
+  input  lc_ctrl_reg_pkg::lc_ctrl_hw2reg_t hw2reg, // Read
 
   // Integrity check errors
   output logic intg_err_o
 );
 
-  import caliptra_ss_lc_ctrl_reg_pkg::* ;
+  import lc_ctrl_reg_pkg::* ;
 
   localparam int AW = 8;
   localparam int DW = 32;
@@ -182,12 +181,12 @@ module caliptra_ss_lc_ctrl_regs_reg_top
   logic [31:0] otp_vendor_test_ctrl_wd;
   logic otp_vendor_test_status_re;
   logic [31:0] otp_vendor_test_status_qs;
-  logic caliptra_ss_lc_state_re;
-  logic [29:0] caliptra_ss_lc_state_qs;
-  logic caliptra_ss_lc_transition_cnt_re;
-  logic [4:0] caliptra_ss_lc_transition_cnt_qs;
-  logic caliptra_ss_lc_id_state_re;
-  logic [31:0] caliptra_ss_lc_id_state_qs;
+  logic lc_state_re;
+  logic [29:0] lc_state_qs;
+  logic lc_transition_cnt_re;
+  logic [4:0] lc_transition_cnt_qs;
+  logic lc_id_state_re;
+  logic [31:0] lc_id_state_qs;
   logic hw_revision0_re;
   logic [15:0] hw_revision0_product_id_qs;
   logic [15:0] hw_revision0_silicon_creator_id_qs;
@@ -751,51 +750,51 @@ module caliptra_ss_lc_ctrl_regs_reg_top
   );
 
 
-  // R[caliptra_ss_lc_state]: V(True)
+  // R[lc_state]: V(True)
   caliptra_prim_subreg_ext #(
     .DW    (30)
-  ) u_caliptra_ss_lc_state (
-    .re     (caliptra_ss_lc_state_re),
+  ) u_lc_state (
+    .re     (lc_state_re),
     .we     (1'b0),
     .wd     ('0),
-    .d      (hw2reg.caliptra_ss_lc_state.d),
+    .d      (hw2reg.lc_state.d),
     .qre    (),
     .qe     (),
     .q      (),
     .ds     (),
-    .qs     (caliptra_ss_lc_state_qs)
+    .qs     (lc_state_qs)
   );
 
 
-  // R[caliptra_ss_lc_transition_cnt]: V(True)
+  // R[lc_transition_cnt]: V(True)
   caliptra_prim_subreg_ext #(
     .DW    (5)
-  ) u_caliptra_ss_lc_transition_cnt (
-    .re     (caliptra_ss_lc_transition_cnt_re),
+  ) u_lc_transition_cnt (
+    .re     (lc_transition_cnt_re),
     .we     (1'b0),
     .wd     ('0),
-    .d      (hw2reg.caliptra_ss_lc_transition_cnt.d),
+    .d      (hw2reg.lc_transition_cnt.d),
     .qre    (),
     .qe     (),
     .q      (),
     .ds     (),
-    .qs     (caliptra_ss_lc_transition_cnt_qs)
+    .qs     (lc_transition_cnt_qs)
   );
 
 
-  // R[caliptra_ss_lc_id_state]: V(True)
+  // R[lc_id_state]: V(True)
   caliptra_prim_subreg_ext #(
     .DW    (32)
-  ) u_caliptra_ss_lc_id_state (
-    .re     (caliptra_ss_lc_id_state_re),
+  ) u_lc_id_state (
+    .re     (lc_id_state_re),
     .we     (1'b0),
     .wd     ('0),
-    .d      (hw2reg.caliptra_ss_lc_id_state.d),
+    .d      (hw2reg.lc_id_state.d),
     .qre    (),
     .qe     (),
     .q      (),
     .ds     (),
-    .qs     (caliptra_ss_lc_id_state_qs)
+    .qs     (lc_id_state_qs)
   );
 
 
@@ -1181,41 +1180,41 @@ module caliptra_ss_lc_ctrl_regs_reg_top
   // Check sub-word write is permitted
   always_comb begin
     wr_err = (reg_we &
-              ((addr_hit[ 0] & (|(LC_CTRL_REGS_PERMIT[ 0] & ~reg_be))) |
-               (addr_hit[ 1] & (|(LC_CTRL_REGS_PERMIT[ 1] & ~reg_be))) |
-               (addr_hit[ 2] & (|(LC_CTRL_REGS_PERMIT[ 2] & ~reg_be))) |
-               (addr_hit[ 3] & (|(LC_CTRL_REGS_PERMIT[ 3] & ~reg_be))) |
-               (addr_hit[ 4] & (|(LC_CTRL_REGS_PERMIT[ 4] & ~reg_be))) |
-               (addr_hit[ 5] & (|(LC_CTRL_REGS_PERMIT[ 5] & ~reg_be))) |
-               (addr_hit[ 6] & (|(LC_CTRL_REGS_PERMIT[ 6] & ~reg_be))) |
-               (addr_hit[ 7] & (|(LC_CTRL_REGS_PERMIT[ 7] & ~reg_be))) |
-               (addr_hit[ 8] & (|(LC_CTRL_REGS_PERMIT[ 8] & ~reg_be))) |
-               (addr_hit[ 9] & (|(LC_CTRL_REGS_PERMIT[ 9] & ~reg_be))) |
-               (addr_hit[10] & (|(LC_CTRL_REGS_PERMIT[10] & ~reg_be))) |
-               (addr_hit[11] & (|(LC_CTRL_REGS_PERMIT[11] & ~reg_be))) |
-               (addr_hit[12] & (|(LC_CTRL_REGS_PERMIT[12] & ~reg_be))) |
-               (addr_hit[13] & (|(LC_CTRL_REGS_PERMIT[13] & ~reg_be))) |
-               (addr_hit[14] & (|(LC_CTRL_REGS_PERMIT[14] & ~reg_be))) |
-               (addr_hit[15] & (|(LC_CTRL_REGS_PERMIT[15] & ~reg_be))) |
-               (addr_hit[16] & (|(LC_CTRL_REGS_PERMIT[16] & ~reg_be))) |
-               (addr_hit[17] & (|(LC_CTRL_REGS_PERMIT[17] & ~reg_be))) |
-               (addr_hit[18] & (|(LC_CTRL_REGS_PERMIT[18] & ~reg_be))) |
-               (addr_hit[19] & (|(LC_CTRL_REGS_PERMIT[19] & ~reg_be))) |
-               (addr_hit[20] & (|(LC_CTRL_REGS_PERMIT[20] & ~reg_be))) |
-               (addr_hit[21] & (|(LC_CTRL_REGS_PERMIT[21] & ~reg_be))) |
-               (addr_hit[22] & (|(LC_CTRL_REGS_PERMIT[22] & ~reg_be))) |
-               (addr_hit[23] & (|(LC_CTRL_REGS_PERMIT[23] & ~reg_be))) |
-               (addr_hit[24] & (|(LC_CTRL_REGS_PERMIT[24] & ~reg_be))) |
-               (addr_hit[25] & (|(LC_CTRL_REGS_PERMIT[25] & ~reg_be))) |
-               (addr_hit[26] & (|(LC_CTRL_REGS_PERMIT[26] & ~reg_be))) |
-               (addr_hit[27] & (|(LC_CTRL_REGS_PERMIT[27] & ~reg_be))) |
-               (addr_hit[28] & (|(LC_CTRL_REGS_PERMIT[28] & ~reg_be))) |
-               (addr_hit[29] & (|(LC_CTRL_REGS_PERMIT[29] & ~reg_be))) |
-               (addr_hit[30] & (|(LC_CTRL_REGS_PERMIT[30] & ~reg_be))) |
-               (addr_hit[31] & (|(LC_CTRL_REGS_PERMIT[31] & ~reg_be))) |
-               (addr_hit[32] & (|(LC_CTRL_REGS_PERMIT[32] & ~reg_be))) |
-               (addr_hit[33] & (|(LC_CTRL_REGS_PERMIT[33] & ~reg_be))) |
-               (addr_hit[34] & (|(LC_CTRL_REGS_PERMIT[34] & ~reg_be)))));
+              ((addr_hit[ 0] & (|(LC_CTRL_PERMIT[ 0] & ~reg_be))) |
+               (addr_hit[ 1] & (|(LC_CTRL_PERMIT[ 1] & ~reg_be))) |
+               (addr_hit[ 2] & (|(LC_CTRL_PERMIT[ 2] & ~reg_be))) |
+               (addr_hit[ 3] & (|(LC_CTRL_PERMIT[ 3] & ~reg_be))) |
+               (addr_hit[ 4] & (|(LC_CTRL_PERMIT[ 4] & ~reg_be))) |
+               (addr_hit[ 5] & (|(LC_CTRL_PERMIT[ 5] & ~reg_be))) |
+               (addr_hit[ 6] & (|(LC_CTRL_PERMIT[ 6] & ~reg_be))) |
+               (addr_hit[ 7] & (|(LC_CTRL_PERMIT[ 7] & ~reg_be))) |
+               (addr_hit[ 8] & (|(LC_CTRL_PERMIT[ 8] & ~reg_be))) |
+               (addr_hit[ 9] & (|(LC_CTRL_PERMIT[ 9] & ~reg_be))) |
+               (addr_hit[10] & (|(LC_CTRL_PERMIT[10] & ~reg_be))) |
+               (addr_hit[11] & (|(LC_CTRL_PERMIT[11] & ~reg_be))) |
+               (addr_hit[12] & (|(LC_CTRL_PERMIT[12] & ~reg_be))) |
+               (addr_hit[13] & (|(LC_CTRL_PERMIT[13] & ~reg_be))) |
+               (addr_hit[14] & (|(LC_CTRL_PERMIT[14] & ~reg_be))) |
+               (addr_hit[15] & (|(LC_CTRL_PERMIT[15] & ~reg_be))) |
+               (addr_hit[16] & (|(LC_CTRL_PERMIT[16] & ~reg_be))) |
+               (addr_hit[17] & (|(LC_CTRL_PERMIT[17] & ~reg_be))) |
+               (addr_hit[18] & (|(LC_CTRL_PERMIT[18] & ~reg_be))) |
+               (addr_hit[19] & (|(LC_CTRL_PERMIT[19] & ~reg_be))) |
+               (addr_hit[20] & (|(LC_CTRL_PERMIT[20] & ~reg_be))) |
+               (addr_hit[21] & (|(LC_CTRL_PERMIT[21] & ~reg_be))) |
+               (addr_hit[22] & (|(LC_CTRL_PERMIT[22] & ~reg_be))) |
+               (addr_hit[23] & (|(LC_CTRL_PERMIT[23] & ~reg_be))) |
+               (addr_hit[24] & (|(LC_CTRL_PERMIT[24] & ~reg_be))) |
+               (addr_hit[25] & (|(LC_CTRL_PERMIT[25] & ~reg_be))) |
+               (addr_hit[26] & (|(LC_CTRL_PERMIT[26] & ~reg_be))) |
+               (addr_hit[27] & (|(LC_CTRL_PERMIT[27] & ~reg_be))) |
+               (addr_hit[28] & (|(LC_CTRL_PERMIT[28] & ~reg_be))) |
+               (addr_hit[29] & (|(LC_CTRL_PERMIT[29] & ~reg_be))) |
+               (addr_hit[30] & (|(LC_CTRL_PERMIT[30] & ~reg_be))) |
+               (addr_hit[31] & (|(LC_CTRL_PERMIT[31] & ~reg_be))) |
+               (addr_hit[32] & (|(LC_CTRL_PERMIT[32] & ~reg_be))) |
+               (addr_hit[33] & (|(LC_CTRL_PERMIT[33] & ~reg_be))) |
+               (addr_hit[34] & (|(LC_CTRL_PERMIT[34] & ~reg_be)))));
   end
 
   // Generate write-enables
@@ -1269,9 +1268,9 @@ module caliptra_ss_lc_ctrl_regs_reg_top
 
   assign otp_vendor_test_ctrl_wd = reg_wdata[31:0];
   assign otp_vendor_test_status_re = addr_hit[13] & reg_re & !reg_error;
-  assign caliptra_ss_lc_state_re = addr_hit[14] & reg_re & !reg_error;
-  assign caliptra_ss_lc_transition_cnt_re = addr_hit[15] & reg_re & !reg_error;
-  assign caliptra_ss_lc_id_state_re = addr_hit[16] & reg_re & !reg_error;
+  assign lc_state_re = addr_hit[14] & reg_re & !reg_error;
+  assign lc_transition_cnt_re = addr_hit[15] & reg_re & !reg_error;
+  assign lc_id_state_re = addr_hit[16] & reg_re & !reg_error;
   assign hw_revision0_re = addr_hit[17] & reg_re & !reg_error;
   assign hw_revision1_re = addr_hit[18] & reg_re & !reg_error;
   assign device_id_0_re = addr_hit[19] & reg_re & !reg_error;
@@ -1406,15 +1405,15 @@ module caliptra_ss_lc_ctrl_regs_reg_top
       end
 
       addr_hit[14]: begin
-        reg_rdata_next[29:0] = caliptra_ss_lc_state_qs;
+        reg_rdata_next[29:0] = lc_state_qs;
       end
 
       addr_hit[15]: begin
-        reg_rdata_next[4:0] = caliptra_ss_lc_transition_cnt_qs;
+        reg_rdata_next[4:0] = lc_transition_cnt_qs;
       end
 
       addr_hit[16]: begin
-        reg_rdata_next[31:0] = caliptra_ss_lc_id_state_qs;
+        reg_rdata_next[31:0] = lc_id_state_qs;
       end
 
       addr_hit[17]: begin
@@ -1523,6 +1522,6 @@ module caliptra_ss_lc_ctrl_regs_reg_top
 
   // this is formulated as an assumption such that the FPV testbenches do disprove this
   // property by mistake
-  //`CALIPTRA_ASSUME(reqParity, tl_reg_h2d.a_valid |-> tl_reg_h2d.a_user.chk_en == tlul_pkg::CheckDis)
+  //`ASSUME(reqParity, tl_reg_h2d.a_valid |-> tl_reg_h2d.a_user.chk_en == tlul_pkg::CheckDis)
 
 endmodule

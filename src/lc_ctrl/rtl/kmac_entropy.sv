@@ -72,7 +72,7 @@ module kmac_entropy
   output caliptra_prim_mubi_pkg::mubi4_t entropy_configured_o,
 
   // Life cycle
-  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_escalate_en_i,
+  input  lc_ctrl_pkg::lc_tx_t lc_escalate_en_i,
 
   // Error output
   output err_t err_o,
@@ -732,7 +732,7 @@ module kmac_entropy
     // SEC_CM: FSM.GLOBAL_ESC, FSM.LOCAL_ESC
     // Unconditionally jump into the terminal error state
     // if the life cycle controller triggers an escalation.
-    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en_i)) begin
+    if (lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i)) begin
       st_d = StTerminalError;
     end
   end

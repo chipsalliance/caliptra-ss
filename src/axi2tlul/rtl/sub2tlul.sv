@@ -138,7 +138,8 @@ module sub2tlul
     logic [DataIntgWidth-1:0]      data_intg;
 
     axi2tlul_cmd_intg_gen #( 
-        .EnableDataIntgGen  (1) 
+        .EnableDataIntgGen  (1),
+        .AW (AW)
     ) u_axi2tlul_cmd_intg_gen (
         .instr_type_i   (instr_type),
         .addr_i         (addr),

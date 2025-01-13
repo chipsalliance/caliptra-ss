@@ -5,7 +5,7 @@
 // key manager package
 //
 
-package caliptra_ss_lc_ctrl_keymgr_pkg;
+package lc_ctrl_keymgr_pkg;
 
   parameter int KeyWidth = 256;
   parameter int CDIs = 2; // 2 different CDIs, sealing / attestation
@@ -258,7 +258,7 @@ package caliptra_ss_lc_ctrl_keymgr_pkg;
     KeyMgrEnCfgEn,
     KeyMgrEnSwBindingEn,
     KeyMgrEnLast
-  } keymgr_caliptra_ss_lc_en_usage_e;
+  } keymgr_lc_en_usage_e;
 
   // perm_data
   function automatic logic[RandWidth-1:0] perm_data (logic [RandWidth-1:0] data,
@@ -275,4 +275,4 @@ package caliptra_ss_lc_ctrl_keymgr_pkg;
     return |value & ~&value;
   endfunction
 
-endpackage : caliptra_ss_lc_ctrl_keymgr_pkg
+endpackage : lc_ctrl_keymgr_pkg

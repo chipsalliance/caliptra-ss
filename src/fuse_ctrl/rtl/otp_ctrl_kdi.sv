@@ -20,7 +20,7 @@ module otp_ctrl_kdi
   // been initialized.
   input                                              kdi_en_i,
   // Escalation input. This moves the FSM into a terminal state.
-  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t                        escalate_en_i,
+  input  lc_ctrl_pkg::lc_tx_t                        escalate_en_i,
   // FSM is in error state
   output logic                                       fsm_err_o,
   // Key seed inputs from OTP
@@ -559,7 +559,7 @@ module otp_ctrl_kdi
 
     // Unconditionally jump into the terminal error state in case of escalation.
     // SEC_CM: KDI.FSM.LOCAL_ESC, KDI.FSM.GLOBAL_ESC
-    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(escalate_en_i) ||
+    if (lc_ctrl_pkg::lc_tx_test_true_loose(escalate_en_i) ||
         seed_cnt_err || entropy_cnt_err) begin
       state_d = ErrorSt;
       fsm_err_o = 1'b1;

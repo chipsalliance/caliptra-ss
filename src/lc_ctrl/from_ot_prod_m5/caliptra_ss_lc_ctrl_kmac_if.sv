@@ -5,11 +5,11 @@
 // Synchronization interface between LC FSM and KMAC.
 //
 
-`include "caliptra_prim_assert.sv"
+`include "prim_assert.sv"
 
-module caliptra_ss_lc_ctrl_kmac_if
-  import caliptra_ss_lc_ctrl_pkg::*;
-  import caliptra_ss_lc_ctrl_state_pkg::*;
+module lc_ctrl_kmac_if
+  import lc_ctrl_pkg::*;
+  import lc_ctrl_state_pkg::*;
 (
   // Life cycle controller clock
   input                         clk_i,
@@ -22,14 +22,14 @@ module caliptra_ss_lc_ctrl_kmac_if
   input  kmac_pkg::app_rsp_t    kmac_data_i,
   output kmac_pkg::app_req_t    kmac_data_o,
   // Token hashing interface to LC FSM'
-  input caliptra_ss_lc_token_t              transition_token_i,
+  input lc_token_t              transition_token_i,
   input                         token_hash_req_i,
-  // Used for gating assertions inside CDC caliptra_primitives.
+  // Used for gating assertions inside CDC primitives.
   input                         token_hash_req_chk_i,
   output logic                  token_hash_ack_o,
   output logic                  token_hash_err_o,
   output logic                  token_if_fsm_err_o,
-  output caliptra_ss_lc_token_t             hashed_token_o
+  output lc_token_t             hashed_token_o
 );
 
   //////////////////////////////////////
@@ -40,26 +40,26 @@ module caliptra_ss_lc_ctrl_kmac_if
   // The transition_token_i register is guaranteed to remain stable once a life cycle
   // transition has been initiated.
   // Hence no further synchronization registers are required on the outgoing data.
-  caliptra_ss_lc_token_t kmac_transition_token;
+  lc_token_t kmac_transition_token;
   assign kmac_transition_token = transition_token_i;
 
   // SRC domain cannot change data while waiting for ACK.
-  `CALIPTRA_ASSERT(DataStable_A, token_hash_req_i && !token_hash_ack_o |-> $stable(transition_token_i))
+  `ASSERT(DataStable_A, token_hash_req_i && !token_hash_ack_o |-> $stable(transition_token_i))
 
   // Second synchronizer instance for handshake and return data synchronization.
   logic kmac_req, kmac_ack;
   logic token_hash_req;
   logic token_hash_ack_d, token_hash_ack_q;
   logic token_hash_err_q, token_hash_err_d;
-  caliptra_ss_lc_token_t hashed_token_q, hashed_token_d;
-  caliptra_prim_sync_reqack_data #(
+  lc_token_t hashed_token_q, hashed_token_d;
+  prim_sync_reqack_data #(
     // Token + Error bit
     .Width      (LcTokenWidth + 1),
     .DataSrc2Dst(1'b0),
     // This instantiates a data register
     // on the destination side.
     .DataReg    (1'b1)
-  ) u_caliptra_prim_sync_reqack_data_in (
+  ) u_prim_sync_reqack_data_in (
     .clk_src_i  ( clk_i                ),
     .rst_src_ni ( rst_ni               ),
     .clk_dst_i  ( clk_kmac_i           ),
@@ -84,7 +84,7 @@ module caliptra_ss_lc_ctrl_kmac_if
   };
 
   // Hashed Token Register Running on LC Clock
-  always_ff @(posedge clk_i or negedge rst_ni) begin : p_caliptra_ss_lc_regs
+  always_ff @(posedge clk_i or negedge rst_ni) begin : p_lc_regs
     if (!rst_ni) begin
         token_hash_ack_q <= 1'b0;
         token_hash_err_q <= 1'b0;
@@ -108,10 +108,10 @@ module caliptra_ss_lc_ctrl_kmac_if
 
   // Need to synchronize this error signal separately.
   logic kmac_fsm_err_d, kmac_fsm_err_q;
-  caliptra_prim_flop_2sync #(
+  prim_flop_2sync #(
     .Width(1),
     .ResetValue(0)
-  ) u_caliptra_prim_flop_2sync (
+  ) u_prim_flop_2sync (
     .clk_i,
     .rst_ni,
     .d_i(kmac_fsm_err_q),
@@ -200,7 +200,7 @@ module caliptra_ss_lc_ctrl_kmac_if
     endcase // state_q
   end
 
-  `CALIPTRA_PRIM_FLOP_SPARSE_FSM(u_state_regs, state_d, state_q, state_e, FirstSt, clk_kmac_i, rst_kmac_ni)
+  `PRIM_FLOP_SPARSE_FSM(u_state_regs, state_d, state_q, state_e, FirstSt, clk_kmac_i, rst_kmac_ni)
 
   always_ff @(posedge clk_kmac_i or negedge rst_kmac_ni) begin : p_kmac_fsm_err
     if (!rst_kmac_ni) begin
@@ -210,4 +210,4 @@ module caliptra_ss_lc_ctrl_kmac_if
     end
   end
 
-endmodule : caliptra_ss_lc_ctrl_kmac_if
+endmodule : lc_ctrl_kmac_if

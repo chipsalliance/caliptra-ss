@@ -55,7 +55,7 @@ module kmac
   output caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0] alert_tx_o,
 
   // KeyMgr sideload (secret key) interface
-  input caliptra_ss_lc_ctrl_keymgr_pkg::hw_key_req_t keymgr_key_i,
+  input lc_ctrl_keymgr_pkg::hw_key_req_t keymgr_key_i,
 
   // KeyMgr KDF data path
   input  app_req_t [NumAppIntf-1:0] app_i,
@@ -66,7 +66,7 @@ module kmac
   input  edn_pkg::edn_rsp_t entropy_i,
 
   // Life cycle
-  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_escalate_en_i,
+  input  lc_ctrl_pkg::lc_tx_t lc_escalate_en_i,
 
   // interrupts
   output logic intr_kmac_done_o,
@@ -336,8 +336,8 @@ module kmac
 
   // Life cycle
   localparam int unsigned NumLcSyncCopies = 6;
-  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t [NumLcSyncCopies-1:0] caliptra_ss_lc_escalate_en_sync;
-  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t [NumLcSyncCopies-1:0] caliptra_ss_lc_escalate_en;
+  lc_ctrl_pkg::lc_tx_t [NumLcSyncCopies-1:0] lc_escalate_en_sync;
+  lc_ctrl_pkg::lc_tx_t [NumLcSyncCopies-1:0] lc_escalate_en;
 
   //////////////////////////////////////
   // Connecting Register IF to logics //
@@ -846,7 +846,7 @@ module kmac
     // SEC_CM: FSM.GLOBAL_ESC, FSM.LOCAL_ESC
     // Unconditionally jump into the terminal error state
     // if the life cycle controller triggers an escalation.
-    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en[0])) begin
+    if (lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en[0])) begin
       kmac_st_d = KmacTerminalError;
     end
   end
@@ -892,7 +892,7 @@ module kmac
     .process_o (kmac2sha3_process   ),
 
     // LC escalation
-    .caliptra_ss_lc_escalate_en_i (caliptra_ss_lc_escalate_en[1]),
+    .lc_escalate_en_i (lc_escalate_en[1]),
 
     // Error detection
     .sparse_fsm_error_o (kmac_core_state_error),
@@ -958,7 +958,7 @@ module kmac
     .done_i     (sha3_done        ),
 
     // LC escalation
-    .caliptra_ss_lc_escalate_en_i (caliptra_ss_lc_escalate_en[2]),
+    .lc_escalate_en_i (lc_escalate_en[2]),
 
     .absorbed_o  (sha3_absorbed),
     .squeezing_o (unused_sha3_squeeze),
@@ -1121,7 +1121,7 @@ module kmac
     .entropy_ready_i (entropy_configured),
 
     // LC escalation
-    .caliptra_ss_lc_escalate_en_i (caliptra_ss_lc_escalate_en[3]),
+    .lc_escalate_en_i (lc_escalate_en[3]),
 
     // Error report
     .error_o            (app_err),
@@ -1213,7 +1213,7 @@ module kmac
     .keccak_done_i  (sha3_block_processed),
 
     // LC escalation
-    .caliptra_ss_lc_escalate_en_i (caliptra_ss_lc_escalate_en[4]),
+    .lc_escalate_en_i (lc_escalate_en[4]),
 
     .err_processed_i (err_processed),
     .clear_after_error_i (clear_after_error),
@@ -1302,7 +1302,7 @@ module kmac
       .entropy_configured_o (entropy_configured),
 
       // LC escalation
-      .caliptra_ss_lc_escalate_en_i (caliptra_ss_lc_escalate_en[5]),
+      .lc_escalate_en_i (lc_escalate_en[5]),
 
       // Error
       .err_o              (entropy_err),
@@ -1500,10 +1500,10 @@ module kmac
   assign unused_alerts_q0 = alerts_q[0];
 
   // SEC_CM: LC_ESCALATE_EN.INTERSIG.MUBI, FSM.GLOBAL_ESC, FSM.LOCAL_ESC
-  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t alert_to_caliptra_ss_lc_tx;
-  assign alert_to_caliptra_ss_lc_tx = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_bool_to_caliptra_ss_lc_tx(alerts_q[1]);
-  for (genvar i = 0; i < NumLcSyncCopies; i++) begin : gen_or_alert_caliptra_ss_lc_sync
-      assign caliptra_ss_lc_escalate_en[i] = caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_or_hi(alert_to_caliptra_ss_lc_tx, caliptra_ss_lc_escalate_en_sync[i]);
+  lc_ctrl_pkg::lc_tx_t alert_to_lc_tx;
+  assign alert_to_lc_tx = lc_ctrl_pkg::lc_tx_bool_to_lc_tx(alerts_q[1]);
+  for (genvar i = 0; i < NumLcSyncCopies; i++) begin : gen_or_alert_lc_sync
+      assign lc_escalate_en[i] = lc_ctrl_pkg::lc_tx_or_hi(alert_to_lc_tx, lc_escalate_en_sync[i]);
   end
 
   // Synchronize life cycle input
@@ -1512,8 +1512,8 @@ module kmac
   ) u_caliptra_prim_lc_sync (
     .clk_i,
     .rst_ni,
-    .lc_en_i ( caliptra_ss_lc_escalate_en_i    ),
-    .lc_en_o ( caliptra_ss_lc_escalate_en_sync )
+    .lc_en_i ( lc_escalate_en_i    ),
+    .lc_en_o ( lc_escalate_en_sync )
   );
 
   assign en_masking_o = EnMasking;

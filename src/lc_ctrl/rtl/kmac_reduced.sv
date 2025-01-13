@@ -87,7 +87,7 @@ module kmac_reduced
   output logic [HashCntW-1:0]   entropy_hash_cnt_o,
 
   // Life cycle interface
-  input caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_escalate_en_i,
+  input lc_ctrl_pkg::lc_tx_t lc_escalate_en_i,
 
   // Error signaling
   output logic err_o,
@@ -172,7 +172,7 @@ module kmac_reduced
 
   // Life cycle signals
   localparam int unsigned NumLcSyncCopies = 2;
-  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t [NumLcSyncCopies-1:0] caliptra_ss_lc_escalate_en;
+  lc_ctrl_pkg::lc_tx_t [NumLcSyncCopies-1:0] lc_escalate_en;
 
   // Synchronize life cycle input.
   caliptra_prim_lc_sync #(
@@ -180,8 +180,8 @@ module kmac_reduced
   ) u_caliptra_prim_lc_sync (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_escalate_en_i),
-    .lc_en_o(caliptra_ss_lc_escalate_en)
+    .lc_en_i(lc_escalate_en_i),
+    .lc_en_o(lc_escalate_en)
   );
 
   // Error signals
@@ -242,7 +242,7 @@ module kmac_reduced
     .run_ack_i(1'b1), // The SHA3 core is always allowed to process.
 
     // LC escalation
-    .caliptra_ss_lc_escalate_en_i(caliptra_ss_lc_escalate_en[0]),
+    .lc_escalate_en_i(lc_escalate_en[0]),
 
     // Error signals
     .error_o                   (sha3_err),
@@ -300,7 +300,7 @@ module kmac_reduced
     .entropy_configured_o(entropy_configured_o),
 
     // LC escalation
-    .caliptra_ss_lc_escalate_en_i(caliptra_ss_lc_escalate_en[1]),
+    .lc_escalate_en_i(lc_escalate_en[1]),
 
     // Error signals
     .err_o             (entropy_err),

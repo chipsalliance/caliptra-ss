@@ -73,7 +73,7 @@ module caliptra_ss_sha3
   input        run_ack_i,
 
   // Life cycle
-  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_escalate_en_i,
+  input  lc_ctrl_pkg::lc_tx_t lc_escalate_en_i,
 
   // error_o value is pushed to Error FIFO at KMAC/SHA3 top and reported to SW
   output err_t error_o,
@@ -318,7 +318,7 @@ module caliptra_ss_sha3
     // SEC_CM: FSM.GLOBAL_ESC, FSM.LOCAL_ESC
     // Unconditionally jump into the terminal error state
     // if the life cycle controller triggers an escalation.
-    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en_i)) begin
+    if (lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i)) begin
       st_d = StTerminalError_sparse;
     end
   end
@@ -441,7 +441,7 @@ module caliptra_ss_sha3
     .strength_i,
 
     // LC
-    .caliptra_ss_lc_escalate_en_i (caliptra_ss_lc_escalate_en_i),
+    .lc_escalate_en_i (lc_escalate_en_i),
 
     // controls
     .start_i   (keccak_start),
@@ -482,7 +482,7 @@ module caliptra_ss_sha3
     .state_o    (state),
 
     // LC
-    .caliptra_ss_lc_escalate_en_i (caliptra_ss_lc_escalate_en_i),
+    .lc_escalate_en_i (lc_escalate_en_i),
 
     .sparse_fsm_error_o  (keccak_round_state_error),
     .round_count_error_o (round_count_error),

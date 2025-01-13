@@ -38,7 +38,7 @@ module kmac_app
   output logic         sw_ready_o,
 
   // KeyMgr Sideload Key interface
-  input caliptra_ss_lc_ctrl_keymgr_pkg::hw_key_req_t keymgr_key_i,
+  input lc_ctrl_keymgr_pkg::hw_key_req_t keymgr_key_i,
 
   // Application Message in/ Digest out interface + control signals
   input  app_req_t [NumAppIntf-1:0] app_i,
@@ -117,7 +117,7 @@ module kmac_app
   output kmac_pkg::err_t error_o,
 
   // Life cycle
-  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_escalate_en_i,
+  input  lc_ctrl_pkg::lc_tx_t lc_escalate_en_i,
 
   output logic sparse_fsm_error_o
 );
@@ -133,7 +133,7 @@ module kmac_app
   // Definitions //
   /////////////////
 
-  // Digest width is same to the key width `caliptra_ss_lc_ctrl_keymgr_pkg::KeyWidth`.
+  // Digest width is same to the key width `lc_ctrl_keymgr_pkg::KeyWidth`.
   localparam int KeyMgrKeyW = $bits(keymgr_key_i.key[0]);
 
   localparam key_len_e KeyLengths [5] = '{Key128, Key192, Key256, Key384, Key512};
@@ -567,7 +567,7 @@ module kmac_app
     // SEC_CM: FSM.GLOBAL_ESC, FSM.LOCAL_ESC
     // Unconditionally jump into the terminal error state
     // if the life cycle controller triggers an escalation.
-    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en_i)) begin
+    if (lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i)) begin
       st_d = StTerminalError;
     end
 
@@ -721,7 +721,7 @@ module kmac_app
     reg_state_valid = 1'b 0;
     reg_state_o = '{default:'0};
     if ((mux_sel_buf_output == SelSw) &&
-         caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_escalate_en_i)) begin
+         lc_ctrl_pkg::lc_tx_test_false_strict(lc_escalate_en_i)) begin
       reg_state_valid = keccak_state_valid_i;
       reg_state_o = keccak_state_i;
       // If key is sideloaded and KMAC is SW initiated
@@ -746,7 +746,7 @@ module kmac_app
     app_digest_done = 1'b 0;
     app_digest = '{default:'0};
     if (st == StAppWait && caliptra_prim_mubi_pkg::mubi4_test_true_strict(absorbed_i) &&
-       caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_escalate_en_i)) begin
+       lc_ctrl_pkg::lc_tx_test_false_strict(lc_escalate_en_i)) begin
       // SHA3 engine has calculated the hash. Return the data to KeyMgr
       app_digest_done = 1'b 1;
 
@@ -772,7 +772,7 @@ module kmac_app
   end else begin : g_unmasked_key
     always_comb begin
       keymgr_key[0] = '0;
-      for (int i = 0; i < caliptra_ss_lc_ctrl_keymgr_pkg::Shares; i++) begin
+      for (int i = 0; i < lc_ctrl_keymgr_pkg::Shares; i++) begin
         keymgr_key[0][KeyMgrKeyW-1:0] ^= keymgr_key_i.key[i];
       end
     end

@@ -82,7 +82,7 @@ module caliptra_ss_keccak_round
   output logic [Width-1:0] state_o [Share],
 
   // Life cycle
-  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_escalate_en_i,
+  input  lc_ctrl_pkg::lc_tx_t lc_escalate_en_i,
 
   // Errors:
   //  sparse_fsm_error: Checking if FSM state falls into unknown value
@@ -397,7 +397,7 @@ module caliptra_ss_keccak_round
     // SEC_CM: FSM.GLOBAL_ESC, FSM.LOCAL_ESC
     // Unconditionally jump into the terminal error state
     // if the life cycle controller triggers an escalation.
-    if (caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en_i)) begin
+    if (lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i)) begin
       keccak_st_d = KeccakStTerminalError;
     end
   end
@@ -528,7 +528,7 @@ module caliptra_ss_keccak_round
     .clk_i,
     .rst_ni,
 
-    .caliptra_ss_lc_escalate_en_i,
+    .lc_escalate_en_i,
 
     .rnd_i(round),
 

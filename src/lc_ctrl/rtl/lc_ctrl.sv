@@ -7,10 +7,10 @@
 
 `include "caliptra_prim_assert.sv"
 
-module caliptra_ss_lc_ctrl
-  import caliptra_ss_lc_ctrl_pkg::*;
-  import caliptra_ss_lc_ctrl_reg_pkg::*;
-  import caliptra_ss_lc_ctrl_state_pkg::*;
+module lc_ctrl
+  import lc_ctrl_pkg::*;
+  import lc_ctrl_reg_pkg::*;
+  import lc_ctrl_state_pkg::*;
   import axi_pkg::*;
   import kmac_pkg::*;
 #(
@@ -20,16 +20,15 @@ module caliptra_ss_lc_ctrl
   parameter logic [SiliconCreatorIdWidth-1:0] SiliconCreatorId = '0,
   parameter logic [ProductIdWidth-1:0]        ProductId        = '0,
   parameter logic [RevisionIdWidth-1:0]       RevisionId       = '0,
-   // Idcode value for the JTAG.
-  parameter logic [31:0] IdcodeValue     = 32'h00000001,
-  parameter bit          UseDmiInterface = 1'b0,
+  // Idcode value for the JTAG.
+  parameter logic [31:0] IdcodeValue = 32'h00000001,
   // Random netlist constants
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivInvalid      = LcKeymgrDivWidth'(0),
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivTestUnlocked = LcKeymgrDivWidth'(1),
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivDev          = LcKeymgrDivWidth'(2),
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivProduction   = LcKeymgrDivWidth'(3),
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivRma          = LcKeymgrDivWidth'(4),
-  parameter caliptra_ss_lc_token_mux_t  RndCnstInvalidTokens           = {TokenMuxBits{1'b1}},
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivInvalid      = LcKeymgrDivWidth'(0),
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivTestUnlocked = LcKeymgrDivWidth'(1),
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivDev          = LcKeymgrDivWidth'(2),
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivProduction   = LcKeymgrDivWidth'(3),
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivRma          = LcKeymgrDivWidth'(4),
+  parameter lc_token_mux_t  RndCnstInvalidTokens           = {TokenMuxBits{1'b1}},
   parameter bit             SecVolatileRawUnlockEn         = 0
 ) (
   // Life cycle controller clock
@@ -54,8 +53,8 @@ module caliptra_ss_lc_ctrl
   output tlul_pkg::tl_d2h_t                          dmi_tl_o,
 
   // // AXI interface (device)
-  // axi_if.w_sub                                       s_caliptra_ss_lc_axi_w_if,
-  // axi_if.r_sub                                       s_caliptra_ss_lc_axi_r_if,
+  // axi_if.w_sub                                       s_lc_axi_w_if,
+  // axi_if.r_sub                                       s_lc_axi_r_if,
 
   // JTAG TAP.
   input  jtag_pkg::jtag_req_t                        jtag_i,
@@ -96,19 +95,19 @@ module caliptra_ss_lc_ctrl
 
 
   // Power manager interface (inputs are synced to lifecycle clock domain).
-  input  pwrmgr_pkg::pwr_caliptra_ss_lc_req_t                    pwr_caliptra_ss_lc_i,
-  output pwrmgr_pkg::pwr_caliptra_ss_lc_rsp_t                    pwr_caliptra_ss_lc_o,
+  input  pwrmgr_pkg::pwr_lc_req_t                    pwr_lc_i,
+  output pwrmgr_pkg::pwr_lc_rsp_t                    pwr_lc_o,
   // Strap sampling override that is only used when SecVolatileRawUnlockEn = 1,
   // Otherwise this output is tied off to 0.
   output logic                                       strap_en_override_o,
   // Strap override - this is only used when
   // Macro-specific test registers going to lifecycle TAP
-  output otp_ctrl_pkg::caliptra_ss_lc_otp_vendor_test_req_t      caliptra_ss_lc_otp_vendor_test_o,
-  input  otp_ctrl_pkg::caliptra_ss_lc_otp_vendor_test_rsp_t      caliptra_ss_lc_otp_vendor_test_i,
+  output otp_ctrl_pkg::lc_otp_vendor_test_req_t      lc_otp_vendor_test_o,
+  input  otp_ctrl_pkg::lc_otp_vendor_test_rsp_t      lc_otp_vendor_test_i,
   // Life cycle transition command interface.
   // No sync required since LC and OTP are in the same clock domain.
-  output otp_ctrl_pkg::caliptra_ss_lc_otp_program_req_t          caliptra_ss_lc_otp_program_o,
-  input  otp_ctrl_pkg::caliptra_ss_lc_otp_program_rsp_t          caliptra_ss_lc_otp_program_i,
+  output otp_ctrl_pkg::lc_otp_program_req_t          lc_otp_program_o,
+  input  otp_ctrl_pkg::lc_otp_program_rsp_t          lc_otp_program_i,
   // Life cycle hashing interface for raw unlock
   // Synchronized in the life cycle controller.
   // SEC_CM: TOKEN.DIGEST
@@ -117,40 +116,40 @@ module caliptra_ss_lc_ctrl
   // OTP broadcast outputs
   // No sync required since LC and OTP are in the same clock domain.
   // SEC_CM: TOKEN_VALID.CTRL.MUBI
-  input  otp_ctrl_pkg::otp_caliptra_ss_lc_data_t                 otp_caliptra_ss_lc_data_i,
+  input  otp_ctrl_pkg::otp_lc_data_t                 otp_lc_data_i,
   // Life cycle broadcast outputs (all of them are registered).
   // SEC_CM: INTERSIG.MUBI
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_dft_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_nvm_debug_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_hw_debug_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_cpu_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_creator_seed_sw_rw_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_owner_seed_sw_rw_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_iso_part_sw_rd_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_iso_part_sw_wr_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_seed_hw_rd_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_keymgr_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_escalate_en_o,
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_check_byp_en_o,
+  output lc_tx_t                                     lc_dft_en_o,
+  output lc_tx_t                                     lc_nvm_debug_en_o,
+  output lc_tx_t                                     lc_hw_debug_en_o,
+  output lc_tx_t                                     lc_cpu_en_o,
+  output lc_tx_t                                     lc_creator_seed_sw_rw_en_o,
+  output lc_tx_t                                     lc_owner_seed_sw_rw_en_o,
+  output lc_tx_t                                     lc_iso_part_sw_rd_en_o,
+  output lc_tx_t                                     lc_iso_part_sw_wr_en_o,
+  output lc_tx_t                                     lc_seed_hw_rd_en_o,
+  output lc_tx_t                                     lc_keymgr_en_o,
+  output lc_tx_t                                     lc_escalate_en_o,
+  output lc_tx_t                                     lc_check_byp_en_o,
   // Request and feedback to/from clock manager and AST.
-  // The ack is synced to the lc clock domain using prim_caliptra_ss_lc_sync.
+  // The ack is synced to the lc clock domain using prim_lc_sync.
   // SEC_CM: INTERSIG.MUBI
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_clk_byp_req_o,
-  input  caliptra_ss_lc_tx_t                                     caliptra_ss_lc_clk_byp_ack_i,
+  output lc_tx_t                                     lc_clk_byp_req_o,
+  input  lc_tx_t                                     lc_clk_byp_ack_i,
   // Request and feedback to/from flash controller.
-  // The ack is synced to the lc clock domain using prim_caliptra_ss_lc_sync.
-  output caliptra_ss_lc_flash_rma_seed_t                         caliptra_ss_lc_flash_rma_seed_o,
+  // The ack is synced to the lc clock domain using prim_lc_sync.
+  output lc_flash_rma_seed_t                         lc_flash_rma_seed_o,
   // SEC_CM: INTERSIG.MUBI
-  output caliptra_ss_lc_tx_t                                     caliptra_ss_lc_flash_rma_req_o,
-  input  caliptra_ss_lc_tx_t [NumRmaAckSigs-1:0]                 caliptra_ss_lc_flash_rma_ack_i,
+  output lc_tx_t                                     lc_flash_rma_req_o,
+  input  lc_tx_t [NumRmaAckSigs-1:0]                 lc_flash_rma_ack_i,
   // State group diversification value for keymgr.
-  output caliptra_ss_lc_keymgr_div_t                             caliptra_ss_lc_keymgr_div_o,
+  output lc_keymgr_div_t                             lc_keymgr_div_o,
   // Hardware config input, needed for the DEVICE_ID field.
   input  otp_ctrl_pkg::otp_device_id_t               otp_device_id_i,
   // Hardware config input, needed for the MANUF_STATE field.
   input  otp_ctrl_pkg::otp_device_id_t               otp_manuf_state_i,
   // Hardware revision output (static)
-  output caliptra_ss_lc_hw_rev_t                                 hw_rev_o
+  output lc_hw_rev_t                                 hw_rev_o
 );
 
   import caliptra_prim_mubi_pkg::mubi8_t;
@@ -211,7 +210,7 @@ module caliptra_ss_lc_ctrl
       .DW     (32),
       .UW     (32),
       .IW     (8 )
-  ) u_caliptra_ss_lc_axi2tlul (
+  ) u_lc_axi2tlul (
       .clk            (clk_i),
       .rst_n          (rst_ni),
       .s_axi_w_if     (axi_if.w_sub),
@@ -235,12 +234,12 @@ module caliptra_ss_lc_ctrl
   // Regfile //
   /////////////
 
-  caliptra_ss_lc_ctrl_reg_pkg::caliptra_ss_lc_ctrl_regs_reg2hw_t reg2hw;
-  caliptra_ss_lc_ctrl_reg_pkg::caliptra_ss_lc_ctrl_regs_hw2reg_t hw2reg;
+  lc_ctrl_reg_pkg::lc_ctrl_reg2hw_t reg2hw;
+  lc_ctrl_reg_pkg::lc_ctrl_hw2reg_t hw2reg;
 
   // SEC_CM: TRANSITION.CONFIG.REGWEN, STATE.CONFIG.SPARSE
-  logic fatal_bus_integ_error_q, fatal_bus_integ_error_csr_d, fatal_bus_integ_error_tap_dmi_d;
-  caliptra_ss_lc_ctrl_regs_reg_top u_reg_regs (
+  logic fatal_bus_integ_error_q, fatal_bus_integ_error_csr_d, fatal_bus_integ_error_tap_d;
+  lc_ctrl_reg_top u_reg (
     .clk_i,
     .rst_ni,
     .tl_i      ( regs_tl_i                   ),
@@ -251,62 +250,46 @@ module caliptra_ss_lc_ctrl
     .intg_err_o( fatal_bus_integ_error_csr_d )
   );
 
-  /////////////////////////////
-  // Life Cycle TAP/DMI Regs //
-  /////////////////////////////
+  ////////////////////
+  // Life Cycle TAP //
+  ////////////////////
 
-  caliptra_ss_lc_ctrl_reg_pkg::caliptra_ss_lc_ctrl_regs_reg2hw_t tap_dmi_reg2hw;
-  caliptra_ss_lc_ctrl_reg_pkg::caliptra_ss_lc_ctrl_regs_hw2reg_t tap_dmi_hw2reg;
-
-  tlul_pkg::tl_h2d_t tap_dmi_tl_h2d;
-  tlul_pkg::tl_d2h_t tap_dmi_tl_d2h;
   tlul_pkg::tl_h2d_t tap_tl_h2d;
   tlul_pkg::tl_d2h_t tap_tl_d2h;
+  lc_ctrl_reg_pkg::lc_ctrl_reg2hw_t tap_reg2hw;
+  lc_ctrl_reg_pkg::lc_ctrl_hw2reg_t tap_hw2reg;
 
-  // Statically mux DMI TLUL port and the one coming from the JTAG TAP
-  if (UseDmiInterface) begin : gen_dmi_tlul_ports
-    assign tap_dmi_tl_h2d = dmi_tl_i;
-    assign dmi_tl_o       = tap_dmi_tl_d2h;
-  end else begin : gen_tap_tlul_ports
-    assign tap_dmi_tl_h2d = tap_tl_h2d;
-    assign tap_tl_d2h     = tap_dmi_tl_d2h;
-    // Tie-off other port
-    assign dmi_tl_o = tlul_pkg::TL_D2H_DEFAULT;
-    logic unused_signal;
-    assign unused_signal = ^{dmi_tl_i};
-  end
-
-  caliptra_ss_lc_ctrl_regs_reg_top u_reg_tap_dmi (
+  lc_ctrl_reg_top u_reg_tap (
     .clk_i,
     .rst_ni,
-    .tl_i      ( tap_dmi_tl_h2d              ),
-    .tl_o      ( tap_dmi_tl_d2h              ),
-    .reg2hw    ( tap_dmi_reg2hw              ),
-    .hw2reg    ( tap_dmi_hw2reg              ),
+    .tl_i      ( tap_tl_h2d                  ),
+    .tl_o      ( tap_tl_d2h                  ),
+    .reg2hw    ( tap_reg2hw                  ),
+    .hw2reg    ( tap_hw2reg                  ),
     // SEC_CM: BUS.INTEGRITY
     // While the TAP does not have bus integrity, it does have a WE checker
     // that feeds into intg_err_o - hence this is wired up to the fatal_bus_integ_error.
-    .intg_err_o( fatal_bus_integ_error_tap_dmi_d )
+    .intg_err_o( fatal_bus_integ_error_tap_d )
   );
 
-  if (!UseDmiInterface) begin : gen_tap_tlul
-    // This reuses the JTAG DTM and DMI from the RISC-V external
-    // debug v0.13 specification to read and write the caliptra_ss_lc_ctrl CSRs:
-    // https://github.com/riscv/riscv-debug-spec/blob/release/riscv-debug-release.pdf
-    // The register addresses correspond to the byte offsets of the caliptra_ss_lc_ctrl CSRs, divided by 4.
-    // Note that the DMI reset does not affect the LC controller in any way.
-    dm::dmi_req_t dmi_req;
-    logic dmi_req_valid;
-    logic dmi_req_ready;
-    dm::dmi_resp_t dmi_resp;
-    logic dmi_resp_ready;
-    logic dmi_resp_valid;
 
-    logic scanmode;
-    caliptra_prim_mubi4_dec u_prim_mubi4_dec (
-      .mubi_i(scanmode_i),
-      .mubi_dec_o(scanmode)
-    );
+  // This reuses the JTAG DTM and DMI from the RISC-V external
+  // debug v0.13 specification to read and write the lc_ctrl CSRs:
+  // https://github.com/riscv/riscv-debug-spec/blob/release/riscv-debug-release.pdf
+  // The register addresses correspond to the byte offsets of the lc_ctrl CSRs, divided by 4.
+  // Note that the DMI reset does not affect the LC controller in any way.
+  dm::dmi_req_t dmi_req;
+  logic dmi_req_valid;
+  logic dmi_req_ready;
+  dm::dmi_resp_t dmi_resp;
+  logic dmi_resp_ready;
+  logic dmi_resp_valid;
+
+  logic scanmode;
+  caliptra_prim_mubi4_dec u_prim_mubi4_dec (
+    .mubi_i(scanmode_i),
+    .mubi_dec_o(scanmode)
+  );
 
     logic tck_muxed;
     logic trst_n_muxed;
@@ -368,7 +351,6 @@ module caliptra_ss_lc_ctrl
       .wdata_i      ( dmi_req.data                           ),
       .wdata_intg_i ('0                                      ),
       .be_i         ( {top_pkg::TL_DBW{1'b1}}                ),
-      .user_rsvd_i  ('0                                      ),
       .instr_type_i ( caliptra_prim_mubi_pkg::MuBi4False              ),
       .valid_o      ( dmi_resp_valid                         ),
       .rdata_o      ( dmi_resp.data                          ),
@@ -394,11 +376,7 @@ module caliptra_ss_lc_ctrl
       tap_tl_d2h.d_user,
       tap_tl_d2h.d_error
     };
-  end else begin : gen_dmi_tlul
-    // No scan chain needed in the DMI configuration
-    logic unused_signals;
-    assign unused_signals = ^{scan_rst_ni, scanmode_i};
-  end
+
 
   ///////////////////////////////////////
   // Transition Interface and HW Mutex //
@@ -414,16 +392,16 @@ module caliptra_ss_lc_ctrl
   logic          state_invalid_error_d, fatal_state_error_q;
   logic          otp_part_error_q;
   mubi8_t        sw_claim_transition_if_d, sw_claim_transition_if_q;
-  mubi8_t        tap_dmi_claim_transition_if_d, tap_dmi_claim_transition_if_q;
+  mubi8_t        tap_claim_transition_if_d, tap_claim_transition_if_q;
   logic          transition_cmd;
-  caliptra_ss_lc_token_t     transition_token_d, transition_token_q;
-  ext_dec_caliptra_ss_lc_state_t transition_target_d, transition_target_q;
+  lc_token_t     transition_token_d, transition_token_q;
+  ext_dec_lc_state_t transition_target_d, transition_target_q;
   // No need to register these.
-  ext_dec_caliptra_ss_lc_state_t dec_caliptra_ss_lc_state;
-  dec_caliptra_ss_lc_cnt_t       dec_caliptra_ss_lc_cnt;
-  dec_caliptra_ss_lc_id_state_e  dec_caliptra_ss_lc_id_state;
+  ext_dec_lc_state_t dec_lc_state;
+  dec_lc_cnt_t       dec_lc_cnt;
+  dec_lc_id_state_e  dec_lc_id_state;
 
-  logic caliptra_ss_lc_idle_d, caliptra_ss_lc_done_d;
+  logic lc_idle_d, lc_done_d;
 
   // Assign hardware revision output
   assign hw_rev_o = '{silicon_creator_id: SiliconCreatorId,
@@ -440,8 +418,8 @@ module caliptra_ss_lc_ctrl
 
   always_comb begin : p_csr_assign_outputs
     hw2reg = '0;
-    hw2reg.status.initialized            = caliptra_ss_lc_done_d;
-    hw2reg.status.ready                  = caliptra_ss_lc_idle_d;
+    hw2reg.status.initialized            = lc_done_d;
+    hw2reg.status.ready                  = lc_idle_d;
     hw2reg.status.ext_clock_switched     = ext_clock_switched;
     hw2reg.status.transition_successful  = trans_success_q;
     hw2reg.status.transition_count_error = trans_cnt_oflw_error_q;
@@ -452,9 +430,9 @@ module caliptra_ss_lc_ctrl
     hw2reg.status.state_error            = fatal_state_error_q;
     hw2reg.status.otp_partition_error    = otp_part_error_q;
     hw2reg.status.bus_integ_error        = fatal_bus_integ_error_q;
-    hw2reg.caliptra_ss_lc_state                      = dec_caliptra_ss_lc_state;
-    hw2reg.caliptra_ss_lc_transition_cnt             = dec_caliptra_ss_lc_cnt;
-    hw2reg.caliptra_ss_lc_id_state                   = {DecLcIdStateNumRep{dec_caliptra_ss_lc_id_state}};
+    hw2reg.lc_state                      = dec_lc_state;
+    hw2reg.lc_transition_cnt             = dec_lc_cnt;
+    hw2reg.lc_id_state                   = {DecLcIdStateNumRep{dec_lc_id_state}};
     hw2reg.device_id                     = otp_device_id_i;
     hw2reg.manuf_state                   = otp_manuf_state_i;
     hw2reg.hw_revision0.silicon_creator_id = hw_rev_o.silicon_creator_id;
@@ -462,28 +440,28 @@ module caliptra_ss_lc_ctrl
     hw2reg.hw_revision1.revision_id        = hw_rev_o.revision_id;
     hw2reg.hw_revision1.reserved           = '0;
 
-    // The assignments above are identical for the TAP/DMI.
-    tap_dmi_hw2reg = hw2reg;
+    // The assignments above are identical for the TAP.
+    tap_hw2reg = hw2reg;
 
-    // Assignments gated by mutex. Again, the DMI has priority.
-    tap_dmi_hw2reg.claim_transition_if = tap_dmi_claim_transition_if_q;
+    // Assignments gated by mutex. Again, the TAP has priority.
+    tap_hw2reg.claim_transition_if = tap_claim_transition_if_q;
     hw2reg.claim_transition_if = sw_claim_transition_if_q;
-    if (mubi8_test_true_strict(tap_dmi_claim_transition_if_q)) begin
-      tap_dmi_hw2reg.transition_ctrl.ext_clock_en = use_ext_clock_q;
-      tap_dmi_hw2reg.transition_ctrl.volatile_raw_unlock = volatile_raw_unlock_q;
-      tap_dmi_hw2reg.transition_token  = transition_token_q;
-      tap_dmi_hw2reg.transition_target = transition_target_q;
+    if (mubi8_test_true_strict(tap_claim_transition_if_q)) begin
+      tap_hw2reg.transition_ctrl.ext_clock_en = use_ext_clock_q;
+      tap_hw2reg.transition_ctrl.volatile_raw_unlock = volatile_raw_unlock_q;
+      tap_hw2reg.transition_token  = transition_token_q;
+      tap_hw2reg.transition_target = transition_target_q;
       // SEC_CM: TRANSITION.CONFIG.REGWEN
-      tap_dmi_hw2reg.transition_regwen = caliptra_ss_lc_idle_d;
-      tap_dmi_hw2reg.otp_vendor_test_ctrl     = otp_vendor_test_ctrl_q;
-      tap_dmi_hw2reg.otp_vendor_test_status   = otp_vendor_test_status;
+      tap_hw2reg.transition_regwen = lc_idle_d;
+      tap_hw2reg.otp_vendor_test_ctrl     = otp_vendor_test_ctrl_q;
+      tap_hw2reg.otp_vendor_test_status   = otp_vendor_test_status;
     end else if (mubi8_test_true_strict(sw_claim_transition_if_q)) begin
       hw2reg.transition_ctrl.ext_clock_en = use_ext_clock_q;
       hw2reg.transition_ctrl.volatile_raw_unlock = volatile_raw_unlock_q;
       hw2reg.transition_token  = transition_token_q;
       hw2reg.transition_target = transition_target_q;
       // SEC_CM: TRANSITION.CONFIG.REGWEN
-      hw2reg.transition_regwen = caliptra_ss_lc_idle_d;
+      hw2reg.transition_regwen = lc_idle_d;
       hw2reg.otp_vendor_test_ctrl     = otp_vendor_test_ctrl_q;
       hw2reg.otp_vendor_test_status   = otp_vendor_test_status;
     end
@@ -491,7 +469,7 @@ module caliptra_ss_lc_ctrl
 
   always_comb begin : p_csr_assign_inputs
     sw_claim_transition_if_d  = sw_claim_transition_if_q;
-    tap_dmi_claim_transition_if_d = tap_dmi_claim_transition_if_q;
+    tap_claim_transition_if_d = tap_claim_transition_if_q;
     transition_token_d        = transition_token_q;
     transition_target_d       = transition_target_q;
     transition_cmd            = 1'b0;
@@ -499,28 +477,28 @@ module caliptra_ss_lc_ctrl
     use_ext_clock_d           = use_ext_clock_q;
     volatile_raw_unlock_d     = volatile_raw_unlock_q;
 
-    // Note that the mutex claims from the TAP/DMI and SW side could arrive within the same cycle.
-    // In that case we give priority to the TAP/DMI mutex claim in order to avoid a race condition.
-    // TAP/DMI mutex claim.
+    // Note that the mutex claims from the TAP and SW side could arrive within the same cycle.
+    // In that case we give priority to the TAP mutex claim in order to avoid a race condition.
+    // TAP mutex claim.
     if (mubi8_test_false_loose(sw_claim_transition_if_q) &&
-        tap_dmi_reg2hw.claim_transition_if.qe) begin
-      tap_dmi_claim_transition_if_d = mubi8_t'(tap_dmi_reg2hw.claim_transition_if.q);
+        tap_reg2hw.claim_transition_if.qe) begin
+      tap_claim_transition_if_d = mubi8_t'(tap_reg2hw.claim_transition_if.q);
     // SW mutex claim.
-    end else if (mubi8_test_false_loose(tap_dmi_claim_transition_if_q) &&
+    end else if (mubi8_test_false_loose(tap_claim_transition_if_q) &&
         reg2hw.claim_transition_if.qe) begin
       sw_claim_transition_if_d = mubi8_t'(reg2hw.claim_transition_if.q);
     end
 
 
     // The idle signal serves as the REGWEN in this case.
-    if (caliptra_ss_lc_idle_d) begin
-      // The DMI has priority.
-      if (mubi8_test_true_strict(tap_dmi_claim_transition_if_q)) begin
-        transition_cmd = tap_dmi_reg2hw.transition_cmd.q &
-                         tap_dmi_reg2hw.transition_cmd.qe;
+    if (lc_idle_d) begin
+      // The TAP has priority.
+      if (mubi8_test_true_strict(tap_claim_transition_if_q)) begin
+        transition_cmd = tap_reg2hw.transition_cmd.q &
+                         tap_reg2hw.transition_cmd.qe;
 
-        if (tap_dmi_reg2hw.transition_ctrl.ext_clock_en.qe) begin
-          use_ext_clock_d |= tap_dmi_reg2hw.transition_ctrl.ext_clock_en.q;
+        if (tap_reg2hw.transition_ctrl.ext_clock_en.qe) begin
+          use_ext_clock_d |= tap_reg2hw.transition_ctrl.ext_clock_en.q;
         end
 
         // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
@@ -528,26 +506,26 @@ module caliptra_ss_lc_ctrl
         // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
         // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
         // ---------------------------------------------------------------
-        if (tap_dmi_reg2hw.transition_ctrl.volatile_raw_unlock.qe) begin
-          volatile_raw_unlock_d = tap_dmi_reg2hw.transition_ctrl.volatile_raw_unlock.q;
+        if (tap_reg2hw.transition_ctrl.volatile_raw_unlock.qe) begin
+          volatile_raw_unlock_d = tap_reg2hw.transition_ctrl.volatile_raw_unlock.q;
         end
         // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------
 
         for (int k = 0; k < LcTokenWidth/32; k++) begin
-          if (tap_dmi_reg2hw.transition_token[k].qe) begin
-            transition_token_d[k*32 +: 32] = tap_dmi_reg2hw.transition_token[k].q;
+          if (tap_reg2hw.transition_token[k].qe) begin
+            transition_token_d[k*32 +: 32] = tap_reg2hw.transition_token[k].q;
           end
         end
 
-        if (tap_dmi_reg2hw.transition_target.qe) begin
+        if (tap_reg2hw.transition_target.qe) begin
           for (int k = 0; k < DecLcStateNumRep; k++) begin
-            transition_target_d[k] = dec_caliptra_ss_lc_state_e'(
-                tap_dmi_reg2hw.transition_target.q[k*DecLcStateWidth +: DecLcStateWidth]);
+            transition_target_d[k] = dec_lc_state_e'(
+                tap_reg2hw.transition_target.q[k*DecLcStateWidth +: DecLcStateWidth]);
           end
         end
 
-        if (tap_dmi_reg2hw.otp_vendor_test_ctrl.qe) begin
-          otp_vendor_test_ctrl_d = tap_dmi_reg2hw.otp_vendor_test_ctrl.q;
+        if (tap_reg2hw.otp_vendor_test_ctrl.qe) begin
+          otp_vendor_test_ctrl_d = tap_reg2hw.otp_vendor_test_ctrl.q;
         end
       end else if (mubi8_test_true_strict(sw_claim_transition_if_q)) begin
         transition_cmd = reg2hw.transition_cmd.q &
@@ -575,7 +553,7 @@ module caliptra_ss_lc_ctrl
 
         if (reg2hw.transition_target.qe) begin
           for (int k = 0; k < DecLcStateNumRep; k++) begin
-            transition_target_d[k] = dec_caliptra_ss_lc_state_e'(
+            transition_target_d[k] = dec_lc_state_e'(
                 reg2hw.transition_target.q[k*DecLcStateWidth +: DecLcStateWidth]);
           end
         end
@@ -589,21 +567,21 @@ module caliptra_ss_lc_ctrl
 
   always_ff @(posedge clk_i or negedge rst_ni) begin : p_csrs
     if (!rst_ni) begin
-      trans_success_q               <= 1'b0;
-      trans_cnt_oflw_error_q        <= 1'b0;
-      trans_invalid_error_q         <= 1'b0;
-      token_invalid_error_q         <= 1'b0;
-      flash_rma_error_q             <= 1'b0;
-      fatal_prog_error_q            <= 1'b0;
-      fatal_state_error_q           <= 1'b0;
-      sw_claim_transition_if_q      <= MuBi8False;
-      tap_dmi_claim_transition_if_q <= MuBi8False;
-      transition_token_q            <= '0;
-      transition_target_q           <= {DecLcStateNumRep{DecLcStRaw}};
-      otp_part_error_q              <= 1'b0;
-      fatal_bus_integ_error_q       <= 1'b0;
-      otp_vendor_test_ctrl_q        <= '0;
-      use_ext_clock_q               <= 1'b0;
+      trans_success_q           <= 1'b0;
+      trans_cnt_oflw_error_q    <= 1'b0;
+      trans_invalid_error_q     <= 1'b0;
+      token_invalid_error_q     <= 1'b0;
+      flash_rma_error_q         <= 1'b0;
+      fatal_prog_error_q        <= 1'b0;
+      fatal_state_error_q       <= 1'b0;
+      sw_claim_transition_if_q  <= MuBi8False;
+      tap_claim_transition_if_q <= MuBi8False;
+      transition_token_q        <= '0;
+      transition_target_q       <= {DecLcStateNumRep{DecLcStRaw}};
+      otp_part_error_q          <= 1'b0;
+      fatal_bus_integ_error_q   <= 1'b0;
+      otp_vendor_test_ctrl_q    <= '0;
+      use_ext_clock_q           <= 1'b0;
     end else begin
       // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
       // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
@@ -625,17 +603,17 @@ module caliptra_ss_lc_ctrl
       flash_rma_error_q         <= flash_rma_error_d       | flash_rma_error_q;
       fatal_prog_error_q        <= otp_prog_error_d        | fatal_prog_error_q;
       fatal_state_error_q       <= state_invalid_error_d   | fatal_state_error_q;
-      otp_part_error_q          <= otp_caliptra_ss_lc_data_i.error     | otp_part_error_q;
+      otp_part_error_q          <= otp_lc_data_i.error     | otp_part_error_q;
       fatal_bus_integ_error_q   <= fatal_bus_integ_error_csr_d |
-                                   fatal_bus_integ_error_tap_dmi_d |
+                                   fatal_bus_integ_error_tap_d |
                                    fatal_bus_integ_error_q;
       // Other regs, gated by mutex further below.
-      sw_claim_transition_if_q      <= sw_claim_transition_if_d;
-      tap_dmi_claim_transition_if_q <= tap_dmi_claim_transition_if_d;
-      transition_token_q            <= transition_token_d;
-      transition_target_q           <= transition_target_d;
-      otp_vendor_test_ctrl_q        <= otp_vendor_test_ctrl_d;
-      use_ext_clock_q               <= use_ext_clock_d;
+      sw_claim_transition_if_q  <= sw_claim_transition_if_d;
+      tap_claim_transition_if_q <= tap_claim_transition_if_d;
+      transition_token_q        <= transition_token_d;
+      transition_target_q       <= transition_target_d;
+      otp_vendor_test_ctrl_q    <= otp_vendor_test_ctrl_d;
+      use_ext_clock_q           <= use_ext_clock_d;
     end
   end
 
@@ -660,26 +638,26 @@ module caliptra_ss_lc_ctrl
   end
   // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------
 
-  assign caliptra_ss_lc_flash_rma_seed_o = transition_token_q[RmaSeedWidth-1:0];
+  assign lc_flash_rma_seed_o = transition_token_q[RmaSeedWidth-1:0];
 
   // Gate the vendor specific test ctrl/status bits to zero in production states.
   // Buffer the enable signal to prevent optimization of the multibit signal.
-  caliptra_ss_lc_tx_t caliptra_ss_lc_raw_test_rma;
-  caliptra_ss_lc_tx_t [1:0] caliptra_ss_lc_raw_test_rma_buf;
+  lc_tx_t lc_raw_test_rma;
+  lc_tx_t [1:0] lc_raw_test_rma_buf;
   caliptra_prim_lc_sync #(
     .NumCopies(2),
     .AsyncOn(0)
-  ) u_prim_caliptra_ss_lc_sync (
+  ) u_prim_lc_sync (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_raw_test_rma),
-    .lc_en_o(caliptra_ss_lc_raw_test_rma_buf)
+    .lc_en_i(lc_raw_test_rma),
+    .lc_en_o(lc_raw_test_rma_buf)
   );
 
-  assign caliptra_ss_lc_otp_vendor_test_o.ctrl = (caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_raw_test_rma_buf[0])) ?
+  assign lc_otp_vendor_test_o.ctrl = (lc_tx_test_true_strict(lc_raw_test_rma_buf[0])) ?
                                      otp_vendor_test_ctrl_q                           : '0;
-  assign otp_vendor_test_status    = (caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_raw_test_rma_buf[1])) ?
-                                     caliptra_ss_lc_otp_vendor_test_i.status                      : '0;
+  assign otp_vendor_test_status    = (lc_tx_test_true_strict(lc_raw_test_rma_buf[1])) ?
+                                     lc_otp_vendor_test_i.status                      : '0;
 
   //////////////////
   // Alert Sender //
@@ -687,7 +665,7 @@ module caliptra_ss_lc_ctrl
 
   // logic [NumAlerts-1:0] alerts;
   logic [NumAlerts-1:0] alert_test;
-  logic [NumAlerts-1:0] tap_dmi_alert_test;
+  logic [NumAlerts-1:0] tap_alert_test;
 
   assign alerts = {
     fatal_bus_integ_error_q,
@@ -704,13 +682,13 @@ module caliptra_ss_lc_ctrl
     reg2hw.alert_test.fatal_prog_error.qe
   };
 
-   assign tap_dmi_alert_test = {
-    tap_dmi_reg2hw.alert_test.fatal_bus_integ_error.q &
-    tap_dmi_reg2hw.alert_test.fatal_bus_integ_error.qe,
-    tap_dmi_reg2hw.alert_test.fatal_state_error.q &
-    tap_dmi_reg2hw.alert_test.fatal_state_error.qe,
-    tap_dmi_reg2hw.alert_test.fatal_prog_error.q &
-    tap_dmi_reg2hw.alert_test.fatal_prog_error.qe
+   assign tap_alert_test = {
+    tap_reg2hw.alert_test.fatal_bus_integ_error.q &
+    tap_reg2hw.alert_test.fatal_bus_integ_error.qe,
+    tap_reg2hw.alert_test.fatal_state_error.q &
+    tap_reg2hw.alert_test.fatal_state_error.qe,
+    tap_reg2hw.alert_test.fatal_prog_error.q &
+    tap_reg2hw.alert_test.fatal_prog_error.qe
   };
 
 // ------------------------Removing Alert sender module----------------------------
@@ -744,11 +722,11 @@ module caliptra_ss_lc_ctrl
 
   kmac_pkg::app_rsp_t                         kmac_data_i;
   kmac_pkg::app_req_t                         kmac_data_o;
-  wire caliptra_ss_lc_tx_t                                caliptra_ss_lc_escalate_en_int;
+  wire lc_tx_t                                lc_escalate_en_int;
   wire app_req_t  [2:0]            app_req;
   wire app_rsp_t  [2:0]            app_rsp;
 
-  assign caliptra_ss_lc_escalate_en_int = caliptra_ss_lc_escalate_en_o;
+  assign lc_escalate_en_int = lc_escalate_en_o;
 
   assign app_req[0] = '0;
   assign app_req[1] = kmac_data_o;
@@ -772,7 +750,7 @@ module caliptra_ss_lc_ctrl
     .alert_tx_o         (  ),
 
     // escalate en
-    .caliptra_ss_lc_escalate_en_i   (caliptra_ss_lc_escalate_en_int),
+    .lc_escalate_en_i   (lc_escalate_en_int),
 
     // KeyMgr sideload key interface
     .keymgr_key_i       ('0),
@@ -814,7 +792,7 @@ module caliptra_ss_lc_ctrl
 
   // // This escalation action moves the life cycle
   // // state into a temporary "SCRAP" state named "ESCALATE",
-  // // and asserts the caliptra_ss_lc_escalate_en life cycle control signal.
+  // // and asserts the lc_escalate_en life cycle control signal.
   // logic esc_scrap_state0;
   // caliptra_prim_esc_receiver #(
   //   .N_ESC_SEV   (alert_handler_reg_pkg::N_ESC_SEV),
@@ -848,39 +826,39 @@ module caliptra_ss_lc_ctrl
   ////////////////////////////
 
   // Signals going to and coming from power manager.
-  logic caliptra_ss_lc_init;
+  logic lc_init;
   caliptra_prim_flop_2sync #(
     .Width(1)
   ) u_prim_flop_2sync_init (
     .clk_i,
     .rst_ni,
-    .d_i(pwr_caliptra_ss_lc_i.caliptra_ss_lc_init),
-    .q_o(caliptra_ss_lc_init)
+    .d_i(pwr_lc_i.lc_init),
+    .q_o(lc_init)
   );
 
-  logic caliptra_ss_lc_done_q;
-  logic caliptra_ss_lc_idle_q;
+  logic lc_done_q;
+  logic lc_idle_q;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin : p_sync_regs
     if (!rst_ni) begin
-      caliptra_ss_lc_done_q <= 1'b0;
-      caliptra_ss_lc_idle_q <= 1'b0;
+      lc_done_q <= 1'b0;
+      lc_idle_q <= 1'b0;
     end else begin
-      caliptra_ss_lc_done_q <= caliptra_ss_lc_done_d;
-      caliptra_ss_lc_idle_q <= caliptra_ss_lc_idle_d;
+      lc_done_q <= lc_done_d;
+      lc_idle_q <= lc_idle_d;
     end
   end
 
-  assign pwr_caliptra_ss_lc_o.caliptra_ss_lc_done = caliptra_ss_lc_done_q;
-  assign pwr_caliptra_ss_lc_o.caliptra_ss_lc_idle = caliptra_ss_lc_idle_q;
+  assign pwr_lc_o.lc_done = lc_done_q;
+  assign pwr_lc_o.lc_idle = lc_idle_q;
 
   ////////////////////
   // KMAC Interface //
   ////////////////////
 
   logic token_hash_req, token_hash_req_chk, token_hash_ack, token_hash_err, token_if_fsm_err;
-  caliptra_ss_lc_token_t hashed_token;
-  caliptra_ss_lc_ctrl_kmac_if u_caliptra_ss_lc_ctrl_kmac_if (
+  lc_token_t hashed_token;
+  lc_ctrl_kmac_if u_lc_ctrl_kmac_if (
     .clk_i,
     .rst_ni,
     .clk_kmac_i           (clk_i),
@@ -900,7 +878,7 @@ module caliptra_ss_lc_ctrl
   // LC FSM //
   ////////////
 
-  caliptra_ss_lc_ctrl_fsm #(
+  lc_ctrl_fsm #(
     .RndCnstLcKeymgrDivInvalid     ( RndCnstLcKeymgrDivInvalid      ),
     .RndCnstLcKeymgrDivTestUnlocked( RndCnstLcKeymgrDivTestUnlocked ),
     .RndCnstLcKeymgrDivDev         ( RndCnstLcKeymgrDivDev          ),
@@ -908,33 +886,33 @@ module caliptra_ss_lc_ctrl
     .RndCnstLcKeymgrDivRma         ( RndCnstLcKeymgrDivRma          ),
     .RndCnstInvalidTokens          ( RndCnstInvalidTokens           ),
     .SecVolatileRawUnlockEn        ( SecVolatileRawUnlockEn         )
-  ) u_caliptra_ss_lc_ctrl_fsm (
+  ) u_lc_ctrl_fsm (
     .clk_i,
     .rst_ni,
     .Allow_RMA_on_PPD,
-    .init_req_i             ( caliptra_ss_lc_init                          ),
-    .init_done_o            ( caliptra_ss_lc_done_d                        ),
-    .idle_o                 ( caliptra_ss_lc_idle_d                        ),
+    .init_req_i             ( lc_init                          ),
+    .init_done_o            ( lc_done_d                        ),
+    .idle_o                 ( lc_idle_d                        ),
     .esc_scrap_state0_i     ( esc_scrap_state0                 ),
     .esc_scrap_state1_i     ( esc_scrap_state1                 ),
-    .caliptra_ss_lc_state_valid_i       ( otp_caliptra_ss_lc_data_i.valid              ),
-    .caliptra_ss_lc_state_i             ( caliptra_ss_lc_state_e'(otp_caliptra_ss_lc_data_i.state) ),
-    .secrets_valid_i        ( otp_caliptra_ss_lc_data_i.secrets_valid      ),
-    .caliptra_ss_lc_cnt_i               ( caliptra_ss_lc_cnt_e'(otp_caliptra_ss_lc_data_i.count)   ),
+    .lc_state_valid_i       ( otp_lc_data_i.valid              ),
+    .lc_state_i             ( lc_state_e'(otp_lc_data_i.state) ),
+    .secrets_valid_i        ( otp_lc_data_i.secrets_valid      ),
+    .lc_cnt_i               ( lc_cnt_e'(otp_lc_data_i.count)   ),
     .use_ext_clock_i        ( use_ext_clock_q                  ),
     .ext_clock_switched_o   ( ext_clock_switched               ),
     .volatile_raw_unlock_i  ( volatile_raw_unlock_q            ),
     .strap_en_override_o,
-    .test_unlock_token_i    ( otp_caliptra_ss_lc_data_i.test_unlock_token  ),
-    .test_exit_token_i      ( otp_caliptra_ss_lc_data_i.test_exit_token    ),
-    .test_tokens_valid_i    ( otp_caliptra_ss_lc_data_i.test_tokens_valid  ),
-    .rma_token_i            ( otp_caliptra_ss_lc_data_i.rma_token          ),
-    .rma_token_valid_i      ( otp_caliptra_ss_lc_data_i.rma_token_valid    ),
+    .test_unlock_token_i    ( otp_lc_data_i.test_unlock_token  ),
+    .test_exit_token_i      ( otp_lc_data_i.test_exit_token    ),
+    .test_tokens_valid_i    ( otp_lc_data_i.test_tokens_valid  ),
+    .rma_token_i            ( otp_lc_data_i.rma_token          ),
+    .rma_token_valid_i      ( otp_lc_data_i.rma_token_valid    ),
     .trans_cmd_i            ( transition_cmd                   ),
     .trans_target_i         ( transition_target_q              ),
-    .dec_caliptra_ss_lc_state_o         ( dec_caliptra_ss_lc_state                     ),
-    .dec_caliptra_ss_lc_cnt_o           ( dec_caliptra_ss_lc_cnt                       ),
-    .dec_caliptra_ss_lc_id_state_o      ( dec_caliptra_ss_lc_id_state                  ),
+    .dec_lc_state_o         ( dec_lc_state                     ),
+    .dec_lc_cnt_o           ( dec_lc_cnt                       ),
+    .dec_lc_id_state_o      ( dec_lc_id_state                  ),
     .token_hash_req_o       ( token_hash_req                   ),
     .token_hash_req_chk_o   ( token_hash_req_chk               ),
     .token_hash_ack_i       ( token_hash_ack                   ),
@@ -942,11 +920,11 @@ module caliptra_ss_lc_ctrl
     .token_if_fsm_err_i     ( token_if_fsm_err                 ),
     .hashed_token_i         ( hashed_token                     ),
     .unhashed_token_i       ( transition_token_q               ),
-    .otp_prog_req_o         ( caliptra_ss_lc_otp_program_o.req             ),
-    .otp_prog_caliptra_ss_lc_state_o    ( caliptra_ss_lc_otp_program_o.state           ),
-    .otp_prog_caliptra_ss_lc_cnt_o      ( caliptra_ss_lc_otp_program_o.count           ),
-    .otp_prog_ack_i         ( caliptra_ss_lc_otp_program_i.ack             ),
-    .otp_prog_err_i         ( caliptra_ss_lc_otp_program_i.err             ),
+    .otp_prog_req_o         ( lc_otp_program_o.req             ),
+    .otp_prog_lc_state_o    ( lc_otp_program_o.state           ),
+    .otp_prog_lc_cnt_o      ( lc_otp_program_o.count           ),
+    .otp_prog_ack_i         ( lc_otp_program_i.ack             ),
+    .otp_prog_err_i         ( lc_otp_program_i.err             ),
     .trans_success_o        ( trans_success_d                  ),
     .trans_cnt_oflw_error_o ( trans_cnt_oflw_error_d           ),
     .trans_invalid_error_o  ( trans_invalid_error_d            ),
@@ -954,52 +932,51 @@ module caliptra_ss_lc_ctrl
     .flash_rma_error_o      ( flash_rma_error_d                ),
     .otp_prog_error_o       ( otp_prog_error_d                 ),
     .state_invalid_error_o  ( state_invalid_error_d            ),
-    .caliptra_ss_lc_raw_test_rma_o      ( caliptra_ss_lc_raw_test_rma                  ),
-    .caliptra_ss_lc_dft_en_o,
-    .caliptra_ss_lc_nvm_debug_en_o,
-    .caliptra_ss_lc_hw_debug_en_o,
-    .caliptra_ss_lc_cpu_en_o,
-    .caliptra_ss_lc_creator_seed_sw_rw_en_o,
-    .caliptra_ss_lc_owner_seed_sw_rw_en_o,
-    .caliptra_ss_lc_iso_part_sw_rd_en_o,
-    .caliptra_ss_lc_iso_part_sw_wr_en_o,
-    .caliptra_ss_lc_seed_hw_rd_en_o,
-    .caliptra_ss_lc_keymgr_en_o,
-    .caliptra_ss_lc_escalate_en_o,
-    .caliptra_ss_lc_check_byp_en_o,
-    .caliptra_ss_lc_clk_byp_req_o,
-    .caliptra_ss_lc_clk_byp_ack_i,
-    .caliptra_ss_lc_flash_rma_req_o,
-    .caliptra_ss_lc_flash_rma_ack_i,
-    .caliptra_ss_lc_keymgr_div_o
+    .lc_raw_test_rma_o      ( lc_raw_test_rma                  ),
+    .lc_dft_en_o,
+    .lc_nvm_debug_en_o,
+    .lc_hw_debug_en_o,
+    .lc_cpu_en_o,
+    .lc_creator_seed_sw_rw_en_o,
+    .lc_owner_seed_sw_rw_en_o,
+    .lc_iso_part_sw_rd_en_o,
+    .lc_iso_part_sw_wr_en_o,
+    .lc_seed_hw_rd_en_o,
+    .lc_keymgr_en_o,
+    .lc_escalate_en_o,
+    .lc_check_byp_en_o,
+    .lc_clk_byp_req_o,
+    .lc_clk_byp_ack_i,
+    .lc_flash_rma_req_o,
+    .lc_flash_rma_ack_i,
+    .lc_keymgr_div_o
   );
 
   ////////////////
   // Assertions //
   ////////////////
 
-  `CALIPTRA_ASSERT_KNOWN(RegsTlOKnown,           regs_tl_o                  )
-  `CALIPTRA_ASSERT_KNOWN(DmiTlOKnown,            dmi_tl_o                   )
+  `CALIPTRA_ASSERT_KNOWN(TlOKnown,               tl_o                       )
   //`CALIPTRA_ASSERT_KNOWN(AlertTxKnown_A,         alert_tx_o                 ) // -> NOTE: Removed since we do not use this port anymore
-  `CALIPTRA_ASSERT_KNOWN(PwrLcKnown_A,           pwr_caliptra_ss_lc_o                   )
-  `CALIPTRA_ASSERT_KNOWN(LcOtpProgramKnown_A,    caliptra_ss_lc_otp_program_o           )
+  `CALIPTRA_ASSERT_KNOWN(PwrLcKnown_A,           pwr_lc_o                   )
+  `CALIPTRA_ASSERT_KNOWN(LcOtpProgramKnown_A,    lc_otp_program_o           )
   `CALIPTRA_ASSERT_KNOWN(LcOtpTokenKnown_A,      kmac_data_o                )
-  `CALIPTRA_ASSERT_KNOWN(LcDftEnKnown_A,         caliptra_ss_lc_dft_en_o                )
-  `CALIPTRA_ASSERT_KNOWN(LcNvmDebugEnKnown_A,    caliptra_ss_lc_nvm_debug_en_o          )
-  `CALIPTRA_ASSERT_KNOWN(LcHwDebugEnKnown_A,     caliptra_ss_lc_hw_debug_en_o           )
-  `CALIPTRA_ASSERT_KNOWN(LcCpuEnKnown_A,         caliptra_ss_lc_cpu_en_o                )
-  `CALIPTRA_ASSERT_KNOWN(LcCreatorSwRwEn_A,      caliptra_ss_lc_creator_seed_sw_rw_en_o )
-  `CALIPTRA_ASSERT_KNOWN(LcOwnerSwRwEn_A,        caliptra_ss_lc_owner_seed_sw_rw_en_o   )
-  `CALIPTRA_ASSERT_KNOWN(LcIsoSwRwEn_A,          caliptra_ss_lc_iso_part_sw_rd_en_o     )
-  `CALIPTRA_ASSERT_KNOWN(LcIsoSwWrEn_A,          caliptra_ss_lc_iso_part_sw_wr_en_o     )
-  `CALIPTRA_ASSERT_KNOWN(LcSeedHwRdEn_A,         caliptra_ss_lc_seed_hw_rd_en_o         )
-  `CALIPTRA_ASSERT_KNOWN(LcKeymgrEnKnown_A,      caliptra_ss_lc_keymgr_en_o             )
-  `CALIPTRA_ASSERT_KNOWN(LcEscalateEnKnown_A,    caliptra_ss_lc_escalate_en_o           )
-  `CALIPTRA_ASSERT_KNOWN(LcCheckBypassEnKnown_A, caliptra_ss_lc_check_byp_en_o          )
-  `CALIPTRA_ASSERT_KNOWN(LcClkBypReqKnown_A,     caliptra_ss_lc_clk_byp_req_o           )
-  `CALIPTRA_ASSERT_KNOWN(LcFlashRmaSeedKnown_A,  caliptra_ss_lc_flash_rma_seed_o        )
-  `CALIPTRA_ASSERT_KNOWN(LcFlashRmaReqKnown_A,   caliptra_ss_lc_flash_rma_req_o         )
-  `CALIPTRA_ASSERT_KNOWN(LcKeymgrDiv_A,          caliptra_ss_lc_keymgr_div_o            )
+  `CALIPTRA_ASSERT_KNOWN(LcDftEnKnown_A,         lc_dft_en_o                )
+  `CALIPTRA_ASSERT_KNOWN(LcNvmDebugEnKnown_A,    lc_nvm_debug_en_o          )
+  `CALIPTRA_ASSERT_KNOWN(LcHwDebugEnKnown_A,     lc_hw_debug_en_o           )
+  `CALIPTRA_ASSERT_KNOWN(LcCpuEnKnown_A,         lc_cpu_en_o                )
+  `CALIPTRA_ASSERT_KNOWN(LcCreatorSwRwEn_A,      lc_creator_seed_sw_rw_en_o )
+  `CALIPTRA_ASSERT_KNOWN(LcOwnerSwRwEn_A,        lc_owner_seed_sw_rw_en_o   )
+  `CALIPTRA_ASSERT_KNOWN(LcIsoSwRwEn_A,          lc_iso_part_sw_rd_en_o     )
+  `CALIPTRA_ASSERT_KNOWN(LcIsoSwWrEn_A,          lc_iso_part_sw_wr_en_o     )
+  `CALIPTRA_ASSERT_KNOWN(LcSeedHwRdEn_A,         lc_seed_hw_rd_en_o         )
+  `CALIPTRA_ASSERT_KNOWN(LcKeymgrEnKnown_A,      lc_keymgr_en_o             )
+  `CALIPTRA_ASSERT_KNOWN(LcEscalateEnKnown_A,    lc_escalate_en_o           )
+  `CALIPTRA_ASSERT_KNOWN(LcCheckBypassEnKnown_A, lc_check_byp_en_o          )
+  `CALIPTRA_ASSERT_KNOWN(LcClkBypReqKnown_A,     lc_clk_byp_req_o           )
+  `CALIPTRA_ASSERT_KNOWN(LcFlashRmaSeedKnown_A,  lc_flash_rma_seed_o        )
+  `CALIPTRA_ASSERT_KNOWN(LcFlashRmaReqKnown_A,   lc_flash_rma_req_o         )
+  `CALIPTRA_ASSERT_KNOWN(LcKeymgrDiv_A,          lc_keymgr_div_o            )
 
   
   
@@ -1029,52 +1006,52 @@ module caliptra_ss_lc_ctrl
 
   // Alert assertions for sparse FSMs.
   // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcFsmCheck_A,
-  //     u_caliptra_ss_lc_ctrl_fsm.u_fsm_state_regs, alert_tx_o[1])
+  //     u_lc_ctrl_fsm.u_fsm_state_regs, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcFsmCheck_A,
-      u_caliptra_ss_lc_ctrl_fsm.u_fsm_state_regs, state_alert)
+      u_lc_ctrl_fsm.u_fsm_state_regs, state_alert)
   // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcStateCheck_A,
-  //     u_caliptra_ss_lc_ctrl_fsm.u_state_regs, alert_tx_o[1],
-  //     !$past(otp_caliptra_ss_lc_data_i.valid) ||
-  //     u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
-  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
-  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+  //     u_lc_ctrl_fsm.u_state_regs, alert_tx_o[1],
+  //     !$past(otp_lc_data_i.valid) ||
+  //     u_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
+  //     u_lc_ctrl_fsm.esc_scrap_state0_i ||
+  //     u_lc_ctrl_fsm.esc_scrap_state1_i)
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcStateCheck_A,
-      u_caliptra_ss_lc_ctrl_fsm.u_state_regs, state_alert,
-      !$past(otp_caliptra_ss_lc_data_i.valid) ||
-      u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
-      u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
-      u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+      u_lc_ctrl_fsm.u_state_regs, state_alert,
+      !$past(otp_lc_data_i.valid) ||
+      u_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
+      u_lc_ctrl_fsm.esc_scrap_state0_i ||
+      u_lc_ctrl_fsm.esc_scrap_state1_i)
   // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcCntCheck_A,
-  //     u_caliptra_ss_lc_ctrl_fsm.u_cnt_regs, alert_tx_o[1],
-  //      !$past(otp_caliptra_ss_lc_data_i.valid) ||
-  //     u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
-  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
-  //     u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+  //     u_lc_ctrl_fsm.u_cnt_regs, alert_tx_o[1],
+  //      !$past(otp_lc_data_i.valid) ||
+  //     u_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
+  //     u_lc_ctrl_fsm.esc_scrap_state0_i ||
+  //     u_lc_ctrl_fsm.esc_scrap_state1_i)
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLcCntCheck_A,
-      u_caliptra_ss_lc_ctrl_fsm.u_cnt_regs, state_alert,
-       !$past(otp_caliptra_ss_lc_data_i.valid) ||
-      u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
-      u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
-      u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+      u_lc_ctrl_fsm.u_cnt_regs, state_alert,
+       !$past(otp_lc_data_i.valid) ||
+      u_lc_ctrl_fsm.fsm_state_q inside {ResetSt, EscalateSt, PostTransSt, InvalidSt, ScrapSt} ||
+      u_lc_ctrl_fsm.esc_scrap_state0_i ||
+      u_lc_ctrl_fsm.esc_scrap_state1_i)
   //  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKmacIfFsmCheck_A,
-  //       u_caliptra_ss_lc_ctrl_kmac_if.u_state_regs, alert_tx_o[1],
-  //       u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {EscalateSt} ||
-  //       u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
-  //       u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+  //       u_lc_ctrl_kmac_if.u_state_regs, alert_tx_o[1],
+  //       u_lc_ctrl_fsm.fsm_state_q inside {EscalateSt} ||
+  //       u_lc_ctrl_fsm.esc_scrap_state0_i ||
+  //       u_lc_ctrl_fsm.esc_scrap_state1_i)
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKmacIfFsmCheck_A,
-      u_caliptra_ss_lc_ctrl_kmac_if.u_state_regs, state_alert,
-      u_caliptra_ss_lc_ctrl_fsm.fsm_state_q inside {EscalateSt} ||
-      u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state0_i ||
-      u_caliptra_ss_lc_ctrl_fsm.esc_scrap_state1_i)
+      u_lc_ctrl_kmac_if.u_state_regs, state_alert,
+      u_lc_ctrl_fsm.fsm_state_q inside {EscalateSt} ||
+      u_lc_ctrl_fsm.esc_scrap_state0_i ||
+      u_lc_ctrl_fsm.esc_scrap_state1_i)
 
   // Alert assertions for reg_we onehot check
-  // `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg_regs, alert_tx_o[2])
+  // `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg, alert_tx_o[2])
   // `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(TapDmiWeOnehotCheck_A,
   //                                                u_reg_tap_dmi, alert_tx_o[2], 0)
-  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg_regs, program_alert)
+  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegsWeOnehotCheck_A, u_reg, program_alert)
   `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(TapDmiWeOnehotCheck_A,
-                                                 u_reg_tap_dmi, program_alert, 0)
+                                                 u_reg_tap, program_alert, 0)
 
 // ------------------------------------------------------------------------------------------
   
-endmodule : caliptra_ss_lc_ctrl
+endmodule : lc_ctrl

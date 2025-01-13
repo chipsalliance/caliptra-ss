@@ -4,74 +4,74 @@
 //
 // Life cycle signal decoder and sender module.
 
-module caliptra_ss_lc_ctrl_signal_decode
-  import caliptra_ss_lc_ctrl_pkg::*;
-  import caliptra_ss_lc_ctrl_state_pkg::*;
+module lc_ctrl_signal_decode
+  import lc_ctrl_pkg::*;
+  import lc_ctrl_state_pkg::*;
 #(
   // Random netlist constants
   // SCRAP, RAW, TEST_LOCKED*, INVALID
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivInvalid      = LcKeymgrDivWidth'(0),
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivInvalid      = LcKeymgrDivWidth'(0),
   // TEST_UNLOCKED*
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivTestUnlocked = LcKeymgrDivWidth'(1),
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivTestUnlocked = LcKeymgrDivWidth'(1),
   // DEV
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivDev          = LcKeymgrDivWidth'(2),
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivDev          = LcKeymgrDivWidth'(2),
   // PROD, PROD_END
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivProduction   = LcKeymgrDivWidth'(3),
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivProduction   = LcKeymgrDivWidth'(3),
   // RMA
-  parameter caliptra_ss_lc_keymgr_div_t RndCnstLcKeymgrDivRma          = LcKeymgrDivWidth'(4)
+  parameter lc_keymgr_div_t RndCnstLcKeymgrDivRma          = LcKeymgrDivWidth'(4)
   ) (
   input                  clk_i,
   input                  rst_ni,
   // Life cycle state vector.
-  input  logic           caliptra_ss_lc_state_valid_i,
-  input  caliptra_ss_lc_state_e      caliptra_ss_lc_state_i,
+  input  logic           lc_state_valid_i,
+  input  lc_state_e      lc_state_i,
   input  fsm_state_e     fsm_state_i,
-  input  caliptra_ss_lc_tx_t         secrets_valid_i,
+  input  lc_tx_t         secrets_valid_i,
   // Local life cycle signal
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_raw_test_rma_o,
+  output lc_tx_t         lc_raw_test_rma_o,
   // Life cycle broadcast outputs.
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_dft_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_nvm_debug_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_hw_debug_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_cpu_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_creator_seed_sw_rw_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_owner_seed_sw_rw_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_iso_part_sw_rd_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_iso_part_sw_wr_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_seed_hw_rd_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_keymgr_en_o,
-  output caliptra_ss_lc_tx_t         caliptra_ss_lc_escalate_en_o,
+  output lc_tx_t         lc_dft_en_o,
+  output lc_tx_t         lc_nvm_debug_en_o,
+  output lc_tx_t         lc_hw_debug_en_o,
+  output lc_tx_t         lc_cpu_en_o,
+  output lc_tx_t         lc_creator_seed_sw_rw_en_o,
+  output lc_tx_t         lc_owner_seed_sw_rw_en_o,
+  output lc_tx_t         lc_iso_part_sw_rd_en_o,
+  output lc_tx_t         lc_iso_part_sw_wr_en_o,
+  output lc_tx_t         lc_seed_hw_rd_en_o,
+  output lc_tx_t         lc_keymgr_en_o,
+  output lc_tx_t         lc_escalate_en_o,
   // State group diversification value for keymgr
-  output caliptra_ss_lc_keymgr_div_t caliptra_ss_lc_keymgr_div_o
+  output lc_keymgr_div_t lc_keymgr_div_o
 );
 
   //////////////////////////
   // Signal Decoder Logic //
   //////////////////////////
 
-  caliptra_ss_lc_tx_t caliptra_ss_lc_raw_test_rma;
-  caliptra_ss_lc_tx_t caliptra_ss_lc_dft_en, caliptra_ss_lc_nvm_debug_en, caliptra_ss_lc_hw_debug_en, caliptra_ss_lc_cpu_en, caliptra_ss_lc_keymgr_en, caliptra_ss_lc_escalate_en;
-  caliptra_ss_lc_tx_t caliptra_ss_lc_creator_seed_sw_rw_en, caliptra_ss_lc_owner_seed_sw_rw_en, caliptra_ss_lc_iso_part_sw_rd_en;
-  caliptra_ss_lc_tx_t caliptra_ss_lc_iso_part_sw_wr_en, caliptra_ss_lc_seed_hw_rd_en;
-  caliptra_ss_lc_keymgr_div_t caliptra_ss_lc_keymgr_div_d, caliptra_ss_lc_keymgr_div_q;
+  lc_tx_t lc_raw_test_rma;
+  lc_tx_t lc_dft_en, lc_nvm_debug_en, lc_hw_debug_en, lc_cpu_en, lc_keymgr_en, lc_escalate_en;
+  lc_tx_t lc_creator_seed_sw_rw_en, lc_owner_seed_sw_rw_en, lc_iso_part_sw_rd_en;
+  lc_tx_t lc_iso_part_sw_wr_en, lc_seed_hw_rd_en;
+  lc_keymgr_div_t lc_keymgr_div_d, lc_keymgr_div_q;
 
-  always_comb begin : p_caliptra_ss_lc_signal_decode
+  always_comb begin : p_lc_signal_decode
     // Life cycle control signal defaults
-    caliptra_ss_lc_raw_test_rma          = Off;
-    caliptra_ss_lc_dft_en                = Off;
-    caliptra_ss_lc_nvm_debug_en          = Off;
-    caliptra_ss_lc_hw_debug_en           = Off;
-    caliptra_ss_lc_cpu_en                = Off;
-    caliptra_ss_lc_creator_seed_sw_rw_en = Off;
-    caliptra_ss_lc_owner_seed_sw_rw_en   = Off;
-    caliptra_ss_lc_iso_part_sw_rd_en     = Off;
-    caliptra_ss_lc_iso_part_sw_wr_en     = Off;
-    caliptra_ss_lc_seed_hw_rd_en         = Off;
-    caliptra_ss_lc_keymgr_en             = Off;
+    lc_raw_test_rma          = Off;
+    lc_dft_en                = Off;
+    lc_nvm_debug_en          = Off;
+    lc_hw_debug_en           = Off;
+    lc_cpu_en                = Off;
+    lc_creator_seed_sw_rw_en = Off;
+    lc_owner_seed_sw_rw_en   = Off;
+    lc_iso_part_sw_rd_en     = Off;
+    lc_iso_part_sw_wr_en     = Off;
+    lc_seed_hw_rd_en         = Off;
+    lc_keymgr_en             = Off;
     // This ensures that once escalation has been triggered, it cannot go back to Off.
-    caliptra_ss_lc_escalate_en           = caliptra_ss_lc_tx_or_hi(Off, caliptra_ss_lc_escalate_en_o);
+    lc_escalate_en           = lc_tx_or_hi(Off, lc_escalate_en_o);
     // Set to invalid diversification value by default.
-    caliptra_ss_lc_keymgr_div_d          = RndCnstLcKeymgrDivInvalid;
+    lc_keymgr_div_d          = RndCnstLcKeymgrDivInvalid;
 
     unique case (fsm_state_i)
       ///////////////////////////////////////////////////////////////////
@@ -89,8 +89,8 @@ module caliptra_ss_lc_ctrl_signal_decode
       TokenCheck0St,
       TokenCheck1St,
       TransProgSt: begin
-        if (caliptra_ss_lc_state_valid_i) begin
-          unique case (caliptra_ss_lc_state_i)
+        if (lc_state_valid_i) begin
+          unique case (lc_state_i)
             ///////////////////////////////////////////////////////////////////
             // Only enable life cycle TAP register for OTP test mechanisms.
             LcStRaw,
@@ -101,7 +101,7 @@ module caliptra_ss_lc_ctrl_signal_decode
             LcStTestLocked4,
             LcStTestLocked5,
             LcStTestLocked6: begin
-              caliptra_ss_lc_raw_test_rma = On;
+              lc_raw_test_rma = On;
             end
             ///////////////////////////////////////////////////////////////////
             // Enable DFT and debug functionality, including the CPU in the
@@ -113,88 +113,88 @@ module caliptra_ss_lc_ctrl_signal_decode
             LcStTestUnlocked4,
             LcStTestUnlocked5,
             LcStTestUnlocked6: begin
-              caliptra_ss_lc_raw_test_rma      = On;
-              caliptra_ss_lc_dft_en            = On;
-              caliptra_ss_lc_nvm_debug_en      = On;
-              caliptra_ss_lc_hw_debug_en       = On;
-              caliptra_ss_lc_cpu_en            = On;
-              caliptra_ss_lc_iso_part_sw_wr_en = On;
-              caliptra_ss_lc_keymgr_div_d      = RndCnstLcKeymgrDivTestUnlocked;
+              lc_raw_test_rma      = On;
+              lc_dft_en            = On;
+              lc_nvm_debug_en      = On;
+              lc_hw_debug_en       = On;
+              lc_cpu_en            = On;
+              lc_iso_part_sw_wr_en = On;
+              lc_keymgr_div_d      = RndCnstLcKeymgrDivTestUnlocked;
             end
             ///////////////////////////////////////////////////////////////////
             // This is the last TEST_UNLOCKED state. The same feature set is enabled
             // as in the other TEST_UNLOCKED states above, except for NVM debug en,
             // which is disabled in this state.
             LcStTestUnlocked7: begin
-              caliptra_ss_lc_raw_test_rma      = On;
-              caliptra_ss_lc_dft_en            = On;
-              caliptra_ss_lc_hw_debug_en       = On;
-              caliptra_ss_lc_cpu_en            = On;
-              caliptra_ss_lc_iso_part_sw_wr_en = On;
-              caliptra_ss_lc_keymgr_div_d      = RndCnstLcKeymgrDivTestUnlocked;
+              lc_raw_test_rma      = On;
+              lc_dft_en            = On;
+              lc_hw_debug_en       = On;
+              lc_cpu_en            = On;
+              lc_iso_part_sw_wr_en = On;
+              lc_keymgr_div_d      = RndCnstLcKeymgrDivTestUnlocked;
             end
             ///////////////////////////////////////////////////////////////////
             // Enable production functions
             LcStProd,
             LcStProdEnd: begin
-              caliptra_ss_lc_cpu_en              = On;
-              caliptra_ss_lc_keymgr_en           = On;
-              caliptra_ss_lc_owner_seed_sw_rw_en = On;
-              caliptra_ss_lc_iso_part_sw_wr_en   = On;
-              caliptra_ss_lc_iso_part_sw_rd_en   = On;
-              caliptra_ss_lc_keymgr_div_d        = RndCnstLcKeymgrDivProduction;
+              lc_cpu_en              = On;
+              lc_keymgr_en           = On;
+              lc_owner_seed_sw_rw_en = On;
+              lc_iso_part_sw_wr_en   = On;
+              lc_iso_part_sw_rd_en   = On;
+              lc_keymgr_div_d        = RndCnstLcKeymgrDivProduction;
               // Only allow provisioning if the device has not yet been personalized.
               // If secrets_valid_i is set to ON, we output OFF.
               // Note that we can convert ON to OFF with a bitwise inversion due to the encoding.
-              caliptra_ss_lc_creator_seed_sw_rw_en = caliptra_ss_lc_tx_t'(~secrets_valid_i);
+              lc_creator_seed_sw_rw_en = lc_tx_t'(~secrets_valid_i);
               // Only allow hardware to consume the seeds once personalized.
               // If secrets_valid_i is set to ON, we output ON.
-              caliptra_ss_lc_seed_hw_rd_en = secrets_valid_i;
+              lc_seed_hw_rd_en = secrets_valid_i;
             end
             ///////////////////////////////////////////////////////////////////
             // Similar functions as PROD, with the following differences:
             // - hardware debug functionality (CPU TAP) is enabled,
             // - access to the isolated flash partition is disabled.
             LcStDev: begin
-              caliptra_ss_lc_hw_debug_en         = On;
-              caliptra_ss_lc_cpu_en              = On;
-              caliptra_ss_lc_keymgr_en           = On;
-              caliptra_ss_lc_owner_seed_sw_rw_en = On;
-              caliptra_ss_lc_iso_part_sw_wr_en   = On;
-              caliptra_ss_lc_keymgr_div_d        = RndCnstLcKeymgrDivDev;
+              lc_hw_debug_en         = On;
+              lc_cpu_en              = On;
+              lc_keymgr_en           = On;
+              lc_owner_seed_sw_rw_en = On;
+              lc_iso_part_sw_wr_en   = On;
+              lc_keymgr_div_d        = RndCnstLcKeymgrDivDev;
               // Only allow provisioning if the device has not yet been personalized.
               // If secrets_valid_i is set to ON, we output OFF.
               // Note that we can convert ON to OFF with a bitwise inversion due to the encoding.
-              caliptra_ss_lc_creator_seed_sw_rw_en = caliptra_ss_lc_tx_t'(~secrets_valid_i);
+              lc_creator_seed_sw_rw_en = lc_tx_t'(~secrets_valid_i);
               // Only allow hardware to consume the seeds once personalized.
               // If secrets_valid_i is set to ON, we output ON.
-              caliptra_ss_lc_seed_hw_rd_en = secrets_valid_i;
+              lc_seed_hw_rd_en = secrets_valid_i;
             end
             ///////////////////////////////////////////////////////////////////
             // Enable all test and production functions.
             LcStRma: begin
-              caliptra_ss_lc_raw_test_rma          = On;
-              caliptra_ss_lc_dft_en                = On;
-              caliptra_ss_lc_nvm_debug_en          = On;
-              caliptra_ss_lc_hw_debug_en           = On;
-              caliptra_ss_lc_cpu_en                = On;
-              caliptra_ss_lc_keymgr_en             = On;
-              caliptra_ss_lc_creator_seed_sw_rw_en = On;
-              caliptra_ss_lc_owner_seed_sw_rw_en   = On;
-              caliptra_ss_lc_iso_part_sw_wr_en     = On;
-              caliptra_ss_lc_iso_part_sw_rd_en     = On;
-              caliptra_ss_lc_seed_hw_rd_en         = On;
-              caliptra_ss_lc_keymgr_div_d          = RndCnstLcKeymgrDivRma;
+              lc_raw_test_rma          = On;
+              lc_dft_en                = On;
+              lc_nvm_debug_en          = On;
+              lc_hw_debug_en           = On;
+              lc_cpu_en                = On;
+              lc_keymgr_en             = On;
+              lc_creator_seed_sw_rw_en = On;
+              lc_owner_seed_sw_rw_en   = On;
+              lc_iso_part_sw_wr_en     = On;
+              lc_iso_part_sw_rd_en     = On;
+              lc_seed_hw_rd_en         = On;
+              lc_keymgr_div_d          = RndCnstLcKeymgrDivRma;
             end
             ///////////////////////////////////////////////////////////////////
             // Invalid or scrapped life cycle state, make sure the escalation
             // signal is also asserted in this case.
             default: begin
-              caliptra_ss_lc_escalate_en = On;
+              lc_escalate_en = On;
             end
-          endcase // caliptra_ss_lc_state_i
+          endcase // lc_state_i
         end else begin
-          caliptra_ss_lc_escalate_en = On;
+          lc_escalate_en = On;
         end
       end
       ///////////////////////////////////////////////////////////////////
@@ -208,10 +208,10 @@ module caliptra_ss_lc_ctrl_signal_decode
       ScrapSt,
       EscalateSt,
       InvalidSt: begin
-        caliptra_ss_lc_escalate_en = On;
+        lc_escalate_en = On;
       end
       default: begin
-        caliptra_ss_lc_escalate_en = On;
+        lc_escalate_en = On;
       end
     endcase // fsm_state_i
   end
@@ -223,77 +223,77 @@ module caliptra_ss_lc_ctrl_signal_decode
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_raw_test_rma (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_raw_test_rma),
-    .lc_en_o(caliptra_ss_lc_raw_test_rma_o)
+    .lc_en_i(lc_raw_test_rma),
+    .lc_en_o(lc_raw_test_rma_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_dft_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_dft_en),
-    .lc_en_o(caliptra_ss_lc_dft_en_o)
+    .lc_en_i(lc_dft_en),
+    .lc_en_o(lc_dft_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_nvm_debug_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_nvm_debug_en),
-    .lc_en_o(caliptra_ss_lc_nvm_debug_en_o)
+    .lc_en_i(lc_nvm_debug_en),
+    .lc_en_o(lc_nvm_debug_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_hw_debug_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_hw_debug_en),
-    .lc_en_o(caliptra_ss_lc_hw_debug_en_o)
+    .lc_en_i(lc_hw_debug_en),
+    .lc_en_o(lc_hw_debug_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_cpu_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_cpu_en),
-    .lc_en_o(caliptra_ss_lc_cpu_en_o)
+    .lc_en_i(lc_cpu_en),
+    .lc_en_o(lc_cpu_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_creator_seed_sw_rw_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_creator_seed_sw_rw_en),
-    .lc_en_o(caliptra_ss_lc_creator_seed_sw_rw_en_o)
+    .lc_en_i(lc_creator_seed_sw_rw_en),
+    .lc_en_o(lc_creator_seed_sw_rw_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_owner_seed_sw_rw_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_owner_seed_sw_rw_en),
-    .lc_en_o(caliptra_ss_lc_owner_seed_sw_rw_en_o)
+    .lc_en_i(lc_owner_seed_sw_rw_en),
+    .lc_en_o(lc_owner_seed_sw_rw_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_iso_part_sw_rd_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_iso_part_sw_rd_en),
-    .lc_en_o(caliptra_ss_lc_iso_part_sw_rd_en_o)
+    .lc_en_i(lc_iso_part_sw_rd_en),
+    .lc_en_o(lc_iso_part_sw_rd_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_iso_part_sw_wr_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_iso_part_sw_wr_en),
-    .lc_en_o(caliptra_ss_lc_iso_part_sw_wr_en_o)
+    .lc_en_i(lc_iso_part_sw_wr_en),
+    .lc_en_o(lc_iso_part_sw_wr_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_seed_hw_rd_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_seed_hw_rd_en),
-    .lc_en_o(caliptra_ss_lc_seed_hw_rd_en_o)
+    .lc_en_i(lc_seed_hw_rd_en),
+    .lc_en_o(lc_seed_hw_rd_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_keymgr_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_keymgr_en),
-    .lc_en_o(caliptra_ss_lc_keymgr_en_o)
+    .lc_en_i(lc_keymgr_en),
+    .lc_en_o(lc_keymgr_en_o)
   );
   caliptra_prim_lc_sender u_caliptra_prim_lc_sender_escalate_en (
     .clk_i,
     .rst_ni,
-    .lc_en_i(caliptra_ss_lc_escalate_en),
-    .lc_en_o(caliptra_ss_lc_escalate_en_o)
+    .lc_en_i(lc_escalate_en),
+    .lc_en_o(lc_escalate_en_o)
   );
 
-  assign caliptra_ss_lc_keymgr_div_o = caliptra_ss_lc_keymgr_div_q;
+  assign lc_keymgr_div_o = lc_keymgr_div_q;
 
   caliptra_prim_flop #(
     .Width(LcKeymgrDivWidth),
@@ -301,8 +301,8 @@ module caliptra_ss_lc_ctrl_signal_decode
   ) u_caliptra_prim_flop_keymgr_div (
     .clk_i  ( clk_i           ),
     .rst_ni ( rst_ni          ),
-    .d_i    ( caliptra_ss_lc_keymgr_div_d ),
-    .q_o    ( caliptra_ss_lc_keymgr_div_q )
+    .d_i    ( lc_keymgr_div_d ),
+    .q_o    ( lc_keymgr_div_q )
   );
 
   ////////////////
@@ -332,21 +332,21 @@ module caliptra_ss_lc_ctrl_signal_decode
                                       RndCnstLcKeymgrDivProduction}))
 
   `CALIPTRA_ASSERT(SignalsAreOffWhenNotEnabled_A,
-      !caliptra_ss_lc_state_valid_i
+      !lc_state_valid_i
       |=>
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_raw_test_rma_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_dft_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_nvm_debug_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_hw_debug_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_cpu_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_creator_seed_sw_rw_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_owner_seed_sw_rw_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_iso_part_sw_rd_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_iso_part_sw_wr_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_seed_hw_rd_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_keymgr_en_o) &&
-      caliptra_ss_lc_tx_test_false_strict(caliptra_ss_lc_dft_en_o) &&
-      caliptra_ss_lc_keymgr_div_o == RndCnstLcKeymgrDivInvalid)
+      lc_tx_test_false_strict(lc_raw_test_rma_o) &&
+      lc_tx_test_false_strict(lc_dft_en_o) &&
+      lc_tx_test_false_strict(lc_nvm_debug_en_o) &&
+      lc_tx_test_false_strict(lc_hw_debug_en_o) &&
+      lc_tx_test_false_strict(lc_cpu_en_o) &&
+      lc_tx_test_false_strict(lc_creator_seed_sw_rw_en_o) &&
+      lc_tx_test_false_strict(lc_owner_seed_sw_rw_en_o) &&
+      lc_tx_test_false_strict(lc_iso_part_sw_rd_en_o) &&
+      lc_tx_test_false_strict(lc_iso_part_sw_wr_en_o) &&
+      lc_tx_test_false_strict(lc_seed_hw_rd_en_o) &&
+      lc_tx_test_false_strict(lc_keymgr_en_o) &&
+      lc_tx_test_false_strict(lc_dft_en_o) &&
+      lc_keymgr_div_o == RndCnstLcKeymgrDivInvalid)
 
 
   `CALIPTRA_ASSERT(FsmInScrap_A,
@@ -363,10 +363,10 @@ module caliptra_ss_lc_ctrl_signal_decode
                             TokenCheck1St,
                             PostTransSt})
       |=>
-      caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_escalate_en_o))
+      lc_tx_test_true_strict(lc_escalate_en_o))
 
   `CALIPTRA_ASSERT(StateInScrap_A,
-      caliptra_ss_lc_state_valid_i &&
+      lc_state_valid_i &&
       fsm_state_i inside {IdleSt,
                           ClkMuxSt,
                           CntIncrSt,
@@ -376,7 +376,7 @@ module caliptra_ss_lc_ctrl_signal_decode
                           TokenHashSt,
                           TokenCheck0St,
                           TokenCheck1St} &&
-      !(caliptra_ss_lc_state_i inside {LcStRaw,
+      !(lc_state_i inside {LcStRaw,
                            LcStTestUnlocked0,
                            LcStTestUnlocked1,
                            LcStTestUnlocked2,
@@ -397,6 +397,6 @@ module caliptra_ss_lc_ctrl_signal_decode
                            LcStProdEnd,
                            LcStRma})
       |=>
-      caliptra_ss_lc_tx_test_true_strict(caliptra_ss_lc_escalate_en_o))
+      lc_tx_test_true_strict(lc_escalate_en_o))
 
-endmodule : caliptra_ss_lc_ctrl_signal_decode
+endmodule : lc_ctrl_signal_decode

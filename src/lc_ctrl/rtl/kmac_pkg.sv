@@ -442,7 +442,7 @@ package kmac_pkg;
     //  - Sw issues KMAC op without Entropy setting.
     ErrSwHashingWithoutEntropyReady = 8'h 09,
 
-    // Error due to caliptra_ss_lc_escalation_en_i or fatal fault
+    // Error due to lc_escalation_en_i or fatal fault
     ErrFatalError = 8'h C1,
 
     // Error due to the counter integrity check failure inside MsgFifo.Packer

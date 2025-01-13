@@ -28,7 +28,7 @@ module caliptra_ss_keccak_2share
   input clk_i,
   input rst_ni,
 
-  input  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t caliptra_ss_lc_escalate_en_i, // Used to disable SVAs when escalating.
+  input  lc_ctrl_pkg::lc_tx_t lc_escalate_en_i, // Used to disable SVAs when escalating.
 
   input [RndW-1:0] rnd_i, // Current round index
 
@@ -340,13 +340,13 @@ module caliptra_ss_keccak_2share
   `CALIPTRA_ASSERT_INIT(ValidRound_A, MaxRound <= 24) // Keccak-f only
 
   // phase_sel_i shall stay for two cycle after change to 1.
-  caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_t unused_caliptra_ss_lc_sig;
-  assign unused_caliptra_ss_lc_sig = caliptra_ss_lc_escalate_en_i;
+  lc_ctrl_pkg::lc_tx_t unused_lc_sig;
+  assign unused_lc_sig = lc_escalate_en_i;
   if (EnMasking) begin : gen_selperiod_chk
     `CALIPTRA_ASSUME(SelStayTwoCycleIfTrue_A,
         ($past(phase_sel_i) == MuBi4False) && (phase_sel_i == MuBi4True)
         |=> phase_sel_i == MuBi4True, clk_i, !rst_ni ||
-            caliptra_ss_lc_ctrl_pkg::caliptra_ss_lc_tx_test_true_loose(caliptra_ss_lc_escalate_en_i))
+            lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i))
   end
 
   ///////////////

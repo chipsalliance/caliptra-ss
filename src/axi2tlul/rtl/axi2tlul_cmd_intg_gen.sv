@@ -14,14 +14,14 @@
 //
 
 module axi2tlul_cmd_intg_gen 
-    import axi_pkg::*;
     import caliptra_prim_pkg::*;
     import tlul_pkg::*;
     #(
-        parameter bit EnableDataIntgGen = 1'b1
+        parameter bit EnableDataIntgGen = 1'b1,
+        parameter AW = 32
     ) (
         input caliptra_prim_mubi_pkg::mubi4_t  instr_type_i,
-        input [AXI_AW-1:0]      addr_i,
+        input [AW-1:0]      addr_i,
         input tl_a_op_e         opcode_i,
         input [tlul_pkg::TL_DBW-1:0]      mask_i,
         input [tlul_pkg::TL_DW-1:0]       data_i,
