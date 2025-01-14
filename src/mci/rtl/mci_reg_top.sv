@@ -21,8 +21,9 @@ module mci_reg_top
     (
     input logic clk,
 
-    // MCI Resets
+    // Resets
     input logic mci_rst_b,
+    input logic mcu_rst_b,
     input logic mci_pwrgood,
 
     // REG HWIF signals
@@ -40,16 +41,33 @@ module mci_reg_top
     input  logic t1_timeout_p,
     input  logic t2_timeout_p,
     
-    // SOC Interrupts
-    output logic error_fatal,
+    // SS error signals
+    input logic cptra_error_fatal,
+    input logic cptra_error_non_fatal,
 
-    // input NMI
-    input logic nmi_intr,
+    // SOC Interrupts
+    output logic mci_error_fatal,
+    output logic mci_error_non_fatal,
+
+    // MCU interrupts
+    output logic mcu_timer_int,
+    output logic mci_intr,
+
+    // NMI
+    input  logic nmi_intr,
+    output logic [31:0] mcu_nmi_vector,
+
+    // MISC 
+    input logic mcu_sram_fw_exec_region_lock,
 
     // MCU SRAM specific signals
     input logic mcu_sram_single_ecc_error,
     input logic mcu_sram_double_ecc_error,
 
+    // Reset status
+    input  logic mcu_reset_once,
+    input  logic fw_boot_upd_reset,     // First MCU reset request
+    input  logic fw_hitless_upd_reset,  // Other MCU reset requests
 
     
     // Caliptra internal fabric response interface
@@ -57,10 +75,25 @@ module mci_reg_top
 
     );
 
+// Reset reason
+logic pwrgood_toggle_hint;
+logic Warm_Reset_Capture_Flag;
+
+// Interrupts 
+logic mci_error_intr;
+logic mci_notif_intr;
+
 // Error signals
 logic mci_reg_read_error;
 logic mci_reg_write_error;
 logic unmasked_hw_error_fatal_write;
+logic unmasked_agg_error_fatal_write;
+logic unmasked_hw_error_non_fatal_write; 
+logic unmasked_hw_error_non_fatal_is_set; 
+logic unmasked_agg_error_non_fatal_write; 
+logic unmasked_agg_error_non_fatal_is_set; 
+logic cptra_error_fatal_sync;
+logic cptra_error_non_fatal_sync;
 
 // REG HWIF signals
 mci_reg__in_t   mci_reg_hwif_in;
@@ -71,6 +104,31 @@ logic   error_wdt_timer2_timeout_sts_prev;
 
 // Byte Enable mapping
 logic [MCI_REG_DATA_WIDTH-1:0] c_cpuif_wr_biten;
+
+// MCU Reset Request interrupt 
+logic cptra_mcu_rst_req;
+logic mcu_sram_fw_exec_region_lock_posedge;
+logic mcu_sram_fw_exec_region_lock_negedge;
+logic mcu_sram_fw_exec_region_lock_prev;
+
+///////////////////////////////////////////////
+// Sync to signals to local clock domain
+///////////////////////////////////////////////
+caliptra_prim_flop_2sync #(
+  .Width(1)
+) u_prim_flop_2sync_cptra_error_fatal (
+  .clk_i(clk),
+  .rst_ni(mci_pwrgood),
+  .d_i(cptra_error_fatal),
+  .q_o(cptra_error_fatal_sync));
+
+caliptra_prim_flop_2sync #(
+  .Width(1)
+) u_prim_flop_2sync_cptra_error_non_fatal (
+  .clk_i(clk),
+  .rst_ni(mci_pwrgood),
+  .d_i(cptra_error_non_fatal),
+  .q_o(cptra_error_non_fatal_sync));
 
 ///////////////////////////////////////////////
 // Map CIF WSTRB to BITEN of CSR block
@@ -103,7 +161,7 @@ assign cif_resp_if.hold = '0;
 
 // Resets
 assign mci_reg_hwif_in.mci_rst_b = mci_rst_b;
-assign mci_reg_hwif_in.mcu_rst_b = '0; // FIXME
+assign mci_reg_hwif_in.mcu_rst_b = mcu_rst_b; // FIXME is this really required?
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
@@ -115,12 +173,8 @@ assign mci_reg_hwif_in.CAPABILITIES = '0; // FIXME
 assign mci_reg_hwif_in.HW_REV_ID = '0; // FIXME
 assign mci_reg_hwif_in.HW_CONFIG = '0; // FIXME
 assign mci_reg_hwif_in.FLOW_STATUS = '0; // FIXME
-assign mci_reg_hwif_in.RESET_REASON = '0; // FIXME
-assign mci_reg_hwif_in.HW_ERROR_NON_FATAL = '0; // FIXME
-assign mci_reg_hwif_in.MCU_RV_MTIME_L = '0; // FIXME
-assign mci_reg_hwif_in.MCU_RV_MTIME_H = '0; // FIXME
-assign mci_reg_hwif_in.RESET_REQUEST = '0; // FIXME
-assign mci_reg_hwif_in.RESET_ACK = '0; // FIXME
+
+
 assign mci_reg_hwif_in.CALIPTRA_AXI_ID = '0; // FIXME
 assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE = '0; // FIXME
 assign mci_reg_hwif_in.GENERIC_INPUT_WIRES = '0; // FIXME
@@ -135,9 +189,125 @@ assign mci_reg_hwif_in.STICKY_LOCKABLE_SCRATCH_REG = '0; // FIXME
 assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
 assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG = '0; // FIXME
 
+// mtime always increments, but if it's being written by software the write
+// value will update the register. Deasserting incr in this case prevents the
+// SW write from being dropped (due to RDL compiler failing to give SW precedence properly).
+assign mci_reg_hwif_in.MCU_RV_MTIME_L.count_l.incr = !(cif_resp_if.dv && mci_reg_hwif_out.MCU_RV_MTIME_L.count_l.swmod);
+assign mci_reg_hwif_in.MCU_RV_MTIME_H.count_h.incr = !(cif_resp_if.dv && mci_reg_hwif_out.MCU_RV_MTIME_H.count_h.swmod) && mci_reg_hwif_out.MCU_RV_MTIME_L.count_l.overflow;
+assign mcu_timer_int  =  {mci_reg_hwif_out.MCU_RV_MTIME_H.count_h.value     ,mci_reg_hwif_out.MCU_RV_MTIME_L.count_l.value}
+                     >=
+                     {mci_reg_hwif_out.MCU_RV_MTIMECMP_H.compare_h.value,mci_reg_hwif_out.MCU_RV_MTIMECMP_L.compare_l.value};
+
+///////////////////////////////////////////////
+// MCU Reset Request interrupt 
+///////////////////////////////////////////////
+
+
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        mcu_sram_fw_exec_region_lock_prev <= 0;
+    end
+    else if(!Warm_Reset_Capture_Flag) begin
+        mcu_sram_fw_exec_region_lock_prev <= mcu_sram_fw_exec_region_lock;
+    end
+end
+
+assign mcu_sram_fw_exec_region_lock_posedge = mcu_sram_fw_exec_region_lock & (~mcu_sram_fw_exec_region_lock_prev);
+assign mcu_sram_fw_exec_region_lock_negedge = (~mcu_sram_fw_exec_region_lock) & mcu_sram_fw_exec_region_lock_prev;
+
+// On first boot (mcu_reset_once) we expect region_lock to transition 0->1 indicating 
+// a FW update is available for MCU. This will trigger MCU ROM to reset itself.
+// On all subsequence update (hitless FW Update) we expect region_lock to go 1->0
+// which will trigger MCU RT FW to be interrupted and reset itself. While the MCU
+// is in reset and the FW image is in MCU SRAM the region_lock will be set 0->1
+// in the boot sequencer this is when MCU is brought out of reset.
+always_comb begin
+    if(!mcu_reset_once && mcu_sram_fw_exec_region_lock_posedge) begin
+        cptra_mcu_rst_req = 1'b1;
+    end
+    else if(mcu_sram_fw_exec_region_lock_negedge) begin
+        cptra_mcu_rst_req = 1'b1;
+    end
+    else begin
+        cptra_mcu_rst_req = 1'b0;
+    end
+end
+
+assign mci_reg_hwif_in.intr_block_rf.notif_internal_intr_r.notif_clpra_mcu_reset_req_sts.hwset = cptra_mcu_rst_req;
+
+///////////////////////////////////////////////
+// MCI Interrupt aggregation
+///////////////////////////////////////////////
+assign mci_error_intr = mci_reg_hwif_out.intr_block_rf.error_global_intr_r.intr;
+assign mci_notif_intr = mci_reg_hwif_out.intr_block_rf.notif_global_intr_r.intr;
+
+
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        mci_intr <= 0;
+    end
+    else  begin
+        mci_intr <= mci_error_intr | mci_notif_intr;
+    end
+end
+
+///////////////////////////////////////////////
+// MCU Reset Request
+///////////////////////////////////////////////
+assign mci_reg_hwif_in.RESET_REQUEST.mcu_req.hwclr = ~mcu_rst_b;
+
+///////////////////////////////////////////////
+// Reset reason
+///////////////////////////////////////////////
+
+assign mci_reg_hwif_in.RESET_REASON.FW_BOOT_UPD_RESET.next = fw_boot_upd_reset; 
+
+assign mci_reg_hwif_in.RESET_REASON.FW_HITLESS_UPD_RESET.next = fw_hitless_upd_reset; 
+
+// pwrgood_hint informs if the powergood toggled
+always_ff @(posedge clk or negedge mci_pwrgood) begin
+     if(~mci_pwrgood) begin
+        pwrgood_toggle_hint <= 1;
+     end
+     // Reset the bit after warm reset deassertion has been observed
+     else if(Warm_Reset_Capture_Flag) begin
+        pwrgood_toggle_hint <= 0;
+     end
+end
+
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        Warm_Reset_Capture_Flag <= 0;
+    end
+    else if(!Warm_Reset_Capture_Flag) begin
+        Warm_Reset_Capture_Flag <= 1;
+    end
+end
+
+// PwrGood is used to decide if the warm reset toggle happened due to pwrgood or
+// only due to warm reset. We also need to clear this bit when its
+// FW_*_UPD_RESET only path
+always_comb begin
+    if (!Warm_Reset_Capture_Flag) begin
+         mci_reg_hwif_in.RESET_REASON.WARM_RESET.next = ~pwrgood_toggle_hint;
+    end
+    else if (mci_reg_hwif_out.RESET_REASON.FW_BOOT_UPD_RESET.value || mci_reg_hwif_out.RESET_REASON.FW_HITLESS_UPD_RESET.value) begin
+         mci_reg_hwif_in.RESET_REASON.WARM_RESET.next = 1'b0;
+    end 
+    else begin
+         mci_reg_hwif_in.RESET_REASON.WARM_RESET.next = mci_reg_hwif_out.RESET_REASON.WARM_RESET.value;
+    end
+end
+
+
+
+///////////////////////////////////////////////
+// NMI Vector   
+///////////////////////////////////////////////
+assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec; // FIXME reset for this? MCI reset 
 
 ////////////////////////////////////////////////////////
-// Write-enables for CPTRA_HW_ERROR_FATAL and CPTRA_HW_ERROR_NON_FATAL
+// Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL
 // Also calculate whether or not an unmasked event is being set, so we can
 // trigger the SOC interrupt signal
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_double_ecc_error; // FIXME do we need to add a reset window disable like in caliptra?
@@ -147,36 +317,108 @@ always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      = nmi_intr;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next    = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next        = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
-always_comb unmasked_hw_error_fatal_write = (mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      && |mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next) ||
-                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next);
+always_comb unmasked_hw_error_fatal_write = (mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin.value && |mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next) ||
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next);
 
+////////////////////////////////////////////////////////
+// Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL
+// Also calculate whether or not an unmasked event is being set, so we can
+// trigger the SOC interrupt signal
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.cptra_error_fatal.we  = cptra_error_fatal_sync;
+// Using we+next instead of hwset allows us to encode the reserved fields in some fashion
+// other than bit-hot in the future, if needed (e.g. we need to encode > 32 FATAL events)
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.cptra_error_fatal.next    = 1'b1;
+// Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
+always_comb unmasked_agg_error_fatal_write = (mci_reg_hwif_in.AGG_ERROR_FATAL.cptra_error_fatal.we      && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_cptra_error_fatal && |mci_reg_hwif_in.AGG_ERROR_FATAL.cptra_error_fatal.next);
+
+
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.RSVD.we = '0; // FIXME remove
+// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_no_lock.we = mbox_protocol_error.axs_without_lock;
+// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_ooo    .we = mbox_protocol_error.axs_incorrect_order;
+// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_ecc_unc     .we = sram_double_ecc_error;
+// Using we+next instead of hwset allows us to encode the reserved fields in some fashion
+// other than bit-hot in the future, if needed (e.g. we need to encode > 32 NON-FATAL events)
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.RSVD.next = 1'b1; // FIXME remove
+// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_no_lock.next = 1'b1;
+// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_ooo    .next = 1'b1;
+// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_ecc_unc     .next = 1'b1;
+// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.rsvd.next[28:0]        = 29'h0;
+// Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
+always_comb unmasked_hw_error_non_fatal_write = '0; // FIXME 
+                                                // FIXME (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_no_lock.we && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_prot_no_lock.value && |soc_ifc_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_no_lock.next) ||
+                                                // FIXME (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_ooo    .we && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_prot_ooo    .value && |soc_ifc_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_ooo    .next) ||
+                                                // FIXME (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_ecc_unc     .we && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_ecc_unc     .value && |soc_ifc_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_ecc_unc     .next);
+always_comb unmasked_hw_error_non_fatal_is_set = '0; // FIXME 
+                                                 // FIXME (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox_prot_no_lock.value && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_prot_no_lock.value) ||
+                                                 // FIXME (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox_prot_ooo    .value && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_prot_ooo    .value) ||
+                                                 // FIXME (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox_ecc_unc     .value && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_ecc_unc     .value);
+
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.we = cptra_error_non_fatal_sync;
+// Using we+next instead of hwset allows us to encode the reserved fields in some fashion
+// other than bit-hot in the future, if needed (e.g. we need to encode > 32 NON-FATAL events)
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.next = 1'b1; 
+// Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
+always_comb unmasked_agg_error_non_fatal_write = (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.we && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_cptra_error_non_fatal.value && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.next);
+always_comb unmasked_agg_error_non_fatal_is_set = (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_cptra_error_non_fatal.value);
 
 // Interrupt output is set, for any enabled conditions, when a new write
 // sets FW_ERROR_FATAL or when a HW condition occurs that sets a bit
-// in HW_ERROR_FATAL
+// in HW_ERROR_FATAL or when an aggregated fatal error occures in
+// AGG_ERROR_FATAL
 // Interrupt only deasserts on reset
 always_ff@(posedge clk or negedge mci_rst_b) begin
     if(~mci_rst_b) begin
-        error_fatal <= 1'b0;
+        mci_error_fatal <= 1'b0;
     end
     // FW write that SETS a new (non-masked) bit results in interrupt assertion
     else if (cif_resp_if.dv &&
              mci_reg_hwif_out.FW_ERROR_FATAL.error_code.swmod &&
-             |(cif_resp_if.req_data.wdata & ~mci_reg_hwif_out.FW_ERROR_FATAL.error_code.value)) begin // FIXME do I need to add FW mask like soc_ifc?
-        error_fatal <= 1'b1;
+             |(cif_resp_if.req_data.wdata & ~mci_reg_hwif_out.internal_fw_error_fatal_mask.mask.value & ~mci_reg_hwif_out.FW_ERROR_FATAL.error_code.value)) begin
+        mci_error_fatal <= 1'b1;
     end
     // HW event that SETS a new (non-masked) bit results in interrupt assertion
     else if (unmasked_hw_error_fatal_write) begin
-        error_fatal <= 1'b1;
+        mci_error_fatal <= 1'b1;
+    end
+    // AGG event that SETS a new (non-masked) bit results in interrupt assertion
+    else if (unmasked_agg_error_fatal_write) begin
+        mci_error_fatal <= 1'b1;
     end
     // NOTE: There is no mechanism to clear interrupt assertion by design.
     //       Platform MUST perform mci_rst_b in order to clear error_fatal
     //       output signal, per the integration spec.
     else begin
-        error_fatal <= error_fatal;
+        mci_error_fatal <= mci_error_fatal;
     end
 end
 
+always_ff@(posedge clk or negedge mci_rst_b) begin
+    if(~mci_rst_b) begin
+        mci_error_non_fatal <= 1'b0;
+    end
+    // FW write that SETS a new (non-masked) bit results in interrupt assertion
+    else if (cif_resp_if.dv &&
+             mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.swmod &&
+             |(cif_resp_if.req_data.wdata & ~mci_reg_hwif_out.internal_fw_error_non_fatal_mask.mask.value  & ~mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.value)) begin
+        mci_error_non_fatal <= 1'b1;
+    end
+    // HW event that SETS a new (non-masked) bit results in interrupt assertion
+    else if (unmasked_hw_error_non_fatal_write) begin
+        mci_error_non_fatal <= 1'b1;
+    end
+    // AGG event that SETS a new (non-masked) bit results in interrupt assertion
+    else if (unmasked_agg_error_non_fatal_write) begin
+        mci_error_non_fatal <= 1'b1;
+    end
+    // If FW performs a write that clears all outstanding (unmasked) ERROR_NON_FATAL events, deassert interrupt
+    else if (~unmasked_hw_error_non_fatal_is_set && ~unmasked_agg_error_non_fatal_is_set && 
+             ~|(~mci_reg_hwif_out.internal_fw_error_non_fatal_mask.mask.value & mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.value)) begin
+        mci_error_non_fatal <= 1'b0;
+    end
+    else begin
+        mci_error_non_fatal <= cptra_error_non_fatal;
+    end
+end
 
 //TIE-OFFS
 always_comb begin

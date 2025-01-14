@@ -40,15 +40,19 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic next;
-        logic we;
-    } mci_reg__RESET_REASON__FW_UPD_RESET__in_t;
+    } mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t;
+
+    typedef struct packed{
+        logic next;
+    } mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t;
 
     typedef struct packed{
         logic next;
     } mci_reg__RESET_REASON__WARM_RESET__in_t;
 
     typedef struct packed{
-        mci_reg__RESET_REASON__FW_UPD_RESET__in_t FW_UPD_RESET;
+        mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t FW_HITLESS_UPD_RESET;
+        mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t FW_BOOT_UPD_RESET;
         mci_reg__RESET_REASON__WARM_RESET__in_t WARM_RESET;
     } mci_reg__RESET_REASON__in_t;
 
@@ -63,8 +67,16 @@ package mci_reg_pkg;
     } mci_reg__HW_ERROR_FATAL__in_t;
 
     typedef struct packed{
+        mci_reg__rw_rw_sticky_hw__in_t cptra_error_fatal;
+    } mci_reg__AGG_ERROR_FATAL__in_t;
+
+    typedef struct packed{
         mci_reg__rw_rw_sticky_hw__in_t RSVD;
     } mci_reg__HW_ERROR_NON_FATAL__in_t;
+
+    typedef struct packed{
+        mci_reg__rw_rw_sticky_hw__in_t cptra_error_non_fatal;
+    } mci_reg__AGG_ERROR_NON_FATAL__in_t;
 
     typedef struct packed{
         logic [31:0] next;
@@ -110,19 +122,11 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic hwclr;
-    } mci_reg__RESET_REQUEST__req__in_t;
+    } mci_reg__RESET_REQUEST__mcu_req__in_t;
 
     typedef struct packed{
-        mci_reg__RESET_REQUEST__req__in_t req;
+        mci_reg__RESET_REQUEST__mcu_req__in_t mcu_req;
     } mci_reg__RESET_REQUEST__in_t;
-
-    typedef struct packed{
-        logic hwclr;
-    } mci_reg__RESET_ACK__ack__in_t;
-
-    typedef struct packed{
-        mci_reg__RESET_ACK__ack__in_t ack;
-    } mci_reg__RESET_ACK__in_t;
 
     typedef struct packed{
         logic next;
@@ -245,15 +249,20 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic hwset;
-    } mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__notif_mcu_sram_ecc_cor_sts_enable_d03e9c2f_next_0c3eb3de__in_t;
+    } mci_reg__intr_block_t__notif_intr_t_notif_clpra_mcu_reset_req_sts_9381a1fb_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__notif_mcu_sram_ecc_cor_sts_enable_d03e9c2f_next_0c3eb3de__in_t;
 
     typedef struct packed{
-        mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__notif_mcu_sram_ecc_cor_sts_enable_d03e9c2f_next_0c3eb3de__in_t notif_mcu_sram_ecc_cor_sts;
-    } mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__in_t;
+        logic hwset;
+    } mci_reg__intr_block_t__notif_intr_t_notif_clpra_mcu_reset_req_sts_9381a1fb_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__notif_clpra_mcu_reset_req_sts_enable_7d919954_next_c824e7d8__in_t;
+
+    typedef struct packed{
+        mci_reg__intr_block_t__notif_intr_t_notif_clpra_mcu_reset_req_sts_9381a1fb_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__notif_mcu_sram_ecc_cor_sts_enable_d03e9c2f_next_0c3eb3de__in_t notif_mcu_sram_ecc_cor_sts;
+        mci_reg__intr_block_t__notif_intr_t_notif_clpra_mcu_reset_req_sts_9381a1fb_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__notif_clpra_mcu_reset_req_sts_enable_7d919954_next_c824e7d8__in_t notif_clpra_mcu_reset_req_sts;
+    } mci_reg__intr_block_t__notif_intr_t_notif_clpra_mcu_reset_req_sts_9381a1fb_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__in_t;
 
     typedef struct packed{
         mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__in_t error_internal_intr_r;
-        mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__in_t notif_internal_intr_r;
+        mci_reg__intr_block_t__notif_intr_t_notif_clpra_mcu_reset_req_sts_9381a1fb_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__in_t notif_internal_intr_r;
     } mci_reg__intr_block_t__in_t;
 
     typedef struct packed{
@@ -268,14 +277,15 @@ package mci_reg_pkg;
         mci_reg__FLOW_STATUS__in_t FLOW_STATUS;
         mci_reg__RESET_REASON__in_t RESET_REASON;
         mci_reg__HW_ERROR_FATAL__in_t HW_ERROR_FATAL;
+        mci_reg__AGG_ERROR_FATAL__in_t AGG_ERROR_FATAL;
         mci_reg__HW_ERROR_NON_FATAL__in_t HW_ERROR_NON_FATAL;
+        mci_reg__AGG_ERROR_NON_FATAL__in_t AGG_ERROR_NON_FATAL;
         mci_reg__FW_ERROR_FATAL__in_t FW_ERROR_FATAL;
         mci_reg__FW_ERROR_NON_FATAL__in_t FW_ERROR_NON_FATAL;
         mci_reg__WDT_STATUS__in_t WDT_STATUS;
         mci_reg__MCU_RV_MTIME_L__in_t MCU_RV_MTIME_L;
         mci_reg__MCU_RV_MTIME_H__in_t MCU_RV_MTIME_H;
         mci_reg__RESET_REQUEST__in_t RESET_REQUEST;
-        mci_reg__RESET_ACK__in_t RESET_ACK;
         mci_reg__CALIPTRA_AXI_ID__in_t CALIPTRA_AXI_ID;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__in_t FW_SRAM_EXEC_REGION_SIZE;
         mci_reg__GENERIC_INPUT_WIRES__in_t [2-1:0]GENERIC_INPUT_WIRES;
@@ -301,7 +311,7 @@ package mci_reg_pkg;
     } mci_reg__BOOT_STATUS__out_t;
 
     typedef struct packed{
-        logic [23:0] value;
+        logic [21:0] value;
     } mci_reg__FLOW_STATUS__status__out_t;
 
     typedef struct packed{
@@ -310,16 +320,29 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
-    } mci_reg__RESET_REASON__FW_UPD_RESET__out_t;
+    } mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__out_t;
+
+    typedef struct packed{
+        logic value;
+    } mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__out_t;
 
     typedef struct packed{
         logic value;
     } mci_reg__RESET_REASON__WARM_RESET__out_t;
 
     typedef struct packed{
-        mci_reg__RESET_REASON__FW_UPD_RESET__out_t FW_UPD_RESET;
+        mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__out_t FW_HITLESS_UPD_RESET;
+        mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__out_t FW_BOOT_UPD_RESET;
         mci_reg__RESET_REASON__WARM_RESET__out_t WARM_RESET;
     } mci_reg__RESET_REASON__out_t;
+
+    typedef struct packed{
+        logic [21:0] value;
+    } mci_reg__RESET_STATUS__status__out_t;
+
+    typedef struct packed{
+        mci_reg__RESET_STATUS__status__out_t status;
+    } mci_reg__RESET_STATUS__out_t;
 
     typedef struct packed{
         logic value;
@@ -331,8 +354,16 @@ package mci_reg_pkg;
     } mci_reg__HW_ERROR_FATAL__out_t;
 
     typedef struct packed{
+        mci_reg__rw_rw_sticky_hw__out_t cptra_error_fatal;
+    } mci_reg__AGG_ERROR_FATAL__out_t;
+
+    typedef struct packed{
         mci_reg__rw_rw_sticky_hw__out_t RSVD;
     } mci_reg__HW_ERROR_NON_FATAL__out_t;
+
+    typedef struct packed{
+        mci_reg__rw_rw_sticky_hw__out_t cptra_error_non_fatal;
+    } mci_reg__AGG_ERROR_NON_FATAL__out_t;
 
     typedef struct packed{
         logic [31:0] value;
@@ -370,6 +401,39 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__FW_EXTENDED_ERROR_INFO__error_info__out_t error_info;
     } mci_reg__FW_EXTENDED_ERROR_INFO__out_t;
+
+    typedef struct packed{
+        logic value;
+    } mci_reg__rw_ro_ro_hw__out_t;
+
+    typedef struct packed{
+        mci_reg__rw_ro_ro_hw__out_t mask_mcu_sram_ecc_unc;
+        mci_reg__rw_ro_ro_hw__out_t mask_nmi_pin;
+    } mci_reg__internal_hw_error_fatal_mask__out_t;
+
+    typedef struct packed{
+        mci_reg__rw_ro_ro_hw__out_t FIXME;
+    } mci_reg__internal_hw_error_non_fatal_mask__out_t;
+
+    typedef struct packed{
+        mci_reg__rw_ro_ro_hw__out_t mask_cptra_error_fatal;
+    } mci_reg__internal_agg_error_fatal_mask__out_t;
+
+    typedef struct packed{
+        mci_reg__rw_ro_ro_hw__out_t mask_cptra_error_non_fatal;
+    } mci_reg__internal_agg_error_non_fatal_mask__out_t;
+
+    typedef struct packed{
+        logic [31:0] value;
+    } mci_reg__rw_ro_ro_hw_w32__out_t;
+
+    typedef struct packed{
+        mci_reg__rw_ro_ro_hw_w32__out_t mask;
+    } mci_reg__internal_fw_error_fatal_mask__out_t;
+
+    typedef struct packed{
+        mci_reg__rw_ro_ro_hw_w32__out_t mask;
+    } mci_reg__internal_fw_error_non_fatal_mask__out_t;
 
     typedef struct packed{
         logic value;
@@ -469,24 +533,19 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
-    } mci_reg__RESET_REQUEST__req__out_t;
+    } mci_reg__RESET_REQUEST__mcu_req__out_t;
 
     typedef struct packed{
-        logic value;
-    } mci_reg__RESET_REQUEST__clr__out_t;
-
-    typedef struct packed{
-        mci_reg__RESET_REQUEST__req__out_t req;
-        mci_reg__RESET_REQUEST__clr__out_t clr;
+        mci_reg__RESET_REQUEST__mcu_req__out_t mcu_req;
     } mci_reg__RESET_REQUEST__out_t;
 
     typedef struct packed{
         logic value;
-    } mci_reg__RESET_ACK__ack__out_t;
+    } mci_reg__CALIPTRA_BOOT_GO__go__out_t;
 
     typedef struct packed{
-        mci_reg__RESET_ACK__ack__out_t ack;
-    } mci_reg__RESET_ACK__out_t;
+        mci_reg__CALIPTRA_BOOT_GO__go__out_t go;
+    } mci_reg__CALIPTRA_BOOT_GO__out_t;
 
     typedef struct packed{
         logic [15:0] value;
@@ -495,6 +554,14 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__out_t size;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__out_t;
+
+    typedef struct packed{
+        logic [31:0] value;
+    } mci_reg__MCU_NMI_VECTOR__vec__out_t;
+
+    typedef struct packed{
+        mci_reg__MCU_NMI_VECTOR__vec__out_t vec;
+    } mci_reg__MCU_NMI_VECTOR__out_t;
 
     typedef struct packed{
         logic [31:0] value;
@@ -577,26 +644,35 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic intr;
-    } mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__out_t;
+    } mci_reg__intr_block_t__notif_intr_t_notif_clpra_mcu_reset_req_sts_9381a1fb_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__out_t;
 
     typedef struct packed{
         mci_reg__intr_block_t__global_intr_t_agg_sts_dd3dcf0a__out_t error_global_intr_r;
         mci_reg__intr_block_t__global_intr_t_agg_sts_e6399b4a__out_t notif_global_intr_r;
         mci_reg__intr_block_t__error_intr_t_error_wdt_timer1_timeout_sts_3f5fd972_error_wdt_timer2_timeout_sts_e711632a__out_t error_internal_intr_r;
-        mci_reg__intr_block_t__notif_intr_t_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__out_t notif_internal_intr_r;
+        mci_reg__intr_block_t__notif_intr_t_notif_clpra_mcu_reset_req_sts_9381a1fb_notif_mcu_sram_ecc_cor_sts_2e5e2a9a__out_t notif_internal_intr_r;
     } mci_reg__intr_block_t__out_t;
 
     typedef struct packed{
         mci_reg__BOOT_STATUS__out_t BOOT_STATUS;
         mci_reg__FLOW_STATUS__out_t FLOW_STATUS;
         mci_reg__RESET_REASON__out_t RESET_REASON;
+        mci_reg__RESET_STATUS__out_t RESET_STATUS;
         mci_reg__HW_ERROR_FATAL__out_t HW_ERROR_FATAL;
+        mci_reg__AGG_ERROR_FATAL__out_t AGG_ERROR_FATAL;
         mci_reg__HW_ERROR_NON_FATAL__out_t HW_ERROR_NON_FATAL;
+        mci_reg__AGG_ERROR_NON_FATAL__out_t AGG_ERROR_NON_FATAL;
         mci_reg__FW_ERROR_FATAL__out_t FW_ERROR_FATAL;
         mci_reg__FW_ERROR_NON_FATAL__out_t FW_ERROR_NON_FATAL;
         mci_reg__HW_ERROR_ENC__out_t HW_ERROR_ENC;
         mci_reg__FW_ERROR_ENC__out_t FW_ERROR_ENC;
         mci_reg__FW_EXTENDED_ERROR_INFO__out_t [8-1:0]FW_EXTENDED_ERROR_INFO;
+        mci_reg__internal_hw_error_fatal_mask__out_t internal_hw_error_fatal_mask;
+        mci_reg__internal_hw_error_non_fatal_mask__out_t internal_hw_error_non_fatal_mask;
+        mci_reg__internal_agg_error_fatal_mask__out_t internal_agg_error_fatal_mask;
+        mci_reg__internal_agg_error_non_fatal_mask__out_t internal_agg_error_non_fatal_mask;
+        mci_reg__internal_fw_error_fatal_mask__out_t internal_fw_error_fatal_mask;
+        mci_reg__internal_fw_error_non_fatal_mask__out_t internal_fw_error_non_fatal_mask;
         mci_reg__WDT_TIMER1_EN__out_t WDT_TIMER1_EN;
         mci_reg__WDT_TIMER1_CTRL__out_t WDT_TIMER1_CTRL;
         mci_reg__WDT_TIMER1_TIMEOUT_PERIOD__out_t [2-1:0]WDT_TIMER1_TIMEOUT_PERIOD;
@@ -609,8 +685,9 @@ package mci_reg_pkg;
         mci_reg__MCU_RV_MTIMECMP_L__out_t MCU_RV_MTIMECMP_L;
         mci_reg__MCU_RV_MTIMECMP_H__out_t MCU_RV_MTIMECMP_H;
         mci_reg__RESET_REQUEST__out_t RESET_REQUEST;
-        mci_reg__RESET_ACK__out_t RESET_ACK;
+        mci_reg__CALIPTRA_BOOT_GO__out_t CALIPTRA_BOOT_GO;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__out_t FW_SRAM_EXEC_REGION_SIZE;
+        mci_reg__MCU_NMI_VECTOR__out_t MCU_NMI_VECTOR;
         mci_reg__GENERIC_OUTPUT_WIRES__out_t [2-1:0]GENERIC_OUTPUT_WIRES;
         mci_reg__FUSE_WR_DONE__out_t FUSE_WR_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;

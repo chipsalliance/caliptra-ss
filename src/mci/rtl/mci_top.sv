@@ -16,8 +16,11 @@ module mci_top
     import mci_reg_pkg::*;
     import mci_pkg::*;
     #(
-    parameter MCU_SRAM_SIZE_KB = 1024 // FIXME - write assertion ensuring this size 
+    parameter MCU_SRAM_SIZE_KB = 1024, // FIXME - write assertion ensuring this size 
                                       // is compatible with the MCU SRAM IF parameters
+
+    parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Size of MCU reset counter that overflows before allowing MCU
+                                            // to come out of reset during a FW RT Update
     )
     (
     input logic clk,
@@ -38,11 +41,37 @@ module mci_top
     // SRAM ADHOC connections
     input logic mcu_sram_fw_exec_region_lock,
 
+    // SS error signals
+    input logic cptra_error_fatal,
+    input logic cptra_error_non_fatal,
+
     // SOC Interrupts
-    output logic error_fatal,
+    output logic mci_error_fatal,
+    output logic mci_error_non_fatal,
+    
+    // MCU interrupts
+    output logic mcu_timer_int,
+    output logic mci_intr,
 
     // NMI Vector 
     output logic nmi_intr,
+    output logic [31:0] mcu_nmi_vector,
+    
+    // Reset controls
+    output logic mcu_rst_b,
+    output logic cptra_rst_b,
+
+    // SoC signals
+    input logic mci_boot_seq_brkpoint,
+
+    // LCC Signals
+    input  logic lc_done,
+    output logic lc_init,
+
+    // FC Signals
+    input  logic fc_opt_done,
+    output logic fc_opt_init,
+
 
     // MCU SRAM Interface
     mci_mcu_sram_if.request mci_mcu_sram_req_if 
@@ -59,6 +88,7 @@ module mci_top
     // MCU SRAM signals
     logic mcu_sram_single_ecc_error;
     logic mcu_sram_double_ecc_error;
+    logic mcu_sram_fw_exec_region_lock_sync;
 
     // WDT signals
     logic timer1_en;
@@ -81,6 +111,10 @@ module mci_top
     logic clp_req    ;
     logic soc_req    ;
 
+    // Boot Sequencer
+    logic mcu_reset_once;
+    logic fw_boot_upd_reset;     // First MCU reset request
+    logic fw_hitless_upd_reset;  // Other MCU reset requests
 
 // Caliptra internal fabric interface for MCU SRAM 
 // Address width is set to AXI_ADDR_WIDTH and MCU SRAM
@@ -106,6 +140,14 @@ cif_if #(
     .clk, 
     .rst_b(mci_rst_b));
 
+caliptra_prim_flop_2sync #(
+  .Width(1)
+) u_prim_flop_2sync_mcu_sram_fw_exec_region_lock (
+  .clk_i(clk),
+  .rst_ni(mci_rst_b),
+  .d_i(mcu_sram_fw_exec_region_lock),
+  .q_o(mcu_sram_fw_exec_region_lock_sync));
+  
 
 //AXI Interface
 //This module contains the logic for interfacing with the SoC over the AXI Interface
@@ -148,6 +190,35 @@ mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
     .strap_clp_axi_user
 );
 
+mci_boot_seqr #(
+    .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH)
+)i_boot_seqr (
+    .clk,
+    .mci_rst_b,
+
+    // Reset controls
+    .mcu_rst_b,
+    .cptra_rst_b,
+
+    // Internal signals
+    .caliptra_boot_go(mci_reg_hwif_out.CALIPTRA_BOOT_GO.go),
+    .mcu_rst_req(mci_reg_hwif_out.RESET_REQUEST.mcu_req),
+    .fw_boot_upd_reset,     // First MCU reset request
+    .fw_hitless_upd_reset,  // Other MCU reset requests
+    .mcu_reset_once,
+
+    // SoC signals
+    .mci_boot_seq_brkpoint,
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),
+
+    // LCC Signals
+    .lc_done,
+    .lc_init,
+
+    // FC Signals
+    .fc_opt_done,
+    .fc_opt_init
+);
 
 // MCU SRAM
 // Translates requests from the AXI SUB and sends them to the MCU SRAM.
@@ -159,6 +230,10 @@ mci_mcu_sram_ctrl #(
 
     // MCI Resets
     .rst_b (mci_rst_b), // FIXME: Need to sync reset
+
+    
+    // MCU Reset
+    .mcu_rst_b,
 
     // Interface
     .fw_sram_exec_region_size(mci_reg_hwif_out.FW_SRAM_EXEC_REGION_SIZE.size.value), 
@@ -172,7 +247,7 @@ mci_mcu_sram_ctrl #(
     .clp_req    ,
 
     // Access lock interface
-    .mcu_sram_fw_exec_region_lock,  
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),  
 
     // ECC Status
     .sram_single_ecc_error(mcu_sram_single_ecc_error),  
@@ -228,6 +303,7 @@ mci_reg_top i_mci_reg_top (
 
     // MCI Resets
     .mci_rst_b      (mci_rst_b),// FIXME: Need to sync reset
+    .mcu_rst_b      (mcu_rst_b),// FIXME: Need to sync reset
     .mci_pwrgood    (mci_pwrgood),       // FIXME: Need to sync
 
     // REG HWIF signals
@@ -245,15 +321,33 @@ mci_reg_top i_mci_reg_top (
     .t1_timeout,
     .t2_timeout,
 
+    // SS error signals
+    .cptra_error_fatal,
+    .cptra_error_non_fatal,
+
     // SOC Interrupts
-    .error_fatal,
+    .mci_error_fatal,
+    .mci_error_non_fatal,
+    
+    // MCU interrupts
+    .mcu_timer_int,
+    .mci_intr,
 
     // NMI
     .nmi_intr,
+    .mcu_nmi_vector,
+    
+    // MISC
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),
 
     // MCU SRAM specific signals
     .mcu_sram_single_ecc_error,
     .mcu_sram_double_ecc_error,
+
+    // Reset status
+    .mcu_reset_once,
+    .fw_boot_upd_reset,     // First MCU reset request
+    .fw_hitless_upd_reset,  // Other MCU reset requests
     
     // Caliptra internal fabric response interface
     .cif_resp_if (mci_reg_req_if.response)
