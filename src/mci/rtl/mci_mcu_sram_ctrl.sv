@@ -22,14 +22,15 @@
 //      requests to the MCU SRAM as this module cannot detect address aliasing.
 //
 //      Error handling:
-//      If an access vilation due to USER privilage issues is detected it 
+//      If an access violation due to USER privilege issues is detected it 
 //      will always return an error on the first cycle of the cif_if.
 //      ECC errors are returned on the read data phase (second clock cycle)
 //
 //      Region mapping:
 //      The lower address is mapped to the exec region. Upper address range is mapped
 //      to prot region. If fw_sram_exec_region_size is larger than the actual SRAM size 
-//      the entier SRAM is considered exec region and there is no prot region
+//      the entire SRAM is considered exec region and there is no prot region
+
 
 module mci_mcu_sram_ctrl 
     #(
@@ -47,10 +48,11 @@ module mci_mcu_sram_ctrl
     // Caliptra internal fabric response interface
     cif_if.response  cif_resp_if,
 
-    // AXI users
-    input logic [cif_resp_if.USER_WIDTH-1:0] strap_mcu_lsu_axi_user,
-    input logic [cif_resp_if.USER_WIDTH-1:0] strap_mcu_ifu_axi_user,
-    input logic [cif_resp_if.USER_WIDTH-1:0] strap_clp_axi_user,
+    // AXI Privileged requests
+    input logic mcu_lsu_req,
+    input logic mcu_ifu_req,
+    input logic clp_req ,
+
 
     // Access lock interface
     input logic mcu_sram_fw_exec_region_lock,
@@ -87,7 +89,7 @@ logic exec_region_match;
 logic exec_region_req;
 logic prot_region_req;
 
-// Momory region mapping
+// Memory region mapping
 logic [28:0]                    exec_region_base; // TODO: Report to status register?
 logic [28:0]                    exec_region_end_calc;  
 logic [28:0]                    exec_region_end;  // TODO: Report to status register?
@@ -106,10 +108,7 @@ logic exec_region_filter_error;
 logic prot_region_filter_success;
 logic prot_region_filter_error; 
 
-// Agent request checks
-logic mcu_lsu_req;
-logic mcu_ifu_req;
-logic clp_req;
+
 
 // SRAM Read/Write request and phase signals
 logic mcu_sram_valid_req;
@@ -140,8 +139,9 @@ assign exec_region_end_calc     = exec_region_base + exec_region_size_bytes - 1;
 assign exec_region_overflow  = |exec_region_end_calc[28:MCU_SRAM_CIF_ADDR_W];
 // If there was overflow set to the MCU SRAM size.
 // Otherwise take the calculated value
-assign exec_region_end          = exec_region_overflow ? (MCU_SRAM_SIZE_BYTES-1) : 
-                                    exec_region_end_calc;  
+assign exec_region_end  = exec_region_overflow ? (MCU_SRAM_SIZE_BYTES-1) : 
+                            exec_region_end_calc;  
+
 
 
 
@@ -161,14 +161,6 @@ assign exec_region_match =  (cif_resp_if.req_data.addr[MCU_SRAM_CIF_ADDR_W-1:0] 
 assign exec_region_req = cif_resp_if.dv & exec_region_match;
 assign prot_region_req = cif_resp_if.dv & !exec_region_match; 
 
-
-///////////////////////////////////////////////
-// Determine if the user matches any of the  
-// previlaged users
-///////////////////////////////////////////////
-assign mcu_lsu_req = ~(|(cif_resp_if.req_data.user ^ strap_mcu_lsu_axi_user));
-assign mcu_ifu_req = ~(|(cif_resp_if.req_data.user ^ strap_mcu_ifu_axi_user));
-assign clp_req = ~(|(cif_resp_if.req_data.user ^ strap_clp_axi_user));
 
 ///////////////////////////////////////////////
 // Protected data region access protection  
@@ -303,7 +295,7 @@ rvecc_decode ecc_decode (
 );
 
 // Only send data back if we are in the sram_read_data_phase. Assumptions made:
-// 1. We will only have sram_read_data_phase if a privilaged agent is doing the read
+// 1. We will only have sram_read_data_phase if a privileged agent is doing the read
 // 2. If an ECC error is detected it is OK to send garbage data back.
 assign cif_resp_if.rdata = sram_read_data_phase ?  sram_rdata_cor : '0;
 
@@ -329,7 +321,8 @@ assign cif_resp_if.hold = sram_read_req_phase;
 // for DV.
 assign cif_resp_if.error = exec_region_filter_error | 
                            prot_region_filter_error | 
-                           sram_double_ecc_error; // FIXME any other error conditions? 
+                           sram_double_ecc_error; 
+
 
 
 endmodule
