@@ -129,20 +129,21 @@ package mci_reg_pkg;
     } mci_reg__RESET_REQUEST__in_t;
 
     typedef struct packed{
-        logic next;
-    } mci_reg__CALIPTRA_AXI_ID__id__in_t;
-
-    typedef struct packed{
-        mci_reg__CALIPTRA_AXI_ID__id__in_t id;
-    } mci_reg__CALIPTRA_AXI_ID__in_t;
-
-    typedef struct packed{
         logic swwe;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__in_t;
 
     typedef struct packed{
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__in_t size;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__in_t;
+
+    typedef struct packed{
+        logic [31:0] next;
+        logic we;
+    } mci_reg__MCU_RESET_VECTOR__vec__in_t;
+
+    typedef struct packed{
+        mci_reg__MCU_RESET_VECTOR__vec__in_t vec;
+    } mci_reg__MCU_RESET_VECTOR__in_t;
 
     typedef struct packed{
         logic [31:0] next;
@@ -269,8 +270,8 @@ package mci_reg_pkg;
         logic mci_rst_b;
         logic mcu_rst_b;
         logic mci_pwrgood;
-        logic cptra_req;
         logic mcu_req;
+        logic mcu_or_no_rom_config_req;
         mci_reg__CAPABILITIES__in_t CAPABILITIES;
         mci_reg__HW_REV_ID__in_t HW_REV_ID;
         mci_reg__HW_CONFIG__in_t HW_CONFIG;
@@ -286,8 +287,8 @@ package mci_reg_pkg;
         mci_reg__MCU_RV_MTIME_L__in_t MCU_RV_MTIME_L;
         mci_reg__MCU_RV_MTIME_H__in_t MCU_RV_MTIME_H;
         mci_reg__RESET_REQUEST__in_t RESET_REQUEST;
-        mci_reg__CALIPTRA_AXI_ID__in_t CALIPTRA_AXI_ID;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__in_t FW_SRAM_EXEC_REGION_SIZE;
+        mci_reg__MCU_RESET_VECTOR__in_t MCU_RESET_VECTOR;
         mci_reg__GENERIC_INPUT_WIRES__in_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__FUSE_WR_DONE__in_t FUSE_WR_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__in_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
@@ -565,6 +566,14 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic [31:0] value;
+    } mci_reg__MCU_RESET_VECTOR__vec__out_t;
+
+    typedef struct packed{
+        mci_reg__MCU_RESET_VECTOR__vec__out_t vec;
+    } mci_reg__MCU_RESET_VECTOR__out_t;
+
+    typedef struct packed{
+        logic [31:0] value;
     } mci_reg__GENERIC_OUTPUT_WIRES__wires__out_t;
 
     typedef struct packed{
@@ -688,6 +697,7 @@ package mci_reg_pkg;
         mci_reg__CALIPTRA_BOOT_GO__out_t CALIPTRA_BOOT_GO;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__out_t FW_SRAM_EXEC_REGION_SIZE;
         mci_reg__MCU_NMI_VECTOR__out_t MCU_NMI_VECTOR;
+        mci_reg__MCU_RESET_VECTOR__out_t MCU_RESET_VECTOR;
         mci_reg__GENERIC_OUTPUT_WIRES__out_t [2-1:0]GENERIC_OUTPUT_WIRES;
         mci_reg__FUSE_WR_DONE__out_t FUSE_WR_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;

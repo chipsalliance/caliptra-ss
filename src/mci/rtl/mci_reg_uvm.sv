@@ -1189,36 +1189,6 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__CALIPTRA_BOOT_GO
 
-    // Reg - mci_reg::CALIPTRA_AXI_ID
-    class mci_reg__CALIPTRA_AXI_ID extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__CALIPTRA_AXI_ID_bit_cg id_bit_cg[1];
-        mci_reg__CALIPTRA_AXI_ID_fld_cg fld_cg;
-        rand uvm_reg_field id;
-
-        function new(string name = "mci_reg__CALIPTRA_AXI_ID");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.id = new("id");
-            this.id.configure(this, 1, 0, "RO", 1, 'h0, 0, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(id_bit_cg[bt]) id_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__CALIPTRA_AXI_ID
-
     // Reg - mci_reg::FW_SRAM_EXEC_REGION_SIZE
     class mci_reg__FW_SRAM_EXEC_REGION_SIZE extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -1278,6 +1248,36 @@ package mci_reg_uvm;
                 fld_cg = new();
         endfunction : build
     endclass : mci_reg__MCU_NMI_VECTOR
+
+    // Reg - mci_reg::MCU_RESET_VECTOR
+    class mci_reg__MCU_RESET_VECTOR extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_RESET_VECTOR_bit_cg vec_bit_cg[32];
+        mci_reg__MCU_RESET_VECTOR_fld_cg fld_cg;
+        rand uvm_reg_field vec;
+
+        function new(string name = "mci_reg__MCU_RESET_VECTOR");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.vec = new("vec");
+            this.vec.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(vec_bit_cg[bt]) vec_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_RESET_VECTOR
 
     // Reg - mci_reg::MBOX0_VALID_AXI_ID
     class mci_reg__MBOX0_VALID_AXI_ID extends uvm_reg;
@@ -2548,9 +2548,9 @@ package mci_reg_uvm;
         rand mci_reg__MCU_RV_MTIMECMP_H MCU_RV_MTIMECMP_H;
         rand mci_reg__RESET_REQUEST RESET_REQUEST;
         rand mci_reg__CALIPTRA_BOOT_GO CALIPTRA_BOOT_GO;
-        rand mci_reg__CALIPTRA_AXI_ID CALIPTRA_AXI_ID;
         rand mci_reg__FW_SRAM_EXEC_REGION_SIZE FW_SRAM_EXEC_REGION_SIZE;
         rand mci_reg__MCU_NMI_VECTOR MCU_NMI_VECTOR;
+        rand mci_reg__MCU_RESET_VECTOR MCU_RESET_VECTOR;
         rand mci_reg__MBOX0_VALID_AXI_ID MBOX0_VALID_AXI_ID[5];
         rand mci_reg__MBOX0_VALID_AXI_ID_LOCK MBOX0_VALID_AXI_ID_LOCK[5];
         rand mci_reg__MBOX1_VALID_AXI_ID MBOX1_VALID_AXI_ID[5];
@@ -2778,21 +2778,21 @@ package mci_reg_uvm;
 
             this.CALIPTRA_BOOT_GO.build();
             this.default_map.add_reg(this.CALIPTRA_BOOT_GO, 'h104);
-            this.CALIPTRA_AXI_ID = new("CALIPTRA_AXI_ID");
-            this.CALIPTRA_AXI_ID.configure(this);
-
-            this.CALIPTRA_AXI_ID.build();
-            this.default_map.add_reg(this.CALIPTRA_AXI_ID, 'h108);
             this.FW_SRAM_EXEC_REGION_SIZE = new("FW_SRAM_EXEC_REGION_SIZE");
             this.FW_SRAM_EXEC_REGION_SIZE.configure(this);
 
             this.FW_SRAM_EXEC_REGION_SIZE.build();
-            this.default_map.add_reg(this.FW_SRAM_EXEC_REGION_SIZE, 'h10c);
+            this.default_map.add_reg(this.FW_SRAM_EXEC_REGION_SIZE, 'h108);
             this.MCU_NMI_VECTOR = new("MCU_NMI_VECTOR");
             this.MCU_NMI_VECTOR.configure(this);
 
             this.MCU_NMI_VECTOR.build();
-            this.default_map.add_reg(this.MCU_NMI_VECTOR, 'h110);
+            this.default_map.add_reg(this.MCU_NMI_VECTOR, 'h10c);
+            this.MCU_RESET_VECTOR = new("MCU_RESET_VECTOR");
+            this.MCU_RESET_VECTOR.configure(this);
+
+            this.MCU_RESET_VECTOR.build();
+            this.default_map.add_reg(this.MCU_RESET_VECTOR, 'h110);
             foreach(this.MBOX0_VALID_AXI_ID[i0]) begin
                 this.MBOX0_VALID_AXI_ID[i0] = new($sformatf("MBOX0_VALID_AXI_ID[%0d]", i0));
                 this.MBOX0_VALID_AXI_ID[i0].configure(this);

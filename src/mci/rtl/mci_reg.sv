@@ -104,9 +104,9 @@ module mci_reg (
         logic MCU_RV_MTIMECMP_H;
         logic RESET_REQUEST;
         logic CALIPTRA_BOOT_GO;
-        logic CALIPTRA_AXI_ID;
         logic FW_SRAM_EXEC_REGION_SIZE;
         logic MCU_NMI_VECTOR;
+        logic MCU_RESET_VECTOR;
         logic [5-1:0]MBOX0_VALID_AXI_ID;
         logic [5-1:0]MBOX0_VALID_AXI_ID_LOCK;
         logic [5-1:0]MBOX1_VALID_AXI_ID;
@@ -201,9 +201,9 @@ module mci_reg (
         decoded_reg_strb.MCU_RV_MTIMECMP_H = cpuif_req_masked & (cpuif_addr == 13'hf0);
         decoded_reg_strb.RESET_REQUEST = cpuif_req_masked & (cpuif_addr == 13'h100);
         decoded_reg_strb.CALIPTRA_BOOT_GO = cpuif_req_masked & (cpuif_addr == 13'h104);
-        decoded_reg_strb.CALIPTRA_AXI_ID = cpuif_req_masked & (cpuif_addr == 13'h108);
-        decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE = cpuif_req_masked & (cpuif_addr == 13'h10c);
-        decoded_reg_strb.MCU_NMI_VECTOR = cpuif_req_masked & (cpuif_addr == 13'h110);
+        decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE = cpuif_req_masked & (cpuif_addr == 13'h108);
+        decoded_reg_strb.MCU_NMI_VECTOR = cpuif_req_masked & (cpuif_addr == 13'h10c);
+        decoded_reg_strb.MCU_RESET_VECTOR = cpuif_req_masked & (cpuif_addr == 13'h110);
         for(int i0=0; i0<5; i0++) begin
             decoded_reg_strb.MBOX0_VALID_AXI_ID[i0] = cpuif_req_masked & (cpuif_addr == 13'h180 + i0*13'h4);
         end
@@ -536,6 +536,12 @@ module mci_reg (
                 logic load_next;
             } vec;
         } MCU_NMI_VECTOR;
+        struct packed{
+            struct packed{
+                logic [31:0] next;
+                logic load_next;
+            } vec;
+        } MCU_RESET_VECTOR;
         struct packed{
             struct packed{
                 logic [31:0] next;
@@ -996,6 +1002,11 @@ module mci_reg (
                 logic [31:0] value;
             } vec;
         } MCU_NMI_VECTOR;
+        struct packed{
+            struct packed{
+                logic [31:0] value;
+            } vec;
+        } MCU_RESET_VECTOR;
         struct packed{
             struct packed{
                 logic [31:0] value;
@@ -1984,7 +1995,7 @@ module mci_reg (
     always_comb begin
         automatic logic [0:0] next_c = field_storage.RESET_REQUEST.mcu_req.value;
         automatic logic load_next_c = '0;
-        if(decoded_reg_strb.RESET_REQUEST && decoded_req_is_wr && hwif_in.cptra_req) begin // SW write
+        if(decoded_reg_strb.RESET_REQUEST && decoded_req_is_wr && hwif_in.mcu_or_no_rom_config_req) begin // SW write
             next_c = (field_storage.RESET_REQUEST.mcu_req.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end else if(hwif_in.RESET_REQUEST.mcu_req.hwclr) begin // HW Clear
@@ -2059,6 +2070,28 @@ module mci_reg (
         end
     end
     assign hwif_out.MCU_NMI_VECTOR.vec.value = field_storage.MCU_NMI_VECTOR.vec.value;
+    // Field: mci_reg.MCU_RESET_VECTOR.vec
+    always_comb begin
+        automatic logic [31:0] next_c = field_storage.MCU_RESET_VECTOR.vec.value;
+        automatic logic load_next_c = '0;
+        if(decoded_reg_strb.MCU_RESET_VECTOR && decoded_req_is_wr && hwif_in.mcu_or_no_rom_config_req) begin // SW write
+            next_c = (field_storage.MCU_RESET_VECTOR.vec.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end else if(hwif_in.MCU_RESET_VECTOR.vec.we) begin // HW Write - we
+            next_c = hwif_in.MCU_RESET_VECTOR.vec.next;
+            load_next_c = '1;
+        end
+        field_combo.MCU_RESET_VECTOR.vec.next = next_c;
+        field_combo.MCU_RESET_VECTOR.vec.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.MCU_RESET_VECTOR.vec.value <= 32'h0;
+        end else if(field_combo.MCU_RESET_VECTOR.vec.load_next) begin
+            field_storage.MCU_RESET_VECTOR.vec.value <= field_combo.MCU_RESET_VECTOR.vec.next;
+        end
+    end
+    assign hwif_out.MCU_RESET_VECTOR.vec.value = field_storage.MCU_RESET_VECTOR.vec.value;
     for(genvar i0=0; i0<5; i0++) begin
         // Field: mci_reg.MBOX0_VALID_AXI_ID[].id
         always_comb begin
@@ -3105,11 +3138,10 @@ module mci_reg (
     assign readback_array[47][31:1] = '0;
     assign readback_array[48][0:0] = (decoded_reg_strb.CALIPTRA_BOOT_GO && !decoded_req_is_wr) ? field_storage.CALIPTRA_BOOT_GO.go.value : '0;
     assign readback_array[48][31:1] = '0;
-    assign readback_array[49][0:0] = (decoded_reg_strb.CALIPTRA_AXI_ID && !decoded_req_is_wr) ? hwif_in.CALIPTRA_AXI_ID.id.next : '0;
-    assign readback_array[49][31:1] = '0;
-    assign readback_array[50][15:0] = (decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE && !decoded_req_is_wr) ? field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value : '0;
-    assign readback_array[50][31:16] = '0;
-    assign readback_array[51][31:0] = (decoded_reg_strb.MCU_NMI_VECTOR && !decoded_req_is_wr) ? field_storage.MCU_NMI_VECTOR.vec.value : '0;
+    assign readback_array[49][15:0] = (decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE && !decoded_req_is_wr) ? field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value : '0;
+    assign readback_array[49][31:16] = '0;
+    assign readback_array[50][31:0] = (decoded_reg_strb.MCU_NMI_VECTOR && !decoded_req_is_wr) ? field_storage.MCU_NMI_VECTOR.vec.value : '0;
+    assign readback_array[51][31:0] = (decoded_reg_strb.MCU_RESET_VECTOR && !decoded_req_is_wr) ? field_storage.MCU_RESET_VECTOR.vec.value : '0;
     for(genvar i0=0; i0<5; i0++) begin
         assign readback_array[i0*1 + 52][31:0] = (decoded_reg_strb.MBOX0_VALID_AXI_ID[i0] && !decoded_req_is_wr) ? field_storage.MBOX0_VALID_AXI_ID[i0].id.value : '0;
     end

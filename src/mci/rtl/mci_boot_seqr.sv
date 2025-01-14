@@ -33,8 +33,9 @@ import mci_pkg::*;
     output logic mcu_reset_once, // Has MCU been reset before?
 
     // SoC signals
-    input logic mci_boot_seq_brkpoint,
-    input logic mcu_sram_fw_exec_region_lock,
+    input  logic mci_boot_seq_brkpoint,
+    input  logic mcu_sram_fw_exec_region_lock,
+    input  logic mcu_no_rom_config,                // Determines boot sequencer boot flow
 
     // LCC Signals
     input  logic lc_done,
@@ -49,6 +50,7 @@ import mci_pkg::*;
 
 mci_boot_fsm_state_e boot_fsm;
 mci_boot_fsm_state_e boot_fsm_nxt;
+mci_boot_fsm_state_e boot_fsm_prev;
 
 logic lc_done_sync;
 logic lc_init_nxt;
@@ -57,6 +59,8 @@ logic fc_opt_done_sync;
 logic fc_opt_init_nxt;
 
 logic mci_boot_seq_brkpoint_sync;
+
+logic mcu_no_rom_config_sync;
 
 logic mcu_rst_b_nxt;
 logic cptra_rst_b_nxt;
@@ -97,12 +101,21 @@ caliptra_prim_flop_2sync #(
   .d_i(mci_boot_seq_brkpoint),
   .q_o(mci_boot_seq_brkpoint_sync));
 
+caliptra_prim_flop_2sync #(
+  .Width(1)
+) u_prim_flop_2sync_mcu_no_rom_config (
+  .clk_i(clk),
+  .rst_ni(mci_rst_b),
+  .d_i(mcu_no_rom_config),
+  .q_o(mcu_no_rom_config_sync));
+
 /////////////////////////////////////////////////
 // Boot FSM
 /////////////////////////////////////////////////
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if(!mci_rst_b) begin
         boot_fsm                    <= BOOT_IDLE;
+        boot_fsm_prev               <= BOOT_IDLE;
         fc_opt_init                 <= '0;
         lc_init                     <= '0;
         mcu_rst_b                   <= '0;
@@ -115,6 +128,7 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     end
     else begin
         boot_fsm        <= boot_fsm_nxt;
+        boot_fsm_prev   <= (boot_fsm != boot_fsm_nxt) ? boot_fsm : boot_fsm_prev; // Capture where FSM came from
         fc_opt_init     <= fc_opt_init_nxt;
         lc_init         <= lc_init_nxt;
         mcu_rst_b       <= mcu_rst_b_nxt;
@@ -162,7 +176,15 @@ always_comb begin
             end
         end
         BOOT_MCU: begin
+            if (boot_fsm_prev == BOOT_RST_MCU) begin
+                boot_fsm_nxt = BOOT_WAIT_MCU_RST_REQ;
+            end
+            else begin 
+                boot_fsm_nxt = BOOT_WAIT_CLPA_GO;
+            end
             mcu_rst_b_nxt = 1'b1;
+        end
+        BOOT_WAIT_CLPA_GO: begin
             if(caliptra_boot_go) begin
                 boot_fsm_nxt = BOOT_CPTRA;
             end
@@ -185,8 +207,7 @@ always_comb begin
             // indication FW image has been loaded into MCU SRAM
             // visa the region_lock signal. Bring MCU out of reset
             if(min_mcu_rst_count_elapsed && mcu_sram_fw_exec_region_lock) begin
-                mcu_rst_b_nxt = 1'b1;
-                boot_fsm_nxt  = BOOT_RST_MCU;
+                boot_fsm_nxt  = BOOT_MCU;
             end
         end
         default: begin

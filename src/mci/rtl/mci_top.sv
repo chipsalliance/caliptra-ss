@@ -16,6 +16,12 @@ module mci_top
     import mci_reg_pkg::*;
     import mci_pkg::*;
     #(
+    
+    parameter AXI_ADDR_WIDTH = 32,
+    parameter AXI_DATA_WIDTH = 32,
+    parameter AXI_USER_WIDTH = 32,
+    parameter AXI_ID_WIDTH   = 8,
+
     parameter MCU_SRAM_SIZE_KB = 1024, // FIXME - write assertion ensuring this size 
                                       // is compatible with the MCU SRAM IF parameters
 
@@ -37,6 +43,8 @@ module mci_top
     input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_mcu_ifu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_clp_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_mcu_reset_access0_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_mcu_rset_access1_user,
 
     // SRAM ADHOC connections
     input logic mcu_sram_fw_exec_region_lock,
@@ -49,9 +57,18 @@ module mci_top
     output logic mci_error_fatal,
     output logic mci_error_non_fatal,
     
+    // Generic in/out
+    input  logic [63:0] mci_generic_input_wires,
+    output logic [63:0] mci_generic_output_wires,
+    
     // MCU interrupts
     output logic mcu_timer_int,
     output logic mci_intr,
+
+    // MCU Reset vector
+    input  logic [31:0] strap_mcu_reset_vector, // default reset vector
+    output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
+    input  logic mcu_no_rom_config,                // Determines boot sequencer boot flow
 
     // NMI Vector 
     output logic nmi_intr,
@@ -78,10 +95,6 @@ module mci_top
 
     );
 
-    localparam AXI_ADDR_WIDTH = s_axi_w_if.AW;
-    localparam AXI_DATA_WIDTH = s_axi_w_if.DW;
-    localparam AXI_USER_WIDTH = s_axi_w_if.UW;
-    localparam AXI_ID_WIDTH   = s_axi_w_if.IW;
     
     mci_reg__out_t mci_reg_hwif_out;
 
@@ -155,6 +168,10 @@ caliptra_prim_flop_2sync #(
 //This wrapper decodes that protocol, collapses the full-duplex protocol to
 // simplex, and issues requests to the MIC decode block
 mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
+    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH), 
+    .AXI_DATA_WIDTH(AXI_DATA_WIDTH), 
+    .AXI_ID_WIDTH(AXI_ID_WIDTH),
+    .AXI_USER_WIDTH(AXI_USER_WIDTH),
     .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
     .MBOX0_SIZE_KB (4),     // FIXME
     .MBOX1_SIZE_KB  (4)     // FIXME
@@ -210,6 +227,7 @@ mci_boot_seqr #(
     // SoC signals
     .mci_boot_seq_brkpoint,
     .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),
+    .mcu_no_rom_config,                // Determines boot sequencer boot flow
 
     // LCC Signals
     .lc_done,
@@ -320,6 +338,14 @@ mci_reg_top i_mci_reg_top (
     .t2_timeout_p,
     .t1_timeout,
     .t2_timeout,
+    
+    // Generic IN/OUT
+    .mci_generic_input_wires,
+    .mci_generic_output_wires,
+    
+    // MCU Reset vector
+    .strap_mcu_reset_vector, // default reset vector
+    .mcu_reset_vector,       // reset vector used by MCU
 
     // SS error signals
     .cptra_error_fatal,

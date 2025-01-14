@@ -41,6 +41,10 @@ module mci_reg_top
     input  logic t1_timeout_p,
     input  logic t2_timeout_p,
     
+    // Generic in/out
+    input  logic [63:0] mci_generic_input_wires,
+    output logic [63:0] mci_generic_output_wires,
+
     // SS error signals
     input logic cptra_error_fatal,
     input logic cptra_error_non_fatal,
@@ -52,6 +56,10 @@ module mci_reg_top
     // MCU interrupts
     output logic mcu_timer_int,
     output logic mci_intr,
+
+    // MCU Reset vector
+    input  logic [31:0] strap_mcu_reset_vector, // default reset vector
+    output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
 
     // NMI
     input  logic nmi_intr,
@@ -140,6 +148,18 @@ generate
     end
 endgenerate
 
+///////////////////////////////////////////////
+// GENERIC Wires        
+///////////////////////////////////////////////
+caliptra_prim_flop_2sync #(
+  .Width(64)
+) u_prim_flop_2sync_mcu_sram_fw_exec_region_lock (
+  .clk_i(clk),
+  .rst_ni(mci_rst_b),
+  .d_i(mci_generic_input_wires),
+  .q_o({mci_reg_hwif_in.GENERIC_INPUT_WIRES[1].wires.next, mci_reg_hwif_in.GENERIC_INPUT_WIRES[0].wires.next}));
+
+assign mci_generic_output_wires = {mci_reg_hwif_out.GENERIC_OUTPUT_WIRES[1].wires.value, mci_reg_hwif_out.GENERIC_OUTPUT_WIRES[0].wires.value};
 
 ///////////////////////////////////////////////
 // Error handling logic
@@ -165,8 +185,10 @@ assign mci_reg_hwif_in.mcu_rst_b = mcu_rst_b; // FIXME is this really required?
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
-assign mci_reg_hwif_in.cptra_req    = clp_req;
+//assign mci_reg_hwif_in.cptra_req    = clp_req; FIXME is this needed?
 assign mci_reg_hwif_in.mcu_req      = mcu_req;
+assign mci_reg_hwif_in.mcu_or_no_rom_config_req      = 1'b1; // FIXME
+
 
 
 assign mci_reg_hwif_in.CAPABILITIES = '0; // FIXME
@@ -175,9 +197,7 @@ assign mci_reg_hwif_in.HW_CONFIG = '0; // FIXME
 assign mci_reg_hwif_in.FLOW_STATUS = '0; // FIXME
 
 
-assign mci_reg_hwif_in.CALIPTRA_AXI_ID = '0; // FIXME
 assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE = '0; // FIXME
-assign mci_reg_hwif_in.GENERIC_INPUT_WIRES = '0; // FIXME
 assign mci_reg_hwif_in.FUSE_WR_DONE = '0; // FIXME
 assign mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG = '0; // FIXME
 assign mci_reg_hwif_in.STICKY_DATA_VAULT_CTRL = '0; // FIXME
@@ -300,6 +320,13 @@ always_comb begin
 end
 
 
+///////////////////////////////////////////////
+// MCI RESET Vector
+///////////////////////////////////////////////
+assign mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next = strap_mcu_reset_vector; 
+assign mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we = pwrgood_toggle_hint; // FIXME is there more logic needed for DMI or security? 
+
+assign mcu_reset_vector = mci_reg_hwif_out.MCU_RESET_VECTOR.vec.value;
 
 ///////////////////////////////////////////////
 // NMI Vector   

@@ -31,8 +31,9 @@ addrmap mci_reg {
     signal {activelow; async;} mci_pwrgood;
 
     //signal to indicate request origin
-    signal {} cptra_req;
+    signal {} cptra_req; // FIXME is this needed?
     signal {} mcu_req;
+    signal {} mcu_or_no_rom_config_req;
 
     //defined fields by access type
     field rw_ro_ro_hw {swwe = mcu_req; hw = r;}; //writes enabled only for MCU, hw readable
@@ -556,15 +557,13 @@ addrmap mci_reg {
                 [br]Caliptra Access: R0
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field { desc = "Request. Writable by MCU. Causes MCU reset to be asserted by MCI."; sw=rw; hw=r; hwclr=true; swwe=cptra_req; resetsignal=mci_rst_b; } mcu_req=1'b0;
+        field { desc = "Request. Writable by MCU. Causes MCU reset to be asserted by MCI."; sw=rw; hw=r; hwclr=true; swwe=mcu_or_no_rom_config_req; resetsignal=mci_rst_b; } mcu_req=1'b0;
+        // FIXME mcu_or_no_rom_config we need to privide a strap for allowed AXI users other than MCU that can access this bit.
     } RESET_REQUEST @0x100;
 // TODO finish desc for these
     reg {
         field { desc="fixme"; swwe = mcu_req; hw = r;} go=1'b0;
     } CALIPTRA_BOOT_GO;
-    reg {
-        field {sw=r; hw=w; } id;
-    } CALIPTRA_AXI_ID;
     reg {
         name = "Firmware SRAM Exec Region Size";
         desc = "Dynamic size assignment for the region of sram that contains executable instructions for MCU.";
@@ -582,7 +581,17 @@ addrmap mci_reg {
         field {desc = "NMI Vector"; hw = r; sw = rw; swwe = mcu_req;} vec[32] = 32'h0;
     } MCU_NMI_VECTOR;
 
-    // TODO reset_vector
+    reg {
+        name = "MCU Reset Vector";
+        desc = "32-bit register providing the reset vector for RISC-V do the initial fetch.
+                Default is determined by a HW strap strap_mcu_reset_vector, but may be modified by SW while in debug mode.
+                Bit [0] is ignored to enforce half-word alignment of address.
+                [br]Caliptra Access: R)
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+
+        field {desc = "NMI Vector"; hw = rw; we; sw = rw; swwe = mcu_or_no_rom_config_req;} vec[32] = 32'h0; // FIXME : is this the right access?
+    } MCU_RESET_VECTOR;
 
     // ----------------------------------------
     // ------------ AxUSER CONFIG -------------
