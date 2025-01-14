@@ -522,6 +522,8 @@ For conditional transitions, the LCC can also branch different states (RAW_UNLOC
 
 # Manufacturer Control Unit (MCU)
 
+MCU is another instance of VeeR EL2 core. The following features are enabled on MCU - iCache, dedicated DCCM, AXI interfaces with seperate AXI USER ID to ROM and MCI, bit manipulation extensions that we have for Caliptra core (Zba, Zbb, Zbc, Zbs) and PMP + SMEPMP with max PMP entries. Please see Caliptra subsystem integration spec for the configuration options available at subsystem level.
+
 # Manufacturer Control Interface (MCI)
 ## Overview
 The Manufacturer Control Interface (MCI) is a critical hardware block designed to supplement the Manufacturer Control Unit (MCU) within a System on Chip (SoC). The primary functions of the MCI include providing an SRAM bank, facilitating restricted communication through a mailbox from external entities, and managing a bank of Control/Status Registers (CSRs). Additionally, the MCI incorporates a Watchdog Timer and a Boot Sequencing Finite State Machine (FSM) to manage timing and control during the SoC boot sequence after power application. This boot sequence encompasses reset deassertion, initialization of the Fuse Controller, initialization of the Lifecycle Controller, and enabling the JTAG block for debugging and manufacturing processes.
@@ -637,7 +639,8 @@ MCI also generates error signals for its own internal blocks, specifically for M
 MCI also provides capability to store fuses required for Caliptra subsystem for Caliptra core's usage for production debug unlock feature. MCU will read the fuse controller for the production debug unlock hashes , write to the corresponding registers in the MCI block and lock the registers from being changed by MCU RT FW. Lock is done by writing to do a FUSE_WR_DONE (FIXME: Add specific register & bit names).
 
 ### MCU Timer
-**FIXME**
+RV compliant mtimer. **FIXME**
+
 # Subsystem Memory Map
 
 # Subsystem HW Security
