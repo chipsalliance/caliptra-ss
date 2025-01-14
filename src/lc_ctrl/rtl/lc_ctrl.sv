@@ -49,8 +49,8 @@ module lc_ctrl
   input  axi_struct_pkg::axi_rd_req_t                        axi_rd_req,
   output axi_struct_pkg::axi_rd_rsp_t                        axi_rd_rsp,
 
-  input  tlul_pkg::tl_h2d_t                          dmi_tl_i,
-  output tlul_pkg::tl_d2h_t                          dmi_tl_o,
+  // input  tlul_pkg::tl_h2d_t                          dmi_tl_i,
+  // output tlul_pkg::tl_d2h_t                          dmi_tl_o,
 
   // // AXI interface (device)
   // axi_if.w_sub                                       s_lc_axi_w_if,

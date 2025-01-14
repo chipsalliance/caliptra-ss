@@ -743,8 +743,8 @@ module caliptra_ss_top
 
 
     caliptra_top_tb_soc_bfm #(
-        .SKIP_BRINGUP(1),
-        .SKIP_FUSE_CTRL(0)
+        .SKIP_BRINGUP(1)/* ,
+        .SKIP_FUSE_CTRL(0)*/
     ) soc_bfm_inst (
         .core_clk        (core_clk        ),
 
@@ -2023,8 +2023,8 @@ module caliptra_ss_top
         .to_bfm_lc_flash_rma_req_o(to_bfm_lc_flash_rma_req_o),
 
         // TL-UL Interface
-        .lc_ctrl_dmi_tl_h2d(),
-        .lc_ctrl_dmi_tl_d2h(tlul_pkg::tl_d2h_t'(lc_ctrl_dmi_tl_d2h_tb)),
+        // .lc_ctrl_dmi_tl_h2d(),
+        // .lc_ctrl_dmi_tl_d2h(tlul_pkg::tl_d2h_t'(lc_ctrl_dmi_tl_d2h_tb)),
 
         // Scan Interface
         .lc_ctrl_scan_rst_ni(lc_ctrl_scan_rst_ni_tb),
@@ -2078,8 +2078,8 @@ module caliptra_ss_top
             .axi_rd_req(lc_axi_rd_req),
             .axi_rd_rsp(lc_axi_rd_rsp),
 
-            .dmi_tl_i(tlul_pkg::tl_h2d_t'(lc_ctrl_dmi_tl_h2d_tb)),
-            .dmi_tl_o(),
+            // .dmi_tl_i(tlul_pkg::tl_h2d_t'(lc_ctrl_dmi_tl_h2d_tb)),
+            // .dmi_tl_o(),
             .jtag_i('0),
             .jtag_o(),
             
