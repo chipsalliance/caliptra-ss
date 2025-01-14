@@ -105,7 +105,7 @@ module lc_ctrl_bfm
     always@(posedge clk or negedge reset_n) begin
         if (!reset_n)
             Allow_RMA_on_PPD <= 0;
-        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0048 && !power_and_reset_indication)
+        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0448 && !power_and_reset_indication)
             Allow_RMA_on_PPD <= ~Allow_RMA_on_PPD;
     end
     //-------------------------------------------------------------------
@@ -116,7 +116,7 @@ module lc_ctrl_bfm
     always@(posedge clk or negedge reset_n) begin
         if (!reset_n)
             power_and_reset_indication <= 0;
-        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0044 && !power_and_reset_indication)
+        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0444 && !power_and_reset_indication)
             power_and_reset_indication <= 1;
         else
             power_and_reset_indication <= 0;
