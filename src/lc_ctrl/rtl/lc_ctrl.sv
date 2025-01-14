@@ -120,15 +120,15 @@ module lc_ctrl
   // Life cycle broadcast outputs (all of them are registered).
   // SEC_CM: INTERSIG.MUBI
   output lc_tx_t                                     lc_dft_en_o,
-  output lc_tx_t                                     lc_nvm_debug_en_o,
+  // output lc_tx_t                                     lc_nvm_debug_en_o,
   output lc_tx_t                                     lc_hw_debug_en_o,
   output lc_tx_t                                     lc_cpu_en_o,
-  output lc_tx_t                                     lc_creator_seed_sw_rw_en_o,
-  output lc_tx_t                                     lc_owner_seed_sw_rw_en_o,
-  output lc_tx_t                                     lc_iso_part_sw_rd_en_o,
-  output lc_tx_t                                     lc_iso_part_sw_wr_en_o,
-  output lc_tx_t                                     lc_seed_hw_rd_en_o,
-  output lc_tx_t                                     lc_keymgr_en_o,
+  output lc_tx_t                                     lc_creator_seed_sw_rw_en_o, // TODO: remove them when they are removed from otp ctrl
+  output lc_tx_t                                     lc_owner_seed_sw_rw_en_o,  // TODO: remove them when they are removed from otp ctrl
+  // output lc_tx_t                                     lc_iso_part_sw_rd_en_o,
+  // output lc_tx_t                                     lc_iso_part_sw_wr_en_o,
+  output lc_tx_t                                     lc_seed_hw_rd_en_o,  // TODO: remove them when they are removed from otp ctrl
+  // output lc_tx_t                                     lc_keymgr_en_o,
   output lc_tx_t                                     lc_escalate_en_o,
   output lc_tx_t                                     lc_check_byp_en_o,
   // Request and feedback to/from clock manager and AST.
@@ -138,12 +138,12 @@ module lc_ctrl
   input  lc_tx_t                                     lc_clk_byp_ack_i,
   // Request and feedback to/from flash controller.
   // The ack is synced to the lc clock domain using prim_lc_sync.
-  output lc_flash_rma_seed_t                         lc_flash_rma_seed_o,
+  // output lc_flash_rma_seed_t                         lc_flash_rma_seed_o,
   // SEC_CM: INTERSIG.MUBI
-  output lc_tx_t                                     lc_flash_rma_req_o,
-  input  lc_tx_t [NumRmaAckSigs-1:0]                 lc_flash_rma_ack_i,
+  // output lc_tx_t                                     lc_flash_rma_req_o,
+  // input  lc_tx_t [NumRmaAckSigs-1:0]                 lc_flash_rma_ack_i,
   // State group diversification value for keymgr.
-  output lc_keymgr_div_t                             lc_keymgr_div_o,
+  // output lc_keymgr_div_t                             lc_keymgr_div_o,
   // Hardware config input, needed for the DEVICE_ID field.
   input  otp_ctrl_pkg::otp_device_id_t               otp_device_id_i,
   // Hardware config input, needed for the MANUF_STATE field.
@@ -151,6 +151,17 @@ module lc_ctrl
   // Hardware revision output (static)
   output lc_hw_rev_t                                 hw_rev_o
 );
+
+  // Short-cut assignments since Caliptra-SS does not use this ports
+  lc_tx_t                                     lc_nvm_debug_en_o;
+  lc_tx_t                                     lc_iso_part_sw_rd_en_o;
+  lc_tx_t                                     lc_iso_part_sw_wr_en_o;
+  lc_tx_t                                     lc_keymgr_en_o;
+  lc_flash_rma_seed_t                         lc_flash_rma_seed_o;
+  lc_keymgr_div_t                             lc_keymgr_div_o;
+  lc_tx_t                                     lc_flash_rma_req_o;
+  lc_tx_t[NumRmaAckSigs-1:0]                  lc_flash_rma_ack_i;
+  assign lc_flash_rma_ack_i = (lc_tx_test_true_strict(lc_flash_rma_req_o)) ? {NumRmaAckSigs{lc_ctrl_pkg::On}} : {NumRmaAckSigs{lc_ctrl_pkg::Off}};
 
   import caliptra_prim_mubi_pkg::mubi8_t;
   import caliptra_prim_mubi_pkg::MuBi8False;
