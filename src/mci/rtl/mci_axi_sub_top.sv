@@ -40,6 +40,12 @@ module mci_axi_sub_top
     // MCU SRAM Interface
     cif_if.request  mcu_sram_req_if,
 
+    // MCU SRAM Interface
+    cif_if.request  mci_mbox0_req_if,
+
+    // MCU SRAM Interface
+    cif_if.request  mci_mbox1_req_if,
+
 
     // Privileged requests 
     output logic mcu_lsu_req,
@@ -58,10 +64,10 @@ module mci_axi_sub_top
 
     );
 
-localparam AXI_ADDR_WIDTH = s_axi_w_if.AW;
-localparam AXI_DATA_WIDTH = s_axi_w_if.DW;
-localparam AXI_USER_WIDTH = s_axi_w_if.UW;
-localparam AXI_ID_WIDTH   = s_axi_w_if.IW;
+localparam AXI_ADDR_WIDTH = 32;//s_axi_w_if.AW;
+localparam AXI_DATA_WIDTH = 32;//s_axi_w_if.DW;
+localparam AXI_USER_WIDTH = 32;//s_axi_w_if.UW;
+localparam AXI_ID_WIDTH   = 8;//s_axi_w_if.IW;
 
 // Interface between axi_sub and mci decoder
 cif_if #(
@@ -131,7 +137,13 @@ mci_axi_sub_decode #(
 
     //MCU SRAM inf
     .mcu_sram_req_if,
-    
+
+    //MCI Mbox0
+    .mci_mbox0_req_if,
+
+    //MCI Mbox1
+    .mci_mbox1_req_if,
+
     // Privileged requests 
     .mcu_lsu_req,
     .mcu_ifu_req,

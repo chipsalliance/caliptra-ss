@@ -43,8 +43,6 @@ module mci_axi_sub_decode
     )
     (
 
-
-
     //SOC inf
     cif_if.response  soc_resp_if,
 
@@ -53,6 +51,12 @@ module mci_axi_sub_decode
 
     //MCU SRAM inf
     cif_if.request  mcu_sram_req_if,
+
+    //MCI Mbox0 inf
+    cif_if.request  mci_mbox0_req_if,
+
+    //MCI Mbox1 inf
+    cif_if.request  mci_mbox1_req_if,
 
     // Privileged requests 
     output logic mcu_lsu_req,
@@ -71,6 +75,8 @@ module mci_axi_sub_decode
 // GRANT signals
 logic soc_mcu_sram_gnt;
 logic soc_mci_reg_gnt;
+logic soc_mci_mbox0_gnt;
+logic soc_mci_mbox1_gnt;
 
 
 // MISC signals
@@ -86,6 +92,12 @@ always_comb soc_mcu_sram_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr insi
 // SoC request to MCI Reg
 always_comb soc_mci_reg_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MCI_REG_START_ADDR:MCI_REG_END_ADDR]}));
 
+// SoC request to MCI Mbox0
+always_comb soc_mci_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX0_START_ADDR:MBOX0_END_ADDR]}));
+
+// SoC request to MCI Mbox1
+always_comb soc_mci_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX1_START_ADDR:MBOX1_END_ADDR]}));
+
 
 ///////////////////////////////////////////////////////////
 // Drive DV to appropriate destination
@@ -96,6 +108,12 @@ always_comb mcu_sram_req_if.dv = soc_mcu_sram_gnt;
 
 // MCI REG 
 always_comb mci_reg_req_if.dv = soc_mci_reg_gnt;
+
+// MCI Mbox0
+always_comb mci_mbox0_req_if.dv = soc_mci_mbox0_gnt;
+
+// MCI Mbox1
+always_comb mci_mbox1_req_if.dv = soc_mci_mbox1_gnt;
 
 
 ///////////////////////////////////////////////////////////
@@ -108,7 +126,11 @@ always_comb mcu_sram_req_if.req_data = soc_resp_if.req_data;
 // MCI REG 
 always_comb mci_reg_req_if.req_data = soc_resp_if.req_data;
 
+// MCI Mbox0
+always_comb mci_mbox0_req_if.req_data = soc_resp_if.req_data;
 
+// MCI MBOX1
+always_comb mci_mbox1_req_if.req_data = soc_resp_if.req_data;
 
 
 ///////////////////////////////////////////////////////////
@@ -117,6 +139,8 @@ always_comb mci_reg_req_if.req_data = soc_resp_if.req_data;
 
 assign soc_resp_if.rdata =  soc_mcu_sram_gnt    ? mcu_sram_req_if.rdata : 
                             soc_mci_reg_gnt     ? mci_reg_req_if.rdata  :
+                            soc_mci_mbox0_gnt   ? mci_mbox0_req_if.rdata  :
+                            soc_mci_mbox1_gnt   ? mci_mbox1_req_if.rdata  :
                             '0;
 
 
@@ -127,7 +151,9 @@ assign soc_resp_if.rdata =  soc_mcu_sram_gnt    ? mcu_sram_req_if.rdata :
 ///////////////////////////////////////////////////////////
 
 always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sram_req_if.hold)) |
-                                (soc_mci_reg_gnt & (~soc_mci_reg_gnt | mci_reg_req_if.hold));
+                                (soc_mci_reg_gnt & (~soc_mci_reg_gnt | mci_reg_req_if.hold)) |
+                                (soc_mci_mbox0_gnt & (~soc_mci_mbox0_gnt | mci_mbox0_req_if.hold)) |
+                                (soc_mci_mbox1_gnt & (~soc_mci_mbox1_gnt | mci_mbox1_req_if.hold)) ;
 
 
 
@@ -139,8 +165,10 @@ always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sra
 always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_gnt | soc_mci_reg_gnt);
 
 // Error for SOC
-always_comb soc_resp_if.error = (soc_mcu_sram_gnt & mcu_sram_req_if.error) |
-                                (soc_mci_reg_gnt  & mci_reg_req_if.error)  |
+always_comb soc_resp_if.error = (soc_mcu_sram_gnt  & mcu_sram_req_if.error)  |
+                                (soc_mci_reg_gnt   & mci_reg_req_if.error)   |
+                                (soc_mci_mbox0_gnt & mci_mbox0_req_if.error) |
+                                (soc_mci_mbox1_gnt & mci_mbox1_req_if.error) |
                                 soc_req_miss;
 
 ///////////////////////////////////////////////

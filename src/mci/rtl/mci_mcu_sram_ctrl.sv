@@ -71,9 +71,9 @@ localparam BITS_IN_BYTE = 8;
 localparam KB = 1024; // Bytes in KB
 
 localparam MCU_SRAM_SIZE_BYTES = MCU_SRAM_SIZE_KB * KB;
-localparam MCU_SRAM_DATA_W = mci_mcu_sram_req_if.DATA_WIDTH;
+localparam MCU_SRAM_DATA_W = 32;//mci_mcu_sram_req_if.DATA_WIDTH; FIXME
 localparam MCU_SRAM_DATA_W_BYTES = MCU_SRAM_DATA_W / BITS_IN_BYTE;
-localparam MCU_SRAM_ECC_DATA_W = mci_mcu_sram_req_if.ECC_WIDTH;
+localparam MCU_SRAM_ECC_DATA_W = 7;//mci_mcu_sram_req_if.ECC_WIDTH; FIXME
 localparam MCU_SRAM_DATA_AND_ECC_W = MCU_SRAM_DATA_W + MCU_SRAM_ECC_DATA_W;
 localparam MCU_SRAM_DEPTH = MCU_SRAM_SIZE_BYTES / MCU_SRAM_DATA_W_BYTES;
 localparam MCU_SRAM_ADDR_W = $clog2(MCU_SRAM_DEPTH);
