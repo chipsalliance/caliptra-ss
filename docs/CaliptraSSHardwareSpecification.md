@@ -529,7 +529,7 @@ MCU is another instance of VeeR EL2 core. The following features are enabled on 
 The Manufacturer Control Interface (MCI) is a critical hardware block designed to supplement the Manufacturer Control Unit (MCU) within a System on Chip (SoC). The primary functions of the MCI include providing an SRAM bank, facilitating restricted communication through a mailbox from external entities, and managing a bank of Control/Status Registers (CSRs). Additionally, the MCI incorporates a Watchdog Timer and a Boot Sequencing Finite State Machine (FSM) to manage timing and control during the SoC boot sequence after power application. This boot sequence encompasses reset deassertion, initialization of the Fuse Controller, initialization of the Lifecycle Controller, and enabling the JTAG block for debugging and manufacturing processes.
 
 The following diagram illustrates the internal components of the MCI.
-![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/MCI-block-diagram.png)
+![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-block-diagram.png)
 
 ## Sub-block Descriptions
 ### Control/Status Registers (CSRs)
@@ -629,10 +629,10 @@ SW access to all interrupt registers are restricted to MCU.
 ### MCI Error handling
 
 MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any error signals that fuse controller, i3c etc.) and provides subsystem level FATAL and NON FATAL error signals. For all the error information being collected from other subystem modules, MCI also provides masking capability for MCU FW to program/enable based on SOC specific architectures to provide maximux flexibility.
-![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/MCI-error-agg.png)
+![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-error-agg.png)
 
 MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
-![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/MCI-internal-error.png)
+![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-internal-error.png)
 
 
 ### MCI Fuse Storage Support
