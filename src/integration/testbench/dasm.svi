@@ -20,7 +20,8 @@
 `define MCU_RV_NUM_THREADS 1
 `endif
 
-string           abi_reg[32]; // ABI register names
+// string           abi_reg[32]; // ABI register names
+// This string is removed since it is also defined under caliptra_ss_top
 
 bit[31:0] [31:0] gpr[`MCU_RV_NUM_THREADS];
 

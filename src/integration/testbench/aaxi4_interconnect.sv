@@ -22,6 +22,7 @@ import aaxi_pkg::*;
 import aaxi_pkg_xactor::*;
 import aaxi_pkg_test::*;
 import aaxi_pll::*;
+import aaxi_pkg_caliptra_test::*;
 
 // AXI Reset, Deassert=H, Assert=L
 // bit         rst_l;
@@ -232,6 +233,36 @@ initial begin
         slave[4].cfg_info.total_outstanding_depth = 4;
         slave[4].cfg_info.id_outstanding_depth = 4;
 
+        //-- Fuse Controller Core AXI 
+        slave[5].cfg_info.passive_mode = 1; 
+        slave[5].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[5].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[5].cfg_info.base_address[0] = 64'h7000_0000;
+        slave[5].cfg_info.limit_address[0] = 64'h7000_01FF;
+        slave[5].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
+        slave[5].cfg_info.total_outstanding_depth = 4;
+        slave[5].cfg_info.id_outstanding_depth = 4;
+
+        //-- Fuse Controller Prim AXI 
+        slave[6].cfg_info.passive_mode = 1; 
+        slave[6].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[6].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[6].cfg_info.base_address[0] = 64'h7000_0200;
+        slave[6].cfg_info.limit_address[0] = 64'h7000_03FF;
+        slave[6].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
+        slave[6].cfg_info.total_outstanding_depth = 4;
+        slave[6].cfg_info.id_outstanding_depth = 4;
+
+        //-- Life-cycle Controller Core AXI 
+        slave[7].cfg_info.passive_mode = 1; 
+        slave[7].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[7].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[7].cfg_info.base_address[0] = 64'h7000_0400;
+        slave[7].cfg_info.limit_address[0] = 64'h7000_05FF;
+        slave[7].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
+        slave[7].cfg_info.total_outstanding_depth = 4;
+        slave[7].cfg_info.id_outstanding_depth = 4;
+
 //#1;
 //do not sure what feature of #1
     // connect devices to the Interconnect
@@ -288,7 +319,8 @@ initial begin
 `endif
     end
 
-    task automatic start_test(aaxi_test_base test);
+    //task automatic start_test(aaxi_test_base test);
+    task automatic start_test(aaxi_test_caliptra_ss test);
         aaxi_pkg_test::aaxi_test_select(test.test_name);
         test.master0= master[0];
         test.master1= master[1];
@@ -307,12 +339,19 @@ initial begin
         slave[2].set("mem_uninitialized_value", 0);
         slave[3].set("mem_uninitialized_value", 0);
         slave[4].set("mem_uninitialized_value", 0);
+        slave[5].set("mem_uninitialized_value", 0);
+        slave[6].set("mem_uninitialized_value", 0);
+        slave[7].set("mem_uninitialized_value", 0);
+
 
         test.slave0= slave[0];
         test.slave1= slave[1];
         test.slave2= slave[2];
         test.slave3= slave[3];
         test.slave4= slave[4];
+        test.slave5= slave[5];
+        test.slave6= slave[6];
+        test.slave6= slave[7];
 
         for (int i=0; i< AAXI_INTC_SLAVE_CNT; i++)
             test.slv_bfms.push_back(slave[i]);

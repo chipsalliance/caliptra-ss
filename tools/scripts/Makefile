@@ -71,6 +71,8 @@ CALIPTRA_RTL = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/rtl
 # 		  wdt
 # COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_SS)/src/integration/test_suites/libs/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
+		$(RTL_DIR)/fuse_ctrl_address_map.h \
+		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
