@@ -17,6 +17,7 @@ schema_version: 2.4.0
 requires:
   - caliptra_prim
   - axi_sub
+  - soc_ifc_top
   - mci_pkg
   # for beh_lib with rvecc_encode/decode
   - el2_veer_pkg
@@ -32,7 +33,6 @@ targets:
       - $COMPILE_ROOT/rtl/mci_mcu_sram_if.sv
       - $COMPILE_ROOT/rtl/cif_if.sv
       - $COMPILE_ROOT/rtl/mci_wdt_top.sv
-      - $COMPILE_ROOT/rtl/wdt.sv # FIXME REMOVE
       - $COMPILE_ROOT/rtl/mci_reg_top.sv
       - $COMPILE_ROOT/rtl/mci_reg.sv
     tops: [mci_top]
