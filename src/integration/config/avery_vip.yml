@@ -1,0 +1,48 @@
+provides: [avery_vip]
+schema_version: 2.4.0
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/vip
+      #-- General
+      - /cad/tools/mentor/avery/2024.3/avery_sim
+      - /cad/tools/mentor/avery/2024.3/avery_sim/src
+      - /cad/tools/mentor/avery/2024.3/avery_sim/src.IEEE
+      - /cad/tools/mentor/avery/2024.3/avery_pli
+      #-- AXI Interconnect
+      - /cad/tools/mentor/avery/2024.3/axixactor/src.axi.VCS
+      - /cad/tools/mentor/avery/2024.3/axixactor/src.axi
+      - /cad/tools/mentor/avery/2024.3/axixactor/checker/BP063-BU-01000-r0p1-00rel0/sva
+      - /cad/tools/mentor/avery/2024.3/axixactor/testbench
+      #-- I3C VIP
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/src
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/src.i3c
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/src.VCS
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/src.i3c
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/testsuite.i3c/examples
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/testsuite.i3c/examples.uvm
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/testsuite.i3c/dut
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/testsuite.i3c/dut1_1
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/testsuite.i3c/dut_slave
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/testsuite.i3c/dut_master
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/testsuite.i3c/dut_master_stby
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/testbench
+    files:
+      #-- General
+      - /cad/tools/mentor/avery/2024.3/avery_sim/src/avery_pkg.sv
+      - /cad/tools/mentor/avery/2024.3/avery_sim/src/avery_pkg_test.sv
+      #-- AXI Interconnect
+      - /cad/tools/mentor/avery/2024.3/axixactor/src.axi/aaxi_pkg.sv
+      - /cad/tools/mentor/avery/2024.3/axixactor/src.axi/aaxi_pkg_xactor.sv
+      - /cad/tools/mentor/avery/2024.3/axixactor/src.axi/aaxi_class_pll.sv
+      - /cad/tools/mentor/avery/2024.3/axixactor/src.axi/aaxi_pkg_test.sv
+      - /cad/tools/mentor/avery/2024.3/axixactor/src.axi/aaxi_intf.sv
+      #-- I3C VIP
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/src/ai2c_pkg.sv
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/src.i3c/ai3c_pkg.sv
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/src/ai2c_intf.sv
+      - /cad/tools/mentor/avery/2024.3/i3cxactor/src.i3c/ai3c_intf.sv
+    tops:
+      #-- NOTE: include this in the top level testbench
+      - ai3c_tests_bench 

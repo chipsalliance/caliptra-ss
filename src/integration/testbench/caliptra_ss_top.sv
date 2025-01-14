@@ -32,22 +32,15 @@ module caliptra_ss_top
     input bit [31:0]            mem_signature_end,
     input bit [31:0]            mem_mailbox
     `endif // VERILATOR
-    // I3C Interface
-`ifdef VERILATOR
-    input  logic scl_i,
-    input  logic sda_i,
-    output logic scl_o,
-    output logic sda_o,
-    output logic sel_od_pp_o
-`else
-    inout  wire  i3c_scl_io,
-    inout  wire  i3c_sda_io
-`endif
 );
     import axi_pkg::*;
     import soc_ifc_pkg::*;
     import caliptra_top_tb_pkg::*;
+    import ai2c_pkg::*;
+    import ai3c_pkg::*;
+    import avery_pkg_test::*;
 
+// Time formatting for %t in display tasks
 `ifndef VERILATOR
     // Time formatting for %t in display tasks
     // -9 = ns units
@@ -109,21 +102,6 @@ module caliptra_ss_top
     logic        [63:0]         sb_hwdata       ;
     logic                       sb_hready       ;
     logic                       sb_hresp        ;
-
-//    `ifdef I3C_USE_AHB
-//        logic        [31:0]         i3c_haddr;
-//        logic        [2:0]          i3c_hburst;
-//        logic                       i3c_hmastlock;
-//        logic        [3:0]          i3c_hprot;
-//        logic        [2:0]          i3c_hsize;
-//        logic        [1:0]          i3c_htrans;
-//        logic                       i3c_hwrite;
-//        logic        [63:0]         i3c_hrdata;
-//        logic        [63:0]         i3c_hwdata;
-//        logic                       i3c_hready;
-//        logic                       i3c_hreadyout;
-//        logic                       i3c_hresp;
-//    `endif
 
     logic        [31:0]         trace_rv_i_insn_ip;
     logic        [31:0]         trace_rv_i_address_ip;
@@ -374,45 +352,6 @@ module caliptra_ss_top
     wire                        lmem_axi_bready;
 `endif
 
-//    //-------------------------- I3C AXI signals--------------------------
-//    // AXI Write Channels
-//        wire                             i3c_axi_awvalid;
-//        wire                             i3c_axi_awready;
-//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_awid;
-//        wire [31:0]                      i3c_axi_awaddr;
-//        wire [2:0]                       i3c_axi_awsize;
-//        wire [2:0]                       i3c_axi_awprot;
-//        wire [7:0]                       i3c_axi_awlen;
-//        wire [1:0]                       i3c_axi_awburst;
-//
-//
-//        wire                             i3c_axi_wvalid;
-//        wire                             i3c_axi_wready;
-//        wire [63:0]                      i3c_axi_wdata;
-//        wire [7:0]                       i3c_axi_wstrb;
-//        wire                             i3c_axi_wlast;
-//
-//        wire                             i3c_axi_bvalid;
-//        wire                             i3c_axi_bready;
-//        wire [1:0]                       i3c_axi_bresp;
-//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_bid;
-//
-//        // AXI Read Channels
-//        wire                             i3c_axi_arvalid;
-//        wire                             i3c_axi_arready;
-//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_arid;
-//        wire [31:0]                      i3c_axi_araddr;
-//        wire [2:0]                       i3c_axi_arsize;
-//        wire [2:0]                       i3c_axi_arprot;
-//        wire [7:0]                       i3c_axi_arlen;
-//        wire [1:0]                       i3c_axi_arburst;
-//
-//        wire                             i3c_axi_rvalid;
-//        wire                             i3c_axi_rready;
-//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_rid;
-//        wire [63:0]                      i3c_axi_rdata;
-//        wire [1:0]                       i3c_axi_rresp;
-//        wire                             i3c_axi_rlast;
 
     string                      abi_reg[32]; // ABI register names
     css_mcu0_el2_mem_if         css_mcu0_el2_mem_export ();
@@ -430,7 +369,6 @@ module caliptra_ss_top
 
     assign mailbox_write    = lmem.awvalid && (lmem.awaddr == mem_mailbox) && rst_l;
     assign mailbox_data     = lmem.wdata;
-
     assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
 
     parameter MAX_CYCLES = 200_000;
@@ -514,6 +452,7 @@ module caliptra_ss_top
                 $display("* TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
+                #500us;
                 $finish;
             end
             else if(mailbox_data[7:0] == 8'h1) begin
@@ -620,19 +559,16 @@ module caliptra_ss_top
         preload_css_mcu0_dccm();
         preload_iccm();
 
-// `ifndef VERILATOR
-//         // if($test$plusargs("dumpon")) $dumpvars;
-//         // forever  ACLK     = #5 ~ACLK;
-// `endif
 
     end
 
+    // Clock generation
     initial  begin
         core_clk = 0;
-        forever  core_clk = #5 ~core_clk;
+        forever  core_clk = #(0.5) ~core_clk; // 1GHz
     end
 
-    assign rst_l = cycleCnt > 5 ? 1'b1 : 1'b0;
+    assign rst_l   = cycleCnt > 5 ? 1'b1 : 1'b0;
     assign porst_l = cycleCnt > 2;
 
    //=========================================================================
@@ -731,8 +667,6 @@ module caliptra_ss_top
     logic assert_rst_flag_from_service;
     logic deassert_rst_flag_from_service;
 
-
-
     caliptra_top_tb_soc_bfm #(
         .SKIP_BRINGUP(1)
     ) soc_bfm_inst (
@@ -763,7 +697,7 @@ module caliptra_ss_top
 
         .cptra_error_fatal(cptra_error_fatal),
         .cptra_error_non_fatal(cptra_error_non_fatal),
-        
+
         //Interrupt flags
         .int_flag(int_flag),
         .cycleCnt_smpl_en(cycleCnt_smpl_en),
@@ -774,7 +708,7 @@ module caliptra_ss_top
         .deassert_rst_flag_from_service(deassert_rst_flag_from_service)
 
     );
-        
+
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag0"),
@@ -791,7 +725,7 @@ module caliptra_ss_top
     );
 
     //=========================================================================-
-    // DUT instance
+    // Caliptra Instance
     //=========================================================================-
     caliptra_top caliptra_top_dut (
         .cptra_pwrgood              (cptra_pwrgood),
@@ -807,7 +741,7 @@ module caliptra_ss_top
         .jtag_trst_n(cptra_jtag_trst_n),
         .jtag_tdo   (cptra_jtag_tdo   ),
         .jtag_tdoEn (cptra_jtag_tdoEn ),
-        
+
         //SoC AXI Interface
         .s_axi_w_if(s_axi_if.w_sub),
         .s_axi_r_if(s_axi_if.r_sub),
@@ -827,7 +761,7 @@ module caliptra_ss_top
         .mbox_sram_addr(mbox_sram_addr),
         .mbox_sram_wdata(mbox_sram_wdata),
         .mbox_sram_rdata(mbox_sram_rdata),
-            
+
         .imem_cs(imem_cs),
         .imem_addr(imem_addr),
         .imem_rdata(imem_rdata),
@@ -946,26 +880,6 @@ module caliptra_ss_top
 
     );
 
-//        // Fake "MCU" SRAM block
-//        caliptra_axi_sram #(
-//            .AW(AXI_SRAM_ADDR_WIDTH),
-//            .DW(CPTRA_AXI_DMA_DATA_WIDTH),
-//            .UW(CPTRA_AXI_DMA_USER_WIDTH),
-//            .IW(CPTRA_AXI_DMA_ID_WIDTH + 3),
-//            .EX_EN(0)
-//        ) i_axi_sram (
-//            .clk(core_clk),
-//            .rst_n(cptra_rst_b),
-//
-//            // AXI INF
-//            .s_axi_w_if(axi_sram_if.w_sub),
-//            .s_axi_r_if(axi_sram_if.r_sub)
-//        );
-//        `ifdef VERILATOR
-//        initial i_axi_sram.i_sram.ram = '{default:'{default:8'h00}};
-//        `else
-//        initial i_axi_sram.i_sram.ram = '{default:8'h00};
-//        `endif
 
     caliptra_top_sva sva();
 
@@ -973,6 +887,7 @@ module caliptra_ss_top
 
     logic s_axi_if_rd_is_upper_dw_latched;
     logic s_axi_if_wr_is_upper_dw_latched;
+
     // AXI Interconnect connections
     assign s_axi_if.awvalid                      = axi_interconnect.sintf_arr[3].AWVALID;
     assign s_axi_if.awaddr                       = axi_interconnect.sintf_arr[3].AWADDR;
@@ -1208,8 +1123,9 @@ module caliptra_ss_top
     logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_awid_req_r [pt.LSU_BUS_TAG];
     assign axi_interconnect.mintf_arr[0].ARID[pt.LSU_BUS_TAG-1:0] = pt.LSU_BUS_TAG'(0);
     assign axi_interconnect.mintf_arr[0].AWID[pt.LSU_BUS_TAG-1:0] = pt.LSU_BUS_TAG'(0);
+    
     //=========================================================================-
-    // RTL instance
+    // RISCV MCU Top instance
     //=========================================================================-
     mcu_top rvtop_wrapper (
         .rst_l                  ( rst_l         ),
@@ -1596,11 +1512,60 @@ module caliptra_ss_top
     //=========================================================================-
     // I3C-Core Instance
     //=========================================================================-
+
+    // --- I3C env and interface ---
+    ai3c_env i3c_env0;
+    wand  SCL;
+    wand  SDA;
+
+    // --- Avery I3C master ---
+    ai3c_device#(`AI3C_LANE_NUM) master0;
+    ai3c_intf#(`AI3C_LANE_NUM) master0_intf(SDA, SCL);
+
+    // // // --- Avery I3C slave ---
+    // ai3c_device#(`AI3C_LANE_NUM) slaves[$];
+    // ai3c_device#(`AI3C_LANE_NUM) slave;
+    // ai3c_intf#(`AI3C_LANE_NUM) slave_intf(i3c_sda_io, i3c_scl_io);
+    
+    // --- AXI interface for I3C ---
     logic i3c_axi_rd_is_upper_dw_latched; // FIXME
     logic i3c_axi_wr_is_upper_dw_latched; // FIXME
     logic [31:0] i3c_axi_rdata_32; // FIXME
     logic [31:0] i3c_axi_wdata_32; // FIXME
     logic [3:0]  i3c_axi_wstrb_4; // FIXME
+    wire sel_od_pp_o;
+
+    initial begin
+
+        // --- Avery I3C slave ---
+        // slave = new("slave", , AI3C_SLAVE, slave_intf);
+        // slave.log.enable_bus_tracker = 1;
+        // slave.cfg_info.basic_mode();
+        // slave.set("static_addr", 7'b010_0001);
+        // slaves.push_back(slave);
+        // i3c_env0.add_slave(slaves[0]);
+        // slaves[0].set("start_bfm");
+        
+        // --- Avery I3C master ---
+        master0 = new("master0", , AI3C_MASTER, master0_intf);
+        master0.cfg_info.is_main_master = 1;
+        master0.log.enable_bus_tracker  = 1;
+        master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
+        master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
+        
+        // --- I3C env ---
+        i3c_env0 = new("i3c_env0");
+        i3c_env0.add_master(master0);
+
+        #100us;  // system boot delay
+        master0.set("start_bfm");
+        
+        // run test for i3c
+        ai3c_run_test("ai3ct_ext_basic", i3c_env0); 
+
+    end
+
+    // ------------------- I3C Wrapper (core) -------------------
 
     i3c_wrapper #(
 `ifdef I3C_USE_AHB
@@ -1665,16 +1630,21 @@ module caliptra_ss_top
         .bresp_o    (axi_interconnect.sintf_arr[4].BRESP),
         .bid_o      (axi_interconnect.sintf_arr[4].BID),
 `endif
-`ifdef VERILATOR
-        .scl_i(scl_i),
-        .sda_i(sda_i),
-        .scl_o(scl_o),
-        .sda_o(sda_o),
-        .sel_od_pp_o(sel_od_pp_o)
+`ifdef DIGITAL_IO_I3C
+        .scl_i(master0_intf.scl_and),
+        .sda_i(master0_intf.sda_and),
+        .scl_o(master0_intf.scl_and),
+        .sda_o(master0_intf.sda_and),
+        .sel_od_pp_o(sel_od_pp_o),
 `else
         .i3c_scl_io(i3c_scl_io),
-        .i3c_sda_io(i3c_sda_io)
+        .i3c_sda_io(i3c_sda_io),
 `endif
+        .recovery_payload_available_o(),
+        .recovery_image_activated_o(),
+        .peripheral_reset_o(),
+        .peripheral_reset_done_i(1'b1),
+        .escalated_reset_o()
     );
 
     // FIXME data width conversion hack
@@ -1864,9 +1834,6 @@ endtask
 `define MCU_DRAM(bk) css_mcu0_dccm_enable.dccm_loop[bk].dccm.dccm_bank.ram_core
 `define MCU_IRAM(bk) Gen_iccm_enable.iccm_loop[bk].iccm.iccm_bank.ram_core
 `endif
-
-
-
 
 
 task slam_iccm_ram( input[31:0] addr, input[38:0] data);
@@ -2623,3 +2590,8 @@ end : Gen_iccm_enable
 /* verilator lint_on CASEINCOMPLETE */
 
 endmodule
+
+// --- Avery I3C Test Case Bench ---
+// This is the top level module for the Avery I3C test case bench.
+// it triggers i3c test cases.
+`include "ai3c_tests_bench.sv"
