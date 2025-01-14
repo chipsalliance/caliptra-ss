@@ -1998,6 +1998,7 @@ module caliptra_ss_top
         .fake_reset(fake_reset),
         .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
 
+
         // Scan Interface
         .lc_ctrl_scan_rst_ni(lc_ctrl_scan_rst_ni_tb),
         .lc_ctrl_scanmode_i(),
