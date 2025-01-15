@@ -41,17 +41,19 @@ module otp_ctrl
 
   // input  tlul_pkg::tl_h2d_t                          prim_tl_i,
   // output tlul_pkg::tl_d2h_t                          prim_tl_o,
-  input axi_struct_pkg::axi_wr_req_t                  prim_axi_wr_req,
-  output axi_struct_pkg::axi_wr_rsp_t                 prim_axi_wr_rsp,
-  input axi_struct_pkg::axi_rd_req_t                  prim_axi_rd_req,
-  output axi_struct_pkg::axi_rd_rsp_t                 prim_axi_rd_rsp,
+  // input axi_struct_pkg::axi_wr_req_t                  prim_axi_wr_req,
+  // output axi_struct_pkg::axi_wr_rsp_t                 prim_axi_wr_rsp,
+  // input axi_struct_pkg::axi_rd_req_t                  prim_axi_rd_req,
+  // output axi_struct_pkg::axi_rd_rsp_t                 prim_axi_rd_rsp,
 
   // Interrupt Requests
   output logic                                       intr_otp_operation_done_o,
   output logic                                       intr_otp_error_o,
   // Alerts
-  input  caliptra_prim_alert_pkg::alert_rx_t [NumAlerts-1:0]  alert_rx_i,
-  output caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0]  alert_tx_o,
+  // input  caliptra_prim_alert_pkg::alert_rx_t [NumAlerts-1:0]  alert_rx_i,
+  // output caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0]  alert_tx_o,
+  // Caliptra-SS does not use alert sender. It directs alerts to MCI.
+  output  [NumAlerts-1:0] alerts,
   // Observability to AST
   input ast_pkg::ast_obs_ctrl_t                      obs_ctrl_i,
   output logic [7:0]                                 otp_obs_o,
@@ -168,48 +170,42 @@ module otp_ctrl
   tlul_pkg::tl_h2d_t      prim_tl_i;
   tlul_pkg::tl_d2h_t      prim_tl_o;
 
+
+  axi_struct_pkg::axi_wr_req_t prim_axi_wr_req;
+  axi_struct_pkg::axi_wr_rsp_t prim_axi_wr_rsp;
+  axi_struct_pkg::axi_rd_req_t prim_axi_rd_req;
+  axi_struct_pkg::axi_rd_rsp_t prim_axi_rd_rsp;
+
   axi_if prim_axi_if(
     .clk(clk_i),
     .rst_n(rst_ni)
   );
 
-  assign prim_axi_if.awaddr      = prim_axi_wr_req.awaddr;
-  assign prim_axi_if.awburst     = prim_axi_wr_req.awburst;
-  assign prim_axi_if.awsize      = prim_axi_wr_req.awsize;
-  assign prim_axi_if.awlen       = prim_axi_wr_req.awlen;
-  assign prim_axi_if.awuser      = prim_axi_wr_req.awuser;
-  assign prim_axi_if.awid        = prim_axi_wr_req.awid;
-  assign prim_axi_if.awlock      = prim_axi_wr_req.awlock;
-  assign prim_axi_if.awvalid     = prim_axi_wr_req.awvalid;
-  assign prim_axi_wr_rsp.awready = prim_axi_if.awready;
+  assign prim_axi_if.awaddr      = '0;
+  assign prim_axi_if.awburst     = '0;
+  assign prim_axi_if.awsize      = '0;
+  assign prim_axi_if.awlen       = '0;
+  assign prim_axi_if.awuser      = '0;
+  assign prim_axi_if.awid        = '0;
+  assign prim_axi_if.awlock      = '0;
+  assign prim_axi_if.awvalid     = '0;
 
-  assign prim_axi_if.wdata       = prim_axi_wr_req.wdata;
-  assign prim_axi_if.wstrb       = prim_axi_wr_req.wstrb;
-  assign prim_axi_if.wlast       = prim_axi_wr_req.wlast;
-  assign prim_axi_if.wvalid      = prim_axi_wr_req.wvalid;
-  assign prim_axi_wr_rsp.wready  = prim_axi_if.wready;
+  assign prim_axi_if.wdata       = '0;
+  assign prim_axi_if.wstrb       = '0;
+  assign prim_axi_if.wlast       = '0;
+  assign prim_axi_if.wvalid      = '0;
 
-  assign prim_axi_wr_rsp.bresp   = prim_axi_if.bresp;
-  assign prim_axi_wr_rsp.bid     = prim_axi_if.bid;
-  assign prim_axi_wr_rsp.bvalid  = prim_axi_if.bvalid;
-  assign prim_axi_if.bready      = prim_axi_wr_req.bready;
+  assign prim_axi_if.bready      = '0;
 
-  assign prim_axi_if.araddr      = prim_axi_rd_req.araddr;
-  assign prim_axi_if.arburst     = prim_axi_rd_req.arburst;
-  assign prim_axi_if.arsize      = prim_axi_rd_req.arsize;
-  assign prim_axi_if.arlen       = prim_axi_rd_req.arlen;
-  assign prim_axi_if.aruser      = prim_axi_rd_req.aruser;
-  assign prim_axi_if.arid        = prim_axi_rd_req.arid;
-  assign prim_axi_if.arlock      = prim_axi_rd_req.arlock;
-  assign prim_axi_if.arvalid     = prim_axi_rd_req.arvalid;
-  assign prim_axi_rd_rsp.arready = prim_axi_if.arready;
-
-  assign prim_axi_rd_rsp.rdata   = prim_axi_if.rdata;
-  assign prim_axi_rd_rsp.rresp   = prim_axi_if.rresp;
-  assign prim_axi_rd_rsp.rid     = prim_axi_if.rid;
-  assign prim_axi_rd_rsp.rlast   = prim_axi_if.rlast;
-  assign prim_axi_rd_rsp.rvalid  = prim_axi_if.rvalid;
-  assign prim_axi_if.rready      = prim_axi_rd_req.rready;
+  assign prim_axi_if.araddr      = '0;
+  assign prim_axi_if.arburst     = '0;
+  assign prim_axi_if.arsize      = '0;
+  assign prim_axi_if.arlen       = '0;
+  assign prim_axi_if.aruser      = '0;
+  assign prim_axi_if.arid        = '0;
+  assign prim_axi_if.arlock      = '0;
+  assign prim_axi_if.arvalid     = '0;
+  assign prim_axi_if.rready      = '0;
 
   // Prim AXI2TLUL instance
   axi2tlul #(
@@ -667,7 +663,7 @@ module otp_ctrl
                      chk_timeout,
                      lfsr_fsm_err,
                      scrmbl_fsm_err,
-                     part_fsm_err[KdiIdx],
+                    //  part_fsm_err[KdiIdx], //TODO: Removed this KdiIdx
                      fatal_bus_integ_error_q,
                      dai_idle,
                      chk_pending};
@@ -715,7 +711,7 @@ end
     .intr_o                 ( intr_otp_error_o               )
   );
 
-  logic [NumAlerts-1:0] alerts;
+  // logic [NumAlerts-1:0] alerts;
   logic [NumAlerts-1:0] alert_test;
   logic fatal_prim_otp_alert, recov_prim_otp_alert;
 
@@ -748,21 +744,22 @@ end
     1'b1  // fatal_macro_error_q
   };
 
-  for (genvar k = 0; k < NumAlerts; k++) begin : gen_alert_tx
-    caliptra_prim_alert_sender #(
-      .AsyncOn(AlertAsyncOn[k]),
-      .IsFatal(AlertIsFatal[k])
-    ) u_prim_alert_sender (
-      .clk_i,
-      .rst_ni,
-      .alert_test_i  ( alert_test[k] ),
-      .alert_req_i   ( alerts[k]     ),
-      .alert_ack_o   (               ),
-      .alert_state_o (               ),
-      .alert_rx_i    ( alert_rx_i[k] ),
-      .alert_tx_o    ( alert_tx_o[k] )
-    );
-  end
+  // Caliptra does not use alert sender
+  // for (genvar k = 0; k < NumAlerts; k++) begin : gen_alert_tx
+  //   caliptra_prim_alert_sender #(
+  //     .AsyncOn(AlertAsyncOn[k]),
+  //     .IsFatal(AlertIsFatal[k])
+  //   ) u_prim_alert_sender (
+  //     .clk_i,
+  //     .rst_ni,
+  //     .alert_test_i  ( alert_test[k] ),
+  //     .alert_req_i   ( alerts[k]     ),
+  //     .alert_ack_o   (               ),
+  //     .alert_state_o (               ),
+  //     .alert_rx_i    ( alert_rx_i[k] ),
+  //     .alert_tx_o    ( alert_tx_o[k] )
+  //   );
+  // end
 
   ////////////////////////////////
   // LFSR Timer and CSR mapping //
@@ -1259,13 +1256,18 @@ end
   // );
 
   // Tie off OTP bus access, since this is not needed.
-  assign part_otp_arb_req[KdiIdx] = 1'b0;
-  assign part_otp_arb_bundle[KdiIdx] = '0;
+  
+  //TODO: Removed this KdiIdx
+  // assign part_otp_arb_req[KdiIdx] = 1'b0;
+  // assign part_otp_arb_bundle[KdiIdx] = '0;
+  
 
   // This stops lint from complaining about unused signals.
-  logic unused_kdi_otp_sigs;
-  assign unused_kdi_otp_sigs = ^{part_otp_arb_gnt[KdiIdx],
-                                 part_otp_rvalid[KdiIdx]};
+
+  //TODO: Removed this KdiIdx
+  // logic unused_kdi_otp_sigs;
+  // assign unused_kdi_otp_sigs = ^{part_otp_arb_gnt[KdiIdx],
+  //                                part_otp_rvalid[KdiIdx]};
 
   /////////////////////////
   // Partition Instances //

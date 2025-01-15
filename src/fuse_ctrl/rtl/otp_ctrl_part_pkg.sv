@@ -369,7 +369,7 @@ package otp_ctrl_part_pkg;
     // add these at the end of certain arrays.
     DaiIdx,
     LciIdx,
-    KdiIdx,
+    // KdiIdx,
     // Number of agents is the last idx+1.
     NumAgentsIdx
   } part_idx_e;

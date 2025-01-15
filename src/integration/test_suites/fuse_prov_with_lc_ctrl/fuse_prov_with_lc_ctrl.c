@@ -302,7 +302,7 @@ void wait_dai_op_idle() {
     do {
         status = lsu_read_32(FUSE_CTRL_STATUS);
         VPRINTF(LOW, "DEBUG: DAI should be idle but is 0x%08X.\n", status);
-        status = (status >> 18) & 0x1; // This extracts 19th bit (DAI_IDLE) from the status
+        status = (status >> 21) & 0x1; // This extracts 19th bit (DAI_IDLE) from the status
     } while (status == 0);
     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
 }
@@ -402,7 +402,7 @@ void initialize_otp_controller() {
     status = lsu_read_32(FUSE_CTRL_STATUS);
 
     // Check for error bits in the status register
-    if (status & 0x3FFFF != 0 ) { // Mask all bits except DAI_IDLE
+    if (status & 0x1FFFFF != 0 ) { // Mask all bits except DAI_IDLE
         VPRINTF(LOW, "ERROR: OTP controller initialization failed. STATUS: 0x%08X\n", status);
         return;
     }
@@ -415,24 +415,24 @@ void initialize_otp_controller() {
     VPRINTF(LOW, "DEBUG: Configuring periodic background checks...\n");
 
     // Configure INTEGRITY_CHECK_PERIOD
-    uint32_t integrity_check_period = 0x100; // Example value, adjust as needed
-    lsu_write_32(FUSE_CTRL_INTEGRITY_CHECK_PERIOD, integrity_check_period);
-    VPRINTF(LOW, "INFO: INTEGRITY_CHECK_PERIOD set to 0x%08X\n", integrity_check_period);
+    // uint32_t integrity_check_period = 0x100; // Example value, adjust as needed
+    // lsu_write_32(FUSE_CTRL_INTEGRITY_CHECK_PERIOD, integrity_check_period);
+    // VPRINTF(LOW, "INFO: INTEGRITY_CHECK_PERIOD set to 0x%08X\n", integrity_check_period);
 
-    // Configure CONSISTENCY_CHECK_PERIOD
-    uint32_t consistency_check_period = 0x100; // Example value, adjust as needed
-    lsu_write_32(FUSE_CTRL_CONSISTENCY_CHECK_PERIOD, consistency_check_period);
-    VPRINTF(LOW, "INFO: CONSISTENCY_CHECK_PERIOD set to 0x%08X\n", consistency_check_period);
+    // // Configure CONSISTENCY_CHECK_PERIOD
+    // uint32_t consistency_check_period = 0x100; // Example value, adjust as needed
+    // lsu_write_32(FUSE_CTRL_CONSISTENCY_CHECK_PERIOD, consistency_check_period);
+    // VPRINTF(LOW, "INFO: CONSISTENCY_CHECK_PERIOD set to 0x%08X\n", consistency_check_period);
 
-    // Configure CHECK_TIMEOUT
-    uint32_t check_timeout = 0x1000; // Example value, adjust as needed
-    lsu_write_32(FUSE_CTRL_CHECK_TIMEOUT, check_timeout);
-    VPRINTF(LOW, "INFO: CHECK_TIMEOUT set to 0x%08X\n", check_timeout);
+    // // Configure CHECK_TIMEOUT
+    // uint32_t check_timeout = 0x1000; // Example value, adjust as needed
+    // lsu_write_32(FUSE_CTRL_CHECK_TIMEOUT, check_timeout);
+    // VPRINTF(LOW, "INFO: CHECK_TIMEOUT set to 0x%08X\n", check_timeout);
 
-    // Step 3: Lock down background check registers
-    VPRINTF(LOW, "DEBUG: Locking background check registers...\n");
-    lsu_write_32(FUSE_CTRL_CHECK_REGWEN, 0x0);
-    VPRINTF(LOW, "INFO: CHECK_REGWEN locked.\n");
+    // // Step 3: Lock down background check registers
+    // VPRINTF(LOW, "DEBUG: Locking background check registers...\n");
+    // lsu_write_32(FUSE_CTRL_CHECK_REGWEN, 0x0);
+    // VPRINTF(LOW, "INFO: CHECK_REGWEN locked.\n");
 
     
 }
@@ -594,13 +594,13 @@ void program_secret_X_partition(uint32_t part_base_addr, uint32_t digest_base_ad
     if (granularity == 64){
         for (uint32_t i = 0; i < lenght_data; i++) {
             dai_wr(secret_base_addr+i*8, data0[i], data0[i], 64);
-            VPRINTF(LOW, "DEBUG: TEST_UNLOCK_TOKEN Wrote 0x%08X and 0x%08X to address 0x%08X.\n", data0[0], data0[0], secret_base_addr+i*8);
+            VPRINTF(LOW, "DEBUG: TEST_UNLOCK_TOKEN Wrote 0x%08X and 0x%08X to address 0x%08X.\n", data0[i], data0[i], secret_base_addr+i*8);
         }
     }
     else{
         for (uint32_t i = 0; i < lenght_data; i++) {
             dai_wr(secret_base_addr+i*4, data0[i], data0[i], 32);
-            VPRINTF(LOW, "DEBUG: TEST_UNLOCK_TOKEN Wrote 0x%08X to address 0x%08X.\n", data0[0], secret_base_addr+i*4);
+            VPRINTF(LOW, "DEBUG: TEST_UNLOCK_TOKEN Wrote 0x%08X to address 0x%08X.\n", data0[i], secret_base_addr+i*4);
         }
     }
     
