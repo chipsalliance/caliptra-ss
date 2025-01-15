@@ -8,7 +8,7 @@ package otp_ctrl_reg_pkg;
 
   // Param list
   parameter int NumSramKeyReqSlots = 4;
-  parameter int OtpByteAddrWidth = 12;
+  parameter int OtpByteAddrWidth = 13;
   parameter int NumErrorEntries = 16;
   parameter int NumDaiWords = 2;
   parameter int NumDigestWords = 2;
