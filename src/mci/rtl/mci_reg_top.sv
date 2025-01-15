@@ -46,8 +46,8 @@ module mci_reg_top
     output logic [63:0] mci_generic_output_wires,
 
     // SS error signals
-    input logic cptra_error_fatal,
-    input logic cptra_error_non_fatal,
+    input logic [31:0] agg_error_fatal,
+    input logic [31:0] agg_error_non_fatal,
 
     // SOC Interrupts
     output logic mci_error_fatal,
@@ -100,8 +100,8 @@ logic unmasked_hw_error_non_fatal_write;
 logic unmasked_hw_error_non_fatal_is_set; 
 logic unmasked_agg_error_non_fatal_write; 
 logic unmasked_agg_error_non_fatal_is_set; 
-logic cptra_error_fatal_sync;
-logic cptra_error_non_fatal_sync;
+logic [31:0] agg_error_fatal_sync;
+logic [31:0] agg_error_non_fatal_sync;
 
 // REG HWIF signals
 mci_reg__in_t   mci_reg_hwif_in;
@@ -122,21 +122,22 @@ logic mcu_sram_fw_exec_region_lock_prev;
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
 ///////////////////////////////////////////////
-caliptra_prim_flop_2sync #(
-  .Width(1)
-) u_prim_flop_2sync_cptra_error_fatal (
-  .clk_i(clk),
-  .rst_ni(mci_pwrgood),
-  .d_i(cptra_error_fatal),
-  .q_o(cptra_error_fatal_sync));
 
 caliptra_prim_flop_2sync #(
-  .Width(1)
-) u_prim_flop_2sync_cptra_error_non_fatal (
+  .Width(32)
+) u_prim_flop_2sync_agg_error_fatal (
   .clk_i(clk),
   .rst_ni(mci_pwrgood),
-  .d_i(cptra_error_non_fatal),
-  .q_o(cptra_error_non_fatal_sync));
+  .d_i(agg_error_fatal),
+  .q_o(agg_error_fatal_sync));
+
+caliptra_prim_flop_2sync #(
+  .Width(32)
+) u_prim_flop_2sync_agg_error_non_fatal (
+  .clk_i(clk),
+  .rst_ni(mci_pwrgood),
+  .d_i(agg_error_non_fatal),
+  .q_o(agg_error_non_fatal_sync));
 
 ///////////////////////////////////////////////
 // Map CIF WSTRB to BITEN of CSR block
@@ -253,7 +254,7 @@ always_comb begin
     end
 end
 
-assign mci_reg_hwif_in.intr_block_rf.notif_internal_intr_r.notif_clpra_mcu_reset_req_sts.hwset = cptra_mcu_rst_req;
+assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_clpra_mcu_reset_req_sts.hwset = cptra_mcu_rst_req;
 
 ///////////////////////////////////////////////
 // MCI Interrupt aggregation
@@ -351,12 +352,110 @@ always_comb unmasked_hw_error_fatal_write = (mci_reg_hwif_in.HW_ERROR_FATAL.nmi_
 // Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL
 // Also calculate whether or not an unmasked event is being set, so we can
 // trigger the SOC interrupt signal
-always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.cptra_error_fatal.we  = cptra_error_fatal_sync;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.we  = agg_error_fatal_sync[0];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.we  = agg_error_fatal_sync[1];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.we  = agg_error_fatal_sync[2];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.we  = agg_error_fatal_sync[3];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.we  = agg_error_fatal_sync[4];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.we  = agg_error_fatal_sync[5];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.we  = agg_error_fatal_sync[6];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.we  = agg_error_fatal_sync[7];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.we  = agg_error_fatal_sync[8];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.we  = agg_error_fatal_sync[9];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.we  = agg_error_fatal_sync[10];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.we  = agg_error_fatal_sync[11];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.we  = agg_error_fatal_sync[12];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.we  = agg_error_fatal_sync[13];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.we  = agg_error_fatal_sync[14];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.we  = agg_error_fatal_sync[15];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.we  = agg_error_fatal_sync[16];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.we  = agg_error_fatal_sync[17];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.we  = agg_error_fatal_sync[18];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.we  = agg_error_fatal_sync[19];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.we  = agg_error_fatal_sync[20];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.we  = agg_error_fatal_sync[21];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.we  = agg_error_fatal_sync[22];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.we  = agg_error_fatal_sync[23];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.we  = agg_error_fatal_sync[24];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.we  = agg_error_fatal_sync[25];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.we  = agg_error_fatal_sync[26];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.we  = agg_error_fatal_sync[27];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.we  = agg_error_fatal_sync[28];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.we  = agg_error_fatal_sync[29];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.we  = agg_error_fatal_sync[30];
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.we  = agg_error_fatal_sync[31];
 // Using we+next instead of hwset allows us to encode the reserved fields in some fashion
 // other than bit-hot in the future, if needed (e.g. we need to encode > 32 FATAL events)
-always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.cptra_error_fatal.next    = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.next    = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.next = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
-always_comb unmasked_agg_error_fatal_write = (mci_reg_hwif_in.AGG_ERROR_FATAL.cptra_error_fatal.we      && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_cptra_error_fatal && |mci_reg_hwif_in.AGG_ERROR_FATAL.cptra_error_fatal.next);
+always_comb unmasked_agg_error_fatal_write = (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.we          && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal0       && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal1     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal2     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal3     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal4     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal5     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal6     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal7     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal8     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal9     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal10     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal11     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal12     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal13     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal14     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal15     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal16     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal17     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal18     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal19     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal20     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal21     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal22     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal23     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal24     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal25     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal26     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal27     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal28     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal29     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal30     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal31     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.next)  
+                                             ;
+                                              
+                                              
+                                              
 
 
 always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.RSVD.we = '0; // FIXME remove
@@ -380,13 +479,140 @@ always_comb unmasked_hw_error_non_fatal_is_set = '0; // FIXME
                                                  // FIXME (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox_prot_ooo    .value && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_prot_ooo    .value) ||
                                                  // FIXME (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox_ecc_unc     .value && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_ecc_unc     .value);
 
-always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.we = cptra_error_non_fatal_sync;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.we  = agg_error_non_fatal_sync[0];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.we  = agg_error_non_fatal_sync[1];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.we  = agg_error_non_fatal_sync[2];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.we  = agg_error_non_fatal_sync[3];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.we  = agg_error_non_fatal_sync[4];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.we  = agg_error_non_fatal_sync[5];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.we  = agg_error_non_fatal_sync[6];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.we  = agg_error_non_fatal_sync[7];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.we  = agg_error_non_fatal_sync[8];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.we  = agg_error_non_fatal_sync[9];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.we  = agg_error_non_fatal_sync[10];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.we  = agg_error_non_fatal_sync[11];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.we  = agg_error_non_fatal_sync[12];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.we  = agg_error_non_fatal_sync[13];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.we  = agg_error_non_fatal_sync[14];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.we  = agg_error_non_fatal_sync[15];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.we  = agg_error_non_fatal_sync[16];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.we  = agg_error_non_fatal_sync[17];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.we  = agg_error_non_fatal_sync[18];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.we  = agg_error_non_fatal_sync[19];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.we  = agg_error_non_fatal_sync[20];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.we  = agg_error_non_fatal_sync[21];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.we  = agg_error_non_fatal_sync[22];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.we  = agg_error_non_fatal_sync[23];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.we  = agg_error_non_fatal_sync[24];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.we  = agg_error_non_fatal_sync[25];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.we  = agg_error_non_fatal_sync[26];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.we  = agg_error_non_fatal_sync[27];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.we  = agg_error_non_fatal_sync[28];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.we  = agg_error_non_fatal_sync[29];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.we  = agg_error_non_fatal_sync[30];
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.we  = agg_error_non_fatal_sync[31];
 // Using we+next instead of hwset allows us to encode the reserved fields in some fashion
-// other than bit-hot in the future, if needed (e.g. we need to encode > 32 NON-FATAL events)
-always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.next = 1'b1; 
+// other than bit-hot in the future, if needed (e.g. we need to encode > 32 NON_FATAL events)
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.next    = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next = 1'b1;
+always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
-always_comb unmasked_agg_error_non_fatal_write = (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.we && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_cptra_error_non_fatal.value && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.next);
-always_comb unmasked_agg_error_non_fatal_is_set = (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.cptra_error_non_fatal.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_cptra_error_non_fatal.value);
+always_comb unmasked_agg_error_non_fatal_write = (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.we          && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0       && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next) ||  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next)  
+                                             ;
+always_comb unmasked_agg_error_non_fatal_is_set = (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value  && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value) ||
+                                             (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value)
+                                             ;
 
 // Interrupt output is set, for any enabled conditions, when a new write
 // sets FW_ERROR_FATAL or when a HW condition occurs that sets a bit
@@ -418,7 +644,6 @@ always_ff@(posedge clk or negedge mci_rst_b) begin
         mci_error_fatal <= mci_error_fatal;
     end
 end
-
 always_ff@(posedge clk or negedge mci_rst_b) begin
     if(~mci_rst_b) begin
         mci_error_non_fatal <= 1'b0;
@@ -443,7 +668,7 @@ always_ff@(posedge clk or negedge mci_rst_b) begin
         mci_error_non_fatal <= 1'b0;
     end
     else begin
-        mci_error_non_fatal <= cptra_error_non_fatal;
+        mci_error_non_fatal <= mci_error_non_fatal;
     end
 end
 
@@ -455,6 +680,74 @@ always_comb begin
     mci_reg_hwif_in.FW_ERROR_NON_FATAL.error_code.next = 'h0;
 end
 
+////////////////////////////////////////////////////////
+// AGG MCI Interrupts
+////////////////////////////////////////////////////////
+// FIXME should these be pluses
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal0_sts.hwset  = agg_error_fatal_sync[0];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal1_sts.hwset  = agg_error_fatal_sync[1];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal2_sts.hwset  = agg_error_fatal_sync[2];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal3_sts.hwset  = agg_error_fatal_sync[3];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal4_sts.hwset  = agg_error_fatal_sync[4];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal5_sts.hwset  = agg_error_fatal_sync[5];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal6_sts.hwset  = agg_error_fatal_sync[6];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal7_sts.hwset  = agg_error_fatal_sync[7];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal8_sts.hwset  = agg_error_fatal_sync[8];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal9_sts.hwset  = agg_error_fatal_sync[9];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal10_sts.hwset  = agg_error_fatal_sync[10];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal11_sts.hwset  = agg_error_fatal_sync[11];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal12_sts.hwset  = agg_error_fatal_sync[12];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal13_sts.hwset  = agg_error_fatal_sync[13];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal14_sts.hwset  = agg_error_fatal_sync[14];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal15_sts.hwset  = agg_error_fatal_sync[15];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal16_sts.hwset  = agg_error_fatal_sync[16];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal17_sts.hwset  = agg_error_fatal_sync[17];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal18_sts.hwset  = agg_error_fatal_sync[18];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal19_sts.hwset  = agg_error_fatal_sync[19];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal20_sts.hwset  = agg_error_fatal_sync[20];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal21_sts.hwset  = agg_error_fatal_sync[21];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal22_sts.hwset  = agg_error_fatal_sync[22];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal23_sts.hwset  = agg_error_fatal_sync[23];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal24_sts.hwset  = agg_error_fatal_sync[24];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal25_sts.hwset  = agg_error_fatal_sync[25];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal26_sts.hwset  = agg_error_fatal_sync[26];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal27_sts.hwset  = agg_error_fatal_sync[27];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal28_sts.hwset  = agg_error_fatal_sync[28];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal29_sts.hwset  = agg_error_fatal_sync[29];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal30_sts.hwset  = agg_error_fatal_sync[30];
+always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal31_sts.hwset  = agg_error_fatal_sync[31];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal0_sts.hwset  = agg_error_non_fatal_sync[0];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal1_sts.hwset  = agg_error_non_fatal_sync[1];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal2_sts.hwset  = agg_error_non_fatal_sync[2];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal3_sts.hwset  = agg_error_non_fatal_sync[3];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal4_sts.hwset  = agg_error_non_fatal_sync[4];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal5_sts.hwset  = agg_error_non_fatal_sync[5];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal6_sts.hwset  = agg_error_non_fatal_sync[6];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal7_sts.hwset  = agg_error_non_fatal_sync[7];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal8_sts.hwset  = agg_error_non_fatal_sync[8];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal9_sts.hwset  = agg_error_non_fatal_sync[9];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal10_sts.hwset  = agg_error_non_fatal_sync[10];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal11_sts.hwset  = agg_error_non_fatal_sync[11];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal12_sts.hwset  = agg_error_non_fatal_sync[12];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal13_sts.hwset  = agg_error_non_fatal_sync[13];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal14_sts.hwset  = agg_error_non_fatal_sync[14];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal15_sts.hwset  = agg_error_non_fatal_sync[15];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal16_sts.hwset  = agg_error_non_fatal_sync[16];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal17_sts.hwset  = agg_error_non_fatal_sync[17];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal18_sts.hwset  = agg_error_non_fatal_sync[18];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal19_sts.hwset  = agg_error_non_fatal_sync[19];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal20_sts.hwset  = agg_error_non_fatal_sync[20];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal21_sts.hwset  = agg_error_non_fatal_sync[21];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal22_sts.hwset  = agg_error_non_fatal_sync[22];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal23_sts.hwset  = agg_error_non_fatal_sync[23];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal24_sts.hwset  = agg_error_non_fatal_sync[24];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal25_sts.hwset  = agg_error_non_fatal_sync[25];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal26_sts.hwset  = agg_error_non_fatal_sync[26];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal27_sts.hwset  = agg_error_non_fatal_sync[27];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal28_sts.hwset  = agg_error_non_fatal_sync[28];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal29_sts.hwset  = agg_error_non_fatal_sync[29];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal30_sts.hwset  = agg_error_non_fatal_sync[30];
+always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal31_sts.hwset  = agg_error_non_fatal_sync[31];
 ////////////////////////////////////////////////////////
 // WDT
 ////////////////////////////////////////////////////////
@@ -468,18 +761,18 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         error_wdt_timer2_timeout_sts_prev <= 1'b0;
     end
     else begin
-        error_wdt_timer1_timeout_sts_prev <= mci_reg_hwif_out.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value;
-        error_wdt_timer2_timeout_sts_prev <= mci_reg_hwif_out.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value;
+        error_wdt_timer1_timeout_sts_prev <= mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer1_timeout_sts.value;
+        error_wdt_timer2_timeout_sts_prev <= mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer2_timeout_sts.value;
     end
 end
 
-assign wdt_timer1_timeout_serviced = error_wdt_timer1_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.value;
-assign wdt_timer2_timeout_serviced = error_wdt_timer2_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.value;;
+assign wdt_timer1_timeout_serviced = error_wdt_timer1_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer1_timeout_sts.value;
+assign wdt_timer2_timeout_serviced = error_wdt_timer2_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer2_timeout_sts.value;;
 
 
 // WDT timeout Interrupts
-assign mci_reg_hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer1_timeout_sts.hwset = t1_timeout_p;
-assign mci_reg_hwif_in.intr_block_rf.error_internal_intr_r.error_wdt_timer2_timeout_sts.hwset = t2_timeout_p;
+assign mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_wdt_timer1_timeout_sts.hwset = t1_timeout_p;
+assign mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_wdt_timer2_timeout_sts.hwset = t2_timeout_p;
 
 //Set WDT status reg
 always_comb begin
@@ -489,7 +782,7 @@ end
 
 
 // MCU SRAM Interrupts
-assign mci_reg_hwif_in.intr_block_rf.notif_internal_intr_r.notif_mcu_sram_ecc_cor_sts.hwset = mcu_sram_single_ecc_error;
+assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.hwset = mcu_sram_single_ecc_error;
 
 ///////////////////////////////////////////////
 // MCI REG Module      

@@ -43,15 +43,13 @@ module mci_top
     input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_mcu_ifu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_clp_axi_user,
-    input logic [s_axi_r_if.UW-1:0] strap_mcu_reset_access0_axi_user,
-    input logic [s_axi_r_if.UW-1:0] strap_mcu_rset_access1_user,
 
     // SRAM ADHOC connections
     input logic mcu_sram_fw_exec_region_lock,
 
     // SS error signals
-    input logic cptra_error_fatal,
-    input logic cptra_error_non_fatal,
+    input logic [31:0] agg_error_fatal,
+    input logic [31:0] agg_error_non_fatal,
 
     // SOC Interrupts
     output logic mci_error_fatal,
@@ -84,6 +82,7 @@ module mci_top
     // LCC Signals
     input  logic lc_done,
     output logic lc_init,
+
 
     // FC Signals
     input  logic fc_opt_done,
@@ -348,8 +347,8 @@ mci_reg_top i_mci_reg_top (
     .mcu_reset_vector,       // reset vector used by MCU
 
     // SS error signals
-    .cptra_error_fatal,
-    .cptra_error_non_fatal,
+    .agg_error_fatal,
+    .agg_error_non_fatal,
 
     // SOC Interrupts
     .mci_error_fatal,
