@@ -37,8 +37,11 @@ module mci_axi_sub_decode
     localparam MBOX0_END_ADDR        = MBOX0_START_ADDR + (MBOX0_SIZE_KB * KB) - 1,
     localparam MBOX1_START_ADDR      = MBOX0_END_ADDR + 32'h0000_0001, // FIXME: Do we want B2B
     localparam MBOX1_END_ADDR        = MBOX1_START_ADDR + (MBOX1_SIZE_KB * KB) - 1,
-    localparam MCU_SRAM_START_ADDR   = 32'h0020_0000,
-    localparam MCU_SRAM_END_ADDR     = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1 
+    localparam MCU_SRAM_START_ADDR   = 32'h0020_0000, // REQUIRED TO BE LAST ADDRESS IN MCI ADDRESS RANGE
+    localparam MCU_SRAM_END_ADDR     = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1, 
+
+    localparam MCI_END_ADDR   = MCU_SRAM_END_ADDR,
+    localparam MCI_INTERNAL_ADDR_WIDTH = $clog2(MCI_END_ADDR)
         
     )
     (
@@ -81,10 +84,10 @@ logic soc_req_miss;
 // Decode which address space is being requested
 ///////////////////////////////////////////////////////////
 //SoC requests to MCU_SRAM
-always_comb soc_mcu_sram_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MCU_SRAM_START_ADDR:MCU_SRAM_END_ADDR]}));
+always_comb soc_mcu_sram_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCU_SRAM_START_ADDR:MCU_SRAM_END_ADDR]}));
 
 // SoC request to MCI Reg
-always_comb soc_mci_reg_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MCI_REG_START_ADDR:MCI_REG_END_ADDR]}));
+always_comb soc_mci_reg_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCI_REG_START_ADDR:MCI_REG_END_ADDR]}));
 
 
 ///////////////////////////////////////////////////////////

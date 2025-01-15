@@ -2291,4 +2291,5 @@ regfile intr_block_t {
  * Register File instance
  * ----------------------- */
 intr_block_t intr_block_rf @0x1000;
+
 };
