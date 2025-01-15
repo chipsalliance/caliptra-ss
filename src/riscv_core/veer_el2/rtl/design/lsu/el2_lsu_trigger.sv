@@ -65,4 +65,4 @@ import css_mcu0_el2_pkg::*;
    end
 
 
-endmodule // el2_lsu_trigger
+endmodule // css_mcu0_el2_lsu_trigger

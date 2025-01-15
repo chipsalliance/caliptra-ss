@@ -31,7 +31,10 @@ import css_mcu0_el2_pkg::*;
    input logic                          clk,                                // Clock only while core active.  Through one clock header.  For flops with    second clock header built in.  Connected to ACTIVE_L2CLK.
    input logic                          clk_override,                       // Override non-functional clock gating
    input logic                          rst_l,                              // reset, active low
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input logic                          scan_mode,                          // scan mode
+   /*pragma coverage on*/
    input logic                          dec_tlu_external_ldfwd_disable,     // disable load to load forwarding for externals
    input logic                          dec_tlu_wb_coalescing_disable,      // disable write buffer coalescing
    input logic                          dec_tlu_sideeffect_posted_disable,  // Don't block the sideeffect load store to the bus
@@ -106,13 +109,22 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.LSU_BUS_TAG-1:0]       lsu_axi_awid,
    output logic [31:0]                     lsu_axi_awaddr,
    output logic [3:0]                      lsu_axi_awregion,
+   /* exclude signals that are tied to constant value in this file */
+   /*pragma coverage off*/
    output logic [7:0]                      lsu_axi_awlen,
+   /*pragma coverage on*/
    output logic [2:0]                      lsu_axi_awsize,
+   /* exclude signals that are tied to constant value in this file */
+   /*pragma coverage off*/
    output logic [1:0]                      lsu_axi_awburst,
    output logic                            lsu_axi_awlock,
+   /*pragma coverage on*/
    output logic [3:0]                      lsu_axi_awcache,
+   /* exclude signals that are tied to constant value in this file */
+   /*pragma coverage off*/
    output logic [2:0]                      lsu_axi_awprot,
    output logic [3:0]                      lsu_axi_awqos,
+   /*pragma coverage on*/
 
    output logic                            lsu_axi_wvalid,
    input  logic                            lsu_axi_wready,
@@ -121,7 +133,10 @@ import css_mcu0_el2_pkg::*;
    output logic                            lsu_axi_wlast,
 
    input  logic                            lsu_axi_bvalid,
+   /* exclude signals that are tied to constant value in this file */
+   /*pragma coverage off*/
    output logic                            lsu_axi_bready,
+   /*pragma coverage on*/
    input  logic [1:0]                      lsu_axi_bresp,
    input  logic [pt.LSU_BUS_TAG-1:0]       lsu_axi_bid,
 
@@ -131,16 +146,28 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.LSU_BUS_TAG-1:0]       lsu_axi_arid,
    output logic [31:0]                     lsu_axi_araddr,
    output logic [3:0]                      lsu_axi_arregion,
+   /* exclude signals that are tied to constant value in this file */
+   /*pragma coverage off*/
    output logic [7:0]                      lsu_axi_arlen,
+   /*pragma coverage on*/
    output logic [2:0]                      lsu_axi_arsize,
+   /* exclude signals that are tied to constant value in this file */
+   /*pragma coverage off*/
    output logic [1:0]                      lsu_axi_arburst,
    output logic                            lsu_axi_arlock,
+   /*pragma coverage on*/
    output logic [3:0]                      lsu_axi_arcache,
+   /* exclude signals that are tied to constant value in this file */
+   /*pragma coverage off*/
    output logic [2:0]                      lsu_axi_arprot,
    output logic [3:0]                      lsu_axi_arqos,
+   /*pragma coverage on*/
 
    input  logic                            lsu_axi_rvalid,
+   /* exclude signals that are tied to constant value in this file */
+   /*pragma coverage off*/
    output logic                            lsu_axi_rready,
+   /*pragma coverage on*/
    input  logic [pt.LSU_BUS_TAG-1:0]       lsu_axi_rid,
    input  logic [63:0]                     lsu_axi_rdata,
    input  logic [1:0]                      lsu_axi_rresp,
@@ -720,6 +747,8 @@ import css_mcu0_el2_pkg::*;
                      buf_ldfwd_en[i]           = buf_state_en[i];
                      buf_cmd_state_bus_en[i]  = '0;
             end
+            /* buf_state is an enum and the existing members are handled above */
+            /*pragma coverage off*/
             default : begin
                      buf_nxtstate[i]          = IDLE;
                      buf_state_en[i]          = '0;
@@ -732,6 +761,7 @@ import css_mcu0_el2_pkg::*;
                      buf_rst[i]               = '0;
                      buf_cmd_state_bus_en[i]  = '0;
             end
+            /*pragma coverage on*/
          endcase
       end
 
@@ -933,4 +963,4 @@ import css_mcu0_el2_pkg::*;
 
 `endif
 
-endmodule // el2_lsu_bus_buffer
+endmodule // css_mcu0_el2_lsu_bus_buffer

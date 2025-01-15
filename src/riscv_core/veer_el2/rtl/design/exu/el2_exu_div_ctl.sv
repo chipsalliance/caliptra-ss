@@ -22,7 +22,10 @@ import css_mcu0_el2_pkg::*;
   (
    input logic           clk,                       // Top level clock
    input logic           rst_l,                     // Reset
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input logic           scan_mode,                 // Scan mode
+   /*pragma coverage on*/
 
    input el2_div_pkt_t  dp,                        // valid, sign, rem
    input logic  [31:0]   dividend,                  // Numerator
@@ -128,7 +131,7 @@ import css_mcu0_el2_pkg::*;
 
 
 
-endmodule // el2_exu_div_ctl
+endmodule // css_mcu0_el2_exu_div_ctl
 
 
 
@@ -140,7 +143,10 @@ module css_mcu0_el2_exu_div_existing_1bit_cheapshortq
   (
    input  logic            clk,                       // Top level clock
    input  logic            rst_l,                     // Reset
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic            scan_mode,                 // Scan mode
+   /*pragma coverage on*/
 
    input  logic            cancel,                    // Flush pipeline
    input  logic            valid_in,
@@ -436,7 +442,7 @@ module css_mcu0_el2_exu_div_existing_1bit_cheapshortq
 
 
 
-endmodule // el2_exu_div_existing_1bit_cheapshortq
+endmodule // css_mcu0_el2_exu_div_existing_1bit_cheapshortq
 
 
 
@@ -448,7 +454,10 @@ module css_mcu0_el2_exu_div_new_1bit_fullshortq
   (
    input  logic            clk,                       // Top level clock
    input  logic            rst_l,                     // Reset
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic            scan_mode,                 // Scan mode
+   /*pragma coverage on*/
 
    input  logic            cancel,                    // Flush pipeline
    input  logic            valid_in,
@@ -694,7 +703,7 @@ module css_mcu0_el2_exu_div_new_1bit_fullshortq
 
 
 
-endmodule // el2_exu_div_new_1bit_fullshortq
+endmodule // css_mcu0_el2_exu_div_new_1bit_fullshortq
 
 
 
@@ -706,7 +715,10 @@ module css_mcu0_el2_exu_div_new_2bit_fullshortq
   (
    input  logic            clk,                       // Top level clock
    input  logic            rst_l,                     // Reset
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic            scan_mode,                 // Scan mode
+   /*pragma coverage on*/
 
    input  logic            cancel,                    // Flush pipeline
    input  logic            valid_in,
@@ -968,7 +980,7 @@ module css_mcu0_el2_exu_div_new_2bit_fullshortq
 
 
 
-endmodule // el2_exu_div_new_2bit_fullshortq
+endmodule // css_mcu0_el2_exu_div_new_2bit_fullshortq
 
 
 
@@ -980,7 +992,10 @@ module css_mcu0_el2_exu_div_new_3bit_fullshortq
   (
    input  logic            clk,                       // Top level clock
    input  logic            rst_l,                     // Reset
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic            scan_mode,                 // Scan mode
+   /*pragma coverage on*/
 
    input  logic            cancel,                    // Flush pipeline
    input  logic            valid_in,
@@ -1300,7 +1315,7 @@ module css_mcu0_el2_exu_div_new_3bit_fullshortq
 
 
 
-endmodule // el2_exu_div_new_3bit_fullshortq
+endmodule // css_mcu0_el2_exu_div_new_3bit_fullshortq
 
 
 
@@ -1312,7 +1327,10 @@ module css_mcu0_el2_exu_div_new_4bit_fullshortq
   (
    input  logic            clk,                       // Top level clock
    input  logic            rst_l,                     // Reset
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic            scan_mode,                 // Scan mode
+   /*pragma coverage on*/
 
    input  logic            cancel,                    // Flush pipeline
    input  logic            valid_in,
@@ -1706,7 +1724,7 @@ module css_mcu0_el2_exu_div_new_4bit_fullshortq
 
 
 
-endmodule // el2_exu_div_new_4bit_fullshortq
+endmodule // css_mcu0_el2_exu_div_new_4bit_fullshortq
 
 
 
@@ -1798,4 +1816,4 @@ assign cls_ones[4:0]              = ({5{operand[31:30] ==  {{ 1{1'b1}},1'b0} }} 
 
 assign cls[4:0]                   =  operand[32]  ?  cls_ones[4:0]  :  cls_zeros[4:0];
 
-endmodule // el2_exu_div_cls
+endmodule // css_mcu0_el2_exu_div_cls

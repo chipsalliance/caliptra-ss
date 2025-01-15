@@ -84,6 +84,6 @@ module css_mcu0_el2_ifu_tb_memread;
 
 
 
-endmodule // el2_ifu_tb_memread
+endmodule // css_mcu0_el2_ifu_tb_memread
 
 
