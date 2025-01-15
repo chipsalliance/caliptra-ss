@@ -34,16 +34,16 @@ module mci_axi_sub_top
     axi_if.w_sub s_axi_w_if,
     axi_if.r_sub s_axi_r_if,
 
-    // MCU SRAM Interface
+    // MCI reg Interface
     cif_if.request  mci_reg_req_if,
 
     // MCU SRAM Interface
     cif_if.request  mcu_sram_req_if,
 
-    // MCU SRAM Interface
+    // Mbox0 SRAM Interface
     cif_if.request  mci_mbox0_req_if,
 
-    // MCU SRAM Interface
+    // Mbox1 SRAM Interface
     cif_if.request  mci_mbox1_req_if,
 
 

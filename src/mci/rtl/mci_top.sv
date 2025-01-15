@@ -52,7 +52,7 @@ module mci_top
     // Mbox0 SRAM Interface
     mci_mcu_sram_if.request mci_mbox0_sram_req_if,
 
-    // Mbox0 SRAM Interface
+    // Mbox1 SRAM Interface
     mci_mcu_sram_if.request mci_mbox1_sram_req_if 
 
     );

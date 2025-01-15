@@ -56,8 +56,8 @@ package mci_pkg;
         BOOT_LCC           = 4'b0011,
         BOOT_MCU           = 4'b0100,
         BOOT_PLL           = 4'b0101,
-        BOOT_WAIT_MCI    = 4'b0110,
-        BOOT_MCI         = 4'b0111,
+        BOOT_WAIT_CPTRA    = 4'b0110,
+        BOOT_CPTRA         = 4'b0111,
         BOOT_WAIT_UPDATE   = 4'b1000,
         BOOT_RST_MCU       = 4'b1001
     } mci_boot_fsm_state_e;
