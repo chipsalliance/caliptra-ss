@@ -546,33 +546,50 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 **Note:** SOC may have other HW FSM steps that were done before Caliptra (CSS) is brought out of reset such as locking a PLL or calibrating a CRO, setting up GPIOs, test logic bring up etc. using SOC HW FSM.
 
 1. SOC asserts Caliptra SS powergood and desserts Caliptra SS reset to MCI
+
    a. SOC may choose to connect the same signals to the AXI fabric or bring it out of reset using a different signals. But the requirement is that before MCU is out of reset, fabric should be operational.
+
 2. CSS-BootFSM will sample straps on the MCI and will drive its outputs to reset defaults.
 3. CSS-BootFSM will go through Caliptra Subsystem Fuse controller (CSS FC) Init Sequence Init Sequence/handshakes
 4. CSS-BootFSM will go through Caliptra Subsystem Life Cycle Controller (CSS LCC) Init Sequence/handshakes
+
    a. **SOC Note:** Note that LCC shall start on an SOC generated internal clock to prevent clock stretch attacks
-   b. **SOC Note:** If the life cycle state is in RAW, TEST* or RMA, and if TRANSITION_CTRL.EXT_CLOCK_EN is set to one, the CLK_BYP_REQ signal is asserted in order to switch the main system clock to an external clock signal. This functionality is needed in certain life cycle states where the SOC internal clock source may not be fully calibrated yet, since the OTP macro requires a stable clock frequency in order to reliably program the fuse array. Note that the TRANSITION_CTRL.EXT_CLOCK_EN register can only be set to one if the transition interface has been claimed via the CLAIM_TRANSITION_IF mutex. This function is not available in production life cycle states.
+
+   b. **SOC Note:** If the life cycle state is in RAW, TEST* or RMA, and if LCC.TRANSITION_CTRL.EXT_CLOCK_EN is set to one, the LCC.CLK_BYP_REQ signal is asserted in order to switch the main system clock to an external clock signal. This functionality is needed in certain life cycle states where the SOC internal clock source may not be fully calibrated yet, since the OTP macro requires a stable clock frequency in order to reliably program the fuse array. Note that the LCC.TRANSITION_CTRL.EXT_CLOCK_EN register can only be set to one if the transition interface has been claimed via the CLAIM_TRANSITION_IF mutex. This function is not available in production life cycle states.
+
+
 5. If MCU-No-ROM-Config strap is not set, then CSS-BootFSM will bring MCU out of reset and MCU ROM will start executing.
+
    a. **Note:** MCU ROM may be used by some SOCs for doing additional SOC specific initializations.An example of such a SoC construction is MCI, MCU, CSS Fabric are running on external clock initially. MCU brings up PLL, some GPIO peripherals, does I3C init sequence etc and then performs clock switch to internal PLL clock domain so that the fabric is running on the internal clock domain before secrets are read on it from the fuse controller.
-   c. **Note:** In allowed LCC states, MCU TAP will be open to use as soon as MCU is out of reset.
+
+   b. **Note:** In allowed LCC states, MCU TAP will be open to use as soon as MCU is out of reset.
+
 6. If MCU-No-ROM-Config is not set, MCU ROM will bring Caliptra out of reset by writing a MCI register
 7. If MCU-No-ROM-Config is set, CSS-BootFSM waits for a Caliptra GO write from SOC to bring Caliptra out of reset.
+
    a. **Note:** MCU Reset Vector will be strapped to the MCU SRAM executable location at integration time.
-   b. **Note:** MCI will allow a “TEST AXI ID” to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
+
+   b. **Note:** MCI will allow a “TEST AXI ID” to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM in the debug mode to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
+   
 8. Caliptra reset (cptra_rst_b) is deasserted.
 9. Caliptra BootFSM will go through its own boot flow as documented in Caliptra spec, reads secret fuses and sets “ready_for_fuses” to MCI.
 
-   **Note:** In MCU-NO-ROM-CONFIG, steps 11 through 14 & steps 16 through 18 are done by a SOC entity. Otherwise, MCU ROM will do the below steps. 
+   a. **Note:** In MCU-NO-ROM-CONFIG, steps 11 through 14 & steps 16 through 18 are done by a SOC entity. Otherwise, MCU ROM will do the below steps. 
    
 10. MCU ROM will be polling for this indication
 11. MCU ROM will now read FC’s SW partition for all the required fuses including its own and also write Caliptra fuses. Note that only non-secret fuses are accessible for MCU ROM by fuse controller construction.
-    a. Note: All fuses will be zero if FC is not programmed
-12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here)
+
+      a. **Note**: All fuses will be zero if FC is not programmed
+
+12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here) and then write the fuse_write_done to MCI.
 13. MCU ROM will do a fuse_write_done write to Caliptra
-15. Caliptra ROM starts to execute from here on.
-16. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
-17. CSS-BootFSM will wait for a confirmation from MCU ROM and assert the reset to MCU and deassert the reset to MCU after 10 cycles.
-18. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
+14. Caliptra ROM starts to execute from here on.
+15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
+16. CSS-BootFSM will wait for a confirmation from MCU ROM and assert and deassert the MCU reset based on a min clock counter in MCI
+
+      a. **Note:** The CSS-BootFSM min reset counter is configurable via an MCI parameter (MIN_MCU_RST_COUNTER_WIDTH). When the counter overflows CSS-BootFSM checks for FW_EXEC_CTL[2] to be set and will bring MCU out of reset. 
+
+17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
 ![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/Caliptra-SS-BootFSM.png)
 
