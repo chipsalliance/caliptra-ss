@@ -579,7 +579,7 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 10. MCU ROM will be polling for this indication
 11. MCU ROM will now read FC’s SW partition for all the required fuses including its own and also write Caliptra fuses. Note that only non-secret fuses are accessible for MCU ROM by fuse controller construction.
 
-   a. **Note**: All fuses will be zero if FC is not programmed
+      a. **Note**: All fuses will be zero if FC is not programmed
 
 12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here) and then write the fuse_write_done to MCI.
 13. MCU ROM will do a fuse_write_done write to Caliptra
@@ -587,7 +587,7 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
 16. CSS-BootFSM will wait for a confirmation from MCU ROM and assert and deassert the MCU reset based on a min clock counter in MCI
 
-   a. **Note:** The CSS-BootFSM min reset counter is configurable via an MCI parameter (MIN_MCU_RST_COUNTER_WIDTH). When the counter overflows CSS-BootFSM checks for FW_EXEC_CTL[2] to be set and will bring MCU out of reset. 
+      a. **Note:** The CSS-BootFSM min reset counter is configurable via an MCI parameter (MIN_MCU_RST_COUNTER_WIDTH). When the counter overflows CSS-BootFSM checks for FW_EXEC_CTL[2] to be set and will bring MCU out of reset. 
 
 17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
