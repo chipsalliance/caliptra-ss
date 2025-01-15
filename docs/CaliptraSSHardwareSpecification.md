@@ -653,5 +653,6 @@ MCI also provides capability to store fuses required for Caliptra subsystem for 
 Standard RISC-V timer interrupts for MCU are implemented using the mtime and mtimecmp registers defined in the RISC-V Privileged Architecture Specification. Both mtime and mtimecmp are included in the MCI register bank, and are accessible by the MCU to facilitate precise timing tasks. Frequency for the timers is configured by the SoC using the dedicated timer configuration register, which satisfies the requirement prescribed in the RISC-V specification for such a mechanism. These timer registers drive the timer_int pin into the MCU.
 
 # Subsystem Memory Map
+Please see integration specification
 
 # Subsystem HW Security
