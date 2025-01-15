@@ -14,24 +14,24 @@
 //
 
 module fuse_ctrl_bfm
-    import caliptra_ss_lc_ctrl_pkg::*;
-    import caliptra_ss_lc_ctrl_reg_pkg::*;
-    import caliptra_ss_lc_ctrl_state_pkg::*;
+    import lc_ctrl_pkg::*;
+    import lc_ctrl_reg_pkg::*;
+    import lc_ctrl_state_pkg::*;
     //import caliptra_top_tb_pkg::*;
     //import global_fuse_ctrl_init_done_event_pkg::*;
     (
         input logic         core_clk,
         input logic         cptra_pwrgood,
         output logic        fc_partition_init,
-        output caliptra_ss_lc_tx_t      caliptra_ss_lc_dft_en_i,
-        output caliptra_ss_lc_tx_t      caliptra_ss_lc_escalate_en_i,
-        output caliptra_ss_lc_tx_t      caliptra_ss_lc_check_byp_en_i,
-        input otp_ctrl_pkg::otp_caliptra_ss_lc_data_t otp_caliptra_ss_lc_data_o,
+        output lc_tx_t      lc_dft_en_i,
+        output lc_tx_t      lc_escalate_en_i,
+        output lc_tx_t      lc_check_byp_en_i,
+        input otp_ctrl_pkg::otp_lc_data_t otp_lc_data_o,
         output logic        fuse_ctrl_rdy
     );
 
-    logic otp_caliptra_ss_lc_data_o_valid;
-    assign otp_caliptra_ss_lc_data_o_valid = otp_caliptra_ss_lc_data_o.valid;
+    logic otp_lc_data_o_valid;
+    assign otp_lc_data_o_valid = otp_lc_data_o.valid;
 
     initial begin
         fuse_ctrl_rst();
@@ -39,7 +39,7 @@ module fuse_ctrl_bfm
         wait(cptra_pwrgood == 1);
         $display("Fuse Controller (fuse_ctrl_init_flow): Forcing fc_partition_init = 1.");
         force fc_partition_init = 1'b1;
-        wait(otp_caliptra_ss_lc_data_o_valid == 1);
+        wait(otp_lc_data_o_valid == 1);
         //->caliptra_top_tb_pkg::fuse_ctrl_init_done; //Signal that fuse controler initialization is done
         fuse_ctrl_rdy = 1;
         $display("Fuse Controller (fuse_ctrl_init_flow): All partitions initialized.");
@@ -48,9 +48,9 @@ module fuse_ctrl_bfm
     end
 
     task fuse_ctrl_rst();
-        caliptra_ss_lc_dft_en_i         = caliptra_ss_lc_ctrl_pkg::Off;
-        caliptra_ss_lc_escalate_en_i    = caliptra_ss_lc_ctrl_pkg::Off;
-        caliptra_ss_lc_check_byp_en_i   = lc_ctrl_pkg::Off;
+        lc_dft_en_i         = lc_ctrl_pkg::Off;
+        lc_escalate_en_i    = lc_ctrl_pkg::Off;
+        lc_check_byp_en_i   = lc_ctrl_pkg::Off;
         fc_partition_init   = 0;
     endtask
 endmodule

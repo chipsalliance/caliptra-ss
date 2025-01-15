@@ -102,7 +102,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc="Generic Status";                                            sw=rw; swwe = mcu_req; hw=r ; resetsignal = mci_rst_b;} status[22]=0;
+        field {desc="Generic Status";                                            sw=rw; swwe = mcu_req; hw=r ; resetsignal = mci_rst_b;} status[24]=0;
         field {desc="DEV ID CSR ready";                                          sw=r;                         /* no storage, no reset */} rsvd[3]=0;
         field {desc="Boot FSM State";                                            sw=r;                  hw=w ; /* no storage, no reset */} boot_fsm_ps[5];
     } FLOW_STATUS;

@@ -702,7 +702,7 @@ package mci_reg_pkg;
     } mci_reg__BOOT_STATUS__out_t;
 
     typedef struct packed{
-        logic [21:0] value;
+        logic [23:0] value;
     } mci_reg__FLOW_STATUS__status__out_t;
 
     typedef struct packed{

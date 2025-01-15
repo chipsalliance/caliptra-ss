@@ -165,7 +165,7 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__FLOW_STATUS_bit_cg status_bit_cg[22];
+        mci_reg__FLOW_STATUS_bit_cg status_bit_cg[24];
         mci_reg__FLOW_STATUS_bit_cg rsvd_bit_cg[3];
         mci_reg__FLOW_STATUS_bit_cg boot_fsm_ps_bit_cg[5];
         mci_reg__FLOW_STATUS_fld_cg fld_cg;
@@ -184,11 +184,11 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.status = new("status");
-            this.status.configure(this, 22, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.status.configure(this, 24, 0, "RW", 0, 'h0, 1, 1, 0);
             this.rsvd = new("rsvd");
-            this.rsvd.configure(this, 3, 22, "RO", 0, 'h0, 1, 1, 0);
+            this.rsvd.configure(this, 3, 24, "RO", 0, 'h0, 1, 1, 0);
             this.boot_fsm_ps = new("boot_fsm_ps");
-            this.boot_fsm_ps.configure(this, 5, 25, "RO", 1, 'h0, 0, 1, 0);
+            this.boot_fsm_ps.configure(this, 5, 27, "RO", 1, 'h0, 0, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(status_bit_cg[bt]) status_bit_cg[bt] = new();
                 foreach(rsvd_bit_cg[bt]) rsvd_bit_cg[bt] = new();

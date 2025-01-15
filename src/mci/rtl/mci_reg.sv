@@ -572,7 +572,7 @@ module mci_reg (
         } BOOT_STATUS;
         struct packed{
             struct packed{
-                logic [21:0] next;
+                logic [23:0] next;
                 logic load_next;
             } status;
         } FLOW_STATUS;
@@ -3390,7 +3390,7 @@ module mci_reg (
         } BOOT_STATUS;
         struct packed{
             struct packed{
-                logic [21:0] value;
+                logic [23:0] value;
             } status;
         } FLOW_STATUS;
         struct packed{
@@ -5435,12 +5435,12 @@ module mci_reg (
     assign hwif_out.BOOT_STATUS.status.value = field_storage.BOOT_STATUS.status.value;
     // Field: mci_reg.FLOW_STATUS.status
     always_comb begin
-        automatic logic [21:0] next_c;
+        automatic logic [23:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.FLOW_STATUS.status.value;
         load_next_c = '0;
         if(decoded_reg_strb.FLOW_STATUS && decoded_req_is_wr && hwif_in.mcu_req) begin // SW write
-            next_c = (field_storage.FLOW_STATUS.status.value & ~decoded_wr_biten[21:0]) | (decoded_wr_data[21:0] & decoded_wr_biten[21:0]);
+            next_c = (field_storage.FLOW_STATUS.status.value & ~decoded_wr_biten[23:0]) | (decoded_wr_data[23:0] & decoded_wr_biten[23:0]);
             load_next_c = '1;
         end
         field_combo.FLOW_STATUS.status.next = next_c;
@@ -5448,7 +5448,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.FLOW_STATUS.status.value <= 22'h0;
+            field_storage.FLOW_STATUS.status.value <= 24'h0;
         end else if(field_combo.FLOW_STATUS.status.load_next) begin
             field_storage.FLOW_STATUS.status.value <= field_combo.FLOW_STATUS.status.next;
         end
@@ -18897,10 +18897,9 @@ module mci_reg (
     assign readback_array[4][0:0] = (decoded_reg_strb.HW_CONFIG && !decoded_req_is_wr) ? hwif_in.HW_CONFIG.RSVD_en.next : '0;
     assign readback_array[4][31:1] = '0;
     assign readback_array[5][31:0] = (decoded_reg_strb.BOOT_STATUS && !decoded_req_is_wr) ? field_storage.BOOT_STATUS.status.value : '0;
-    assign readback_array[6][21:0] = (decoded_reg_strb.FLOW_STATUS && !decoded_req_is_wr) ? field_storage.FLOW_STATUS.status.value : '0;
-    assign readback_array[6][24:22] = (decoded_reg_strb.FLOW_STATUS && !decoded_req_is_wr) ? 3'h0 : '0;
-    assign readback_array[6][29:25] = (decoded_reg_strb.FLOW_STATUS && !decoded_req_is_wr) ? hwif_in.FLOW_STATUS.boot_fsm_ps.next : '0;
-    assign readback_array[6][31:30] = '0;
+    assign readback_array[6][23:0] = (decoded_reg_strb.FLOW_STATUS && !decoded_req_is_wr) ? field_storage.FLOW_STATUS.status.value : '0;
+    assign readback_array[6][26:24] = (decoded_reg_strb.FLOW_STATUS && !decoded_req_is_wr) ? 3'h0 : '0;
+    assign readback_array[6][31:27] = (decoded_reg_strb.FLOW_STATUS && !decoded_req_is_wr) ? hwif_in.FLOW_STATUS.boot_fsm_ps.next : '0;
     assign readback_array[7][0:0] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value : '0;
     assign readback_array[7][1:1] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value : '0;
     assign readback_array[7][2:2] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.WARM_RESET.value : '0;
