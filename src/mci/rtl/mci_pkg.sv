@@ -21,36 +21,15 @@ package mci_pkg;
     localparam MB = KB * 1024;
     localparam MB_BASE0 = MB - 1;
 
+    localparam MCI_MBOX_DATA_W = 32; //not configurable
+    localparam MCI_MBOX_ECC_DATA_W = 7; //not configurable
+
     // Assert reset for 10 cycles then deassert
     // to facilitate the hitless update
     parameter MCI_MCU_UPDATE_RESET_CYLES = 10;
 
     parameter  MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS = 2;
     localparam MCI_WDT_TIMEOUT_PERIOD_W = MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS * 32;
-
-    parameter MCI_MBOX0_DMI_DLEN_ADDR = 0; //TODO define
-    parameter MCI_MBOX1_DMI_DLEN_ADDR = 0; //TODO define
-
-    //Mailbox size configuration
-    parameter MCI_MBOX0_SIZE_KB = 4;
-    parameter MCI_MBOX0_DATA_W = 32;
-    parameter MCI_MBOX0_ECC_DATA_W = 7;
-    parameter MCI_MBOX0_SIZE_BYTES = MCI_MBOX0_SIZE_KB * 1024;
-    parameter MCI_MBOX0_SIZE_DWORDS = MCI_MBOX0_SIZE_BYTES/4;
-    parameter MCI_MBOX0_DATA_AND_ECC_W = MCI_MBOX0_DATA_W + MCI_MBOX0_ECC_DATA_W;
-    parameter MCI_MBOX0_DEPTH = (MCI_MBOX0_SIZE_KB * 1024 * 8) / MCI_MBOX0_DATA_W;
-    parameter MCI_MBOX0_ADDR_W = $clog2(MCI_MBOX0_DEPTH);
-    parameter MCI_MBOX0_DEPTH_LOG2 = $clog2(MCI_MBOX0_DEPTH);
-
-    parameter MCI_MBOX1_SIZE_KB = 4;
-    parameter MCI_MBOX1_DATA_W = 32;
-    parameter MCI_MBOX1_ECC_DATA_W = 7;
-    parameter MCI_MBOX1_SIZE_BYTES = MCI_MBOX1_SIZE_KB * 1024;
-    parameter MCI_MBOX1_SIZE_DWORDS = MCI_MBOX1_SIZE_BYTES/4;
-    parameter MCI_MBOX1_DATA_AND_ECC_W = MCI_MBOX1_DATA_W + MCI_MBOX1_ECC_DATA_W;
-    parameter MCI_MBOX1_DEPTH = (MCI_MBOX1_SIZE_KB * 1024 * 8) / MCI_MBOX1_DATA_W;
-    parameter MCI_MBOX1_ADDR_W = $clog2(MCI_MBOX1_DEPTH);
-    parameter MCI_MBOX1_DEPTH_LOG2 = $clog2(MCI_MBOX1_DEPTH);
 
     typedef enum logic [3:0] {
         BOOT_IDLE          = 4'b0000,

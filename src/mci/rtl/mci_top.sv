@@ -18,8 +18,13 @@ module mci_top
     import mci_pkg::*;
     import mbox_pkg::*;
     #(
-    parameter MCU_SRAM_SIZE_KB = 1024 // FIXME - write assertion ensuring this size 
-                                      // is compatible with the MCU SRAM IF parameters
+     parameter MCU_SRAM_SIZE_KB = 1024 // FIXME - write assertion ensuring this size 
+                                       // is compatible with the MCU SRAM IF parameters
+    //Mailbox configuration
+    ,parameter MCI_MBOX0_DMI_DLEN_ADDR = 0 //TODO define
+    ,parameter MCI_MBOX0_SIZE_KB = 4
+    ,parameter MCI_MBOX1_DMI_DLEN_ADDR = 0 //TODO define
+    ,parameter MCI_MBOX1_SIZE_KB = 4
     )
     (
     input logic clk,
@@ -151,9 +156,7 @@ cif_if #(
 //This wrapper decodes that protocol, collapses the full-duplex protocol to
 // simplex, and issues requests to the MIC decode block
 mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
-    .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
-    .MBOX0_SIZE_KB (MCI_MBOX0_SIZE_KB),
-    .MBOX1_SIZE_KB  (MCI_MBOX1_SIZE_KB)
+    .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
 ) i_mci_axi_sub_top (
     // MCI clk
     .clk  (clk     ),
@@ -308,7 +311,7 @@ if (MCI_MBOX0_SIZE_KB == 0) begin
         //TIE-OFF zero sized mailbox
         mci_mbox0_req_if.hold = 0;
         mci_mbox0_req_if.rdata = 0;
-        mci_mbox0_req_if.error = 0;
+        mci_mbox0_req_if.error = 1;
         mci_mbox0_sram_req_if.req.cs = 0;
         mci_mbox0_sram_req_if.req.we = 0;
         mci_mbox0_sram_req_if.req.addr = 0;
@@ -321,8 +324,8 @@ mbox
 #(
     .DMI_REG_MBOX_DLEN_ADDR(MCI_MBOX0_DMI_DLEN_ADDR),
     .MBOX_SIZE_KB(MCI_MBOX0_SIZE_KB),
-    .MBOX_DATA_W(MCI_MBOX0_DATA_W),
-    .MBOX_ECC_DATA_W(MCI_MBOX0_ECC_DATA_W),
+    .MBOX_DATA_W(MCI_MBOX_DATA_W),
+    .MBOX_ECC_DATA_W(MCI_MBOX_ECC_DATA_W),
     .MBOX_IFC_DATA_W(AXI_DATA_WIDTH),
     .MBOX_IFC_USER_W(AXI_USER_WIDTH),
     .MBOX_IFC_ADDR_W(AXI_ADDR_WIDTH)
@@ -337,7 +340,7 @@ mci_mbox0_i (
     .req_data_wdata(mci_mbox0_req_if.req_data.wdata),
     .req_data_user(mci_mbox0_req_if.req_data.user),
     .req_data_write(mci_mbox0_req_if.req_data.write),
-    .req_data_soc_req(clp_req), //FIXME is this right? Should it be ~mcu_req?
+    .req_data_soc_req(~mcu_req),
     .rdata(mci_mbox0_req_if.rdata),
     .mbox_error(mci_mbox0_req_if.error),
     .mbox_sram_req_cs(mci_mbox0_sram_req_if.req.cs),
@@ -391,7 +394,7 @@ if (MCI_MBOX1_SIZE_KB == 0) begin
         //TIE-OFF zero sized mailbox
         mci_mbox1_req_if.hold = 0;
         mci_mbox1_req_if.rdata = 0;
-        mci_mbox1_req_if.error = 0;
+        mci_mbox1_req_if.error = 1;
         mci_mbox1_sram_req_if.req.cs = 0;
         mci_mbox1_sram_req_if.req.we = 0;
         mci_mbox1_sram_req_if.req.addr = 0;
@@ -404,8 +407,8 @@ mbox
 #(
     .DMI_REG_MBOX_DLEN_ADDR(MCI_MBOX1_DMI_DLEN_ADDR),
     .MBOX_SIZE_KB(MCI_MBOX1_SIZE_KB),
-    .MBOX_DATA_W(MCI_MBOX1_DATA_W),
-    .MBOX_ECC_DATA_W(MCI_MBOX1_ECC_DATA_W),
+    .MBOX_DATA_W(MCI_MBOX_DATA_W),
+    .MBOX_ECC_DATA_W(MCI_MBOX_ECC_DATA_W),
     .MBOX_IFC_DATA_W(AXI_DATA_WIDTH),
     .MBOX_IFC_USER_W(AXI_USER_WIDTH),
     .MBOX_IFC_ADDR_W(AXI_ADDR_WIDTH)
@@ -420,7 +423,7 @@ mci_mbox1_i (
     .req_data_wdata(mci_mbox1_req_if.req_data.wdata),
     .req_data_user(mci_mbox1_req_if.req_data.user),
     .req_data_write(mci_mbox1_req_if.req_data.write),
-    .req_data_soc_req(clp_req), //FIXME is this right? Should it be ~mcu_req?
+    .req_data_soc_req(~mcu_req),
     .rdata(mci_mbox1_req_if.rdata),
     .mbox_error(mci_mbox1_req_if.error),
     .mbox_sram_req_cs(mci_mbox1_sram_req_if.req.cs),

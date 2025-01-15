@@ -20,9 +20,7 @@
 
 module mci_axi_sub_top 
     #(
-    parameter MCU_SRAM_SIZE_KB  = 1024,
-    parameter MBOX0_SIZE_KB    = 4,
-    parameter MBOX1_SIZE_KB    = 4
+    parameter MCU_SRAM_SIZE_KB  = 1024
     )
     (
     input logic clk,
@@ -125,9 +123,7 @@ assign soc_resp_if.req_data.size = '0; // FIXME unused?
 //This wrapper decodes that protocol, collapses the full-duplex protocol to
 // simplex, and issues requests to the MIC decode block
 mci_axi_sub_decode #(
-    .MCU_SRAM_SIZE_KB   (MCU_SRAM_SIZE_KB),
-    .MBOX0_SIZE_KB   (MBOX0_SIZE_KB),
-    .MBOX1_SIZE_KB   (MBOX1_SIZE_KB)
+    .MCU_SRAM_SIZE_KB   (MCU_SRAM_SIZE_KB)
 ) i_mci_axi_sub_decode (
     //SOC inf
     .soc_resp_if        (soc_resp_if.response),
