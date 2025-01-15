@@ -38,7 +38,7 @@ targets:
       - $COMPILE_ROOT/rtl/otp_ctrl_prim_reg_top.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_dai.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_ecc_reg.sv
-      - $COMPILE_ROOT/rtl/otp_ctrl_kdi.sv
+      # - $COMPILE_ROOT/rtl/otp_ctrl_kdi.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_lci.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_lfsr_timer.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_part_buf.sv
