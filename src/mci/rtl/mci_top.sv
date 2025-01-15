@@ -302,10 +302,24 @@ mci_reg_top i_mci_reg_top (
     .cif_resp_if (mci_reg_req_if.response)
 
 );
-
+generate
+if (MCI_MBOX0_SIZE_KB == 0) begin
+    always_comb begin
+        //TIE-OFF zero sized mailbox
+        mci_mbox0_req_if.hold = 0;
+        mci_mbox0_req_if.rdata = 0;
+        mci_mbox0_req_if.error = 0;
+        mci_mbox0_sram_req_if.req.cs = 0;
+        mci_mbox0_sram_req_if.req.we = 0;
+        mci_mbox0_sram_req_if.req.addr = 0;
+        mci_mbox0_sram_req_if.req.wdata = 0;
+        mbox0_sram_single_ecc_error = 0;
+        mbox0_sram_double_ecc_error = 0;
+    end
+end else begin
 mbox
 #(
-    .DMI_REG_MBOX_DLEN_ADDR(0),
+    .DMI_REG_MBOX_DLEN_ADDR(MCI_MBOX0_DMI_DLEN_ADDR),
     .MBOX_SIZE_KB(MCI_MBOX0_SIZE_KB),
     .MBOX_DATA_W(MCI_MBOX0_DATA_W),
     .MBOX_ECC_DATA_W(MCI_MBOX0_ECC_DATA_W),
@@ -368,11 +382,27 @@ mci_mbox0_i (
     .dmi_reg_wdata('0),
     .dmi_reg()
 );
+end
+endgenerate
 
-
+generate
+if (MCI_MBOX1_SIZE_KB == 0) begin
+    always_comb begin
+        //TIE-OFF zero sized mailbox
+        mci_mbox1_req_if.hold = 0;
+        mci_mbox1_req_if.rdata = 0;
+        mci_mbox1_req_if.error = 0;
+        mci_mbox1_sram_req_if.req.cs = 0;
+        mci_mbox1_sram_req_if.req.we = 0;
+        mci_mbox1_sram_req_if.req.addr = 0;
+        mci_mbox1_sram_req_if.req.wdata = 0;
+        mbox1_sram_single_ecc_error = 0;
+        mbox1_sram_double_ecc_error = 0;
+    end
+end else begin
 mbox
 #(
-    .DMI_REG_MBOX_DLEN_ADDR(0),
+    .DMI_REG_MBOX_DLEN_ADDR(MCI_MBOX1_DMI_DLEN_ADDR),
     .MBOX_SIZE_KB(MCI_MBOX1_SIZE_KB),
     .MBOX_DATA_W(MCI_MBOX1_DATA_W),
     .MBOX_ECC_DATA_W(MCI_MBOX1_ECC_DATA_W),
@@ -410,6 +440,21 @@ mci_mbox1_i (
     .soc_req_mbox_lock(), //FIXME
     .mbox_protocol_error(), //FIXME
     .mbox_inv_axi_user_axs(), //FIXME
+    //dma FIXME
+    .dma_sram_req_dv  ('0),
+    .dma_sram_req_write('0),
+    .dma_sram_req_addr('0),
+    .dma_sram_req_wdata('0),
+    .dma_sram_rdata   (),
+    .dma_sram_hold    (),
+    .dma_sram_error   (),
+    //dmi FIXME
+    .dmi_inc_rdptr('0),
+    .dmi_inc_wrptr('0),
+    .dmi_reg_wen('0),
+    .dmi_reg_addr('0),
+    .dmi_reg_wdata('0),
+    .dmi_reg(),
     //direct request unsupported
     .dir_req_dv(1'b0),
     .dir_rdata(),
@@ -418,22 +463,9 @@ mci_mbox1_i (
     .sha_sram_req_addr('0),
     .sha_sram_resp_ecc(),
     .sha_sram_resp_data(),
-    .sha_sram_hold(),
-    //dma unsupported
-    .dma_sram_req_dv  ('0),
-    .dma_sram_req_write('0),
-    .dma_sram_req_addr('0),
-    .dma_sram_req_wdata('0),
-    .dma_sram_rdata   (),
-    .dma_sram_hold    (),
-    .dma_sram_error   (),
-    //dmi port
-    .dmi_inc_rdptr('0),
-    .dmi_inc_wrptr('0),
-    .dmi_reg_wen('0),
-    .dmi_reg_addr('0),
-    .dmi_reg_wdata('0),
-    .dmi_reg()
+    .sha_sram_hold()
 );
+end
+endgenerate
 
 endmodule

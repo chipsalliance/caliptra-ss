@@ -28,6 +28,9 @@ package mci_pkg;
     parameter  MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS = 2;
     localparam MCI_WDT_TIMEOUT_PERIOD_W = MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS * 32;
 
+    parameter MCI_MBOX0_DMI_DLEN_ADDR = 0; //TODO define
+    parameter MCI_MBOX1_DMI_DLEN_ADDR = 0; //TODO define
+
     //Mailbox size configuration
     parameter MCI_MBOX0_SIZE_KB = 4;
     parameter MCI_MBOX0_DATA_W = 32;

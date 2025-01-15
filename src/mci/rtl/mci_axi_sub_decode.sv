@@ -162,7 +162,7 @@ always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sra
 ///////////////////////////////////////////////////////////
 
 // Missed all destinations 
-always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_gnt | soc_mci_reg_gnt);
+always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_gnt | soc_mci_reg_gnt | soc_mci_mbox0_gnt | soc_mci_mbox1_gnt);
 
 // Error for SOC
 always_comb soc_resp_if.error = (soc_mcu_sram_gnt  & mcu_sram_req_if.error)  |
