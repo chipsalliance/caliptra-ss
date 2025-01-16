@@ -65,16 +65,34 @@ module otp_ctrl_cov_bind;
   );
 
   // Mubi internal coverage for buffered and unbuffered partitions.
-  `PART_MUBI_COV(vendor_test, otp_ctrl_part_pkg::VendorTestIdx)
-  `PART_MUBI_COV(non_secret_fuses, otp_ctrl_part_pkg::NonSecretFusesIdx)
-  `PART_MUBI_COV(secret0, otp_ctrl_part_pkg::Secret0Idx)
-  `PART_MUBI_COV(secret1, otp_ctrl_part_pkg::Secret1Idx)
+  `PART_MUBI_COV(secret_manuf_partition, otp_ctrl_part_pkg::SecretManufPartitionIdx)
+  `PART_MUBI_COV(secret_prod_partition_0, otp_ctrl_part_pkg::SecretProdPartition0Idx)
+  `PART_MUBI_COV(secret_prod_partition_1, otp_ctrl_part_pkg::SecretProdPartition1Idx)
+  `PART_MUBI_COV(secret_prod_partition_2, otp_ctrl_part_pkg::SecretProdPartition2Idx)
+  `PART_MUBI_COV(secret_prod_partition_3, otp_ctrl_part_pkg::SecretProdPartition3Idx)
+  `PART_MUBI_COV(sw_manuf_partition, otp_ctrl_part_pkg::SwManufPartitionIdx)
+  `PART_MUBI_COV(sw_prod_partition, otp_ctrl_part_pkg::SwProdPartitionIdx)
+  `PART_MUBI_COV(secret_lc_unlock_partition, otp_ctrl_part_pkg::SecretLcUnlockPartitionIdx)
+  `PART_MUBI_COV(secret_lc_manuf_partition, otp_ctrl_part_pkg::SecretLcManufPartitionIdx)
+  `PART_MUBI_COV(secret_lc_prod_partition, otp_ctrl_part_pkg::SecretLcProdPartitionIdx)
+  `PART_MUBI_COV(secret_lc_rma_partition, otp_ctrl_part_pkg::SecretLcRmaPartitionIdx)
+  `PART_MUBI_COV(svn_partition, otp_ctrl_part_pkg::SvnPartitionIdx)
+  `PART_MUBI_COV(vendor_test_partition, otp_ctrl_part_pkg::VendorTestPartitionIdx)
 
   // Mubi internal coverage for DAI interface access
-  `DAI_MUBI_COV(vendor_test, otp_ctrl_part_pkg::VendorTestIdx)
-  `DAI_MUBI_COV(non_secret_fuses, otp_ctrl_part_pkg::NonSecretFusesIdx)
-  `DAI_MUBI_COV(secret0, otp_ctrl_part_pkg::Secret0Idx)
-  `DAI_MUBI_COV(secret1, otp_ctrl_part_pkg::Secret1Idx)
+  `DAI_MUBI_COV(secret_manuf_partition, otp_ctrl_part_pkg::SecretManufPartitionIdx)
+  `DAI_MUBI_COV(secret_prod_partition_0, otp_ctrl_part_pkg::SecretProdPartition0Idx)
+  `DAI_MUBI_COV(secret_prod_partition_1, otp_ctrl_part_pkg::SecretProdPartition1Idx)
+  `DAI_MUBI_COV(secret_prod_partition_2, otp_ctrl_part_pkg::SecretProdPartition2Idx)
+  `DAI_MUBI_COV(secret_prod_partition_3, otp_ctrl_part_pkg::SecretProdPartition3Idx)
+  `DAI_MUBI_COV(sw_manuf_partition, otp_ctrl_part_pkg::SwManufPartitionIdx)
+  `DAI_MUBI_COV(sw_prod_partition, otp_ctrl_part_pkg::SwProdPartitionIdx)
+  `DAI_MUBI_COV(secret_lc_unlock_partition, otp_ctrl_part_pkg::SecretLcUnlockPartitionIdx)
+  `DAI_MUBI_COV(secret_lc_manuf_partition, otp_ctrl_part_pkg::SecretLcManufPartitionIdx)
+  `DAI_MUBI_COV(secret_lc_prod_partition, otp_ctrl_part_pkg::SecretLcProdPartitionIdx)
+  `DAI_MUBI_COV(secret_lc_rma_partition, otp_ctrl_part_pkg::SecretLcRmaPartitionIdx)
+  `DAI_MUBI_COV(svn_partition, otp_ctrl_part_pkg::SvnPartitionIdx)
+  `DAI_MUBI_COV(vendor_test_partition, otp_ctrl_part_pkg::VendorTestPartitionIdx)
 
 `undef PART_MUBI_COV
 `undef DAI_MUBI_COV

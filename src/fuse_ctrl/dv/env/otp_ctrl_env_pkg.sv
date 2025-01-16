@@ -41,7 +41,7 @@ package otp_ctrl_env_pkg;
   parameter uint NUM_EDN                 = 1;
 
   parameter uint DIGEST_SIZE             = 8;
-  parameter uint SW_WINDOW_BASE_ADDR     = 'h800;
+  parameter uint SW_WINDOW_BASE_ADDR     = 'h2000;
   parameter uint SW_WINDOW_SIZE          = NumSwCfgWindowWords * 4;
 
   parameter uint TL_SIZE = (TL_DW / 8);
@@ -73,30 +73,36 @@ package otp_ctrl_env_pkg;
 
   // lc does not have dai access
   parameter int PART_BASE_ADDRS [NumPart-1] = {
-    VendorTestOffset,
-    CreatorSwCfgOffset,
-    OwnerSwCfgOffset,
-    RotCreatorAuthCodesignOffset,
-    RotCreatorAuthStateOffset,
-    HwCfg0Offset,
-    HwCfg1Offset,
-    Secret0Offset,
-    Secret1Offset,
-    Secret2Offset
+    SecretManufPartitionOffset,
+    SecretProdPartition0Offset,
+    SecretProdPartition1Offset,
+    SecretProdPartition2Offset,
+    SecretProdPartition3Offset,
+    SwManufPartitionOffset,
+    SwProdPartitionOffset,
+    SecretLcUnlockPartitionOffset,
+    SecretLcManufPartitionOffset,
+    SecretLcProdPartitionOffset,
+    SecretLcRmaPartitionOffset,
+    SvnPartitionOffset,
+    VendorTestPartitionOffset
   };
 
   // lc does not have digest
   parameter int PART_OTP_DIGEST_ADDRS [NumPart-1] = {
-    VendorTestDigestOffset >> 2,
-    CreatorSwCfgDigestOffset >> 2,
-    OwnerSwCfgDigestOffset >> 2,
-    RotCreatorAuthCodesignDigestOffset >> 2,
-    RotCreatorAuthStateDigestOffset >> 2,
-    HwCfg0DigestOffset >> 2,
-    HwCfg1DigestOffset >> 2,
-    Secret0DigestOffset >> 2,
-    Secret1DigestOffset >> 2,
-    Secret2DigestOffset >> 2
+    SecretManufPartitionDigestOffset >> 2,
+    SecretProdPartition0DigestOffset >> 2,
+    SecretProdPartition1DigestOffset >> 2,
+    SecretProdPartition2DigestOffset >> 2,
+    SecretProdPartition3DigestOffset >> 2,
+    SwManufPartitionDigestOffset >> 2,
+    SwProdPartitionDigestOffset >> 2,
+    SecretLcUnlockPartitionDigestOffset >> 2,
+    SecretLcManufPartitionDigestOffset >> 2,
+    SecretLcProdPartitionDigestOffset >> 2,
+    SecretLcRmaPartitionDigestOffset >> 2,
+    -1, // This partition does not have a digest.
+    VendorTestPartitionDigestOffset >> 2
   };
 
   // types
@@ -107,16 +113,19 @@ package otp_ctrl_env_pkg;
   } otp_intr_e;
 
   typedef enum bit [5:0] {
-    OtpVendorTestErrIdx,
-    OtpCreatorSwCfgErrIdx,
-    OtpOwnerSwCfgErrIdx,
-    OtpRotCreatorAuthCodesignErrIdx,
-    OtpRotCreatorAuthStateErrIdx,
-    OtpHwCfg0ErrIdx,
-    OtpHwCfg1ErrIdx,
-    OtpSecret0ErrIdx,
-    OtpSecret1ErrIdx,
-    OtpSecret2ErrIdx,
+    OtpSecretManufPartitionErrIdx,
+    OtpSecretProdPartition0ErrIdx,
+    OtpSecretProdPartition1ErrIdx,
+    OtpSecretProdPartition2ErrIdx,
+    OtpSecretProdPartition3ErrIdx,
+    OtpSwManufPartitionErrIdx,
+    OtpSwProdPartitionErrIdx,
+    OtpSecretLcUnlockPartitionErrIdx,
+    OtpSecretLcManufPartitionErrIdx,
+    OtpSecretLcProdPartitionErrIdx,
+    OtpSecretLcRmaPartitionErrIdx,
+    OtpSvnPartitionErrIdx,
+    OtpVendorTestPartitionErrIdx,
     OtpLifeCycleErrIdx,
     OtpDaiErrIdx,
     OtpLciErrIdx,

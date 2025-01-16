@@ -160,59 +160,39 @@ interface otp_ctrl_if(input clk_i, input rst_ni);
   task automatic force_sw_check_fail(
       bit[NumPartUnbuf-1:0] fail_idx = $urandom_range(1, (1'b1 << NumPartUnbuf) - 1));
     @(posedge clk_i);
-    if (fail_idx[VendorTestIdx]) begin
-      force tb.dut.gen_partitions[VendorTestIdx].gen_unbuffered.
+    if (fail_idx[SwManufPartitionIdx]) begin
+      force tb.dut.gen_partitions[SwManufPartitionIdx].gen_unbuffered.
             u_part_unbuf.`ECC_REG_PATH.data_i[0] = 1;
-      force_sw_parts_ecc_reg[VendorTestIdx] = 1;
+      force_sw_parts_ecc_reg[SwManufPartitionIdx] = 1;
     end
-    if (fail_idx[CreatorSwCfgIdx]) begin
-      force tb.dut.gen_partitions[CreatorSwCfgIdx].gen_unbuffered.
+    if (fail_idx[SwProdPartitionIdx]) begin
+      force tb.dut.gen_partitions[SwProdPartitionIdx].gen_unbuffered.
             u_part_unbuf.`ECC_REG_PATH.data_i[0] = 1;
-      force_sw_parts_ecc_reg[CreatorSwCfgIdx] = 1;
+      force_sw_parts_ecc_reg[SwProdPartitionIdx] = 1;
     end
-    if (fail_idx[OwnerSwCfgIdx]) begin
-      force tb.dut.gen_partitions[OwnerSwCfgIdx].gen_unbuffered.
+    if (fail_idx[VendorTestPartitionIdx]) begin
+      force tb.dut.gen_partitions[VendorTestPartitionIdx].gen_unbuffered.
             u_part_unbuf.`ECC_REG_PATH.data_i[0] = 1;
-      force_sw_parts_ecc_reg[OwnerSwCfgIdx] = 1;
-    end
-    if (fail_idx[RotCreatorAuthCodesignIdx]) begin
-      force tb.dut.gen_partitions[RotCreatorAuthCodesignIdx].gen_unbuffered.
-            u_part_unbuf.`ECC_REG_PATH.data_i[0] = 1;
-      force_sw_parts_ecc_reg[RotCreatorAuthCodesignIdx] = 1;
-    end
-    if (fail_idx[RotCreatorAuthStateIdx]) begin
-      force tb.dut.gen_partitions[RotCreatorAuthStateIdx].gen_unbuffered.
-            u_part_unbuf.`ECC_REG_PATH.data_i[0] = 1;
-      force_sw_parts_ecc_reg[RotCreatorAuthStateIdx] = 1;
+      force_sw_parts_ecc_reg[VendorTestPartitionIdx] = 1;
     end
   endtask
 
   task automatic release_sw_check_fail();
     @(posedge clk_i);
-    if (force_sw_parts_ecc_reg[VendorTestIdx]) begin
-      release tb.dut.gen_partitions[VendorTestIdx].gen_unbuffered.
+    if (force_sw_parts_ecc_reg[SwManufPartitionIdx]) begin
+      release tb.dut.gen_partitions[SwManufPartitionIdx].gen_unbuffered.
               u_part_unbuf.`ECC_REG_PATH.data_i[0];
-      force_sw_parts_ecc_reg[VendorTestIdx] = 0;
+      force_sw_parts_ecc_reg[SwManufPartitionIdx] = 0;
     end
-    if (force_sw_parts_ecc_reg[CreatorSwCfgIdx]) begin
-      release tb.dut.gen_partitions[CreatorSwCfgIdx].gen_unbuffered.
+    if (force_sw_parts_ecc_reg[SwProdPartitionIdx]) begin
+      release tb.dut.gen_partitions[SwProdPartitionIdx].gen_unbuffered.
               u_part_unbuf.`ECC_REG_PATH.data_i[0];
-      force_sw_parts_ecc_reg[CreatorSwCfgIdx] = 0;
+      force_sw_parts_ecc_reg[SwProdPartitionIdx] = 0;
     end
-    if (force_sw_parts_ecc_reg[OwnerSwCfgIdx]) begin
-      release tb.dut.gen_partitions[OwnerSwCfgIdx].gen_unbuffered.
+    if (force_sw_parts_ecc_reg[VendorTestPartitionIdx]) begin
+      release tb.dut.gen_partitions[VendorTestPartitionIdx].gen_unbuffered.
               u_part_unbuf.`ECC_REG_PATH.data_i[0];
-      force_sw_parts_ecc_reg[OwnerSwCfgIdx] = 0;
-    end
-    if (force_sw_parts_ecc_reg[RotCreatorAuthCodesignIdx]) begin
-      release tb.dut.gen_partitions[RotCreatorAuthCodesignIdx].gen_unbuffered.
-              u_part_unbuf.`ECC_REG_PATH.data_i[0];
-      force_sw_parts_ecc_reg[RotCreatorAuthCodesignIdx] = 0;
-    end
-    if (force_sw_parts_ecc_reg[RotCreatorAuthStateIdx]) begin
-      release tb.dut.gen_partitions[RotCreatorAuthStateIdx].gen_unbuffered.
-              u_part_unbuf.`ECC_REG_PATH.data_i[0];
-      force_sw_parts_ecc_reg[RotCreatorAuthStateIdx] = 0;
+      force_sw_parts_ecc_reg[VendorTestPartitionIdx] = 0;
     end
   endtask
 
@@ -231,11 +211,15 @@ interface otp_ctrl_if(input clk_i, input rst_ni);
   task automatic force_invalid_part_cmd_o(int part_idx);
     @(posedge clk_i);
     case (part_idx)
-      HwCfg0Idx: force `BUF_PART_OTP_CMD_PATH(HwCfg0Idx) = prim_otp_pkg::cmd_e'(2'b10);
-      HwCfg1Idx: force `BUF_PART_OTP_CMD_PATH(HwCfg1Idx) = prim_otp_pkg::cmd_e'(2'b10);
-      Secret0Idx: force `BUF_PART_OTP_CMD_PATH(Secret0Idx) = prim_otp_pkg::cmd_e'(2'b10);
-      Secret1Idx: force `BUF_PART_OTP_CMD_PATH(Secret1Idx) = prim_otp_pkg::cmd_e'(2'b10);
-      Secret2Idx: force `BUF_PART_OTP_CMD_PATH(Secret2Idx) = prim_otp_pkg::cmd_e'(2'b10);
+      SecretManufPartitionIdx: force `BUF_PART_OTP_CMD_PATH(SecretManufPartitionIdx) = prim_otp_pkg::cmd_e'(2'b10);
+      SecretProdPartition0Idx: force `BUF_PART_OTP_CMD_PATH(SecretProdPartition0Idx) = prim_otp_pkg::cmd_e'(2'b10);
+      SecretProdPartition1Idx: force `BUF_PART_OTP_CMD_PATH(SecretProdPartition1Idx) = prim_otp_pkg::cmd_e'(2'b10);
+      SecretProdPartition2Idx: force `BUF_PART_OTP_CMD_PATH(SecretProdPartition2Idx) = prim_otp_pkg::cmd_e'(2'b10);
+      SecretProdPartition3Idx: force `BUF_PART_OTP_CMD_PATH(SecretProdPartition3Idx) = prim_otp_pkg::cmd_e'(2'b10);
+      SecretLcUnlockPartitionIdx: force `BUF_PART_OTP_CMD_PATH(SecretLcUnlockPartitionIdx) = prim_otp_pkg::cmd_e'(2'b10);
+      SecretLcManufPartitionIdx: force `BUF_PART_OTP_CMD_PATH(SecretLcManufPartitionIdx) = prim_otp_pkg::cmd_e'(2'b10);
+      SecretLcProdPartitionIdx: force `BUF_PART_OTP_CMD_PATH(SecretLcProdPartitionIdx) = prim_otp_pkg::cmd_e'(2'b10);
+      SecretLcRmaPartitionIdx: force `BUF_PART_OTP_CMD_PATH(SecretLcRmaPartitionIdx) = prim_otp_pkg::cmd_e'(2'b10);
       LifeCycleIdx: force `LC_PART_OTP_CMD_PATH              = prim_otp_pkg::cmd_e'(2'b10);
       default: begin
         `uvm_fatal("otp_ctrl_if",
@@ -247,11 +231,15 @@ interface otp_ctrl_if(input clk_i, input rst_ni);
   task automatic release_invalid_part_cmd_o(int part_idx);
     @(posedge clk_i);
     case (part_idx)
-      HwCfg0Idx: release `BUF_PART_OTP_CMD_PATH(HwCfg0Idx);
-      HwCfg1Idx: release `BUF_PART_OTP_CMD_PATH(HwCfg1Idx);
-      Secret0Idx: release `BUF_PART_OTP_CMD_PATH(Secret0Idx);
-      Secret1Idx: release `BUF_PART_OTP_CMD_PATH(Secret1Idx);
-      Secret2Idx: release `BUF_PART_OTP_CMD_PATH(Secret2Idx);
+      SecretManufPartitionIdx: release `BUF_PART_OTP_CMD_PATH(SecretManufPartitionIdx);
+      SecretProdPartition0Idx: release `BUF_PART_OTP_CMD_PATH(SecretProdPartition0Idx);
+      SecretProdPartition1Idx: release `BUF_PART_OTP_CMD_PATH(SecretProdPartition1Idx);
+      SecretProdPartition2Idx: release `BUF_PART_OTP_CMD_PATH(SecretProdPartition2Idx);
+      SecretProdPartition3Idx: release `BUF_PART_OTP_CMD_PATH(SecretProdPartition3Idx);
+      SecretLcUnlockPartitionIdx: release `BUF_PART_OTP_CMD_PATH(SecretLcUnlockPartitionIdx);
+      SecretLcManufPartitionIdx: release `BUF_PART_OTP_CMD_PATH(SecretLcManufPartitionIdx);
+      SecretLcProdPartitionIdx: release `BUF_PART_OTP_CMD_PATH(SecretLcProdPartitionIdx);
+      SecretLcRmaPartitionIdx: release `BUF_PART_OTP_CMD_PATH(SecretLcRmaPartitionIdx);
       LifeCycleIdx: release `LC_PART_OTP_CMD_PATH;
       default: begin
         `uvm_fatal("otp_ctrl_if",
@@ -265,16 +253,19 @@ interface otp_ctrl_if(input clk_i, input rst_ni);
   // false. Then scb will check if design treats these values as locking the partition access.
   task automatic force_part_access_mubi(otp_part_access_lock_t forced_part_access_sel[NumPart-1]);
     @(posedge clk_i);
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(VendorTestIdx)
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(CreatorSwCfgIdx)
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(OwnerSwCfgIdx)
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(RotCreatorAuthCodesignIdx)
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(RotCreatorAuthStateIdx)
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(HwCfg0Idx)
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(HwCfg1Idx)
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(Secret0Idx)
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(Secret1Idx)
-    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(Secret2Idx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SecretManufPartitionIdx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SecretProdPartition0Idx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SecretProdPartition1Idx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SecretProdPartition2Idx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SecretProdPartition3Idx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SwManufPartitionIdx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SwProdPartitionIdx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SecretLcUnlockPartitionIdx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SecretLcManufPartitionIdx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SecretLcProdPartitionIdx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SecretLcRmaPartitionIdx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(SvnPartitionIdx)
+    `FORCE_OTP_PART_LOCK_WITH_RAND_NON_MUBI_VAL(VendorTestPartitionIdx)
   endtask
 
   task automatic release_part_access_mubi();

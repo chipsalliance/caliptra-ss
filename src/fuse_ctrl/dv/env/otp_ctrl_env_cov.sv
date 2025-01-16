@@ -60,30 +60,34 @@ class otp_ctrl_csr_rd_after_alert_cg_wrap;
                                                                                      csr_offset);
     read_csr_after_alert_issued: coverpoint csr_offset {
       bins unbuffered_digests  = {
-        ral.vendor_test_digest[0].get_offset(),
-        ral.vendor_test_digest[1].get_offset(),
-        ral.creator_sw_cfg_digest[0].get_offset(),
-        ral.creator_sw_cfg_digest[1].get_offset(),
-        ral.owner_sw_cfg_digest[0].get_offset(),
-        ral.owner_sw_cfg_digest[1].get_offset(),
-        ral.rot_creator_auth_codesign_digest[0].get_offset(),
-        ral.rot_creator_auth_codesign_digest[1].get_offset(),
-        ral.rot_creator_auth_state_digest[0].get_offset(),
-        ral.rot_creator_auth_state_digest[1].get_offset()
+        ral.sw_manuf_partition_digest[0].get_offset(),
+        ral.sw_manuf_partition_digest[1].get_offset(),
+        ral.sw_prod_partition_digest[0].get_offset(),
+        ral.sw_prod_partition_digest[1].get_offset(),
+        ral.vendor_test_partition_digest[0].get_offset(),
+        ral.vendor_test_partition_digest[1].get_offset()
       };
       bins hw_digests          = {
-        ral.hw_cfg0_digest[0].get_offset(),
-        ral.hw_cfg0_digest[1].get_offset(),
-        ral.hw_cfg1_digest[0].get_offset(),
-        ral.hw_cfg1_digest[1].get_offset()
       };
       bins secret_digests      = {
-        ral.secret0_digest[0].get_offset(),
-        ral.secret0_digest[1].get_offset(),
-        ral.secret1_digest[0].get_offset(),
-        ral.secret1_digest[1].get_offset(),
-        ral.secret2_digest[0].get_offset(),
-        ral.secret2_digest[1].get_offset()
+        ral.secret_manuf_partition_digest[0].get_offset(),
+        ral.secret_manuf_partition_digest[1].get_offset(),
+        ral.secret_prod_partition_0_digest[0].get_offset(),
+        ral.secret_prod_partition_0_digest[1].get_offset(),
+        ral.secret_prod_partition_1_digest[0].get_offset(),
+        ral.secret_prod_partition_1_digest[1].get_offset(),
+        ral.secret_prod_partition_2_digest[0].get_offset(),
+        ral.secret_prod_partition_2_digest[1].get_offset(),
+        ral.secret_prod_partition_3_digest[0].get_offset(),
+        ral.secret_prod_partition_3_digest[1].get_offset(),
+        ral.secret_lc_unlock_partition_digest[0].get_offset(),
+        ral.secret_lc_unlock_partition_digest[1].get_offset(),
+        ral.secret_lc_manuf_partition_digest[0].get_offset(),
+        ral.secret_lc_manuf_partition_digest[1].get_offset(),
+        ral.secret_lc_prod_partition_digest[0].get_offset(),
+        ral.secret_lc_prod_partition_digest[1].get_offset(),
+        ral.secret_lc_rma_partition_digest[0].get_offset(),
+        ral.secret_lc_rma_partition_digest[1].get_offset()
       };
       bins direct_access_rdata = {
         ral.direct_access_rdata[0].get_offset(),
@@ -105,7 +109,10 @@ class otp_ctrl_csr_rd_after_alert_cg_wrap;
         ral.err_code[9].get_offset(),
         ral.err_code[10].get_offset(),
         ral.err_code[11].get_offset(),
-        ral.err_code[12].get_offset()
+        ral.err_code[12].get_offset(),
+        ral.err_code[13].get_offset(),
+        ral.err_code[14].get_offset(),
+        ral.err_code[15].get_offset()
       };
     }
   endgroup
@@ -164,16 +171,19 @@ class otp_ctrl_env_cov extends cip_base_env_cov #(.CFG_T(otp_ctrl_env_cfg));
   // - If each partition is locked (expect LC)
   covergroup power_on_cg with function sample (bit lc_esc_en, bit[NumPart-2:0] parts_locked);
     lc_esc:          coverpoint lc_esc_en;
-    vendor_test_lock: coverpoint parts_locked[0];
-    creator_sw_cfg_lock: coverpoint parts_locked[1];
-    owner_sw_cfg_lock: coverpoint parts_locked[2];
-    rot_creator_auth_codesign_lock: coverpoint parts_locked[3];
-    rot_creator_auth_state_lock: coverpoint parts_locked[4];
-    hw_cfg0_lock: coverpoint parts_locked[5];
-    hw_cfg1_lock: coverpoint parts_locked[6];
-    secret0_lock: coverpoint parts_locked[7];
-    secret1_lock: coverpoint parts_locked[8];
-    secret2_lock: coverpoint parts_locked[9];
+    secret_manuf_partition_lock: coverpoint parts_locked[0];
+    secret_prod_partition_0_lock: coverpoint parts_locked[1];
+    secret_prod_partition_1_lock: coverpoint parts_locked[2];
+    secret_prod_partition_2_lock: coverpoint parts_locked[3];
+    secret_prod_partition_3_lock: coverpoint parts_locked[4];
+    sw_manuf_partition_lock: coverpoint parts_locked[5];
+    sw_prod_partition_lock: coverpoint parts_locked[6];
+    secret_lc_unlock_partition_lock: coverpoint parts_locked[7];
+    secret_lc_manuf_partition_lock: coverpoint parts_locked[8];
+    secret_lc_prod_partition_lock: coverpoint parts_locked[9];
+    secret_lc_rma_partition_lock: coverpoint parts_locked[10];
+    svn_partition_lock: coverpoint parts_locked[11];
+    vendor_test_partition_lock: coverpoint parts_locked[12];
   endgroup
 
   // This covergroup is sampled only if flash request passed scb check.
@@ -236,16 +246,19 @@ class otp_ctrl_env_cov extends cip_base_env_cov #(.CFG_T(otp_ctrl_env_cfg));
       illegal_bins illegal_err = default;
     }
     partition: coverpoint part_idx {
-      bins vendor_test = {VendorTestIdx};
-      bins creator_sw_cfg = {CreatorSwCfgIdx};
-      bins owner_sw_cfg = {OwnerSwCfgIdx};
-      bins rot_creator_auth_codesign = {RotCreatorAuthCodesignIdx};
-      bins rot_creator_auth_state = {RotCreatorAuthStateIdx};
-      bins hw_cfg0 = {HwCfg0Idx};
-      bins hw_cfg1 = {HwCfg1Idx};
-      bins secret0 = {Secret0Idx};
-      bins secret1 = {Secret1Idx};
-      bins secret2 = {Secret2Idx};
+      bins secret_manuf_partition = {SecretManufPartitionIdx};
+      bins secret_prod_partition_0 = {SecretProdPartition0Idx};
+      bins secret_prod_partition_1 = {SecretProdPartition1Idx};
+      bins secret_prod_partition_2 = {SecretProdPartition2Idx};
+      bins secret_prod_partition_3 = {SecretProdPartition3Idx};
+      bins sw_manuf_partition = {SwManufPartitionIdx};
+      bins sw_prod_partition = {SwProdPartitionIdx};
+      bins secret_lc_unlock_partition = {SecretLcUnlockPartitionIdx};
+      bins secret_lc_manuf_partition = {SecretLcManufPartitionIdx};
+      bins secret_lc_prod_partition = {SecretLcProdPartitionIdx};
+      bins secret_lc_rma_partition = {SecretLcRmaPartitionIdx};
+      bins svn_partition = {SvnPartitionIdx};
+      bins vendor_test_partition = {VendorTestPartitionIdx};
       bins life_cycle = {LifeCycleIdx};
       bins illegal_idx    = default;
     }
@@ -343,35 +356,44 @@ class otp_ctrl_env_cov extends cip_base_env_cov #(.CFG_T(otp_ctrl_env_cfg));
   function void collect_err_code_cov(int part_idx, bit [TL_DW-1:0] val,
                                      int access_part_idx = DaiIdx);
     case (part_idx)
-      OtpVendorTestErrIdx: begin
-        unbuf_err_code_cg_wrap[part_idx].unbuf_err_code_cg.sample(val);
-      end
-      OtpCreatorSwCfgErrIdx: begin
-        unbuf_err_code_cg_wrap[part_idx].unbuf_err_code_cg.sample(val);
-      end
-      OtpOwnerSwCfgErrIdx: begin
-        unbuf_err_code_cg_wrap[part_idx].unbuf_err_code_cg.sample(val);
-      end
-      OtpRotCreatorAuthCodesignErrIdx: begin
-        unbuf_err_code_cg_wrap[part_idx].unbuf_err_code_cg.sample(val);
-      end
-      OtpRotCreatorAuthStateErrIdx: begin
-        unbuf_err_code_cg_wrap[part_idx].unbuf_err_code_cg.sample(val);
-      end
-      OtpHwCfg0ErrIdx: begin
+      OtpSecretManufPartitionErrIdx: begin
         buf_err_code_cg_wrap[part_idx - NumPartUnbuf].buf_err_code_cg.sample(val);
       end
-      OtpHwCfg1ErrIdx: begin
+      OtpSecretProdPartition0ErrIdx: begin
         buf_err_code_cg_wrap[part_idx - NumPartUnbuf].buf_err_code_cg.sample(val);
       end
-      OtpSecret0ErrIdx: begin
+      OtpSecretProdPartition1ErrIdx: begin
         buf_err_code_cg_wrap[part_idx - NumPartUnbuf].buf_err_code_cg.sample(val);
       end
-      OtpSecret1ErrIdx: begin
+      OtpSecretProdPartition2ErrIdx: begin
         buf_err_code_cg_wrap[part_idx - NumPartUnbuf].buf_err_code_cg.sample(val);
       end
-      OtpSecret2ErrIdx: begin
+      OtpSecretProdPartition3ErrIdx: begin
         buf_err_code_cg_wrap[part_idx - NumPartUnbuf].buf_err_code_cg.sample(val);
+      end
+      OtpSwManufPartitionErrIdx: begin
+        unbuf_err_code_cg_wrap[part_idx].unbuf_err_code_cg.sample(val);
+      end
+      OtpSwProdPartitionErrIdx: begin
+        unbuf_err_code_cg_wrap[part_idx].unbuf_err_code_cg.sample(val);
+      end
+      OtpSecretLcUnlockPartitionErrIdx: begin
+        buf_err_code_cg_wrap[part_idx - NumPartUnbuf].buf_err_code_cg.sample(val);
+      end
+      OtpSecretLcManufPartitionErrIdx: begin
+        buf_err_code_cg_wrap[part_idx - NumPartUnbuf].buf_err_code_cg.sample(val);
+      end
+      OtpSecretLcProdPartitionErrIdx: begin
+        buf_err_code_cg_wrap[part_idx - NumPartUnbuf].buf_err_code_cg.sample(val);
+      end
+      OtpSecretLcRmaPartitionErrIdx: begin
+        buf_err_code_cg_wrap[part_idx - NumPartUnbuf].buf_err_code_cg.sample(val);
+      end
+      OtpSvnPartitionErrIdx: begin
+        unbuf_err_code_cg_wrap[part_idx].unbuf_err_code_cg.sample(val);
+      end
+      OtpVendorTestPartitionErrIdx: begin
+        unbuf_err_code_cg_wrap[part_idx].unbuf_err_code_cg.sample(val);
       end
       OtpLifeCycleErrIdx: begin
       end
