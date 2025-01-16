@@ -18,7 +18,7 @@
 
 `default_nettype none
 
-`include "common_defines.sv"
+`include "css_mcu0_common_defines.vh"
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
@@ -172,7 +172,7 @@ module caliptra_ss_top
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
 
-`ifdef MCU_RV_BUILD_AXI4
+`ifdef css_mcu0_RV_BUILD_AXI4
    //-------------------------- LSU AXI signals--------------------------
    // AXI Write Channels
     wire                        lsu_axi_awvalid;
@@ -1456,11 +1456,11 @@ module caliptra_ss_top
         .jtag_tdoEn             (),
 
         .mpc_debug_halt_ack     ( mpc_debug_halt_ack),
-        .mpc_debug_halt_req     ( 1'b0),
-        .mpc_debug_run_ack      ( mpc_debug_run_ack),
-        .mpc_debug_run_req      ( 1'b1),
-        .mpc_reset_run_req      ( 1'b1),             // Start running after reset
-         .debug_brkpt_status    (debug_brkpt_status),
+        .mpc_debug_halt_req     ( 1'b0              ),
+        .mpc_debug_run_ack      ( mpc_debug_run_ack ),
+        .mpc_debug_run_req      ( 1'b1              ),
+        .mpc_reset_run_req      ( 1'b1              ), // Start running after reset
+        .debug_brkpt_status     (debug_brkpt_status ),
 
         .i_cpu_halt_req         ( 1'b0  ),    // Async halt req to CPU
         .o_cpu_halt_ack         ( o_cpu_halt_ack ),    // core response to halt
@@ -1492,6 +1492,26 @@ module caliptra_ss_top
         .dccm_bank_dout         (css_mcu0_el2_mem_export.dccm_bank_dout),
         .dccm_bank_ecc          (css_mcu0_el2_mem_export.dccm_bank_ecc),
 
+        // ICache Export Interface
+        // ICache Data
+        .ic_b_sb_wren              (css_mcu0_el2_mem_export.ic_b_sb_wren              ),
+        .ic_b_sb_bit_en_vec        (css_mcu0_el2_mem_export.ic_b_sb_bit_en_vec        ),
+        .ic_sb_wr_data             (css_mcu0_el2_mem_export.ic_sb_wr_data             ),
+        .ic_rw_addr_bank_q         (css_mcu0_el2_mem_export.ic_rw_addr_bank_q         ),
+        .ic_bank_way_clken_final   (css_mcu0_el2_mem_export.ic_bank_way_clken_final   ),
+        .ic_bank_way_clken_final_up(css_mcu0_el2_mem_export.ic_bank_way_clken_final_up),
+        .wb_packeddout_pre         (css_mcu0_el2_mem_export.wb_packeddout_pre         ),
+        .wb_dout_pre_up            (css_mcu0_el2_mem_export.wb_dout_pre_up            ),
+        // ICache Tag
+        .ic_tag_clken_final        (css_mcu0_el2_mem_export.ic_tag_clken_final        ),
+        .ic_tag_wren_q             (css_mcu0_el2_mem_export.ic_tag_wren_q             ),
+        .ic_tag_wren_biten_vec     (css_mcu0_el2_mem_export.ic_tag_wren_biten_vec     ),
+        .ic_tag_wr_data            (css_mcu0_el2_mem_export.ic_tag_wr_data            ),
+        .ic_rw_addr_q              (css_mcu0_el2_mem_export.ic_rw_addr_q              ),
+        .ic_tag_data_raw_pre       (css_mcu0_el2_mem_export.ic_tag_data_raw_pre       ),
+        .ic_tag_data_raw_packed_pre(css_mcu0_el2_mem_export.ic_tag_data_raw_packed_pre),
+
+        // ICCM/DCCM ecc errors
         .iccm_ecc_single_error  (),
         .iccm_ecc_double_error  (),
         .dccm_ecc_single_error  (),
@@ -1505,12 +1525,14 @@ module caliptra_ss_top
         .scan_mode              ( 1'b0 ),         // To enable scan mode
         .mbist_mode             ( 1'b0 ),        // to enable mbist
 
+        .dmi_core_enable        (),
         .dmi_uncore_enable      (),
         .dmi_uncore_en          (),
         .dmi_uncore_wr_en       (),
         .dmi_uncore_addr        (),
         .dmi_uncore_wdata       (),
-        .dmi_uncore_rdata       ()
+        .dmi_uncore_rdata       (),
+        .dmi_active             ()
 
     );
 
@@ -2442,15 +2464,15 @@ task slam_iccm_ram( input[31:0] addr, input[38:0] data);
     int bank, idx;
 
     bank = get_iccm_bank(addr, idx);
-    `ifdef MCU_RV_ICCM_ENABLE
+    `ifdef css_mcu0_RV_ICCM_ENABLE
     case(bank) // {
       0: `MCU_IRAM(0)[idx] = data;
       1: `MCU_IRAM(1)[idx] = data;
-     `ifdef MCU_RV_ICCM_NUM_BANKS_4
+     `ifdef css_mcu0_RV_ICCM_NUM_BANKS_4
       2: `MCU_IRAM(2)[idx] = data;
       3: `MCU_IRAM(3)[idx] = data;
      `endif
-     `ifdef MCU_RV_ICCM_NUM_BANKS_8
+     `ifdef css_mcu0_RV_ICCM_NUM_BANKS_8
       2: `MCU_IRAM(2)[idx] = data;
       3: `MCU_IRAM(3)[idx] = data;
       4: `MCU_IRAM(4)[idx] = data;
@@ -2459,7 +2481,7 @@ task slam_iccm_ram( input[31:0] addr, input[38:0] data);
       7: `MCU_IRAM(7)[idx] = data;
      `endif
 
-     `ifdef MCU_RV_ICCM_NUM_BANKS_16
+     `ifdef css_mcu0_RV_ICCM_NUM_BANKS_16
       2: `MCU_IRAM(2)[idx] = data;
       3: `MCU_IRAM(3)[idx] = data;
       4: `MCU_IRAM(4)[idx] = data;
@@ -2480,21 +2502,21 @@ task slam_iccm_ram( input[31:0] addr, input[38:0] data);
 endtask
 
 task init_iccm;
-    `ifdef MCU_RV_ICCM_ENABLE
+    `ifdef css_mcu0_RV_ICCM_ENABLE
         `MCU_IRAM(0) = '{default:39'h0};
         `MCU_IRAM(1) = '{default:39'h0};
-    `ifdef MCU_RV_ICCM_NUM_BANKS_4
+    `ifdef css_mcu0_RV_ICCM_NUM_BANKS_4
         `MCU_IRAM(2) = '{default:39'h0};
         `MCU_IRAM(3) = '{default:39'h0};
     `endif
-    `ifdef MCU_RV_ICCM_NUM_BANKS_8
+    `ifdef css_mcu0_RV_ICCM_NUM_BANKS_8
         `MCU_IRAM(4) = '{default:39'h0};
         `MCU_IRAM(5) = '{default:39'h0};
         `MCU_IRAM(6) = '{default:39'h0};
         `MCU_IRAM(7) = '{default:39'h0};
     `endif
 
-    `ifdef MCU_RV_ICCM_NUM_BANKS_16
+    `ifdef css_mcu0_RV_ICCM_NUM_BANKS_16
         `MCU_IRAM(4) = '{default:39'h0};
         `MCU_IRAM(5) = '{default:39'h0};
         `MCU_IRAM(6) = '{default:39'h0};
@@ -2538,16 +2560,16 @@ function int get_dccm_bank(input[31:0] addr,  output int bank_idx);
 endfunction
 
 function int get_iccm_bank(input[31:0] addr,  output int bank_idx);
-    `ifdef MCU_RV_DCCM_NUM_BANKS_2
+    `ifdef css_mcu0_RV_DCCM_NUM_BANKS_2
         bank_idx = int'(addr[`css_mcu0_RV_DCCM_BITS-1:3]);
         return int'( addr[2]);
-    `elsif MCU_RV_ICCM_NUM_BANKS_4
+    `elsif css_mcu0_RV_ICCM_NUM_BANKS_4
         bank_idx = int'(addr[`css_mcu0_RV_ICCM_BITS-1:4]);
         return int'(addr[3:2]);
-    `elsif MCU_RV_ICCM_NUM_BANKS_8
+    `elsif css_mcu0_RV_ICCM_NUM_BANKS_8
         bank_idx = int'(addr[`css_mcu0_RV_ICCM_BITS-1:5]);
         return int'( addr[4:2]);
-    `elsif MCU_RV_ICCM_NUM_BANKS_16
+    `elsif css_mcu0_RV_ICCM_NUM_BANKS_16
         bank_idx = int'(addr[`css_mcu0_RV_ICCM_BITS-1:6]);
         return int'( addr[5:2]);
     `endif
@@ -2565,7 +2587,7 @@ task dump_signature ();
         for (i=mem_signature_begin; i<mem_signature_end; i=i+4) begin
 
             // From DCCM
-    `ifdef MCU_RV_DCCM_ENABLE
+    `ifdef css_mcu0_RV_DCCM_ENABLE
             if (i >= `css_mcu0_RV_DCCM_SADR && i < `css_mcu0_RV_DCCM_EADR) begin
                 bit[38:0] data;
                 int bank, indx;
@@ -2574,11 +2596,11 @@ task dump_signature ();
                 case (bank)
                 0: data = `MCU_DRAM(0)[indx];
                 1: data = `MCU_DRAM(1)[indx];
-                `ifdef MCU_RV_DCCM_NUM_BANKS_4
+                `ifdef css_mcu0_RV_DCCM_NUM_BANKS_4
                 2: data = `MCU_DRAM(2)[indx];
                 3: data = `MCU_DRAM(3)[indx];
                 `endif
-                `ifdef MCU_RV_DCCM_NUM_BANKS_8
+                `ifdef css_mcu0_RV_DCCM_NUM_BANKS_8
                 2: data = `MCU_DRAM(2)[indx];
                 3: data = `MCU_DRAM(3)[indx];
                 4: data = `MCU_DRAM(4)[indx];
@@ -3186,6 +3208,411 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
 `endif
 end : iccm_loop
 end : Gen_iccm_enable
+
+`include "icache_macros.svh"
+
+// ICACHE DATA
+ if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_0
+    for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: WAYS
+      for (genvar k=0; k<pt.ICACHE_BANKS_WAY; k++) begin: BANKS_WAY   // 16B subbank
+      if (pt.ICACHE_ECC) begin : ECC1
+        if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
+           `EL2_IC_DATA_SRAM(8192,71,i,k)
+        end
+        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
+           `EL2_IC_DATA_SRAM(4096,71,i,k)
+        end
+        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
+           `EL2_IC_DATA_SRAM(2048,71,i,k)
+        end
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
+           `EL2_IC_DATA_SRAM(1024,71,i,k)
+        end
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
+           `EL2_IC_DATA_SRAM(512,71,i,k)
+        end
+         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
+           `EL2_IC_DATA_SRAM(256,71,i,k)
+         end
+         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
+           `EL2_IC_DATA_SRAM(128,71,i,k)
+         end
+         else  begin : size_64
+           `EL2_IC_DATA_SRAM(64,71,i,k)
+         end
+      end // if (pt.ICACHE_ECC)
+
+     else  begin  : ECC0
+        if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
+           `EL2_IC_DATA_SRAM(8192,68,i,k)
+        end
+        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
+           `EL2_IC_DATA_SRAM(4096,68,i,k)
+        end
+        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
+           `EL2_IC_DATA_SRAM(2048,68,i,k)
+        end
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
+           `EL2_IC_DATA_SRAM(1024,68,i,k)
+        end
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
+           `EL2_IC_DATA_SRAM(512,68,i,k)
+        end
+         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
+           `EL2_IC_DATA_SRAM(256,68,i,k)
+         end
+         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
+           `EL2_IC_DATA_SRAM(128,68,i,k)
+         end
+         else  begin : size_64
+           `EL2_IC_DATA_SRAM(64,68,i,k)
+         end
+      end // else: !if(pt.ICACHE_ECC)
+      end // block: BANKS_WAY
+   end // block: WAYS
+
+ end // block: PACKED_0
+
+ // WAY PACKED
+ else begin : PACKED_10
+
+ // generate IC DATA PACKED SRAMS for 2/4 ways
+  for (genvar k=0; k<pt.ICACHE_BANKS_WAY; k++) begin: BANKS_WAY   // 16B subbank
+     if (pt.ICACHE_ECC) begin : ECC1
+        // SRAMS with ECC (single/double detect; no correct)
+        if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(8192,284,71,k)    // 64b data + 7b ecc
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(8192,142,71,k)
+           end // block: WAYS
+        end // block: size_8192
+
+        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(4096,284,71,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(4096,142,71,k)
+           end // block: WAYS
+        end // block: size_4096
+
+        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(2048,284,71,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(2048,142,71,k)
+           end // block: WAYS
+        end // block: size_2048
+
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(1024,284,71,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(1024,142,71,k)
+           end // block: WAYS
+        end // block: size_1024
+
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(512,284,71,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(512,142,71,k)
+           end // block: WAYS
+        end // block: size_512
+
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(256,284,71,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(256,142,71,k)
+           end // block: WAYS
+        end // block: size_256
+
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(128,284,71,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(128,142,71,k)
+           end // block: WAYS
+        end // block: size_128
+
+        else  begin : size_64
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(64,284,71,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(64,142,71,k)
+           end // block: WAYS
+        end // block: size_64
+       end // if (pt.ICACHE_ECC)
+
+     else  begin  : ECC0
+        // SRAMs with parity
+        if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(8192,272,68,k)    // 64b data + 4b parity
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(8192,136,68,k)
+           end // block: WAYS
+        end // block: size_8192
+
+        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(4096,272,68,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(4096,136,68,k)
+           end // block: WAYS
+        end // block: size_4096
+
+        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(2048,272,68,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(2048,136,68,k)
+           end // block: WAYS
+        end // block: size_2048
+
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(1024,272,68,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(1024,136,68,k)
+           end // block: WAYS
+        end // block: size_1024
+
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(512,272,68,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(512,136,68,k)
+           end // block: WAYS
+        end // block: size_512
+
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(256,272,68,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(256,136,68,k)
+           end // block: WAYS
+        end // block: size_256
+
+        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(128,272,68,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(128,136,68,k)
+           end // block: WAYS
+        end // block: size_128
+
+        else  begin : size_64
+           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(64,272,68,k)
+           end // block: WAYS
+           else   begin : WAYS
+              `EL2_PACKED_IC_DATA_SRAM(64,136,68,k)
+           end // block: WAYS
+        end // block: size_64
+     end // block: ECC0
+     end // block: BANKS_WAY
+ end // block: PACKED_10
+
+
+// ICACHE TAG
+if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_11
+    for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: WAYS
+        if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
+                 `EL2_IC_TAG_SRAM(32,26,i)
+        end // if (pt.ICACHE_TAG_DEPTH == 32)
+        if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
+                 `EL2_IC_TAG_SRAM(64,26,i)
+        end // if (pt.ICACHE_TAG_DEPTH == 64)
+        if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
+                 `EL2_IC_TAG_SRAM(128,26,i)
+        end // if (pt.ICACHE_TAG_DEPTH == 128)
+        if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
+                 `EL2_IC_TAG_SRAM(256,26,i)
+        end // if (pt.ICACHE_TAG_DEPTH == 256)
+        if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
+                 `EL2_IC_TAG_SRAM(512,26,i)
+        end // if (pt.ICACHE_TAG_DEPTH == 512)
+        if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
+                 `EL2_IC_TAG_SRAM(1024,26,i)
+        end // if (pt.ICACHE_TAG_DEPTH == 1024)
+        if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
+                 `EL2_IC_TAG_SRAM(2048,26,i)
+        end // if (pt.ICACHE_TAG_DEPTH == 2048)
+        if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
+                 `EL2_IC_TAG_SRAM(4096,26,i)
+        end // if (pt.ICACHE_TAG_DEPTH == 4096)
+   end // block: WAYS
+ end // block: PACKED_11
+
+ else begin : PACKED_1
+    if (pt.ICACHE_ECC) begin  : ECC1
+      if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
+        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(32,104)
+        end // block: WAYS
+      else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(32,52)
+        end // block: WAYS
+      end // if (pt.ICACHE_TAG_DEPTH == 32
+
+      if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
+        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(64,104)
+        end // block: WAYS
+      else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(64,52)
+        end // block: WAYS
+      end // block: size_64
+
+      if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(128,104)
+      end // block: WAYS
+      else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(128,52)
+      end // block: WAYS
+
+      end // block: size_128
+
+      if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(256,104)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(256,52)
+        end // block: WAYS
+      end // block: size_256
+
+      if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(512,104)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(512,52)
+        end // block: WAYS
+      end // block: size_512
+
+      if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
+         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(1024,104)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(1024,52)
+        end // block: WAYS
+      end // block: size_1024
+
+      if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(2048,104)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(2048,52)
+        end // block: WAYS
+      end // block: size_2048
+
+      if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(4096,104)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(4096,52)
+        end // block: WAYS
+      end // block: size_4096
+   end // block: ECC1
+
+   else  begin : ECC0
+      if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
+        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(32,88)
+        end // block: WAYS
+      else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(32,44)
+        end // block: WAYS
+      end // if (pt.ICACHE_TAG_DEPTH == 32
+
+      if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
+        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(64,88)
+        end // block: WAYS
+      else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(64,44)
+        end // block: WAYS
+      end // block: size_64
+
+      if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(128,88)
+      end // block: WAYS
+      else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(128,44)
+      end // block: WAYS
+
+      end // block: size_128
+
+      if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(256,88)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(256,44)
+        end // block: WAYS
+      end // block: size_256
+
+      if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(512,88)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(512,44)
+        end // block: WAYS
+      end // block: size_512
+
+      if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
+         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(1024,88)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(1024,44)
+        end // block: WAYS
+      end // block: size_1024
+
+      if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(2048,88)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(2048,44)
+        end // block: WAYS
+      end // block: size_2048
+
+      if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
+       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(4096,88)
+        end // block: WAYS
+       else begin : WAYS
+                 `EL2_IC_TAG_PACKED_SRAM(4096,44)
+        end // block: WAYS
+      end // block: size_4096
+   end // block: ECC0
+end // block: PACKED_1
+// end ICACHE TAG
 
 /* verilator lint_off CASEINCOMPLETE */
 `include "dasm.svi"

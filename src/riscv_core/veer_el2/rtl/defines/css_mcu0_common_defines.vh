@@ -234,7 +234,7 @@
 `define css_mcu0_RV_RESET_VEC 'h80000000
 `define css_mcu0_RV_RET_STACK_SIZE 8
 `define css_mcu0_RV_TARGET default
-`define css_mcu0_TEC_RV_ICG clockhdr
+`define css_mcu0_TEC_RV_ICG css_mcu0_clockhdr
 `define css_mcu0_CPU_TOP `RV_TOP.veer
 `define css_mcu0_RV_TOP `TOP.rvtop_wrapper.rvtop
 `define css_mcu0_SDVT_AHB 0
@@ -246,7 +246,7 @@
 `define css_mcu0_RV_EXT_DATAWIDTH 64
 `define css_mcu0_RV_LDERR_ROLLBACK 1
 `define css_mcu0_RV_STERR_ROLLBACK 0
-`define css_mcu0_USER_EC_RV_ICG user_clock_gate
+`define css_mcu0_USER_EC_RV_ICG css_mcu0_user_clock_gate
 `define css_mcu0_RV_XLEN 32
 
 `endif // RV_COMMON_DEFINES
