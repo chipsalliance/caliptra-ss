@@ -23,12 +23,26 @@ module mci_lcc_st_trans
     input logic                                         state_error, // That includes invalid state
     // Inputs from LCC
     input  otp_ctrl_pkg::lc_otp_program_req_t           from_lcc_to_otp_program_i,
+    input lc_tx_t                                       lc_dft_en_i,
+    input lc_tx_t                                       lc_hw_debug_en_i
     // Inputs from OTP_Ctrl
     input  otp_ctrl_pkg::lc_otp_program_rsp_t           from_otp_to_lcc_program_i,
     // Inputs from Caliptra_Core
     input logic                                         ss_dbg_manuf_enable_i,    
     input logic [63:0]                                  ss_soc_dbg_unlock_level_i,
-    
+    // Inputs from SoC
+    input logic [63:0]                                  ss_soc_dft_en_mask_reg0_1,
+    input logic [63:0]                                  ss_soc_dbg_unlock_mask_reg0_1,
+    input logic [63:0]                                  ss_soc_CLTAP_unlock_mask_reg0_1,
+
+// (SOC_DFT_EN(|(k&ss_soc_dbg_unlock_level_i))); // DFT_EN in production
+// ((|(d&ss_soc_dbg_unlock_level_i))); // debug unlock for caliptra in production
+// ((|(c&ss_soc_dbg_unlock_level_i))); // SOC_HW_DBG_EN to open CLTAP
+
+    // Converted Signals FROM LCC 
+    output  logic                                       SOC_DFT_EN,
+    output 	logic                                       SOC_HW_DEBUG_EN,
+
     output soc_ifc_pkg::security_state_t                security_state_o
 );
 
@@ -40,28 +54,44 @@ lc_state_e                                   otp_static_state;
 
 logic                                        otp_data_valid;
 logic                                        lc_otp_prog_req;
+logic                                        lcc_valid;
+logic                                        SOC_DFT_EN_AND;
+logic                                        SOC_HW_DEBUG_EN_AND;
+logic                                        CLPTR_DEBUG_UNLOCK_AND;
 
-assign otp_data_valid = from_otp_to_lcc_program_i.valid;
-assign lc_otp_prog_req = from_lcc_to_otp_program_i.req;
+
+assign otp_data_valid           = from_otp_to_lcc_program_i.valid;
+assign lc_otp_prog_req          = from_lcc_to_otp_program_i.req;
+assign SOC_DFT_EN_AND           = |(ss_soc_dbg_unlock_level_i & ss_soc_dft_en_mask_reg0_1);
+assign SOC_HW_DEBUG_EN_AND      = |(ss_soc_dbg_unlock_level_i & ss_soc_CLTAP_unlock_mask_reg0_1);
+assign CLPTR_DEBUG_UNLOCK_AND   = |(ss_soc_dbg_unlock_level_i & ss_soc_dbg_unlock_mask_reg0_1);
+
 
 
 always_ff @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
-        mci_trans_st_current    <= TRANSLATOR_RESET;
-        security_state_o        <= '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
-        otp_static_state        <=  LcStRaw; // This is all zeros
+        mci_trans_st_current            <= TRANSLATOR_RESET;
+        security_state_o                <= '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
+        otp_static_state                <=  LcStRaw; // This is all zeros
+        SOC_DFT_EN                      <= 1'b0;
+        SOC_HW_DEBUG_EN                 <= 1'b0;
     end
     else begin
         if (otp_data_valid) begin
-            mci_trans_st_current    <= mci_trans_st_next;
-            security_state_o        <= security_state_comb;  // Default case
-            otp_static_state        <= from_otp_to_lcc_program_i.state;
+            mci_trans_st_current            <= mci_trans_st_next;
+            security_state_o                <= security_state_comb;  // Default case
+            otp_static_state                <= from_otp_to_lcc_program_i.state;
+            SOC_DFT_EN                      <= lc_dft_en_i | SOC_DFT_EN_AND;
+            SOC_HW_DEBUG_EN                 <= lc_hw_debug_en_i | SOC_HW_DEBUG_EN_AND;
         end
         else begin
-            mci_trans_st_current    <= TRANSLATOR_RESET;
-            security_state_o        <= '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
-            otp_static_state        <=  LcStRaw; // This is all zeros
+            mci_trans_st_current            <= TRANSLATOR_RESET;
+            security_state_o                <= '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
+            otp_static_state                <=  LcStRaw; // This is all zeros
+            SOC_DFT_EN                      <= 1'b0;
+            SOC_HW_DEBUG_EN                 <= 1'b0;
         end
+
     end
 
 end
@@ -175,7 +205,7 @@ always_comb begin: state_branch
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
                 security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
             end
-            else if (ss_soc_dbg_unlock_level_i != '0) begin // TODO: Be careful for fault injections
+            else if (CLPTR_DEBUG_UNLOCK_AND) begin // TODO: Be careful for fault injections
                 mci_trans_st_next = TRANSLATOR_PROD_DEBUG;
                 security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
             end
@@ -203,3 +233,5 @@ always_comb begin: state_branch
 end
 
 endmodule
+
+
