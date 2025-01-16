@@ -21,9 +21,15 @@ package mci_pkg;
     localparam MB = KB * 1024;
     localparam MB_BASE0 = MB - 1;
 
+    localparam MCI_MBOX_DATA_W = 32; //not configurable
+    localparam MCI_MBOX_ECC_DATA_W = 7; //not configurable
+
     // Assert reset for 10 cycles then deassert
     // to facilitate the hitless update
     parameter MCI_MCU_UPDATE_RESET_CYLES = 10;
+
+    parameter  MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS = 2;
+    localparam MCI_WDT_TIMEOUT_PERIOD_W = MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS * 32;
 
     typedef enum logic [3:0] {
         BOOT_IDLE          = 4'b0000,

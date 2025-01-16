@@ -745,8 +745,8 @@ module caliptra_ss_top
 
 
     caliptra_top_tb_soc_bfm #(
-        .SKIP_BRINGUP(1),
-        .SKIP_FUSE_CTRL(0)
+        .SKIP_BRINGUP(1)/* ,
+        .SKIP_FUSE_CTRL(0)*/
     ) soc_bfm_inst (
         .core_clk        (core_clk        ),
 
@@ -2077,20 +2077,13 @@ module caliptra_ss_top
     assign lc_axi_rd_req.rready = axi_interconnect.sintf_arr[7].RREADY;
 
 
-    //--------------------------------------------------------------------------------------------
-    // These are alert handler signals. We do not want them for the initial integrations
-    // TL-UL Interface
-    logic [$bits(tlul_pkg::tl_h2d_t)-1:0] lc_ctrl_dmi_tl_h2d_tb;
-    logic [$bits(tlul_pkg::tl_d2h_t)-1:0] lc_ctrl_dmi_tl_d2h_tb;
-    assign lc_ctrl_dmi_tl_d2h_tb = tlul_pkg::tl_d2h_t'(u_lc_ctrl.dmi_tl_o);
-    assign lc_ctrl_dmi_tl_h2d_tb = tlul_pkg::tl_h2d_t'(u_lc_ctrl_bfm.lc_ctrl_dmi_tl_h2d);
+
+
 
     // Scan Interface
     logic lc_ctrl_scan_rst_ni_tb;
     logic [$bits(caliptra_prim_mubi_pkg::mubi4_t)-1:0] lc_ctrl_scanmode_i_tb;
     assign lc_ctrl_scanmode_i_tb = caliptra_prim_mubi_pkg::mubi4_t'(u_lc_ctrl_bfm.lc_ctrl_scanmode_i);
-
-   
 
 
     //--------------------------------------------------------------------------------------------
@@ -2111,7 +2104,6 @@ module caliptra_ss_top
     assign lc_otp_vendor_test_o_tb = otp_ctrl_pkg::lc_otp_vendor_test_req_t'(u_lc_ctrl.lc_otp_vendor_test_o);
     assign lc_otp_vendor_test_i_tb = otp_ctrl_pkg::lc_otp_vendor_test_rsp_t'(u_otp_ctrl.lc_otp_vendor_test_o);
 
-
     assign lc_otp_program_o_tb = otp_ctrl_pkg::lc_otp_program_req_t'(u_lc_ctrl.lc_otp_program_o);
     assign lc_otp_program_i_tb = otp_ctrl_pkg::lc_otp_program_rsp_t'(u_otp_ctrl.lc_otp_program_o);
 
@@ -2121,26 +2113,16 @@ module caliptra_ss_top
     assign lc_dft_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_dft_en_o);
     assign lc_escalate_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_escalate_en_o);
     assign lc_check_byp_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_check_byp_en_o);
-
-    // TODO: This port is hacked in LCC's BFM in order to have provisioned tokens
-    //assign otp_lc_data_tb = otp_ctrl_pkg::otp_lc_data_t'(u_otp_ctrl.otp_lc_data_o);
     assign otp_lc_data_tb = otp_ctrl_pkg::otp_lc_data_t'(u_lc_ctrl_bfm.otp_lc_data_o);
 
     //--------------------------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------------------------
     // These are going to be connected to SoC later on
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_nvm_debug_en_tb;
     logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_hw_debug_en_tb;
     logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_cpu_en_tb;
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_iso_part_sw_rd_en_tb;
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_iso_part_sw_wr_en_tb;
-    // Assignments for unused signals
-    assign lc_nvm_debug_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_nvm_debug_en_o);
     assign lc_hw_debug_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_hw_debug_en_o);
     assign lc_cpu_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_cpu_en_o);
-    assign lc_iso_part_sw_rd_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_iso_part_sw_rd_en_o);
-    assign lc_iso_part_sw_wr_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_iso_part_sw_wr_en_o);
     //--------------------------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------------------------
@@ -2155,13 +2137,9 @@ module caliptra_ss_top
     // Assignments for Power Manager Interface
     assign pwr_lc_i_tb = pwrmgr_pkg::pwr_lc_req_t'(u_lc_ctrl_bfm.pwr_lc_i);
     assign pwr_lc_o_tb = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o);
+
+
     logic pwr_otp_init_i;
-
-
-
-    logic [7:0] lc_flash_rma_ack_tb;
-    logic [7:0] from_bfm_lc_flash_rma_ack;
-    assign lc_flash_rma_ack_tb = from_bfm_lc_flash_rma_ack;
 
     logic Allow_RMA_on_PPD;
     logic fake_reset;
@@ -2184,12 +2162,7 @@ module caliptra_ss_top
         .lc_axi_rd_rsp(lc_axi_rd_rsp),
         .fake_reset(fake_reset),
         .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
-        .from_bfm_lc_flash_rma_ack(from_bfm_lc_flash_rma_ack),
-        .to_bfm_lc_flash_rma_req_o(to_bfm_lc_flash_rma_req_o),
 
-        // TL-UL Interface
-        .lc_ctrl_dmi_tl_h2d(),
-        .lc_ctrl_dmi_tl_d2h(tlul_pkg::tl_d2h_t'(lc_ctrl_dmi_tl_d2h_tb)),
 
         // Scan Interface
         .lc_ctrl_scan_rst_ni(lc_ctrl_scan_rst_ni_tb),
@@ -2220,21 +2193,7 @@ module caliptra_ss_top
 
 
 
-    lc_ctrl /*#(
-            .AlertAsyncOn(AlertAsyncOn),
-            .SiliconCreatorId(SiliconCreatorId),
-            .ProductId(ProductId),
-            .RevisionId(RevisionId),
-            .IdcodeValue(IdcodeValue),
-            .UseDmiInterface(UseDmiInterface),
-            .RndCnstLcKeymgrDivInvalid(RndCnstLcKeymgrDivInvalid),
-            .RndCnstLcKeymgrDivTestUnlocked(RndCnstLcKeymgrDivTestUnlocked),
-            .RndCnstLcKeymgrDivDev(RndCnstLcKeymgrDivDev),
-            .RndCnstLcKeymgrDivProduction(RndCnstLcKeymgrDivProduction),
-            .RndCnstLcKeymgrDivRma(RndCnstLcKeymgrDivRma),
-            .RndCnstInvalidTokens(RndCnstInvalidTokens),
-            .SecVolatileRawUnlockEn(SecVolatileRawUnlockEn)
-        ) */ u_lc_ctrl (
+    lc_ctrl u_lc_ctrl (
             .clk_i(core_clk),
             .rst_ni(rst_l & fake_reset),
             .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
@@ -2243,29 +2202,18 @@ module caliptra_ss_top
             .axi_rd_req(lc_axi_rd_req),
             .axi_rd_rsp(lc_axi_rd_rsp),
 
-            .dmi_tl_i(tlul_pkg::tl_h2d_t'(lc_ctrl_dmi_tl_h2d_tb)),
-            .dmi_tl_o(),
             .jtag_i('0),
             .jtag_o(),
             
             .scan_rst_ni(lc_ctrl_scan_rst_ni_tb),
             .scanmode_i(caliptra_prim_mubi_pkg::mubi4_t'(lc_ctrl_scanmode_i_tb)),
-
-            // Alert Handler Interface
-            // .alert_rx_i(caliptra_prim_alert_pkg::alert_rx_t'(lc_ctrl_alert_rx_tb)),
-            // .alert_tx_o(),
-            // .esc_scrap_state0_tx_i(caliptra_prim_esc_pkg::esc_rx_t'(esc_scrap_state0_tx_tb)),
-            // .esc_scrap_state0_rx_o(),
-            // .esc_scrap_state1_tx_i(caliptra_prim_esc_pkg::esc_rx_t'(esc_scrap_state1_tx_tb)),
-            // .esc_scrap_state1_rx_o(),
+            
             .alerts(lc_alerts_o),
             .esc_scrap_state0(esc_scrap_state0),
             .esc_scrap_state1(esc_scrap_state1),
 
-
             .pwr_lc_i(pwrmgr_pkg::pwr_lc_req_t'(pwr_lc_i_tb)),
             .pwr_lc_o(),
-
 
             .strap_en_override_o(),
 
@@ -2273,7 +2221,6 @@ module caliptra_ss_top
             .lc_otp_vendor_test_i(otp_ctrl_pkg::lc_otp_vendor_test_rsp_t'(lc_otp_vendor_test_i_tb)),
             .lc_otp_program_o(),
             .lc_otp_program_i(otp_ctrl_pkg::lc_otp_program_rsp_t'(lc_otp_program_i_tb)),
-
             .otp_lc_data_i(otp_ctrl_pkg::otp_lc_data_t'(otp_lc_data_tb)),
             .lc_dft_en_o(),
             .lc_creator_seed_sw_rw_en_o(),
@@ -2282,24 +2229,12 @@ module caliptra_ss_top
             .lc_escalate_en_o(),
             .lc_check_byp_en_o(),
 
-
-
-            .lc_nvm_debug_en_o(),
             .lc_hw_debug_en_o(),
             .lc_cpu_en_o(),
-            .lc_iso_part_sw_rd_en_o(),
-            .lc_iso_part_sw_wr_en_o(),
 
-
-
-            .lc_keymgr_en_o(), // We do not use key manager
             .lc_clk_byp_req_o(),
-            // .lc_clk_byp_ack_i(lc_ctrl_pkg::lc_tx_t'(lc_clk_byp_ack_tb)),
             .lc_clk_byp_ack_i(lc_clk_byp_ack_tb),
-            .lc_flash_rma_seed_o(), // We do not use flash
-            .lc_flash_rma_req_o(),
-            .lc_flash_rma_ack_i(lc_flash_rma_ack_tb),
-            .lc_keymgr_div_o(), // We do not use key manager
+
             .otp_device_id_i('0),
             .otp_manuf_state_i('0),
             .hw_rev_o()
