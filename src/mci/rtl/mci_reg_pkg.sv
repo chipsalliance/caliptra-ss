@@ -216,7 +216,7 @@ package mci_reg_pkg;
     } mci_reg__GENERIC_INPUT_WIRES__in_t;
 
     typedef struct packed{
-        logic swwel;
+        logic swwe;
     } mci_reg__FUSE_WR_DONE__done__in_t;
 
     typedef struct packed{
@@ -660,8 +660,8 @@ package mci_reg_pkg;
         logic mci_rst_b;
         logic mcu_rst_b;
         logic mci_pwrgood;
+        logic cptra_req;
         logic mcu_req;
-        logic mcu_or_no_rom_config_req;
         mci_reg__CAPABILITIES__in_t CAPABILITIES;
         mci_reg__HW_REV_ID__in_t HW_REV_ID;
         mci_reg__HW_CONFIG__in_t HW_CONFIG;

@@ -57,6 +57,9 @@ module mci_reg_top
     output logic mcu_timer_int,
     output logic mci_intr,
 
+    // Straps
+    input logic [7:0][11:0][31:0] strap_prod_debug_unlock_pk_hash,
+
     // MCU Reset vector
     input  logic [31:0] strap_mcu_reset_vector, // default reset vector
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
@@ -119,6 +122,9 @@ logic mcu_sram_fw_exec_region_lock_posedge;
 logic mcu_sram_fw_exec_region_lock_negedge;
 logic mcu_sram_fw_exec_region_lock_prev;
 
+// Fuse write done
+logic strap_we;
+
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
 ///////////////////////////////////////////////
@@ -175,9 +181,54 @@ assign cif_resp_if.error = mci_reg_read_error | mci_reg_write_error;
 // Reads and writes occur in 1 clock cycles
 assign cif_resp_if.hold = '0;
 
-
 ///////////////////////////////////////////////
-// Hold response logic
+// STRAPS / FUSE WR DONE       
+///////////////////////////////////////////////
+
+// Fuse write done can be written by MCU if it is already NOT '1.
+// The bit gets reset on cold reset
+always_comb mci_reg_hwif_in.FUSE_WR_DONE.done.swwe = (mcu_req & cif_resp_if.dv) & ~mci_reg_hwif_out.FUSE_WR_DONE.done.value;
+
+// Subsystem straps capture the initial value from input port on rising edge of cptra_pwrgood
+always_ff @(posedge clk or negedge mci_pwrgood) begin
+     if(~mci_pwrgood) begin
+        strap_we <= 1'b1;
+    end
+    else begin
+        strap_we <= 1'b0;
+    end
+end
+
+// Value
+always_comb begin
+    for (int i=0; i<8; i++) begin
+        for (int j=0; j<12; j++) begin
+            mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.next = strap_prod_debug_unlock_pk_hash[i][j];
+        end
+    end
+end
+
+// Write enable
+always_comb begin
+    for (int i=0; i<8; i++) begin
+        for (int j=0; j<12; j++) begin
+            mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.we = strap_we;
+        end
+    end
+end
+
+
+
+// Locking
+always_comb begin
+    for (int i=0; i<8; i++) begin
+        for (int j=0; j<12; j++) begin
+            mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.swwel = mci_reg_hwif_out.FUSE_WR_DONE.done.value ;
+        end
+    end
+end
+///////////////////////////////////////////////
+// TEMP CONNECTIONS FIXME
 ///////////////////////////////////////////////
 
 // Resets
@@ -186,9 +237,8 @@ assign mci_reg_hwif_in.mcu_rst_b = mcu_rst_b; // FIXME is this really required?
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
-//assign mci_reg_hwif_in.cptra_req    = clp_req; FIXME is this needed?
+assign mci_reg_hwif_in.cptra_req    = clp_req; 
 assign mci_reg_hwif_in.mcu_req      = mcu_req;
-assign mci_reg_hwif_in.mcu_or_no_rom_config_req      = 1'b1; // FIXME
 
 
 
@@ -199,8 +249,6 @@ assign mci_reg_hwif_in.FLOW_STATUS = '0; // FIXME
 
 
 assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE = '0; // FIXME
-assign mci_reg_hwif_in.FUSE_WR_DONE = '0; // FIXME
-assign mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG = '0; // FIXME
 assign mci_reg_hwif_in.STICKY_DATA_VAULT_CTRL = '0; // FIXME
 assign mci_reg_hwif_in.STICKY_DATA_VAULT_ENTRY = '0; // FIXME
 assign mci_reg_hwif_in.DATA_VAULT_CTRL = '0; // FIXME
