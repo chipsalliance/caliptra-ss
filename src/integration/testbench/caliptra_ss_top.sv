@@ -702,9 +702,9 @@ module caliptra_ss_top
     logic mailbox_data_avail;
     logic mbox_sram_cs;
     logic mbox_sram_we;
-    logic [14:0] mbox_sram_addr;
-    logic [MBOX_DATA_AND_ECC_W-1:0] mbox_sram_wdata;
-    logic [MBOX_DATA_AND_ECC_W-1:0] mbox_sram_rdata;
+    logic [CPTRA_MBOX_ADDR_W-1:0] mbox_sram_addr;
+    logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] mbox_sram_wdata;
+    logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] mbox_sram_rdata;
 
     logic imem_cs;
     logic [`CALIPTRA_IMEM_ADDR_WIDTH-1:0] imem_addr;
@@ -739,8 +739,7 @@ module caliptra_ss_top
 
 
     caliptra_top_tb_soc_bfm #(
-        .SKIP_BRINGUP(1),
-        .SKIP_FUSE_CTRL(0)
+        .SKIP_BRINGUP(1)
     ) soc_bfm_inst (
         .core_clk        (core_clk        ),
 
@@ -805,8 +804,12 @@ module caliptra_ss_top
         .cptra_rst_b                (cptra_rst_b),
         .clk                        (core_clk),
 
-        .cptra_obf_key              (cptra_obf_key     ),
-        .cptra_csr_hmac_key         (cptra_csr_hmac_key),
+        .cptra_obf_key              (cptra_obf_key                ),
+        .cptra_csr_hmac_key         (cptra_csr_hmac_key           ),
+        .cptra_obf_field_entropy_vld(1'b0                         ),
+        .cptra_obf_field_entropy    ({`CLP_OBF_FE_DWORDS {32'h0}} ),
+        .cptra_obf_uds_seed_vld     (1'b0                         ),
+        .cptra_obf_uds_seed         ({`CLP_OBF_UDS_DWORDS{32'h0}} ),
 
         .jtag_tck   (cptra_jtag_tck   ),
         .jtag_tdi   (cptra_jtag_tdi   ),
@@ -1511,10 +1514,6 @@ module caliptra_ss_top
         .iccm_ecc_double_error  (),
         .dccm_ecc_single_error  (),
         .dccm_ecc_double_error  (),
-
-    // remove mems DFT pins for opensource
-        .ic_data_ext_in_pkt     ('0),
-        .ic_tag_ext_in_pkt      ('0),
 
         .core_id                ('0),
         .scan_mode              ( 1'b0 ),         // To enable scan mode
