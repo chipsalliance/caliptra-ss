@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 module mci_top 
     import mci_reg_pkg::*;
     import mci_pkg::*;
-    #(
-    
+    import mbox_pkg::*;
+    #(    
     parameter AXI_ADDR_WIDTH = 32,
     parameter AXI_DATA_WIDTH = 32,
     parameter AXI_USER_WIDTH = 32,
@@ -27,6 +28,13 @@ module mci_top
 
     parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Size of MCU reset counter that overflows before allowing MCU
                                             // to come out of reset during a FW RT Update
+
+    //Mailbox configuration
+    ,parameter MCI_MBOX0_DMI_DLEN_ADDR = 0 //TODO define
+    ,parameter MCI_MBOX0_SIZE_KB = 4
+    ,parameter MCI_MBOX1_DMI_DLEN_ADDR = 0 //TODO define
+    ,parameter MCI_MBOX1_SIZE_KB = 4
+
     )
     (
     input logic clk,
@@ -95,7 +103,13 @@ module mci_top
 
 
     // MCU SRAM Interface
-    mci_mcu_sram_if.request mci_mcu_sram_req_if 
+    mci_mcu_sram_if.request mci_mcu_sram_req_if,
+
+    // Mbox0 SRAM Interface
+    mci_mcu_sram_if.request mci_mbox0_sram_req_if,
+
+    // Mbox1 SRAM Interface
+    mci_mcu_sram_if.request mci_mbox1_sram_req_if 
 
     );
 
@@ -106,6 +120,12 @@ module mci_top
     logic mcu_sram_single_ecc_error;
     logic mcu_sram_double_ecc_error;
     logic mcu_sram_fw_exec_region_lock_sync;
+
+    // Mbox0 SRAM signals
+    logic mbox0_sram_single_ecc_error;
+    logic mbox0_sram_double_ecc_error;
+    logic mbox1_sram_single_ecc_error;
+    logic mbox1_sram_double_ecc_error;
 
     // WDT signals
     logic timer1_en;
@@ -189,6 +209,29 @@ caliptra_prim_flop_2sync #(
   .d_i(mcu_sram_fw_exec_region_lock),
   .q_o(mcu_sram_fw_exec_region_lock_sync));
   
+// Caliptra internal fabric interface for MCI Mbox0
+// Address width is set to AXI_ADDR_WIDTH and Mbox0
+// will mask out upper bits that are "don't care"
+cif_if #(
+    .ADDR_WIDTH(AXI_ADDR_WIDTH)
+    ,.DATA_WIDTH(AXI_DATA_WIDTH)
+    ,.ID_WIDTH(AXI_ID_WIDTH)
+    ,.USER_WIDTH(AXI_USER_WIDTH)
+) mci_mbox0_req_if(
+    .clk, 
+    .rst_b(mci_rst_b));
+
+// Caliptra internal fabric interface for MCI Mbox0
+// Address width is set to AXI_ADDR_WIDTH and Mbox0
+// will mask out upper bits that are "don't care"
+cif_if #(
+    .ADDR_WIDTH(AXI_ADDR_WIDTH)
+    ,.DATA_WIDTH(AXI_DATA_WIDTH)
+    ,.ID_WIDTH(AXI_ID_WIDTH)
+    ,.USER_WIDTH(AXI_USER_WIDTH)
+) mci_mbox1_req_if(
+    .clk, 
+    .rst_b(mci_rst_b));
 
 //AXI Interface
 //This module contains the logic for interfacing with the SoC over the AXI Interface
@@ -201,8 +244,7 @@ mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
     .AXI_ID_WIDTH(AXI_ID_WIDTH),
     .AXI_USER_WIDTH(AXI_USER_WIDTH),
     .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
-    .MBOX0_SIZE_KB (4),     // FIXME
-    .MBOX1_SIZE_KB  (4)     // FIXME
+    .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
 ) i_mci_axi_sub_top (
     // MCI clk
     .clk  (clk     ),
@@ -220,6 +262,11 @@ mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
     // MCU SRAM Interface
     .mcu_sram_req_if( mcu_sram_req_if.request ),
 
+    // MCI Mbox0 Interface
+    .mci_mbox0_req_if ( mci_mbox0_req_if.request ),
+
+    // MCI Mbox1 Interface
+    .mci_mbox1_req_if ( mci_mbox1_req_if.request ),
 
     // Privileged requests 
     .mcu_lsu_req,
@@ -410,7 +457,170 @@ mci_reg_top i_mci_reg_top (
     .cif_resp_if (mci_reg_req_if.response)
 
 );
+generate
+if (MCI_MBOX0_SIZE_KB == 0) begin
+    always_comb begin
+        //TIE-OFF zero sized mailbox
+        mci_mbox0_req_if.hold = 0;
+        mci_mbox0_req_if.rdata = 0;
+        mci_mbox0_req_if.error = 1;
+        mci_mbox0_sram_req_if.req.cs = 0;
+        mci_mbox0_sram_req_if.req.we = 0;
+        mci_mbox0_sram_req_if.req.addr = 0;
+        mci_mbox0_sram_req_if.req.wdata = 0;
+        mbox0_sram_single_ecc_error = 0;
+        mbox0_sram_double_ecc_error = 0;
+    end
+end else begin
+mbox
+#(
+    .DMI_REG_MBOX_DLEN_ADDR(MCI_MBOX0_DMI_DLEN_ADDR),
+    .MBOX_SIZE_KB(MCI_MBOX0_SIZE_KB),
+    .MBOX_DATA_W(MCI_MBOX_DATA_W),
+    .MBOX_ECC_DATA_W(MCI_MBOX_ECC_DATA_W),
+    .MBOX_IFC_DATA_W(AXI_DATA_WIDTH),
+    .MBOX_IFC_USER_W(AXI_USER_WIDTH),
+    .MBOX_IFC_ADDR_W(AXI_ADDR_WIDTH)
+)
+mci_mbox0_i (
+    .clk(clk),
+    .rst_b(mci_rst_b),
+    //mailbox request interface
+    .req_dv(mci_mbox0_req_if.dv), 
+    .req_hold(mci_mbox0_req_if.hold),
+    .req_data_addr(mci_mbox0_req_if.req_data.addr),
+    .req_data_wdata(mci_mbox0_req_if.req_data.wdata),
+    .req_data_user(mci_mbox0_req_if.req_data.user),
+    .req_data_write(mci_mbox0_req_if.req_data.write),
+    .req_data_soc_req(~mcu_req),
+    .rdata(mci_mbox0_req_if.rdata),
+    .mbox_error(mci_mbox0_req_if.error),
+    .mbox_sram_req_cs(mci_mbox0_sram_req_if.req.cs),
+    .mbox_sram_req_we(mci_mbox0_sram_req_if.req.we), 
+    .mbox_sram_req_addr(mci_mbox0_sram_req_if.req.addr),
+    .mbox_sram_req_ecc(mci_mbox0_sram_req_if.req.wdata.ecc),
+    .mbox_sram_req_wdata(mci_mbox0_sram_req_if.req.wdata.data),
+    .mbox_sram_resp_ecc(mci_mbox0_sram_req_if.resp.rdata.ecc),
+    .mbox_sram_resp_data(mci_mbox0_sram_req_if.resp.rdata.data),
+    .sram_single_ecc_error(mbox0_sram_single_ecc_error),
+    .sram_double_ecc_error(mbox0_sram_double_ecc_error),
+    //status
+    .uc_mbox_lock(), //FIXME
+    //interrupts
+    .soc_mbox_data_avail(), //FIXME
+    .uc_mbox_data_avail(), //FIXME
+    .soc_req_mbox_lock(), //FIXME
+    .mbox_protocol_error(), //FIXME
+    .mbox_inv_axi_user_axs(), //FIXME
+    //direct request unsupported
+    .dir_req_dv(1'b0),
+    .dir_rdata(),
+    //sha accelerator unsupported
+    .sha_sram_req_dv('0),
+    .sha_sram_req_addr('0),
+    .sha_sram_resp_ecc(),
+    .sha_sram_resp_data(),
+    .sha_sram_hold(),
+    //dma unsupported
+    .dma_sram_req_dv  ('0),
+    .dma_sram_req_write('0),
+    .dma_sram_req_addr('0),
+    .dma_sram_req_wdata('0),
+    .dma_sram_rdata   (),
+    .dma_sram_hold    (),
+    .dma_sram_error   (),
+    //dmi port
+    .dmi_inc_rdptr('0),
+    .dmi_inc_wrptr('0),
+    .dmi_reg_wen('0),
+    .dmi_reg_addr('0),
+    .dmi_reg_wdata('0),
+    .dmi_reg()
+);
+end
+endgenerate
 
-
+generate
+if (MCI_MBOX1_SIZE_KB == 0) begin
+    always_comb begin
+        //TIE-OFF zero sized mailbox
+        mci_mbox1_req_if.hold = 0;
+        mci_mbox1_req_if.rdata = 0;
+        mci_mbox1_req_if.error = 1;
+        mci_mbox1_sram_req_if.req.cs = 0;
+        mci_mbox1_sram_req_if.req.we = 0;
+        mci_mbox1_sram_req_if.req.addr = 0;
+        mci_mbox1_sram_req_if.req.wdata = 0;
+        mbox1_sram_single_ecc_error = 0;
+        mbox1_sram_double_ecc_error = 0;
+    end
+end else begin
+mbox
+#(
+    .DMI_REG_MBOX_DLEN_ADDR(MCI_MBOX1_DMI_DLEN_ADDR),
+    .MBOX_SIZE_KB(MCI_MBOX1_SIZE_KB),
+    .MBOX_DATA_W(MCI_MBOX_DATA_W),
+    .MBOX_ECC_DATA_W(MCI_MBOX_ECC_DATA_W),
+    .MBOX_IFC_DATA_W(AXI_DATA_WIDTH),
+    .MBOX_IFC_USER_W(AXI_USER_WIDTH),
+    .MBOX_IFC_ADDR_W(AXI_ADDR_WIDTH)
+)
+mci_mbox1_i (
+    .clk(clk),
+    .rst_b(mci_rst_b),
+    //mailbox request interface
+    .req_dv(mci_mbox1_req_if.dv), 
+    .req_hold(mci_mbox1_req_if.hold),
+    .req_data_addr(mci_mbox1_req_if.req_data.addr),
+    .req_data_wdata(mci_mbox1_req_if.req_data.wdata),
+    .req_data_user(mci_mbox1_req_if.req_data.user),
+    .req_data_write(mci_mbox1_req_if.req_data.write),
+    .req_data_soc_req(~mcu_req),
+    .rdata(mci_mbox1_req_if.rdata),
+    .mbox_error(mci_mbox1_req_if.error),
+    .mbox_sram_req_cs(mci_mbox1_sram_req_if.req.cs),
+    .mbox_sram_req_we(mci_mbox1_sram_req_if.req.we), 
+    .mbox_sram_req_addr(mci_mbox1_sram_req_if.req.addr),
+    .mbox_sram_req_ecc(mci_mbox1_sram_req_if.req.wdata.ecc),
+    .mbox_sram_req_wdata(mci_mbox1_sram_req_if.req.wdata.data),
+    .mbox_sram_resp_ecc(mci_mbox1_sram_req_if.resp.rdata.ecc),
+    .mbox_sram_resp_data(mci_mbox1_sram_req_if.resp.rdata.data),
+    .sram_single_ecc_error(mbox1_sram_single_ecc_error),
+    .sram_double_ecc_error(mbox1_sram_double_ecc_error),
+    //status
+    .uc_mbox_lock(), //FIXME
+    //interrupts
+    .soc_mbox_data_avail(), //FIXME
+    .uc_mbox_data_avail(), //FIXME
+    .soc_req_mbox_lock(), //FIXME
+    .mbox_protocol_error(), //FIXME
+    .mbox_inv_axi_user_axs(), //FIXME
+    //dma FIXME
+    .dma_sram_req_dv  ('0),
+    .dma_sram_req_write('0),
+    .dma_sram_req_addr('0),
+    .dma_sram_req_wdata('0),
+    .dma_sram_rdata   (),
+    .dma_sram_hold    (),
+    .dma_sram_error   (),
+    //dmi FIXME
+    .dmi_inc_rdptr('0),
+    .dmi_inc_wrptr('0),
+    .dmi_reg_wen('0),
+    .dmi_reg_addr('0),
+    .dmi_reg_wdata('0),
+    .dmi_reg(),
+    //direct request unsupported
+    .dir_req_dv(1'b0),
+    .dir_rdata(),
+    //sha accelerator unsupported
+    .sha_sram_req_dv('0),
+    .sha_sram_req_addr('0),
+    .sha_sram_resp_ecc(),
+    .sha_sram_resp_data(),
+    .sha_sram_hold()
+);
+end
+endgenerate
 
 endmodule
