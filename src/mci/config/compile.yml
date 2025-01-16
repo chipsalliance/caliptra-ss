@@ -41,4 +41,21 @@ targets:
     waiver_files:
       - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
     tops: [mci_top]
-
+---
+provides: [mci_top_tb]
+schema_version: 2.4.0
+requires:
+  - mci_top
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/tb
+    files:
+      - $COMPILE_ROOT/tb/mci_top_tb.sv
+    tops: [mci_top_tb]
+global:
+  tool:
+    vcs:
+      default:
+        - '-assert svaext'
+        - '-noinherit_timescale=1ns/1ps'
