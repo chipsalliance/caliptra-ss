@@ -35,6 +35,7 @@ targets:
       - $COMPILE_ROOT/rtl/mci_wdt_top.sv
       - $COMPILE_ROOT/rtl/mci_reg_top.sv
       - $COMPILE_ROOT/rtl/mci_reg.sv
+      - $COMPILE_ROOT/rtl/mci_boot_seqr.sv
     tops: [mci_top]
   rtl_lint:
     directories: [$COMPILE_ROOT/config/design_lint]

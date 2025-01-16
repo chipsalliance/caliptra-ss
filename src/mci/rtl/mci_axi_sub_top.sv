@@ -20,6 +20,10 @@
 
 module mci_axi_sub_top 
     #(
+    parameter AXI_ADDR_WIDTH    = 32,
+    parameter AXI_DATA_WIDTH    = 32,
+    parameter AXI_USER_WIDTH    = 32,
+    parameter AXI_ID_WIDTH      = 8,
     parameter MCU_SRAM_SIZE_KB  = 1024
     )
     (
@@ -62,10 +66,6 @@ module mci_axi_sub_top
 
     );
 
-localparam AXI_ADDR_WIDTH = s_axi_w_if.AW;
-localparam AXI_DATA_WIDTH = s_axi_w_if.DW;
-localparam AXI_USER_WIDTH = s_axi_w_if.UW;
-localparam AXI_ID_WIDTH   = s_axi_w_if.IW;
 
 // Interface between axi_sub and mci decoder
 cif_if #(

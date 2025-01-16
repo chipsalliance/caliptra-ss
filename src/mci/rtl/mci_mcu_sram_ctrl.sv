@@ -42,6 +42,9 @@ module mci_mcu_sram_ctrl
     // MCI Resets
     input logic rst_b,
 
+    // MCU Reset
+    input logic mcu_rst_b,
+
     // Interface
     input logic [15:0] fw_sram_exec_region_size, // 4KB steps with 0 being 4KB
 
@@ -71,9 +74,9 @@ localparam BITS_IN_BYTE = 8;
 localparam KB = 1024; // Bytes in KB
 
 localparam MCU_SRAM_SIZE_BYTES = MCU_SRAM_SIZE_KB * KB;
-localparam MCU_SRAM_DATA_W = mci_mcu_sram_req_if.DATA_WIDTH;
+localparam MCU_SRAM_DATA_W = 32; // ECC not parametrized so can't expose this parameter
 localparam MCU_SRAM_DATA_W_BYTES = MCU_SRAM_DATA_W / BITS_IN_BYTE;
-localparam MCU_SRAM_ECC_DATA_W = mci_mcu_sram_req_if.ECC_WIDTH;
+localparam MCU_SRAM_ECC_DATA_W = 7; // ECC not parameterized so can't expose this parameter
 localparam MCU_SRAM_DATA_AND_ECC_W = MCU_SRAM_DATA_W + MCU_SRAM_ECC_DATA_W;
 localparam MCU_SRAM_DEPTH = MCU_SRAM_SIZE_BYTES / MCU_SRAM_DATA_W_BYTES;
 localparam MCU_SRAM_ADDR_W = $clog2(MCU_SRAM_DEPTH);
@@ -82,7 +85,8 @@ localparam MCU_SRAM_ADDR_W = $clog2(MCU_SRAM_DEPTH);
 // SRAM. AKA address scope
 localparam MCU_SRAM_CIF_ADDR_W = $clog2(MCU_SRAM_SIZE_BYTES);
 
-
+// Memory protection controls
+logic fw_exec_region_mcu_access;
 
 // Memory region request
 logic exec_region_match;
@@ -180,6 +184,24 @@ assign prot_region_filter_error   = prot_region_req & ~prot_region_filter_succes
 // Execution data region access protection  
 ///////////////////////////////////////////////
 
+// Cannot directly use the mcu_sram_fw_exec_region_lock
+// because when cleared MCU could still be executing
+// from MCU SRAM. We need to make sure MCU is in reset
+// before we switch access from MCU -> Caliptra
+always_ff @(posedge clk or negedge rst_b) begin
+    if(!rst_b) begin
+        fw_exec_region_mcu_access <= '0;
+    end
+    else begin
+        if (mcu_sram_fw_exec_region_lock) begin
+            fw_exec_region_mcu_access <= 1'b1;
+        end
+        else if(!mcu_rst_b) begin
+            fw_exec_region_mcu_access <= 1'b0;
+        end
+    end
+end
+
 // This logic will help in 2 areas:
 // 1. We can use these signals to block read or a write
 //    ever reaching the SRAM.
@@ -190,7 +212,7 @@ always_comb begin
     exec_region_filter_success = '0;
     exec_region_filter_error   = '0;
     if (exec_region_req) begin
-        if (mcu_sram_fw_exec_region_lock) begin
+        if (fw_exec_region_mcu_access) begin
             exec_region_filter_success = (mcu_lsu_req | mcu_ifu_req);
             exec_region_filter_error   = ~exec_region_filter_success;
         end 
@@ -226,7 +248,7 @@ assign mcu_sram_write_req = mcu_sram_valid_req & cif_resp_if.req_data.write;
 assign sram_req_phase = mcu_sram_valid_req  & ~sram_read_data_phase; 
 
 assign sram_write_req_phase = sram_req_phase & mcu_sram_write_req;
-assign sram_read_req_phase = sram_req_phase & mcu_sram_write_req;
+assign sram_read_req_phase  = sram_req_phase & mcu_sram_read_req;
 
 always_ff @(posedge clk or negedge rst_b) begin
     if(!rst_b) begin
