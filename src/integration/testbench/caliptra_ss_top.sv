@@ -74,7 +74,6 @@ module caliptra_ss_top
 
     logic        [31:0]         reset_vector;
     logic        [31:0]         nmi_vector;
-    logic        [31:1]         jtag_id;
 
     logic        [31:0]         ic_haddr        ;
     logic        [2:0]          ic_hburst       ;
@@ -601,9 +600,6 @@ module caliptra_ss_top
         soft_int    = 0;
 
     // tie offs
-        jtag_id[31:28] = 4'b1;
-        jtag_id[27:12] = '0;
-        jtag_id[11:1]  = 11'h45;
         reset_vector = `css_mcu0_RV_RESET_VEC;
         nmi_vector   = 32'hee000000;
 
@@ -1248,7 +1244,6 @@ module caliptra_ss_top
         .rst_vec                ( reset_vector[31:1]),
         .nmi_int                ( nmi_int       ),
         .nmi_vec                ( nmi_vector[31:1]),
-        .jtag_id                ( jtag_id[31:1]),
 
 
 

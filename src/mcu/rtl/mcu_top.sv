@@ -26,7 +26,6 @@ module mcu_top
     input logic [31:1] rst_vec,
     input logic        nmi_int,
     input logic [31:1] nmi_vec,
-    input logic [31:1] jtag_id,
 
 
     output logic [31:0] trace_rv_i_insn_ip,

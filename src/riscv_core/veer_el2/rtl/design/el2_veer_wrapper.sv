@@ -35,10 +35,9 @@ import css_mcu0_el2_pkg::*;
    input logic [31:1]                      rst_vec,
    /*pragma coverage on*/
    input logic                             nmi_int,
-   // jtag_id and nmi_vec are supposed to be tied to constants in the top level
+   // nmi_vec is supposed to be tied to constants in the top level
    /*pragma coverage off*/
    input logic [31:1]                      nmi_vec,
-   input logic [31:1]                      jtag_id,
    /*pragma coverage on*/
 
 
@@ -897,7 +896,6 @@ import css_mcu0_el2_pkg::*;
     // Processor Signals
     .core_rst_n  (dbg_rst_l),       // Debug reset, active low
     .core_clk    (clk),             // Core clock
-    .jtag_id     (jtag_id),         // JTAG ID
     .rd_data     (dmi_rdata),       // Read data from  Processor
     .reg_wr_data (dmi_wdata),       // Write data to Processor
     .reg_wr_addr (dmi_addr),        // Write address to Processor
