@@ -190,10 +190,10 @@ initial begin
         slave[0].cfg_info.limit_address[0] = 64'h8000_FFFF;
 
         //-- lmem/Mailbox
-        slave[1].cfg_info.base_address[0] = 64'h9001_0000;
-        slave[1].cfg_info.limit_address[0] = 64'h9001_FFFF;
-        slave[1].cfg_info.base_address[1]  = 64'hD058_0000;
-        slave[1].cfg_info.limit_address[1] = 64'hD058_0000;
+        // slave[1].cfg_info.base_address[0] = 64'h9001_0000;
+        // slave[1].cfg_info.limit_address[0] = 64'h9001_FFFF;
+        // slave[1].cfg_info.base_address[1]  = 64'hD058_0000;
+        // slave[1].cfg_info.limit_address[1] = 64'hD058_0000;
         // slave[1].cfg_info.fifo_address[1]  = 64'hE000_0000;
         // slave[1].cfg_info.fifo_limit[1]    = 64'hE000_1000;
 
@@ -231,10 +231,12 @@ initial begin
         slave[4].cfg_info.passive_mode= 1; 
         slave[4].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        // slave[4].cfg_info.base_address[0] = 64'h2000_4000;
-        slave[4].cfg_info.base_address[0] = {32'h0, `SOC_MCI_REG_BASE_ADDR};//64'h2100_0000;
         // slave[4].cfg_info.limit_address[0] = 64'h2000_4FFF;
+        // slave[4].cfg_info.base_address[0] = 64'h2000_4000;
+        slave[4].cfg_info.base_address[0]  = {32'h0, `SOC_MCI_REG_BASE_ADDR};//64'h2100_0000;
         slave[4].cfg_info.limit_address[0] = {32'h0, `SOC_MCI_REG_BASE_ADDR + 32'h00FF_FFFF};
+        // slave[4].cfg_info.base_address[1]  = 64'h0000_0000_D058_0000;
+        // slave[4].cfg_info.limit_address[1] = 64'h0000_0000_D058_0000;
         slave[4].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         slave[4].cfg_info.total_outstanding_depth = 4;
         slave[4].cfg_info.id_outstanding_depth = 4;

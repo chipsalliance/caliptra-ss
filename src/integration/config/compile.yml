@@ -32,7 +32,7 @@ targets:
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
       - $COMPILE_ROOT/testbench/axi_slv.sv
       # - $COMPILE_ROOT/testbench/dasm.svi
-      # - $COMPILE_ROOT/testbench/mci_sram.sv
+      - $COMPILE_ROOT/testbench/mci_sram.sv
       - $COMPILE_ROOT/testbench/aaxi_pkg_caliptra_test.sv
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
       - $COMPILE_ROOT/testbench/aaxi4_interconnect.sv
