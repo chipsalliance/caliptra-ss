@@ -248,7 +248,7 @@ assign mcu_sram_write_req = mcu_sram_valid_req & cif_resp_if.req_data.write;
 assign sram_req_phase = mcu_sram_valid_req  & ~sram_read_data_phase; 
 
 assign sram_write_req_phase = sram_req_phase & mcu_sram_write_req;
-assign sram_read_req_phase = sram_req_phase & mcu_sram_write_req;
+assign sram_read_req_phase  = sram_req_phase & mcu_sram_read_req;
 
 always_ff @(posedge clk or negedge rst_b) begin
     if(!rst_b) begin

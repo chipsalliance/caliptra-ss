@@ -243,7 +243,6 @@ mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
     .AXI_DATA_WIDTH(AXI_DATA_WIDTH), 
     .AXI_ID_WIDTH(AXI_ID_WIDTH),
     .AXI_USER_WIDTH(AXI_USER_WIDTH),
-    .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
     .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
 ) i_mci_axi_sub_top (
     // MCI clk

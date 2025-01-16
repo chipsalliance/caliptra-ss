@@ -24,7 +24,7 @@ module mci_axi_sub_top
     parameter AXI_DATA_WIDTH    = 32,
     parameter AXI_USER_WIDTH    = 32,
     parameter AXI_ID_WIDTH      = 8,
-    parameter MCU_SRAM_SIZE_KB  = 1024,
+    parameter MCU_SRAM_SIZE_KB  = 1024
     )
     (
     input logic clk,
