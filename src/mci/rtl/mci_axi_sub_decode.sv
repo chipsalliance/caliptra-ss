@@ -126,7 +126,7 @@ assign soc_resp_if.rdata =  soc_mcu_sram_gnt    ? mcu_sram_req_if.rdata :
 
 
 ///////////////////////////////////////////////////////////
-// Drive approriate hold back
+// Drive appropriate hold back
 ///////////////////////////////////////////////////////////
 
 always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sram_req_if.hold)) |
@@ -135,7 +135,7 @@ always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sra
 
 
 ///////////////////////////////////////////////////////////
-// Drive approriate error back or request misses all desitnations
+// Drive appropriate error back or request misses all destinations
 ///////////////////////////////////////////////////////////
 
 // Missed all destinations 

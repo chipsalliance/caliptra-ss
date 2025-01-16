@@ -212,7 +212,7 @@ always_comb begin
         end
         default: begin
             // Unexpected state so set state to X
-            boot_fsm_nxt = 'x;
+            boot_fsm_nxt = BOOT_UNKNOWN;
         end
     endcase
 end
