@@ -5,16 +5,19 @@ targets:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/mci_pkg.sv
+      - $COMPILE_ROOT/rtl/mci_reg_pkg.sv
   tb:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/mci_pkg.sv
+      - $COMPILE_ROOT/rtl/mci_reg_pkg.sv
 ---
 provides: [mci_top]
 schema_version: 2.4.0
 requires:
   - caliptra_prim
   - axi_sub
+  - soc_ifc_top
   - mci_pkg
   # for beh_lib with rvecc_encode/decode
   - el2_veer_pkg
@@ -29,10 +32,30 @@ targets:
       - $COMPILE_ROOT/rtl/mci_mcu_sram_ctrl.sv
       - $COMPILE_ROOT/rtl/mci_mcu_sram_if.sv
       - $COMPILE_ROOT/rtl/cif_if.sv
+      - $COMPILE_ROOT/rtl/mci_wdt_top.sv
+      - $COMPILE_ROOT/rtl/mci_reg_top.sv
+      - $COMPILE_ROOT/rtl/mci_reg.sv
     tops: [mci_top]
   rtl_lint:
     directories: [$COMPILE_ROOT/config/design_lint]
     waiver_files:
       - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
     tops: [mci_top]
-
+---
+provides: [mci_top_tb]
+schema_version: 2.4.0
+requires:
+  - mci_top
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/tb
+    files:
+      - $COMPILE_ROOT/tb/mci_top_tb.sv
+    tops: [mci_top_tb]
+global:
+  tool:
+    vcs:
+      default:
+        - '-assert svaext'
+        - '-noinherit_timescale=1ns/1ps'

@@ -28,8 +28,8 @@ module lc_ctrl_bfm
     input axi_struct_pkg::axi_rd_rsp_t lc_axi_rd_rsp,
     output logic fake_reset,
     output logic Allow_RMA_on_PPD,
-    output logic [7:0] from_bfm_lc_flash_rma_ack,
-    input  [3:0]        to_bfm_lc_flash_rma_req_o,
+    // output logic [7:0] from_bfm_lc_flash_rma_ack,
+    // input  [3:0]        to_bfm_lc_flash_rma_req_o,
 
     // Power manager interface
     output pwrmgr_pkg::pwr_lc_req_t pwr_lc_i,
@@ -37,8 +37,8 @@ module lc_ctrl_bfm
     input  logic                                cptra_pwrgood,
 
     // TL-UL Interface
-    output tlul_pkg::tl_h2d_t lc_ctrl_dmi_tl_h2d,
-    input  tlul_pkg::tl_d2h_t lc_ctrl_dmi_tl_d2h,
+    // output tlul_pkg::tl_h2d_t lc_ctrl_dmi_tl_h2d,
+    // input  tlul_pkg::tl_d2h_t lc_ctrl_dmi_tl_d2h,
 
     // Scan Interface
     output lc_ctrl_scan_rst_ni,
@@ -78,7 +78,7 @@ module lc_ctrl_bfm
     assign pwr_lc_i = pwr_lc_i_internal;
 
     // Default values
-    assign lc_ctrl_dmi_tl_h2d = tlul_pkg::TL_H2D_DEFAULT;
+    // assign lc_ctrl_dmi_tl_h2d = tlul_pkg::TL_H2D_DEFAULT;
     assign lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
     
 
@@ -94,7 +94,7 @@ module lc_ctrl_bfm
     assign otp_lc_data_o.rma_token_valid = lc_tx_t'(On);//from_otp_lc_data_i.rma_token_valid;//lc_tx_t'(On);
     assign otp_lc_data_o.rma_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
 
-    assign from_bfm_lc_flash_rma_ack = (to_bfm_lc_flash_rma_req_o==3'h5) ? 8'h55 : 8'hAA;
+    // assign from_bfm_lc_flash_rma_ack = (to_bfm_lc_flash_rma_req_o==3'h5) ? 8'h55 : 8'hAA;
 
     assign esc_scrap_state0 = (|lc_alerts_o)? 1'b1: 1'b0;
     assign esc_scrap_state1 = (|lc_alerts_o)? 1'b1: 1'b0;
@@ -105,7 +105,7 @@ module lc_ctrl_bfm
     always@(posedge clk or negedge reset_n) begin
         if (!reset_n)
             Allow_RMA_on_PPD <= 0;
-        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0048 && !power_and_reset_indication)
+        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0448 && !power_and_reset_indication)
             Allow_RMA_on_PPD <= ~Allow_RMA_on_PPD;
     end
     //-------------------------------------------------------------------
@@ -116,7 +116,7 @@ module lc_ctrl_bfm
     always@(posedge clk or negedge reset_n) begin
         if (!reset_n)
             power_and_reset_indication <= 0;
-        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0044 && !power_and_reset_indication)
+        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0444 && !power_and_reset_indication)
             power_and_reset_indication <= 1;
         else
             power_and_reset_indication <= 0;
