@@ -43,7 +43,8 @@ targets:
                 && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py .
                 && echo "[PRE-EXEC] Copying MLDSA vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 .
                 && echo "[PRE-EXEC] Copying MLDSA debug vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug .
-                && echo "[PRE-EXEC] Copying mldsa directed vector to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex .'
+                && echo "[PRE-EXEC] Copying mldsa directed vector to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex .
+                && echo "[PRE-EXEC] Copying otp-img.2048.vmem to ${pwd}" && cp $COMPILE_ROOT/../../src/fuse_ctrl/data/otp-img.2048.vmem .'
 global:
   tool:
     vcs:
