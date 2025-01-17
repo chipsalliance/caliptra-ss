@@ -546,29 +546,52 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 **Note:** SOC may have other HW FSM steps that were done before Caliptra (CSS) is brought out of reset such as locking a PLL or calibrating a CRO, setting up GPIOs, test logic bring up etc. using SOC HW FSM.
 
 1. SOC asserts Caliptra SS powergood and desserts Caliptra SS reset to MCI
+
    a. SOC may choose to connect the same signals to the AXI fabric or bring it out of reset using a different signals. But the requirement is that before MCU is out of reset, fabric should be operational.
+
 2. CSS-BootFSM will sample straps on the MCI and will drive its outputs to reset defaults.
 3. CSS-BootFSM will go through Caliptra Subsystem Fuse controller (CSS FC) Init Sequence Init Sequence/handshakes
 4. CSS-BootFSM will go through Caliptra Subsystem Life Cycle Controller (CSS LCC) Init Sequence/handshakes
+
    a. **SOC Note:** Note that LCC shall start on an SOC generated internal clock to prevent clock stretch attacks
-   b. **SOC Note:** If the life cycle state is in RAW, TEST* or RMA, and if TRANSITION_CTRL.EXT_CLOCK_EN is set to one, the CLK_BYP_REQ signal is asserted in order to switch the main system clock to an external clock signal. This functionality is needed in certain life cycle states where the SOC internal clock source may not be fully calibrated yet, since the OTP macro requires a stable clock frequency in order to reliably program the fuse array. Note that the TRANSITION_CTRL.EXT_CLOCK_EN register can only be set to one if the transition interface has been claimed via the CLAIM_TRANSITION_IF mutex. This function is not available in production life cycle states.
-5. If MCU ROM Bypass mode is set, there is no other function for CSS-BootFSM to handle and the control is passed on to SOC to do the remaining steps and below MCU ROM steps are immaterial.
-   a. **Note:** MCU Reset Vector will be strapped to the MCU SRAM executable location at integration time.
-   b. **Note:** MCI will allow a “TEST AXI ID” to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
-6. If MCU ROM Bypass strap is not set, then CSS-BootFSM will bring MCU out of reset and MCU ROM will start executing.
+
+   b. **SOC Note:** If the life cycle state is in RAW, TEST* or RMA, and if LCC.TRANSITION_CTRL.EXT_CLOCK_EN is set to one, the LCC.CLK_BYP_REQ signal is asserted in order to switch the main system clock to an external clock signal. This functionality is needed in certain life cycle states where the SOC internal clock source may not be fully calibrated yet, since the OTP macro requires a stable clock frequency in order to reliably program the fuse array. Note that the LCC.TRANSITION_CTRL.EXT_CLOCK_EN register can only be set to one if the transition interface has been claimed via the CLAIM_TRANSITION_IF mutex. This function is not available in production life cycle states.
+
+
+5. If MCU-No-ROM-Config strap is not set, then CSS-BootFSM will bring MCU out of reset and MCU ROM will start executing.
+
    a. **Note:** MCU ROM may be used by some SOCs for doing additional SOC specific initializations.An example of such a SoC construction is MCI, MCU, CSS Fabric are running on external clock initially. MCU brings up PLL, some GPIO peripherals, does I3C init sequence etc and then performs clock switch to internal PLL clock domain so that the fabric is running on the internal clock domain before secrets are read on it from the fuse controller.
-   c. **Note:** In allowed LCC states, MCU TAP will be open to use as soon as MCU is out of reset.
-7. MCU ROM will bring Caliptra out of reset by writing a MCI register
-8. Caliptra reset (cptra_rst_b) is deasserted
+
+   b. **Note:** In allowed LCC states, MCU TAP will be open to use as soon as MCU is out of reset.
+
+6. If MCU-No-ROM-Config is not set, MCU ROM will bring Caliptra out of reset by writing a MCI register
+7. If MCU-No-ROM-Config is set, CSS-BootFSM waits for a Caliptra GO write from SOC to bring Caliptra out of reset.
+
+   a. **Note:** MCU Reset Vector will be strapped to the MCU SRAM executable location at integration time.
+
+   b. **Note:** MCI will allow a “TEST AXI ID” to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM in the debug mode to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
+   
+8. Caliptra reset (cptra_rst_b) is deasserted.
 9. Caliptra BootFSM will go through its own boot flow as documented in Caliptra spec, reads secret fuses and sets “ready_for_fuses” to MCI.
+
+   a. **Note:** In MCU-NO-ROM-CONFIG, steps 11 through 14 & steps 16 through 18 are done by a SOC entity. Otherwise, MCU ROM will do the below steps. 
+   
 10. MCU ROM will be polling for this indication
 11. MCU ROM will now read FC’s SW partition for all the required fuses including its own and also write Caliptra fuses. Note that only non-secret fuses are accessible for MCU ROM by fuse controller construction.
-    a. Note: All fuses will be zero if FC is not programmed
-12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here)
+
+      a. **Note**: All fuses will be zero if FC is not programmed
+
+12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here) and then write the fuse_write_done to MCI.
 13. MCU ROM will do a fuse_write_done write to Caliptra
 14. Caliptra ROM starts to execute from here on.
+15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
+16. CSS-BootFSM will wait for a confirmation from MCU ROM and assert and deassert the MCU reset based on a min clock counter in MCI
 
-**FIXME:** BootFSM pic
+      a. **Note:** The CSS-BootFSM min reset counter is configurable via an MCI parameter (MIN_MCU_RST_COUNTER_WIDTH). When the counter overflows CSS-BootFSM checks for FW_EXEC_CTL[2] to be set and will bring MCU out of reset. 
+
+17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
+
+![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/Caliptra-SS-BootFSM.png)
 
 ### Watchdog Timer
 The Watchdog Timer within the MCI is a crucial component designed to enhance the reliability and robustness of the SoC. This timer monitors the operation of the system and can trigger a system reset if it detects that the system is not functioning correctly. The Watchdog Timer is configurable through CSRs and provides various timeout periods and control mechanisms to ensure the system operates within defined parameters.
@@ -606,19 +629,24 @@ The span of each region is dynamically defined by the MCU ROM during boot up. On
 
 The Updateable Execution Region may only be read/written by Caliptra prior to setting the MCU_RUNTIME_LOCK register and may only be read/written by the MCU IFU or MCU LSU after MCU_RUNTIME_LOCK is set. The Protected Data Region may never be accessed by Caliptra or the MCU IFU. Only the MCU LSU is allowed to read or write to the Protected Data Region, regardless of whether MCU ROM or MCU Runtime firmware is running.
 
-The entire MCU SRAM has ECC protection. See error handling section for more details. Unlike MCI mailboxes, there is no configuration available to disable MCU SRAM for architectural reasons.
+The entire MCU SRAM has ECC protection. Unlike MCI mailboxes, there is no configuration available to disable MCU SRAM for architectural reasons. Single bit errors are detected and corrected. While double bit errors are detected and error. MCI actions for single bit errors:
+- Correct data and pass corrected data back to the initiator.
+- Send interrupt notification to MCU.
+- MCI actions for double bit errors:
+- AXI response to the initiator
+- HW_ERROR_FATAL asserted and sent to SOC
 
 ### Interrupts
 
 All interrupt status and control registers live in the CSR block. Each interrupt has the following properties:
-	- Status: W1C for SW to clear
-	- Enable: Prevents status from propagating. It does not block the status from being set.
-	- SW Trigger: Ability for SW to manually trigger the interrupt. Typically used for debug.
-	- Counter: Counts number of times the interrupt event was detected (SW or HW). 
+- Status: W1C for SW to clear
+- Enable: Prevents status from propagating. It does not block the status from being set.
+- SW Trigger: Ability for SW to manually trigger the interrupt. Typically used for debug.
+- Counter: Counts number of times the interrupt event was detected (SW or HW). 
 
 There are two different groups of interrupts
-	- Error 
-	- Notification 
+- Error
+- Notification 
 
 Each group of interrupts has its own global status and enable registers that are an aggregate of all interrupts in the group. These status and enable registers have the same properties as the individual interrupt status and enable registers.  
 
@@ -639,8 +667,9 @@ MCI also generates error signals for its own internal blocks, specifically for M
 MCI also provides capability to store fuses required for Caliptra subsystem for Caliptra core's usage for production debug unlock feature. MCU will read the fuse controller for the production debug unlock hashes , write to the corresponding registers in the MCI block and lock the registers from being changed by MCU RT FW. Lock is done by writing to do a FUSE_WR_DONE (FIXME: Add specific register & bit names).
 
 ### MCU Timer
-RV compliant mtimer. **FIXME**
+Standard RISC-V timer interrupts for MCU are implemented using the mtime and mtimecmp registers defined in the RISC-V Privileged Architecture Specification. Both mtime and mtimecmp are included in the MCI register bank, and are accessible by the MCU to facilitate precise timing tasks. Frequency for the timers is configured by the SoC using the dedicated timer configuration register, which satisfies the requirement prescribed in the RISC-V specification for such a mechanism. These timer registers drive the timer_int pin into the MCU.
 
 # Subsystem Memory Map
+Please see integration specification
 
 # Subsystem HW Security

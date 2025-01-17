@@ -21,6 +21,9 @@ package mci_pkg;
     localparam MB = KB * 1024;
     localparam MB_BASE0 = MB - 1;
 
+    localparam MCI_MBOX_DATA_W = 32; //not configurable
+    localparam MCI_MBOX_ECC_DATA_W = 7; //not configurable
+
     // Assert reset for 10 cycles then deassert
     // to facilitate the hitless update
     parameter MCI_MCU_UPDATE_RESET_CYLES = 10;
@@ -40,18 +43,6 @@ package mci_pkg;
         BOOT_WAIT_UPDATE   = 4'b1000,
         BOOT_RST_MCU       = 4'b1001
     } mci_boot_fsm_state_e;
-
-
-    typedef enum logic [2:0] {
-        TRANSLATOR_RESET            = 3'd0,
-        TRANSLATOR_IDLE             = 3'd1,
-        TRANSLATOR_NON_DEBUG        = 3'd2,
-        TRANSLATOR_UNPROV_DEBUG     = 3'd3,
-        TRANSLATOR_MANUF_NON_DEBUG  = 3'd4,
-        TRANSLATOR_MANUF_DEBUG      = 3'd5,
-        TRANSLATOR_PROD_NON_DEBUG   = 3'd6,
-        TRANSLATOR_PROD_DEBUG       = 3'd7
-    } mci_state_translator_fsm_state_e;
 
 endpackage
 `endif /*MCI_PKG*/
