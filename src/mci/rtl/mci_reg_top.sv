@@ -58,7 +58,6 @@ module mci_reg_top
     output logic mci_intr,
 
     // Straps
-    input logic [7:0][11:0][31:0] strap_prod_debug_unlock_pk_hash,
 
     // MCU Reset vector
     input  logic [31:0] strap_mcu_reset_vector, // default reset vector
@@ -200,33 +199,33 @@ always_ff @(posedge clk or negedge mci_pwrgood) begin
 end
 
 // Value
-always_comb begin
-    for (int i=0; i<8; i++) begin
-        for (int j=0; j<12; j++) begin
-            mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.next = strap_prod_debug_unlock_pk_hash[i][j];
-        end
-    end
-end
-
-// Write enable
-always_comb begin
-    for (int i=0; i<8; i++) begin
-        for (int j=0; j<12; j++) begin
-            mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.we = strap_we;
-        end
-    end
-end
-
-
-
-// Locking
-always_comb begin
-    for (int i=0; i<8; i++) begin
-        for (int j=0; j<12; j++) begin
-            mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.swwel = mci_reg_hwif_out.FUSE_WR_DONE.done.value ;
-        end
-    end
-end
+// FIXME always_comb begin
+// FIXME     for (int i=0; i<8; i++) begin
+// FIXME         for (int j=0; j<12; j++) begin
+// FIXME             mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.next = strap_prod_debug_unlock_pk_hash[i][j];
+// FIXME         end
+// FIXME     end
+// FIXME end
+// FIXME 
+// FIXME // Write enable
+// FIXME always_comb begin
+// FIXME     for (int i=0; i<8; i++) begin
+// FIXME         for (int j=0; j<12; j++) begin
+// FIXME             mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.we = strap_we;
+// FIXME         end
+// FIXME     end
+// FIXME end
+// FIXME 
+// FIXME 
+// FIXME 
+// FIXME // Locking
+// FIXME always_comb begin
+// FIXME     for (int i=0; i<8; i++) begin
+// FIXME         for (int j=0; j<12; j++) begin
+// FIXME             mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.swwel = mci_reg_hwif_out.FUSE_WR_DONE.done.value ;
+// FIXME         end
+// FIXME     end
+// FIXME end
 ///////////////////////////////////////////////
 // TEMP CONNECTIONS FIXME
 ///////////////////////////////////////////////
@@ -247,7 +246,7 @@ assign mci_reg_hwif_in.HW_REV_ID = '0; // FIXME
 assign mci_reg_hwif_in.HW_CONFIG = '0; // FIXME
 assign mci_reg_hwif_in.FLOW_STATUS = '0; // FIXME
 
-
+assign mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG = '0; // FIXME
 assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE = '0; // FIXME
 assign mci_reg_hwif_in.STICKY_DATA_VAULT_CTRL = '0; // FIXME
 assign mci_reg_hwif_in.STICKY_DATA_VAULT_ENTRY = '0; // FIXME

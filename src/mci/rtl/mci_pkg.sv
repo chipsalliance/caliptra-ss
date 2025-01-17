@@ -24,10 +24,6 @@ package mci_pkg;
     localparam MCI_MBOX_DATA_W = 32; //not configurable
     localparam MCI_MBOX_ECC_DATA_W = 7; //not configurable
 
-    // Assert reset for 10 cycles then deassert
-    // to facilitate the hitless update
-    parameter MCI_MCU_UPDATE_RESET_CYLES = 10;
-
     parameter  MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS = 2;
     localparam MCI_WDT_TIMEOUT_PERIOD_W = MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS * 32;
 

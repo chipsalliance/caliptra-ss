@@ -55,7 +55,6 @@ module mci_top
     input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_mcu_ifu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_clp_axi_user,
-    input logic [7:0][11:0][31:0]   strap_prod_debug_unlock_pk_hash,
 
     // SRAM ADHOC connections
     input logic mcu_sram_fw_exec_region_lock,
@@ -430,7 +429,6 @@ mci_reg_top i_mci_reg_top (
     .mci_error_non_fatal,
     
     // Straps
-    .strap_prod_debug_unlock_pk_hash,
 
     // MCU interrupts
     .mcu_timer_int,
