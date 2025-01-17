@@ -414,6 +414,10 @@ module caliptra_ss_top
       
       
          soc_ifc_pkg::security_state_t                security_state_o;
+
+//---------------------------I3C---------------------------------------
+         logic payload_available_o;
+         logic image_activated_o;
       
 //------------------------------------------------------------------------
 
@@ -892,8 +896,8 @@ module caliptra_ss_top
         .mailbox_flow_done(),
         .BootFSM_BrkPoint(BootFSM_BrkPoint),
 
-        .recovery_data_avail(1'b1/*TODO*/),
-        .recovery_image_activated(1'b0/*TODO*/),
+        .recovery_data_avail(payload_available_o),
+        .recovery_image_activated(image_activated_o),
 
         //SoC Interrupts
         .cptra_error_fatal    (cptra_error_fatal    ),
@@ -1738,8 +1742,8 @@ module caliptra_ss_top
         .i3c_scl_io(i3c_scl_io),
         .i3c_sda_io(i3c_sda_io),
 `endif
-        .recovery_payload_available_o(),
-        .recovery_image_activated_o(),
+        .recovery_payload_available_o(payload_available_o),
+        .recovery_image_activated_o(image_activated_o),
         .peripheral_reset_o(),
         .peripheral_reset_done_i(1'b1),
         .escalated_reset_o()
