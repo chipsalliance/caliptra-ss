@@ -10,6 +10,7 @@ requires:
   - fuse_ctrl_pkg
   - fuse_ctrl
   - caliptra_top_tb_pkg
+  - mci_top
 targets:
   tb:
     directories:
@@ -31,7 +32,9 @@ targets:
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
       - $COMPILE_ROOT/testbench/axi_slv.sv
       # - $COMPILE_ROOT/testbench/dasm.svi
+      - $COMPILE_ROOT/testbench/mci_sram.sv
       - $COMPILE_ROOT/testbench/aaxi_pkg_caliptra_test.sv
+      - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
       - $COMPILE_ROOT/testbench/aaxi4_interconnect.sv
       - $COMPILE_ROOT/testbench/fuse_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv
@@ -43,7 +46,8 @@ targets:
                 && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py .
                 && echo "[PRE-EXEC] Copying MLDSA vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 .
                 && echo "[PRE-EXEC] Copying MLDSA debug vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug .
-                && echo "[PRE-EXEC] Copying mldsa directed vector to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex .'
+                && echo "[PRE-EXEC] Copying mldsa directed vector to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex .
+                && echo "[PRE-EXEC] Copying otp-img.2048.vmem to ${pwd}" && cp $COMPILE_ROOT/../../src/fuse_ctrl/data/otp-img.2048.vmem .'
 global:
   tool:
     vcs:
@@ -68,7 +72,7 @@ global:
         - +define+CALIPTRA_INTERNAL_UART
         - '-noinherit_timescale=1ns/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=8
+        - +define+AAXI_INTC_SLAVE_CNT=9
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
       elab:

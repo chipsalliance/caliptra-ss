@@ -6,7 +6,8 @@
 #include <string.h>
 #include <stdint.h>
 
-volatile char* stdout = (char *)0xd0580000;
+// volatile char* stdout = (char *)0xd0580000;
+volatile char* stdout = (char *)0x21000410;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
@@ -36,6 +37,17 @@ void main (void) {
                              0xffffffff };
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
+    uint32_t cptra_boot_go;
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    
+    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
+    // This is just to see CSSBootFSM running correctly
+    lsu_write_32(SOC_MCI_REG_CALIPTRA_BOOT_GO, 1);
+    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_REG_CALIPTRA_BOOT_GO\n");
+
+    cptra_boot_go = lsu_read_32(SOC_MCI_REG_CALIPTRA_BOOT_GO);
+    VPRINTF(LOW, "MCU: Reading SOC_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
+
 
     VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n")
 
@@ -122,6 +134,28 @@ void main (void) {
         mbox_resp_data = lsu_read_32(SOC_MBOX_CSR_MBOX_DATAOUT);
     }
     VPRINTF(LOW, "MCU: Mbox response received\n");
+    
+    mbox_resp_data = lsu_read_32(SOC_MCI_REG_HW_REV_ID);
+    VPRINTF(LOW, "MCU: MCI SOC_MCI_REG_HW_REV_ID %x\n", mbox_resp_data);
+    // lsu_write_32(0x21200000, 0x12345678);
+    // VPRINTF(LOW, "MCU: I3C 0x2120_0000 write completed\n");
+    // lsu_write_32(0x21200004, 0xABCDABCD);
+    // VPRINTF(LOW, "MCU: I3C 0x2120_0004 write completed\n");
+    // lsu_write_32(0x21203FFC, 0xDEADDEAD);
+    // VPRINTF(LOW, "MCU: I3C 0x2120_03FC write completed\n");
+
+    // mbox_resp_data = lsu_read_32(0x21200000);
+    // VPRINTF(LOW, "MCU: I3C 0x2120_0000 %x\n", mbox_resp_data);
+    // mbox_resp_data = lsu_read_32(0x21200004);
+    // VPRINTF(LOW, "MCU: I3C 0x2120_0004 %x\n", mbox_resp_data);
+    // mbox_resp_data = lsu_read_32(0x21203FFC);
+    // VPRINTF(LOW, "MCU: I3C 0x2120_03FC %x\n", mbox_resp_data);
+
+    // mbox_resp_dlen = lsu_read_32(I3CCSR_I3CBASE_CONTROLLER_DEVICE_ADDR);
+    // VPRINTF(LOW, "MCU: I3C I3CCSR_I3CBASE_CONTROLLER_DEVICE_ADDR %x\n", mbox_resp_dlen);
+
+    // lsu_write_32(SOC_I3CCSR_I3CBASE_HC_CONTROL, 0x12345678);
+    // VPRINTF(LOW, "MCU: I3C SOC_I3CCSR_I3CBASE_HC_CONTROL write completed\n");
 
     // MBOX: Clear Execute
     lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0);

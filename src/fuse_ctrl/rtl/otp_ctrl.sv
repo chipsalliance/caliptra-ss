@@ -41,17 +41,19 @@ module otp_ctrl
 
   // input  tlul_pkg::tl_h2d_t                          prim_tl_i,
   // output tlul_pkg::tl_d2h_t                          prim_tl_o,
-  input axi_struct_pkg::axi_wr_req_t                  prim_axi_wr_req,
-  output axi_struct_pkg::axi_wr_rsp_t                 prim_axi_wr_rsp,
-  input axi_struct_pkg::axi_rd_req_t                  prim_axi_rd_req,
-  output axi_struct_pkg::axi_rd_rsp_t                 prim_axi_rd_rsp,
+  // input axi_struct_pkg::axi_wr_req_t                  prim_axi_wr_req,
+  // output axi_struct_pkg::axi_wr_rsp_t                 prim_axi_wr_rsp,
+  // input axi_struct_pkg::axi_rd_req_t                  prim_axi_rd_req,
+  // output axi_struct_pkg::axi_rd_rsp_t                 prim_axi_rd_rsp,
 
   // Interrupt Requests
   output logic                                       intr_otp_operation_done_o,
   output logic                                       intr_otp_error_o,
   // Alerts
-  input  caliptra_prim_alert_pkg::alert_rx_t [NumAlerts-1:0]  alert_rx_i,
-  output caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0]  alert_tx_o,
+  // input  caliptra_prim_alert_pkg::alert_rx_t [NumAlerts-1:0]  alert_rx_i,
+  // output caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0]  alert_tx_o,
+  // Caliptra-SS does not use alert sender. It directs alerts to MCI.
+  output  [NumAlerts-1:0] alerts,
   // Observability to AST
   input ast_pkg::ast_obs_ctrl_t                      obs_ctrl_i,
   output logic [7:0]                                 otp_obs_o,
@@ -120,18 +122,18 @@ module otp_ctrl
   assign core_axi_if.awlock      = core_axi_wr_req.awlock;
   assign core_axi_if.awvalid     = core_axi_wr_req.awvalid;
   assign core_axi_wr_rsp.awready = core_axi_if.awready;
-  
+
   assign core_axi_if.wdata       = core_axi_wr_req.wdata;
   assign core_axi_if.wstrb       = core_axi_wr_req.wstrb;
   assign core_axi_if.wlast       = core_axi_wr_req.wlast;
   assign core_axi_if.wvalid      = core_axi_wr_req.wvalid;
   assign core_axi_wr_rsp.wready  = core_axi_if.wready;
-  
+
   assign core_axi_wr_rsp.bresp   = core_axi_if.bresp;
   assign core_axi_wr_rsp.bid     = core_axi_if.bid;
   assign core_axi_wr_rsp.bvalid  = core_axi_if.bvalid;
   assign core_axi_if.bready      = core_axi_wr_req.bready;
-  
+
   assign core_axi_if.araddr      = core_axi_rd_req.araddr;
   assign core_axi_if.arburst     = core_axi_rd_req.arburst;
   assign core_axi_if.arsize      = core_axi_rd_req.arsize;
@@ -141,7 +143,7 @@ module otp_ctrl
   assign core_axi_if.arlock      = core_axi_rd_req.arlock;
   assign core_axi_if.arvalid     = core_axi_rd_req.arvalid;
   assign core_axi_rd_rsp.arready      = core_axi_if.arready;
-  
+
   assign core_axi_rd_rsp.rdata   = core_axi_if.rdata;
   assign core_axi_rd_rsp.rresp   = core_axi_if.rresp;
   assign core_axi_rd_rsp.rid     = core_axi_if.rid;
@@ -168,48 +170,42 @@ module otp_ctrl
   tlul_pkg::tl_h2d_t      prim_tl_i;
   tlul_pkg::tl_d2h_t      prim_tl_o;
 
+
+  axi_struct_pkg::axi_wr_req_t prim_axi_wr_req;
+  axi_struct_pkg::axi_wr_rsp_t prim_axi_wr_rsp;
+  axi_struct_pkg::axi_rd_req_t prim_axi_rd_req;
+  axi_struct_pkg::axi_rd_rsp_t prim_axi_rd_rsp;
+
   axi_if prim_axi_if(
     .clk(clk_i),
     .rst_n(rst_ni)
   );
 
-  assign prim_axi_if.awaddr      = prim_axi_wr_req.awaddr;
-  assign prim_axi_if.awburst     = prim_axi_wr_req.awburst;
-  assign prim_axi_if.awsize      = prim_axi_wr_req.awsize;
-  assign prim_axi_if.awlen       = prim_axi_wr_req.awlen;
-  assign prim_axi_if.awuser      = prim_axi_wr_req.awuser;
-  assign prim_axi_if.awid        = prim_axi_wr_req.awid;
-  assign prim_axi_if.awlock      = prim_axi_wr_req.awlock;
-  assign prim_axi_if.awvalid     = prim_axi_wr_req.awvalid;
-  assign prim_axi_wr_rsp.awready = prim_axi_if.awready;
-  
-  assign prim_axi_if.wdata       = prim_axi_wr_req.wdata;
-  assign prim_axi_if.wstrb       = prim_axi_wr_req.wstrb;
-  assign prim_axi_if.wlast       = prim_axi_wr_req.wlast;
-  assign prim_axi_if.wvalid      = prim_axi_wr_req.wvalid;
-  assign prim_axi_wr_rsp.wready  = prim_axi_if.wready;
-  
-  assign prim_axi_wr_rsp.bresp   = prim_axi_if.bresp;
-  assign prim_axi_wr_rsp.bid     = prim_axi_if.bid;
-  assign prim_axi_wr_rsp.bvalid  = prim_axi_if.bvalid;
-  assign prim_axi_if.bready      = prim_axi_wr_req.bready;
-  
-  assign prim_axi_if.araddr      = prim_axi_rd_req.araddr;
-  assign prim_axi_if.arburst     = prim_axi_rd_req.arburst;
-  assign prim_axi_if.arsize      = prim_axi_rd_req.arsize;
-  assign prim_axi_if.arlen       = prim_axi_rd_req.arlen;
-  assign prim_axi_if.aruser      = prim_axi_rd_req.aruser;
-  assign prim_axi_if.arid        = prim_axi_rd_req.arid;
-  assign prim_axi_if.arlock      = prim_axi_rd_req.arlock;
-  assign prim_axi_if.arvalid     = prim_axi_rd_req.arvalid;
-  assign prim_axi_rd_rsp.arready = prim_axi_if.arready;
-  
-  assign prim_axi_rd_rsp.rdata   = prim_axi_if.rdata;
-  assign prim_axi_rd_rsp.rresp   = prim_axi_if.rresp;
-  assign prim_axi_rd_rsp.rid     = prim_axi_if.rid;
-  assign prim_axi_rd_rsp.rlast   = prim_axi_if.rlast;
-  assign prim_axi_rd_rsp.rvalid  = prim_axi_if.rvalid;
-  assign prim_axi_if.rready      = prim_axi_rd_req.rready;
+  assign prim_axi_if.awaddr      = '0;
+  assign prim_axi_if.awburst     = '0;
+  assign prim_axi_if.awsize      = '0;
+  assign prim_axi_if.awlen       = '0;
+  assign prim_axi_if.awuser      = '0;
+  assign prim_axi_if.awid        = '0;
+  assign prim_axi_if.awlock      = '0;
+  assign prim_axi_if.awvalid     = '0;
+
+  assign prim_axi_if.wdata       = '0;
+  assign prim_axi_if.wstrb       = '0;
+  assign prim_axi_if.wlast       = '0;
+  assign prim_axi_if.wvalid      = '0;
+
+  assign prim_axi_if.bready      = '0;
+
+  assign prim_axi_if.araddr      = '0;
+  assign prim_axi_if.arburst     = '0;
+  assign prim_axi_if.arsize      = '0;
+  assign prim_axi_if.arlen       = '0;
+  assign prim_axi_if.aruser      = '0;
+  assign prim_axi_if.arid        = '0;
+  assign prim_axi_if.arlock      = '0;
+  assign prim_axi_if.arvalid     = '0;
+  assign prim_axi_if.rready      = '0;
 
   // Prim AXI2TLUL instance
   axi2tlul #(
@@ -667,7 +663,7 @@ module otp_ctrl
                      chk_timeout,
                      lfsr_fsm_err,
                      scrmbl_fsm_err,
-                     part_fsm_err[KdiIdx],
+                    //  part_fsm_err[KdiIdx], //TODO: Removed this KdiIdx
                      fatal_bus_integ_error_q,
                      dai_idle,
                      chk_pending};
@@ -715,7 +711,7 @@ end
     .intr_o                 ( intr_otp_error_o               )
   );
 
-  logic [NumAlerts-1:0] alerts;
+  // logic [NumAlerts-1:0] alerts;
   logic [NumAlerts-1:0] alert_test;
   logic fatal_prim_otp_alert, recov_prim_otp_alert;
 
@@ -748,21 +744,22 @@ end
     1'b1  // fatal_macro_error_q
   };
 
-  for (genvar k = 0; k < NumAlerts; k++) begin : gen_alert_tx
-    caliptra_prim_alert_sender #(
-      .AsyncOn(AlertAsyncOn[k]),
-      .IsFatal(AlertIsFatal[k])
-    ) u_prim_alert_sender (
-      .clk_i,
-      .rst_ni,
-      .alert_test_i  ( alert_test[k] ),
-      .alert_req_i   ( alerts[k]     ),
-      .alert_ack_o   (               ),
-      .alert_state_o (               ),
-      .alert_rx_i    ( alert_rx_i[k] ),
-      .alert_tx_o    ( alert_tx_o[k] )
-    );
-  end
+  // Caliptra does not use alert sender
+  // for (genvar k = 0; k < NumAlerts; k++) begin : gen_alert_tx
+  //   caliptra_prim_alert_sender #(
+  //     .AsyncOn(AlertAsyncOn[k]),
+  //     .IsFatal(AlertIsFatal[k])
+  //   ) u_prim_alert_sender (
+  //     .clk_i,
+  //     .rst_ni,
+  //     .alert_test_i  ( alert_test[k] ),
+  //     .alert_req_i   ( alerts[k]     ),
+  //     .alert_ack_o   (               ),
+  //     .alert_state_o (               ),
+  //     .alert_rx_i    ( alert_rx_i[k] ),
+  //     .alert_tx_o    ( alert_tx_o[k] )
+  //   );
+  // end
 
   ////////////////////////////////
   // LFSR Timer and CSR mapping //
@@ -1221,51 +1218,56 @@ end
   // Key Derivation Interface (KDI) //
   ////////////////////////////////////
 
-  logic scrmbl_key_seed_valid;
-  logic [SramKeySeedWidth-1:0] sram_data_key_seed;
-  logic [FlashKeySeedWidth-1:0] flash_data_key_seed, flash_addr_key_seed;
+  // logic scrmbl_key_seed_valid;
+  // logic [SramKeySeedWidth-1:0] sram_data_key_seed;
+  // logic [FlashKeySeedWidth-1:0] flash_data_key_seed, flash_addr_key_seed;
 
-  otp_ctrl_kdi #(
-    .RndCnstScrmblKeyInit(RndCnstScrmblKeyInit)
-  ) u_otp_ctrl_kdi (
-    .clk_i,
-    .rst_ni,
-    .kdi_en_i                ( pwr_otp_o.otp_done      ),
-    .escalate_en_i           ( lc_escalate_en[KdiIdx]  ),
-    .fsm_err_o               ( part_fsm_err[KdiIdx]    ),
-    .scrmbl_key_seed_valid_i ( scrmbl_key_seed_valid   ),
-    .flash_data_key_seed_i   ( flash_data_key_seed     ),
-    .flash_addr_key_seed_i   ( flash_addr_key_seed     ),
-    .sram_data_key_seed_i    ( sram_data_key_seed      ),
-    .edn_req_o               ( key_edn_req             ),
-    .edn_ack_i               ( key_edn_ack             ),
-    .edn_data_i              ( edn_data                ),
-    .flash_otp_key_i,
-    .flash_otp_key_o,
-    .sram_otp_key_i,
-    .sram_otp_key_o,
-    .otbn_otp_key_i,
-    .otbn_otp_key_o,
-    .scrmbl_mtx_req_o        ( part_scrmbl_mtx_req[KdiIdx]          ),
-    .scrmbl_mtx_gnt_i        ( part_scrmbl_mtx_gnt[KdiIdx]          ),
-    .scrmbl_cmd_o            ( part_scrmbl_req_bundle[KdiIdx].cmd   ),
-    .scrmbl_mode_o           ( part_scrmbl_req_bundle[KdiIdx].mode  ),
-    .scrmbl_sel_o            ( part_scrmbl_req_bundle[KdiIdx].sel   ),
-    .scrmbl_data_o           ( part_scrmbl_req_bundle[KdiIdx].data  ),
-    .scrmbl_valid_o          ( part_scrmbl_req_bundle[KdiIdx].valid ),
-    .scrmbl_ready_i          ( part_scrmbl_req_ready[KdiIdx]        ),
-    .scrmbl_valid_i          ( part_scrmbl_rsp_valid[KdiIdx]        ),
-    .scrmbl_data_i           ( part_scrmbl_rsp_data                 )
-  );
+  // otp_ctrl_kdi #(
+  //   .RndCnstScrmblKeyInit(RndCnstScrmblKeyInit)
+  // ) u_otp_ctrl_kdi (
+  //   .clk_i,
+  //   .rst_ni,
+  //   .kdi_en_i                ( pwr_otp_o.otp_done      ),
+  //   .escalate_en_i           ( lc_escalate_en[KdiIdx]  ),
+  //   .fsm_err_o               ( part_fsm_err[KdiIdx]    ),
+  //   .scrmbl_key_seed_valid_i ( scrmbl_key_seed_valid   ),
+  //   .flash_data_key_seed_i   ( flash_data_key_seed     ),
+  //   .flash_addr_key_seed_i   ( flash_addr_key_seed     ),
+  //   .sram_data_key_seed_i    ( sram_data_key_seed      ),
+  //   .edn_req_o               ( key_edn_req             ),
+  //   .edn_ack_i               ( key_edn_ack             ),
+  //   .edn_data_i              ( edn_data                ),
+  //   .flash_otp_key_i,
+  //   .flash_otp_key_o,
+  //   .sram_otp_key_i,
+  //   .sram_otp_key_o,
+  //   .otbn_otp_key_i,
+  //   .otbn_otp_key_o,
+  //   .scrmbl_mtx_req_o        ( part_scrmbl_mtx_req[KdiIdx]          ),
+  //   .scrmbl_mtx_gnt_i        ( part_scrmbl_mtx_gnt[KdiIdx]          ),
+  //   .scrmbl_cmd_o            ( part_scrmbl_req_bundle[KdiIdx].cmd   ),
+  //   .scrmbl_mode_o           ( part_scrmbl_req_bundle[KdiIdx].mode  ),
+  //   .scrmbl_sel_o            ( part_scrmbl_req_bundle[KdiIdx].sel   ),
+  //   .scrmbl_data_o           ( part_scrmbl_req_bundle[KdiIdx].data  ),
+  //   .scrmbl_valid_o          ( part_scrmbl_req_bundle[KdiIdx].valid ),
+  //   .scrmbl_ready_i          ( part_scrmbl_req_ready[KdiIdx]        ),
+  //   .scrmbl_valid_i          ( part_scrmbl_rsp_valid[KdiIdx]        ),
+  //   .scrmbl_data_i           ( part_scrmbl_rsp_data                 )
+  // );
 
   // Tie off OTP bus access, since this is not needed.
-  assign part_otp_arb_req[KdiIdx] = 1'b0;
-  assign part_otp_arb_bundle[KdiIdx] = '0;
+  
+  //TODO: Removed this KdiIdx
+  // assign part_otp_arb_req[KdiIdx] = 1'b0;
+  // assign part_otp_arb_bundle[KdiIdx] = '0;
+  
 
   // This stops lint from complaining about unused signals.
-  logic unused_kdi_otp_sigs;
-  assign unused_kdi_otp_sigs = ^{part_otp_arb_gnt[KdiIdx],
-                                 part_otp_rvalid[KdiIdx]};
+
+  //TODO: Removed this KdiIdx
+  // logic unused_kdi_otp_sigs;
+  // assign unused_kdi_otp_sigs = ^{part_otp_arb_gnt[KdiIdx],
+  //                                part_otp_rvalid[KdiIdx]};
 
   /////////////////////////
   // Partition Instances //
@@ -1554,30 +1556,29 @@ end
     clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
   )
 
-  // Scrambling Keys
-  assign scrmbl_key_seed_valid = part_digest[Secret1Idx] != '0;
-  assign sram_data_key_seed    = part_buf_data[SramDataKeySeedOffset +:
-                                               SramDataKeySeedSize];
-  assign flash_data_key_seed   = part_buf_data[FlashDataKeySeedOffset +:
-                                               FlashDataKeySeedSize];
-  assign flash_addr_key_seed   = part_buf_data[FlashAddrKeySeedOffset +:
-                                               FlashAddrKeySeedSize];
+  //////////////////////////////////////////////////////////
+  // TODO: Correctly output unlock tokens for each LC state.
+  //////////////////////////////////////////////////////////
 
   // Test unlock and exit tokens and RMA token
-  assign otp_lc_data_o.test_exit_token   = part_buf_data[TestExitTokenOffset +:
-                                                         TestExitTokenSize];
-  assign otp_lc_data_o.test_unlock_token = part_buf_data[TestUnlockTokenOffset +:
-                                                         TestUnlockTokenSize];
+  assign otp_lc_data_o.test_exit_token   = part_buf_data[TestUnlockToken0Offset +:
+                                                         TestUnlockToken0Size];
+  assign otp_lc_data_o.test_unlock_token = part_buf_data[TestUnlockToken0Offset +:
+                                                         TestUnlockToken0Size];
   assign otp_lc_data_o.rma_token         = part_buf_data[RmaTokenOffset +:
                                                          RmaTokenSize];
 
+  //////////////////////////////////////////////////////////
+  // TODO: Correctly compute the valid bits for the tokens.
+  //////////////////////////////////////////////////////////
+
   lc_ctrl_pkg::lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
   // The test tokens have been provisioned.
-  assign test_tokens_valid = (part_digest[Secret0Idx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign test_tokens_valid = (part_digest[SecretLcUnlockPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The rma token has been provisioned.
-  assign rma_token_valid = (part_digest[Secret2Idx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign rma_token_valid = (part_digest[SecretLcRmaPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
-  assign secrets_valid = (part_digest[Secret2Idx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign secrets_valid = (part_digest[SecretLcRmaPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
 
   // Buffer these constants in order to ensure that synthesis does not try to optimize the encoding.
   // SEC_CM: TOKEN_VALID.CTRL.MUBI
@@ -1629,15 +1630,12 @@ end
   // Assertions //
   ////////////////
 
-  `CALIPTRA_ASSERT_INIT(CreatorRootKeyShare0Size_A, KeyMgrKeyWidth == CreatorRootKeyShare0Size * 8)
-  `CALIPTRA_ASSERT_INIT(CreatorRootKeyShare1Size_A, KeyMgrKeyWidth == CreatorRootKeyShare1Size * 8)
-  `CALIPTRA_ASSERT_INIT(FlashDataKeySeedSize_A,     FlashKeySeedWidth == FlashDataKeySeedSize * 8)
-  `CALIPTRA_ASSERT_INIT(FlashAddrKeySeedSize_A,     FlashKeySeedWidth == FlashAddrKeySeedSize * 8)
-  `CALIPTRA_ASSERT_INIT(SramDataKeySeedSize_A,      SramKeySeedWidth == SramDataKeySeedSize * 8)
+  //////////////////////////////////////////////////////////
+  // TODO: Properly assert the unlock tokens.
+  //////////////////////////////////////////////////////////
 
   `CALIPTRA_ASSERT_INIT(RmaTokenSize_A,        lc_ctrl_state_pkg::LcTokenWidth == RmaTokenSize * 8)
-  `CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, lc_ctrl_state_pkg::LcTokenWidth == TestUnlockTokenSize * 8)
-  `CALIPTRA_ASSERT_INIT(TestExitTokenSize_A,   lc_ctrl_state_pkg::LcTokenWidth == TestExitTokenSize * 8)
+  `CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, lc_ctrl_state_pkg::LcTokenWidth == TestUnlockToken0Size * 8)
   `CALIPTRA_ASSERT_INIT(LcStateSize_A,         lc_ctrl_state_pkg::LcStateWidth == LcStateSize * 8)
   `CALIPTRA_ASSERT_INIT(LcTransitionCntSize_A, lc_ctrl_state_pkg::LcCountWidth == LcTransitionCntSize * 8)
 
@@ -1659,8 +1657,8 @@ end
   // Alert assertions for sparse FSMs.
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlDaiFsmCheck_A,
       u_otp_ctrl_dai.u_state_regs, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKdiFsmCheck_A,
-      u_otp_ctrl_kdi.u_state_regs, alert_tx_o[1])
+  // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKdiFsmCheck_A,
+  //     u_otp_ctrl_kdi.u_state_regs, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLciFsmCheck_A,
       u_otp_ctrl_lci.u_state_regs, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLfsrTimerFsmCheck_A,
@@ -1675,10 +1673,10 @@ end
       u_otp_ctrl_lfsr_timer.u_prim_count_cnsty, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntDaiCheck_A,
       u_otp_ctrl_dai.u_prim_count, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntKdiSeedCheck_A,
-      u_otp_ctrl_kdi.u_prim_count_seed, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntKdiEntropyCheck_A,
-      u_otp_ctrl_kdi.u_prim_count_entropy, alert_tx_o[1])
+  // `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntKdiSeedCheck_A,
+  //     u_otp_ctrl_kdi.u_prim_count_seed, alert_tx_o[1])
+  // `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntKdiEntropyCheck_A,
+  //     u_otp_ctrl_kdi.u_prim_count_entropy, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntLciCheck_A,
       u_otp_ctrl_lci.u_prim_count, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntScrmblCheck_A,

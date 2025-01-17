@@ -197,7 +197,7 @@ always_ff @(posedge clk or negedge mci_pwrgood) begin
         strap_we <= 1'b0;
     end
 end
-
+  
 // Value
 // FIXME always_comb begin
 // FIXME     for (int i=0; i<8; i++) begin
@@ -226,6 +226,7 @@ end
 // FIXME         end
 // FIXME     end
 // FIXME end
+
 ///////////////////////////////////////////////
 // TEMP CONNECTIONS FIXME
 ///////////////////////////////////////////////

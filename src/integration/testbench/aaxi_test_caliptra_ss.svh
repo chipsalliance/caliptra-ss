@@ -8,7 +8,7 @@ import aaxi_pkg_xactor::*;
 class aaxi_test_caliptra_ss extends aaxi_test_base;
     // Additional Slave BFMs slave5, slave6
     // slave0, slave1, slave2, slave3 and slave4 are defined in aaxi_test_base
-    aaxi_device_class slave5, slave6;
+    aaxi_device_class slave5, slave6, slave7, slave8;
 
     // Constructor to initialize the class 
     function new(string name); 
