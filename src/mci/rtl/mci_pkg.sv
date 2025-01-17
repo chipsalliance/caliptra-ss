@@ -44,5 +44,16 @@ package mci_pkg;
         BOOT_UNKNOWN             = 'x
     } mci_boot_fsm_state_e;
 
+    typedef enum logic [2:0] {
+        TRANSLATOR_RESET            = 3'd0,
+        TRANSLATOR_IDLE             = 3'd1,
+        TRANSLATOR_NON_DEBUG        = 3'd2,
+        TRANSLATOR_UNPROV_DEBUG     = 3'd3,
+        TRANSLATOR_MANUF_NON_DEBUG  = 3'd4,
+        TRANSLATOR_MANUF_DEBUG      = 3'd5,
+        TRANSLATOR_PROD_NON_DEBUG   = 3'd6,
+        TRANSLATOR_PROD_DEBUG       = 3'd7
+    } mci_state_translator_fsm_state_e;
+
 endpackage
 `endif /*MCI_PKG*/

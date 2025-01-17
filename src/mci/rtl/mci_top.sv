@@ -109,7 +109,28 @@ module mci_top
     mci_mcu_sram_if.request mci_mbox0_sram_req_if,
 
     // Mbox1 SRAM Interface
-    mci_mcu_sram_if.request mci_mbox1_sram_req_if 
+    mci_mcu_sram_if.request mci_mbox1_sram_req_if,
+
+
+    //=============== LCC GASKET PORTS ========================
+
+    // Inputs from LCC
+    input  otp_ctrl_pkg::lc_otp_program_req_t           from_lcc_to_otp_program_i,
+    input lc_ctrl_pkg::lc_tx_t                          lc_dft_en_i,
+    input lc_ctrl_pkg::lc_tx_t                          lc_hw_debug_en_i,
+    // Inputs from OTP_Ctrl
+    input  otp_ctrl_pkg::otp_lc_data_t                  from_otp_to_lcc_program_i,
+    // Inputs from Caliptra_Core
+    input logic                                         ss_dbg_manuf_enable_i,    
+    input logic [63:0]                                  ss_soc_dbg_unlock_level_i,
+
+    // Converted Signals from LCC 
+    output  logic                                       SOC_DFT_EN,
+    output 	logic                                       SOC_HW_DEBUG_EN,
+
+    output soc_ifc_pkg::security_state_t                security_state_o
+
+    //============================================================
 
     );
 
@@ -621,5 +642,25 @@ mci_mbox1_i (
 );
 end
 endgenerate
+
+
+ // DUT instantiation
+mci_lcc_st_trans LCC_state_translator (
+    .clk(clk),
+    .rst_n(mci_rst_b),
+    .state_error(1'b0),  // TODO: This needs to be added to put caliptra into debug locked position
+    .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
+    .lc_dft_en_i(lc_dft_en_i),
+    .lc_hw_debug_en_i(lc_hw_debug_en_i),
+    .from_otp_to_lcc_program_i(from_otp_to_lcc_program_i),
+    .ss_dbg_manuf_enable_i(ss_dbg_manuf_enable_i),
+    .ss_soc_dbg_unlock_level_i(ss_soc_dbg_unlock_level_i),
+    .ss_soc_dft_en_mask_reg0_1(64'h0), // TODO: there should be two registers for this connection
+    .ss_soc_dbg_unlock_mask_reg0_1(64'h0), // TODO: there should be two registers for this connection
+    .ss_soc_CLTAP_unlock_mask_reg0_1(64'h0), // TODO: there should be two registers for this connection
+    .SOC_DFT_EN(SOC_DFT_EN),
+    .SOC_HW_DEBUG_EN(SOC_HW_DEBUG_EN),
+    .security_state_o(security_state_o)
+);
 
 endmodule
