@@ -419,6 +419,7 @@ module caliptra_ss_top
     logic intr_otp_operation_done;
     logic        mci_mcu_nmi_int;
     logic [31:0] mci_mcu_nmi_vector;
+    logic mci_mcu_timer_int;
 
 //    //-------------------------- I3C AXI signals--------------------------
 //    // AXI Write Channels
@@ -1497,7 +1498,7 @@ module caliptra_ss_top
         .dma_axi_rresp          (axi_interconnect.sintf_arr[2].RRESP),
         .dma_axi_rlast          (axi_interconnect.sintf_arr[2].RLAST),
 
-        .timer_int              ( timer_int ),
+        .timer_int              ( mci_mcu_timer_int ),
         .soft_int               ( soft_int ),
         .extintsrc_req          ( ext_int ),
 
@@ -2082,7 +2083,7 @@ module caliptra_ss_top
         .mci_generic_input_wires(64'h0),
         .mci_generic_output_wires(),
 
-        .mcu_timer_int(),
+        .mcu_timer_int(mci_mcu_timer_int),
         .mci_intr(mci_intr),
 
         .strap_mcu_reset_vector(32'h0),
