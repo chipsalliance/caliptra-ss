@@ -121,21 +121,6 @@ module caliptra_ss_top
     logic                       sb_hready       ;
     logic                       sb_hresp        ;
 
-//    `ifdef I3C_USE_AHB
-//        logic        [31:0]         i3c_haddr;
-//        logic        [2:0]          i3c_hburst;
-//        logic                       i3c_hmastlock;
-//        logic        [3:0]          i3c_hprot;
-//        logic        [2:0]          i3c_hsize;
-//        logic        [1:0]          i3c_htrans;
-//        logic                       i3c_hwrite;
-//        logic        [63:0]         i3c_hrdata;
-//        logic        [63:0]         i3c_hwdata;
-//        logic                       i3c_hready;
-//        logic                       i3c_hreadyout;
-//        logic                       i3c_hresp;
-//    `endif
-
     logic        [31:0]         trace_rv_i_insn_ip;
     logic        [31:0]         trace_rv_i_address_ip;
     logic                       trace_rv_i_valid_ip;
@@ -1670,34 +1655,14 @@ module caliptra_ss_top
 
     // ------------------- I3C Wrapper (core) -------------------
     i3c_wrapper #(
-`ifdef I3C_USE_AHB
-        .AhbDataWidth(`AHB_DATA_WIDTH),
-        .AhbAddrWidth(`AHB_ADDR_WIDTH)
-`elsif I3C_USE_AXI
         .AxiDataWidth(`AXI_DATA_WIDTH),
         .AxiAddrWidth(`AXI_ADDR_WIDTH),
         .AxiUserWidth(`AXI_USER_WIDTH),
         .AxiIdWidth  (`AXI_ID_WIDTH  )
-`endif
     ) i3c (
         .clk_i (core_clk),
         .rst_ni(rst_l   ),
 
-`ifdef I3C_USE_AHB
-        .haddr_i    (i3c_haddr    ),
-        .hburst_i   (i3c_hburst   ),
-        .hprot_i    (i3c_hprot    ),
-        .hwdata_i   (i3c_hwdata   ),
-        .hsel_i     (i3c_hsel     ),
-        .hwstrb_i   (i3c_hwstrb   ),
-        .hwrite_i   (i3c_hwrite   ),
-        .hready_i   (i3c_hready   ),
-        .htrans_i   (i3c_htrans   ),
-        .hsize_i    (i3c_hsize    ),
-        .hresp_o    (i3c_hresp    ),
-        .hreadyout_o(i3c_hreadyout),
-        .hrdata_o   (i3c_hrdata   ),
-`elsif I3C_USE_AXI
         .arvalid_i  (axi_interconnect.sintf_arr[1].ARVALID),
         .arready_o  (axi_interconnect.sintf_arr[1].ARREADY),
         .arid_i     (axi_interconnect.sintf_arr[1].ARID),
@@ -1731,7 +1696,7 @@ module caliptra_ss_top
         .bready_i   (axi_interconnect.sintf_arr[1].BREADY),
         .bresp_o    (axi_interconnect.sintf_arr[1].BRESP),
         .bid_o      (axi_interconnect.sintf_arr[1].BID),
-`endif
+
 `ifdef DIGITAL_IO_I3C
         .scl_i(master0_intf.scl_and),
         .sda_i(master0_intf.sda_and),
