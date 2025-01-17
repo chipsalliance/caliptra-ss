@@ -17,8 +17,8 @@ package otp_ctrl_part_pkg;
   // Scrambling Constants and Types //
   ////////////////////////////////////
 
-  parameter int NumScrmblKeys = 3;
-  parameter int NumDigestSets = 4;
+  parameter int NumScrmblKeys = 9;
+  parameter int NumDigestSets = 1;
 
   parameter int ScrmblKeySelWidth = vbits(NumScrmblKeys);
   parameter int DigestSetSelWidth = vbits(NumDigestSets);
@@ -36,20 +36,29 @@ package otp_ctrl_part_pkg;
   typedef logic [NumDigestSets-1:0][ScrmblBlockWidth-1:0] digest_iv_array_t;
 
   typedef enum logic [ConstSelWidth-1:0] {
-    Secret0Key,
-    Secret1Key,
-    Secret2Key
+    SecretManufKey,
+    SecretProdKey0,
+    SecretProdKey1,
+    SecretProdKey2,
+    SecretProdKey3,
+    SecretLifeCycleUnlockKey,
+    SecretLifeCycleManufKey,
+    SecretLifeCycleProdKey,
+    SecretLifeCycleRMAKey
   } key_sel_e;
 
   typedef enum logic [ConstSelWidth-1:0] {
-    CnstyDigest,
-    FlashDataKey,
-    FlashAddrKey,
-    SramDataKey
+    CnstyDigest
   } digest_sel_e;
 
   // SEC_CM: SECRET.MEM.SCRAMBLE
   parameter key_array_t RndCnstKey = {
+    128'h4A22D4B78FE0266FBEE3958332F2939B,
+    128'h90C7F21F6224F027F98C48B1F9377284,
+    128'hB7474D640F8A7F5D60822E1FAEC5C72,
+    128'h277195FC471E4B26B6641214B61D1B43,
+    128'h4D5A89AA9109294AE048B657396B4B83,
+    128'hBEAD91D5FA4E09150E95F517CB98955B,
     128'h85A9E830BC059BA9286D6E2856A05CC3,
     128'hEFFA6D736C5EFF49AE7B70F9C46E5A62,
     128'h3BA121C5E097DDEB7768B4C666E9C3DA
@@ -58,12 +67,12 @@ package otp_ctrl_part_pkg;
   // SEC_CM: PART.MEM.DIGEST
   // Note: digest set 0 is used for computing the partition digests. Constants at
   // higher indices are used to compute the scrambling keys.
-  // [anjpar]: Added *Default parameter as we are not running topgen script
-  parameter digest_const_array_t RndCnstDigestConst= {
-    128'h4A22D4B78FE0266FBEE3958332F2939B,
-    128'hD60822E1FAEC5C7290C7F21F6224F027,
-    128'h277195FC471E4B26B6641214B61D1B43,
-    128'hE95F517CB98955B4D5A89AA9109294A
+  parameter digest_const_array_t RndCnstDigestConst = {
+    128'hCF7A50A9A91EF7F7B3A5B4421F462370
+  };
+
+  parameter digest_iv_array_t RndCnstDigestIV = {
+    64'h63B9485A3856C417
   };
 
   parameter digest_const_array_t RndCnstDigestConstDefault = {
@@ -71,13 +80,6 @@ package otp_ctrl_part_pkg;
     128'hD60822E1FAEC5C7290C7F21F6224F027,
     128'h277195FC471E4B26B6641214B61D1B43,
     128'hE95F517CB98955B4D5A89AA9109294A
-  };
-
-  parameter digest_iv_array_t RndCnstDigestIV = {
-    64'hF98C48B1F9377284,
-    64'hB7474D640F8A7F5,
-    64'hE048B657396B4B83,
-    64'hBEAD91D5FA4E0915
   };
 
   parameter digest_iv_array_t RndCnstDigestIVDefault = {
@@ -136,10 +138,190 @@ package otp_ctrl_part_pkg;
   ////////////////////////
 
   localparam part_info_t PartInfo [NumPart] = '{
-    // VENDOR_TEST
+    // SECRET_MANUF_PARTITION
+    '{
+      variant:          Buffered,
+      offset:           13'd0,
+      size:             72,
+      key_sel:          SecretManufKey,
+      secret:           1'b1,
+      sw_digest:        1'b0,
+      hw_digest:        1'b1,
+      write_lock:       1'b1,
+      read_lock:        1'b1,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SECRET_PROD_PARTITION_0
+    '{
+      variant:          Buffered,
+      offset:           13'd72,
+      size:             16,
+      key_sel:          SecretProdKey0,
+      secret:           1'b1,
+      sw_digest:        1'b0,
+      hw_digest:        1'b1,
+      write_lock:       1'b1,
+      read_lock:        1'b1,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SECRET_PROD_PARTITION_1
+    '{
+      variant:          Buffered,
+      offset:           13'd88,
+      size:             16,
+      key_sel:          SecretProdKey1,
+      secret:           1'b1,
+      sw_digest:        1'b0,
+      hw_digest:        1'b1,
+      write_lock:       1'b1,
+      read_lock:        1'b1,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SECRET_PROD_PARTITION_2
+    '{
+      variant:          Buffered,
+      offset:           13'd104,
+      size:             16,
+      key_sel:          SecretProdKey2,
+      secret:           1'b1,
+      sw_digest:        1'b0,
+      hw_digest:        1'b1,
+      write_lock:       1'b1,
+      read_lock:        1'b1,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SECRET_PROD_PARTITION_3
+    '{
+      variant:          Buffered,
+      offset:           13'd120,
+      size:             16,
+      key_sel:          SecretProdKey3,
+      secret:           1'b1,
+      sw_digest:        1'b0,
+      hw_digest:        1'b1,
+      write_lock:       1'b1,
+      read_lock:        1'b1,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SW_MANUF_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           11'd0,
+      offset:           13'd136,
+      size:             4192,
+      key_sel:          key_sel_e'('0),
+      secret:           1'b0,
+      sw_digest:        1'b1,
+      hw_digest:        1'b0,
+      write_lock:       1'b1,
+      read_lock:        1'b0,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SW_PROD_PARTITION
+    '{
+      variant:          Unbuffered,
+      offset:           13'd4328,
+      size:             3480,
+      key_sel:          key_sel_e'('0),
+      secret:           1'b0,
+      sw_digest:        1'b1,
+      hw_digest:        1'b0,
+      write_lock:       1'b1,
+      read_lock:        1'b0,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SECRET_LC_UNLOCK_PARTITION
+    '{
+      variant:          Buffered,
+      offset:           13'd7808,
+      size:             136,
+      key_sel:          SecretLifeCycleUnlockKey,
+      secret:           1'b1,
+      sw_digest:        1'b0,
+      hw_digest:        1'b1,
+      write_lock:       1'b1,
+      read_lock:        1'b1,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SECRET_LC_MANUF_PARTITION
+    '{
+      variant:          Buffered,
+      offset:           13'd7944,
+      size:             24,
+      key_sel:          SecretLifeCycleManufKey,
+      secret:           1'b1,
+      sw_digest:        1'b0,
+      hw_digest:        1'b1,
+      write_lock:       1'b1,
+      read_lock:        1'b1,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SECRET_LC_PROD_PARTITION
+    '{
+      variant:          Buffered,
+      offset:           13'd7968,
+      size:             24,
+      key_sel:          SecretLifeCycleProdKey,
+      secret:           1'b1,
+      sw_digest:        1'b0,
+      hw_digest:        1'b1,
+      write_lock:       1'b1,
+      read_lock:        1'b1,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SECRET_LC_RMA_PARTITION
+    '{
+      variant:          Buffered,
+      offset:           13'd7992,
+      size:             24,
+      key_sel:          SecretLifeCycleRMAKey,
+      secret:           1'b1,
+      sw_digest:        1'b0,
+      hw_digest:        1'b1,
+      write_lock:       1'b1,
+      read_lock:        1'b1,
+      integrity:        1'b1,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // SVN_PARTITION
+    '{
+      variant:          Unbuffered,
+      offset:           13'd8016,
+      size:             24,
+      key_sel:          key_sel_e'('0),
+      secret:           1'b0,
+      sw_digest:        1'b0,
+      hw_digest:        1'b0,
+      write_lock:       1'b0,
+      read_lock:        1'b0,
+      integrity:        1'b0,
+      iskeymgr_creator: 1'b0,
+      iskeymgr_owner:   1'b0
+    },
+    // VENDOR_TEST_PARTITION
+    '{
+      variant:          Unbuffered,
+      offset:           13'd8040,
       size:             64,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -151,145 +333,10 @@ package otp_ctrl_part_pkg;
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0
     },
-    // CREATOR_SW_CFG
-    '{
-      variant:          Unbuffered,
-      offset:           11'd64,
-      size:             368,
-      key_sel:          key_sel_e'('0),
-      secret:           1'b0,
-      sw_digest:        1'b1,
-      hw_digest:        1'b0,
-      write_lock:       1'b1,
-      read_lock:        1'b0,
-      integrity:        1'b1,
-      iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
-    },
-    // OWNER_SW_CFG
-    '{
-      variant:          Unbuffered,
-      offset:           11'd432,
-      size:             712,
-      key_sel:          key_sel_e'('0),
-      secret:           1'b0,
-      sw_digest:        1'b1,
-      hw_digest:        1'b0,
-      write_lock:       1'b1,
-      read_lock:        1'b0,
-      integrity:        1'b1,
-      iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
-    },
-    // ROT_CREATOR_AUTH_CODESIGN
-    '{
-      variant:          Unbuffered,
-      offset:           11'd1144,
-      size:             472,
-      key_sel:          key_sel_e'('0),
-      secret:           1'b0,
-      sw_digest:        1'b1,
-      hw_digest:        1'b0,
-      write_lock:       1'b1,
-      read_lock:        1'b0,
-      integrity:        1'b1,
-      iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
-    },
-    // ROT_CREATOR_AUTH_STATE
-    '{
-      variant:          Unbuffered,
-      offset:           11'd1616,
-      size:             40,
-      key_sel:          key_sel_e'('0),
-      secret:           1'b0,
-      sw_digest:        1'b1,
-      hw_digest:        1'b0,
-      write_lock:       1'b1,
-      read_lock:        1'b0,
-      integrity:        1'b1,
-      iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
-    },
-    // HW_CFG0
-    '{
-      variant:          Buffered,
-      offset:           11'd1656,
-      size:             72,
-      key_sel:          key_sel_e'('0),
-      secret:           1'b0,
-      sw_digest:        1'b0,
-      hw_digest:        1'b1,
-      write_lock:       1'b1,
-      read_lock:        1'b0,
-      integrity:        1'b1,
-      iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
-    },
-    // HW_CFG1
-    '{
-      variant:          Buffered,
-      offset:           11'd1728,
-      size:             16,
-      key_sel:          key_sel_e'('0),
-      secret:           1'b0,
-      sw_digest:        1'b0,
-      hw_digest:        1'b1,
-      write_lock:       1'b1,
-      read_lock:        1'b0,
-      integrity:        1'b1,
-      iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
-    },
-    // SECRET0
-    '{
-      variant:          Buffered,
-      offset:           11'd1744,
-      size:             40,
-      key_sel:          Secret0Key,
-      secret:           1'b1,
-      sw_digest:        1'b0,
-      hw_digest:        1'b1,
-      write_lock:       1'b1,
-      read_lock:        1'b1,
-      integrity:        1'b1,
-      iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
-    },
-    // SECRET1
-    '{
-      variant:          Buffered,
-      offset:           11'd1784,
-      size:             88,
-      key_sel:          Secret1Key,
-      secret:           1'b1,
-      sw_digest:        1'b0,
-      hw_digest:        1'b1,
-      write_lock:       1'b1,
-      read_lock:        1'b1,
-      integrity:        1'b1,
-      iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
-    },
-    // SECRET2
-    '{
-      variant:          Buffered,
-      offset:           11'd1872,
-      size:             88,
-      key_sel:          Secret2Key,
-      secret:           1'b1,
-      sw_digest:        1'b0,
-      hw_digest:        1'b1,
-      write_lock:       1'b1,
-      read_lock:        1'b1,
-      integrity:        1'b1,
-      iskeymgr_creator: 1'b1,
-      iskeymgr_owner:   1'b0
-    },
     // LIFE_CYCLE
     '{
       variant:          LifeCycle,
-      offset:           11'd1960,
+      offset:           13'd8104,
       size:             88,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -304,22 +351,25 @@ package otp_ctrl_part_pkg;
   };
 
   typedef enum {
-    VendorTestIdx,
-    CreatorSwCfgIdx,
-    OwnerSwCfgIdx,
-    RotCreatorAuthCodesignIdx,
-    RotCreatorAuthStateIdx,
-    HwCfg0Idx,
-    HwCfg1Idx,
-    Secret0Idx,
-    Secret1Idx,
-    Secret2Idx,
+    SecretManufPartitionIdx,
+    SecretProdPartition0Idx,
+    SecretProdPartition1Idx,
+    SecretProdPartition2Idx,
+    SecretProdPartition3Idx,
+    SwManufPartitionIdx,
+    SwProdPartitionIdx,
+    SecretLcUnlockPartitionIdx,
+    SecretLcManufPartitionIdx,
+    SecretLcProdPartitionIdx,
+    SecretLcRmaPartitionIdx,
+    SvnPartitionIdx,
+    VendorTestPartitionIdx,
     LifeCycleIdx,
     // These are not "real partitions", but in terms of implementation it is convenient to
     // add these at the end of certain arrays.
     DaiIdx,
     LciIdx,
-    KdiIdx,
+    // KdiIdx,
     // Number of agents is the last idx+1.
     NumAgentsIdx
   } part_idx_e;
@@ -328,189 +378,156 @@ package otp_ctrl_part_pkg;
 
   // Breakout types for easier access of individual items.
   typedef struct packed {
-    logic [63:0] hw_cfg0_digest;
-    logic [255:0] manuf_state;
-    logic [255:0] device_id;
-  } otp_hw_cfg0_data_t;
+    logic [63:0] secret_manuf_partition_digest;
+    logic [511:0] uds_seed;
+  } otp_secret_manuf_partition_data_t;
 
   // default value used for intermodule
-  parameter otp_hw_cfg0_data_t OTP_HW_CFG0_DATA_DEFAULT = '{
-    hw_cfg0_digest: 64'hF87BED95CFBA3727,
-    manuf_state: 256'hDF3888886BD10DC67ABB319BDA0529AE40119A3C6E63CDF358840E458E4029A6,
-    device_id: 256'h63B9485A3856C417CF7A50A9A91EF7F7B3A5B4421F462370FFF698183664DC7E
+  parameter otp_secret_manuf_partition_data_t OTP_SECRET_MANUF_PARTITION_DATA_DEFAULT = '{
+    secret_manuf_partition_digest: 64'hF87BED95CFBA3727,
+    uds_seed: 512'hFFF698183664DC7EDF3888886BD10DC67ABB319BDA0529AE40119A3C6E63CDF358840E458E4029A6B5AC1F53D00A08C3B28B5C0FEE5F4C02711D135F59A50322
   };
   typedef struct packed {
-    logic [63:0] hw_cfg1_digest;
-    logic [39:0] unallocated;
-    caliptra_prim_mubi_pkg::mubi8_t dis_rv_dm_late_debug;
-    caliptra_prim_mubi_pkg::mubi8_t en_csrng_sw_app_read;
-    caliptra_prim_mubi_pkg::mubi8_t en_sram_ifetch;
-  } otp_hw_cfg1_data_t;
+    logic [63:0] secret_prod_partition_0_digest;
+    logic [63:0] field_entropy_0;
+  } otp_secret_prod_partition_0_data_t;
 
   // default value used for intermodule
-  parameter otp_hw_cfg1_data_t OTP_HW_CFG1_DATA_DEFAULT = '{
-    hw_cfg1_digest: 64'hBBF4A76885E754F2,
-    unallocated: 40'h0,
-    dis_rv_dm_late_debug: caliptra_prim_mubi_pkg::mubi8_t'(8'h69),
-    en_csrng_sw_app_read: caliptra_prim_mubi_pkg::mubi8_t'(8'h69),
-    en_sram_ifetch: caliptra_prim_mubi_pkg::mubi8_t'(8'h69)
+  parameter otp_secret_prod_partition_0_data_t OTP_SECRET_PROD_PARTITION_0_DATA_DEFAULT = '{
+    secret_prod_partition_0_digest: 64'hBBF4A76885E754F2,
+    field_entropy_0: 64'hB6711DB6F5D40A37
+  };
+  typedef struct packed {
+    logic [63:0] secret_prod_partition_1_digest;
+    logic [63:0] field_entropy_1;
+  } otp_secret_prod_partition_1_data_t;
+
+  // default value used for intermodule
+  parameter otp_secret_prod_partition_1_data_t OTP_SECRET_PROD_PARTITION_1_DATA_DEFAULT = '{
+    secret_prod_partition_1_digest: 64'hBE193854E9CA60A0,
+    field_entropy_1: 64'hDBC827839FE2DCC2
+  };
+  typedef struct packed {
+    logic [63:0] secret_prod_partition_2_digest;
+    logic [63:0] field_entropy_2;
+  } otp_secret_prod_partition_2_data_t;
+
+  // default value used for intermodule
+  parameter otp_secret_prod_partition_2_data_t OTP_SECRET_PROD_PARTITION_2_DATA_DEFAULT = '{
+    secret_prod_partition_2_digest: 64'hC469C593E5DC0DA8,
+    field_entropy_2: 64'h7E17D06B5D4E0DDD
+  };
+  typedef struct packed {
+    logic [63:0] secret_prod_partition_3_digest;
+    logic [63:0] field_entropy_3;
+  } otp_secret_prod_partition_3_data_t;
+
+  // default value used for intermodule
+  parameter otp_secret_prod_partition_3_data_t OTP_SECRET_PROD_PARTITION_3_DATA_DEFAULT = '{
+    secret_prod_partition_3_digest: 64'h8CBBAD02BB4CA928,
+    field_entropy_3: 64'hDBB9844327F20FB5
   };
   typedef struct packed {
     // This reuses the same encoding as the life cycle signals for indicating valid status.
     lc_ctrl_pkg::lc_tx_t valid;
-    otp_hw_cfg1_data_t hw_cfg1_data;
-    otp_hw_cfg0_data_t hw_cfg0_data;
+    otp_secret_prod_partition_3_data_t secret_prod_partition_3_data;
+    otp_secret_prod_partition_2_data_t secret_prod_partition_2_data;
+    otp_secret_prod_partition_1_data_t secret_prod_partition_1_data;
+    otp_secret_prod_partition_0_data_t secret_prod_partition_0_data;
+    otp_secret_manuf_partition_data_t secret_manuf_partition_data;
   } otp_broadcast_t;
 
   // default value for intermodule
   parameter otp_broadcast_t OTP_BROADCAST_DEFAULT = '{
     valid: lc_ctrl_pkg::Off,
-    hw_cfg1_data: OTP_HW_CFG1_DATA_DEFAULT,
-    hw_cfg0_data: OTP_HW_CFG0_DATA_DEFAULT
+    secret_prod_partition_3_data: OTP_SECRET_PROD_PARTITION_3_DATA_DEFAULT,
+    secret_prod_partition_2_data: OTP_SECRET_PROD_PARTITION_2_DATA_DEFAULT,
+    secret_prod_partition_1_data: OTP_SECRET_PROD_PARTITION_1_DATA_DEFAULT,
+    secret_prod_partition_0_data: OTP_SECRET_PROD_PARTITION_0_DATA_DEFAULT,
+    secret_manuf_partition_data: OTP_SECRET_MANUF_PARTITION_DATA_DEFAULT
   };
 
 
   // OTP invalid partition default for buffered partitions.
-  parameter logic [16383:0] PartInvDefault = 16384'({
+  parameter logic [65535:0] PartInvDefault = 65536'({
     704'({
-      320'h93B61DE417B9FB339605F051E74379CBCC6596C7174EBA643E725E464F593C87A445C3C29F71A256,
-      384'hA0D1E90E8C9FDDFA01E46311FD36D95401136C663A36C3E3E817E760B27AE937BFCDF15A3429452A851B80674A2B6FBE
+      320'h4947DD361344767A0340A5B93BB19342E29749216775E8A515F164D7930C9D1920440F25BB053FB5,
+      384'h851B80674A2B6FBE93B61DE417B9FB339605F051E74379CBCC6596C7174EBA643E725E464F593C87A445C3C29F71A256
     }),
-    704'({
+    512'({
+      64'h60BAE4A876D70627,
+      192'h0, // unallocated space
+      256'h0
+    }),
+    192'({
+      32'h0, // unallocated space
+      128'h0,
+      32'h0
+    }),
+    192'({
+      64'h2DCDD92FA5B24BF3,
+      128'hE817E760B27AE937BFCDF15A3429452A
+    }),
+    192'({
+      64'h3BF7D79A9FF747F6,
+      128'h1E46311FD36D95401136C663A36C3E3
+    }),
+    192'({
+      64'h41837480464544A1,
+      128'h315FD2B871D88819A0D1E90E8C9FDDFA
+    }),
+    1088'({
+      64'h6FDFE93D3146B0F,
+      128'h688098A43C33459F0279FC51CC7C626E,
+      128'hD3D58610F4851667D68C96F0B3D1FEED,
+      128'h2C0DBDDEDF7A854D5E58D0AA97A0F8F6,
+      128'h2A4D8B51F5D41C8AD0BAC511D08ECE0E,
+      128'h1C752824C7DDC89694CD3DED94B57819,
+      128'h426D99D374E699CAE00E9680BD9B7029,
+      128'h234729143F97B62A55D0320379A0D260,
+      128'hD396D1CE085BDC31105733EAA3880C5A
+    }),
+    27840'({
+      64'h67BBE3B4555DF35C,
+      27312'h0, // unallocated space
+      8'h0,
+      32'h0,
+      32'h0,
+      384'h0,
+      8'h0
+    }),
+    33536'({
+      64'hAA3F4C71234F097C,
+      27304'h0, // unallocated space
+      256'h0,
+      384'h0,
+      4096'h0,
+      128'h0,
+      16'h0,
+      128'h0,
+      768'h0,
+      8'h0,
+      384'h0
+    }),
+    128'({
       64'h8CBBAD02BB4CA928,
-      256'hD68C96F0B3D1FEED688098A43C33459F0279FC51CC7C626E315FD2B871D88819,
-      256'hD0BAC511D08ECE0E2C0DBDDEDF7A854D5E58D0AA97A0F8F6D3D58610F4851667,
-      128'h94CD3DED94B578192A4D8B51F5D41C8A
+      64'hDBB9844327F20FB5
     }),
-    704'({
+    128'({
       64'hC469C593E5DC0DA8,
-      128'hE00E9680BD9B70291C752824C7DDC896,
-      256'h105733EAA3880C5A234729143F97B62A55D0320379A0D260426D99D374E699CA,
-      256'hDBC827839FE2DCC27E17D06B5D4E0DDDDBB9844327F20FB5D396D1CE085BDC31
+      64'h7E17D06B5D4E0DDD
     }),
-    320'({
+    128'({
       64'hBE193854E9CA60A0,
-      128'h711D135F59A50322B6711DB6F5D40A37,
-      128'hB5AC1F53D00A08C3B28B5C0FEE5F4C02
+      64'hDBC827839FE2DCC2
     }),
     128'({
       64'hBBF4A76885E754F2,
-      40'h0, // unallocated space
-      8'h69,
-      8'h69,
-      8'h69
+      64'hB6711DB6F5D40A37
     }),
     576'({
       64'hF87BED95CFBA3727,
-      256'hDF3888886BD10DC67ABB319BDA0529AE40119A3C6E63CDF358840E458E4029A6,
-      256'h63B9485A3856C417CF7A50A9A91EF7F7B3A5B4421F462370FFF698183664DC7E
-    }),
-    320'({
-      64'h20440F25BB053FB5,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0
-    }),
-    3776'({
-      64'h15F164D7930C9D19,
-      256'h0,
-      32'h0,
-      256'h0,
-      32'h0,
-      32'h0,
-      256'h0,
-      32'h0,
-      32'h0,
-      256'h0,
-      32'h0,
-      32'h0,
-      256'h0,
-      32'h0,
-      512'h0,
-      32'h0,
-      512'h0,
-      32'h0,
-      512'h0,
-      32'h0,
-      512'h0,
-      32'h0
-    }),
-    5696'({
-      64'hE29749216775E8A5,
-      96'h0, // unallocated space
-      1024'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      96'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      512'h0,
-      128'h0,
-      128'h0,
-      512'h0,
-      2560'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0
-    }),
-    2944'({
-      64'h340A5B93BB19342,
-      96'h0, // unallocated space
-      256'h0,
-      256'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      32'h0,
-      1248'h0
-    }),
-    512'({
-      64'h4947DD361344767A,
-      448'h0
+      512'hFFF698183664DC7EDF3888886BD10DC67ABB319BDA0529AE40119A3C6E63CDF358840E458E4029A6B5AC1F53D00A08C3B28B5C0FEE5F4C02711D135F59A50322
     })});
 
   ///////////////////////////////////////////////
@@ -523,16 +540,18 @@ package otp_ctrl_part_pkg;
     logic unused_sigs;
     unused_sigs = ^part_digest;
     hw2reg = '0;
-    hw2reg.vendor_test_digest = part_digest[VendorTestIdx];
-    hw2reg.creator_sw_cfg_digest = part_digest[CreatorSwCfgIdx];
-    hw2reg.owner_sw_cfg_digest = part_digest[OwnerSwCfgIdx];
-    hw2reg.rot_creator_auth_codesign_digest = part_digest[RotCreatorAuthCodesignIdx];
-    hw2reg.rot_creator_auth_state_digest = part_digest[RotCreatorAuthStateIdx];
-    hw2reg.hw_cfg0_digest = part_digest[HwCfg0Idx];
-    hw2reg.hw_cfg1_digest = part_digest[HwCfg1Idx];
-    hw2reg.secret0_digest = part_digest[Secret0Idx];
-    hw2reg.secret1_digest = part_digest[Secret1Idx];
-    hw2reg.secret2_digest = part_digest[Secret2Idx];
+    hw2reg.secret_manuf_partition_digest = part_digest[SecretManufPartitionIdx];
+    hw2reg.secret_prod_partition_0_digest = part_digest[SecretProdPartition0Idx];
+    hw2reg.secret_prod_partition_1_digest = part_digest[SecretProdPartition1Idx];
+    hw2reg.secret_prod_partition_2_digest = part_digest[SecretProdPartition2Idx];
+    hw2reg.secret_prod_partition_3_digest = part_digest[SecretProdPartition3Idx];
+    hw2reg.sw_manuf_partition_digest = part_digest[SwManufPartitionIdx];
+    hw2reg.sw_prod_partition_digest = part_digest[SwProdPartitionIdx];
+    hw2reg.secret_lc_unlock_partition_digest = part_digest[SecretLcUnlockPartitionIdx];
+    hw2reg.secret_lc_manuf_partition_digest = part_digest[SecretLcManufPartitionIdx];
+    hw2reg.secret_lc_prod_partition_digest = part_digest[SecretLcProdPartitionIdx];
+    hw2reg.secret_lc_rma_partition_digest = part_digest[SecretLcRmaPartitionIdx];
+    hw2reg.vendor_test_partition_digest = part_digest[VendorTestPartitionIdx];
     return hw2reg;
   endfunction : named_reg_assign
 
@@ -545,25 +564,21 @@ package otp_ctrl_part_pkg;
     part_access_pre = {{32'(2*NumPart)}{caliptra_prim_mubi_pkg::MuBi8False}};
     // Note: these could be made a MuBi CSRs in the future.
     // The main thing that is missing right now is proper support for W0C.
-    // VENDOR_TEST
-    if (!reg2hw.vendor_test_read_lock) begin
-      part_access_pre[VendorTestIdx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
+    // SW_MANUF_PARTITION
+    if (!reg2hw.sw_manuf_partition_read_lock) begin
+      part_access_pre[SwManufPartitionIdx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
     end
-    // CREATOR_SW_CFG
-    if (!reg2hw.creator_sw_cfg_read_lock) begin
-      part_access_pre[CreatorSwCfgIdx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
+    // SW_PROD_PARTITION
+    if (!reg2hw.sw_prod_partition_read_lock) begin
+      part_access_pre[SwProdPartitionIdx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
     end
-    // OWNER_SW_CFG
-    if (!reg2hw.owner_sw_cfg_read_lock) begin
-      part_access_pre[OwnerSwCfgIdx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
+    // SVN_PARTITION
+    if (!reg2hw.svn_partition_read_lock) begin
+      part_access_pre[SvnPartitionIdx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
     end
-    // ROT_CREATOR_AUTH_CODESIGN
-    if (!reg2hw.rot_creator_auth_codesign_read_lock) begin
-      part_access_pre[RotCreatorAuthCodesignIdx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
-    end
-    // ROT_CREATOR_AUTH_STATE
-    if (!reg2hw.rot_creator_auth_state_read_lock) begin
-      part_access_pre[RotCreatorAuthStateIdx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
+    // VENDOR_TEST_PARTITION
+    if (!reg2hw.vendor_test_partition_read_lock) begin
+      part_access_pre[VendorTestPartitionIdx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
     end
     return part_access_pre;
   endfunction : named_part_access_pre
@@ -575,36 +590,45 @@ package otp_ctrl_part_pkg;
     logic valid, unused;
     unused = 1'b0;
     valid = 1'b1;
-    // VENDOR_TEST
-    unused ^= ^{part_init_done[VendorTestIdx],
-                part_buf_data[VendorTestOffset +: VendorTestSize]};
-    // CREATOR_SW_CFG
-    unused ^= ^{part_init_done[CreatorSwCfgIdx],
-                part_buf_data[CreatorSwCfgOffset +: CreatorSwCfgSize]};
-    // OWNER_SW_CFG
-    unused ^= ^{part_init_done[OwnerSwCfgIdx],
-                part_buf_data[OwnerSwCfgOffset +: OwnerSwCfgSize]};
-    // ROT_CREATOR_AUTH_CODESIGN
-    unused ^= ^{part_init_done[RotCreatorAuthCodesignIdx],
-                part_buf_data[RotCreatorAuthCodesignOffset +: RotCreatorAuthCodesignSize]};
-    // ROT_CREATOR_AUTH_STATE
-    unused ^= ^{part_init_done[RotCreatorAuthStateIdx],
-                part_buf_data[RotCreatorAuthStateOffset +: RotCreatorAuthStateSize]};
-    // HW_CFG0
-    valid &= part_init_done[HwCfg0Idx];
-    otp_broadcast.hw_cfg0_data = otp_hw_cfg0_data_t'(part_buf_data[HwCfg0Offset +: HwCfg0Size]);
-    // HW_CFG1
-    valid &= part_init_done[HwCfg1Idx];
-    otp_broadcast.hw_cfg1_data = otp_hw_cfg1_data_t'(part_buf_data[HwCfg1Offset +: HwCfg1Size]);
-    // SECRET0
-    unused ^= ^{part_init_done[Secret0Idx],
-                part_buf_data[Secret0Offset +: Secret0Size]};
-    // SECRET1
-    unused ^= ^{part_init_done[Secret1Idx],
-                part_buf_data[Secret1Offset +: Secret1Size]};
-    // SECRET2
-    unused ^= ^{part_init_done[Secret2Idx],
-                part_buf_data[Secret2Offset +: Secret2Size]};
+    // SECRET_MANUF_PARTITION
+    valid &= part_init_done[SecretManufPartitionIdx];
+    otp_broadcast.secret_manuf_partition_data = otp_secret_manuf_partition_data_t'(part_buf_data[SecretManufPartitionOffset +: SecretManufPartitionSize]);
+    // SECRET_PROD_PARTITION_0
+    valid &= part_init_done[SecretProdPartition0Idx];
+    otp_broadcast.secret_prod_partition_0_data = otp_secret_prod_partition_0_data_t'(part_buf_data[SecretProdPartition0Offset +: SecretProdPartition0Size]);
+    // SECRET_PROD_PARTITION_1
+    valid &= part_init_done[SecretProdPartition1Idx];
+    otp_broadcast.secret_prod_partition_1_data = otp_secret_prod_partition_1_data_t'(part_buf_data[SecretProdPartition1Offset +: SecretProdPartition1Size]);
+    // SECRET_PROD_PARTITION_2
+    valid &= part_init_done[SecretProdPartition2Idx];
+    otp_broadcast.secret_prod_partition_2_data = otp_secret_prod_partition_2_data_t'(part_buf_data[SecretProdPartition2Offset +: SecretProdPartition2Size]);
+    // SECRET_PROD_PARTITION_3
+    valid &= part_init_done[SecretProdPartition3Idx];
+    otp_broadcast.secret_prod_partition_3_data = otp_secret_prod_partition_3_data_t'(part_buf_data[SecretProdPartition3Offset +: SecretProdPartition3Size]);
+    // SW_MANUF_PARTITION
+    unused ^= ^{part_init_done[SwManufPartitionIdx],
+                part_buf_data[SwManufPartitionOffset +: SwManufPartitionSize]};
+    // SW_PROD_PARTITION
+    unused ^= ^{part_init_done[SwProdPartitionIdx],
+                part_buf_data[SwProdPartitionOffset +: SwProdPartitionSize]};
+    // SECRET_LC_UNLOCK_PARTITION
+    unused ^= ^{part_init_done[SecretLcUnlockPartitionIdx],
+                part_buf_data[SecretLcUnlockPartitionOffset +: SecretLcUnlockPartitionSize]};
+    // SECRET_LC_MANUF_PARTITION
+    unused ^= ^{part_init_done[SecretLcManufPartitionIdx],
+                part_buf_data[SecretLcManufPartitionOffset +: SecretLcManufPartitionSize]};
+    // SECRET_LC_PROD_PARTITION
+    unused ^= ^{part_init_done[SecretLcProdPartitionIdx],
+                part_buf_data[SecretLcProdPartitionOffset +: SecretLcProdPartitionSize]};
+    // SECRET_LC_RMA_PARTITION
+    unused ^= ^{part_init_done[SecretLcRmaPartitionIdx],
+                part_buf_data[SecretLcRmaPartitionOffset +: SecretLcRmaPartitionSize]};
+    // SVN_PARTITION
+    unused ^= ^{part_init_done[SvnPartitionIdx],
+                part_buf_data[SvnPartitionOffset +: SvnPartitionSize]};
+    // VENDOR_TEST_PARTITION
+    unused ^= ^{part_init_done[VendorTestPartitionIdx],
+                part_buf_data[VendorTestPartitionOffset +: VendorTestPartitionSize]};
     // LIFE_CYCLE
     unused ^= ^{part_init_done[LifeCycleIdx],
                 part_buf_data[LifeCycleOffset +: LifeCycleSize]};
@@ -623,55 +647,45 @@ package otp_ctrl_part_pkg;
     // interface to the keymgr remains stable. The type contains
     // a superset of all options, so we have to initialize it to '0 here.
     otp_keymgr_key = '0;
-    // VENDOR_TEST
-    unused ^= ^{part_digest[VendorTestIdx],
-                part_buf_data[VendorTestOffset +: VendorTestSize]};
-    // CREATOR_SW_CFG
-    unused ^= ^{part_digest[CreatorSwCfgIdx],
-                part_buf_data[CreatorSwCfgOffset +: CreatorSwCfgSize]};
-    // OWNER_SW_CFG
-    unused ^= ^{part_digest[OwnerSwCfgIdx],
-                part_buf_data[OwnerSwCfgOffset +: OwnerSwCfgSize]};
-    // ROT_CREATOR_AUTH_CODESIGN
-    unused ^= ^{part_digest[RotCreatorAuthCodesignIdx],
-                part_buf_data[RotCreatorAuthCodesignOffset +: RotCreatorAuthCodesignSize]};
-    // ROT_CREATOR_AUTH_STATE
-    unused ^= ^{part_digest[RotCreatorAuthStateIdx],
-                part_buf_data[RotCreatorAuthStateOffset +: RotCreatorAuthStateSize]};
-    // HW_CFG0
-    unused ^= ^{part_digest[HwCfg0Idx],
-                part_buf_data[HwCfg0Offset +: HwCfg0Size]};
-    // HW_CFG1
-    unused ^= ^{part_digest[HwCfg1Idx],
-                part_buf_data[HwCfg1Offset +: HwCfg1Size]};
-    // SECRET0
-    unused ^= ^{part_digest[Secret0Idx],
-                part_buf_data[Secret0Offset +: Secret0Size]};
-    // SECRET1
-    unused ^= ^{part_digest[Secret1Idx],
-                part_buf_data[Secret1Offset +: Secret1Size]};
-    // SECRET2
-    valid = (part_digest[Secret2Idx] != 0);
-    unused ^= ^part_buf_data[RmaTokenOffset +: RmaTokenSize];
-    otp_keymgr_key.creator_root_key_share0_valid = valid;
-    if (lc_ctrl_pkg::lc_tx_test_true_strict(lc_seed_hw_rd_en)) begin
-      otp_keymgr_key.creator_root_key_share0 =
-          part_buf_data[CreatorRootKeyShare0Offset +: CreatorRootKeyShare0Size];
-    end else begin
-      otp_keymgr_key.creator_root_key_share0 =
-          PartInvDefault[CreatorRootKeyShare0Offset*8 +: CreatorRootKeyShare0Size*8];
-    end
-    otp_keymgr_key.creator_root_key_share1_valid = valid;
-    if (lc_ctrl_pkg::lc_tx_test_true_strict(lc_seed_hw_rd_en)) begin
-      otp_keymgr_key.creator_root_key_share1 =
-          part_buf_data[CreatorRootKeyShare1Offset +: CreatorRootKeyShare1Size];
-    end else begin
-      otp_keymgr_key.creator_root_key_share1 =
-          PartInvDefault[CreatorRootKeyShare1Offset*8 +: CreatorRootKeyShare1Size*8];
-    end
-    // This is not used since we consume the
-    // ungated digest values from the part_digest array.
-    unused ^= ^part_buf_data[Secret2DigestOffset +: Secret2DigestSize];
+    // SECRET_MANUF_PARTITION
+    unused ^= ^{part_digest[SecretManufPartitionIdx],
+                part_buf_data[SecretManufPartitionOffset +: SecretManufPartitionSize]};
+    // SECRET_PROD_PARTITION_0
+    unused ^= ^{part_digest[SecretProdPartition0Idx],
+                part_buf_data[SecretProdPartition0Offset +: SecretProdPartition0Size]};
+    // SECRET_PROD_PARTITION_1
+    unused ^= ^{part_digest[SecretProdPartition1Idx],
+                part_buf_data[SecretProdPartition1Offset +: SecretProdPartition1Size]};
+    // SECRET_PROD_PARTITION_2
+    unused ^= ^{part_digest[SecretProdPartition2Idx],
+                part_buf_data[SecretProdPartition2Offset +: SecretProdPartition2Size]};
+    // SECRET_PROD_PARTITION_3
+    unused ^= ^{part_digest[SecretProdPartition3Idx],
+                part_buf_data[SecretProdPartition3Offset +: SecretProdPartition3Size]};
+    // SW_MANUF_PARTITION
+    unused ^= ^{part_digest[SwManufPartitionIdx],
+                part_buf_data[SwManufPartitionOffset +: SwManufPartitionSize]};
+    // SW_PROD_PARTITION
+    unused ^= ^{part_digest[SwProdPartitionIdx],
+                part_buf_data[SwProdPartitionOffset +: SwProdPartitionSize]};
+    // SECRET_LC_UNLOCK_PARTITION
+    unused ^= ^{part_digest[SecretLcUnlockPartitionIdx],
+                part_buf_data[SecretLcUnlockPartitionOffset +: SecretLcUnlockPartitionSize]};
+    // SECRET_LC_MANUF_PARTITION
+    unused ^= ^{part_digest[SecretLcManufPartitionIdx],
+                part_buf_data[SecretLcManufPartitionOffset +: SecretLcManufPartitionSize]};
+    // SECRET_LC_PROD_PARTITION
+    unused ^= ^{part_digest[SecretLcProdPartitionIdx],
+                part_buf_data[SecretLcProdPartitionOffset +: SecretLcProdPartitionSize]};
+    // SECRET_LC_RMA_PARTITION
+    unused ^= ^{part_digest[SecretLcRmaPartitionIdx],
+                part_buf_data[SecretLcRmaPartitionOffset +: SecretLcRmaPartitionSize]};
+    // SVN_PARTITION
+    unused ^= ^{part_digest[SvnPartitionIdx],
+                part_buf_data[SvnPartitionOffset +: SvnPartitionSize]};
+    // VENDOR_TEST_PARTITION
+    unused ^= ^{part_digest[VendorTestPartitionIdx],
+                part_buf_data[VendorTestPartitionOffset +: VendorTestPartitionSize]};
     // LIFE_CYCLE
     unused ^= ^{part_digest[LifeCycleIdx],
                 part_buf_data[LifeCycleOffset +: LifeCycleSize]};

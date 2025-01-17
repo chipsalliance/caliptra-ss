@@ -36,7 +36,10 @@ module mci_axi_sub_decode
     localparam MBOX1_START_ADDR      = 32'h0009_0000,
     localparam MBOX1_END_ADDR        = MBOX1_START_ADDR + ((32'h0000_0001 << MBOX_CSR_ADDR_WIDTH) - 1),
     localparam MCU_SRAM_START_ADDR   = 32'h0020_0000,
-    localparam MCU_SRAM_END_ADDR     = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1 
+    localparam MCU_SRAM_END_ADDR     = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1, 
+      
+    localparam MCI_END_ADDR   = MCU_SRAM_END_ADDR,
+    localparam MCI_INTERNAL_ADDR_WIDTH = $clog2(MCI_END_ADDR)
         
     )
     (
@@ -85,10 +88,10 @@ logic soc_req_miss;
 // Decode which address space is being requested
 ///////////////////////////////////////////////////////////
 //SoC requests to MCU_SRAM
-always_comb soc_mcu_sram_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MCU_SRAM_START_ADDR:MCU_SRAM_END_ADDR]}));
+always_comb soc_mcu_sram_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCU_SRAM_START_ADDR:MCU_SRAM_END_ADDR]}));
 
 // SoC request to MCI Reg
-always_comb soc_mci_reg_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MCI_REG_START_ADDR:MCI_REG_END_ADDR]}));
+always_comb soc_mci_reg_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCI_REG_START_ADDR:MCI_REG_END_ADDR]}));
 
 // SoC request to MCI Mbox0
 always_comb soc_mci_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX0_START_ADDR:MBOX0_END_ADDR]}));
@@ -145,7 +148,7 @@ assign soc_resp_if.rdata =  soc_mcu_sram_gnt    ? mcu_sram_req_if.rdata :
 
 
 ///////////////////////////////////////////////////////////
-// Drive approriate hold back
+// Drive appropriate hold back
 ///////////////////////////////////////////////////////////
 
 always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sram_req_if.hold)) |
@@ -156,7 +159,7 @@ always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sra
 
 
 ///////////////////////////////////////////////////////////
-// Drive approriate error back or request misses all desitnations
+// Drive appropriate error back or request misses all destinations
 ///////////////////////////////////////////////////////////
 
 // Missed all destinations 

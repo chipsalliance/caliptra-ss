@@ -19,6 +19,8 @@ requires:
   - axi_sub
   - soc_ifc_top
   - mci_pkg
+  - lc_ctrl_pkg
+  - fuse_ctrl_pkg
   # for beh_lib with rvecc_encode/decode
   - el2_veer_pkg
 targets:
@@ -35,6 +37,8 @@ targets:
       - $COMPILE_ROOT/rtl/mci_wdt_top.sv
       - $COMPILE_ROOT/rtl/mci_reg_top.sv
       - $COMPILE_ROOT/rtl/mci_reg.sv
+      - $COMPILE_ROOT/rtl/mci_boot_seqr.sv
+      - $COMPILE_ROOT/rtl/mci_lcc_st_trans.sv
     tops: [mci_top]
   rtl_lint:
     directories: [$COMPILE_ROOT/config/design_lint]
@@ -59,3 +63,62 @@ global:
       default:
         - '-assert svaext'
         - '-noinherit_timescale=1ns/1ps'
+---
+provides: [mci_lcc_st_trans]
+schema_version: 2.4.0
+requires:
+  - caliptra_prim
+  - soc_ifc_top
+  - mci_pkg
+  - el2_veer_pkg
+  - lc_ctrl_pkg
+  - fuse_ctrl_pkg
+targets:
+  rtl:
+    directories:
+      - $COMPILE_ROOT/rtl
+    files:
+      - $COMPILE_ROOT/rtl/mci_lcc_st_trans.sv
+    tops: [mci_lcc_st_trans]
+  rtl_lint:
+    directories: [$COMPILE_ROOT/config/design_lint]
+    waiver_files:
+      - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
+    tops: [mci_lcc_st_trans]
+---
+provides: [mci_lcc_st_trans_tb]
+schema_version: 2.4.0
+requires:
+  - caliptra_prim
+  - soc_ifc_top
+  - mci_pkg
+  - el2_veer_pkg
+  - lc_ctrl_pkg
+  - fuse_ctrl_pkg
+  - mci_lcc_st_trans
+targets:
+  rtl:
+    directories: [$COMPILE_ROOT/tb]
+    files:
+      - $COMPILE_ROOT/tb/mci_lcc_st_trans_tb.sv
+    tops: [mci_lcc_st_trans_tb]
+global:
+  tool:
+    vcs:
+      default:
+        - '-assert svaext'
+        - '-noinherit_timescale=1ns/1ps'
+        #sim:
+        #- '-ucli -i dump.ucli'
+        # Suppress a warning due to calling $fgets as task instead of function
+        # i.e. discarding the return value. This is in auto-generated code.
+        - '+warn=noRVOSFD'
+        # Suppress NOTE about repeated package imports within the same
+        # package (each .svh file included in the auto-generated UVM _pkg.sv
+        # files imports the same dependencies)
+        - '-suppress=SV-LCM-PPWI'
+      elab:
+        # Suppress warnings about too few port connections - auto-generated interfaces
+        # declare all signals as inout, but are driven at a lower layer than the
+        # instantiation, so they will always flag this
+        - '-suppress=TFIPC'
