@@ -2096,7 +2096,7 @@ module caliptra_ss_top
     caliptra_prim_mubi_pkg::mubi4_t scanmode_mubi;
     
     otp_ctrl #(
-        .MemInitFile ("/home/pure_scratch/caliptra/users/users/ekarabulut/ws2/chipsalliance/caliptra-ss/src/fuse_ctrl/data/otp-img.2048.vmem")
+        .MemInitFile ("otp-img.2048.vmem")
     ) u_otp_ctrl (
         .clk_i                      (core_clk),
         .rst_ni                     (rst_l & fake_reset),
