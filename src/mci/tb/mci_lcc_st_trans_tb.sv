@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
-//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -93,8 +91,14 @@ module mci_lcc_st_trans_tb
 
  task apply_reset();
     rst_n = 0;
+    from_otp_to_lcc_program_i.valid = 0;
+    from_otp_to_lcc_program_i.valid = 0;
     repeat(10) @(negedge clk);
     rst_n = 1;
+    repeat(5) @(negedge clk);
+    from_otp_to_lcc_program_i.valid = 1;
+    repeat(5) @(negedge clk);
+    from_otp_to_lcc_program_i.valid = 1;
 endtask
 
  // Task to set valid OTP state
@@ -110,23 +114,43 @@ task set_lcc_state_req(input lc_state_e state);
 endtask
 
 // Task to assert Caliptra Core signals and registers
-task assert_prod_debug(input logic switch_case);
+task assert_prod_debug(input logic [2:0] switch_case);
     case(switch_case)
         0: begin
+            ss_soc_dbg_unlock_mask_reg0_1 = 64'h0;
+            ss_soc_CLTAP_unlock_mask_reg0_1 = 64'h0;
             ss_soc_dft_en_mask_reg0_1 = 64'h4;
             ss_soc_dbg_unlock_level_i = 64'h2;
         end
         1: begin
+            ss_soc_dbg_unlock_mask_reg0_1 = 64'h0;
+            ss_soc_CLTAP_unlock_mask_reg0_1 = 64'h0;
             ss_soc_dft_en_mask_reg0_1 = 64'h4;
             ss_soc_dbg_unlock_level_i = 64'h4;
         end
         2: begin
+            ss_soc_dbg_unlock_mask_reg0_1 = 64'h0;
+            ss_soc_dft_en_mask_reg0_1 = 64'h0;
             ss_soc_CLTAP_unlock_mask_reg0_1 = 64'h6;
             ss_soc_dbg_unlock_level_i = 64'h4;
         end
         3: begin
+            ss_soc_dbg_unlock_mask_reg0_1 = 64'h0;
+            ss_soc_dft_en_mask_reg0_1 = 64'h0;
             ss_soc_CLTAP_unlock_mask_reg0_1 = 64'h6;
             ss_soc_dbg_unlock_level_i = 64'h6;
+        end
+        4: begin
+            ss_soc_dbg_unlock_mask_reg0_1 = 64'h0;
+            ss_soc_dft_en_mask_reg0_1 = 64'h0;
+            ss_soc_CLTAP_unlock_mask_reg0_1 = 64'h0;
+            ss_soc_dbg_unlock_level_i = 64'h8;
+        end
+        5: begin
+            ss_soc_dbg_unlock_mask_reg0_1 = 64'h8;
+            ss_soc_dft_en_mask_reg0_1 = 64'h0;
+            ss_soc_CLTAP_unlock_mask_reg0_1 = 64'h0;
+            ss_soc_dbg_unlock_level_i = 64'h8;
         end
         default: $fatal("Invalid switch_case value");
     endcase
@@ -144,22 +168,46 @@ initial begin
     set_valid_otp_state(LcStScrap);
     @(posedge clk);
     apply_reset();
-    @(negedge clk);
+    repeat(20) @(negedge clk);
     set_valid_otp_state(LcStTestUnlocked0);
-    repeat(10) @(negedge clk);
+    repeat(20) @(negedge clk);
     apply_reset();
     set_valid_otp_state(LcStDev);
-    repeat(10) @(negedge clk);
+    repeat(20) @(negedge clk);
     set_valid_otp_state(LcStScrap);
-    repeat(10) @(negedge clk);
+    repeat(20) @(negedge clk);
     apply_reset();
     set_valid_otp_state(LcStDev);
     ss_dbg_manuf_enable_i = 1;
     apply_reset();
     ss_dbg_manuf_enable_i = 0;
-    repeat(10) @(negedge clk);
+    repeat(20) @(negedge clk);
+    apply_reset();
+    set_valid_otp_state(LcStProd);
+    repeat(20) @(negedge clk);
+    assert_prod_debug(0);
+    repeat(20) @(negedge clk);
+    apply_reset();
+    assert_prod_debug(1);
+    repeat(20) @(negedge clk);
+    apply_reset();
+    assert_prod_debug(2);
+    repeat(20) @(negedge clk);
+    apply_reset();
+    repeat(20) @(negedge clk);
+    assert_prod_debug(3);
+    repeat(20) @(negedge clk);
+    repeat(20) @(negedge clk);
+    apply_reset();
+    assert_prod_debug(4);
+    repeat(20) @(negedge clk);
+    apply_reset();
+    repeat(20) @(negedge clk);
+    assert_prod_debug(5);
+    repeat(20) @(negedge clk);
     $finish;
-
 end
 
 endmodule
+
+
