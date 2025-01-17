@@ -52,13 +52,14 @@ module axi_slv #(
 
   reg [TAGW-1:0] awid_local;
 
-  assign awid_local = (awvalid == 1)? awid : awid_local;
+  assign awid_local = (awvalid == 1)? awid : bid;
 
   always @(posedge aclk or negedge rst_l) begin
     if (!rst_l) begin
       rvalid <= 0;
       bvalid <= 0;
       rlast  <= 0;
+      bid    <= 0;
     end else begin
       bid    <= awid_local;
       rid    <= arid;

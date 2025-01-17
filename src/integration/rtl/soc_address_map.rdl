@@ -1,10 +1,16 @@
 
 addrmap soc {
-    I3CCSR I3CCSR @ 0x20004000;
 
+    I3CCSR I3CCSR @ 0x2000_4000;
+
+    mci_reg mci_reg @ 0x2100_0000;
+    
     mbox_csr mbox_csr @ 0x3002_0000;
 
     sha512_acc_csr sha512_acc_csr @ 0x3002_1000;
 
     soc_ifc_reg soc_ifc_reg @ 0x3003_0000;
+
+
+
 };

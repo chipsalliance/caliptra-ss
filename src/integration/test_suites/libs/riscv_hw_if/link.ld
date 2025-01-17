@@ -11,16 +11,16 @@ SECTIONS {
   .text   : { *(.text*) }
   _text_end = .;
 
-  . = 0x90010000;
+  . = 0x21200000;
   .data : { *(.*data) *(.rodata*) *(.srodata*) *(.sbss) }
   _data_end = .;
 
-  . = 0x90011000;
+  . = 0x21210000;
   .bss : { *(.bss) }
   _bss_end = .;
 
   STACK = ALIGN(16) + 0x1000;
   
-  . = 0xd0580000;
+  . = 0x21000410;
   .data.io : { *(.data.io) }
 }

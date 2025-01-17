@@ -32,16 +32,16 @@ package mci_pkg;
     localparam MCI_WDT_TIMEOUT_PERIOD_W = MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS * 32;
 
     typedef enum logic [3:0] {
-        BOOT_IDLE          = 4'b0000,
-        BOOT_FABRIC        = 4'b0001,
-        BOOT_OTP_FC        = 4'b0010,
-        BOOT_LCC           = 4'b0011,
-        BOOT_MCU           = 4'b0100,
-        BOOT_PLL           = 4'b0101,
-        BOOT_WAIT_CPTRA    = 4'b0110,
-        BOOT_CPTRA         = 4'b0111,
-        BOOT_WAIT_UPDATE   = 4'b1000,
-        BOOT_RST_MCU       = 4'b1001
+        BOOT_IDLE               = 4'h0,
+        BOOT_OTP_FC             = 4'h1,
+        BOOT_LCC                = 4'h2,
+        BOOT_BREAKPOINT         = 4'h3,
+        BOOT_MCU                = 4'h4,
+        BOOT_WAIT_CLPA_GO       = 4'h5,
+        BOOT_CPTRA              = 4'h6,
+        BOOT_WAIT_MCU_RST_REQ   = 4'h7,
+        BOOT_RST_MCU            = 4'h8,
+        BOOT_UNKNOWN             = 'x
     } mci_boot_fsm_state_e;
 
     typedef enum logic [2:0] {

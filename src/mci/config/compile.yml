@@ -37,6 +37,7 @@ targets:
       - $COMPILE_ROOT/rtl/mci_wdt_top.sv
       - $COMPILE_ROOT/rtl/mci_reg_top.sv
       - $COMPILE_ROOT/rtl/mci_reg.sv
+      - $COMPILE_ROOT/rtl/mci_boot_seqr.sv
       - $COMPILE_ROOT/rtl/mci_lcc_st_trans.sv
     tops: [mci_top]
   rtl_lint:
