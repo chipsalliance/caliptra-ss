@@ -76,12 +76,11 @@ module caliptra_ss_top
     logic                       porst_l;
     logic [pt.PIC_TOTAL_INT:1]  ext_int_tb;
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
-    logic                       nmi_int;
+    logic                       nmi_int_tb;
     logic                       timer_int;
     logic                       soft_int;
 
     logic        [31:0]         reset_vector;
-    logic        [31:0]         nmi_vector;
     logic        [31:1]         jtag_id;
 
     logic        [31:0]         ic_haddr        ;
@@ -418,6 +417,8 @@ module caliptra_ss_top
 
     logic pwr_otp_init_i;
     logic intr_otp_operation_done;
+    logic        mci_mcu_nmi_int;
+    logic [31:0] mci_mcu_nmi_vector;
 
 //    //-------------------------- I3C AXI signals--------------------------
 //    // AXI Write Channels
@@ -510,19 +511,19 @@ module caliptra_ss_top
                     ext_int_tb[mailbox_data[15:8]] <= 1'b1;
             end
             if (mailbox_data[7:0] == 8'h82) begin
-                nmi_int   <= nmi_int   & ~mailbox_data[8];
+                nmi_int_tb   <= nmi_int_tb   & ~mailbox_data[8];
                 timer_int <= timer_int & ~mailbox_data[9];
                 soft_int  <= soft_int  & ~mailbox_data[10];
             end
             if (mailbox_data[7:0] == 8'h83) begin
-                nmi_int   <= nmi_int   |  mailbox_data[8];
+                nmi_int_tb   <= nmi_int_tb   |  mailbox_data[8];
                 timer_int <= timer_int |  mailbox_data[9];
                 soft_int  <= soft_int  |  mailbox_data[10];
             end
         end
         if(mailbox_write && (mailbox_data[7:0] == 8'h90)) begin
             ext_int_tb   <= {pt.PIC_TOTAL_INT-1{1'b0}};
-            nmi_int      <= 1'b0;
+            nmi_int_tb   <= 1'b0;
             timer_int    <= 1'b0;
             soft_int     <= 1'b0;
         end
@@ -639,7 +640,6 @@ module caliptra_ss_top
         abi_reg[31] = "t6";
 
         ext_int_tb  = {pt.PIC_TOTAL_INT-1{1'b0}};
-        nmi_int     = 0;
         timer_int   = 0;
         soft_int    = 0;
 
@@ -648,7 +648,6 @@ module caliptra_ss_top
         jtag_id[27:12] = '0;
         jtag_id[11:1]  = 11'h45;
         reset_vector = `css_mcu0_RV_RESET_VEC;
-        nmi_vector   = 32'hee000000;
 
         $readmemh("mcu_lmem.hex",     lmem.mem);
         $readmemh("mcu_program.hex",  imem.mem);
@@ -1313,8 +1312,8 @@ module caliptra_ss_top
         .dbg_rst_l              ( porst_l       ),
         .clk                    ( core_clk      ),
         .rst_vec                ( reset_vector[31:1]),
-        .nmi_int                ( nmi_int       ),
-        .nmi_vec                ( nmi_vector[31:1]),
+        .nmi_int                ( mci_mcu_nmi_int),
+        .nmi_vec                ( mci_mcu_nmi_vector[31:1]),
         .jtag_id                ( jtag_id[31:1]),
 
 
@@ -2090,8 +2089,8 @@ module caliptra_ss_top
         .mcu_reset_vector(),
         .mcu_no_rom_config(1'b1),
 
-        .nmi_intr(),
-        .mcu_nmi_vector(),
+        .nmi_intr(mci_mcu_nmi_int),
+        .mcu_nmi_vector(mci_mcu_nmi_vector),
 
         .mcu_rst_b(mcu_rst_b),
         .cptra_rst_b(mcu_cptra_rst_b),
@@ -2255,9 +2254,6 @@ module caliptra_ss_top
     assign pwr_lc_i_tb = pwrmgr_pkg::pwr_lc_req_t'(u_lc_ctrl_bfm.pwr_lc_i);
     assign pwr_lc_o_tb = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o);
 
-
-    logic pwr_otp_init_i;
-
     logic Allow_RMA_on_PPD;
     logic fake_reset;
 
@@ -2408,7 +2404,7 @@ module caliptra_ss_top
         // .prim_axi_rd_req            (prim_axi_rd_req),
         // .prim_axi_rd_rsp            (prim_axi_rd_rsp),
 
-        .intr_otp_operation_done_o  (),
+        .intr_otp_operation_done_o  (intr_otp_operation_done),
         .intr_otp_error_o           (),
         // .alert_rx_i                 (),
         // .alert_tx_o                 (),
