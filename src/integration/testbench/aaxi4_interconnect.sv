@@ -272,16 +272,14 @@ initial begin
         slave[7].cfg_info.id_outstanding_depth = 4;
 
         //-- MCI interface --> I3C
-        slave[8].cfg_info.passive_mode = 1;
-        slave[8].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[8].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        // slave[8].cfg_info.base_address[0] = 64'hA000_0000;
-        slave[8].cfg_info.base_address[0] = 64'h2000_4000;
-        // slave[8].cfg_info.base_address[0] = 64'hA000_0000;
-        slave[8].cfg_info.limit_address[0] = 64'h2000_4FFF;
-        slave[8].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
-        slave[8].cfg_info.total_outstanding_depth = 4;
-        slave[8].cfg_info.id_outstanding_depth = 4;
+        slave[1].cfg_info.passive_mode = 1;
+        slave[1].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[1].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[1].cfg_info.base_address[0] = 64'h2000_4000;
+        slave[1].cfg_info.limit_address[0] = 64'h2000_4FFF;
+        slave[1].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
+        slave[1].cfg_info.total_outstanding_depth = 4;
+        slave[1].cfg_info.id_outstanding_depth = 4;
 
 //#1;
 //do not sure what feature of #1
