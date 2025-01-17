@@ -8,11 +8,11 @@ targets:
     files:
       - $COMPILE_ROOT/rtl/mcu_top.sv
     tops: [mcu_top]
-  # rtl_lint:
-  #   waiver_files:
-  #     - $COMPILE_ROOT/config/design_lint/sglint_waivers
-  #   black_box:
-  #     - css_mcu0_el2_veer_wrapper
+  rtl_lint:
+    waiver_files:
+      - $MSFT_REPO_ROOT/src/mcu/config/design_lint/sglint_waivers
+#    black_box:
+#      - css_mcu0_el2_veer_wrapper
   # cdc:
   #   tcl_files:
   #     - $COMPILE_ROOT/config/cdc/integration_top.constraints.tcl
