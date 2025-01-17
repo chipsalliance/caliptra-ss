@@ -19,6 +19,8 @@ requires:
   - axi_sub
   - soc_ifc_top
   - mci_pkg
+  - lc_ctrl_pkg
+  - fuse_ctrl_pkg
   # for beh_lib with rvecc_encode/decode
   - el2_veer_pkg
 targets:
@@ -35,6 +37,7 @@ targets:
       - $COMPILE_ROOT/rtl/mci_wdt_top.sv
       - $COMPILE_ROOT/rtl/mci_reg_top.sv
       - $COMPILE_ROOT/rtl/mci_reg.sv
+      - $COMPILE_ROOT/rtl/mci_lcc_st_trans.sv
     tops: [mci_top]
   rtl_lint:
     directories: [$COMPILE_ROOT/config/design_lint]
