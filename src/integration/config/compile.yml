@@ -10,6 +10,7 @@ requires:
   - fuse_ctrl_pkg
   - fuse_ctrl
   - caliptra_top_tb_pkg
+  - avery_vip
 targets:
   tb:
     directories:
@@ -21,13 +22,6 @@ targets:
       - $COMPILE_ROOT/testbench
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src/avery_pkg.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src/avery_pkg_test.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_pkg.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_pkg_xactor.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_class_pll.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_pkg_test.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_intf.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
       - $COMPILE_ROOT/testbench/axi_slv.sv
       # - $COMPILE_ROOT/testbench/dasm.svi
@@ -36,7 +30,9 @@ targets:
       - $COMPILE_ROOT/testbench/fuse_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top.sv
-    tops: [caliptra_ss_top]
+    tops: 
+      - caliptra_ss_top
+      - ai3c_tests_bench
   sim:
     pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile && echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
                 && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py .
@@ -57,6 +53,8 @@ global:
         - +define+CPTRA_TOP_PATH=caliptra_ss_top.caliptra_top_dut
         - +define+MCU_RV_BUILD_AXI4
         - +define+MCU_RV_OPENSOURCE
+        - +define+CALIPTRA_INTERNAL_UART
+        - '-noinherit_timescale=1ns/1ps'  
         - +define+AVERY_VCS
         - +define+AVERY_CLOCK=5
         - +define+FOUR_OUTSTANDING
@@ -66,21 +64,30 @@ global:
         - +define+AAXI_MAX_ID_WIDTH=5
         - +define+AAXI_MAX_ARUSER_WIDTH=32
         - +define+AAXI_MAX_AWUSER_WIDTH=32
-        - +define+CALIPTRA_INTERNAL_UART
-        - '-noinherit_timescale=1ns/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
         - +define+AAXI_INTC_SLAVE_CNT=8
+        - +define+AI3C_LANE_NUM=1
+        - +define+DIGITAL_IO_I3C=1
+        # - +define+AI3C_SKIP_DAA=1
+        - +define+AVERY_SV_TEST_CASE=1
+        # - '+define+AI3C_TEST_CASE=/cad/tools/mentor/avery/2024.3/i3cxactor/testsuite.i3c/examples/ai3ct_basic.sv'
+        - +define+AI3C_TEST_CASE=/home/ws/caliptra/pateln/caliptra_ws_250110/chipsalliance/caliptra-ss/src/integration/test_suites/ai3ct_ext_basic.sv
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
       elab:
         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c-core
         - '+warn=noIWNF'
         - '+warn=noPCWM-W'
-        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
-        - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME unique case violations in i3c-core
         - '-ignore unique_checks'
+        - '/cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/lib.linux/libtb_vcs64.a'
+        - '-P /cad/tools/mentor/avery/2.5c/avery_pli-2023_0609/tb_vcs64.tab'
       sim:
+        - '+vpi -lpthread'
         # Uncomment for debug prints
         #- +aaxi_dbg_name=all
-        - '+vpi -lpthread'
+        # - '+ai3c_dbg_name=master'
+        # Select AVERY I3C test case
+        # - '+AVY_TEST=ai3ct_basic'
+        - +AVY_TEST=ai3ct_ext_basic
+        # - +UVM_TESTNAME=ai3ct_basic

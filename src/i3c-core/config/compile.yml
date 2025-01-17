@@ -31,11 +31,11 @@ targets:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/queues/write_queue.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/ahb_if.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/axi_adapter.sv
-      - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/configuration.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/dxt.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/tti.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/queues.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/hci.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/target_reset_detector.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/width_converter_8toN.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/width_converter_Nto8.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/recovery/recovery_pec.sv
@@ -46,7 +46,14 @@ targets:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/bus_timers.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/bus_monitor.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/ccc.sv
-      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/daa.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/bus_rx_flow.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/bus_tx.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/bus_tx_flow.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/configuration.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/descriptor_ibi.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/descriptor_rx.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/descriptor_tx.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/ibi.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/edge_detector.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/i2c_controller_fsm.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/i2c_target_fsm.sv
@@ -54,7 +61,6 @@ targets:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/i3c_target_fsm.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/flow_active.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/flow_standby_i2c.sv
-      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/flow_standby_i3c.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/controller_standby_i2c.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/controller_standby_i3c.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/controller_active.sv
