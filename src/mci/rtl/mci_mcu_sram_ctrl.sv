@@ -271,7 +271,7 @@ end
 
 // Either read or write we need to pass the address to the memory interface.
 // Must shift the address to account for sram being more than 1 byte wide 
-assign mci_mcu_sram_req_if.req.addr = sram_req_phase ? cif_resp_if.req_data.addr [MCU_SRAM_ADDR_W-1:2] : '0;
+assign mci_mcu_sram_req_if.req.addr = sram_req_phase ? cif_resp_if.req_data.addr [MCU_SRAM_CIF_ADDR_W-1:2] : '0;
 
 // All requests assert CS
 assign mci_mcu_sram_req_if.req.cs = sram_req_phase;

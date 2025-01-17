@@ -37,6 +37,17 @@ void main (void) {
                              0xffffffff };
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
+    uint32_t cptra_boot_go;
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    
+    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
+    // This is just to see CSSBootFSM running correctly
+    lsu_write_32(SOC_MCI_REG_CALIPTRA_BOOT_GO, 1);
+    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_REG_CALIPTRA_BOOT_GO\n");
+
+    cptra_boot_go = lsu_read_32(SOC_MCI_REG_CALIPTRA_BOOT_GO);
+    VPRINTF(LOW, "MCU: Reading SOC_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
+
 
     VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n")
 
@@ -126,7 +137,6 @@ void main (void) {
     
     mbox_resp_data = lsu_read_32(SOC_MCI_REG_HW_REV_ID);
     VPRINTF(LOW, "MCU: MCI SOC_MCI_REG_HW_REV_ID %x\n", mbox_resp_data);
-
     // lsu_write_32(0x21200000, 0x12345678);
     // VPRINTF(LOW, "MCU: I3C 0x2120_0000 write completed\n");
     // lsu_write_32(0x21200004, 0xABCDABCD);

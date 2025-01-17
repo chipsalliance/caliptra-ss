@@ -376,7 +376,20 @@ module caliptra_ss_top
     wire                        lmem_axi_bready;
 `endif
 
+// ----------------- MCI Connections within Subsystem -----------------------
+         logic                             mcu_rst_b;
+         logic                             mcu_cptra_rst_b;
 
+
+// ----------------- MCI Connections LCC Connections -----------------------
+         logic                             lcc_to_mci_lc_done;
+         logic                             mci_to_lcc_init_req;
+         pwrmgr_pkg::pwr_lc_req_t          lcc_init_req;
+
+// ----------------- MCI OTP Connections -----------------------------------
+         logic                             mci_to_otp_ctrl_init_req;
+         logic                             otp_ctrl_to_mci_otp_ctrl_done;
+         pwrmgr_pkg::pwr_otp_req_t         otp_ctrl_init_req;
 
 //    //-------------------------- I3C AXI signals--------------------------
 //    // AXI Write Channels
@@ -709,8 +722,8 @@ module caliptra_ss_top
     logic mbox_sram_cs;
     logic mbox_sram_we;
     logic [14:0] mbox_sram_addr;
-    logic [MBOX_DATA_AND_ECC_W-1:0] mbox_sram_wdata;
-    logic [MBOX_DATA_AND_ECC_W-1:0] mbox_sram_rdata;
+    logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] mbox_sram_wdata;
+    logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] mbox_sram_rdata;
 
     logic imem_cs;
     logic [`CALIPTRA_IMEM_ADDR_WIDTH-1:0] imem_addr;
@@ -808,7 +821,8 @@ module caliptra_ss_top
     //=========================================================================-
     caliptra_top caliptra_top_dut (
         .cptra_pwrgood              (cptra_pwrgood),
-        .cptra_rst_b                (cptra_rst_b),
+        .cptra_rst_b                (mcu_cptra_rst_b),
+        // .cptra_rst_b                (cptra_rst_b),
         .clk                        (core_clk),
 
         .cptra_obf_key              (cptra_obf_key     ),
@@ -1244,7 +1258,8 @@ module caliptra_ss_top
     // RTL instance
     //=========================================================================-
     mcu_top rvtop_wrapper (
-        .rst_l                  ( rst_l         ),
+        .rst_l                  ( mcu_rst_b     ),
+        // .rst_l                  ( rst_l         ),
         .dbg_rst_l              ( porst_l       ),
         .clk                    ( core_clk      ),
         .rst_vec                ( reset_vector[31:1]),
@@ -1866,9 +1881,27 @@ module caliptra_ss_top
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) mci_m_axi_if (.clk(core_clk), .rst_n(cptra_rst_b));
+
+    // MCI Slave AXI Interface
+    axi_if #(
+        .AW(32), //-- FIXME : Assign a common paramter
+        .DW(32), //-- FIXME : Assign a common paramter,
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) mci_s_axi_if (.clk(core_clk), .rst_n(cptra_rst_b));
 
     mci_mcu_sram_if mci_mcu_sram_req_if (
+        .clk(core_clk),
+        .rst_b(rst_l)
+    );
+
+    mci_mcu_sram_if mci_mbox0_sram_req_if (
+        .clk(core_clk),
+        .rst_b(rst_l)
+    );
+    
+    mci_mcu_sram_if mci_mbox1_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
@@ -1949,10 +1982,11 @@ module caliptra_ss_top
     // MCI Master AXI Interface
 
     mci_top #(
-        .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
+        // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
         .AXI_DATA_WIDTH(32),
         .MCU_SRAM_SIZE_KB(256)
     ) mci_top_i (
+
         .clk(core_clk),
         .mci_rst_b(rst_l),
         .mci_pwrgood(mci_pwrgood),
@@ -1960,17 +1994,25 @@ module caliptra_ss_top
         // MCI AXI Interface
         .s_axi_w_if(mci_s_axi_if.w_sub),
         .s_axi_r_if(mci_s_axi_if.r_sub),
+
+        // MCI Master interface
+        .m_axi_w_if(mci_m_axi_if.w_mgr),
+        .m_axi_r_if(mci_m_axi_if.r_mgr),
         
         .strap_mcu_lsu_axi_user(32'hFFFF_FFFF),
         .strap_mcu_ifu_axi_user(32'hFFFF_FFFF),
         .strap_clp_axi_user(32'hFFFF_FFFF),
-        .strap_mcu_sram_access0_axi_user(32'hFFFF_FFFF),
-        .strap_mcu_sram_access1_axi_user(32'hFFFF_FFFF),
-    
+        .strap_prod_debug_unlock_pk_hash('1),
+        // .strap_mcu_sram_access0_axi_user(32'hFFFF_FFFF),
+        // .strap_mcu_sram_access1_axi_user(32'hFFFF_FFFF),
+
         .mcu_sram_fw_exec_region_lock(1'b1),
-        
-        .cptra_error_fatal(1'b0),
-        .cptra_error_non_fatal(1'b0),
+
+        .agg_error_fatal(1'b0),
+        .agg_error_non_fatal(1'b0),
+
+        // .cptra_error_fatal(1'b0),
+        // .cptra_error_non_fatal(1'b0),
 
         .mci_error_fatal(),
         .mci_error_non_fatal(),
@@ -1988,22 +2030,24 @@ module caliptra_ss_top
         .nmi_intr(),
         .mcu_nmi_vector(),
 
-        .mcu_rst_b(),
-        .cptra_rst_b(),
+        .mcu_rst_b(mcu_rst_b),
+        .cptra_rst_b(mcu_cptra_rst_b),
 
-        .mci_boot_seq_brkpoint(),
+        .mci_boot_seq_brkpoint(1'b0),
 
-        .lc_done(1'b1),
-        .lc_init(),
-        .lc_bus_integ_error_fatal(1'b0),
-        .lc_state_error_fatal(1'b0),
-        .lc_prog_error_fatal(1'b0),
+        .lc_done(lcc_to_mci_lc_done), //output from lcc
+        .lc_init(mci_to_lcc_init_req), //input to lcc
+        // .lc_bus_integ_error_fatal(1'b0),
+        // .lc_state_error_fatal(1'b0),
+        // .lc_prog_error_fatal(1'b0),
 
-        .fc_opt_done(1'b1),
-        .fc_opt_init(),
-        .fc_intr_otp_error(1'b0),
+        .fc_opt_done(otp_ctrl_to_mci_otp_ctrl_done), //output from otp
+        .fc_opt_init(mci_to_otp_ctrl_init_req), //input to otp
+        // .fc_intr_otp_error(1'b0),
 
-        .mci_mcu_sram_req_if(mci_mcu_sram_req_if.request)
+        .mci_mcu_sram_req_if(mci_mcu_sram_req_if.request),
+        .mci_mbox0_sram_req_if(mci_mbox0_sram_req_if.request),
+        .mci_mbox1_sram_req_if(mci_mbox1_sram_req_if.request)
     
     );
 
@@ -2191,6 +2235,8 @@ module caliptra_ss_top
 
     //--------------------------------------------------------------------------------------------
 
+    assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
+    assign lcc_init_req.lc_init = mci_to_lcc_init_req; 
 
 
     lc_ctrl u_lc_ctrl (
@@ -2212,7 +2258,8 @@ module caliptra_ss_top
             .esc_scrap_state0(esc_scrap_state0),
             .esc_scrap_state1(esc_scrap_state1),
 
-            .pwr_lc_i(pwrmgr_pkg::pwr_lc_req_t'(pwr_lc_i_tb)),
+
+            .pwr_lc_i(lcc_init_req),
             .pwr_lc_o(),
 
             .strap_en_override_o(),
@@ -2261,6 +2308,9 @@ module caliptra_ss_top
 
     caliptra_prim_mubi_pkg::mubi4_t scanmode_mubi;
     
+    assign otp_ctrl_to_mci_otp_ctrl_done = pwrmgr_pkg::pwr_otp_rsp_t'(u_otp_ctrl.pwr_otp_o.otp_done);
+    assign otp_ctrl_init_req.otp_init = mci_to_otp_ctrl_init_req; 
+
     otp_ctrl #(
         .MemInitFile ("/home/ws/caliptra/anjpar/caliptra_ws_1119/Caliptra/../chipsalliance/caliptra-ss/src/fuse_ctrl/data/otp-img.2048.vmem")
     ) u_otp_ctrl (
@@ -2289,7 +2339,7 @@ module caliptra_ss_top
         .otp_obs_o                  (),
         .otp_ast_pwr_seq_o          (),
         .otp_ast_pwr_seq_h_i        (),
-        .pwr_otp_i                  (pwr_otp_init_i),
+        .pwr_otp_i                  (otp_ctrl_init_req),
         .pwr_otp_o                  (),
 
         .lc_otp_vendor_test_i(otp_ctrl_pkg::lc_otp_vendor_test_req_t'(lc_otp_vendor_test_o_tb)),
