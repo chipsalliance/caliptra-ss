@@ -56,6 +56,9 @@ module caliptra_ss_top
     import axi_pkg::*;
     import soc_ifc_pkg::*;
     import caliptra_top_tb_pkg::*;
+    import ai2c_pkg::*;
+    import ai3c_pkg::*;
+    import avery_pkg_test::*;
 
 `ifndef VERILATOR
     // Time formatting for %t in display tasks
@@ -557,6 +560,10 @@ module caliptra_ss_top
                 $display("* TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
+                if($test$plusargs("AVY_TEST")) begin
+                    $display("Waiting 500us for I3C tests to finish..\n");
+                    #500us;
+                end
                 $finish;
             end
             else if(mailbox_data[7:0] == 8'h1) begin
@@ -672,7 +679,8 @@ module caliptra_ss_top
 
     initial  begin
         core_clk = 0;
-        forever  core_clk = #5 ~core_clk;
+        // forever  core_clk = #5 ~core_clk;
+        forever  core_clk = #(0.5) ~core_clk; // 1GHz
     end
 
     assign rst_l = cycleCnt > 5 ? 1'b1 : 1'b0;
@@ -1689,12 +1697,61 @@ module caliptra_ss_top
     //=========================================================================-
     // I3C-Core Instance
     //=========================================================================-
+    // --- I3C env and interface ---
+    ai3c_env i3c_env0;
+    wand  SCL;
+    wand  SDA;
+
+    // --- Avery I3C master ---
+    ai3c_device#(`AI3C_LANE_NUM) master0;
+    ai3c_intf#(`AI3C_LANE_NUM) master0_intf(SDA, SCL);
+
+    // // // --- Avery I3C slave ---
+    // ai3c_device#(`AI3C_LANE_NUM) slaves[$];
+    // ai3c_device#(`AI3C_LANE_NUM) slave;
+    // ai3c_intf#(`AI3C_LANE_NUM) slave_intf(i3c_sda_io, i3c_scl_io);
+
+    // --- AXI interface for I3C ---
     logic i3c_axi_rd_is_upper_dw_latched; // FIXME
     logic i3c_axi_wr_is_upper_dw_latched; // FIXME
     logic [31:0] i3c_axi_rdata_32; // FIXME
     logic [31:0] i3c_axi_wdata_32; // FIXME
     logic [3:0]  i3c_axi_wstrb_4; // FIXME
+    wire sel_od_pp_o;
 
+    initial begin
+
+        // --- Avery I3C slave ---
+        // slave = new("slave", , AI3C_SLAVE, slave_intf);
+        // slave.log.enable_bus_tracker = 1;
+        // slave.cfg_info.basic_mode();
+        // slave.set("static_addr", 7'b010_0001);
+        // slaves.push_back(slave);
+        // i3c_env0.add_slave(slaves[0]);
+        // slaves[0].set("start_bfm");
+
+        // --- Avery I3C master ---
+        master0 = new("master0", , AI3C_MASTER, master0_intf);
+        master0.cfg_info.is_main_master = 1;
+        master0.log.enable_bus_tracker  = 1;
+        master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
+        master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
+
+        // --- I3C env ---
+        i3c_env0 = new("i3c_env0");
+        i3c_env0.add_master(master0);
+
+        // run test for i3C
+        if($test$plusargs("AVY_TEST")) begin
+            $display("Waiting for 100us before Running I3C test..");
+            #100us;  // system boot delay
+            master0.set("start_bfm");
+            ai3c_run_test("ai3ct_ext_basic", i3c_env0); 
+        end
+
+    end
+
+    // ------------------- I3C Wrapper (core) -------------------
     i3c_wrapper #(
 `ifdef I3C_USE_AHB
         .AhbDataWidth(`AHB_DATA_WIDTH),
@@ -1724,68 +1781,73 @@ module caliptra_ss_top
         .hreadyout_o(i3c_hreadyout),
         .hrdata_o   (i3c_hrdata   ),
 `elsif I3C_USE_AXI
-        .arvalid_i  (axi_interconnect.sintf_arr[8].ARVALID),
-        .arready_o  (axi_interconnect.sintf_arr[8].ARREADY),
-        .arid_i     (axi_interconnect.sintf_arr[8].ARID),
-        .araddr_i   (axi_interconnect.sintf_arr[8].ARADDR[`AXI_ADDR_WIDTH:0]),
-        .arsize_i   (axi_interconnect.sintf_arr[8].ARSIZE),
-        .aruser_i   (axi_interconnect.sintf_arr[8].ARUSER),
-        .arlen_i    (axi_interconnect.sintf_arr[8].ARLEN),
-        .arburst_i  (axi_interconnect.sintf_arr[8].ARBURST),
-        .arlock_i   (axi_interconnect.sintf_arr[8].ARLOCK[0]),
-        .rvalid_o   (axi_interconnect.sintf_arr[8].RVALID),
-        .rready_i   (axi_interconnect.sintf_arr[8].RREADY),
-        .rid_o      (axi_interconnect.sintf_arr[8].RID),
+        .arvalid_i  (axi_interconnect.sintf_arr[1].ARVALID),
+        .arready_o  (axi_interconnect.sintf_arr[1].ARREADY),
+        .arid_i     (axi_interconnect.sintf_arr[1].ARID),
+        .araddr_i   (axi_interconnect.sintf_arr[1].ARADDR[`AXI_ADDR_WIDTH:0]),
+        .arsize_i   (axi_interconnect.sintf_arr[1].ARSIZE),
+        .aruser_i   (axi_interconnect.sintf_arr[1].ARUSER),
+        .arlen_i    (axi_interconnect.sintf_arr[1].ARLEN),
+        .arburst_i  (axi_interconnect.sintf_arr[1].ARBURST),
+        .arlock_i   (axi_interconnect.sintf_arr[1].ARLOCK[0]),
+        .rvalid_o   (axi_interconnect.sintf_arr[1].RVALID),
+        .rready_i   (axi_interconnect.sintf_arr[1].RREADY),
+        .rid_o      (axi_interconnect.sintf_arr[1].RID),
         .rdata_o    (i3c_axi_rdata_32),
-        .rresp_o    (axi_interconnect.sintf_arr[8].RRESP),
-        .rlast_o    (axi_interconnect.sintf_arr[8].RLAST),
-        .awvalid_i  (axi_interconnect.sintf_arr[8].AWVALID),
-        .awready_o  (axi_interconnect.sintf_arr[8].AWREADY),
-        .awid_i     (axi_interconnect.sintf_arr[8].AWID),
-        .awaddr_i   (axi_interconnect.sintf_arr[8].AWADDR[`AXI_ADDR_WIDTH:0]),
-        .awsize_i   (axi_interconnect.sintf_arr[8].AWSIZE),
-        .awuser_i   (axi_interconnect.sintf_arr[8].AWUSER),
-        .awlen_i    (axi_interconnect.sintf_arr[8].AWLEN),
-        .awburst_i  (axi_interconnect.sintf_arr[8].AWBURST),
-        .awlock_i   (axi_interconnect.sintf_arr[8].AWLOCK[0]),
-        .wvalid_i   (axi_interconnect.sintf_arr[8].WVALID),
-        .wready_o   (axi_interconnect.sintf_arr[8].WREADY),
+        .rresp_o    (axi_interconnect.sintf_arr[1].RRESP),
+        .rlast_o    (axi_interconnect.sintf_arr[1].RLAST),
+        .awvalid_i  (axi_interconnect.sintf_arr[1].AWVALID),
+        .awready_o  (axi_interconnect.sintf_arr[1].AWREADY),
+        .awid_i     (axi_interconnect.sintf_arr[1].AWID),
+        .awaddr_i   (axi_interconnect.sintf_arr[1].AWADDR[`AXI_ADDR_WIDTH:0]),
+        .awsize_i   (axi_interconnect.sintf_arr[1].AWSIZE),
+        .awuser_i   (axi_interconnect.sintf_arr[1].AWUSER),
+        .awlen_i    (axi_interconnect.sintf_arr[1].AWLEN),
+        .awburst_i  (axi_interconnect.sintf_arr[1].AWBURST),
+        .awlock_i   (axi_interconnect.sintf_arr[1].AWLOCK[0]),
+        .wvalid_i   (axi_interconnect.sintf_arr[1].WVALID),
+        .wready_o   (axi_interconnect.sintf_arr[1].WREADY),
         .wdata_i    (i3c_axi_wdata_32),
         .wstrb_i    (i3c_axi_wstrb_4),
-        .wlast_i    (axi_interconnect.sintf_arr[8].WLAST),
-        .bvalid_o   (axi_interconnect.sintf_arr[8].BVALID),
-        .bready_i   (axi_interconnect.sintf_arr[8].BREADY),
-        .bresp_o    (axi_interconnect.sintf_arr[8].BRESP),
-        .bid_o      (axi_interconnect.sintf_arr[8].BID),
+        .wlast_i    (axi_interconnect.sintf_arr[1].WLAST),
+        .bvalid_o   (axi_interconnect.sintf_arr[1].BVALID),
+        .bready_i   (axi_interconnect.sintf_arr[1].BREADY),
+        .bresp_o    (axi_interconnect.sintf_arr[1].BRESP),
+        .bid_o      (axi_interconnect.sintf_arr[1].BID),
 `endif
-`ifdef VERILATOR
-        .scl_i(scl_i),
-        .sda_i(sda_i),
-        .scl_o(scl_o),
-        .sda_o(sda_o),
-        .sel_od_pp_o(sel_od_pp_o)
+`ifdef DIGITAL_IO_I3C
+        .scl_i(master0_intf.scl_and),
+        .sda_i(master0_intf.sda_and),
+        .scl_o(master0_intf.scl_and),
+        .sda_o(master0_intf.sda_and),
+        .sel_od_pp_o(sel_od_pp_o),
 `else
         .i3c_scl_io(i3c_scl_io),
-        .i3c_sda_io(i3c_sda_io)
+        .i3c_sda_io(i3c_sda_io),
 `endif
+        .recovery_payload_available_o(),
+        .recovery_image_activated_o(),
+        .peripheral_reset_o(),
+        .peripheral_reset_done_i(1'b1),
+        .escalated_reset_o()
     );
 
     // FIXME data width conversion hack
     always@(posedge core_clk or negedge rst_l)
         if (!rst_l)
             i3c_axi_wr_is_upper_dw_latched <= 0;
-        else if (axi_interconnect.sintf_arr[8].AWVALID && axi_interconnect.sintf_arr[8].AWREADY)
-            i3c_axi_wr_is_upper_dw_latched <= axi_interconnect.sintf_arr[8].AWADDR[2] && (axi_interconnect.sintf_arr[8].AWSIZE < 3);
-    `CALIPTRA_ASSERT(I3C_AXI_WR_32BIT, (axi_interconnect.sintf_arr[8].AWVALID && axi_interconnect.sintf_arr[8].AWREADY) -> (axi_interconnect.sintf_arr[8].AWSIZE < 3), core_clk, !rst_l)
+        else if (axi_interconnect.sintf_arr[1].AWVALID && axi_interconnect.sintf_arr[1].AWREADY)
+            i3c_axi_wr_is_upper_dw_latched <= axi_interconnect.sintf_arr[1].AWADDR[2] && (axi_interconnect.sintf_arr[1].AWSIZE < 3);
+    `CALIPTRA_ASSERT(I3C_AXI_WR_32BIT, (axi_interconnect.sintf_arr[1].AWVALID && axi_interconnect.sintf_arr[1].AWREADY) -> (axi_interconnect.sintf_arr[1].AWSIZE < 3), core_clk, !rst_l)
     always@(posedge core_clk or negedge rst_l)
         if (!rst_l)
             i3c_axi_rd_is_upper_dw_latched <= 0;
-        else if (axi_interconnect.sintf_arr[8].ARVALID && axi_interconnect.sintf_arr[8].ARREADY)
-            i3c_axi_rd_is_upper_dw_latched <= axi_interconnect.sintf_arr[8].ARADDR[2] && (axi_interconnect.sintf_arr[8].ARSIZE < 3);
-    `CALIPTRA_ASSERT(I3C_AXI_RD_32BIT, (axi_interconnect.sintf_arr[8].ARVALID && axi_interconnect.sintf_arr[8].ARREADY) -> (axi_interconnect.sintf_arr[8].ARSIZE < 3), core_clk, !rst_l)
-    assign axi_interconnect.sintf_arr[8].RDATA = 64'(i3c_axi_rdata_32) << (i3c_axi_rd_is_upper_dw_latched ? 32 : 0);
-    assign i3c_axi_wdata_32                    = axi_interconnect.sintf_arr[8].WDATA >> (i3c_axi_wr_is_upper_dw_latched ? 32 : 0);
-    assign i3c_axi_wstrb_4                     = axi_interconnect.sintf_arr[8].WSTRB >> (i3c_axi_wr_is_upper_dw_latched ? 4  : 0);
+        else if (axi_interconnect.sintf_arr[1].ARVALID && axi_interconnect.sintf_arr[1].ARREADY)
+            i3c_axi_rd_is_upper_dw_latched <= axi_interconnect.sintf_arr[1].ARADDR[2] && (axi_interconnect.sintf_arr[1].ARSIZE < 3);
+    `CALIPTRA_ASSERT(I3C_AXI_RD_32BIT, (axi_interconnect.sintf_arr[1].ARVALID && axi_interconnect.sintf_arr[1].ARREADY) -> (axi_interconnect.sintf_arr[1].ARSIZE < 3), core_clk, !rst_l)
+    assign axi_interconnect.sintf_arr[1].RDATA = 64'(i3c_axi_rdata_32) << (i3c_axi_rd_is_upper_dw_latched ? 32 : 0);
+    assign i3c_axi_wdata_32                    = axi_interconnect.sintf_arr[1].WDATA >> (i3c_axi_wr_is_upper_dw_latched ? 32 : 0);
+    assign i3c_axi_wstrb_4                     = axi_interconnect.sintf_arr[1].WSTRB >> (i3c_axi_wr_is_upper_dw_latched ? 4  : 0);
 
 
     //=========================================================================-
@@ -1887,11 +1949,11 @@ module caliptra_ss_top
     // assign axi_interconnect.sintf_arr[1].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
 
     //-- Slave port 1 free to use. Moved LMEM to MCI
-    assign axi_interconnect.sintf_arr[1].AWREADY = 1'b1;
-    assign axi_interconnect.sintf_arr[1].WREADY  = 1'b1;
-    assign axi_interconnect.sintf_arr[1].BVALID  = 1'b0;
-    assign axi_interconnect.sintf_arr[1].ARREADY = 1'b1;
-    assign axi_interconnect.sintf_arr[1].RVALID  = 1'b0;
+    // assign axi_interconnect.sintf_arr[1].AWREADY = 1'b1;
+    // assign axi_interconnect.sintf_arr[1].WREADY  = 1'b1;
+    // assign axi_interconnect.sintf_arr[1].BVALID  = 1'b0;
+    // assign axi_interconnect.sintf_arr[1].ARREADY = 1'b1;
+    // assign axi_interconnect.sintf_arr[1].RVALID  = 1'b0;
 
 
     //=========================================================================
@@ -3386,3 +3448,8 @@ end : Gen_iccm_enable
 /* verilator lint_on CASEINCOMPLETE */
 
 endmodule
+
+// --- Avery I3C Test Case Bench ---
+// This is the top level module for the Avery I3C test case bench.
+// it triggers i3c test cases.
+`include "ai3c_tests_bench.sv"

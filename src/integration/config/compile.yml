@@ -11,6 +11,7 @@ requires:
   - fuse_ctrl
   - caliptra_top_tb_pkg
   - mci_top
+  - avery_vip
 targets:
   tb:
     directories:
@@ -22,13 +23,6 @@ targets:
       - $COMPILE_ROOT/testbench
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src/avery_pkg.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src/avery_pkg_test.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_pkg.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_pkg_xactor.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_class_pll.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_pkg_test.sv
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi/aaxi_intf.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
       - $COMPILE_ROOT/testbench/axi_slv.sv
       # - $COMPILE_ROOT/testbench/dasm.svi
@@ -39,7 +33,7 @@ targets:
       - $COMPILE_ROOT/testbench/fuse_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top.sv
-    tops: [caliptra_ss_top]
+    tops: [caliptra_ss_top, ai3c_tests_bench]
   sim:
     pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile && echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
                 && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py .
@@ -72,7 +66,12 @@ global:
         - +define+CALIPTRA_INTERNAL_UART
         - '-noinherit_timescale=1ns/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=9
+        - +define+AAXI_INTC_SLAVE_CNT=8
+        - +define+AI3C_LANE_NUM=1
+        - +define+DIGITAL_IO_I3C=1
+        # - +define+AI3C_SKIP_DAA=1
+        - +define+AVERY_SV_TEST_CASE=1
+        - +define+AI3C_TEST_CASE=/home/ws/caliptra/pateln/caliptra_ws_250114/chipsalliance/caliptra-ss/src/integration/test_suites/ai3ct_ext_basic.sv
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
       elab:
@@ -86,4 +85,6 @@ global:
       sim:
         # Uncomment for debug prints
         #- +aaxi_dbg_name=all
+        #- '+ai3c_dbg_name=master'
         - '+vpi -lpthread'
+        # - +AVY_TEST=ai3ct_ext_basic
