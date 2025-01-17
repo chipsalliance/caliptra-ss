@@ -29,6 +29,12 @@ module caliptra_ss_top
 #(
     `include "css_mcu0_el2_param.vh"
 ) (
+
+
+    output  wire                                 SOC_DFT_EN,
+    output  wire                                 SOC_HW_DEBUG_EN,
+
+
     `ifdef VERILATOR
     input bit [31:0]            mem_signature_begin,
     input bit [31:0]            mem_signature_end,
@@ -45,6 +51,7 @@ module caliptra_ss_top
     inout  wire  i3c_scl_io,
     inout  wire  i3c_sda_io
 `endif
+ 
 );
     import axi_pkg::*;
     import soc_ifc_pkg::*;
@@ -391,6 +398,23 @@ module caliptra_ss_top
          logic                             otp_ctrl_to_mci_otp_ctrl_done;
          pwrmgr_pkg::pwr_otp_req_t         otp_ctrl_init_req;
 
+
+//--------------------------MCI&LCC Gasket Signal Def---------------------
+        // Inputs from LCC
+         otp_ctrl_pkg::lc_otp_program_req_t           from_lcc_to_otp_program_i;
+         lc_ctrl_pkg::lc_tx_t                         lc_dft_en_i;
+         lc_ctrl_pkg::lc_tx_t                         lc_hw_debug_en_i;
+         // Inputs from OTP_Ctrl
+         otp_ctrl_pkg::otp_lc_data_t                  from_otp_to_lcc_program_i;
+         // Inputs from Caliptra_Core
+         logic                                         ss_dbg_manuf_enable_i   ; 
+         logic [63:0]                                  ss_soc_dbg_unlock_level_i;
+      
+      
+         soc_ifc_pkg::security_state_t                security_state_o;
+      
+//------------------------------------------------------------------------
+
 //    //-------------------------- I3C AXI signals--------------------------
 //    // AXI Write Channels
 //        wire                             i3c_axi_awvalid;
@@ -729,8 +753,6 @@ module caliptra_ss_top
     logic [`CALIPTRA_IMEM_ADDR_WIDTH-1:0] imem_addr;
     logic [`CALIPTRA_IMEM_DATA_WIDTH-1:0] imem_rdata;
 
-    //device lifecycle
-    security_state_t security_state;
 
     ras_test_ctrl_t ras_test_ctrl;
     logic [63:0] generic_input_wires;
@@ -894,9 +916,12 @@ module caliptra_ss_top
         .strap_ss_strap_generic_3                               (32'h0),
         .ss_debug_intent                                        (1'b0 ),
 
+
+
+
         // Subsystem mode debug outputs
-        .ss_dbg_manuf_enable(),
-        .ss_soc_dbg_unlock_level(),
+        .ss_dbg_manuf_enable(ss_dbg_manuf_enable_i),
+        .ss_soc_dbg_unlock_level(ss_soc_dbg_unlock_level_i),
 
         // Subsystem mode firmware execution control
         .ss_generic_fw_exec_ctrl(),
@@ -904,7 +929,7 @@ module caliptra_ss_top
         .generic_input_wires(generic_input_wires),
         .generic_output_wires(),
 
-        .security_state(security_state),
+        .security_state(security_state_o),
         .scan_mode     (scan_mode)
     );
 
@@ -947,7 +972,7 @@ module caliptra_ss_top
         .imem_rdata(imem_rdata),
 
         // Security State
-        .security_state(security_state),
+        .security_state(), // TODO: Remove this since we do not need it anymore, thanks to MCI
 
         //Scan mode
         .scan_mode(scan_mode),
@@ -1981,6 +2006,8 @@ module caliptra_ss_top
    );
     // MCI Master AXI Interface
 
+
+
     mci_top #(
         // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
         .AXI_DATA_WIDTH(32),
@@ -2047,7 +2074,24 @@ module caliptra_ss_top
 
         .mci_mcu_sram_req_if(mci_mcu_sram_req_if.request),
         .mci_mbox0_sram_req_if(mci_mbox0_sram_req_if.request),
-        .mci_mbox1_sram_req_if(mci_mbox1_sram_req_if.request)
+        .mci_mbox1_sram_req_if(mci_mbox1_sram_req_if.request),
+
+
+        .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
+        .lc_dft_en_i(lc_dft_en_i),
+        .lc_hw_debug_en_i(lc_hw_debug_en_i),
+   // Inputs from OTP_Ctrl
+        .from_otp_to_lcc_program_i(from_otp_to_lcc_program_i),
+   // Inputs from Caliptra_Core
+        .ss_dbg_manuf_enable_i(ss_dbg_manuf_enable_i), 
+        .ss_soc_dbg_unlock_level_i(ss_soc_dbg_unlock_level_i),
+
+   // Converted Signals from LCC to SoC
+        .SOC_DFT_EN(SOC_DFT_EN),
+        .SOC_HW_DEBUG_EN(SOC_HW_DEBUG_EN),
+
+   // Converted Signals from LCC to Caliptra-core
+        .security_state_o(security_state_o)
     
     );
 
@@ -2134,27 +2178,22 @@ module caliptra_ss_top
     // These are shared signals between fuse controller and lc controller
     logic [$bits(otp_ctrl_pkg::lc_otp_vendor_test_req_t)-1:0] lc_otp_vendor_test_o_tb;
     logic [$bits(otp_ctrl_pkg::lc_otp_vendor_test_rsp_t)-1:0] lc_otp_vendor_test_i_tb;
-    logic [$bits(otp_ctrl_pkg::lc_otp_program_req_t)-1:0] lc_otp_program_o_tb;
     logic [$bits(otp_ctrl_pkg::lc_otp_program_rsp_t)-1:0] lc_otp_program_i_tb;
 
     logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_creator_seed_sw_rw_en_tb;
     logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_owner_seed_sw_rw_en_tb;
     logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_seed_hw_rd_en_tb;
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_dft_en_tb;
     logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_escalate_en_tb;
     logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_check_byp_en_tb;
     logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] otp_lc_data_tb;
 
     assign lc_otp_vendor_test_o_tb = otp_ctrl_pkg::lc_otp_vendor_test_req_t'(u_lc_ctrl.lc_otp_vendor_test_o);
     assign lc_otp_vendor_test_i_tb = otp_ctrl_pkg::lc_otp_vendor_test_rsp_t'(u_otp_ctrl.lc_otp_vendor_test_o);
-
-    assign lc_otp_program_o_tb = otp_ctrl_pkg::lc_otp_program_req_t'(u_lc_ctrl.lc_otp_program_o);
     assign lc_otp_program_i_tb = otp_ctrl_pkg::lc_otp_program_rsp_t'(u_otp_ctrl.lc_otp_program_o);
 
     assign lc_creator_seed_sw_rw_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_creator_seed_sw_rw_en_o);
     assign lc_owner_seed_sw_rw_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_owner_seed_sw_rw_en_o);
     assign lc_seed_hw_rd_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_seed_hw_rd_en_o);
-    assign lc_dft_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_dft_en_o);
     assign lc_escalate_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_escalate_en_o);
     assign lc_check_byp_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_check_byp_en_o);
     assign otp_lc_data_tb = otp_ctrl_pkg::otp_lc_data_t'(u_lc_ctrl_bfm.otp_lc_data_o);
@@ -2163,9 +2202,7 @@ module caliptra_ss_top
 
     //--------------------------------------------------------------------------------------------
     // These are going to be connected to SoC later on
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_hw_debug_en_tb;
     logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_cpu_en_tb;
-    assign lc_hw_debug_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_hw_debug_en_o);
     assign lc_cpu_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_cpu_en_o);
     //--------------------------------------------------------------------------------------------
 
@@ -2219,9 +2256,10 @@ module caliptra_ss_top
         .esc_scrap_state0(esc_scrap_state0),
         .esc_scrap_state1(esc_scrap_state1),
 
+
         // OTP hack
         .otp_lc_data_o(),
-        .from_otp_lc_data_i(otp_ctrl_pkg::otp_lc_data_t'(u_otp_ctrl.otp_lc_data_o)),
+        .from_otp_lc_data_i(from_otp_to_lcc_program_i),
 
         // Power manager interface
         .pwr_lc_i(),
@@ -2264,19 +2302,23 @@ module caliptra_ss_top
 
             .strap_en_override_o(),
 
+
+
+        
+
             .lc_otp_vendor_test_o(),
             .lc_otp_vendor_test_i(otp_ctrl_pkg::lc_otp_vendor_test_rsp_t'(lc_otp_vendor_test_i_tb)),
-            .lc_otp_program_o(),
+            .lc_otp_program_o(from_lcc_to_otp_program_i),
             .lc_otp_program_i(otp_ctrl_pkg::lc_otp_program_rsp_t'(lc_otp_program_i_tb)),
             .otp_lc_data_i(otp_ctrl_pkg::otp_lc_data_t'(otp_lc_data_tb)),
-            .lc_dft_en_o(),
+            .lc_dft_en_o(lc_dft_en_i),
             .lc_creator_seed_sw_rw_en_o(),
             .lc_owner_seed_sw_rw_en_o(),
             .lc_seed_hw_rd_en_o(),            
             .lc_escalate_en_o(),
             .lc_check_byp_en_o(),
 
-            .lc_hw_debug_en_o(),
+            .lc_hw_debug_en_o(lc_hw_debug_en_i),
             .lc_cpu_en_o(),
 
             .lc_clk_byp_req_o(),
@@ -2344,7 +2386,7 @@ module caliptra_ss_top
 
         .lc_otp_vendor_test_i(otp_ctrl_pkg::lc_otp_vendor_test_req_t'(lc_otp_vendor_test_o_tb)),
         .lc_otp_vendor_test_o(),
-        .lc_otp_program_i(otp_ctrl_pkg::lc_otp_program_req_t'(lc_otp_program_o_tb)),
+        .lc_otp_program_i(from_lcc_to_otp_program_i),
         .lc_otp_program_o(),
 
 
@@ -2356,15 +2398,17 @@ module caliptra_ss_top
     // .lc_escalate_en_i(lc_ctrl_pkg::lc_tx_t'(lc_escalate_en_tb)),
     // .lc_check_byp_en_i(lc_ctrl_pkg::lc_tx_t'(lc_check_byp_en_tb)),
     // .otp_lc_data_o(otp_ctrl_pkg::otp_lc_data_t'(otp_lc_data_tb)),
+
+                    
     
 
     .lc_creator_seed_sw_rw_en_i(lc_creator_seed_sw_rw_en_tb),
     .lc_owner_seed_sw_rw_en_i(lc_owner_seed_sw_rw_en_tb),
     .lc_seed_hw_rd_en_i(lc_seed_hw_rd_en_tb),
-    .lc_dft_en_i(lc_dft_en_tb),
+    .lc_dft_en_i(lc_dft_en_i),
     .lc_escalate_en_i(lc_escalate_en_tb),
     .lc_check_byp_en_i(lc_check_byp_en_tb),
-    .otp_lc_data_o(),
+    .otp_lc_data_o(from_otp_to_lcc_program_i),
 
 
         .otp_keymgr_key_o           (),
