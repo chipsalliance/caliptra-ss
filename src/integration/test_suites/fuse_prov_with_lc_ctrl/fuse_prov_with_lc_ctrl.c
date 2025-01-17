@@ -10,7 +10,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-volatile char* stdout = (char *)0xd0580000;
+volatile char* stdout = (char *)0x21000410;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
@@ -667,8 +667,20 @@ void main (void) {
                              0xffffffff };
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
+    uint32_t cptra_boot_go;
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
-    VPRINTF(LOW, "=================\n LCC State Transitions \n=================\n\n");
+    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
+    // This is just to see CSSBootFSM running correctly
+    lsu_write_32(SOC_MCI_REG_CALIPTRA_BOOT_GO, 1);
+    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_REG_CALIPTRA_BOOT_GO\n");
+
+    cptra_boot_go = lsu_read_32(SOC_MCI_REG_CALIPTRA_BOOT_GO);
+    VPRINTF(LOW, "MCU: Reading SOC_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
+
+
+    
+    VPRINTF(LOW, "=================\n Fuse Prov TEST \n=================\n\n");
 
 
     lcc_initilization();    
