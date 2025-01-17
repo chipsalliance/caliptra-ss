@@ -84,7 +84,6 @@ targets:
     waiver_files:
       - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
     tops: [mci_lcc_st_trans]
-
 ---
 provides: [mci_lcc_st_trans_tb]
 schema_version: 2.4.0

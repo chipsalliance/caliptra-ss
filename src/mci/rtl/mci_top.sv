@@ -80,6 +80,7 @@ module mci_top
     output soc_ifc_pkg::security_state_t                security_state_o
 
     //============================================================
+    mci_mcu_sram_if.request mci_mbox1_sram_req_if 
 
     );
 
