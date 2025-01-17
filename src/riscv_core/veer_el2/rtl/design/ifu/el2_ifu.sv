@@ -48,6 +48,8 @@ import css_mcu0_el2_pkg::*;
 
   //-------------------------- IFU AXI signals--------------------------
    // AXI Write Channels
+   /* exclude signals that are tied to constant value in css_mcu0_el2_ifu_mem_ctl.sv */
+   /*pragma coverage off*/
    output logic                            ifu_axi_awvalid,
    output logic [pt.IFU_BUS_TAG-1:0]       ifu_axi_awid,
    output logic [31:0]                     ifu_axi_awaddr,
@@ -66,6 +68,7 @@ import css_mcu0_el2_pkg::*;
    output logic                            ifu_axi_wlast,
 
    output logic                            ifu_axi_bready,
+   /*pragma coverage on*/
 
    // AXI Read Channels
    output logic                            ifu_axi_arvalid,
@@ -73,6 +76,8 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.IFU_BUS_TAG-1:0]       ifu_axi_arid,
    output logic [31:0]                     ifu_axi_araddr,
    output logic [3:0]                      ifu_axi_arregion,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_ifu_mem_ctl.sv */
+   /*pragma coverage off*/
    output logic [7:0]                      ifu_axi_arlen,
    output logic [2:0]                      ifu_axi_arsize,
    output logic [1:0]                      ifu_axi_arburst,
@@ -80,9 +85,13 @@ import css_mcu0_el2_pkg::*;
    output logic [3:0]                      ifu_axi_arcache,
    output logic [2:0]                      ifu_axi_arprot,
    output logic [3:0]                      ifu_axi_arqos,
+   /*pragma coverage on*/
 
    input  logic                            ifu_axi_rvalid,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_ifu_mem_ctl.sv */
+   /*pragma coverage off*/
    output logic                            ifu_axi_rready,
+   /*pragma coverage on*/
    input  logic [pt.IFU_BUS_TAG-1:0]       ifu_axi_rid,
    input  logic [63:0]                     ifu_axi_rdata,
    input  logic [1:0]                      ifu_axi_rresp,
@@ -205,7 +214,10 @@ import css_mcu0_el2_pkg::*;
    output logic                                iccm_buf_correct_ecc,
    output logic                                iccm_correction_state,
 
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input logic scan_mode
+   /*pragma coverage on*/
    );
 
    localparam TAGWIDTH = 2 ;
@@ -378,4 +390,4 @@ import css_mcu0_el2_pkg::*;
 
    endfunction
 `endif
-endmodule // el2_ifu
+endmodule // css_mcu0_el2_ifu

@@ -22,7 +22,10 @@ import css_mcu0_el2_pkg::*;
   (
    input logic          clk,                                           // Top level clock
    input logic          rst_l,                                         // Reset
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input logic          scan_mode,                                     // Scan control
+   /*pragma coverage on*/
 
    input logic  [1:0]   dec_data_en,                                   // Clock enable {x,r}, one cycle pulse
    input logic  [1:0]   dec_ctl_en,                                    // Clock enable {x,r}, two cycle pulse
@@ -366,4 +369,4 @@ end // else: !if(pt.BTB_ENABLE==1)
    assign exu_npc_r[31:1]            = (i0_pred_correct_upper_r)  ?  pred_correct_npc_r[31:1]    :  i0_flush_path_upper_r[31:1];
 
 
-endmodule // el2_exu
+endmodule // css_mcu0_el2_exu

@@ -45,5 +45,5 @@ import css_mcu0_el2_pkg::*;
       assign dec_i0_trigger_match_d[i] = trigger_pkt_any[i].execute & trigger_pkt_any[i].m & dec_i0_trigger_data_match[i];
    end
 
-endmodule // el2_dec_trigger
+endmodule // css_mcu0_el2_dec_trigger
 

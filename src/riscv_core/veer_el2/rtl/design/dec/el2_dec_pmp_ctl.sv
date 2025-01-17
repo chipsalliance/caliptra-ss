@@ -48,7 +48,7 @@ module css_mcu0_el2_dec_pmp_ctl
    input logic dec_tlu_pmu_fw_halted, // pmu/fw halted
    input logic internal_dbg_halt_timers, // debug halted
 
-`ifdef RV_SMEPMP
+`ifdef css_mcu0_RV_SMEPMP
    input el2_mseccfg_pkt_t mseccfg,
 `endif
 
@@ -58,7 +58,10 @@ module css_mcu0_el2_dec_pmp_ctl
    output el2_pmp_cfg_pkt_t pmp_pmpcfg  [pt.PMP_ENTRIES],
    output logic [31:0]      pmp_pmpaddr [pt.PMP_ENTRIES],
 
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic        scan_mode
+   /*pragma coverage on*/
    );
 
    logic wr_pmpcfg_r;
@@ -79,7 +82,7 @@ module css_mcu0_el2_dec_pmp_ctl
 
    logic [pt.PMP_ENTRIES-1:0] entry_lock_eff;  // Effective entry lock
    for (genvar r = 0; r < pt.PMP_ENTRIES; r++) begin : g_pmpcfg_lock
-`ifdef RV_SMEPMP
+`ifdef css_mcu0_RV_SMEPMP
    // Smepmp allow modifying locked entries when mseccfg.RLB is set
    assign entry_lock_eff[r] = pmp_pmpcfg[r].lock & ~mseccfg.RLB;
 `else
@@ -107,10 +110,10 @@ module css_mcu0_el2_dec_pmp_ctl
       // When Smepmp is disabled R=0 and W=1 combination is illegal mask out W
       // when R is cleared.
       assign raw_wdata = dec_csr_wrdata_r[(entry_idx[1:0]*8)+7:(entry_idx[1:0]*8)+0];
-`ifdef RV_SMEPMP
+`ifdef css_mcu0_RV_SMEPMP
       assign csr_wdata = raw_wdata & 8'b10011111;
 `else
-      assign csr_wdata = (raw_wdata & 8'b00000001) ? (raw_wdata & 8'b10011111) : (raw_wdata & 8'b10011101);
+      assign csr_wdata = raw_wdata[0] ? (raw_wdata & 8'b10011111) : (raw_wdata & 8'b10011101);
 `endif
 
       css_mcu0_rvdffe #(8) pmpcfg_ff (.*, .clk(free_l2clk),

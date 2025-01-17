@@ -35,7 +35,10 @@ import css_mcu0_el2_pkg::*;
    input logic                           lsu_c2_r_clk,       // clock
    input logic                           clk_override,       // Override non-functional clock gating
    input logic                           rst_l,              // reset, active low
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input logic                           scan_mode,          // scan mode
+   /*pragma coverage on*/
 
    input el2_lsu_pkt_t                  lsu_pkt_m,          // packet in m
    input el2_lsu_pkt_t                  lsu_pkt_r,          // packet in r
@@ -238,4 +241,4 @@ import css_mcu0_el2_pkg::*;
    css_mcu0_rvdffe #(.WIDTH(pt.DCCM_DATA_WIDTH)) sec_data_lo_rplus1ff (.din(sec_data_lo_r[pt.DCCM_DATA_WIDTH-1:0]), .dout(sec_data_lo_r_ff[pt.DCCM_DATA_WIDTH-1:0]), .en(ld_single_ecc_error_r | clk_override), .clk(clk), .*);
 
 
-endmodule // el2_lsu_ecc
+endmodule // css_mcu0_el2_lsu_ecc

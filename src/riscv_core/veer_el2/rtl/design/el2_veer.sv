@@ -29,9 +29,15 @@ import css_mcu0_el2_pkg::*;
    input logic                  clk,
    input logic                  rst_l,
    input logic                  dbg_rst_l,
+   // rst_vec is supposed to be connected to a constant in the top level
+   /*pragma coverage off*/
    input logic [31:1]           rst_vec,
+   /*pragma coverage on*/
    input logic                  nmi_int,
+   // nmi_vec is supposed to be connected to a constant in the top level
+   /*pragma coverage off*/
    input logic [31:1]           nmi_vec,
+   /*pragma coverage on*/
    output logic                 core_rst_l,   // This is "rst_l | dbg_rst_l"
 
    output logic                 active_l2clk,
@@ -58,7 +64,9 @@ import css_mcu0_el2_pkg::*;
    output logic o_cpu_run_ack,     // Core Acknowledge to run request
    output logic o_debug_mode_status, // Core to the PMU that core is in debug mode. When core is in debug mode, the PMU should refrain from sendng a halt or run request
 
+   /*pragma coverage off*/
    input logic [31:4] core_id, // CORE ID
+   /*pragma coverage on*/
 
    // external MPC halt/run interface
    input logic mpc_debug_halt_req, // Async halt request
@@ -134,13 +142,22 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.LSU_BUS_TAG-1:0]       lsu_axi_awid,
    output logic [31:0]                     lsu_axi_awaddr,
    output logic [3:0]                      lsu_axi_awregion,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_lsu_bus_buffer.sv */
+   /*pragma coverage off*/
    output logic [7:0]                      lsu_axi_awlen,
+   /*pragma coverage on*/
    output logic [2:0]                      lsu_axi_awsize,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_lsu_bus_buffer.sv */
+   /*pragma coverage off*/
    output logic [1:0]                      lsu_axi_awburst,
    output logic                            lsu_axi_awlock,
+   /*pragma coverage on*/
    output logic [3:0]                      lsu_axi_awcache,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_lsu_bus_buffer.sv */
+   /*pragma coverage off*/
    output logic [2:0]                      lsu_axi_awprot,
    output logic [3:0]                      lsu_axi_awqos,
+   /*pragma coverage on*/
 
    output logic                            lsu_axi_wvalid,
    input  logic                            lsu_axi_wready,
@@ -149,7 +166,10 @@ import css_mcu0_el2_pkg::*;
    output logic                            lsu_axi_wlast,
 
    input  logic                            lsu_axi_bvalid,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_lsu_bus_buffer.sv */
+   /*pragma coverage off*/
    output logic                            lsu_axi_bready,
+   /*pragma coverage on*/
    input  logic [1:0]                      lsu_axi_bresp,
    input  logic [pt.LSU_BUS_TAG-1:0]       lsu_axi_bid,
 
@@ -159,16 +179,28 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.LSU_BUS_TAG-1:0]       lsu_axi_arid,
    output logic [31:0]                     lsu_axi_araddr,
    output logic [3:0]                      lsu_axi_arregion,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_lsu_bus_buffer.sv */
+   /*pragma coverage off*/
    output logic [7:0]                      lsu_axi_arlen,
+   /*pragma coverage on*/
    output logic [2:0]                      lsu_axi_arsize,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_lsu_bus_buffer.sv */
+   /*pragma coverage off*/
    output logic [1:0]                      lsu_axi_arburst,
    output logic                            lsu_axi_arlock,
+   /*pragma coverage on*/
    output logic [3:0]                      lsu_axi_arcache,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_lsu_bus_buffer.sv */
+   /*pragma coverage off*/
    output logic [2:0]                      lsu_axi_arprot,
    output logic [3:0]                      lsu_axi_arqos,
+   /*pragma coverage on*/
 
    input  logic                            lsu_axi_rvalid,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_lsu_bus_buffer.sv */
+   /*pragma coverage off*/
    output logic                            lsu_axi_rready,
+   /*pragma coverage on*/
    input  logic [pt.LSU_BUS_TAG-1:0]       lsu_axi_rid,
    input  logic [63:0]                     lsu_axi_rdata,
    input  logic [1:0]                      lsu_axi_rresp,
@@ -176,6 +208,9 @@ import css_mcu0_el2_pkg::*;
 
    //-------------------------- IFU AXI signals--------------------------
    // AXI Write Channels
+   /* exclude signals that are tied to constant value in css_mcu0_el2_ifu_mem_ctl.sv
+      IFU does not use AXI write channel */
+   /*pragma coverage off*/
    output logic                            ifu_axi_awvalid,
    input  logic                            ifu_axi_awready,
    output logic [pt.IFU_BUS_TAG-1:0]       ifu_axi_awid,
@@ -199,6 +234,7 @@ import css_mcu0_el2_pkg::*;
    output logic                            ifu_axi_bready,
    input  logic [1:0]                      ifu_axi_bresp,
    input  logic [pt.IFU_BUS_TAG-1:0]       ifu_axi_bid,
+   /*pragma coverage on*/
 
    // AXI Read Channels
    output logic                            ifu_axi_arvalid,
@@ -206,6 +242,8 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.IFU_BUS_TAG-1:0]       ifu_axi_arid,
    output logic [31:0]                     ifu_axi_araddr,
    output logic [3:0]                      ifu_axi_arregion,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_ifu_mem_ctl.sv */
+   /*pragma coverage off*/
    output logic [7:0]                      ifu_axi_arlen,
    output logic [2:0]                      ifu_axi_arsize,
    output logic [1:0]                      ifu_axi_arburst,
@@ -213,9 +251,13 @@ import css_mcu0_el2_pkg::*;
    output logic [3:0]                      ifu_axi_arcache,
    output logic [2:0]                      ifu_axi_arprot,
    output logic [3:0]                      ifu_axi_arqos,
+   /*pragma coverage on*/
 
    input  logic                            ifu_axi_rvalid,
+   /* exclude signals that are tied to constant value in css_mcu0_el2_ifu_mem_ctl.sv */
+   /*pragma coverage off*/
    output logic                            ifu_axi_rready,
+   /*pragma coverage on*/
    input  logic [pt.IFU_BUS_TAG-1:0]       ifu_axi_rid,
    input  logic [63:0]                     ifu_axi_rdata,
    input  logic [1:0]                      ifu_axi_rresp,
@@ -225,16 +267,25 @@ import css_mcu0_el2_pkg::*;
    // AXI Write Channels
    output logic                            sb_axi_awvalid,
    input  logic                            sb_axi_awready,
+   /* exclude signals that are tied to constant value in dbg/css_mcu0_el2_dbg.sv */
+   /*pragma coverage off*/
    output logic [pt.SB_BUS_TAG-1:0]        sb_axi_awid,
+   /*pragma coverage on*/
    output logic [31:0]                     sb_axi_awaddr,
    output logic [3:0]                      sb_axi_awregion,
+   /* exclude signals that are tied to constant value in dbg/css_mcu0_el2_dbg.sv */
+   /*pragma coverage off*/
    output logic [7:0]                      sb_axi_awlen,
+   /*pragma coverage on*/
    output logic [2:0]                      sb_axi_awsize,
+   /* exclude signals that are tied to constant value in dbg/css_mcu0_el2_dbg.sv */
+   /*pragma coverage off*/
    output logic [1:0]                      sb_axi_awburst,
    output logic                            sb_axi_awlock,
    output logic [3:0]                      sb_axi_awcache,
    output logic [2:0]                      sb_axi_awprot,
    output logic [3:0]                      sb_axi_awqos,
+   /*pragma coverage on*/
 
    output logic                            sb_axi_wvalid,
    input  logic                            sb_axi_wready,
@@ -250,19 +301,31 @@ import css_mcu0_el2_pkg::*;
    // AXI Read Channels
    output logic                            sb_axi_arvalid,
    input  logic                            sb_axi_arready,
+   /* exclude signals that are tied to constant value in dbg/css_mcu0_el2_dbg.sv */
+   /*pragma coverage off*/
    output logic [pt.SB_BUS_TAG-1:0]        sb_axi_arid,
+   /*pragma coverage on*/
    output logic [31:0]                     sb_axi_araddr,
    output logic [3:0]                      sb_axi_arregion,
+   /* exclude signals that are tied to constant value in dbg/css_mcu0_el2_dbg.sv */
+   /*pragma coverage off*/
    output logic [7:0]                      sb_axi_arlen,
+   /*pragma coverage on*/
    output logic [2:0]                      sb_axi_arsize,
+   /* exclude signals that are tied to constant value in dbg/css_mcu0_el2_dbg.sv */
+   /*pragma coverage off*/
    output logic [1:0]                      sb_axi_arburst,
    output logic                            sb_axi_arlock,
    output logic [3:0]                      sb_axi_arcache,
    output logic [2:0]                      sb_axi_arprot,
    output logic [3:0]                      sb_axi_arqos,
+   /*pragma coverage on*/
 
    input  logic                            sb_axi_rvalid,
+   /* exclude signals that are tied to constant value in dbg/css_mcu0_el2_dbg.sv */
+   /*pragma coverage off*/
    output logic                            sb_axi_rready,
+   /*pragma coverage on*/
    input  logic [pt.SB_BUS_TAG-1:0]        sb_axi_rid,
    input  logic [63:0]                     sb_axi_rdata,
    input  logic [1:0]                      sb_axi_rresp,
@@ -311,8 +374,11 @@ import css_mcu0_el2_pkg::*;
 
  //// AHB LITE BUS
    output logic [31:0]           haddr,
+   /* exclude signals that are tied to constant value in css_mcu0_axi4_to_ahb.sv */
+   /*pragma coverage off*/
    output logic [2:0]            hburst,
    output logic                  hmastlock,
+   /*pragma coverage on*/
    output logic [3:0]            hprot,
    output logic [2:0]            hsize,
    output logic [1:0]            htrans,
@@ -324,8 +390,11 @@ import css_mcu0_el2_pkg::*;
 
    // LSU AHB Master
    output logic [31:0]          lsu_haddr,
+   /* exclude signals that are tied to constant value in css_mcu0_axi4_to_ahb.sv */
+   /*pragma coverage off*/
    output logic [2:0]           lsu_hburst,
    output logic                 lsu_hmastlock,
+   /*pragma coverage on*/
    output logic [3:0]           lsu_hprot,
    output logic [2:0]           lsu_hsize,
    output logic [1:0]           lsu_htrans,
@@ -338,8 +407,11 @@ import css_mcu0_el2_pkg::*;
 
    //System Bus Debug Master
    output logic [31:0]          sb_haddr,
+   /* exclude signals that are tied to constant value in css_mcu0_axi4_to_ahb.sv */
+   /*pragma coverage off*/
    output logic [2:0]           sb_hburst,
    output logic                 sb_hmastlock,
+   /*pragma coverage on*/
    output logic [3:0]           sb_hprot,
    output logic [2:0]           sb_hsize,
    output logic [1:0]           sb_htrans,
@@ -386,7 +458,10 @@ import css_mcu0_el2_pkg::*;
    input logic [pt.PIC_TOTAL_INT:1]           extintsrc_req,
    input logic                   timer_int,
    input logic                   soft_int,
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input logic                   scan_mode
+   /*pragma coverage on*/
 );
 
 
@@ -484,25 +559,40 @@ import css_mcu0_el2_pkg::*;
    logic                         sb_axi_rlast_int;
 
    logic                         dma_axi_awvalid_ahb;
+   /* exclude signals that are tied to constant value in css_mcu0_ahb_to_axi4.sv */
+   /*pragma coverage off*/
    logic [pt.DMA_BUS_TAG-1:0]    dma_axi_awid_ahb;
+   /*pragma coverage on*/
    logic [31:0]                  dma_axi_awaddr_ahb;
    logic [2:0]                   dma_axi_awsize_ahb;
+   /* exclude signals that are tied to constant value in css_mcu0_ahb_to_axi4.sv */
+   /*pragma coverage off*/
    logic [2:0]                   dma_axi_awprot_ahb;
    logic [7:0]                   dma_axi_awlen_ahb;
    logic [1:0]                   dma_axi_awburst_ahb;
+   /*pragma coverage on*/
    logic                         dma_axi_wvalid_ahb;
    logic [63:0]                  dma_axi_wdata_ahb;
    logic [7:0]                   dma_axi_wstrb_ahb;
+   /* exclude signals that are tied to constant value in css_mcu0_ahb_to_axi4.sv */
+   /*pragma coverage off*/
    logic                         dma_axi_wlast_ahb;
    logic                         dma_axi_bready_ahb;
+   /*pragma coverage on*/
    logic                         dma_axi_arvalid_ahb;
+   /* exclude signals that are tied to constant value in css_mcu0_ahb_to_axi4.sv */
+   /*pragma coverage off*/
    logic [pt.DMA_BUS_TAG-1:0]    dma_axi_arid_ahb;
+   /*pragma coverage on*/
    logic [31:0]                  dma_axi_araddr_ahb;
    logic [2:0]                   dma_axi_arsize_ahb;
+   /* exclude signals that are tied to constant value in css_mcu0_ahb_to_axi4.sv */
+   /*pragma coverage off*/
    logic [2:0]                   dma_axi_arprot_ahb;
    logic [7:0]                   dma_axi_arlen_ahb;
    logic [1:0]                   dma_axi_arburst_ahb;
    logic                         dma_axi_rready_ahb;
+   /*pragma coverage on*/
 
    logic                         dma_axi_awvalid_int;
    logic [pt.DMA_BUS_TAG-1:0]    dma_axi_awid_int;
@@ -884,7 +974,7 @@ import css_mcu0_el2_pkg::*;
 
    assign core_rst_l = rst_l & (dbg_core_rst_l | scan_mode);
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 
    // Operating privilege mode, 0 - machine, 1 - user
    logic priv_mode;
@@ -1369,5 +1459,5 @@ if  (pt.BUILD_AHB_LITE == 1) begin
 
 
 
-endmodule // el2_veer
+endmodule // css_mcu0_el2_veer
 
