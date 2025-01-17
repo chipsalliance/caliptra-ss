@@ -30,7 +30,10 @@ import css_mcu0_el2_pkg::*;
    input logic free_l2clk,                  // Clock always.                  Through one clock header.  For flops with    second header built in.
 
    input logic rst_l, // reset enable, from core pin
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input logic scan_mode, // scan
+   /*pragma coverage on*/
 
    input logic ic_hit_f,      // Icache hit
    input logic ifu_ic_mb_empty, // Miss buffer empty
@@ -242,5 +245,5 @@ end
 
    assign ifc_fetch_uncacheable_bf =  ~dec_tlu_mrac_ff[{ifc_fetch_addr_bf[31:28] , 1'b0 }]  ; // bit 0 of each region description is the cacheable bit
 
-endmodule // el2_ifu_ifc_ctl
+endmodule // css_mcu0_el2_ifu_ifc_ctl
 

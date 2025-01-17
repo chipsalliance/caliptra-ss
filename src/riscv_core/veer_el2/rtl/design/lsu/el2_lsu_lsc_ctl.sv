@@ -114,7 +114,10 @@ import css_mcu0_el2_pkg::*;
     input logic lsu_pmp_error_start,
     input logic lsu_pmp_error_end,
 
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic               scan_mode                  // Scan mode
+   /*pragma coverage on*/
 
    );
 

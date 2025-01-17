@@ -169,7 +169,10 @@ module css_mcu0_rvdffe #( parameter WIDTH=1, SHORT=0, OVERRIDE=0 )
      input  logic           en,
      input  logic           clk,
      input  logic           rst_l,
+     // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+     /*pragma coverage off*/
      input  logic             scan_mode,
+     /*pragma coverage on*/
      output logic [WIDTH-1:0] dout
      );
 
@@ -182,7 +185,7 @@ if (SHORT == 1) begin : genblock
 end
 else begin : genblock
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    if (WIDTH >= 8 || OVERRIDE==1) begin: genblock
 `endif
 
@@ -193,14 +196,14 @@ else begin : genblock
       css_mcu0_rvdff #(WIDTH) dff (.*, .clk(l1clk));
 `endif
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    end
    else
       $error("%m: css_mcu0_rvdffe must be WIDTH >= 8");
 `endif
 end // else: !if(SHORT == 1)
 
-endmodule // rvdffe
+endmodule // css_mcu0_rvdffe
 
 
 module css_mcu0_rvdffpcie #( parameter WIDTH=31 )
@@ -209,13 +212,16 @@ module css_mcu0_rvdffpcie #( parameter WIDTH=31 )
      input  logic             clk,
      input  logic             rst_l,
      input  logic             en,
+     // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+     /*pragma coverage off*/
      input  logic             scan_mode,
+     /*pragma coverage on*/
      output logic [WIDTH-1:0] dout
      );
 
 
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    if (WIDTH == 31) begin: genblock
 `endif
 
@@ -227,7 +233,7 @@ module css_mcu0_rvdffpcie #( parameter WIDTH=31 )
 
 `endif
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    end
    else
       $error("%m: css_mcu0_rvdffpcie width must be 31");
@@ -235,14 +241,17 @@ module css_mcu0_rvdffpcie #( parameter WIDTH=31 )
 endmodule
 
 // format: { LEFT, EXTRA }
-// LEFT # of bits will be done with css_mcu0_rvdffie, all else EXTRA with rvdffe
+// LEFT # of bits will be done with css_mcu0_rvdffie, all else EXTRA with css_mcu0_rvdffe
 module css_mcu0_rvdfflie #( parameter WIDTH=16, LEFT=8 )
    (
      input  logic [WIDTH-1:0] din,
      input  logic             clk,
      input  logic             rst_l,
      input  logic             en,
+     // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+     /*pragma coverage off*/
      input  logic             scan_mode,
+     /*pragma coverage on*/
      output logic [WIDTH-1:0] dout
      );
 
@@ -260,7 +269,7 @@ module css_mcu0_rvdfflie #( parameter WIDTH=16, LEFT=8 )
    localparam XLSB = LLSB-EXTRA;
 
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    if (WIDTH >= 16 && LEFT >= 8 && EXTRA >= 8) begin: genblock
 `endif
 
@@ -278,7 +287,7 @@ module css_mcu0_rvdfflie #( parameter WIDTH=16, LEFT=8 )
 
 `endif
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    end
    else
       $error("%m: css_mcu0_rvdfflie musb be WIDTH >= 16 && LEFT >= 8 && EXTRA >= 8");
@@ -297,7 +306,10 @@ module css_mcu0_rvdffppe #( parameter integer WIDTH = 39 )
      input  logic             clk,
      input  logic             rst_l,
      input  logic             en,
+     // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+     /*pragma coverage off*/
      input  logic             scan_mode,
+     /*pragma coverage on*/
      output logic [WIDTH-1:0] dout
      );
 
@@ -310,7 +322,7 @@ module css_mcu0_rvdffppe #( parameter integer WIDTH = 39 )
    localparam integer RLSB  = LLSB-RIGHT;
 
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    if (WIDTH>=32 && LEFT>=8 && RIGHT>=8) begin: genblock
 `endif
 
@@ -324,7 +336,7 @@ module css_mcu0_rvdffppe #( parameter integer WIDTH = 39 )
 
 `endif
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    end
    else
       $error("%m: must be WIDTH>=32 && LEFT>=8 && RIGHT>=8");
@@ -340,7 +352,10 @@ module css_mcu0_rvdffie #( parameter WIDTH=1, OVERRIDE=0 )
 
      input  logic           clk,
      input  logic           rst_l,
+     // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+     /*pragma coverage off*/
      input  logic             scan_mode,
+     /*pragma coverage on*/
      output logic [WIDTH-1:0] dout
      );
 
@@ -354,7 +369,7 @@ module css_mcu0_rvdffie #( parameter WIDTH=1, OVERRIDE=0 )
 
 
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    if (WIDTH >= 8 || OVERRIDE==1) begin: genblock
 `endif
 
@@ -367,7 +382,7 @@ module css_mcu0_rvdffie #( parameter WIDTH=1, OVERRIDE=0 )
       css_mcu0_rvdff #(WIDTH) dff (.*, .clk(l1clk));
 `endif
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    end
    else
      $error("%m: css_mcu0_rvdffie must be WIDTH >= 8");
@@ -383,7 +398,10 @@ module css_mcu0_rvdffiee #( parameter WIDTH=1, OVERRIDE=0 )
 
      input  logic           clk,
      input  logic           rst_l,
+     // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+     /*pragma coverage off*/
      input  logic           scan_mode,
+     /*pragma coverage on*/
      input  logic           en,
      output logic [WIDTH-1:0] dout
      );
@@ -391,7 +409,7 @@ module css_mcu0_rvdffiee #( parameter WIDTH=1, OVERRIDE=0 )
    logic                      l1clk;
    logic                      final_en;
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    if (WIDTH >= 8 || OVERRIDE==1) begin: genblock
 `endif
 
@@ -403,7 +421,7 @@ module css_mcu0_rvdffiee #( parameter WIDTH=1, OVERRIDE=0 )
       css_mcu0_rvdffe #(WIDTH) dff (.*,  .en(final_en));
 `endif
 
-`ifndef RV_PHYSICAL
+`ifndef css_mcu0_RV_PHYSICAL
    end
    else
       $error("%m: css_mcu0_rvdffie width must be >= 8");
@@ -426,7 +444,7 @@ module css_mcu0_rvsyncss #(parameter WIDTH = 251)
    css_mcu0_rvdff #(WIDTH) sync_ff1  (.*, .din (din[WIDTH-1:0]),     .dout(din_ff1[WIDTH-1:0]));
    css_mcu0_rvdff #(WIDTH) sync_ff2  (.*, .din (din_ff1[WIDTH-1:0]), .dout(dout[WIDTH-1:0]));
 
-endmodule // rvsyncss
+endmodule // css_mcu0_rvsyncss
 
 module css_mcu0_rvsyncss_fpga #(parameter WIDTH = 251)
    (
@@ -443,7 +461,7 @@ module css_mcu0_rvsyncss_fpga #(parameter WIDTH = 251)
    css_mcu0_rvdff_fpga #(WIDTH) sync_ff1  (.*, .clk(gw_clk), .rawclk(rawclk), .clken(clken), .din (din[WIDTH-1:0]),     .dout(din_ff1[WIDTH-1:0]));
    css_mcu0_rvdff_fpga #(WIDTH) sync_ff2  (.*, .clk(gw_clk), .rawclk(rawclk), .clken(clken), .din (din_ff1[WIDTH-1:0]), .dout(dout[WIDTH-1:0]));
 
-endmodule // rvsyncss
+endmodule // css_mcu0_rvsyncss
 
 module css_mcu0_rvlsadder
   (
@@ -471,7 +489,7 @@ module css_mcu0_rvlsadder
                         ({20{ ~sign &   cout}}  & rs1_inc[31:12]) |
                         ({20{  sign &  ~cout}}  & rs1_dec[31:12]);
 
-endmodule // rvlsadder
+endmodule // css_mcu0_rvlsadder
 
 // assume we only maintain pc[31:1] in the pipe
 
@@ -503,7 +521,7 @@ module css_mcu0_rvbradder
                         ({19{  sign &  ~cout}}  & pc_dec[31:13]);
 
 
-endmodule // rvbradder
+endmodule // css_mcu0_rvbradder
 
 
 // 2s complement circuit
@@ -544,7 +562,7 @@ module css_mcu0_rvfindfirst1 #( parameter WIDTH=32, SHIFT=$clog2(WIDTH) )
          dout[SHIFT-1:0] += done ? 1'b0 : 1'b1;
       end : find_first_one
    end
-endmodule // rvfindfirst1
+endmodule // css_mcu0_rvfindfirst1
 
 module css_mcu0_rvfindfirst1hot #( parameter WIDTH=32 )
    (
@@ -562,7 +580,7 @@ module css_mcu0_rvfindfirst1hot #( parameter WIDTH=32 )
          done   |= din[i];
       end : find_first_one
    end
-endmodule // rvfindfirst1hot
+endmodule // css_mcu0_rvfindfirst1hot
 
 // mask and match function matches bits after finding the first 0 position
 // find first starting from LSB. Skip that location and match the rest of the bits
@@ -588,7 +606,7 @@ module css_mcu0_rvmaskandmatch #( parameter WIDTH=32 )
 
    assign match  = &matchvec[WIDTH-1:0];    // all bits either matched or were masked off
 
-endmodule // rvmaskandmatch
+endmodule // css_mcu0_rvmaskandmatch
 
 
 
@@ -626,7 +644,7 @@ module css_mcu0_rveven_paritygen #(WIDTH = 16)  (
 
    assign  parity_out =  ^(data_in[WIDTH-1:0]) ;
 
-endmodule  // rveven_paritygen
+endmodule  // css_mcu0_rveven_paritygen
 
 module css_mcu0_rveven_paritycheck #(WIDTH = 16)  (
                                            input  logic [WIDTH-1:0]  data_in,         // Data
@@ -636,7 +654,7 @@ module css_mcu0_rveven_paritycheck #(WIDTH = 16)  (
 
    assign  parity_err =  ^(data_in[WIDTH-1:0]) ^ parity_in ;
 
-endmodule  // rveven_paritycheck
+endmodule  // css_mcu0_rveven_paritycheck
 
 module css_mcu0_rvecc_encode  (
                       input [31:0] din,
@@ -653,7 +671,7 @@ logic [5:0] ecc_out_temp;
 
    assign ecc_out[6:0] = {(^din[31:0])^(^ecc_out_temp[5:0]),ecc_out_temp[5:0]};
 
-endmodule // rvecc_encode
+endmodule // css_mcu0_rvecc_encode
 
 module css_mcu0_rvecc_decode  (
                       input         en,
@@ -697,7 +715,7 @@ module css_mcu0_rvecc_decode  (
    assign dout[31:0]             = {dout_plus_parity[37:32], dout_plus_parity[30:16], dout_plus_parity[14:8], dout_plus_parity[6:4], dout_plus_parity[2]};
    assign ecc_out[6:0]           = {(dout_plus_parity[38] ^ (ecc_check[6:0] == 7'b1000000)), dout_plus_parity[31], dout_plus_parity[15], dout_plus_parity[7], dout_plus_parity[3], dout_plus_parity[1:0]};
 
-endmodule // rvecc_decode
+endmodule // css_mcu0_rvecc_decode
 
 module css_mcu0_rvecc_encode_64  (
                       input [63:0] din,
@@ -717,7 +735,7 @@ module css_mcu0_rvecc_encode_64  (
 
    assign ecc_out[6] = din[57]^din[58]^din[59]^din[60]^din[61]^din[62]^din[63];
 
-endmodule // rvecc_encode_64
+endmodule // css_mcu0_rvecc_encode_64
 
 
 module css_mcu0_rvecc_decode_64  (
@@ -746,7 +764,7 @@ module css_mcu0_rvecc_decode_64  (
 
    assign ecc_error = en & (ecc_check[6:0] != 0);  // all errors in the sed_ded case will be recorded as DE
 
- endmodule // rvecc_decode_64
+ endmodule // css_mcu0_rvecc_decode_64
 
 `ifndef TECH_SPECIFIC_EC_RV_ICG
 module `css_mcu0_TEC_RV_ICG
@@ -774,7 +792,10 @@ module css_mcu0_rvclkhdr
   (
    input  logic en,
    input  logic clk,
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic scan_mode,
+   /*pragma coverage on*/
    output logic l1clk
    );
 
@@ -787,14 +808,17 @@ module css_mcu0_rvclkhdr
    `css_mcu0_TEC_RV_ICG clkhdr ( .*, .EN(en), .CK(clk), .Q(l1clk));
 `endif
 
-endmodule // rvclkhdr
+endmodule // css_mcu0_rvclkhdr
 `endif
 
 module css_mcu0_rvoclkhdr
   (
    input  logic en,
    input  logic clk,
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic scan_mode,
+   /*pragma coverage on*/
    output logic l1clk
    );
 

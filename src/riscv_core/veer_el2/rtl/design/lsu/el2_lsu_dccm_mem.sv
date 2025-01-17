@@ -50,7 +50,10 @@ module css_mcu0_el2_lsu_dccm_mem
    output logic [pt.DCCM_FDATA_WIDTH-1:0] dccm_rd_data_lo,              // read data from the lo bank
    output logic [pt.DCCM_FDATA_WIDTH-1:0] dccm_rd_data_hi,              // read data from the hi bank
 
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic         scan_mode
+   /*pragma coverage on*/
 );
 
 
@@ -115,6 +118,6 @@ module css_mcu0_el2_lsu_dccm_mem
    css_mcu0_rvdff  #(pt.DCCM_BANK_BITS) rd_addr_lo_ff (.*, .din(dccm_rd_addr_lo[DCCM_WIDTH_BITS+:pt.DCCM_BANK_BITS]), .dout(dccm_rd_addr_lo_q[DCCM_WIDTH_BITS+:pt.DCCM_BANK_BITS]), .clk(active_clk));
    css_mcu0_rvdff  #(pt.DCCM_BANK_BITS) rd_addr_hi_ff (.*, .din(dccm_rd_addr_hi[DCCM_WIDTH_BITS+:pt.DCCM_BANK_BITS]), .dout(dccm_rd_addr_hi_q[DCCM_WIDTH_BITS+:pt.DCCM_BANK_BITS]), .clk(active_clk));
 
-endmodule // el2_lsu_dccm_mem
+endmodule // css_mcu0_el2_lsu_dccm_mem
 
 

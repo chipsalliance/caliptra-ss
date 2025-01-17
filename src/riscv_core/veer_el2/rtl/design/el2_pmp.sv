@@ -25,13 +25,15 @@ module css_mcu0_el2_pmp
 ) (
     input logic clk,       // Top level clock
     input logic rst_l,     // Reset
+    /* pragma coverage off */
     input logic scan_mode, // Scan mode
+    /* pragma coverage on */
 
-`ifdef RV_SMEPMP
+`ifdef css_mcu0_RV_SMEPMP
     input el2_mseccfg_pkt_t mseccfg, // mseccfg CSR content, RLB, MMWP and MML bits
 `endif
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
     input logic priv_mode_ns,   // operating privilege mode (next clock cycle)
     input logic priv_mode_eff,  // operating effective privilege mode
 `endif
@@ -56,7 +58,7 @@ module css_mcu0_el2_pmp
   logic [    PMP_CHANNELS-1:0][pt.PMP_ENTRIES-1:0] region_basic_perm_check;
   logic [    PMP_CHANNELS-1:0][pt.PMP_ENTRIES-1:0] region_perm_check;
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
   logic any_region_enabled;
 `endif
 
@@ -113,7 +115,9 @@ module css_mcu0_el2_pmp
         2'b11: result =
              (pmp_req_type == EXEC) |
             ((pmp_req_type == READ) & ~priv_mode);
+        /* pragma coverage off */
         default: ;
+        /* pragma coverage on */
       endcase
     end else begin
       if (csr_pmp_cfg.read & csr_pmp_cfg.write & csr_pmp_cfg.execute & csr_pmp_cfg.lock) begin
@@ -147,8 +151,8 @@ module css_mcu0_el2_pmp
                                               logic priv_mode,
                                               logic [pt.PMP_ENTRIES-1:0] final_perm_check);
 
-`ifdef RV_USER_MODE
-  `ifdef RV_SMEPMP
+`ifdef css_mcu0_RV_USER_MODE
+  `ifdef css_mcu0_RV_SMEPMP
     // When MSECCFG.MMWP is set default deny always, otherwise allow for M-mode, deny for other
     // modes. Also deny unmatched for M-mode when MSECCFG.MML is set and request type is EXEC.
     logic access_fail = csr_pmp_mseccfg.MMWP | priv_mode |
@@ -178,7 +182,7 @@ module css_mcu0_el2_pmp
   // Access checking
   // ---------------
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
   logic [pt.PMP_ENTRIES-1:0] region_enabled;
   for (genvar r = 0; r < pt.PMP_ENTRIES; r++) begin : g_reg_ena
     assign region_enabled[r] = pmp_pmpcfg[r].mode != OFF;
@@ -219,7 +223,7 @@ module css_mcu0_el2_pmp
     end
   end
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
   logic [PMP_CHANNELS-1:0] pmp_priv_mode_eff;
   for (genvar c = 0; c < PMP_CHANNELS; c++) begin : g_priv_mode_eff
     assign pmp_priv_mode_eff[c] = (
@@ -264,14 +268,14 @@ module css_mcu0_el2_pmp
       // Check specific required permissions since the behaviour is different
       // between Smepmp implementation and original PMP.
       assign region_perm_check[c][r] = perm_check_wrapper(
-`ifdef RV_SMEPMP
+`ifdef css_mcu0_RV_SMEPMP
           mseccfg,
 `else
           3'b000,
 `endif
           pmp_pmpcfg[r],
           pmp_chan_type[c],
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
           pmp_priv_mode_eff[c],
 `else
           1'b0,
@@ -288,14 +292,14 @@ module css_mcu0_el2_pmp
     // Once the permission checks of the regions are done, decide if the access is
     // denied by figuring out the matching region and its permission check.
     assign pmp_chan_err[c] = access_fault_check(
-`ifdef RV_SMEPMP
+`ifdef css_mcu0_RV_SMEPMP
         mseccfg,
 `else
         3'b000,
 `endif
         pmp_chan_type[c],
         region_match_all[c],
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
         any_region_enabled,
         pmp_priv_mode_eff[c],
 `else
@@ -306,4 +310,4 @@ module css_mcu0_el2_pmp
 
   end
 
-endmodule  // el2_pmp
+endmodule  // css_mcu0_el2_pmp

@@ -53,7 +53,10 @@ import css_mcu0_el2_pkg::*;
     input logic lsu_pmp_error_start,
     input logic lsu_pmp_error_end,
 
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic         scan_mode                  // Scan mode
+   /*pragma coverage on*/
 );
 
 
@@ -235,4 +238,4 @@ import css_mcu0_el2_pkg::*;
 
    css_mcu0_rvdff #(.WIDTH(1))   is_sideeffects_mff (.din(is_sideeffects_d), .dout(is_sideeffects_m), .clk(lsu_c2_m_clk), .*);
 
-endmodule // el2_lsu_addrcheck
+endmodule // css_mcu0_el2_lsu_addrcheck

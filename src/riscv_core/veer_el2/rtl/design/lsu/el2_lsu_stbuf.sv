@@ -81,7 +81,10 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.DCCM_BYTE_WIDTH-1:0] stbuf_fwdbyteen_hi_m,        // stbuf data
    output logic [pt.DCCM_BYTE_WIDTH-1:0] stbuf_fwdbyteen_lo_m,        // stbuf data
 
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic       scan_mode                                       // Scan mode
+   /*pragma coverage on*/
 
 );
 

@@ -33,11 +33,20 @@ import css_mcu0_el2_pkg::*;
    input logic free_clk,
    input logic free_l2clk,
    input logic rst_l,
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input logic scan_mode,
+   /*pragma coverage on*/
 
+   //rst_vec is supposed to be connected to constant in the top level
+   /*pragma coverage off*/
    input logic [31:1] rst_vec, // reset vector, from core pins
+   /*pragma coverage on*/
    input logic        nmi_int, // nmi pin
+   //nmi_vec is supposed to be connected to constant in the top level
+   /*pragma coverage off*/
    input logic [31:1] nmi_vec, // nmi vector
+   /*pragma coverage on*/
    input logic  i_cpu_halt_req,    // Asynchronous Halt request to CPU
    input logic  i_cpu_run_req,     // Asynchronous Restart request to CPU
 
@@ -166,7 +175,9 @@ import css_mcu0_el2_pkg::*;
    output logic o_cpu_run_ack, // run req ack
    output logic o_debug_mode_status, // Core to the PMU that core is in debug mode. When core is in debug mode, the PMU should refrain from sendng a halt or run request
 
+   /*pragma coverage off*/
    input logic [31:4] core_id, // Core ID
+   /*pragma coverage on*/
 
    // external MPC halt/run interface
    input logic mpc_debug_halt_req, // Async halt request
@@ -236,7 +247,7 @@ import css_mcu0_el2_pkg::*;
    output logic  dec_tlu_dccm_clk_override, // override DCCM clock domain gating
    output logic  dec_tlu_icm_clk_override,  // override ICCM clock domain gating
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 
    // Privilege mode
    // 0 - machine, 1 - user
@@ -271,7 +282,7 @@ import css_mcu0_el2_pkg::*;
    logic [1:1] mpmc_b_ns, mpmc, mpmc_b;
    logic set_mie_pmu_fw_halt, fw_halted_ns, fw_halted;
    logic wr_mcountinhibit_r;
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    logic wr_mcounteren_r;
    logic [5:0] mcounteren; // HPM6, HPM5, HPM4, HPM3, IR, CY
    logic wr_mseccfg_r;
@@ -284,7 +295,7 @@ import css_mcu0_el2_pkg::*;
    logic [9:0] tdata_wrdata_r;
    logic [1:0] mtsel_ns, mtsel;
    logic tlu_i0_kill_writeb_r;
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    logic [3:0]  mstatus_ns, mstatus; // MPRV, MPP (inverted! 0-M, 1-U), MPIE, MIE
 `else
    logic [1:0]  mstatus_ns, mstatus;
@@ -476,7 +487,7 @@ import css_mcu0_el2_pkg::*;
 
 // coredecode -in csrdecode > corecsrdecode.e; espresso -Dso -oeqntott < corecsrdecode.e | addassign > csrequations; coredecode -in csrdecode -legal > csrlegal.e; espresso -Dso -oeqntott csrlegal.e | addassign > csrlegal_equation
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 
    `include "el2_dec_csr_equ_mu.svh"
 
@@ -541,7 +552,7 @@ import css_mcu0_el2_pkg::*;
 
 localparam MSTATUS_MIE   = 0;
 localparam int MSTATUS_MPIE  = 1;
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 localparam MSTATUS_MPP   = 2;
 localparam MSTATUS_MPRV  = 3;
 `endif
@@ -565,7 +576,7 @@ localparam DCSR_STEPIE   = 11;
 localparam DCSR_STOPC    = 10;
 localparam DCSR_STEP     = 2;
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 localparam MCOUNTEREN_CY   = 0;
 localparam MCOUNTEREN_IR   = 1;
 localparam MCOUNTEREN_HPM3 = 2;
@@ -577,6 +588,386 @@ localparam MSECCFG_RLB   = 2;
 localparam MSECCFG_MMWP  = 1;
 localparam MSECCFG_MML   = 0;
 `endif
+
+   // ----------------------------------------------------------------------
+   // MISA (RO)
+   //  [31:30] XLEN - implementation width, 2'b01 - 32 bits
+   //  [20]    U    - user mode support (if enabled in config)
+   //  [12]    M    - integer mul/div
+   //  [8]     I    - RV32I
+   //  [2]     C    - Compressed extension
+   localparam MISA          = 12'h301;
+
+   // MVENDORID, MARCHID, MIMPID, MHARTID
+   localparam MVENDORID     = 12'hf11;
+   localparam MARCHID       = 12'hf12;
+   localparam MIMPID        = 12'hf13;
+   localparam MHARTID       = 12'hf14;
+
+
+   // ----------------------------------------------------------------------
+   // MSTATUS (RW)
+   // [17]    MPRV : Modify PRiVilege (if enabled in config)
+   // [12:11] MPP  : Prior priv level, either 2'b11 (machine) or 2'b00 (user)
+   // [7]     MPIE : Int enable previous [1]
+   // [3]     MIE  : Int enable          [0]
+   localparam MSTATUS       = 12'h300;
+
+   // ----------------------------------------------------------------------
+   // MTVEC (RW)
+   // [31:2] BASE : Trap vector base address
+   // [1] - Reserved, not implemented, reads zero
+   // [0]  MODE : 0 = Direct, 1 = Asyncs are vectored to BASE + (4 * CAUSE)
+   localparam MTVEC         = 12'h305;
+
+   // ----------------------------------------------------------------------
+   // MIP (RW)
+   //
+   // [30] MCEIP  : (RO) M-Mode Correctable Error interrupt pending
+   // [29] MITIP0 : (RO) M-Mode Internal Timer0 interrupt pending
+   // [28] MITIP1 : (RO) M-Mode Internal Timer1 interrupt pending
+   // [11] MEIP   : (RO) M-Mode external interrupt pending
+   // [7]  MTIP   : (RO) M-Mode timer interrupt pending
+   // [3]  MSIP   : (RO) M-Mode software interrupt pending
+   localparam MIP           = 12'h344;
+
+   // ----------------------------------------------------------------------
+   // MIE (RW)
+   // [30] MCEIE  : (RO) M-Mode Correctable Error interrupt enable
+   // [29] MITIE0 : (RO) M-Mode Internal Timer0 interrupt enable
+   // [28] MITIE1 : (RO) M-Mode Internal Timer1 interrupt enable
+   // [11] MEIE   : (RW) M-Mode external interrupt enable
+   // [7]  MTIE   : (RW) M-Mode timer interrupt enable
+   // [3]  MSIE   : (RW) M-Mode software interrupt enable
+   localparam MIE           = 12'h304;
+
+   // ----------------------------------------------------------------------
+   // MCYCLEL (RW)
+   // [31:0] : Lower Cycle count
+
+   localparam MCYCLEL       = 12'hb00;
+   localparam logic [11:0] CYCLEL  = 12'hc00;
+
+   // ----------------------------------------------------------------------
+   // MCYCLEH (RW)
+   // [63:32] : Higher Cycle count
+   // Chained with mcyclel. Note: mcyclel overflow due to a mcycleh write gets ignored.
+
+   localparam MCYCLEH       = 12'hb80;
+   localparam logic [11:0] CYCLEH  = 12'hc80;
+
+   // ----------------------------------------------------------------------
+   // MINSTRETL (RW)
+   // [31:0] : Lower Instruction retired count
+   // From the spec "Some CSRs, such as the instructions retired counter, instret, may be modified as side effects
+   // of instruction execution. In these cases, if a CSR access instruction reads a CSR, it reads the
+   // value prior to the execution of the instruction. If a CSR access instruction writes a CSR, the
+   // update occurs after the execution of the instruction. In particular, a value written to instret by
+   // one instruction will be the value read by the following instruction (i.e., the increment of instret
+   // caused by the first instruction retiring happens before the write of the new value)."
+   localparam MINSTRETL     = 12'hb02;
+   localparam logic [11:0] INSTRETL  = 12'hc02;
+
+   // ----------------------------------------------------------------------
+   // MINSTRETH (RW)
+   // [63:32] : Higher Instret count
+   // Chained with minstretl. Note: minstretl overflow due to a minstreth write gets ignored.
+
+   localparam MINSTRETH     = 12'hb82;
+   localparam logic [11:0] INSTRETH  = 12'hc82;
+
+   // ----------------------------------------------------------------------
+   // MSCRATCH (RW)
+   // [31:0] : Scratch register
+   localparam MSCRATCH      = 12'h340;
+
+   // ----------------------------------------------------------------------
+   // MEPC (RW)
+   // [31:1] : Exception PC
+   localparam MEPC          = 12'h341;
+
+   // ----------------------------------------------------------------------
+   // MCAUSE (RW)
+   // [31:0] : Exception Cause
+   localparam MCAUSE        = 12'h342;
+
+   // ----------------------------------------------------------------------
+   // MSCAUSE (RW)
+   // [2:0] : Secondary exception Cause
+   localparam MSCAUSE       = 12'h7ff;
+
+   // ----------------------------------------------------------------------
+   // MTVAL (RW)
+   // [31:0] : Exception address if relevant
+   localparam MTVAL         = 12'h343;
+
+   // ----------------------------------------------------------------------
+   // MCGC (RW) Clock gating control
+   // [31:10]: Reserved, reads 0x0
+   // [9]    : picio_clk_override
+   // [7]    : dec_clk_override
+   // [6]    : Unused
+   // [5]    : ifu_clk_override
+   // [4]    : lsu_clk_override
+   // [3]    : bus_clk_override
+   // [2]    : pic_clk_override
+   // [1]    : dccm_clk_override
+   // [0]    : icm_clk_override
+   //
+   localparam MCGC          = 12'h7f8;
+
+   // ----------------------------------------------------------------------
+   // MFDC (RW) Feature Disable Control
+   // [31:19] : Reserved, reads 0x0
+   // [18:16] : DMA QoS Prty
+   // [15:13] : Reserved, reads 0x0
+   // [12]   : Disable trace
+   // [11]   : Disable external load forwarding
+   // [10]   : Disable dual issue
+   // [9]    : Disable pic multiple ints
+   // [8]    : Disable core ecc
+   // [7]    : Disable secondary alu?s
+   // [6]    : Unused, 0x0
+   // [5]    : Disable non-blocking loads/divides
+   // [4]    : Disable fast divide
+   // [3]    : Disable branch prediction and return stack
+   // [2]    : Disable write buffer coalescing
+   // [1]    : Disable load misses that bypass the write buffer
+   // [0]    : Disable pipelining - Enable single instruction execution
+   //
+   localparam MFDC          = 12'h7f9;
+
+   // ----------------------------------------------------------------------
+   // MRAC (RW)
+   // [31:0] : Region Access Control Register, 16 regions, {side_effect, cachable} pairs
+   localparam MRAC          = 12'h7c0;
+
+   // ----------------------------------------------------------------------
+   // MDEAU (WAR0)
+   // [31:0] : Dbus Error Address Unlock register
+   //
+   localparam MDEAU         = 12'hbc0;
+
+   // ----------------------------------------------------------------------
+   // MDSEAC (R)
+   // [31:0] : Dbus Store Error Address Capture register
+   //
+   localparam MDSEAC        = 12'hfc0;
+
+   // ----------------------------------------------------------------------
+   // MPMC (R0W1)
+   // [0] : FW halt
+   // [1] : Set MSTATUS[MIE] on halt
+   localparam MPMC          = 12'h7c6;
+
+   // ----------------------------------------------------------------------
+   // MICECT (I-Cache error counter/threshold)
+   // [31:27] : Icache parity error threshold
+   // [26:0]  : Icache parity error count
+   localparam MICECT        = 12'h7f0;
+
+   // ----------------------------------------------------------------------
+   // MICCMECT (ICCM error counter/threshold)
+   // [31:27] : ICCM parity error threshold
+   // [26:0]  : ICCM parity error count
+   localparam MICCMECT      = 12'h7f1;
+
+   // ----------------------------------------------------------------------
+   // MDCCMECT (DCCM error counter/threshold)
+   // [31:27] : DCCM parity error threshold
+   // [26:0]  : DCCM parity error count
+   localparam MDCCMECT      = 12'h7f2;
+
+   // ----------------------------------------------------------------------
+   // MFDHT (Force Debug Halt Threshold)
+   // [5:1] : Halt timeout threshold (power of 2)
+   //   [0] : Halt timeout enabled
+   localparam MFDHT         = 12'h7ce;
+
+   // ----------------------------------------------------------------------
+   // MFDHS(RW)
+   // [1] : LSU operation pending when debug halt threshold reached
+   // [0] : IFU operation pending when debug halt threshold reached
+   localparam MFDHS         = 12'h7cf;
+
+   // ----------------------------------------------------------------------
+   // MEIVT (External Interrupt Vector Table (R/W))
+   // [31:10]: Base address (R/W)
+   // [9:0]  : Reserved, reads 0x0
+   localparam MEIVT         = 12'hbc8;
+
+   // ----------------------------------------------------------------------
+   // MEICURPL (R/W)
+   // [31:4] : Reserved (read 0x0)
+   // [3:0]  : CURRPRI - Priority level of current interrupt service routine (R/W)
+   localparam MEICURPL      = 12'hbcc;
+
+   // ----------------------------------------------------------------------
+   // MEICIDPL (R/W)
+   // [31:4] : Reserved (read 0x0)
+   // [3:0]  : External Interrupt Claim ID's Priority Level Register
+   localparam MEICIDPL      = 12'hbcb;
+
+   // ----------------------------------------------------------------------
+   // MEICPCT (Capture CLAIMID in MEIHAP and PL in MEICIDPL
+   // [31:1] : Reserved (read 0x0)
+   // [0]    : Capture (W1, Read 0)
+   localparam MEICPCT       = 12'hbca;
+
+   // ----------------------------------------------------------------------
+   // MEIPT (External Interrupt Priority Threshold)
+   // [31:4] : Reserved (read 0x0)
+   // [3:0]  : PRITHRESH
+   localparam MEIPT         = 12'hbc9;
+
+   // ----------------------------------------------------------------------
+   // DCSR (R/W) (Only accessible in debug mode)
+   // [31:28] : xdebugver (hard coded to 0x4) RO
+   // [27:16] : 0x0, reserved
+   // [15]    : ebreakm
+   // [14]    : 0x0, reserved
+   // [13]    : ebreaks (0x0 for this core)
+   // [12]    : ebreaku (0x0 for this core)
+   // [11]    : stepie
+   // [10]    : stopcount
+   // [9]     : 0x0 //stoptime
+   // [8:6]   : cause (RO)
+   // [5:4]   : 0x0, reserved
+   // [3]     : nmip
+   // [2]     : step
+   // [1:0]   : prv (0x3 for this core)
+   //
+   localparam DCSR          = 12'h7b0;
+
+   // ----------------------------------------------------------------------
+   // DPC (R/W) (Only accessible in debug mode)
+   // [31:0] : Debug PC
+   localparam DPC           = 12'h7b1;
+
+   // ----------------------------------------------------------------------
+   // DICAWICS (R/W) (Only accessible in debug mode)
+   // [31:25] : Reserved
+   // [24]    : Array select, 0 is data, 1 is tag
+   // [23:22] : Reserved
+   // [21:20] : Way select
+   // [19:17] : Reserved
+   // [16:3]  : Index
+   // [2:0]   : Reserved
+   localparam DICAWICS      = 12'h7c8;
+
+   // ----------------------------------------------------------------------
+   // DICAD0 (R/W) (Only accessible in debug mode)
+   //
+   // If dicawics[array] is 0
+   // [31:0]  : inst data
+   //
+   // If dicawics[array] is 1
+   // [31:16] : Tag
+   // [15:7]  : Reserved
+   // [6:4]   : LRU
+   // [3:1]   : Reserved
+   // [0]     : Valid
+   localparam DICAD0        = 12'h7c9;
+
+   // ----------------------------------------------------------------------
+   // DICAD0H (R/W) (Only accessible in debug mode)
+   //
+   // If dicawics[array] is 0
+   // [63:32]  : inst data
+   //
+   localparam DICAD0H       = 12'h7cc;
+
+   // ----------------------------------------------------------------------
+   // DICAGO (R/W) (Only accessible in debug mode)
+   // [0]     : Go
+   localparam DICAGO        = 12'h7cb;
+
+   // ----------------------------------------------------------------------
+   // MHPMC3H(RW), MHPMC3(RW)
+   // [63:32][31:0] : Hardware Performance Monitor Counter 3
+   localparam MHPMC3        = 12'hB03;
+   localparam MHPMC3H       = 12'hB83;
+`ifdef css_mcu0_RV_USER_MODE
+   localparam HPMC3         = 12'hC03;
+   localparam HPMC3H        = 12'hC83;
+`endif
+
+   // ----------------------------------------------------------------------
+   // MHPMC4H(RW), MHPMC4(RW)
+   // [63:32][31:0] : Hardware Performance Monitor Counter 4
+   localparam MHPMC4        = 12'hB04;
+   localparam MHPMC4H       = 12'hB84;
+`ifdef css_mcu0_RV_USER_MODE
+   localparam HPMC4         = 12'hC04;
+   localparam HPMC4H        = 12'hC84;
+`endif
+
+   // ----------------------------------------------------------------------
+   // MHPMC5H(RW), MHPMC5(RW)
+   // [63:32][31:0] : Hardware Performance Monitor Counter 5
+   localparam MHPMC5        = 12'hB05;
+   localparam MHPMC5H       = 12'hB85;
+`ifdef css_mcu0_RV_USER_MODE
+   localparam HPMC5         = 12'hC05;
+   localparam HPMC5H        = 12'hC85;
+`endif
+
+   // ----------------------------------------------------------------------
+   // MHPMC6H(RW), MHPMC6(RW)
+   // [63:32][31:0] : Hardware Performance Monitor Counter 6
+   localparam MHPMC6        = 12'hB06;
+   localparam MHPMC6H       = 12'hB86;
+`ifdef css_mcu0_RV_USER_MODE
+   localparam HPMC6         = 12'hC06;
+   localparam HPMC6H        = 12'hC86;
+`endif
+
+   // ----------------------------------------------------------------------
+   // MHPME3(RW)
+   // [9:0] : Hardware Performance Monitor Event 3
+   localparam MHPME3        = 12'h323;
+
+   // ----------------------------------------------------------------------
+   // MHPME4(RW)
+   // [9:0] : Hardware Performance Monitor Event 4
+   localparam MHPME4        = 12'h324;
+
+   // ----------------------------------------------------------------------
+   // MHPME5(RW)
+   // [9:0] : Hardware Performance Monitor Event 5
+   localparam MHPME5        = 12'h325;
+
+   // ----------------------------------------------------------------------
+   // MHPME6(RW)
+   // [9:0] : Hardware Performance Monitor Event 6
+   localparam MHPME6        = 12'h326;
+
+   // MCOUNTINHIBIT(RW)
+   // [31:7] : Reserved, read 0x0
+   // [6]    : HPM6 disable
+   // [5]    : HPM5 disable
+   // [4]    : HPM4 disable
+   // [3]    : HPM3 disable
+   // [2]    : MINSTRET disable
+   // [1]    : reserved, read 0x0
+   // [0]    : MCYCLE disable
+
+   localparam MCOUNTINHIBIT             = 12'h320;
+
+   // ----------------------------------------------------------------------
+   // MTSEL (R/W)
+   // [1:0] : Trigger select : 00, 01, 10 are data/address triggers. 11 is inst count
+   localparam MTSEL         = 12'h7a0;
+
+   // ----------------------------------------------------------------------
+   // MTDATA1 (R/W)
+   // [31:0] : Trigger Data 1
+   localparam MTDATA1       = 12'h7a1;
+
+   // ----------------------------------------------------------------------
+   // MTDATA2 (R/W)
+   // [31:0] : Trigger Data 2
+   localparam MTDATA2       = 12'h7a2;
 
    assign reset_delayed = reset_detect ^ reset_detected;
 
@@ -889,7 +1280,7 @@ localparam MTDATA1_LD    = 0;
                            (~lsu_error_pkt_r.inst_type & lsu_error_pkt_r.single_ecc_error);
 
    //  Final commit valids
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    assign tlu_i0_commit_cmt = dec_tlu_i0_valid_r &
                               ~rfpc_i0_r &
                               ~lsu_i0_exc_r &
@@ -909,7 +1300,7 @@ localparam MTDATA1_LD    = 0;
 `endif
 
    // unified place to manage the killing of arch state writebacks
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    assign tlu_i0_kill_writeb_r = rfpc_i0_r | lsu_i0_exc_r | inst_acc_r | (illegal_r & dec_tlu_dbg_halted) | i0_trigger_hit_r | csr_acc_r;
 `else
    assign tlu_i0_kill_writeb_r = rfpc_i0_r | lsu_i0_exc_r | inst_acc_r | (illegal_r & dec_tlu_dbg_halted) | i0_trigger_hit_r;
@@ -959,7 +1350,7 @@ end // else: !if(pt.BTB_ENABLE==1)
    // only expect these in pipe 0
    assign       ebreak_r     =  (dec_tlu_packet_r.pmu_i0_itype == EBREAK)  & dec_tlu_i0_valid_r & ~i0_trigger_hit_r & ~dcsr[DCSR_EBREAKM] & ~rfpc_i0_r;
    assign       ecall_r      =  (dec_tlu_packet_r.pmu_i0_itype == ECALL)   & dec_tlu_i0_valid_r & ~i0_trigger_hit_r & ~rfpc_i0_r;
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    assign       illegal_r    =  (((dec_tlu_packet_r.pmu_i0_itype == MRET) &  priv_mode) | ~dec_tlu_packet_r.legal) & dec_tlu_i0_valid_r & ~i0_trigger_hit_r & ~rfpc_i0_r;
    assign       mret_r       =  ( (dec_tlu_packet_r.pmu_i0_itype == MRET) & ~priv_mode                           ) & dec_tlu_i0_valid_r & ~i0_trigger_hit_r & ~rfpc_i0_r;
 `else
@@ -982,7 +1373,7 @@ end // else: !if(pt.BTB_ENABLE==1)
 
    assign dec_tlu_fence_i_r = fence_i_r;
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 
    // CSR access
    // Address bits 9:8 == 2'b00 indicate unprivileged / user-level CSR
@@ -1040,7 +1431,7 @@ end // else: !if(pt.BTB_ENABLE==1)
    // - MPIE <- MIE
    // - MIE <- 0
    //
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    assign i0_exception_valid_r = (ebreak_r | ecall_r | illegal_r | inst_acc_r | csr_acc_r) & ~rfpc_i0_r & ~dec_tlu_dbg_halted;
 `else
    assign i0_exception_valid_r = (ebreak_r | ecall_r | illegal_r | inst_acc_r) & ~rfpc_i0_r & ~dec_tlu_dbg_halted;
@@ -1060,7 +1451,7 @@ end // else: !if(pt.BTB_ENABLE==1)
                                 ({5{take_int_timer0_int}}  & 5'h1d) |
                                 ({5{take_int_timer1_int}}  & 5'h1c) |
                                 ({5{take_ce_int}}          & 5'h1e) |
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
                                 ({5{illegal_r| csr_acc_r}} & 5'h02) |
                                 ({5{ecall_r & priv_mode}}  & 5'h08) |
                                 ({5{ecall_r & ~priv_mode}} & 5'h0b) |
@@ -1213,7 +1604,7 @@ end
                                  .dout({interrupt_valid_r_d1, i0_exception_valid_r_d1, exc_or_int_valid_r_d1,
                                         exc_cause_wb[4:0], i0_valid_wb, trigger_hit_r_d1,
                                         take_nmi_r_d1, pause_expired_wb}));
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 
    //
    // Privilege mode
@@ -1237,35 +1628,17 @@ end
    //
    //----------------------------------------------------------------------
 
-
-   // ----------------------------------------------------------------------
-   // MISA (RO)
-   //  [31:30] XLEN - implementation width, 2'b01 - 32 bits
-   //  [20]    U    - user mode support (if enabled in config)
-   //  [12]    M    - integer mul/div
-   //  [8]     I    - RV32I
-   //  [2]     C    - Compressed extension
-   localparam MISA          = 12'h301;
-
-   // MVENDORID, MARCHID, MIMPID, MHARTID
-   localparam MVENDORID     = 12'hf11;
-   localparam MARCHID       = 12'hf12;
-   localparam MIMPID        = 12'hf13;
-   localparam MHARTID       = 12'hf14;
-
-
    // ----------------------------------------------------------------------
    // MSTATUS (RW)
    // [17]    MPRV : Modify PRiVilege (if enabled in config)
    // [12:11] MPP  : Prior priv level, either 2'b11 (machine) or 2'b00 (user)
    // [7]     MPIE : Int enable previous [1]
    // [3]     MIE  : Int enable          [0]
-   localparam MSTATUS       = 12'h300;
 
 
    //When executing a MRET instruction, supposing MPP holds the value 3, MIE
    //is set to MPIE; the privilege mode is changed to 3; MPIE is set to 1; and MPP is set to 3
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    assign dec_csr_wen_r_mod = dec_csr_wen_r & ~i0_trigger_hit_r & ~rfpc_i0_r & ~csr_acc_r;
 `else
    assign dec_csr_wen_r_mod = dec_csr_wen_r & ~i0_trigger_hit_r & ~rfpc_i0_r;
@@ -1276,7 +1649,7 @@ end
    // set this even if we don't go to fwhalt due to debug halt. We committed the inst, so ...
    assign set_mie_pmu_fw_halt = ~mpmc_b_ns[1] & fw_halt_req;
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    // mstatus[2] / mstatus_ns[2] actually stores inverse of the MPP field !
    assign mstatus_ns[3:0] = ( ({4{~wr_mstatus_r & exc_or_int_valid_r}} & {mstatus[MSTATUS_MPRV], priv_mode, mstatus[MSTATUS_MIE], 1'b0}) |
                               ({4{ wr_mstatus_r & exc_or_int_valid_r}} & {mstatus[MSTATUS_MPRV], priv_mode, dec_csr_wrdata_r[3],  1'b0}) |
@@ -1311,7 +1684,6 @@ end
    // [31:2] BASE : Trap vector base address
    // [1] - Reserved, not implemented, reads zero
    // [0]  MODE : 0 = Direct, 1 = Asyncs are vectored to BASE + (4 * CAUSE)
-   localparam MTVEC         = 12'h305;
 
    assign wr_mtvec_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MTVEC);
    assign mtvec_ns[30:0] = {dec_csr_wrdata_r[31:2], dec_csr_wrdata_r[0]} ;
@@ -1326,7 +1698,6 @@ end
    // [11] MEIP   : (RO) M-Mode external interrupt pending
    // [7]  MTIP   : (RO) M-Mode timer interrupt pending
    // [3]  MSIP   : (RO) M-Mode software interrupt pending
-   localparam MIP           = 12'h344;
 
    assign ce_int = (mdccme_ce_req | miccme_ce_req | mice_ce_req);
 
@@ -1340,7 +1711,6 @@ end
    // [11] MEIE   : (RW) M-Mode external interrupt enable
    // [7]  MTIE   : (RW) M-Mode timer interrupt enable
    // [3]  MSIE   : (RW) M-Mode software interrupt enable
-   localparam MIE           = 12'h304;
 
    assign wr_mie_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MIE);
    assign mie_ns[5:0] = wr_mie_r ? {dec_csr_wrdata_r[30:28], dec_csr_wrdata_r[11], dec_csr_wrdata_r[7], dec_csr_wrdata_r[3]} : mie[5:0];
@@ -1350,9 +1720,6 @@ end
    // ----------------------------------------------------------------------
    // MCYCLEL (RW)
    // [31:0] : Lower Cycle count
-
-   localparam MCYCLEL       = 12'hb00;
-   localparam logic [11:0] CYCLEL  = 12'hc00;
 
    assign kill_ebreak_count_r = ebreak_to_debug_mode_r & dcsr[DCSR_STOPC];
 
@@ -1374,9 +1741,6 @@ end
    // [63:32] : Higher Cycle count
    // Chained with mcyclel. Note: mcyclel overflow due to a mcycleh write gets ignored.
 
-   localparam MCYCLEH       = 12'hb80;
-   localparam logic [11:0] CYCLEH  = 12'hc80;
-
    assign wr_mcycleh_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MCYCLEH);
 
    assign mcycleh_inc[31:0] = mcycleh[31:0] + {31'b0, mcyclel_cout_f};
@@ -1393,8 +1757,6 @@ end
    // update occurs after the execution of the instruction. In particular, a value written to instret by
    // one instruction will be the value read by the following instruction (i.e., the increment of instret
    // caused by the first instruction retiring happens before the write of the new value)."
-   localparam MINSTRETL     = 12'hb02;
-   localparam logic [11:0] INSTRETL  = 12'hc02;
 
    assign i0_valid_no_ebreak_ecall_r = dec_tlu_i0_valid_r & ~(ebreak_r | ecall_r | ebreak_to_debug_mode_r | illegal_r | mcountinhibit[2]);
 
@@ -1420,9 +1782,6 @@ end
    // [63:32] : Higher Instret count
    // Chained with minstretl. Note: minstretl overflow due to a minstreth write gets ignored.
 
-   localparam MINSTRETH     = 12'hb82;
-   localparam logic [11:0] INSTRETH  = 12'hc82;
-
    assign wr_minstreth_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MINSTRETH);
 
    assign minstreth_inc[31:0] = minstreth[31:0] + {31'b0, minstretl_cout_f};
@@ -1434,8 +1793,6 @@ end
    // ----------------------------------------------------------------------
    // MSCRATCH (RW)
    // [31:0] : Scratch register
-   localparam MSCRATCH      = 12'h340;
-
    assign wr_mscratch_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MSCRATCH);
 
    css_mcu0_rvdffe #(32)  mscratch_ff (.*, .en(wr_mscratch_r), .din(dec_csr_wrdata_r[31:0]), .dout(mscratch[31:0]));
@@ -1443,7 +1800,6 @@ end
    // ----------------------------------------------------------------------
    // MEPC (RW)
    // [31:1] : Exception PC
-   localparam MEPC          = 12'h341;
 
    // NPC
 
@@ -1480,7 +1836,6 @@ end
    // ----------------------------------------------------------------------
    // MCAUSE (RW)
    // [31:0] : Exception Cause
-   localparam MCAUSE        = 12'h342;
 
    assign wr_mcause_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MCAUSE);
    assign mcause_sel_nmi_store = exc_or_int_valid_r & take_nmi & nmi_lsu_store_type;
@@ -1504,8 +1859,6 @@ end
    // ----------------------------------------------------------------------
    // MSCAUSE (RW)
    // [2:0] : Secondary exception Cause
-   localparam MSCAUSE       = 12'h7ff;
-
    assign wr_mscause_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MSCAUSE);
 
    assign ifu_mscause[3:0]  =  (dec_tlu_packet_r.icaf_type[1:0] == 2'b00) ? 4'b1001 :
@@ -1526,7 +1879,6 @@ end
    // ----------------------------------------------------------------------
    // MTVAL (RW)
    // [31:0] : Exception address if relevant
-   localparam MTVAL         = 12'h343;
 
    assign wr_mtval_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MTVAL);
    assign mtval_capture_pc_r = exc_or_int_valid_r & (ebreak_r | (inst_acc_r & ~inst_acc_second_r) | mepc_trigger_hit_sel_pc_r) & ~take_nmi;
@@ -1553,7 +1905,7 @@ end
    // [1]    : MMWP
    // [0]    : MML
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 
    localparam MSECCFG  = 12'h747;
    localparam MSECCFGH = 12'h757;
@@ -1595,7 +1947,6 @@ end
    // [1]    : dccm_clk_override
    // [0]    : icm_clk_override
    //
-   localparam MCGC          = 12'h7f8;
    assign wr_mcgc_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MCGC);
 
    assign mcgc_ns[9:0] = wr_mcgc_r ? {~dec_csr_wrdata_r[9], dec_csr_wrdata_r[8:0]} : mcgc_int[9:0];
@@ -1633,7 +1984,6 @@ end
    // [1]    : Disable load misses that bypass the write buffer
    // [0]    : Disable pipelining - Enable single instruction execution
    //
-   localparam MFDC          = 12'h7f9;
 
    assign wr_mfdc_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MFDC);
 
@@ -1670,7 +2020,6 @@ end
    // ----------------------------------------------------------------------
    // MRAC (RW)
    // [31:0] : Region Access Control Register, 16 regions, {side_effect, cachable} pairs
-   localparam MRAC          = 12'h7c0;
 
    assign wr_mrac_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MRAC);
 
@@ -1701,7 +2050,6 @@ end
    // MDEAU (WAR0)
    // [31:0] : Dbus Error Address Unlock register
    //
-   localparam MDEAU         = 12'hbc0;
 
    assign wr_mdeau_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MDEAU);
 
@@ -1710,7 +2058,6 @@ end
    // MDSEAC (R)
    // [31:0] : Dbus Store Error Address Capture register
    //
-   localparam MDSEAC        = 12'hfc0;
 
    // only capture error bus if the MDSEAC reg is not locked
    assign mdseac_locked_ns = mdseac_en | (mdseac_locked_f & ~wr_mdeau_r);
@@ -1723,8 +2070,6 @@ end
    // MPMC (R0W1)
    // [0] : FW halt
    // [1] : Set MSTATUS[MIE] on halt
-
-   localparam MPMC          = 12'h7c6;
 
    assign wr_mpmc_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MPMC);
 
@@ -1741,7 +2086,6 @@ end
    // MICECT (I-Cache error counter/threshold)
    // [31:27] : Icache parity error threshold
    // [26:0]  : Icache parity error count
-   localparam MICECT        = 12'h7f0;
 
    assign csr_sat[31:27] = (dec_csr_wrdata_r[31:27] > 5'd26) ? 5'd26 : dec_csr_wrdata_r[31:27];
 
@@ -1757,7 +2101,6 @@ end
    // MICCMECT (ICCM error counter/threshold)
    // [31:27] : ICCM parity error threshold
    // [26:0]  : ICCM parity error count
-   localparam MICCMECT      = 12'h7f1;
 
    assign wr_miccmect_r     = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MICCMECT);
    assign miccmect_inc[26:0] = miccmect[26:0] + {26'b0, iccm_sbecc_r | iccm_dma_sb_error};
@@ -1771,7 +2114,6 @@ end
    // MDCCMECT (DCCM error counter/threshold)
    // [31:27] : DCCM parity error threshold
    // [26:0]  : DCCM parity error count
-   localparam MDCCMECT      = 12'h7f2;
 
    assign wr_mdccmect_r     = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MDCCMECT);
    assign mdccmect_inc[26:0] = mdccmect[26:0] + {26'b0, lsu_single_ecc_error_r_d1};
@@ -1786,7 +2128,6 @@ end
    // MFDHT (Force Debug Halt Threshold)
    // [5:1] : Halt timeout threshold (power of 2)
    //   [0] : Halt timeout enabled
-   localparam MFDHT         = 12'h7ce;
 
    assign wr_mfdht_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MFDHT);
 
@@ -1794,12 +2135,10 @@ end
 
    css_mcu0_rvdffs #(6)  mfdht_ff (.*, .clk(csr_wr_clk), .en(wr_mfdht_r), .din(mfdht_ns[5:0]), .dout(mfdht[5:0]));
 
-    // ----------------------------------------------------------------------
+   // ----------------------------------------------------------------------
    // MFDHS(RW)
    // [1] : LSU operation pending when debug halt threshold reached
    // [0] : IFU operation pending when debug halt threshold reached
-
-   localparam MFDHS         = 12'h7cf;
 
    assign wr_mfdhs_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MFDHS);
 
@@ -1818,8 +2157,6 @@ end
    // MEIVT (External Interrupt Vector Table (R/W))
    // [31:10]: Base address (R/W)
    // [9:0]  : Reserved, reads 0x0
-   localparam MEIVT         = 12'hbc8;
-
    assign wr_meivt_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MEIVT);
 
    css_mcu0_rvdffe #(22)  meivt_ff (.*, .en(wr_meivt_r), .din(dec_csr_wrdata_r[31:10]), .dout(meivt[31:10]));
@@ -1830,19 +2167,17 @@ end
    // [31:10]: Base address (R/W)
    // [9:2]  : ClaimID (R)
    // [1:0]  : Reserved, 0x0
-   localparam MEIHAP        = 12'hfc8;
 
    assign wr_meihap_r = wr_meicpct_r;
 
    css_mcu0_rvdffe #(8)  meihap_ff (.*, .en(wr_meihap_r), .din(pic_claimid[7:0]), .dout(meihap[9:2]));
 
    assign dec_tlu_meihap[31:2] = {meivt[31:10], meihap[9:2]};
+
    // ----------------------------------------------------------------------
    // MEICURPL (R/W)
    // [31:4] : Reserved (read 0x0)
    // [3:0]  : CURRPRI - Priority level of current interrupt service routine (R/W)
-   localparam MEICURPL      = 12'hbcc;
-
    assign wr_meicurpl_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MEICURPL);
    assign meicurpl_ns[3:0] = wr_meicurpl_r ? dec_csr_wrdata_r[3:0] : meicurpl[3:0];
 
@@ -1856,7 +2191,6 @@ end
    // MEICIDPL (R/W)
    // [31:4] : Reserved (read 0x0)
    // [3:0]  : External Interrupt Claim ID's Priority Level Register
-   localparam MEICIDPL      = 12'hbcb;
 
    assign wr_meicidpl_r = (dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MEICIDPL)) | take_ext_int_start;
 
@@ -1867,15 +2201,12 @@ end
    // MEICPCT (Capture CLAIMID in MEIHAP and PL in MEICIDPL
    // [31:1] : Reserved (read 0x0)
    // [0]    : Capture (W1, Read 0)
-   localparam MEICPCT       = 12'hbca;
-
    assign wr_meicpct_r = (dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MEICPCT)) | take_ext_int_start;
 
    // ----------------------------------------------------------------------
    // MEIPT (External Interrupt Priority Threshold)
    // [31:4] : Reserved (read 0x0)
    // [3:0]  : PRITHRESH
-   localparam MEIPT         = 12'hbc9;
 
    assign wr_meipt_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MEIPT);
    assign meipt_ns[3:0] = wr_meipt_r ? dec_csr_wrdata_r[3:0] : meipt[3:0];
@@ -1901,7 +2232,6 @@ end
    // [2]     : step
    // [1:0]   : prv (0x3 for this core)
    //
-   localparam DCSR          = 12'h7b0;
 
    // RV has clarified that 'priority 4' in the spec means top priority.
    // 4. single step. 3. Debugger request. 2. Ebreak. 1. Trigger.
@@ -1933,7 +2263,6 @@ end
    // ----------------------------------------------------------------------
    // DPC (R/W) (Only accessible in debug mode)
    // [31:0] : Debug PC
-   localparam DPC           = 12'h7b1;
 
    assign wr_dpc_r = allow_dbg_halt_csr_write & dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == DPC);
    assign dpc_capture_npc = dbg_tlu_halted & ~dbg_tlu_halted_f & ~request_debug_mode_done;
@@ -1954,7 +2283,6 @@ end
    // [19:17] : Reserved
    // [16:3]  : Index
    // [2:0]   : Reserved
-   localparam DICAWICS      = 12'h7c8;
 
    assign dicawics_ns[16:0] = {dec_csr_wrdata_r[24], dec_csr_wrdata_r[21:20], dec_csr_wrdata_r[16:3]};
    assign wr_dicawics_r = allow_dbg_halt_csr_write & dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == DICAWICS);
@@ -1973,7 +2301,6 @@ end
    // [6:4]   : LRU
    // [3:1]   : Reserved
    // [0]     : Valid
-   localparam DICAD0        = 12'h7c9;
 
    assign dicad0_ns[31:0] = wr_dicad0_r ? dec_csr_wrdata_r[31:0] : ifu_ic_debug_rd_data[31:0];
 
@@ -1987,7 +2314,6 @@ end
    // If dicawics[array] is 0
    // [63:32]  : inst data
    //
-   localparam DICAD0H       = 12'h7cc;
 
    assign dicad0h_ns[31:0] = wr_dicad0h_r ? dec_csr_wrdata_r[31:0] : ifu_ic_debug_rd_data[63:32];
 
@@ -2028,7 +2354,6 @@ end
    // ----------------------------------------------------------------------
    // DICAGO (R/W) (Only accessible in debug mode)
    // [0]     : Go
-   localparam DICAGO        = 12'h7cb;
 
 if (pt.ICACHE_ECC == 1)
    assign dec_tlu_ic_diag_pkt.icache_wrdata[70:0] = {      dicad1[6:0], dicad0h[31:0], dicad0[31:0]};
@@ -2048,7 +2373,6 @@ else
    // ----------------------------------------------------------------------
    // MTSEL (R/W)
    // [1:0] : Trigger select : 00, 01, 10 are data/address triggers. 11 is inst count
-   localparam MTSEL         = 12'h7a0;
 
    assign wr_mtsel_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MTSEL);
    assign mtsel_ns[1:0] = wr_mtsel_r ? {dec_csr_wrdata_r[1:0]} : mtsel[1:0];
@@ -2058,7 +2382,6 @@ else
    // ----------------------------------------------------------------------
    // MTDATA1 (R/W)
    // [31:0] : Trigger Data 1
-   localparam MTDATA1       = 12'h7a1;
 
    // for triggers 0, 1, 2 and 3 aka Match Control
    // [31:28] : type, hard coded to 0x2
@@ -2178,7 +2501,6 @@ else
    // ----------------------------------------------------------------------
    // MTDATA2 (R/W)
    // [31:0] : Trigger Data 2
-   localparam MTDATA2       = 12'h7a2;
 
    // If the DMODE bit is set, tdata2 can only be updated in debug_mode
    assign wr_mtdata2_t0_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MTDATA2) & (mtsel[1:0] == 2'b0)  & (~mtdata1_t0[MTDATA1_DMODE] | dbg_tlu_halted_f);
@@ -2344,7 +2666,7 @@ else
 
    if(pt.FAST_INTERRUPT_REDIRECT) begin : genblock2
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    css_mcu0_rvdffie #(33)  mstatus_ff (.*, .clk(free_l2clk),
                              .din({mdseac_locked_ns, lsu_single_ecc_error_r, lsu_exc_valid_r, lsu_i0_exc_r,
                                    take_ext_int_start,    take_ext_int_start_d1, take_ext_int_start_d2, ext_int_freeze,
@@ -2377,7 +2699,7 @@ else
 
    end
    else begin : genblock2
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
    css_mcu0_rvdffie #(29)  mstatus_ff (.*, .clk(free_l2clk),
                              .din({mdseac_locked_ns, lsu_single_ecc_error_r, lsu_exc_valid_r, lsu_i0_exc_r,
                                    mip_ns[5:0], mcyclel_cout & ~wr_mcycleh_r & mcyclel_cout_in,
@@ -2415,12 +2737,6 @@ else
    // ----------------------------------------------------------------------
    // MHPMC3H(RW), MHPMC3(RW)
    // [63:32][31:0] : Hardware Performance Monitor Counter 3
-   localparam MHPMC3        = 12'hB03;
-   localparam MHPMC3H       = 12'hB83;
-`ifdef RV_USER_MODE
-   localparam HPMC3         = 12'hC03;
-   localparam HPMC3H        = 12'hC83;
-`endif
 
    assign mhpmc3_wr_en0 = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPMC3);
    assign mhpmc3_wr_en1 = (~perfcnt_halted | perfcnt_during_sleep[0]) & (|(mhpmc_inc_r[0]));
@@ -2437,12 +2753,6 @@ else
    // ----------------------------------------------------------------------
    // MHPMC4H(RW), MHPMC4(RW)
    // [63:32][31:0] : Hardware Performance Monitor Counter 4
-   localparam MHPMC4        = 12'hB04;
-   localparam MHPMC4H       = 12'hB84;
-`ifdef RV_USER_MODE
-   localparam HPMC4         = 12'hC04;
-   localparam HPMC4H        = 12'hC84;
-`endif
 
    assign mhpmc4_wr_en0 = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPMC4);
    assign mhpmc4_wr_en1 = (~perfcnt_halted | perfcnt_during_sleep[1]) & (|(mhpmc_inc_r[1]));
@@ -2459,12 +2769,6 @@ else
    // ----------------------------------------------------------------------
    // MHPMC5H(RW), MHPMC5(RW)
    // [63:32][31:0] : Hardware Performance Monitor Counter 5
-   localparam MHPMC5        = 12'hB05;
-   localparam MHPMC5H       = 12'hB85;
-`ifdef RV_USER_MODE
-   localparam HPMC5         = 12'hC05;
-   localparam HPMC5H        = 12'hC85;
-`endif
 
    assign mhpmc5_wr_en0 = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPMC5);
    assign mhpmc5_wr_en1 = (~perfcnt_halted | perfcnt_during_sleep[2]) & (|(mhpmc_inc_r[2]));
@@ -2481,12 +2785,6 @@ else
    // ----------------------------------------------------------------------
    // MHPMC6H(RW), MHPMC6(RW)
    // [63:32][31:0] : Hardware Performance Monitor Counter 6
-   localparam MHPMC6        = 12'hB06;
-   localparam MHPMC6H       = 12'hB86;
-`ifdef RV_USER_MODE
-   localparam HPMC6         = 12'hC06;
-   localparam HPMC6H        = 12'hC86;
-`endif
 
    assign mhpmc6_wr_en0 = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPMC6);
    assign mhpmc6_wr_en1 = (~perfcnt_halted | perfcnt_during_sleep[3]) & (|(mhpmc_inc_r[3]));
@@ -2503,7 +2801,6 @@ else
    // ----------------------------------------------------------------------
    // MHPME3(RW)
    // [9:0] : Hardware Performance Monitor Event 3
-   localparam MHPME3        = 12'h323;
 
    // we only have events 0-56 with holes, 512-516, HPME* are WARL so zero otherwise.
    assign zero_event_r = ( (dec_csr_wrdata_r[9:0] > 10'd516) |
@@ -2521,21 +2818,18 @@ else
    // ----------------------------------------------------------------------
    // MHPME4(RW)
    // [9:0] : Hardware Performance Monitor Event 4
-   localparam MHPME4        = 12'h324;
 
    assign wr_mhpme4_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPME4);
    css_mcu0_rvdffe #(10)  mhpme4_ff (.*, .en(wr_mhpme4_r), .din(event_r[9:0]), .dout(mhpme4[9:0]));
    // ----------------------------------------------------------------------
    // MHPME5(RW)
    // [9:0] : Hardware Performance Monitor Event 5
-   localparam MHPME5        = 12'h325;
 
    assign wr_mhpme5_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPME5);
    css_mcu0_rvdffe #(10)  mhpme5_ff (.*, .en(wr_mhpme5_r), .din(event_r[9:0]), .dout(mhpme5[9:0]));
    // ----------------------------------------------------------------------
    // MHPME6(RW)
    // [9:0] : Hardware Performance Monitor Event 6
-   localparam MHPME6        = 12'h326;
 
    assign wr_mhpme6_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MHPME6);
    css_mcu0_rvdffe #(10)  mhpme6_ff (.*, .en(wr_mhpme6_r), .din(event_r[9:0]), .dout(mhpme6[9:0]));
@@ -2552,7 +2846,7 @@ else
    // [1]    : reserved, read 0x0
    // [0]    : CYCLE user-mode access disable
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 
    localparam MCOUNTEREN                = 12'h306;
 
@@ -2570,8 +2864,6 @@ else
    // [2]    : MINSTRET disable
    // [1]    : reserved, read 0x0
    // [0]    : MCYCLE disable
-
-   localparam MCOUNTINHIBIT             = 12'h320;
 
    assign wr_mcountinhibit_r = dec_csr_wen_r_mod & (dec_csr_wraddr_r[11:0] == MCOUNTINHIBIT);
    css_mcu0_rvdffs #(6)  mcountinhibit_ff (.*, .clk(csr_wr_clk), .en(wr_mcountinhibit_r), .din({dec_csr_wrdata_r[6:2], dec_csr_wrdata_r[0]}), .dout({mcountinhibit[6:2], mcountinhibit[0]}));
@@ -2628,7 +2920,7 @@ assign dec_csr_legal_d = ( dec_csr_any_unq_d &
                            );
    // CSR read mux
 assign dec_csr_rddata_d[31:0] = (
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
                                   ({32{csr_misa}}      & 32'h40101104) |
 `else
                                   ({32{csr_misa}}      & 32'h40001104) |
@@ -2637,7 +2929,7 @@ assign dec_csr_rddata_d[31:0] = (
                                   ({32{csr_marchid}}   & 32'h00000010) |
                                   ({32{csr_mimpid}}    & 32'h4) |
                                   ({32{csr_mhartid}}   & {core_id[31:4], 4'b0}) |
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
                                   ({32{csr_mstatus}}   & {14'b0, mstatus[MSTATUS_MPRV], 4'b0, ~mstatus[MSTATUS_MPP], ~mstatus[MSTATUS_MPP], 3'b0, mstatus[MSTATUS_MPIE], 3'b0, mstatus[MSTATUS_MIE], 3'b0}) |
 `else
                                   ({32{csr_mstatus}}   & {19'b0, 2'b11, 3'b0, mstatus[MSTATUS_MPIE], 3'b0, mstatus[MSTATUS_MIE], 3'b0}) |
@@ -2689,7 +2981,7 @@ assign dec_csr_rddata_d[31:0] = (
                                   ({32{csr_mhpme4}}    & {22'b0,mhpme4[9:0]}) |
                                   ({32{csr_mhpme5}}    & {22'b0,mhpme5[9:0]}) |
                                   ({32{csr_mhpme6}}    & {22'b0,mhpme6[9:0]}) |
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
                                   ({32{csr_menvcfg}}   & 32'd0) |
                                   ({32{csr_menvcfgh}}  & 32'd0) |
                                   ({32{csr_mcounteren}}    & {25'b0, mcounteren[5:1], 1'b0, mcounteren[0]}) |
@@ -2716,7 +3008,7 @@ assign dec_csr_rddata_d[31:0] = (
 
 
 
-endmodule // el2_dec_tlu_ctl
+endmodule // css_mcu0_el2_dec_tlu_ctl
 
 module css_mcu0_el2_dec_timer_ctl
 import css_mcu0_el2_pkg::*;
@@ -2749,7 +3041,10 @@ import css_mcu0_el2_pkg::*;
    output logic        dec_timer_t0_pulse, // timer0 int
    output logic        dec_timer_t1_pulse, // timer1 int
 
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic        scan_mode
+   /*pragma coverage on*/
    );
    localparam MITCTL_ENABLE             = 0;
    localparam MITCTL_ENABLE_HALTED      = 1;

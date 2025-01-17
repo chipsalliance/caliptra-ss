@@ -42,7 +42,10 @@ import css_mcu0_el2_pkg::*;
 
    output logic [63:0]                                iccm_rd_data,                        // ICCM read data
    output logic [77:0]                                iccm_rd_data_ecc,                    // ICCM read ecc
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic                                       scan_mode                            // Scan mode control
+   /*pragma coverage on*/
 
 );
 
@@ -219,4 +222,4 @@ import css_mcu0_el2_pkg::*;
    assign iccm_rd_data[63:0]     = {iccm_data[63:0]};
    assign iccm_rd_data_ecc[77:0] = {iccm_bank_dout_fn[iccm_rd_addr_hi_q][38:0], iccm_bank_dout_fn[iccm_rd_addr_lo_q[pt.ICCM_BANK_HI:2]][38:0]};
 
-endmodule // el2_ifu_iccm_mem
+endmodule // css_mcu0_el2_ifu_iccm_mem
