@@ -74,6 +74,7 @@ module caliptra_ss_top
 `endif
     logic                       rst_l;
     logic                       porst_l;
+    logic [pt.PIC_TOTAL_INT:1]  ext_int_tb;
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
     logic                       nmi_int;
     logic                       timer_int;
@@ -415,6 +416,9 @@ module caliptra_ss_top
       
 //------------------------------------------------------------------------
 
+    logic pwr_otp_init_i;
+    logic intr_otp_operation_done;
+
 //    //-------------------------- I3C AXI signals--------------------------
 //    // AXI Write Channels
 //        wire                             i3c_axi_awvalid;
@@ -499,11 +503,11 @@ module caliptra_ss_top
         if(mailbox_write && (mailbox_data[7:0] >= 8'h80 && mailbox_data[7:0] < 8'h84)) begin
             if (mailbox_data[7:0] == 8'h80) begin
                 if (mailbox_data[15:8] > 0 && mailbox_data[15:8] < pt.PIC_TOTAL_INT)
-                    ext_int[mailbox_data[15:8]] <= 1'b0;
+                    ext_int_tb[mailbox_data[15:8]] <= 1'b0;
             end
             if (mailbox_data[7:0] == 8'h81) begin
                 if (mailbox_data[15:8] > 0 && mailbox_data[15:8] < pt.PIC_TOTAL_INT)
-                    ext_int[mailbox_data[15:8]] <= 1'b1;
+                    ext_int_tb[mailbox_data[15:8]] <= 1'b1;
             end
             if (mailbox_data[7:0] == 8'h82) begin
                 nmi_int   <= nmi_int   & ~mailbox_data[8];
@@ -517,10 +521,10 @@ module caliptra_ss_top
             end
         end
         if(mailbox_write && (mailbox_data[7:0] == 8'h90)) begin
-            ext_int   <= {pt.PIC_TOTAL_INT-1{1'b0}};
-            nmi_int   <= 1'b0;
-            timer_int <= 1'b0;
-            soft_int  <= 1'b0;
+            ext_int_tb   <= {pt.PIC_TOTAL_INT-1{1'b0}};
+            nmi_int      <= 1'b0;
+            timer_int    <= 1'b0;
+            soft_int     <= 1'b0;
         end
         // ECC error injection
         if(mailbox_write && (mailbox_data[7:0] == 8'he0)) begin
@@ -634,7 +638,7 @@ module caliptra_ss_top
         abi_reg[30] = "t5";
         abi_reg[31] = "t6";
 
-        ext_int     = {pt.PIC_TOTAL_INT-1{1'b0}};
+        ext_int_tb  = {pt.PIC_TOTAL_INT-1{1'b0}};
         nmi_int     = 0;
         timer_int   = 0;
         soft_int    = 0;
@@ -1279,6 +1283,27 @@ module caliptra_ss_top
     logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_awid_req_r [pt.LSU_BUS_TAG];
     assign axi_interconnect.mintf_arr[0].ARID[pt.LSU_BUS_TAG-1:0] = pt.LSU_BUS_TAG'(0);
     assign axi_interconnect.mintf_arr[0].AWID[pt.LSU_BUS_TAG-1:0] = pt.LSU_BUS_TAG'(0);
+
+    logic mci_intr;
+
+    //FIXME define these somewhere for integrators
+    // Interrupt Assignments
+    // NOTE Vector 0 is reserved by VeeR
+    `define VEER_INTR_VEC_MCI                 1
+    `define VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL 2
+    `define VEER_INTR_VEC_I3C                 3
+    `define VEER_INTR_VEC_FC                  4
+    
+    //Interrupt connections
+    always_comb begin
+        ext_int = '0;
+        ext_int[`VEER_INTR_VEC_MCI -1]                 = mci_intr;
+        ext_int[`VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL -1] = mailbox_data_avail;
+        ext_int[`VEER_INTR_VEC_I3C -1]                 = 0;
+        ext_int[`VEER_INTR_VEC_FC  -1]                 = intr_otp_operation_done;
+        //ext_int = ext_int_tb; //drive from tb if needed
+    end
+
     //=========================================================================-
     // RTL instance
     //=========================================================================-
@@ -1766,7 +1791,18 @@ module caliptra_ss_top
         .sel_od_pp_o(sel_od_pp_o)
 `else
         .i3c_scl_io(i3c_scl_io),
-        .i3c_sda_io(i3c_sda_io)
+        .i3c_sda_io(i3c_sda_io),
+
+    // Recovery interface signals
+    .recovery_payload_available_o(),
+    .recovery_image_activated_o(),
+
+    .peripheral_reset_o(),
+    .peripheral_reset_done_i(),
+    .escalated_reset_o()
+
+    // TODO: Add interrupts
+
 `endif
     );
 
@@ -2048,7 +2084,7 @@ module caliptra_ss_top
         .mci_generic_output_wires(),
 
         .mcu_timer_int(),
-        .mci_intr(),
+        .mci_intr(mci_intr),
 
         .strap_mcu_reset_vector(32'h0),
         .mcu_reset_vector(),
