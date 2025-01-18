@@ -1155,59 +1155,40 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[7].RVALID = lc_axi_rd_rsp.rvalid;
     assign lc_axi_rd_req.rready = axi_interconnect.sintf_arr[7].RREADY;
 
-    //Interconnect 8 - I3C
-    assign i3c_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[8].AWVALID;
-    assign i3c_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[8].AWADDR;
-    assign i3c_s_axi_if.awid                       = axi_interconnect.sintf_arr[8].AWID;
-    assign i3c_s_axi_if.awlen                      = axi_interconnect.sintf_arr[8].AWLEN;
-    assign i3c_s_axi_if.awsize                     = axi_interconnect.sintf_arr[8].AWSIZE;
-    assign i3c_s_axi_if.awburst                    = axi_interconnect.sintf_arr[8].AWBURST;
-    assign i3c_s_axi_if.awlock                     = axi_interconnect.sintf_arr[8].AWLOCK;
-    assign i3c_s_axi_if.awuser                     = axi_interconnect.sintf_arr[8].AWUSER;
-    assign axi_interconnect.sintf_arr[8].AWREADY = i3c_s_axi_if.awready;
-    assign i3c_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[8].WVALID;
-    assign i3c_s_axi_if.wdata                      = axi_interconnect.sintf_arr[8].WDATA >> (i3c_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
-    assign i3c_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[8].WSTRB >> (i3c_s_axi_if_wr_is_upper_dw_latched ? 4 : 0);
-    assign i3c_s_axi_if.wlast                      = axi_interconnect.sintf_arr[8].WLAST;
-    assign axi_interconnect.sintf_arr[8].WREADY  = i3c_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[8].BVALID  = i3c_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[8].BRESP   = i3c_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[8].BID     = i3c_s_axi_if.bid;
-    assign i3c_s_axi_if.bready                     = axi_interconnect.sintf_arr[8].BREADY;
-    assign i3c_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[8].ARVALID;
-    assign i3c_s_axi_if.araddr                     = axi_interconnect.sintf_arr[8].ARADDR;
-    assign i3c_s_axi_if.arid                       = axi_interconnect.sintf_arr[8].ARID;
-    assign i3c_s_axi_if.arlen                      = axi_interconnect.sintf_arr[8].ARLEN;
-    assign i3c_s_axi_if.arsize                     = axi_interconnect.sintf_arr[8].ARSIZE;
-    assign i3c_s_axi_if.arburst                    = axi_interconnect.sintf_arr[8].ARBURST;
-    assign i3c_s_axi_if.arlock                     = axi_interconnect.sintf_arr[8].ARLOCK;
-    assign i3c_s_axi_if.aruser                     = axi_interconnect.sintf_arr[8].ARUSER;
-    assign axi_interconnect.sintf_arr[8].ARREADY = i3c_s_axi_if.arready;
-    assign axi_interconnect.sintf_arr[8].RVALID  = i3c_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[8].RDATA   = 64'(i3c_s_axi_if.rdata) << (i3c_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
-    assign axi_interconnect.sintf_arr[8].RRESP   = i3c_s_axi_if.rresp;
-    assign axi_interconnect.sintf_arr[8].RID     = i3c_s_axi_if.rid;
-    assign axi_interconnect.sintf_arr[8].RLAST   = i3c_s_axi_if.rlast;
-    assign i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[8].RREADY;
-
-    always_comb begin
-        mcu_lsu_m_axi_if.awuser                                              = 32'hFFFF_FFFF;
-        mcu_lsu_m_axi_if.aruser                                              = 32'hFFFF_FFFF;
-        mcu_lsu_m_axi_if.arid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
-        mcu_lsu_m_axi_if.awid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0;
-        mcu_lsu_m_axi_if.aruser[aaxi_pkg::AAXI_ARUSER_WIDTH-1:0]             = '1;
-        mcu_lsu_m_axi_if.awuser[aaxi_pkg::AAXI_AWUSER_WIDTH-1:0]             = '1;
-        mcu_lsu_m_axi_if.araddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
-        mcu_lsu_m_axi_if.awaddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
-        mcu_ifu_m_axi_if.arid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
-        mcu_ifu_m_axi_if.awid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
-        mcu_ifu_m_axi_if.araddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
-        mcu_ifu_m_axi_if.awaddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
-        mcu_dma_s_axi_if.rid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
-        mcu_dma_s_axi_if.bid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
-        mcu_dma_s_axi_if.araddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
-        mcu_dma_s_axi_if.awaddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
-    end
+    //Interconnect 1 - I3C
+    assign i3c_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[1].AWVALID;
+    assign i3c_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[1].AWADDR;
+    assign i3c_s_axi_if.awid                       = axi_interconnect.sintf_arr[1].AWID;
+    assign i3c_s_axi_if.awlen                      = axi_interconnect.sintf_arr[1].AWLEN;
+    assign i3c_s_axi_if.awsize                     = axi_interconnect.sintf_arr[1].AWSIZE;
+    assign i3c_s_axi_if.awburst                    = axi_interconnect.sintf_arr[1].AWBURST;
+    assign i3c_s_axi_if.awlock                     = axi_interconnect.sintf_arr[1].AWLOCK;
+    assign i3c_s_axi_if.awuser                     = axi_interconnect.sintf_arr[1].AWUSER;
+    assign axi_interconnect.sintf_arr[1].AWREADY = i3c_s_axi_if.awready;
+    assign i3c_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[1].WVALID;
+    assign i3c_s_axi_if.wdata                      = axi_interconnect.sintf_arr[1].WDATA >> (i3c_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
+    assign i3c_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[1].WSTRB >> (i3c_s_axi_if_wr_is_upper_dw_latched ? 4 : 0);
+    assign i3c_s_axi_if.wlast                      = axi_interconnect.sintf_arr[1].WLAST;
+    assign axi_interconnect.sintf_arr[1].WREADY  = i3c_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[1].BVALID  = i3c_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[1].BRESP   = i3c_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[1].BID     = i3c_s_axi_if.bid;
+    assign i3c_s_axi_if.bready                     = axi_interconnect.sintf_arr[1].BREADY;
+    assign i3c_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[1].ARVALID;
+    assign i3c_s_axi_if.araddr                     = axi_interconnect.sintf_arr[1].ARADDR;
+    assign i3c_s_axi_if.arid                       = axi_interconnect.sintf_arr[1].ARID;
+    assign i3c_s_axi_if.arlen                      = axi_interconnect.sintf_arr[1].ARLEN;
+    assign i3c_s_axi_if.arsize                     = axi_interconnect.sintf_arr[1].ARSIZE;
+    assign i3c_s_axi_if.arburst                    = axi_interconnect.sintf_arr[1].ARBURST;
+    assign i3c_s_axi_if.arlock                     = axi_interconnect.sintf_arr[1].ARLOCK;
+    assign i3c_s_axi_if.aruser                     = axi_interconnect.sintf_arr[1].ARUSER;
+    assign axi_interconnect.sintf_arr[1].ARREADY = i3c_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[1].RVALID  = i3c_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[1].RDATA   = 64'(i3c_s_axi_if.rdata) << (i3c_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.sintf_arr[1].RRESP   = i3c_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[1].RID     = i3c_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[1].RLAST   = i3c_s_axi_if.rlast;
+    assign i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[1].RREADY;
 
     mci_mcu_sram_if mci_mcu_sram_req_if (
         .clk(core_clk),
@@ -1251,7 +1232,7 @@ module caliptra_ss_top_tb
     logic mailbox_data_avail;
     logic cptra_core_mbox_sram_cs;
     logic cptra_core_mbox_sram_we;
-    logic [CPTRA_MBOX_ADDR_W:0] cptra_core_mbox_sram_addr;
+    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_core_mbox_sram_addr;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_core_mbox_sram_wdata;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_core_mbox_sram_rdata;
 
@@ -1455,13 +1436,6 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
     assign axi_interconnect.sintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
 
-    //-- Slave port 1 free to use. Moved LMEM to MCI
-    assign axi_interconnect.sintf_arr[1].AWREADY = 1'b1;
-    assign axi_interconnect.sintf_arr[1].WREADY  = 1'b1;
-    assign axi_interconnect.sintf_arr[1].BVALID  = 1'b0;
-    assign axi_interconnect.sintf_arr[1].ARREADY = 1'b1;
-    assign axi_interconnect.sintf_arr[1].RVALID  = 1'b0;
-
     mci_sram #(
         .DEPTH     (18'h3_FFFF), // 1M
         .DATA_WIDTH(39),
@@ -1583,6 +1557,57 @@ module caliptra_ss_top_tb
         .fuse_ctrl_rdy       (fuse_ctrl_rdy       )
     );
 
+    // --- I3C env and interface ---
+    ai3c_env i3c_env0;
+    wand  SCL;
+    wand  SDA;
+
+    // --- Avery I3C master ---
+    ai3c_device#(`AI3C_LANE_NUM) master0;
+    ai3c_intf#(`AI3C_LANE_NUM) master0_intf(SDA, SCL);
+
+    // // // --- Avery I3C slave ---
+    // ai3c_device#(`AI3C_LANE_NUM) slaves[$];
+    // ai3c_device#(`AI3C_LANE_NUM) slave;
+    // ai3c_intf#(`AI3C_LANE_NUM) slave_intf(i3c_sda_io, i3c_scl_io);
+
+    // --- AXI interface for I3C ---
+    logic i3c_axi_rd_is_upper_dw_latched; // FIXME
+    logic i3c_axi_wr_is_upper_dw_latched; // FIXME
+    logic [31:0] i3c_axi_rdata_32; // FIXME
+    logic [31:0] i3c_axi_wdata_32; // FIXME
+    logic [3:0]  i3c_axi_wstrb_4; // FIXME
+    wire sel_od_pp_o;
+
+    initial begin
+        // --- Avery I3C slave ---
+        // slave = new("slave", , AI3C_SLAVE, slave_intf);
+        // slave.log.enable_bus_tracker = 1;
+        // slave.cfg_info.basic_mode();
+        // slave.set("static_addr", 7'b010_0001);
+        // slaves.push_back(slave);
+        // i3c_env0.add_slave(slaves[0]);
+        // slaves[0].set("start_bfm");
+
+        // --- Avery I3C master ---
+        master0 = new("master0", , AI3C_MASTER, master0_intf);
+        master0.cfg_info.is_main_master = 1;
+        master0.log.enable_bus_tracker  = 1;
+        master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
+        master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
+
+        // --- I3C env ---
+        i3c_env0 = new("i3c_env0");
+        i3c_env0.add_master(master0);
+
+        // run test for i3C
+        if($test$plusargs("AVY_TEST")) begin
+            $display("Waiting for 100us before Running I3C test..");
+            #100us;  // system boot delay
+            master0.set("start_bfm");
+            ai3c_run_test("ai3ct_ext_basic", i3c_env0); 
+        end
+    end
 
 //instantiate caliptra ss top module
     caliptra_ss_top
@@ -1702,11 +1727,11 @@ module caliptra_ss_top_tb
         .mem_mailbox,
         `endif // VERILATOR
         // I3C Interface
-        `ifdef VERILATOR
-        .scl_i,
-        .sda_i,
-        .scl_o,
-        .sda_o,
+        `ifdef DIGITAL_IO_I3C
+        .scl_i(master0_intf.scl_and),
+        .sda_i(master0_intf.sda_and),
+        .scl_o(master0_intf.scl_and),
+        .sda_o(master0_intf.sda_and),
         .sel_od_pp_o
         `else
         .i3c_scl_io,

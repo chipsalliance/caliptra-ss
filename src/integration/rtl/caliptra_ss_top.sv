@@ -121,7 +121,7 @@ module caliptra_ss_top
     
     mci_mcu_sram_if.request mci_mbox1_sram_req_if,
 
-    css_mcu0_el2_mem_if.veer_sram_src css_mcu0_el2_mem_export,
+    css_mcu0_el2_mem_if css_mcu0_el2_mem_export,
 
     input logic Allow_RMA_on_PPD,
     input logic fake_reset,
@@ -140,13 +140,15 @@ module caliptra_ss_top
     output  wire                                 SOC_DFT_EN,
     output  wire                                 SOC_HW_DEBUG_EN,
 
+
+
     `ifdef VERILATOR
     input bit [31:0]            mem_signature_begin,
     input bit [31:0]            mem_signature_end,
     input bit [31:0]            mem_mailbox
     `endif // VERILATOR
     // I3C Interface
-`ifdef VERILATOR
+`ifdef DIGITAL_IO_I3C
     input  logic scl_i,
     input  logic sda_i,
     output logic scl_o,
@@ -451,8 +453,31 @@ module caliptra_ss_top
          logic [`CLP_OBF_FE_DWORDS-1 :0][31:0] cptra_obf_field_entropy;
          // --------------------------------------------------------------------
 
+//---------------------------I3C---------------------------------------
+         logic payload_available_o;
+         logic image_activated_o;
+
     // tie offs
      assign reset_vector = `css_mcu0_RV_RESET_VEC;
+
+     always_comb begin
+        mcu_lsu_m_axi_if.awuser                                              = 32'hFFFF_FFFF;
+        mcu_lsu_m_axi_if.aruser                                              = 32'hFFFF_FFFF;
+        mcu_lsu_m_axi_if.arid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0; //FIXME use non tb params
+        mcu_lsu_m_axi_if.awid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0; //FIXME use non tb params
+        mcu_lsu_m_axi_if.aruser[aaxi_pkg::AAXI_ARUSER_WIDTH-1:0]             = '1;
+        mcu_lsu_m_axi_if.awuser[aaxi_pkg::AAXI_AWUSER_WIDTH-1:0]             = '1;
+        mcu_lsu_m_axi_if.araddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        mcu_lsu_m_axi_if.awaddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        mcu_ifu_m_axi_if.arid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
+        mcu_ifu_m_axi_if.awid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
+        mcu_ifu_m_axi_if.araddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        mcu_ifu_m_axi_if.awaddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        mcu_dma_s_axi_if.rid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
+        mcu_dma_s_axi_if.bid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
+        mcu_dma_s_axi_if.araddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+        mcu_dma_s_axi_if.awaddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
+    end
 
     // Fuse controller output is re-organized to feed caliptra-core with its fuse values and valid signal.
      assign uds_field_entrpy_valid = (from_otp_to_clpt_core_broadcast.valid == lc_ctrl_pkg::On) ? 1'b1 : 1'b0;
@@ -515,8 +540,8 @@ module caliptra_ss_top
         .mailbox_flow_done(),
         .BootFSM_BrkPoint(BootFSM_BrkPoint),
 
-        .recovery_data_avail(1'b1/*TODO*/),
-        .recovery_image_activated(1'b0/*TODO*/),
+        .recovery_data_avail(payload_available_o),
+        .recovery_image_activated(image_activated_o),
 
         //SoC Interrupts
         .cptra_error_fatal    (cptra_error_fatal    ),
@@ -597,7 +622,7 @@ module caliptra_ss_top
 
         .lsu_axi_awvalid        (mcu_lsu_m_axi_if.awvalid),
         .lsu_axi_awready        (mcu_lsu_m_axi_if.awready),
-        .lsu_axi_awid           (mcu_lsu_m_axi_if.awid), 
+        .lsu_axi_awid           (mcu_lsu_m_axi_if.awid[pt.LSU_BUS_TAG-1:0]), 
         .lsu_axi_awaddr         (mcu_lsu_m_axi_if.awaddr[31:0]),
         .lsu_axi_awregion       (),//(mcu_lsu_m_axi_if.awregion),
         .lsu_axi_awlen          (mcu_lsu_m_axi_if.awlen),
@@ -644,7 +669,7 @@ module caliptra_ss_top
 
         .ifu_axi_awvalid        ( mcu_ifu_m_axi_if.awvalid ),
         .ifu_axi_awready        ( mcu_ifu_m_axi_if.awready ),
-        .ifu_axi_awid           ( mcu_ifu_m_axi_if.awid[pt.IFU_BUS_TAG-1:0]    ),
+        .ifu_axi_awid           ( mcu_ifu_m_axi_if.awid[pt.IFU_BUS_TAG-1:0]),
         .ifu_axi_awaddr         ( mcu_ifu_m_axi_if.awaddr[31:0]  ),
         .ifu_axi_awregion       (),//( mcu_ifu_m_axi_if.awregion),
         .ifu_axi_awlen          ( mcu_ifu_m_axi_if.awlen   ),
@@ -875,34 +900,14 @@ module caliptra_ss_top
     //=========================================================================-
 
     i3c_wrapper #(
-`ifdef I3C_USE_AHB
-        .AhbDataWidth(`AHB_DATA_WIDTH),
-        .AhbAddrWidth(`AHB_ADDR_WIDTH)
-`elsif I3C_USE_AXI
         .AxiDataWidth(`AXI_DATA_WIDTH),
         .AxiAddrWidth(`AXI_ADDR_WIDTH),
         .AxiUserWidth(`AXI_USER_WIDTH),
         .AxiIdWidth  (`AXI_ID_WIDTH  )
-`endif
     ) i3c (
         .clk_i (cptra_ss_clk),
         .rst_ni(cptra_ss_rst_b),
 
-`ifdef I3C_USE_AHB
-        .haddr_i    (i3c_haddr    ),
-        .hburst_i   (i3c_hburst   ),
-        .hprot_i    (i3c_hprot    ),
-        .hwdata_i   (i3c_hwdata   ),
-        .hsel_i     (i3c_hsel     ),
-        .hwstrb_i   (i3c_hwstrb   ),
-        .hwrite_i   (i3c_hwrite   ),
-        .hready_i   (i3c_hready   ),
-        .htrans_i   (i3c_htrans   ),
-        .hsize_i    (i3c_hsize    ),
-        .hresp_o    (i3c_hresp    ),
-        .hreadyout_o(i3c_hreadyout),
-        .hrdata_o   (i3c_hrdata   ),
-`elsif I3C_USE_AXI
         .arvalid_i  (i3c_s_axi_if.arvalid),
         .arready_o  (i3c_s_axi_if.arready),
         .arid_i     (i3c_s_axi_if.arid),
@@ -936,27 +941,23 @@ module caliptra_ss_top
         .bready_i   (i3c_s_axi_if.bready),
         .bresp_o    (i3c_s_axi_if.bresp),
         .bid_o      (i3c_s_axi_if.bid),
-`endif
-`ifdef VERILATOR
+`ifdef DIGITAL_IO_I3C
         .scl_i(scl_i),
         .sda_i(sda_i),
         .scl_o(scl_o),
         .sda_o(sda_o),
-        .sel_od_pp_o(sel_od_pp_o)
+        .sel_od_pp_o(sel_od_pp_o),
 `else
         .i3c_scl_io(i3c_scl_io),
         .i3c_sda_io(i3c_sda_io),
-
-    // Recovery interface signals
-    .recovery_payload_available_o(),
-    .recovery_image_activated_o(),
-
-    .peripheral_reset_o(),
-    .peripheral_reset_done_i(),
-    .escalated_reset_o()
+`endif
+        .recovery_payload_available_o(payload_available_o),
+        .recovery_image_activated_o(image_activated_o),
+        .peripheral_reset_o(),
+        .peripheral_reset_done_i(1'b1),
+        .escalated_reset_o()
 
     // TODO: Add interrupts
-`endif
     );
 
     //=========================================================================

@@ -27,7 +27,6 @@ targets:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/i3c_phy.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/i3c_io.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/csr/I3CCSR.sv
-      - $COMPILE_ROOT/../../third_party/i3c-core/src/interrupt.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/queues/read_queue.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/queues/write_queue.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/ahb_if.sv
