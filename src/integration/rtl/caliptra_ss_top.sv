@@ -599,10 +599,10 @@ module caliptra_ss_top
     //Interrupt connections
     always_comb begin
         ext_int = '0;
-        ext_int[`VEER_INTR_VEC_MCI -1]                 = mci_intr;
-        ext_int[`VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL -1] = mailbox_data_avail;
-        ext_int[`VEER_INTR_VEC_I3C -1]                 = 0;
-        ext_int[`VEER_INTR_VEC_FC  -1]                 = intr_otp_operation_done;
+        ext_int[`VEER_INTR_VEC_MCI]                 = mci_intr;
+        ext_int[`VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL] = mailbox_data_avail;
+        ext_int[`VEER_INTR_VEC_I3C]                 = 0;
+        ext_int[`VEER_INTR_VEC_FC]                  = intr_otp_operation_done;
         //ext_int = ext_int_tb; //drive from tb if needed
     end
 
