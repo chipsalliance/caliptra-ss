@@ -385,7 +385,7 @@ assign cif_resp_if.hold = sram_read_req;
 // This logic is just an aggregate of the error sources and will not check
 // for DV.
 assign cif_resp_if.error = exec_region_filter_error | 
-                           prot_region_filter_error;
+                           prot_region_filter_error |
                            sram_double_ecc_error;  
 
 // SRAM is single port and cannot handle reads and writes in the same clock cycle
