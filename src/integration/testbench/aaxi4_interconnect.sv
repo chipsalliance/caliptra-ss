@@ -18,6 +18,8 @@ TODO: slave 5 for I3C at 64'h2000_4000
 
 `timescale 1ps/1ps
 
+`include "soc_address_map_defines.svh"
+
 module aaxi4_interconnect(
     input logic		core_clk,	
     input logic      rst_l);
