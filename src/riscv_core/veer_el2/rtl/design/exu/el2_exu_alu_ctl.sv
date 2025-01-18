@@ -22,7 +22,10 @@ import css_mcu0_el2_pkg::*;
   (
    input  logic                  clk,                // Top level clock
    input  logic                  rst_l,              // Reset
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic                  scan_mode,          // Scan control
+   /*pragma coverage on*/
 
    input  logic                  flush_upper_x,      // Branch flush from previous cycle
    input  logic                  flush_lower_r,      // Master flush of entire pipeline
@@ -573,4 +576,4 @@ import css_mcu0_el2_pkg::*;
 
 
 
-endmodule // el2_exu_alu_ctl
+endmodule // css_mcu0_el2_exu_alu_ctl

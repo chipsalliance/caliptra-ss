@@ -11,6 +11,4 @@ addrmap soc {
 
     soc_ifc_reg soc_ifc_reg @ 0x3003_0000;
 
-
-
 };

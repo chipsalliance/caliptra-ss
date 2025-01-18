@@ -84,7 +84,12 @@ targets:
   rtl_lint:
     directories: []
     waiver_files:
-      - $MSFT_REPO_ROOT/src/riscv_core/veer_el2/config/rev1p0_lint/mcu_el2_veer_wrapper/sglint_waivers
+      - $MSFT_REPO_ROOT/src/riscv_core/veer_el2/config/design_lint/el2_veer_wrapper/sglint_waivers
+  tb:
+    directories:
+      - $COMPILE_ROOT/tb
+    files:
+      - $COMPILE_ROOT/tb/icache_macros.svh
 global:
   tool:
     vcs:

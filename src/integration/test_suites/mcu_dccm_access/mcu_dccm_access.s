@@ -1,4 +1,4 @@
-#define STDOUT 0xd0580000
+#define STDOUT 0x21000410
 
 // Code to execute
 .section .text

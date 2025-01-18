@@ -75,7 +75,10 @@ import css_mcu0_el2_pkg::*;
 
    output logic [1:0] [$clog2(pt.BTB_SIZE)-1:0]    ifu_bp_fa_index_f, // predicted branch index (fully associative option)
 
+   // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+   /*pragma coverage off*/
    input  logic       scan_mode
+   /*pragma coverage on*/
    );
 
 
@@ -894,5 +897,5 @@ countones[1:0] = {1'b0, valid[1]} +
                  {1'b0, valid[0]};
       end
    endfunction
-endmodule // el2_ifu_bp_ctl
+endmodule // css_mcu0_el2_ifu_bp_ctl
 

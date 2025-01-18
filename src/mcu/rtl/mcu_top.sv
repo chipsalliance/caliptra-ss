@@ -26,7 +26,6 @@ module mcu_top
     input logic [31:1] rst_vec,
     input logic        nmi_int,
     input logic [31:1] nmi_vec,
-    input logic [31:1] jtag_id,
 
 
     output logic [31:0] trace_rv_i_insn_ip,
@@ -284,11 +283,6 @@ module mcu_top
     input  logic        dbg_bus_clk_en,  // Clock ratio b/w cpu core clk & AHB master interface
     input  logic        dma_bus_clk_en,  // Clock ratio b/w cpu core clk & AHB slave interface
 
-    // all of these test inputs are brought to top-level; must be tied off based on usage by physical design (ie. icache or not, iccm or not, dccm or not)
-
-    input el2_ic_data_ext_in_pkt_t  [pt.ICACHE_NUM_WAYS-1:0][pt.ICACHE_BANKS_WAY-1:0] ic_data_ext_in_pkt,
-    input el2_ic_tag_ext_in_pkt_t [pt.ICACHE_NUM_WAYS-1:0] ic_tag_ext_in_pkt,
-
     input logic                      timer_int,
     input logic                      soft_int,
     input logic [pt.PIC_TOTAL_INT:1] extintsrc_req,
@@ -327,6 +321,25 @@ module mcu_top
     input logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_DATA_WIDTH-1:0] dccm_bank_dout,
     input logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-pt.DCCM_DATA_WIDTH-1:0] dccm_bank_ecc,
 
+    // ICache Export Interface
+    // ICache Data
+    output logic [pt.ICACHE_BANKS_WAY-1:0][pt.ICACHE_NUM_WAYS-1:0]                        ic_b_sb_wren,
+    output logic [pt.ICACHE_BANKS_WAY-1:0][(71*pt.ICACHE_NUM_WAYS)-1:0]                   ic_b_sb_bit_en_vec,
+    output logic [pt.ICACHE_BANKS_WAY-1:0][70:0]                                          ic_sb_wr_data,
+    output logic [pt.ICACHE_BANKS_WAY-1:0][pt.ICACHE_INDEX_HI : pt.ICACHE_DATA_INDEX_LO]  ic_rw_addr_bank_q,
+    output logic [pt.ICACHE_BANKS_WAY-1:0]                                                ic_bank_way_clken_final,
+    output logic [pt.ICACHE_NUM_WAYS-1:0][pt.ICACHE_BANKS_WAY-1:0]                        ic_bank_way_clken_final_up,
+    input logic [pt.ICACHE_BANKS_WAY-1:0][(71*pt.ICACHE_NUM_WAYS)-1:0]                    wb_packeddout_pre,
+    input logic [pt.ICACHE_NUM_WAYS-1:0][pt.ICACHE_BANKS_WAY-1:0][71-1:0]                 wb_dout_pre_up,
+    // ICache Tag
+    output logic [pt.ICACHE_NUM_WAYS-1:0]                ic_tag_clken_final,
+    output logic [pt.ICACHE_NUM_WAYS-1:0]                ic_tag_wren_q,
+    output logic [(26*pt.ICACHE_NUM_WAYS)-1 :0]           ic_tag_wren_biten_vec,
+    output logic [25:0]                                       ic_tag_wr_data,
+    output logic [pt.ICACHE_INDEX_HI: pt.ICACHE_TAG_INDEX_LO] ic_rw_addr_q,
+    input logic [pt.ICACHE_NUM_WAYS-1:0] [25:0]               ic_tag_data_raw_pre,
+    input logic [(26*pt.ICACHE_NUM_WAYS)-1 :0]           ic_tag_data_raw_packed_pre,
+
     // ICCM/DCCM ECC status
     output logic iccm_ecc_single_error,
     output logic iccm_ecc_double_error,
@@ -350,17 +363,21 @@ module mcu_top
     input logic scan_mode,  // To enable scan mode
     input logic mbist_mode,  // to enable mbist
 
+    input  logic        dmi_core_enable,
     // DMI port for uncore
     input  logic        dmi_uncore_enable,
     output logic        dmi_uncore_en,
     output logic        dmi_uncore_wr_en,
     output logic [ 6:0] dmi_uncore_addr,
     output logic [31:0] dmi_uncore_wdata,
-    input  logic [31:0] dmi_uncore_rdata
+    input  logic [31:0] dmi_uncore_rdata,
+
+    output logic        dmi_active
 );
 
   css_mcu0_el2_mem_if mem_export ();
   assign mem_clk                   = mem_export.clk;
+  // DCCM
   assign dccm_clken                = mem_export.dccm_clken;
   assign dccm_wren_bank            = mem_export.dccm_wren_bank;
   assign dccm_addr_bank            = mem_export.dccm_addr_bank;
@@ -368,6 +385,7 @@ module mcu_top
   assign dccm_wr_ecc_bank          = mem_export.dccm_wr_ecc_bank;
   assign mem_export.dccm_bank_dout = dccm_bank_dout;
   assign mem_export.dccm_bank_ecc  = dccm_bank_ecc;
+  // ICCM
   assign iccm_clken                = mem_export.iccm_clken;
   assign iccm_wren_bank            = mem_export.iccm_wren_bank;
   assign iccm_addr_bank            = mem_export.iccm_addr_bank;
@@ -375,11 +393,30 @@ module mcu_top
   assign iccm_bank_wr_ecc          = mem_export.iccm_bank_wr_ecc;
   assign mem_export.iccm_bank_dout = iccm_bank_dout;
   assign mem_export.iccm_bank_ecc  = iccm_bank_ecc;
+  // ICache Data
+  assign ic_b_sb_wren                 = mem_export.ic_b_sb_wren;
+  assign ic_b_sb_bit_en_vec           = mem_export.ic_b_sb_bit_en_vec;
+  assign ic_sb_wr_data                = mem_export.ic_sb_wr_data;
+  assign ic_rw_addr_bank_q            = mem_export.ic_rw_addr_bank_q;
+  assign ic_bank_way_clken_final      = mem_export.ic_bank_way_clken_final;
+  assign ic_bank_way_clken_final_up   = mem_export.ic_bank_way_clken_final_up;
+  assign mem_export.wb_packeddout_pre = wb_packeddout_pre;
+  assign mem_export.wb_dout_pre_up    = wb_dout_pre_up;
+  // ICache Data
+  assign ic_tag_clken_final                    = mem_export.ic_tag_clken_final;
+  assign ic_tag_wren_q                         = mem_export.ic_tag_wren_q;
+  assign ic_tag_wren_biten_vec                 = mem_export.ic_tag_wren_biten_vec;
+  assign ic_tag_wr_data                        = mem_export.ic_tag_wr_data;
+  assign ic_rw_addr_q                          = mem_export.ic_rw_addr_q;
+  assign mem_export.ic_tag_data_raw_packed_pre = ic_tag_data_raw_packed_pre;
+  assign mem_export.ic_tag_data_raw_pre        = ic_tag_data_raw_pre;
 
   css_mcu0_el2_veer_wrapper rvtop (
       .el2_mem_export(mem_export.veer_sram_src),
+      .el2_icache_export(mem_export.veer_icache_src),
+      .dmi_core_enable(dmi_core_enable),
+      .dmi_active(dmi_active),
       .*
   );
-
 
 endmodule

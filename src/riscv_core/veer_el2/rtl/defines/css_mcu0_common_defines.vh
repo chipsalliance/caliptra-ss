@@ -1,12 +1,12 @@
 // NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE
-// This is an automatically generated file by pateln on Tue Sep 24 15:32:41 PDT 2024
+// This is an automatically generated file by cwhitehead on Wed Jan 15 13:22:03 PST 2025
 //
-// cmd:    veer -target=default --iccm_region=0x4 -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x5 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=iccm_enable=0 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=iccm_offset=0x0 -set=iccm_size=128 -set=iccm_num_banks=4 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=0 -set=pic_2cycle=0 -set=pic_region=0x6 -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=31 -set=dma_buf_depth=5 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -fpga_optimize=0 -snapshot=default 
+// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x5 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0x4 -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=0 -set=pic_2cycle=0 -set=pic_region=0x6 -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x80000000 -fpga_optimize=0 -snapshot=20250115_mcu_2p0_tag 
 //
 `ifndef css_mcu0_RV_COMMON_DEFINES
 `define css_mcu0_RV_COMMON_DEFINES
 
-`define css_mcu0_RV_ROOT "/home/ws/caliptra/pateln/veer_el2_core_ws2_0924"
+`define css_mcu0_RV_ROOT ""
 `define css_mcu0_RV_BHT_ADDR_HI 9
 `define css_mcu0_RV_BHT_ADDR_LO 2
 `define css_mcu0_RV_BHT_ARRAY_DEPTH 256
@@ -62,6 +62,7 @@
 `define css_mcu0_RV_LSU_NUM_NBLOAD_WIDTH 2
 `define css_mcu0_RV_LSU_STBUF_DEPTH 4
 `define css_mcu0_RV_TIMER_LEGAL_EN 1
+`define css_mcu0_RV_USER_MODE 1
 `define css_mcu0_RV_DCCM_BANK_BITS 2
 `define css_mcu0_RV_DCCM_BITS 14
 `define css_mcu0_RV_DCCM_BYTE_WIDTH 4
@@ -152,23 +153,23 @@
 `define css_mcu0_RV_NUMIREGS 32
 `define css_mcu0_RV_PIC_BASE_ADDR 32'h60000000
 `define css_mcu0_RV_PIC_BITS 15
-`define css_mcu0_RV_PIC_INT_WORDS 1
-`define css_mcu0_RV_PIC_MEIE_COUNT 31
+`define css_mcu0_RV_PIC_INT_WORDS 8
+`define css_mcu0_RV_PIC_MEIE_COUNT 255
 `define css_mcu0_RV_PIC_MEIE_MASK 'h1
 `define css_mcu0_RV_PIC_MEIE_OFFSET 'h2000
-`define css_mcu0_RV_PIC_MEIGWCLR_COUNT 31
+`define css_mcu0_RV_PIC_MEIGWCLR_COUNT 255
 `define css_mcu0_RV_PIC_MEIGWCLR_MASK 'h0
 `define css_mcu0_RV_PIC_MEIGWCLR_OFFSET 'h5000
-`define css_mcu0_RV_PIC_MEIGWCTRL_COUNT 31
+`define css_mcu0_RV_PIC_MEIGWCTRL_COUNT 255
 `define css_mcu0_RV_PIC_MEIGWCTRL_MASK 'h3
 `define css_mcu0_RV_PIC_MEIGWCTRL_OFFSET 'h4000
-`define css_mcu0_RV_PIC_MEIP_COUNT 1
+`define css_mcu0_RV_PIC_MEIP_COUNT 8
 `define css_mcu0_RV_PIC_MEIP_MASK 'h0
 `define css_mcu0_RV_PIC_MEIP_OFFSET 'h1000
-`define css_mcu0_RV_PIC_MEIPL_COUNT 31
+`define css_mcu0_RV_PIC_MEIPL_COUNT 255
 `define css_mcu0_RV_PIC_MEIPL_MASK 'hf
 `define css_mcu0_RV_PIC_MEIPL_OFFSET 'h0000
-`define css_mcu0_RV_PIC_MEIPT_COUNT 31
+`define css_mcu0_RV_PIC_MEIPT_COUNT 255
 `define css_mcu0_RV_PIC_MEIPT_MASK 'h0
 `define css_mcu0_RV_PIC_MEIPT_OFFSET 'h3004
 `define css_mcu0_RV_PIC_MPICCFG_COUNT 1
@@ -177,8 +178,8 @@
 `define css_mcu0_RV_PIC_OFFSET 10'h0
 `define css_mcu0_RV_PIC_REGION 4'h6
 `define css_mcu0_RV_PIC_SIZE 32
-`define css_mcu0_RV_PIC_TOTAL_INT 31
-`define css_mcu0_RV_PIC_TOTAL_INT_PLUS1 32
+`define css_mcu0_RV_PIC_TOTAL_INT 255
+`define css_mcu0_RV_PIC_TOTAL_INT_PLUS1 256
 `define css_mcu0_RV_DATA_ACCESS_ADDR0 'h00000000
 `define css_mcu0_RV_DATA_ACCESS_ADDR1 'h00000000
 `define css_mcu0_RV_DATA_ACCESS_ADDR2 'h00000000
@@ -227,7 +228,8 @@
 `define css_mcu0_RV_INST_ACCESS_MASK5 'hffffffff
 `define css_mcu0_RV_INST_ACCESS_MASK6 'hffffffff
 `define css_mcu0_RV_INST_ACCESS_MASK7 'hffffffff
-`define css_mcu0_RV_PMP_ENTRIES 16
+`define css_mcu0_RV_PMP_ENTRIES 64
+`define css_mcu0_RV_SMEPMP 1
 `define css_mcu0_REGWIDTH 32
 `define css_mcu0_RV_RESET_VEC 'h80000000
 `define css_mcu0_RV_RET_STACK_SIZE 8

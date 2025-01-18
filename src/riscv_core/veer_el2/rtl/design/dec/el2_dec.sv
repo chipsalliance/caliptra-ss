@@ -47,10 +47,16 @@ module css_mcu0_el2_dec
     output logic dec_tlu_core_empty,
 
     input logic        rst_l,   // reset, active low
+    // rst_vec is supposed to be connected to a constant in the top level
+    /*pragma coverage off*/
     input logic [31:1] rst_vec, // reset vector, from core pins
+    /*pragma coverage on*/
 
     input logic        nmi_int,  // NMI pin
+    // nmi_vec is supposed to be connected to a constant in the top level
+    /*pragma coverage off*/
     input logic [31:1] nmi_vec,  // NMI vector, from pins
+    /*pragma coverage on*/
 
     input logic i_cpu_halt_req,  // Asynchronous Halt request to CPU
     input logic i_cpu_run_req,   // Asynchronous Restart request to CPU
@@ -60,7 +66,9 @@ module css_mcu0_el2_dec
     output logic o_cpu_run_ack,  // Run request ack
     output logic o_debug_mode_status,         // Core to the PMU that core is in debug mode. When core is in debug mode, the PMU should refrain from sendng a halt or run request
 
+    /*pragma coverage off*/
     input logic [31:4] core_id,  // CORE ID
+    /*pragma coverage on*/
 
     // external MPC halt/run interface
     input  logic mpc_debug_halt_req,  // Async halt request
@@ -289,7 +297,7 @@ module css_mcu0_el2_dec
     output el2_pmp_cfg_pkt_t        pmp_pmpcfg [pt.PMP_ENTRIES],
     output logic             [31:0] pmp_pmpaddr[pt.PMP_ENTRIES],
 
-`ifdef RV_USER_MODE
+`ifdef css_mcu0_RV_USER_MODE
 
     // Privilege mode
     output logic priv_mode,
@@ -320,7 +328,10 @@ module css_mcu0_el2_dec
     output logic dec_tlu_icm_clk_override,    // override ICCM clock domain gating
 
     output logic dec_tlu_i0_commit_cmt,  // committed i0 instruction
+    // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.
+    /*pragma coverage off*/
     input  logic scan_mode               // Flop scan mode control
+    /*pragma coverage on*/
 
 );
 
@@ -468,5 +479,5 @@ module css_mcu0_el2_dec
   // end trace
 
 
-endmodule  // el2_dec
+endmodule  // css_mcu0_el2_dec
 

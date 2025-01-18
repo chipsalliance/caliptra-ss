@@ -30,21 +30,18 @@ output              wr_en,
 output              rd_en,
 
 input   [31:0]      rd_data,
+/*pragma coverage off*/
 input   [1:0]       rd_status,
+/*pragma coverage on*/
 
 output  reg         dmi_reset,
 output  reg         dmi_hard_reset,
 
+/*pragma coverage off*/
 input   [2:0]       idle,
 input   [1:0]       dmi_stat,
-/*
---  revisionCode        : 4'h0;
---  manufacturersIdCode : 11'h45;
---  deviceIdCode        : 16'h0001;
---  order MSB .. LSB -> [4 bit version or revision] [16 bit part number] [11 bit manufacturer id] [value of 1'b1 in LSB]
-*/
-input   [31:1]      jtag_id,
 input   [3:0]       version
+/*pragma coverage on*/
 );
 
 localparam USER_DR_LENGTH = AWIDTH + 34;
@@ -67,7 +64,6 @@ wire pause_ir ;
 wire update_ir ;
 wire capture_ir;
 wire[1:0] dr_en;
-wire devid_sel;
 wire [5:0] abits;
 
 assign abits = AWIDTH[5:0];
@@ -143,7 +139,6 @@ always @ (negedge tck or negedge trst) begin
 end
 
 
-assign devid_sel  = ir == 5'b00001;
 assign dr_en[0]   = ir == 5'b10000;
 assign dr_en[1]   = ir == 5'b10001;
 
@@ -166,9 +161,7 @@ always_comb begin
     shift_dr:   begin
                     case(1)
                     dr_en[1]:   nsr = {tdi, sr[USER_DR_LENGTH-1:1]};
-
-                    dr_en[0],
-                    devid_sel:  nsr = {{USER_DR_LENGTH-32{1'b0}},tdi, sr[31:1]};
+                    dr_en[0]:   nsr = {{USER_DR_LENGTH-32{1'b0}},tdi, sr[31:1]};
                     default:    nsr = {{USER_DR_LENGTH-1{1'b0}},tdi}; // bypass
                     endcase
                 end
@@ -177,7 +170,6 @@ always_comb begin
                     case(1)
                     dr_en[0]:   nsr = {{USER_DR_LENGTH-15{1'b0}}, idle, dmi_stat, abits, version};
                     dr_en[1]:   nsr = {{AWIDTH{1'b0}}, rd_data, rd_status};
-                    devid_sel:  nsr = {{USER_DR_LENGTH-32{1'b0}}, jtag_id, 1'b1};
                     endcase
                 end
     shift_ir:   nsr = {{USER_DR_LENGTH-5{1'b0}},tdi, sr[4:1]};
