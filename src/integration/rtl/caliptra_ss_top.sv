@@ -443,11 +443,6 @@ module caliptra_ss_top
          logic [31:0] mci_mcu_nmi_vector;
          logic mci_mcu_timer_int;
 
-         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_arid_req;
-         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_arid_req_r [pt.LSU_BUS_TAG];
-         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_awid_req;
-         logic [pt.LSU_BUS_TAG-1:0] fixme_lsu_axi_awid_req_r [pt.LSU_BUS_TAG];
-
          // ----------------- FC to Caliptra-Core ports -----------------------
          otp_ctrl_part_pkg::otp_broadcast_t from_otp_to_clpt_core_broadcast; // This is a struct data type
          // broadcasted by fuse controller
