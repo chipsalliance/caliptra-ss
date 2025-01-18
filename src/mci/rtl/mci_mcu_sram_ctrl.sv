@@ -249,9 +249,9 @@ assign mcu_sram_write_req = mcu_sram_valid_req & cif_resp_if.req_data.write &   
 
 // Detects we need to do a RMW 
 assign mcu_sram_rmw_req   = mcu_sram_valid_req & cif_resp_if.req_data.write & (~(&cif_resp_if.req_data.wstrb));
-// Detects we are on the write phase of the RMW
-assign mcu_sram_rmw_read_req = mcu_sram_rmw_req & mcu_sram_req_second_cycle; 
-// Detects we are on the read phase of the RMW request a write if the data read back was valid.
+// Detects we are on the read phase of the RMW
+assign mcu_sram_rmw_read_req = mcu_sram_rmw_req & ~mcu_sram_req_second_cycle; 
+// Detects we are on the write phase of the RMW request a write if the data read back was valid.
 assign mcu_sram_rmw_write_req = mcu_sram_rmw_req & mcu_sram_req_second_cycle & ~sram_double_ecc_error; 
 
 // Transactions to SRAM can only be 1 clock cycle or 2. 2 clock cycles are needed for:
