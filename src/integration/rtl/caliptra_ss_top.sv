@@ -169,7 +169,6 @@ module caliptra_ss_top
     logic                       soft_int;
 
     logic        [31:0]         reset_vector;
-    logic        [31:1]         jtag_id;
 
 
     logic                       o_debug_mode_status;
@@ -597,14 +596,13 @@ module caliptra_ss_top
         .rst_vec                ( reset_vector[31:1]),
         .nmi_int                ( mci_mcu_nmi_int),
         .nmi_vec                ( mci_mcu_nmi_vector[31:1]),
-        .jtag_id                ( jtag_id[31:1]),
 
         //-------------------------- LSU AXI signals--------------------------
         // // AXI Write Channels
 
         .lsu_axi_awvalid        (mcu_lsu_m_axi_if.awvalid),
         .lsu_axi_awready        (mcu_lsu_m_axi_if.awready),
-        .lsu_axi_awid           (fixme_lsu_axi_awid_req), /*FIXME*/
+        .lsu_axi_awid           (mcu_lsu_m_axi_if.awid), 
         .lsu_axi_awaddr         (mcu_lsu_m_axi_if.awaddr[31:0]),
         .lsu_axi_awregion       (),//(mcu_lsu_m_axi_if.awregion),
         .lsu_axi_awlen          (mcu_lsu_m_axi_if.awlen),
@@ -624,11 +622,11 @@ module caliptra_ss_top
         .lsu_axi_bvalid         (mcu_lsu_m_axi_if.bvalid),
         .lsu_axi_bready         (mcu_lsu_m_axi_if.bready),
         .lsu_axi_bresp          (mcu_lsu_m_axi_if.bresp),
-        .lsu_axi_bid            (fixme_lsu_axi_awid_req_r[0]/*mcu_lsu_m_axi_if.bid[pt.LSU_BUS_TAG-1:0]*/), /*FIXME*/
+        .lsu_axi_bid            (mcu_lsu_m_axi_if.bid[pt.LSU_BUS_TAG-1:0]),
 
         .lsu_axi_arvalid        (mcu_lsu_m_axi_if.arvalid),
         .lsu_axi_arready        (mcu_lsu_m_axi_if.arready),
-        .lsu_axi_arid           (fixme_lsu_axi_arid_req), /*FIXME*/
+        .lsu_axi_arid           (mcu_lsu_m_axi_if.arid[pt.LSU_BUS_TAG-1:0]),
         .lsu_axi_araddr         (mcu_lsu_m_axi_if.araddr[31:0]),
         .lsu_axi_arregion       (),//(mcu_lsu_m_axi_if.arregion),
         .lsu_axi_arlen          (mcu_lsu_m_axi_if.arlen),
@@ -641,7 +639,7 @@ module caliptra_ss_top
 
         .lsu_axi_rvalid         (mcu_lsu_m_axi_if.rvalid),
         .lsu_axi_rready         (mcu_lsu_m_axi_if.rready),
-        .lsu_axi_rid            (fixme_lsu_axi_arid_req_r[0]/*mcu_lsu_m_axi_if.rid[pt.LSU_BUS_TAG-1:0]*/), /*FIXME*/
+        .lsu_axi_rid            (mcu_lsu_m_axi_if.rid[pt.LSU_BUS_TAG-1:0]),
         .lsu_axi_rdata          (mcu_lsu_m_axi_if.rdata),
         .lsu_axi_rresp          (mcu_lsu_m_axi_if.rresp),
         .lsu_axi_rlast          (mcu_lsu_m_axi_if.rlast),
@@ -838,130 +836,48 @@ module caliptra_ss_top
         .dccm_bank_dout         (css_mcu0_el2_mem_export.dccm_bank_dout),
         .dccm_bank_ecc          (css_mcu0_el2_mem_export.dccm_bank_ecc),
 
+        // ICache Export Interface
+        // ICache Data
+        .ic_b_sb_wren              (css_mcu0_el2_mem_export.ic_b_sb_wren              ),
+        .ic_b_sb_bit_en_vec        (css_mcu0_el2_mem_export.ic_b_sb_bit_en_vec        ),
+        .ic_sb_wr_data             (css_mcu0_el2_mem_export.ic_sb_wr_data             ),
+        .ic_rw_addr_bank_q         (css_mcu0_el2_mem_export.ic_rw_addr_bank_q         ),
+        .ic_bank_way_clken_final   (css_mcu0_el2_mem_export.ic_bank_way_clken_final   ),
+        .ic_bank_way_clken_final_up(css_mcu0_el2_mem_export.ic_bank_way_clken_final_up),
+        .wb_packeddout_pre         (css_mcu0_el2_mem_export.wb_packeddout_pre         ),
+        .wb_dout_pre_up            (css_mcu0_el2_mem_export.wb_dout_pre_up            ),
+        // ICache Tag
+        .ic_tag_clken_final        (css_mcu0_el2_mem_export.ic_tag_clken_final        ),
+        .ic_tag_wren_q             (css_mcu0_el2_mem_export.ic_tag_wren_q             ),
+        .ic_tag_wren_biten_vec     (css_mcu0_el2_mem_export.ic_tag_wren_biten_vec     ),
+        .ic_tag_wr_data            (css_mcu0_el2_mem_export.ic_tag_wr_data            ),
+        .ic_rw_addr_q              (css_mcu0_el2_mem_export.ic_rw_addr_q              ),
+        .ic_tag_data_raw_pre       (css_mcu0_el2_mem_export.ic_tag_data_raw_pre       ),
+        .ic_tag_data_raw_packed_pre(css_mcu0_el2_mem_export.ic_tag_data_raw_packed_pre),
+
         .iccm_ecc_single_error  (),
         .iccm_ecc_double_error  (),
         .dccm_ecc_single_error  (),
         .dccm_ecc_double_error  (),
 
-    // remove mems DFT pins for opensource
-        .ic_data_ext_in_pkt     ('0),
-        .ic_tag_ext_in_pkt      ('0),
-
         .core_id                ('0),
         .scan_mode              ( 1'b0 ),         // To enable scan mode
         .mbist_mode             ( 1'b0 ),        // to enable mbist
 
+        .dmi_core_enable        (),
         .dmi_uncore_enable      (),
         .dmi_uncore_en          (),
         .dmi_uncore_wr_en       (),
         .dmi_uncore_addr        (),
         .dmi_uncore_wdata       (),
-        .dmi_uncore_rdata       ()
+        .dmi_uncore_rdata       (),
+        .dmi_active             ()
 
     );
-
-    // FIXME This hacky FIFO is to ensure the same AXI id is used throughout a mailbox transfer.
-    //       We need an ability to deterministically use the same AXI id from the VeeR executable
-    int ar_count;
-    int aw_count;
-    bit ar_hshake;
-    bit r_hshake;
-    bit aw_hshake;
-    bit b_hshake;
-    int r_ii, w_ii;
-    always_comb begin
-        ar_hshake = mcu_lsu_m_axi_if.arvalid && mcu_lsu_m_axi_if.arready;
-        r_hshake  = mcu_lsu_m_axi_if.rvalid && mcu_lsu_m_axi_if.rready;
-        aw_hshake = mcu_lsu_m_axi_if.awvalid && mcu_lsu_m_axi_if.awready;
-        b_hshake  = mcu_lsu_m_axi_if.bvalid && mcu_lsu_m_axi_if.bready;
-    end
-    always@(posedge cptra_ss_clk or negedge cptra_ss_rst_b) begin
-        if (!cptra_ss_rst_b) begin
-            fixme_lsu_axi_arid_req_r <= '{default:0};
-            fixme_lsu_axi_awid_req_r <= '{default:0};
-            ar_count <= 0;
-            aw_count <= 0;
-        end
-        else begin
-            case ({ar_hshake,r_hshake}) inside
-                2'b00: begin
-                    fixme_lsu_axi_arid_req_r <= fixme_lsu_axi_arid_req_r;
-                    ar_count <= ar_count;
-                end
-                2'b01: begin
-                    `CALIPTRA_ASSERT(FIXME_R, ar_count > 0, core_clk, !cptra_ss_rst_b)
-                    for (r_ii = 0; r_ii < pt.LSU_BUS_TAG-1; r_ii++) begin
-                        if (r_ii < ar_count-1)       fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req_r[r_ii+1]; // Shift down
-                        else if (r_ii >= ar_count-1) fixme_lsu_axi_arid_req_r[r_ii] <= '0;
-                    end
-                    if (ar_count == pt.LSU_BUS_TAG) fixme_lsu_axi_arid_req_r[pt.LSU_BUS_TAG-1] <= '0;
-                    ar_count <= ar_count - 1;
-                end
-                2'b10: begin
-                    for (r_ii = 0; r_ii < pt.LSU_BUS_TAG-1; r_ii++) begin
-                        if (r_ii < ar_count)       fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req_r[r_ii];
-                        else if (r_ii == ar_count) fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req;
-                        else if (r_ii > ar_count)  fixme_lsu_axi_arid_req_r[r_ii] <= '0;
-                    end
-                    if (ar_count == pt.LSU_BUS_TAG-1) fixme_lsu_axi_arid_req_r[pt.LSU_BUS_TAG-1] <= fixme_lsu_axi_arid_req;
-                    ar_count <= ar_count + 1;
-                end
-                2'b11: begin
-                    `CALIPTRA_ASSERT(FIXME_AR, ar_count > 0, core_clk, !cptra_ss_rst_b)
-                    for (r_ii = 0; r_ii < pt.LSU_BUS_TAG-1; r_ii++) begin
-                        if (r_ii < ar_count-1)       fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req_r[r_ii+1]; // Shift down
-                        else if (r_ii == ar_count-1) fixme_lsu_axi_arid_req_r[r_ii] <= fixme_lsu_axi_arid_req;
-                        else if (r_ii >= ar_count)   fixme_lsu_axi_arid_req_r[r_ii] <= '0;
-                    end
-                    if (ar_count == pt.LSU_BUS_TAG) fixme_lsu_axi_arid_req_r[pt.LSU_BUS_TAG-1] <= fixme_lsu_axi_arid_req;
-                    ar_count <= ar_count;
-                end
-            endcase
-            case ({aw_hshake,b_hshake}) inside
-                2'b00: begin
-                    fixme_lsu_axi_awid_req_r <= fixme_lsu_axi_awid_req_r;
-                    aw_count <= aw_count;
-                end
-                2'b01: begin
-                    `CALIPTRA_ASSERT(FIXME_B, aw_count > 0, core_clk, !cptra_ss_rst_b)
-                    for (w_ii = 0; w_ii < pt.LSU_BUS_TAG-1; w_ii++) begin
-                        if (w_ii < aw_count-1)       fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req_r[w_ii+1]; // Shift down
-                        else if (w_ii >= aw_count-1) fixme_lsu_axi_awid_req_r[w_ii] <= '0;
-                    end
-                    if (aw_count == pt.LSU_BUS_TAG) fixme_lsu_axi_awid_req_r[pt.LSU_BUS_TAG-1] <= '0;
-                    aw_count <= aw_count - 1;
-                end
-                2'b10: begin
-                    for (w_ii = 0; w_ii < pt.LSU_BUS_TAG-1; w_ii++) begin
-                        if (w_ii < aw_count)       fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req_r[w_ii];
-                        else if (w_ii == aw_count) fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req;
-                        else if (w_ii > aw_count)  fixme_lsu_axi_awid_req_r[w_ii] <= '0;
-                    end
-                    if (aw_count == pt.LSU_BUS_TAG-1) fixme_lsu_axi_awid_req_r[pt.LSU_BUS_TAG-1] <= fixme_lsu_axi_awid_req;
-                    aw_count <= aw_count + 1;
-                end
-                2'b11: begin
-                    `CALIPTRA_ASSERT(FIXME_aw, aw_count > 0, core_clk, !cptra_ss_rst_b)
-                    for (w_ii = 0; w_ii < pt.LSU_BUS_TAG-1; w_ii++) begin
-                        if (w_ii < aw_count-1)       fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req_r[w_ii+1]; // Shift down
-                        else if (w_ii == aw_count-1) fixme_lsu_axi_awid_req_r[w_ii] <= fixme_lsu_axi_awid_req;
-                        else if (w_ii >= aw_count)   fixme_lsu_axi_awid_req_r[w_ii] <= '0;
-                    end
-                    if (aw_count == pt.LSU_BUS_TAG) fixme_lsu_axi_awid_req_r[pt.LSU_BUS_TAG-1] <= fixme_lsu_axi_awid_req;
-                    aw_count <= aw_count;
-                end
-            endcase
-        end
-    end
 
     //=========================================================================-
     // I3C-Core Instance
     //=========================================================================-
-    logic i3c_axi_rd_is_upper_dw_latched; // FIXME
-    logic i3c_axi_wr_is_upper_dw_latched; // FIXME
-    logic [31:0] i3c_axi_rdata_32; // FIXME
-    logic [31:0] i3c_axi_wdata_32; // FIXME
-    logic [3:0]  i3c_axi_wstrb_4; // FIXME
 
     i3c_wrapper #(
 `ifdef I3C_USE_AHB
@@ -1004,7 +920,7 @@ module caliptra_ss_top
         .rvalid_o   (i3c_s_axi_if.rvalid),
         .rready_i   (i3c_s_axi_if.rready),
         .rid_o      (i3c_s_axi_if.rid),
-        .rdata_o    (i3c_axi_rdata_32),
+        .rdata_o    (i3c_s_axi_if.rdata),
         .rresp_o    (i3c_s_axi_if.rresp),
         .rlast_o    (i3c_s_axi_if.rlast),
         .awvalid_i  (i3c_s_axi_if.awvalid),
@@ -1018,8 +934,8 @@ module caliptra_ss_top
         .awlock_i   (i3c_s_axi_if.awlock[0]),
         .wvalid_i   (i3c_s_axi_if.wvalid),
         .wready_o   (i3c_s_axi_if.wready),
-        .wdata_i    (i3c_axi_wdata_32),
-        .wstrb_i    (i3c_axi_wstrb_4),
+        .wdata_i    (i3c_s_axi_if.wdata),
+        .wstrb_i    (i3c_s_axi_if.wstrb),
         .wlast_i    (i3c_s_axi_if.wlast),
         .bvalid_o   (i3c_s_axi_if.bvalid),
         .bready_i   (i3c_s_axi_if.bready),

@@ -1332,11 +1332,11 @@ module caliptra_ss_top_tb
     ) jtagdpi (
         .clk_i          (core_clk),
         .rst_ni         (cptra_rst_b),
-        .jtag_tck       (cptra_jtag_tck),
-        .jtag_tms       (cptra_jtag_tms),
-        .jtag_tdi       (cptra_jtag_tdi),
-        .jtag_tdo       (cptra_jtag_tdo),
-        .jtag_trst_n    (cptra_jtag_trst_n),
+        .jtag_tck       (cptra_core_jtag_tck),
+        .jtag_tms       (cptra_core_jtag_tms),
+        .jtag_tdi       (cptra_core_jtag_tdi),
+        .jtag_tdo       (cptra_core_jtag_tdo),
+        .jtag_trst_n    (cptra_core_jtag_trst_n),
         .jtag_srst_n    ()
     );
 
@@ -2951,3 +2951,8 @@ end // block: PACKED_1
 /* verilator lint_on CASEINCOMPLETE */
 
 endmodule
+
+// --- Avery I3C Test Case Bench ---
+// This is the top level module for the Avery I3C test case bench.
+// it triggers i3c test cases.
+`include "ai3c_tests_bench.sv"
