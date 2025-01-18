@@ -372,7 +372,7 @@ module caliptra_ss_top_tb
 
     logic pwr_otp_init_i;
     logic Allow_RMA_on_PPD;
-    logic fake_reset;
+    logic lcc_bfm_reset;
 //    //-------------------------- I3C AXI signals--------------------------
 //    // AXI Write Channels
 //        wire                             i3c_axi_awvalid;
@@ -1461,7 +1461,6 @@ module caliptra_ss_top_tb
    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_seed_hw_rd_en_tb;
    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_escalate_en_tb;
    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_check_byp_en_tb;
-   logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] otp_lc_data_tb;
    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_clk_byp_ack_tb;
    assign lc_otp_vendor_test_o_tb = otp_ctrl_pkg::lc_otp_vendor_test_req_t'(caliptra_ss_dut.u_lc_ctrl.lc_otp_vendor_test_o);
    assign lc_otp_vendor_test_i_tb = otp_ctrl_pkg::lc_otp_vendor_test_rsp_t'(caliptra_ss_dut.u_otp_ctrl.lc_otp_vendor_test_o);
@@ -1493,7 +1492,7 @@ module caliptra_ss_top_tb
    logic [3:0]  to_bfm_lc_flash_rma_req_o;
    assign to_bfm_lc_flash_rma_req_o = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_flash_rma_req_o);
 
-   logic [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o;
+
 
    logic esc_scrap_state0;
    logic esc_scrap_state1;
@@ -1503,6 +1502,14 @@ module caliptra_ss_top_tb
    logic [$bits(caliptra_prim_mubi_pkg::mubi4_t)-1:0] lc_ctrl_scanmode_i_tb;
    assign lc_ctrl_scanmode_i_tb = caliptra_prim_mubi_pkg::mubi4_t'(u_lc_ctrl_bfm.lc_ctrl_scanmode_i);
 
+
+
+   logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_otp_to_lcc_bfm_data_override;
+   logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_lcc_bfm_to_lcc_data_override;
+    lc_ctrl_pkg::lc_tx_t SOC_lc_clk_byp_ack;
+    lc_ctrl_pkg::lc_tx_t SOC_lc_clk_byp_req;
+
+
     lc_ctrl_bfm u_lc_ctrl_bfm (
         .clk(core_clk),
         .reset_n(rst_l),
@@ -1510,7 +1517,7 @@ module caliptra_ss_top_tb
 
         .lc_axi_rd_req(lc_axi_rd_req),
         .lc_axi_rd_rsp(lc_axi_rd_rsp),
-        .fake_reset(fake_reset),
+        .fake_reset(lcc_bfm_reset),
         .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
 
 
@@ -1519,7 +1526,7 @@ module caliptra_ss_top_tb
         .lc_ctrl_scanmode_i(),
 
         // Alert Handler Interface
-        .lc_alerts_o(lc_alerts_o),
+        .lc_alerts_o('0),
 
         // Escalation State Interface
         .esc_scrap_state0(esc_scrap_state0),
@@ -1527,8 +1534,8 @@ module caliptra_ss_top_tb
 
 
         // OTP hack
-        .otp_lc_data_o(otp_lc_data_tb),
-        .from_otp_lc_data_i(from_otp_to_lcc_program_i),
+        .otp_lc_data_o(from_lcc_bfm_to_lcc_data_override),
+        .from_otp_lc_data_i(from_otp_to_lcc_bfm_data_override),
 
         // Power manager interface
         .pwr_lc_i(),
@@ -1536,8 +1543,8 @@ module caliptra_ss_top_tb
         .cptra_pwrgood(cptra_pwrgood),
 
         // Clock manager interface
-        .lc_clk_byp_req_o(lc_ctrl_pkg::lc_tx_t'(lc_clk_byp_req_tb)),
-        .lc_clk_byp_ack_i()
+        .lc_clk_byp_req_o(SOC_lc_clk_byp_req),
+        .lc_clk_byp_ack_i(SOC_lc_clk_byp_ack)
     );
 
     //--------------------------------------------------------------------------------------------
@@ -1553,7 +1560,7 @@ module caliptra_ss_top_tb
         .lc_dft_en_i         (),
         .lc_escalate_en_i    (),
         .lc_check_byp_en_i   (),
-        .otp_lc_data_o (otp_ctrl_pkg::otp_lc_data_t'(otp_lc_data_tb)),
+        .otp_lc_data_o (otp_ctrl_pkg::otp_lc_data_t'(from_otp_to_lcc_bfm_data_override)),
         .fuse_ctrl_rdy       (fuse_ctrl_rdy       )
     );
 
@@ -1705,21 +1712,25 @@ module caliptra_ss_top_tb
         .css_mcu0_el2_mem_export,
     
         .Allow_RMA_on_PPD,
-        .fake_reset,
+
+`ifdef LCC_FC_BFM_SIM
+        .lcc_bfm_reset,
+        .from_otp_to_lcc_bfm_data_override(from_otp_to_lcc_bfm_data_override),
+        .from_lcc_bfm_to_lcc_data_override(from_lcc_bfm_to_lcc_data_override),
+`endif 
     
-        .lc_ctrl_scan_rst_ni(lc_ctrl_scan_rst_ni_tb),
-        .lc_ctrl_scanmode_i(lc_ctrl_scanmode_i_tb),
     
-    
-        .otp_lc_data(otp_lc_data_tb),
-        .lc_clk_byp_ack(lc_clk_byp_ack_tb),
-        .lc_alerts_o,
+        .SOC_lc_clk_byp_ack(SOC_lc_clk_byp_ack),
+        .SOC_lc_clk_byp_req(SOC_lc_clk_byp_req),
     
         .esc_scrap_state0,
         .esc_scrap_state1,
     
         .SOC_DFT_EN,
         .SOC_HW_DEBUG_EN,
+
+        .fuse_macro_prim_tl_i('0),
+        .fuse_macro_prim_tl_o(),
     
         `ifdef VERILATOR
         .mem_signature_begin,

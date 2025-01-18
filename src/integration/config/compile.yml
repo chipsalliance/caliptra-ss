@@ -82,6 +82,7 @@ global:
         - +define+MCU_RV_OPENSOURCE
         - +define+AVERY_VCS
         - +define+AVERY_CLOCK=5
+        - +define+LCC_FC_BFM_SIM=1 # this is a defined to enable LCC BFM reset to be driven to LCC and FC
         - +define+FOUR_OUTSTANDING
         - +define+AVERY_AXI_INTERCONNECT
         - +define+AAXI_MAX_DATA_WIDTH=64
