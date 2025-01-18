@@ -30,6 +30,7 @@
 //      The lower address is mapped to the exec region. Upper address range is mapped
 //      to prot region. If fw_sram_exec_region_size is larger than the actual SRAM size 
 //      the entire SRAM is considered exec region and there is no prot region
+`include "caliptra_sva.svh"
 
 
 module mci_mcu_sram_ctrl 
@@ -114,18 +115,23 @@ logic prot_region_filter_error;
 
 
 
-// SRAM Read/Write request and phase signals
+// SRAM Read/Write request signals
 logic mcu_sram_valid_req;
 logic mcu_sram_read_req;
 logic mcu_sram_write_req;
-logic sram_req_phase;
-logic sram_read_req_phase;
-logic sram_write_req_phase;
-logic sram_read_data_phase;
+logic mcu_sram_rmw_req;
+logic mcu_sram_rmw_read_req; 
+logic mcu_sram_rmw_write_req; 
+logic sram_req;
+logic sram_read_req;
+logic sram_write_req;
+logic sram_read_data_avail;
+logic mcu_sram_req_second_cycle;
 
 // SRAM read/ecc
 logic sram_rd_ecc_en;
 logic [MCU_SRAM_DATA_W-1:0] sram_rdata;
+logic [MCU_SRAM_DATA_W-1:0] sram_rmw_wdata;
 logic [MCU_SRAM_DATA_W-1:0] sram_rdata_cor;
 logic [MCU_SRAM_ECC_DATA_W-1:0] sram_rdata_ecc;
 
@@ -236,45 +242,61 @@ end
 // and the request needs to be sent to the SRAM
 assign mcu_sram_valid_req = exec_region_filter_success | prot_region_filter_success;
 
-// Detecting read vs write requests
+// Detecting read, write , vs byte write (rmw) requests
 assign mcu_sram_read_req  = mcu_sram_valid_req & (~cif_resp_if.req_data.write);
-assign mcu_sram_write_req = mcu_sram_valid_req & cif_resp_if.req_data.write;
 
+assign mcu_sram_write_req = mcu_sram_valid_req & cif_resp_if.req_data.write &   (&cif_resp_if.req_data.wstrb);;
 
-// Reading the sram takes 2 clock cycles and write request only take
-// 1 clock cycles
-// 1 - req_phase: Request sent to SRAM to read an address
-// 2 - data_phase: Data is read back from the SRAM. Not needed for write requests
-assign sram_req_phase = mcu_sram_valid_req  & ~sram_read_data_phase; 
+// Detects we need to do a RMW 
+assign mcu_sram_rmw_req   = mcu_sram_valid_req & cif_resp_if.req_data.write & (~(&cif_resp_if.req_data.wstrb));
+// Detects we are on the write phase of the RMW
+assign mcu_sram_rmw_read_req = mcu_sram_rmw_req & mcu_sram_req_second_cycle; 
+// Detects we are on the read phase of the RMW request a write if the data read back was valid.
+assign mcu_sram_rmw_write_req = mcu_sram_rmw_req & mcu_sram_req_second_cycle & ~sram_double_ecc_error; 
 
-assign sram_write_req_phase = sram_req_phase & mcu_sram_write_req;
-assign sram_read_req_phase  = sram_req_phase & mcu_sram_read_req;
-
+// Transactions to SRAM can only be 1 clock cycle or 2. 2 clock cycles are needed for:
+//  1: Read req
+//  2: RMW req 
+// Since it takes 1 clock cycles to read the data
 always_ff @(posedge clk or negedge rst_b) begin
     if(!rst_b) begin
-        sram_read_data_phase <= '0;
+        mcu_sram_req_second_cycle <= '0;
     end
     else begin
-        sram_read_data_phase <= (sram_req_phase & mcu_sram_read_req);
+        mcu_sram_req_second_cycle <= (mcu_sram_read_req | mcu_sram_rmw_req) & ~mcu_sram_req_second_cycle;
     end
 
 end
+
+
+// At this point we are translating the MCU SRAM requests into actual SRAM requests for the SRAM interface
+// MCU SRAM read and write only have 1 request.
+// MCU SRAM RMW have 2 requests
+assign sram_req = ((mcu_sram_read_req | mcu_sram_write_req) & ~mcu_sram_req_second_cycle)  | (mcu_sram_rmw_req);
+
+assign sram_write_req = sram_req & (mcu_sram_write_req | mcu_sram_rmw_write_req);
+assign sram_read_req  = sram_req & (mcu_sram_read_req  | mcu_sram_rmw_read_req);
+
+
+// Assumption is that in order for there to be a second cycle 
+// there must have been a read to the SRAM.
+assign sram_read_data_avail = mcu_sram_req_second_cycle;
 
 
 //////////
 // General Read/Write SRAM controls
 //////////
 
-// All these signals should only be asserted during the sram_req_phase
+// All these signals should only be asserted during sram_req
 // otherwise when we do reads that require 2 clock cycles we will
 // trigger a second read to the SRAM.
 
-// Either read or write we need to pass the address to the memory interface.
+// All Txs we need to pass the address to the memory interface.
 // Must shift the address to account for sram being more than 1 byte wide 
-assign mci_mcu_sram_req_if.req.addr = sram_req_phase ? cif_resp_if.req_data.addr [MCU_SRAM_CIF_ADDR_W-1:2] : '0;
+assign mci_mcu_sram_req_if.req.addr = sram_req ? cif_resp_if.req_data.addr [MCU_SRAM_CIF_ADDR_W-1:2] : '0;
 
 // All requests assert CS
-assign mci_mcu_sram_req_if.req.cs = sram_req_phase;
+assign mci_mcu_sram_req_if.req.cs = sram_req;
 
 
 //////////
@@ -282,10 +304,29 @@ assign mci_mcu_sram_req_if.req.cs = sram_req_phase;
 //////////
 
 // Only toggle WE if write request
-assign mci_mcu_sram_req_if.req.we    = sram_write_req_phase; 
+assign mci_mcu_sram_req_if.req.we    = sram_write_req; 
+
+// RMW data
+genvar i;
+generate 
+    for(i=0; i < $bits(cif_resp_if.req_data.wstrb); i = i + 1) begin : gen_rmw_data_mask
+        assign sram_rmw_wdata[i*8 +: 8] = cif_resp_if.req_data.wstrb[i] ? cif_resp_if.req_data.wdata[i*8 +: 8] : sram_rdata_cor[i*8 +: 8];
+    end
+endgenerate
 
 // Only passing write data to SRAM if write request.
-assign mci_mcu_sram_req_if.req.wdata.data = sram_write_req_phase ? cif_resp_if.req_data.wdata : '0;
+always_comb begin
+    mci_mcu_sram_req_if.req.wdata.data = '0;
+    if(sram_write_req) begin
+
+        if(mcu_sram_rmw_req) begin
+            mci_mcu_sram_req_if.req.wdata.data = sram_rmw_wdata;
+        end
+        else begin
+            mci_mcu_sram_req_if.req.wdata.data = cif_resp_if.req_data.wdata;
+        end
+    end
+end
 
 // From RISC-V core beh_lib.sv
 // 32-bit data width hardcoded
@@ -300,7 +341,7 @@ rvecc_encode ecc_encode (
 // Read SRAM controls
 //////////
 
-assign sram_rd_ecc_en = sram_read_req_phase;
+assign sram_rd_ecc_en = sram_read_data_avail;
 
 assign sram_rdata = mci_mcu_sram_req_if.resp.rdata.data;
 assign sram_rdata_ecc = mci_mcu_sram_req_if.resp.rdata.ecc;
@@ -316,10 +357,12 @@ rvecc_decode ecc_decode (
     .double_ecc_error(sram_double_ecc_error)  // TODO use to flag command error
 );
 
-// Only send data back if we are in the sram_read_data_phase. Assumptions made:
-// 1. We will only have sram_read_data_phase if a privileged agent is doing the read
+// Only send data back if sram_read_data_avail and the request to mcu_ream was
+// a read. There are reads to the SRAM when we get a RMW command meaning not all strb bits are set. 
+// Assumptions made:
+// 1. We will only have sram_read_data_avail if a privileged agent is doing the read
 // 2. If an ECC error is detected it is OK to send garbage data back.
-assign cif_resp_if.rdata = sram_read_data_phase ?  sram_rdata_cor : '0;
+assign cif_resp_if.rdata = (sram_read_data_avail & mcu_sram_read_req) ?  sram_rdata_cor : '0;
 
 ///////////////////////////////////////////////
 // Hold response 
@@ -330,7 +373,7 @@ assign cif_resp_if.rdata = sram_read_data_phase ?  sram_rdata_cor : '0;
 // the protection filtering and is sent to the SRAM. 
 // We wait 1 clock cycle and then read data is back
 // from the sram
-assign cif_resp_if.hold = sram_read_req_phase; 
+assign cif_resp_if.hold = sram_read_req; 
 
 
 ///////////////////////////////////////////////
@@ -342,9 +385,18 @@ assign cif_resp_if.hold = sram_read_req_phase;
 // This logic is just an aggregate of the error sources and will not check
 // for DV.
 assign cif_resp_if.error = exec_region_filter_error | 
-                           prot_region_filter_error | 
-                           sram_double_ecc_error; 
+                           prot_region_filter_error;
+                           sram_double_ecc_error;  
 
+// SRAM is single port and cannot handle reads and writes in the same clock cycle
+`CALIPTRA_ASSERT_MUTEX(ERR_MCU_SRAM_MULTI_REQ, {sram_write_req, sram_write_req}, clk, !rst_b)
 
+// SRAM ECC Errors
+`CALIPTRA_ASSERT_NEVER(ERR_MCU_SRAM_ECC_DB_ERROR, sram_double_ecc_error, clk, !rst_b)
+`CALIPTRA_ASSERT_NEVER(ERR_MCU_SRAM_ECC_SB_ERROR, sram_single_ecc_error, clk, !rst_b)
+
+// SRAM protection errors
+`CALIPTRA_ASSERT_NEVER(ERR_MCU_SRAM_EXEC_REGION_FILTER_ERROR, exec_region_filter_error, clk, !rst_b)
+`CALIPTRA_ASSERT_NEVER(ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR, prot_region_filter_error, clk, !rst_b)
 
 endmodule
