@@ -467,16 +467,10 @@ module caliptra_ss_top
         mcu_lsu_m_axi_if.awid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0; //FIXME use non tb params
         mcu_lsu_m_axi_if.aruser[aaxi_pkg::AAXI_ARUSER_WIDTH-1:0]             = '1;
         mcu_lsu_m_axi_if.awuser[aaxi_pkg::AAXI_AWUSER_WIDTH-1:0]             = '1;
-        mcu_lsu_m_axi_if.araddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
-        mcu_lsu_m_axi_if.awaddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
         mcu_ifu_m_axi_if.arid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
         mcu_ifu_m_axi_if.awid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
-        mcu_ifu_m_axi_if.araddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
-        mcu_ifu_m_axi_if.awaddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
         mcu_dma_s_axi_if.rid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
         mcu_dma_s_axi_if.bid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
-        mcu_dma_s_axi_if.araddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
-        mcu_dma_s_axi_if.awaddr[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]              = 32'h0;
     end
 
     // Fuse controller output is re-organized to feed caliptra-core with its fuse values and valid signal.

@@ -801,45 +801,53 @@ module caliptra_ss_top_tb
     `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT, (core_axi_rd_req.arvalid && core_axi_rd_rsp.arready) -> (core_axi_rd_req.arsize < 3), core_clk, !rst_l)
 
     // AXI Interconnect connections
-
+    always_comb begin
+        axi_interconnect.mintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+        axi_interconnect.mintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+        axi_interconnect.mintf_arr[1].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+        axi_interconnect.mintf_arr[1].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+        axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+        axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    end
+    
     //Interconnect 0 - MCU LSU
     assign axi_interconnect.mintf_arr[0].AWVALID = mcu_lsu_m_axi_if.awvalid;
-    assign axi_interconnect.mintf_arr[0].AWADDR  = mcu_lsu_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[0].AWADDR[31:0]  = mcu_lsu_m_axi_if.awaddr;
     assign axi_interconnect.mintf_arr[0].AWID    = mcu_lsu_m_axi_if.awid;
     assign axi_interconnect.mintf_arr[0].AWLEN   = mcu_lsu_m_axi_if.awlen;
     assign axi_interconnect.mintf_arr[0].AWSIZE  = mcu_lsu_m_axi_if.awsize;
     assign axi_interconnect.mintf_arr[0].AWBURST = mcu_lsu_m_axi_if.awburst;
     assign axi_interconnect.mintf_arr[0].AWLOCK  = mcu_lsu_m_axi_if.awlock;
     assign axi_interconnect.mintf_arr[0].AWUSER  = mcu_lsu_m_axi_if.awuser;
-    assign mcu_lsu_m_axi_if.awready                = axi_interconnect.mintf_arr[0].AWREADY;
+    assign mcu_lsu_m_axi_if.awready              = axi_interconnect.mintf_arr[0].AWREADY;
     assign axi_interconnect.mintf_arr[0].WVALID  = mcu_lsu_m_axi_if.wvalid;
     assign axi_interconnect.mintf_arr[0].WDATA   = mcu_lsu_m_axi_if.wdata << (mcu_lsu_m_axi_if_wr_is_upper_dw_latched ? 32 : 0);
     assign axi_interconnect.mintf_arr[0].WSTRB   = mcu_lsu_m_axi_if.wstrb << (mcu_lsu_m_axi_if_wr_is_upper_dw_latched ?  4 : 0);
     assign axi_interconnect.mintf_arr[0].WLAST   = mcu_lsu_m_axi_if.wlast;
-    assign mcu_lsu_m_axi_if.wready                 = axi_interconnect.mintf_arr[0].WREADY;
-    assign mcu_lsu_m_axi_if.bvalid                 = axi_interconnect.mintf_arr[0].BVALID;
-    assign mcu_lsu_m_axi_if.bresp                  = axi_interconnect.mintf_arr[0].BRESP;
-    assign mcu_lsu_m_axi_if.bid                    = axi_interconnect.mintf_arr[0].BID;
+    assign mcu_lsu_m_axi_if.wready               = axi_interconnect.mintf_arr[0].WREADY;
+    assign mcu_lsu_m_axi_if.bvalid               = axi_interconnect.mintf_arr[0].BVALID;
+    assign mcu_lsu_m_axi_if.bresp                = axi_interconnect.mintf_arr[0].BRESP;
+    assign mcu_lsu_m_axi_if.bid                  = axi_interconnect.mintf_arr[0].BID;
     assign axi_interconnect.mintf_arr[0].BREADY  = mcu_lsu_m_axi_if.bready;
     assign axi_interconnect.mintf_arr[0].ARVALID = mcu_lsu_m_axi_if.arvalid;
-    assign axi_interconnect.mintf_arr[0].ARADDR  = mcu_lsu_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[0].ARADDR[31:0]  = mcu_lsu_m_axi_if.araddr;
     assign axi_interconnect.mintf_arr[0].ARID    = mcu_lsu_m_axi_if.arid;
     assign axi_interconnect.mintf_arr[0].ARLEN   = mcu_lsu_m_axi_if.arlen;
     assign axi_interconnect.mintf_arr[0].ARSIZE  = mcu_lsu_m_axi_if.arsize;
     assign axi_interconnect.mintf_arr[0].ARBURST = mcu_lsu_m_axi_if.arburst;
     assign axi_interconnect.mintf_arr[0].ARLOCK  = mcu_lsu_m_axi_if.arlock;
     assign axi_interconnect.mintf_arr[0].ARUSER  = mcu_lsu_m_axi_if.aruser;
-    assign mcu_lsu_m_axi_if.arready                = axi_interconnect.mintf_arr[0].ARREADY;
-    assign mcu_lsu_m_axi_if.rvalid                 = axi_interconnect.mintf_arr[0].RVALID;
-    assign mcu_lsu_m_axi_if.rdata                  = axi_interconnect.mintf_arr[0].RDATA >> (mcu_lsu_m_axi_if_rd_is_upper_dw_latched ? 32 : 0);
-    assign mcu_lsu_m_axi_if.rresp                  = axi_interconnect.mintf_arr[0].RRESP;
-    assign mcu_lsu_m_axi_if.rid                    = axi_interconnect.mintf_arr[0].RID;
-    assign mcu_lsu_m_axi_if.rlast                  = axi_interconnect.mintf_arr[0].RLAST;
+    assign mcu_lsu_m_axi_if.arready              = axi_interconnect.mintf_arr[0].ARREADY;
+    assign mcu_lsu_m_axi_if.rvalid               = axi_interconnect.mintf_arr[0].RVALID;
+    assign mcu_lsu_m_axi_if.rdata                = axi_interconnect.mintf_arr[0].RDATA >> (mcu_lsu_m_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign mcu_lsu_m_axi_if.rresp                = axi_interconnect.mintf_arr[0].RRESP;
+    assign mcu_lsu_m_axi_if.rid                  = axi_interconnect.mintf_arr[0].RID;
+    assign mcu_lsu_m_axi_if.rlast                = axi_interconnect.mintf_arr[0].RLAST;
     assign axi_interconnect.mintf_arr[0].RREADY  = mcu_lsu_m_axi_if.rready;
 
     //Interconnect 1 - MCU IFU
     assign axi_interconnect.mintf_arr[1].AWVALID = mcu_ifu_m_axi_if.awvalid;
-    assign axi_interconnect.mintf_arr[1].AWADDR  = mcu_ifu_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[1].AWADDR[31:0]  = mcu_ifu_m_axi_if.awaddr;
     assign axi_interconnect.mintf_arr[1].AWID    = mcu_ifu_m_axi_if.awid;
     assign axi_interconnect.mintf_arr[1].AWLEN   = mcu_ifu_m_axi_if.awlen;
     assign axi_interconnect.mintf_arr[1].AWSIZE  = mcu_ifu_m_axi_if.awsize;
@@ -857,7 +865,7 @@ module caliptra_ss_top_tb
     assign mcu_ifu_m_axi_if.bid                    = axi_interconnect.mintf_arr[1].BID;
     assign axi_interconnect.mintf_arr[1].BREADY  = mcu_ifu_m_axi_if.bready;
     assign axi_interconnect.mintf_arr[1].ARVALID = mcu_ifu_m_axi_if.arvalid;
-    assign axi_interconnect.mintf_arr[1].ARADDR  = mcu_ifu_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[1].ARADDR[31:0]  = mcu_ifu_m_axi_if.araddr;
     assign axi_interconnect.mintf_arr[1].ARID    = mcu_ifu_m_axi_if.arid;
     assign axi_interconnect.mintf_arr[1].ARLEN   = mcu_ifu_m_axi_if.arlen;
     assign axi_interconnect.mintf_arr[1].ARSIZE  = mcu_ifu_m_axi_if.arsize;
@@ -900,7 +908,7 @@ module caliptra_ss_top_tb
 
     //Interconnect 2 Sub - MCU DMA
     assign mcu_dma_s_axi_if.awvalid                = axi_interconnect.sintf_arr[2].AWVALID;
-    assign mcu_dma_s_axi_if.awaddr                 = axi_interconnect.sintf_arr[2].AWADDR;
+    assign mcu_dma_s_axi_if.awaddr                 = axi_interconnect.sintf_arr[2].AWADDR[31:0];
     assign mcu_dma_s_axi_if.awid                   = axi_interconnect.sintf_arr[2].AWID;
     assign mcu_dma_s_axi_if.awlen                  = axi_interconnect.sintf_arr[2].AWLEN;
     assign mcu_dma_s_axi_if.awsize                 = axi_interconnect.sintf_arr[2].AWSIZE;
@@ -918,7 +926,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[2].BID     = mcu_dma_s_axi_if.bid;
     assign mcu_dma_s_axi_if.bready                 = axi_interconnect.sintf_arr[2].BREADY;
     assign mcu_dma_s_axi_if.arvalid                = axi_interconnect.sintf_arr[2].ARVALID;
-    assign mcu_dma_s_axi_if.araddr                 = axi_interconnect.sintf_arr[2].ARADDR;
+    assign mcu_dma_s_axi_if.araddr                 = axi_interconnect.sintf_arr[2].ARADDR[31:0];
     assign mcu_dma_s_axi_if.arid                   = axi_interconnect.sintf_arr[2].ARID;
     assign mcu_dma_s_axi_if.arlen                  = axi_interconnect.sintf_arr[2].ARLEN;
     assign mcu_dma_s_axi_if.arsize                 = axi_interconnect.sintf_arr[2].ARSIZE;
@@ -935,7 +943,7 @@ module caliptra_ss_top_tb
 
     //Interconnect 3 - CPTRA soc axi if
     assign cptra_core_s_axi_if.awvalid           = axi_interconnect.sintf_arr[3].AWVALID;
-    assign cptra_core_s_axi_if.awaddr            = axi_interconnect.sintf_arr[3].AWADDR;
+    assign cptra_core_s_axi_if.awaddr            = axi_interconnect.sintf_arr[3].AWADDR[31:0];
     assign cptra_core_s_axi_if.awid              = axi_interconnect.sintf_arr[3].AWID;
     assign cptra_core_s_axi_if.awlen             = axi_interconnect.sintf_arr[3].AWLEN;
     assign cptra_core_s_axi_if.awsize            = axi_interconnect.sintf_arr[3].AWSIZE;
@@ -953,7 +961,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[3].BID     = cptra_core_s_axi_if.bid;
     assign cptra_core_s_axi_if.bready            = axi_interconnect.sintf_arr[3].BREADY;
     assign cptra_core_s_axi_if.arvalid           = axi_interconnect.sintf_arr[3].ARVALID;
-    assign cptra_core_s_axi_if.araddr            = axi_interconnect.sintf_arr[3].ARADDR;
+    assign cptra_core_s_axi_if.araddr            = axi_interconnect.sintf_arr[3].ARADDR[31:0];
     assign cptra_core_s_axi_if.arid              = axi_interconnect.sintf_arr[3].ARID;
     assign cptra_core_s_axi_if.arlen             = axi_interconnect.sintf_arr[3].ARLEN;
     assign cptra_core_s_axi_if.arsize            = axi_interconnect.sintf_arr[3].ARSIZE;
@@ -970,7 +978,7 @@ module caliptra_ss_top_tb
 
     //Interconnect MGR 3 - cptra dma
     assign axi_interconnect.mintf_arr[3].AWVALID = cptra_core_m_axi_if.awvalid;
-    assign axi_interconnect.mintf_arr[3].AWADDR  = cptra_core_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[3].AWADDR[31:0]  = cptra_core_m_axi_if.awaddr;
     assign axi_interconnect.mintf_arr[3].AWID    = cptra_core_m_axi_if.awid;
     assign axi_interconnect.mintf_arr[3].AWLEN   = cptra_core_m_axi_if.awlen;
     assign axi_interconnect.mintf_arr[3].AWSIZE  = cptra_core_m_axi_if.awsize;
@@ -988,7 +996,7 @@ module caliptra_ss_top_tb
     assign cptra_core_m_axi_if.bid               = axi_interconnect.mintf_arr[3].BID;
     assign axi_interconnect.mintf_arr[3].BREADY  = cptra_core_m_axi_if.bready;
     assign axi_interconnect.mintf_arr[3].ARVALID = cptra_core_m_axi_if.arvalid;
-    assign axi_interconnect.mintf_arr[3].ARADDR  = cptra_core_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[3].ARADDR[31:0]  = cptra_core_m_axi_if.araddr;
     assign axi_interconnect.mintf_arr[3].ARID    = cptra_core_m_axi_if.arid;
     assign axi_interconnect.mintf_arr[3].ARLEN   = cptra_core_m_axi_if.arlen;
     assign axi_interconnect.mintf_arr[3].ARSIZE  = cptra_core_m_axi_if.arsize;
@@ -1005,7 +1013,7 @@ module caliptra_ss_top_tb
 
     //Interconnect 4 - master bfm
     assign axi_interconnect.mintf_arr[4].AWVALID  = m_axi_bfm_if.awvalid;
-    assign axi_interconnect.mintf_arr[4].AWADDR   = m_axi_bfm_if.awaddr;
+    assign axi_interconnect.mintf_arr[4].AWADDR[31:0]   = m_axi_bfm_if.awaddr;
     assign axi_interconnect.mintf_arr[4].AWID     = m_axi_bfm_if.awid;
     assign axi_interconnect.mintf_arr[4].AWLEN    = m_axi_bfm_if.awlen;
     assign axi_interconnect.mintf_arr[4].AWSIZE   = m_axi_bfm_if.awsize;
@@ -1023,7 +1031,7 @@ module caliptra_ss_top_tb
     assign m_axi_bfm_if.bid                       = axi_interconnect.mintf_arr[4].BID;
     assign axi_interconnect.mintf_arr[4].BREADY   = m_axi_bfm_if.bready;
     assign axi_interconnect.mintf_arr[4].ARVALID  = m_axi_bfm_if.arvalid;
-    assign axi_interconnect.mintf_arr[4].ARADDR   = m_axi_bfm_if.araddr;
+    assign axi_interconnect.mintf_arr[4].ARADDR[31:0]   = m_axi_bfm_if.araddr;
     assign axi_interconnect.mintf_arr[4].ARID     = m_axi_bfm_if.arid;
     assign axi_interconnect.mintf_arr[4].ARLEN    = m_axi_bfm_if.arlen;
     assign axi_interconnect.mintf_arr[4].ARSIZE   = m_axi_bfm_if.arsize;
@@ -1039,7 +1047,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[4].RREADY   = m_axi_bfm_if.rready;
 
     assign mci_s_axi_if.awvalid                      = axi_interconnect.sintf_arr[4].AWVALID;
-    assign mci_s_axi_if.awaddr                       = axi_interconnect.sintf_arr[4].AWADDR;
+    assign mci_s_axi_if.awaddr                       = axi_interconnect.sintf_arr[4].AWADDR[31:0];
     assign mci_s_axi_if.awid                         = axi_interconnect.sintf_arr[4].AWID;
     assign mci_s_axi_if.awlen                        = axi_interconnect.sintf_arr[4].AWLEN;
     assign mci_s_axi_if.awsize                       = axi_interconnect.sintf_arr[4].AWSIZE;
@@ -1057,7 +1065,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[4].BID         = mci_s_axi_if.bid;
     assign mci_s_axi_if.bready                       = axi_interconnect.sintf_arr[4].BREADY;
     assign mci_s_axi_if.arvalid                      = axi_interconnect.sintf_arr[4].ARVALID;
-    assign mci_s_axi_if.araddr                       = axi_interconnect.sintf_arr[4].ARADDR;
+    assign mci_s_axi_if.araddr                       = axi_interconnect.sintf_arr[4].ARADDR[31:0];
     assign mci_s_axi_if.arid                         = axi_interconnect.sintf_arr[4].ARID;
     assign mci_s_axi_if.arlen                        = axi_interconnect.sintf_arr[4].ARLEN;
     assign mci_s_axi_if.arsize                       = axi_interconnect.sintf_arr[4].ARSIZE;
@@ -1073,7 +1081,7 @@ module caliptra_ss_top_tb
     assign mci_s_axi_if.rready                         = axi_interconnect.sintf_arr[4].RREADY;
 
     //Interconnect 5
-    assign core_axi_wr_req.awaddr = axi_interconnect.sintf_arr[5].AWADDR;
+    assign core_axi_wr_req.awaddr = axi_interconnect.sintf_arr[5].AWADDR[31:0];
     assign core_axi_wr_req.awburst = axi_interconnect.sintf_arr[5].AWBURST;
     assign core_axi_wr_req.awsize = axi_interconnect.sintf_arr[5].AWSIZE;
     assign core_axi_wr_req.awlen = axi_interconnect.sintf_arr[5].AWLEN;
@@ -1091,7 +1099,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[5].BRESP = core_axi_wr_rsp.bresp;
     assign axi_interconnect.sintf_arr[5].BID = core_axi_wr_rsp.bid;
     assign axi_interconnect.sintf_arr[5].BVALID = core_axi_wr_rsp.bvalid;
-    assign core_axi_rd_req.araddr = axi_interconnect.sintf_arr[5].ARADDR;
+    assign core_axi_rd_req.araddr = axi_interconnect.sintf_arr[5].ARADDR[31:0];
     assign core_axi_rd_req.arburst = axi_interconnect.sintf_arr[5].ARBURST;
     assign core_axi_rd_req.arsize = axi_interconnect.sintf_arr[5].ARSIZE;
     assign core_axi_rd_req.arlen = axi_interconnect.sintf_arr[5].ARLEN;
@@ -1122,7 +1130,7 @@ module caliptra_ss_top_tb
 
     //Interconnect 7 - LCC
     assign lc_axi_wr_req.awvalid = axi_interconnect.sintf_arr[7].AWVALID;
-    assign lc_axi_wr_req.awaddr = axi_interconnect.sintf_arr[7].AWADDR;
+    assign lc_axi_wr_req.awaddr = axi_interconnect.sintf_arr[7].AWADDR[31:0];
     assign lc_axi_wr_req.awid = axi_interconnect.sintf_arr[7].AWID;
     assign lc_axi_wr_req.awlen = axi_interconnect.sintf_arr[7].AWLEN;
     assign lc_axi_wr_req.awsize = axi_interconnect.sintf_arr[7].AWSIZE;
@@ -1140,7 +1148,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[7].BVALID = lc_axi_wr_rsp.bvalid;
     assign lc_axi_wr_req.bready = axi_interconnect.sintf_arr[7].BREADY;
     assign lc_axi_rd_req.arvalid = axi_interconnect.sintf_arr[7].ARVALID;
-    assign lc_axi_rd_req.araddr = axi_interconnect.sintf_arr[7].ARADDR;
+    assign lc_axi_rd_req.araddr = axi_interconnect.sintf_arr[7].ARADDR[31:0];
     assign lc_axi_rd_req.arid = axi_interconnect.sintf_arr[7].ARID;
     assign lc_axi_rd_req.arlen = axi_interconnect.sintf_arr[7].ARLEN;
     assign lc_axi_rd_req.arsize = axi_interconnect.sintf_arr[7].ARSIZE;
@@ -1157,7 +1165,7 @@ module caliptra_ss_top_tb
 
     //Interconnect 1 - I3C
     assign i3c_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[1].AWVALID;
-    assign i3c_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[1].AWADDR;
+    assign i3c_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[1].AWADDR[31:0];
     assign i3c_s_axi_if.awid                       = axi_interconnect.sintf_arr[1].AWID;
     assign i3c_s_axi_if.awlen                      = axi_interconnect.sintf_arr[1].AWLEN;
     assign i3c_s_axi_if.awsize                     = axi_interconnect.sintf_arr[1].AWSIZE;
@@ -1175,7 +1183,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[1].BID     = i3c_s_axi_if.bid;
     assign i3c_s_axi_if.bready                     = axi_interconnect.sintf_arr[1].BREADY;
     assign i3c_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[1].ARVALID;
-    assign i3c_s_axi_if.araddr                     = axi_interconnect.sintf_arr[1].ARADDR;
+    assign i3c_s_axi_if.araddr                     = axi_interconnect.sintf_arr[1].ARADDR[31:0];
     assign i3c_s_axi_if.arid                       = axi_interconnect.sintf_arr[1].ARID;
     assign i3c_s_axi_if.arlen                      = axi_interconnect.sintf_arr[1].ARLEN;
     assign i3c_s_axi_if.arsize                     = axi_interconnect.sintf_arr[1].ARSIZE;
@@ -1433,8 +1441,8 @@ module caliptra_ss_top_tb
         .bid            (axi_interconnect.sintf_arr[0].BID)
 
     );
-    assign axi_interconnect.sintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
-    assign axi_interconnect.sintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32]           = 32'h0;
+    assign axi_interconnect.sintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.sintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
 
     mci_sram #(
         .DEPTH     (18'h3_FFFF), // 1M
