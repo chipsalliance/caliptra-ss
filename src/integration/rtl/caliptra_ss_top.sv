@@ -124,21 +124,27 @@ module caliptra_ss_top
     css_mcu0_el2_mem_if css_mcu0_el2_mem_export,
 
     input logic Allow_RMA_on_PPD,
-    input logic fake_reset,
 
-    input logic lc_ctrl_scan_rst_ni,
-    input logic [$bits(caliptra_prim_mubi_pkg::mubi4_t)-1:0] lc_ctrl_scanmode_i,
+`ifdef LCC_FC_BFM_SIM
+    input logic lcc_bfm_reset,
+`endif 
 
+`ifdef LCC_FC_BFM_SIM
+    output wire [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_otp_to_lcc_bfm_data_override,
+    input logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_lcc_bfm_to_lcc_data_override,
+`endif 
+    input  lc_ctrl_pkg::lc_tx_t SOC_lc_clk_byp_ack,
+    output lc_ctrl_pkg::lc_tx_t SOC_lc_clk_byp_req,
 
-    input logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] otp_lc_data,
-    input logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_clk_byp_ack,
-    output logic [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o,
-
-    input logic esc_scrap_state0,
-    input logic esc_scrap_state1,
+    input logic esc_scrap_state0,   // NOTE: These two signals are very important. FIXME: Renaming is needed
+    input logic esc_scrap_state1,   // If you assert them, Caliptr-SS will enter SCRAP mode
 
     output  wire                                 SOC_DFT_EN,
     output  wire                                 SOC_HW_DEBUG_EN,
+
+
+    input  tlul_pkg::tl_h2d_t                          fuse_macro_prim_tl_i,
+    output tlul_pkg::tl_d2h_t                          fuse_macro_prim_tl_o,
 
 
 
@@ -420,6 +426,11 @@ module caliptra_ss_top
          logic                             mci_to_lcc_init_req;
          pwrmgr_pkg::pwr_lc_req_t          lcc_init_req;
 
+
+// ----------------- MCI Connections FC Connections -----------------------
+        logic    [otp_ctrl_reg_pkg::NumAlerts-1:0]  fc_alerts;
+        logic                                       fc_intr_otp_error;
+
 // ----------------- MCI OTP Connections -----------------------------------
          logic                             mci_to_otp_ctrl_init_req;
          logic                             otp_ctrl_to_mci_otp_ctrl_done;
@@ -432,7 +443,7 @@ module caliptra_ss_top
          lc_ctrl_pkg::lc_tx_t                         lc_dft_en_i;
          lc_ctrl_pkg::lc_tx_t                         lc_hw_debug_en_i;
          // Inputs from OTP_Ctrl
-         otp_ctrl_pkg::otp_lc_data_t                  from_otp_to_lcc_program_i;
+         otp_ctrl_pkg::otp_lc_data_t                  from_otp_to_lcc_data_i;
          // Inputs from Caliptra_Core
          logic                                         ss_dbg_manuf_enable   ; 
          logic [63:0]                                  ss_soc_dbg_unlock_level;
@@ -444,6 +455,8 @@ module caliptra_ss_top
          logic        mci_mcu_nmi_int;
          logic [31:0] mci_mcu_nmi_vector;
          logic mci_mcu_timer_int;
+
+        logic [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o; // FIXME: This needs to be an input of MCI
 
          // ----------------- FC to Caliptra-Core ports -----------------------
          otp_ctrl_part_pkg::otp_broadcast_t from_otp_to_clpt_core_broadcast; // This is a struct data type
@@ -957,11 +970,15 @@ module caliptra_ss_top
     //=========================================================================
     // MCI Instance
     //=========================================================================
+    
+    
 
-    logic mci_pwrgood;
-
-    assign mci_pwrgood = 1'b1;
-
+    //TODO: we need to open two input ports for the following signals:
+            // lc_ctrl_pkg::lc_tx_t lc_escalate_en_internal;
+            // lc_ctrl_pkg::lc_tx_t lc_check_byp_en_internal;
+    // These signals show that escalation is enabled at LCC and FUSE end and external clock was accepted.
+    // The following signal should be also an input coming from LC to MCI
+            //lc_hw_rev_t  hw_rev_o;
     mci_top #(
         // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
         .AXI_DATA_WIDTH(32),
@@ -970,7 +987,7 @@ module caliptra_ss_top
 
         .clk(cptra_ss_clk),
         .mci_rst_b(cptra_ss_rst_b),
-        .mci_pwrgood(mci_pwrgood),
+        .mci_pwrgood(cptra_ss_pwrgood),
 
         // MCI AXI Interface
         .s_axi_w_if(mci_s_axi_if.w_sub),
@@ -1035,7 +1052,7 @@ module caliptra_ss_top
         .lc_dft_en_i(lc_dft_en_i),
         .lc_hw_debug_en_i(lc_hw_debug_en_i),
    // Inputs from OTP_Ctrl
-        .from_otp_to_lcc_program_i(from_otp_to_lcc_program_i),
+        .from_otp_to_lcc_program_i(from_otp_to_lcc_data_i),
    // Inputs from Caliptra_Core
         .ss_dbg_manuf_enable_i(ss_dbg_manuf_enable), 
         .ss_soc_dbg_unlock_level_i(ss_soc_dbg_unlock_level),
@@ -1056,25 +1073,34 @@ module caliptra_ss_top
 
     //--------------------------------------------------------------------------------------------
     // These are shared signals between fuse controller and lc controller
-    logic [$bits(otp_ctrl_pkg::lc_otp_vendor_test_req_t)-1:0] lc_otp_vendor_test_o_tb;
-    logic [$bits(otp_ctrl_pkg::lc_otp_vendor_test_rsp_t)-1:0] lc_otp_vendor_test_i_tb;
-    logic [$bits(otp_ctrl_pkg::lc_otp_program_rsp_t)-1:0] lc_otp_program_i_tb;
 
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_creator_seed_sw_rw_en_tb;
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_owner_seed_sw_rw_en_tb;
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_seed_hw_rd_en_tb;
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_escalate_en_tb;
-    logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_check_byp_en_tb;
+    //------------------------- LCC and FC internal signals -------------------------------------
+    // These are shared signals between fuse controller and lc controller
+    otp_ctrl_pkg::lc_otp_vendor_test_req_t from_lc_to_otp_vendor_test_internal;
+    otp_ctrl_pkg::lc_otp_vendor_test_rsp_t from_otp_to_lc_vendor_test_internal;
+    otp_ctrl_pkg::lc_otp_program_rsp_t lc_otp_program_internal;
 
-    assign lc_otp_vendor_test_o_tb = otp_ctrl_pkg::lc_otp_vendor_test_req_t'(u_lc_ctrl.lc_otp_vendor_test_o);
-    assign lc_otp_vendor_test_i_tb = otp_ctrl_pkg::lc_otp_vendor_test_rsp_t'(u_otp_ctrl.lc_otp_vendor_test_o);
-    assign lc_otp_program_i_tb = otp_ctrl_pkg::lc_otp_program_rsp_t'(u_otp_ctrl.lc_otp_program_o);
+    lc_ctrl_pkg::lc_tx_t lc_creator_seed_sw_rw_en_internal;
+    lc_ctrl_pkg::lc_tx_t lc_owner_seed_sw_rw_en_internal;
+    lc_ctrl_pkg::lc_tx_t lc_seed_hw_rd_en_internal;
+    lc_ctrl_pkg::lc_tx_t lc_escalate_en_internal;
+    lc_ctrl_pkg::lc_tx_t lc_check_byp_en_internal;
+    logic lcc_fc_reset;
+    logic lc_ctrl_scan_rst_ni;
+    caliptra_prim_mubi_pkg::mubi4_t lc_ctrl_scanmode_i;
+    assign lc_ctrl_scan_rst_ni = 1'b1; // Note: Since we do not use dmi and use JTAG we do not need this
+    assign lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
 
-    assign lc_creator_seed_sw_rw_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_creator_seed_sw_rw_en_o);
-    assign lc_owner_seed_sw_rw_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_owner_seed_sw_rw_en_o);
-    assign lc_seed_hw_rd_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_seed_hw_rd_en_o);
-    assign lc_escalate_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_escalate_en_o);
-    assign lc_check_byp_en_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl.lc_check_byp_en_o);
+    
+
+
+
+`ifdef LCC_FC_BFM_SIM
+    assign lcc_fc_reset = cptra_ss_rst_b & lcc_bfm_reset;
+    assign from_otp_to_lcc_bfm_data_override = from_otp_to_lcc_data_i;
+`else
+    assign lcc_fc_reset = cptra_ss_rst_b;
+`endif    
 
     //--------------------------------------------------------------------------------------------
 
@@ -1085,18 +1111,18 @@ module caliptra_ss_top
 
     lc_ctrl u_lc_ctrl (
             .clk_i(cptra_ss_clk),
-            .rst_ni(cptra_ss_rst_b & fake_reset),
+            .rst_ni(lcc_fc_reset),
             .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
             .axi_wr_req(lc_axi_wr_req),
             .axi_wr_rsp(lc_axi_wr_rsp),
             .axi_rd_req(lc_axi_rd_req),
             .axi_rd_rsp(lc_axi_rd_rsp),
 
-            .jtag_i('0),
+            .jtag_i('0),    // FIXME: the JTAG should be connected with SoC Logic, TODO: Needs to be input output of SoC
             .jtag_o(),
             
             .scan_rst_ni(lc_ctrl_scan_rst_ni),
-            .scanmode_i(caliptra_prim_mubi_pkg::mubi4_t'(lc_ctrl_scanmode_i)),
+            .scanmode_i(lc_ctrl_scanmode_i),
             
             .alerts(lc_alerts_o),
             .esc_scrap_state0(esc_scrap_state0),
@@ -1104,35 +1130,37 @@ module caliptra_ss_top
 
 
             .pwr_lc_i(lcc_init_req),
-            .pwr_lc_o(),
+            .pwr_lc_o(), // Note: It is tied with this assignment: lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
 
-            .strap_en_override_o(),
+            .strap_en_override_o(),  // Note: We use VolatileUnlock and so this port is not used in Caliptra-ss, needs to be removed from LCC RTL        
 
-
-
-        
-
-            .lc_otp_vendor_test_o(),
-            .lc_otp_vendor_test_i(otp_ctrl_pkg::lc_otp_vendor_test_rsp_t'(lc_otp_vendor_test_i_tb)),
+            .lc_otp_vendor_test_o(from_lc_to_otp_vendor_test_internal),
+            .lc_otp_vendor_test_i(from_otp_to_lc_vendor_test_internal),
             .lc_otp_program_o(from_lcc_to_otp_program_i),
-            .lc_otp_program_i(otp_ctrl_pkg::lc_otp_program_rsp_t'(lc_otp_program_i_tb)),
-            .otp_lc_data_i(otp_ctrl_pkg::otp_lc_data_t'(otp_lc_data)),
+            .lc_otp_program_i(lc_otp_program_internal),
+
+`ifdef LCC_FC_BFM_SIM
+            .otp_lc_data_i(from_lcc_bfm_to_lcc_data_override),
+`else
+            .otp_lc_data_i(from_otp_to_lcc_data_i),
+`endif 
+
             .lc_dft_en_o(lc_dft_en_i),
-            .lc_creator_seed_sw_rw_en_o(),
-            .lc_owner_seed_sw_rw_en_o(),
-            .lc_seed_hw_rd_en_o(),            
-            .lc_escalate_en_o(),
-            .lc_check_byp_en_o(),
+            .lc_creator_seed_sw_rw_en_o(lc_creator_seed_sw_rw_en_internal),
+            .lc_owner_seed_sw_rw_en_o(lc_owner_seed_sw_rw_en_internal),
+            .lc_seed_hw_rd_en_o(lc_seed_hw_rd_en_internal),            
+            .lc_escalate_en_o(lc_escalate_en_internal),
+            .lc_check_byp_en_o(lc_check_byp_en_internal),
 
             .lc_hw_debug_en_o(lc_hw_debug_en_i),
-            .lc_cpu_en_o(),
+            .lc_cpu_en_o(), // Note: this port is not used in Caliptra-ss, needs to be removed from LCC RTL
 
-            .lc_clk_byp_req_o(),
-            .lc_clk_byp_ack_i(lc_ctrl_pkg::lc_tx_t'(lc_clk_byp_ack)),
+            .lc_clk_byp_req_o(SOC_lc_clk_byp_req),
+            .lc_clk_byp_ack_i(SOC_lc_clk_byp_ack),
 
-            .otp_device_id_i('0),
-            .otp_manuf_state_i('0),
-            .hw_rev_o()
+            .otp_device_id_i('0),   // FIXME: This signal should come from FC 
+            .otp_manuf_state_i('0), // FIXME: This signal should come from FC 
+            .hw_rev_o()             // FIXME: This signal should go to MCI 
         );
 
 
@@ -1143,7 +1171,6 @@ module caliptra_ss_top
     
     // logic otp_lc_data_o_valid;
 
-    logic    [otp_ctrl_reg_pkg::NumAlerts-1:0] fc_alerts;  
 
     caliptra_prim_mubi_pkg::mubi4_t scanmode_mubi;
     
@@ -1154,62 +1181,61 @@ module caliptra_ss_top
         .MemInitFile ("otp-img.2048.vmem")
     ) u_otp_ctrl (
         .clk_i                      (cptra_ss_clk),
-        .rst_ni                     (cptra_ss_rst_b & fake_reset),
-        .clk_edn_i                  (),
-        .rst_edn_ni                 (),
-        .edn_o                      (),
-        .edn_i                      (),
+        .rst_ni                     (lcc_fc_reset),
+        .clk_edn_i                  (1'b0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .rst_edn_ni                 (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .edn_o                      (),     // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .edn_i                      ('0),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
 
         .core_axi_wr_req            (core_axi_wr_req),
         .core_axi_wr_rsp            (core_axi_wr_rsp),
         .core_axi_rd_req            (core_axi_rd_req),
         .core_axi_rd_rsp            (core_axi_rd_rsp),
         
-        // .prim_axi_wr_req            (prim_axi_wr_req),
-        // .prim_axi_wr_rsp            (prim_axi_wr_rsp),
-        // .prim_axi_rd_req            (prim_axi_rd_req),
-        // .prim_axi_rd_rsp            (prim_axi_rd_rsp),
+        .prim_tl_i                  (fuse_macro_prim_tl_i),
+        .prim_tl_o                  (fuse_macro_prim_tl_o),
 
         .intr_otp_operation_done_o  (intr_otp_operation_done),
-        .intr_otp_error_o           (),
+        .intr_otp_error_o           (fc_intr_otp_error), //TODO: This signal should be connected to MCI
         // .alert_rx_i                 (),
         // .alert_tx_o                 (),
         .alerts(fc_alerts),
-        .obs_ctrl_i                 (),
+        .obs_ctrl_i                 ('0),    //TODO: Needs to be checked
         .otp_obs_o                  (),
         .otp_ast_pwr_seq_o          (),
-        .otp_ast_pwr_seq_h_i        (),
+        .otp_ast_pwr_seq_h_i        ('0),    //TODO: Needs to be checked
         .pwr_otp_i                  (otp_ctrl_init_req),
         .pwr_otp_o                  (),
 
-        .lc_otp_vendor_test_i(otp_ctrl_pkg::lc_otp_vendor_test_req_t'(lc_otp_vendor_test_o_tb)),
-        .lc_otp_vendor_test_o(),
+        .lc_otp_vendor_test_i(from_lc_to_otp_vendor_test_internal),
+        .lc_otp_vendor_test_o(from_otp_to_lc_vendor_test_internal),
         .lc_otp_program_i(from_lcc_to_otp_program_i),
-        .lc_otp_program_o(),
+        .lc_otp_program_o(lc_otp_program_internal),
 
-    .lc_creator_seed_sw_rw_en_i(lc_creator_seed_sw_rw_en_tb),
-    .lc_owner_seed_sw_rw_en_i(lc_owner_seed_sw_rw_en_tb),
-    .lc_seed_hw_rd_en_i(lc_seed_hw_rd_en_tb),
+        .lc_creator_seed_sw_rw_en_i(lc_creator_seed_sw_rw_en_internal),
+        .lc_owner_seed_sw_rw_en_i(lc_owner_seed_sw_rw_en_internal),
+        .lc_seed_hw_rd_en_i(lc_seed_hw_rd_en_internal),
     .lc_dft_en_i(lc_dft_en_i),
-    .lc_escalate_en_i(lc_escalate_en_tb),
-    .lc_check_byp_en_i(lc_check_byp_en_tb),
-    .otp_lc_data_o(from_otp_to_lcc_program_i),
+        .lc_escalate_en_i(lc_escalate_en_internal),
+        .lc_check_byp_en_i(lc_check_byp_en_internal),
+
+        .otp_lc_data_o(from_otp_to_lcc_data_i),
 
 
-        .otp_keymgr_key_o           (),
-        .flash_otp_key_i            (),
-        .flash_otp_key_o            (),
-        .sram_otp_key_i             (),
-        .sram_otp_key_o             (),
-        .otbn_otp_key_i             (),
-        .otbn_otp_key_o             (),
+        .otp_keymgr_key_o           (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .flash_otp_key_i            ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .flash_otp_key_o            (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .sram_otp_key_i             ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .sram_otp_key_o             (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .otbn_otp_key_i             ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .otbn_otp_key_o             (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
-        .otp_ext_voltage_h_io       (),
-        .scan_en_i                  (),
-        .scan_rst_ni                (),
-        .scanmode_i                 (scanmode_mubi),
-        .cio_test_o                 (),
-        .cio_test_en_o                   ()
+        .otp_ext_voltage_h_io       ('Z),
+        .scan_en_i                  ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .scan_rst_ni                (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+        .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False),
+        .cio_test_o                 (),    //TODO: Needs to be checked
+        .cio_test_en_o              ()    //TODO: Needs to be checked
 	); 
 
 
