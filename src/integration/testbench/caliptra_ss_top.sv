@@ -1712,6 +1712,7 @@ module caliptra_ss_top
         .peripheral_reset_o(),
         .peripheral_reset_done_i(1'b1),
         .escalated_reset_o()
+        .irq_o()
     );
 
     // FIXME data width conversion hack
