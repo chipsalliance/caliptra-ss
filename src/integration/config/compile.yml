@@ -82,8 +82,8 @@ global:
         - '-sverilog -full64'
         - '-debug_access+all'
         # Used in caliptra_top_sva to find signals
-        - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top
-        - +define+CPTRA_TOP_PATH=caliptra_ss_top.caliptra_top_dut
+        - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
+        - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
         - +define+MCU_RV_BUILD_AXI4
         - +define+MCU_RV_OPENSOURCE
         - +define+AVERY_VCS
