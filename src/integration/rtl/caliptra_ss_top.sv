@@ -191,7 +191,6 @@ module caliptra_ss_top
 
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
     logic                       timer_int;
-    logic                       soft_int;
 
     logic        [31:0]         reset_vector;
 
@@ -827,7 +826,7 @@ module caliptra_ss_top
         .dma_axi_rlast          (mcu_dma_s_axi_if.rlast),
 
         .timer_int              ( mci_mcu_timer_int ),
-        .soft_int               ( soft_int ),
+        .soft_int               ( 1'b0 ), // No multi-processor functionality, not expecting MSI from other HARTs
         .extintsrc_req          ( ext_int ),
 
         .lsu_bus_clk_en         ( 1'b1  ),// Clock ratio b/w cpu core clk & AHB master interface

@@ -83,7 +83,6 @@ module caliptra_ss_top_tb
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
     logic                       nmi_int_tb;
     logic                       timer_int;
-    logic                       soft_int;
 
     logic        [31:0]         trace_rv_i_insn_ip;
     logic        [31:0]         trace_rv_i_address_ip;
@@ -466,19 +465,16 @@ module caliptra_ss_top_tb
             if (mailbox_data[7:0] == 8'h82) begin
                 nmi_int_tb   <= nmi_int_tb   & ~mailbox_data[8];
                 timer_int <= timer_int & ~mailbox_data[9];
-                soft_int  <= soft_int  & ~mailbox_data[10];
             end
             if (mailbox_data[7:0] == 8'h83) begin
                 nmi_int_tb   <= nmi_int_tb   |  mailbox_data[8];
                 timer_int <= timer_int |  mailbox_data[9];
-                soft_int  <= soft_int  |  mailbox_data[10];
             end
         end
         if(mailbox_write && (mailbox_data[7:0] == 8'h90)) begin
             ext_int_tb   <= {pt.PIC_TOTAL_INT-1{1'b0}};
             nmi_int_tb   <= 1'b0;
             timer_int    <= 1'b0;
-            soft_int     <= 1'b0;
         end
         // ECC error injection
         if(mailbox_write && (mailbox_data[7:0] == 8'he0)) begin
@@ -598,7 +594,6 @@ module caliptra_ss_top_tb
 
         ext_int_tb  = {pt.PIC_TOTAL_INT-1{1'b0}};
         timer_int   = 0;
-        soft_int    = 0;
 
         $readmemh("mcu_lmem.hex",     lmem.mem);
         $readmemh("mcu_program.hex",  imem.mem);
@@ -686,7 +681,7 @@ module caliptra_ss_top_tb
     // MCU LSU AXI Interface
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
-        .DW(32), //-- FIXME : Assign a common paramter,
+        .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) mcu_lsu_m_axi_if (.clk(core_clk), .rst_n(rst_l));
@@ -694,7 +689,7 @@ module caliptra_ss_top_tb
     // MCU IFU AXI Interface
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
-        .DW(32), //-- FIXME : Assign a common paramter,
+        .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) mcu_ifu_m_axi_if (.clk(core_clk), .rst_n(rst_l));
@@ -702,7 +697,7 @@ module caliptra_ss_top_tb
     // MCU DMA AXI Interface
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
-        .DW(32), //-- FIXME : Assign a common paramter,
+        .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) mcu_dma_s_axi_if (.clk(core_clk), .rst_n(rst_l));
@@ -737,12 +732,6 @@ module caliptra_ss_top_tb
     logic cptra_core_s_axi_if_wr_is_upper_dw_latched;
     logic lc_axi_rd_is_upper_dw_latched;
     logic lc_axi_wr_is_upper_dw_latched;
-    logic mcu_lsu_m_axi_if_rd_is_upper_dw_latched;
-    logic mcu_lsu_m_axi_if_wr_is_upper_dw_latched;
-    logic mcu_ifu_m_axi_if_rd_is_upper_dw_latched;
-    logic mcu_ifu_m_axi_if_wr_is_upper_dw_latched;
-    logic mcu_dma_s_axi_if_rd_is_upper_dw_latched;
-    logic mcu_dma_s_axi_if_wr_is_upper_dw_latched;
     logic i3c_s_axi_if_rd_is_upper_dw_latched;
     logic i3c_s_axi_if_wr_is_upper_dw_latched;
 
@@ -765,9 +754,6 @@ module caliptra_ss_top_tb
     `SS_DATA_WIDTH_HACK(cptra_core_s_axi_if)
     `SS_DATA_WIDTH_HACK(m_axi_bfm_if)
     `SS_DATA_WIDTH_HACK(mci_s_axi_if)
-    `SS_DATA_WIDTH_HACK(mcu_lsu_m_axi_if)
-    `SS_DATA_WIDTH_HACK(mcu_ifu_m_axi_if)
-    `SS_DATA_WIDTH_HACK(mcu_dma_s_axi_if)
     `SS_DATA_WIDTH_HACK(i3c_s_axi_if)
         
     //These don't fit the macro FIXME LATER
@@ -821,8 +807,8 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[0].AWUSER  = mcu_lsu_m_axi_if.awuser;
     assign mcu_lsu_m_axi_if.awready              = axi_interconnect.mintf_arr[0].AWREADY;
     assign axi_interconnect.mintf_arr[0].WVALID  = mcu_lsu_m_axi_if.wvalid;
-    assign axi_interconnect.mintf_arr[0].WDATA   = mcu_lsu_m_axi_if.wdata << (mcu_lsu_m_axi_if_wr_is_upper_dw_latched ? 32 : 0);
-    assign axi_interconnect.mintf_arr[0].WSTRB   = mcu_lsu_m_axi_if.wstrb << (mcu_lsu_m_axi_if_wr_is_upper_dw_latched ?  4 : 0);
+    assign axi_interconnect.mintf_arr[0].WDATA   = mcu_lsu_m_axi_if.wdata;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[0].WSTRB   = mcu_lsu_m_axi_if.wstrb;// Native 64-bit width, no dwidth conversion
     assign axi_interconnect.mintf_arr[0].WLAST   = mcu_lsu_m_axi_if.wlast;
     assign mcu_lsu_m_axi_if.wready               = axi_interconnect.mintf_arr[0].WREADY;
     assign mcu_lsu_m_axi_if.bvalid               = axi_interconnect.mintf_arr[0].BVALID;
@@ -839,7 +825,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[0].ARUSER  = mcu_lsu_m_axi_if.aruser;
     assign mcu_lsu_m_axi_if.arready              = axi_interconnect.mintf_arr[0].ARREADY;
     assign mcu_lsu_m_axi_if.rvalid               = axi_interconnect.mintf_arr[0].RVALID;
-    assign mcu_lsu_m_axi_if.rdata                = axi_interconnect.mintf_arr[0].RDATA >> (mcu_lsu_m_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign mcu_lsu_m_axi_if.rdata                = axi_interconnect.mintf_arr[0].RDATA;// Native 64-bit width, no dwidth conversion
     assign mcu_lsu_m_axi_if.rresp                = axi_interconnect.mintf_arr[0].RRESP;
     assign mcu_lsu_m_axi_if.rid                  = axi_interconnect.mintf_arr[0].RID;
     assign mcu_lsu_m_axi_if.rlast                = axi_interconnect.mintf_arr[0].RLAST;
@@ -856,8 +842,8 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[1].AWUSER  = mcu_ifu_m_axi_if.awuser;
     assign mcu_ifu_m_axi_if.awready                = axi_interconnect.mintf_arr[1].AWREADY;
     assign axi_interconnect.mintf_arr[1].WVALID  = mcu_ifu_m_axi_if.wvalid;
-    assign axi_interconnect.mintf_arr[1].WDATA   = mcu_ifu_m_axi_if.wdata << (mcu_ifu_m_axi_if_wr_is_upper_dw_latched ? 32 : 0);
-    assign axi_interconnect.mintf_arr[1].WSTRB   = mcu_ifu_m_axi_if.wstrb << (mcu_ifu_m_axi_if_wr_is_upper_dw_latched ?  4 : 0);
+    assign axi_interconnect.mintf_arr[1].WDATA   = mcu_ifu_m_axi_if.wdata;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[1].WSTRB   = mcu_ifu_m_axi_if.wstrb;// Native 64-bit width, no dwidth conversion
     assign axi_interconnect.mintf_arr[1].WLAST   = mcu_ifu_m_axi_if.wlast;
     assign mcu_ifu_m_axi_if.wready                 = axi_interconnect.mintf_arr[1].WREADY;
     assign mcu_ifu_m_axi_if.bvalid                 = axi_interconnect.mintf_arr[1].BVALID;
@@ -874,7 +860,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[1].ARUSER  = mcu_ifu_m_axi_if.aruser;
     assign mcu_ifu_m_axi_if.arready                = axi_interconnect.mintf_arr[1].ARREADY;
     assign mcu_ifu_m_axi_if.rvalid                 = axi_interconnect.mintf_arr[1].RVALID;
-    assign mcu_ifu_m_axi_if.rdata                  = axi_interconnect.mintf_arr[1].RDATA >> (mcu_ifu_m_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign mcu_ifu_m_axi_if.rdata                  = axi_interconnect.mintf_arr[1].RDATA;// Native 64-bit width, no dwidth conversion
     assign mcu_ifu_m_axi_if.rresp                  = axi_interconnect.mintf_arr[1].RRESP;
     assign mcu_ifu_m_axi_if.rid                    = axi_interconnect.mintf_arr[1].RID;
     assign mcu_ifu_m_axi_if.rlast                  = axi_interconnect.mintf_arr[1].RLAST;
@@ -917,8 +903,8 @@ module caliptra_ss_top_tb
     assign mcu_dma_s_axi_if.awuser                 = axi_interconnect.sintf_arr[2].AWUSER;
     assign axi_interconnect.sintf_arr[2].AWREADY = mcu_dma_s_axi_if.awready;
     assign mcu_dma_s_axi_if.wvalid                 = axi_interconnect.sintf_arr[2].WVALID;
-    assign mcu_dma_s_axi_if.wdata                  = axi_interconnect.sintf_arr[2].WDATA >> (mcu_dma_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
-    assign mcu_dma_s_axi_if.wstrb                  = axi_interconnect.sintf_arr[2].WSTRB >> (mcu_dma_s_axi_if_wr_is_upper_dw_latched ? 4 : 0);
+    assign mcu_dma_s_axi_if.wdata                  = axi_interconnect.sintf_arr[2].WDATA;// Native 64-bit width, no dwidth conversion
+    assign mcu_dma_s_axi_if.wstrb                  = axi_interconnect.sintf_arr[2].WSTRB;// Native 64-bit width, no dwidth conversion
     assign mcu_dma_s_axi_if.wlast                  = axi_interconnect.sintf_arr[2].WLAST;
     assign axi_interconnect.sintf_arr[2].WREADY  = mcu_dma_s_axi_if.wready;
     assign axi_interconnect.sintf_arr[2].BVALID  = mcu_dma_s_axi_if.bvalid;
@@ -935,7 +921,7 @@ module caliptra_ss_top_tb
     assign mcu_dma_s_axi_if.aruser                 = axi_interconnect.sintf_arr[2].ARUSER;
     assign axi_interconnect.sintf_arr[2].ARREADY = mcu_dma_s_axi_if.arready;
     assign axi_interconnect.sintf_arr[2].RVALID  = mcu_dma_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[2].RDATA   = 64'(mcu_dma_s_axi_if.rdata) << (mcu_dma_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.sintf_arr[2].RDATA   = 64'(mcu_dma_s_axi_if.rdata);// Native 64-bit width, no dwidth conversion
     assign axi_interconnect.sintf_arr[2].RRESP   = mcu_dma_s_axi_if.rresp;
     assign axi_interconnect.sintf_arr[2].RID     = mcu_dma_s_axi_if.rid;
     assign axi_interconnect.sintf_arr[2].RLAST   = mcu_dma_s_axi_if.rlast;
