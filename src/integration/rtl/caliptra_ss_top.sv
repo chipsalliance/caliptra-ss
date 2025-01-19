@@ -30,17 +30,20 @@ module caliptra_ss_top
 #(
     `include "css_mcu0_el2_param.vh"
 ) (
+    // -- Input to _i and output to _o -- TASK
     input logic cptra_ss_clk,
     input logic cptra_ss_pwrgood,
     input logic cptra_ss_rst_b,
 
     //SoC AXI Interface
+    // -- rename to cptra_ss_* from cptra_* -- TASK
     axi_if cptra_core_s_axi_if,
 
     // AXI Manager INF
     axi_if cptra_core_m_axi_if,
 
     //SoC AXI Interface
+    // -- rename to cptra_ss_* from cptra_* -- TASK
     axi_if mci_s_axi_if,
 
     // AXI Manager INF
@@ -48,17 +51,18 @@ module caliptra_ss_top
 
     axi_if mcu_lsu_m_axi_if,
     axi_if mcu_ifu_m_axi_if,
-    axi_if mcu_dma_s_axi_if,
+    axi_if mcu_dma_s_axi_if,  // -- Remove this. -- TASK
     axi_if i3c_s_axi_if,
 
-    input axi_struct_pkg::axi_wr_req_t lc_axi_wr_req,
+    input  axi_struct_pkg::axi_wr_req_t lc_axi_wr_req,
     output axi_struct_pkg::axi_wr_rsp_t lc_axi_wr_rsp,
-    input axi_struct_pkg::axi_rd_req_t lc_axi_rd_req,
+    input  axi_struct_pkg::axi_rd_req_t lc_axi_rd_req,
     output axi_struct_pkg::axi_rd_rsp_t lc_axi_rd_rsp,
 
-    input axi_struct_pkg::axi_wr_req_t core_axi_wr_req,
+    // -- Fuse controller interface -- TASK
+    input  axi_struct_pkg::axi_wr_req_t core_axi_wr_req,
     output axi_struct_pkg::axi_wr_rsp_t core_axi_wr_rsp,
-    input axi_struct_pkg::axi_rd_req_t core_axi_rd_req,
+    input  axi_struct_pkg::axi_rd_req_t core_axi_rd_req,
     output axi_struct_pkg::axi_rd_rsp_t core_axi_rd_rsp,
 
     //--------------------
@@ -66,6 +70,7 @@ module caliptra_ss_top
     //--------------------
     input logic [255:0]                              cptra_obf_key,
     input logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_csr_hmac_key,  
+
     //Caliptra JTAG Interface
     input logic                        cptra_core_jtag_tck,    // JTAG clk
     input logic                        cptra_core_jtag_tms,    // JTAG TMS
@@ -75,28 +80,31 @@ module caliptra_ss_top
     output logic                       cptra_core_jtag_tdoEn,  // JTAG TDO enable
 
     // Caliptra Memory Export Interface
+    // Caliptra Core, ICCM and DCCM interface
     el2_mem_if.veer_sram_src           cptra_core_el2_mem_export,
 
-    //SRAM interface for mbox
+    // SRAM interface for mbox
+    // Caliptra SS mailbox sram interface
     output logic cptra_core_mbox_sram_cs,
     output logic cptra_core_mbox_sram_we,
     output logic [CPTRA_MBOX_ADDR_W-1:0] cptra_core_mbox_sram_addr,
     output logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_core_mbox_sram_wdata,
     input  logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_core_mbox_sram_rdata,
 
-    //SRAM interface for imem
+    // Caliptra Core SRAM interface for imem (/ROM)
     output logic cptra_core_imem_cs,
     output logic [`CALIPTRA_IMEM_ADDR_WIDTH-1:0] cptra_core_imem_addr,
     input  logic [`CALIPTRA_IMEM_DATA_WIDTH-1:0] cptra_core_imem_rdata,
-    
+
+    // -- Move it from output to internal signal -- TASK
     output logic                       ready_for_fuses,
     output logic                       ready_for_mb_processing,
-
     output logic                       mailbox_data_avail,
 
+    // -- Rename to cptra_ss_cptra_core_bootfsm_bp -- TASK
     input logic                        BootFSM_BrkPoint,
 
-    //SoC Interrupts
+    // -- Move it from output to internal signal -- TASK
     output logic             cptra_error_fatal,
     output logic             cptra_error_non_fatal,
 
@@ -109,51 +117,60 @@ module caliptra_ss_top
     input  logic             cptra_core_itrng_valid,
     `endif
 
+    // -- Move it from output to internal signal -- TASK
     input logic  [63:0]                cptra_core_generic_input_wires,
     output logic [63:0]                cptra_core_generic_output_wires,
 
+    // -- rename to cptra_ss_cptra_core_scan_mode -- TASK
     input logic                        scan_mode,
 
-    //MCU
+    //MCU 
+    // -- rename to cptra_ss_* from * -- TASK
     mci_mcu_sram_if.request mci_mcu_sram_req_if,
-
     mci_mcu_sram_if.request mci_mbox0_sram_req_if,
-    
     mci_mcu_sram_if.request mci_mbox1_sram_req_if,
-
     css_mcu0_el2_mem_if css_mcu0_el2_mem_export,
 
+    // -- rename to cptra_ss_lc_* from * -- TASK
     input logic Allow_RMA_on_PPD,
 
 `ifdef LCC_FC_BFM_SIM
+    // -- Remove this @Emre -- TASK
     input logic lcc_bfm_reset,
 `endif 
 
 `ifdef LCC_FC_BFM_SIM
+    // -- Remove this @Emre -- TASK
     output wire [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_otp_to_lcc_bfm_data_override,
     input logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_lcc_bfm_to_lcc_data_override,
 `endif 
+
+    // -- rename to cptra_ss_* from SOC_* (remove soc) -- TASK
     input  lc_ctrl_pkg::lc_tx_t SOC_lc_clk_byp_ack,
     output lc_ctrl_pkg::lc_tx_t SOC_lc_clk_byp_req,
 
+    // -- Global change -- TASK
     input logic esc_scrap_state0,   // NOTE: These two signals are very important. FIXME: Renaming is needed
     input logic esc_scrap_state1,   // If you assert them, Caliptr-SS will enter SCRAP mode
 
-    output  wire                                 SOC_DFT_EN,
-    output  wire                                 SOC_HW_DEBUG_EN,
+    // -- rename to cptra_ss_* from * (keep SOC) -- TASK
+    output wire SOC_DFT_EN,
+    output wire SOC_HW_DEBUG_EN,
 
-
+    // -- rename to cptra_ss_* from * -- TASK
     input  tlul_pkg::tl_h2d_t                          fuse_macro_prim_tl_i,
     output tlul_pkg::tl_d2h_t                          fuse_macro_prim_tl_o,
 
 
-
+    // -- renmove this -- TASK
     `ifdef VERILATOR
     input bit [31:0]            mem_signature_begin,
     input bit [31:0]            mem_signature_end,
     input bit [31:0]            mem_mailbox
     `endif // VERILATOR
+    
     // I3C Interface
+    // -- rename to cptra_ss_* from * -- TASK
 `ifdef DIGITAL_IO_I3C
     input  logic scl_i,
     input  logic sda_i,
@@ -165,7 +182,7 @@ module caliptra_ss_top
     inout  wire  i3c_sda_io
 `endif
 );
-
+// -- remove this -- TASK
 `ifndef VERILATOR
     bit          [31:0]         mem_signature_begin = 32'd0; // TODO:
     bit          [31:0]         mem_signature_end   = 32'd0;
@@ -565,8 +582,9 @@ module caliptra_ss_top
 `endif
 
         // Subsystem mode straps
+        // -- This should go out as ports at SS -- TASK
         .strap_ss_caliptra_base_addr                            (64'h0),
-        .strap_ss_mci_base_addr                                 (64'h0),
+        .strap_ss_mci_base_addr                                 (64'h0), 
         .strap_ss_recovery_ifc_base_addr                        (64'h0),
         .strap_ss_otp_fc_base_addr                              (64'h0),
         .strap_ss_uds_seed_base_addr                            (64'h0),
@@ -576,13 +594,19 @@ module caliptra_ss_top
         .strap_ss_strap_generic_1                               (32'h0),
         .strap_ss_strap_generic_2                               (32'h0),
         .strap_ss_strap_generic_3                               (32'h0),
-        .ss_debug_intent                                        (1'b0 ),
+
+        // -- This should go out as ports at SS -- TASK
+        .ss_debug_intent                                        (1'b0 ), //-- This is a signal
 
         // Subsystem mode debug outputs
+        // -- This should go out as ports at SS -- TASK
+        // --- rename ss_soc_dbg_unlock_level to cptra_ss_cptra_core_soc_prod_dbg_unlock_level -- TASK
         .ss_dbg_manuf_enable(ss_dbg_manuf_enable),
         .ss_soc_dbg_unlock_level(ss_soc_dbg_unlock_level),
 
         // Subsystem mode firmware execution control
+        // -- This should go out as ports at SS -- TASK
+        // -- bit 2 of this connects to mcu_sram_fw_exec_region_lock -- TASK
         .ss_generic_fw_exec_ctrl(),
 
         .generic_input_wires(cptra_core_generic_input_wires),
@@ -719,7 +743,7 @@ module caliptra_ss_top
         .ifu_axi_rlast          ( mcu_ifu_m_axi_if.rlast   ),
 
         //-------------------------- SB AXI signals--------------------------
-        // AXI Write Channels
+        // AXI Write Channels -- system bus
         .sb_axi_awvalid         (sb_axi_awvalid),
         .sb_axi_awready         (sb_axi_awready),
         .sb_axi_awid            (sb_axi_awid),
@@ -819,6 +843,9 @@ module caliptra_ss_top
         .trace_rv_i_interrupt_ip(),//FIXME future (trace_rv_i_interrupt_ip),
         .trace_rv_i_tval_ip     (),//FIXME future (trace_rv_i_tval_ip),
 
+        // JTAG Interface
+        // -- MCU JTAG Interface -- Needs to go out -- TASK
+        // -- Rename this to cptra_core_jtag_tck from * -- TASK
         .jtag_tck               ( 1'b0  ),
         .jtag_tms               ( 1'b0  ),
         .jtag_tdi               ( 1'b0  ),
@@ -831,7 +858,7 @@ module caliptra_ss_top
         .mpc_debug_run_ack      ( mpc_debug_run_ack),
         .mpc_debug_run_req      ( 1'b1),
         .mpc_reset_run_req      ( 1'b1),             // Start running after reset
-         .debug_brkpt_status    (debug_brkpt_status),
+        .debug_brkpt_status    (debug_brkpt_status),
 
         .i_cpu_halt_req         ( 1'b0  ),    // Async halt req to CPU
         .o_cpu_halt_ack         ( o_cpu_halt_ack ),    // core response to halt
@@ -846,7 +873,8 @@ module caliptra_ss_top
         .dec_tlu_perfcnt3       (),
 
         .mem_clk                (css_mcu0_el2_mem_export.clk),
-
+        // -- These signals are not used in the design -- TASK
+        // -- Include this as part of integration specification -- TASK
         .iccm_clken             (css_mcu0_el2_mem_export.iccm_clken),
         .iccm_wren_bank         (css_mcu0_el2_mem_export.iccm_wren_bank),
         .iccm_addr_bank         (css_mcu0_el2_mem_export.iccm_addr_bank),
@@ -888,7 +916,7 @@ module caliptra_ss_top
         .dccm_ecc_double_error  (),
 
         .core_id                ('0),
-        .scan_mode              ( 1'b0 ),         // To enable scan mode
+        .scan_mode              ( 1'b0 ),        // To enable scan mode
         .mbist_mode             ( 1'b0 ),        // to enable mbist
 
         .dmi_core_enable        (),
@@ -905,6 +933,7 @@ module caliptra_ss_top
     //=========================================================================-
     // I3C-Core Instance
     //=========================================================================-
+    // -- Add interrupt signal to the I3C-Core -- TASK
 
     i3c_wrapper #(
         .AxiDataWidth(`AXI_DATA_WIDTH),
@@ -997,13 +1026,17 @@ module caliptra_ss_top
         .m_axi_w_if(mci_m_axi_if.w_mgr),
         .m_axi_r_if(mci_m_axi_if.r_mgr),
         
+        // -- move this these straps to the top level -- TASK
         .strap_mcu_lsu_axi_user(32'hFFFF_FFFF),
         .strap_mcu_ifu_axi_user(32'hFFFF_FFFF),
         .strap_clp_axi_user(32'hFFFF_FFFF),
+        // --- remove this -- TASK
         .strap_prod_debug_unlock_pk_hash('1),
         // .strap_mcu_sram_access0_axi_user(32'hFFFF_FFFF),
         // .strap_mcu_sram_access1_axi_user(32'hFFFF_FFFF),
 
+        // -- this needs to hooked upto bit 2 of generic firmware wires -- TASK
+        // -- connects to ss_generic_fw_exec_ctrl (bit 2)
         .mcu_sram_fw_exec_region_lock(1'b1),
 
         .agg_error_fatal(1'b0),
@@ -1012,17 +1045,23 @@ module caliptra_ss_top
         // .cptra_error_fatal(1'b0),
         // .cptra_error_non_fatal(1'b0),
 
+        // -- move these to the top level -- TASK
         .mci_error_fatal(),
         .mci_error_non_fatal(),
 
+        // -- move these to the top level -- TASK
         .mci_generic_input_wires(64'h0),
         .mci_generic_output_wires(),
 
         .mcu_timer_int(mci_mcu_timer_int),
         .mci_intr(mci_intr),
 
+        // -- Straps need to be moved to the top level -- TASK
         .strap_mcu_reset_vector(32'h0),
+        
         .mcu_reset_vector(),
+
+        // -- straps need to be moved to the top level -- TASK
         .mcu_no_rom_config(1'b1),
 
         .nmi_intr(mci_mcu_nmi_int),
@@ -1031,6 +1070,7 @@ module caliptra_ss_top
         .mcu_rst_b(mcu_rst_b),
         .cptra_rst_b(mcu_cptra_rst_b),
 
+        // -- move this to the top level -- TASK
         .mci_boot_seq_brkpoint(1'b0),
 
         .lc_done(lcc_to_mci_lc_done), //output from lcc
@@ -1043,27 +1083,28 @@ module caliptra_ss_top
         .fc_opt_init(mci_to_otp_ctrl_init_req), //input to otp
         // .fc_intr_otp_error(1'b0),
 
-        .mci_mcu_sram_req_if(mci_mcu_sram_req_if),
+        .mci_mcu_sram_req_if  (mci_mcu_sram_req_if),
         .mci_mbox0_sram_req_if(mci_mbox0_sram_req_if),
         .mci_mbox1_sram_req_if(mci_mbox1_sram_req_if),
-
 
         .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
         .lc_dft_en_i(lc_dft_en_i),
         .lc_hw_debug_en_i(lc_hw_debug_en_i),
-   // Inputs from OTP_Ctrl
+
+        // Inputs from OTP_Ctrl
         .from_otp_to_lcc_program_i(from_otp_to_lcc_data_i),
-   // Inputs from Caliptra_Core
-        .ss_dbg_manuf_enable_i(ss_dbg_manuf_enable), 
+
+        // Inputs from Caliptra_Core
+        .ss_dbg_manuf_enable_i(ss_dbg_manuf_enable),
         .ss_soc_dbg_unlock_level_i(ss_soc_dbg_unlock_level),
 
-   // Converted Signals from LCC to SoC
+        // Converted Signals from LCC to SoC
         .SOC_DFT_EN(SOC_DFT_EN),
         .SOC_HW_DEBUG_EN(SOC_HW_DEBUG_EN),
 
-   // Converted Signals from LCC to Caliptra-core
+        // Converted Signals from LCC to Caliptra-core
         .security_state_o(mci_cptra_security_state)
-    
+
     );
 
     //=========================================================================-
@@ -1118,16 +1159,19 @@ module caliptra_ss_top
             .axi_rd_req(lc_axi_rd_req),
             .axi_rd_rsp(lc_axi_rd_rsp),
 
+            // -- move this to the top level -- TASK
             .jtag_i('0),    // FIXME: the JTAG should be connected with SoC Logic, TODO: Needs to be input output of SoC
             .jtag_o(),
             
+            // -- move this to the top level -- TASK
             .scan_rst_ni(lc_ctrl_scan_rst_ni),
-            .scanmode_i(lc_ctrl_scanmode_i),
             
+            .scanmode_i(lc_ctrl_scanmode_i),
+
             .alerts(lc_alerts_o),
+            // -- move this to the top level -- TASK
             .esc_scrap_state0(esc_scrap_state0),
             .esc_scrap_state1(esc_scrap_state1),
-
 
             .pwr_lc_i(lcc_init_req),
             .pwr_lc_o(), // Note: It is tied with this assignment: lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
@@ -1138,7 +1182,7 @@ module caliptra_ss_top
             .lc_otp_vendor_test_i(from_otp_to_lc_vendor_test_internal),
             .lc_otp_program_o(from_lcc_to_otp_program_i),
             .lc_otp_program_i(lc_otp_program_internal),
-
+// -- Remove this -- TASK
 `ifdef LCC_FC_BFM_SIM
             .otp_lc_data_i(from_lcc_bfm_to_lcc_data_override),
 `else
@@ -1155,6 +1199,7 @@ module caliptra_ss_top
             .lc_hw_debug_en_o(lc_hw_debug_en_i),
             .lc_cpu_en_o(), // Note: this port is not used in Caliptra-ss, needs to be removed from LCC RTL
 
+            // -- move this to the top level -- TASK
             .lc_clk_byp_req_o(SOC_lc_clk_byp_req),
             .lc_clk_byp_ack_i(SOC_lc_clk_byp_ack),
 
@@ -1215,7 +1260,7 @@ module caliptra_ss_top
         .lc_creator_seed_sw_rw_en_i(lc_creator_seed_sw_rw_en_internal),
         .lc_owner_seed_sw_rw_en_i(lc_owner_seed_sw_rw_en_internal),
         .lc_seed_hw_rd_en_i(lc_seed_hw_rd_en_internal),
-    .lc_dft_en_i(lc_dft_en_i),
+        .lc_dft_en_i(lc_dft_en_i),
         .lc_escalate_en_i(lc_escalate_en_internal),
         .lc_check_byp_en_i(lc_check_byp_en_internal),
 
@@ -1238,7 +1283,7 @@ module caliptra_ss_top
         .cio_test_en_o              ()    //TODO: Needs to be checked
 	); 
 
-
+    // -- remove this @Emre -- TASK 
     assign scanmode_mubi = scan_mode ? caliptra_prim_mubi_pkg::MuBi4True : caliptra_prim_mubi_pkg::MuBi4False;
 
     // assign otp_lc_data_o_valid = otp_lc_data_o.valid;
