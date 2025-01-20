@@ -1512,7 +1512,7 @@ module caliptra_ss_top_tb
     end
 
     //instantiate caliptra ss top module
-    logic [127:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
+    logic [124:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
     logic         cptra_ss_mci_boot_seq_brkpoint_i;
     logic         cptra_ss_mcu_no_rom_config_i;
     logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;

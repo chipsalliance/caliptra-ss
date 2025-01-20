@@ -73,7 +73,7 @@ module caliptra_ss_top
     input logic                        cptra_ss_cptra_core_jtag_trst_n_i, // JTAG Reset
     output logic                       cptra_ss_cptra_core_jtag_tdo_o,    // JTAG TDO
     output logic                       cptra_ss_cptra_core_jtag_tdoEn_o,  // JTAG TDO enable
-    output logic [127:0]               cptra_ss_cptra_generic_fw_exec_ctrl_o,
+    output logic [124:0]               cptra_ss_cptra_generic_fw_exec_ctrl_o,
     
 
 //LC controller JTAG
@@ -540,6 +540,10 @@ module caliptra_ss_top
     //=========================================================================-
     // Caliptra DUT instance
     //=========================================================================-
+    
+    logic [127:0] cptra_ss_cptra_generic_fw_exec_ctrl_internal;
+    assign cptra_ss_cptra_generic_fw_exec_ctrl_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[127:3];
+
     caliptra_top caliptra_top_dut (
         .clk                        (cptra_ss_clk_i),
         .cptra_pwrgood              (cptra_ss_pwrgood_i),
@@ -624,7 +628,7 @@ module caliptra_ss_top
         .ss_soc_dbg_unlock_level(cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o),
 
         // Subsystem mode firmware execution control
-        .ss_generic_fw_exec_ctrl(cptra_ss_cptra_generic_fw_exec_ctrl_o),
+        .ss_generic_fw_exec_ctrl(cptra_ss_cptra_generic_fw_exec_ctrl_internal),
 
         .generic_input_wires(cptra_ss_cptra_core_generic_input_wires_i),
         .generic_output_wires(cptra_ss_cptra_core_generic_output_wires_o),
@@ -632,6 +636,8 @@ module caliptra_ss_top
         .security_state(mci_cptra_security_state),
         .scan_mode     (cptra_ss_cptra_core_scan_mode_i)
     );
+
+
 
 
     logic mci_intr;
@@ -1047,7 +1053,7 @@ module caliptra_ss_top
         .strap_clp_axi_user    (cptra_ss_strap_clp_axi_user_i),
 
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
-        .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_o[2]),
+        .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_internal[2]),
 
         .agg_error_fatal(1'b0),
         .agg_error_non_fatal(1'b0),
