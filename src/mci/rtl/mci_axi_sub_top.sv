@@ -112,7 +112,8 @@ axi_sub #(
     .last  (soc_resp_if.req_data.last), // FIXME unused in code today Asserted with final 'dv' of a burst
     .hld   (soc_resp_if.hold    ),
     .rd_err(soc_resp_if.error   ),
-    .wr_err(soc_resp_if.error   )
+    .wr_err(soc_resp_if.error   ),
+    .size  ()
 );
 
 assign soc_resp_if.req_data.size = '0; // FIXME unused?
