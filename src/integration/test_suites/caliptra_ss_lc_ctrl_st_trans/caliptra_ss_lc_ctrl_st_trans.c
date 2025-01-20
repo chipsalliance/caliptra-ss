@@ -412,6 +412,9 @@ void main (void) {
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
+    for (uint8_t ii = 0; ii < 255; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
 
 
     SEND_STDOUT_CTRL(0xff);

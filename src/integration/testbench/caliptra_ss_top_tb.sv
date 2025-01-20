@@ -1387,62 +1387,12 @@ module caliptra_ss_top_tb
        .rdata_o (cptra_ss_mci_mcu_sram_req_if.resp.rdata)
    );
 
-    //--------------------------------------------------------------------------------------------
-    // These are shared signals between fuse controller and lc controller
-   logic [$bits(otp_ctrl_pkg::lc_otp_vendor_test_req_t)-1:0] lc_otp_vendor_test_o_tb;
-   logic [$bits(otp_ctrl_pkg::lc_otp_vendor_test_rsp_t)-1:0] lc_otp_vendor_test_i_tb;
-   logic [$bits(otp_ctrl_pkg::lc_otp_program_rsp_t)-1:0] lc_otp_program_i_tb;
-
-   logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_creator_seed_sw_rw_en_tb;
-   logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_owner_seed_sw_rw_en_tb;
-   logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_seed_hw_rd_en_tb;
-   logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_escalate_en_tb;
-   logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_check_byp_en_tb;
-   logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_clk_byp_ack_tb;
-   assign lc_otp_vendor_test_o_tb = otp_ctrl_pkg::lc_otp_vendor_test_req_t'(caliptra_ss_dut.u_lc_ctrl.lc_otp_vendor_test_o);
-   assign lc_otp_vendor_test_i_tb = otp_ctrl_pkg::lc_otp_vendor_test_rsp_t'(caliptra_ss_dut.u_otp_ctrl.lc_otp_vendor_test_o);
-   assign lc_otp_program_i_tb = otp_ctrl_pkg::lc_otp_program_rsp_t'(caliptra_ss_dut.u_otp_ctrl.lc_otp_program_o);
-
-   assign lc_creator_seed_sw_rw_en_tb = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_creator_seed_sw_rw_en_o);
-   assign lc_owner_seed_sw_rw_en_tb = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_owner_seed_sw_rw_en_o);
-   assign lc_seed_hw_rd_en_tb = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_seed_hw_rd_en_o);
-   assign lc_escalate_en_tb = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_escalate_en_o);
-   assign lc_check_byp_en_tb = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_check_byp_en_o);
-   assign lc_clk_byp_ack_tb = lc_ctrl_pkg::lc_tx_t'(u_lc_ctrl_bfm.lc_clk_byp_ack_i);
-   //--------------------------------------------------------------------------------------------
-   // These are going to be connected to SoC later on
-   logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_cpu_en_tb;
-   assign lc_cpu_en_tb = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_cpu_en_o);
-   //--------------------------------------------------------------------------------------------
-
-   //--------------------------------------------------------------------------------------------
-   // These are driven by the lc ctrl bfm
-   logic [$bits(lc_ctrl_pkg::lc_tx_t)-1:0] lc_clk_byp_req_tb;
-   assign lc_clk_byp_req_tb = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_clk_byp_req_o);
-
-   logic [$bits(pwrmgr_pkg::pwr_lc_req_t)-1:0] pwr_lc_i_tb;
-   logic [$bits(pwrmgr_pkg::pwr_lc_rsp_t)-1:0] pwr_lc_o_tb;
-   // Assignments for Power Manager Interface
-   assign pwr_lc_i_tb = pwrmgr_pkg::pwr_lc_req_t'(u_lc_ctrl_bfm.pwr_lc_i);
-   assign pwr_lc_o_tb = pwrmgr_pkg::pwr_lc_rsp_t'(caliptra_ss_dut.u_lc_ctrl.pwr_lc_o);
-
-   logic [3:0]  to_bfm_lc_flash_rma_req_o;
-   assign to_bfm_lc_flash_rma_req_o = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_flash_rma_req_o);
-
 
    // driven by lc_ctrl_bfm
    logic cptra_ss_lc_esclate_scrap_state0_i;
    logic cptra_ss_lc_esclate_scrap_state1_i;
 
-   // Scan Interface
-   logic lc_ctrl_scan_rst_ni_tb;
-   logic [$bits(caliptra_prim_mubi_pkg::mubi4_t)-1:0] lc_ctrl_scanmode_i_tb;
-   assign lc_ctrl_scanmode_i_tb = caliptra_prim_mubi_pkg::mubi4_t'(u_lc_ctrl_bfm.lc_ctrl_scanmode_i);
-
-
-
-   logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_otp_to_lcc_bfm_data_override;
-   logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_lcc_bfm_to_lcc_data_override;
+   
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_ack_i;
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_req_o;
 
@@ -1460,27 +1410,9 @@ module caliptra_ss_top_tb
         .fake_reset(lcc_bfm_reset),
         .Allow_RMA_on_PPD(cptra_ss_lc_Allow_RMA_on_PPD_i),
 
-
-        // Scan Interface
-        .lc_ctrl_scan_rst_ni(lc_ctrl_scan_rst_ni_tb),
-        .lc_ctrl_scanmode_i(),
-
-        // Alert Handler Interface
-        .lc_alerts_o('0),
-
         // Escalation State Interface
         .esc_scrap_state0(cptra_ss_lc_esclate_scrap_state0_i),
         .esc_scrap_state1(cptra_ss_lc_esclate_scrap_state1_i),
-
-
-        // OTP hack
-        .otp_lc_data_o(from_lcc_bfm_to_lcc_data_override),
-        .from_otp_lc_data_i(from_otp_to_lcc_bfm_data_override),
-
-        // Power manager interface
-        .pwr_lc_i(),
-        .pwr_lc_o(pwrmgr_pkg::pwr_lc_rsp_t'(pwr_lc_o_tb)),
-        .cptra_pwrgood(cptra_ss_pwrgood_i),
 
         // Clock manager interface
         .lc_clk_byp_req_o(cptra_ss_lc_clk_byp_req_o),
@@ -1517,7 +1449,7 @@ module caliptra_ss_top_tb
         .lc_dft_en_i         (),
         .lc_escalate_en_i    (),
         .lc_check_byp_en_i   (),
-        .otp_lc_data_o (otp_ctrl_pkg::otp_lc_data_t'(from_otp_to_lcc_bfm_data_override)),
+        .otp_lc_data_o (caliptra_ss_dut.u_otp_ctrl.otp_lc_data_o),
         .fuse_ctrl_rdy       (fuse_ctrl_rdy       )
     );
 
