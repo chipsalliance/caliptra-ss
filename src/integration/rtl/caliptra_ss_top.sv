@@ -48,7 +48,6 @@ module caliptra_ss_top
 
     axi_if cptra_ss_mcu_lsu_m_axi_if,
     axi_if cptra_ss_mcu_ifu_m_axi_if,
-    axi_if mcu_dma_s_axi_if,  // -- Remove this. -- TASK
     axi_if cptra_ss_i3c_s_axi_if,
 
     input  axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i,
@@ -180,7 +179,7 @@ module caliptra_ss_top
     inout  wire  cptra_ss_i3c_sda_io,
 `endif
 
-// -- Move it from output to internal signal -- TASK 
+// -- THESE ARE NOT RTL SIGNALS, DO NOT USE THEM
 // -- note: these are output required for TB
 // -- this will go away in final release
     input  logic [63:0] cptra_ss_cptra_core_generic_input_wires_i,
@@ -498,6 +497,14 @@ module caliptra_ss_top
     // tie offs
         assign reset_vector = `css_mcu0_RV_RESET_VEC;
 
+    // MCU DMA AXI Interface
+    axi_if #(
+        .AW(32), //-- FIXME : Assign a common paramter
+        .DW(64), //-- FIXME : Assign a common paramter,
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) mcu_dma_s_axi_if (.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+
      always_comb begin
         cptra_ss_mcu_lsu_m_axi_if.awuser                                              = 32'hFFFF_FFFF;
         cptra_ss_mcu_lsu_m_axi_if.aruser                                              = 32'hFFFF_FFFF;
@@ -507,8 +514,16 @@ module caliptra_ss_top
         cptra_ss_mcu_lsu_m_axi_if.awuser[aaxi_pkg::AAXI_AWUSER_WIDTH-1:0]             = '1;
         cptra_ss_mcu_ifu_m_axi_if.arid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
         cptra_ss_mcu_ifu_m_axi_if.awid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
-        mcu_dma_s_axi_if.rid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
-        mcu_dma_s_axi_if.bid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
+        
+        // mcu_dma_s_axi_if.rid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
+        // mcu_dma_s_axi_if.bid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
+        
+        mcu_dma_s_axi_if.awvalid = '0;
+        mcu_dma_s_axi_if.wvalid  = '0;
+        mcu_dma_s_axi_if.bready  = '0;
+        mcu_dma_s_axi_if.arvalid = '0;
+        mcu_dma_s_axi_if.rready  = '0;
+
     end
 
     // Fuse controller output is re-organized to feed caliptra-core with its fuse values and valid signal.
@@ -874,7 +889,7 @@ module caliptra_ss_top
 
         .mem_clk                (cptra_ss_mcu0_el2_mem_export.clk),
 
-        // -- Include this as part of integration specification -- TASK
+        // -- Include this as part of integration specification
         // -- These signals are not used in the design
         .iccm_clken             (cptra_ss_mcu0_el2_mem_export.iccm_clken),
         .iccm_wren_bank         (cptra_ss_mcu0_el2_mem_export.iccm_wren_bank),
