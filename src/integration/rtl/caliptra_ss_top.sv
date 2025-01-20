@@ -155,17 +155,6 @@ module caliptra_ss_top
     output logic        cptra_ss_dbg_manuf_enable_o,
     output logic [63:0] cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o,
 
-`ifdef LCC_FC_BFM_SIM
-    // -- Remove this @Emre -- TASK
-    input logic lcc_bfm_reset,
-`endif 
-
-`ifdef LCC_FC_BFM_SIM
-    // -- Remove this @Emre -- TASK
-    output wire [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_otp_to_lcc_bfm_data_override,
-    input logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_lcc_bfm_to_lcc_data_override,
-`endif 
-
     input  lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_ack_i,
     output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_req_o,
     input  cptra_ss_lc_ctrl_scan_rst_ni_i,
@@ -1125,20 +1114,9 @@ module caliptra_ss_top
     lc_ctrl_pkg::lc_tx_t lc_seed_hw_rd_en_internal;
     lc_ctrl_pkg::lc_tx_t lc_escalate_en_internal;
     lc_ctrl_pkg::lc_tx_t lc_check_byp_en_internal;
-    logic lcc_fc_reset;
     caliptra_prim_mubi_pkg::mubi4_t lc_ctrl_scanmode_i;
     assign lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
 
-    
-
-
-
-`ifdef LCC_FC_BFM_SIM
-    assign lcc_fc_reset = cptra_ss_rst_b_i & lcc_bfm_reset;
-    assign from_otp_to_lcc_bfm_data_override = from_otp_to_lcc_data_i;
-`else
-    assign lcc_fc_reset = cptra_ss_rst_b_i;
-`endif    
 
     //--------------------------------------------------------------------------------------------
 
@@ -1149,7 +1127,7 @@ module caliptra_ss_top
 
     lc_ctrl u_lc_ctrl (
             .clk_i(cptra_ss_clk_i),
-            .rst_ni(lcc_fc_reset),
+            .rst_ni(cptra_ss_rst_b_i),
             .Allow_RMA_on_PPD(cptra_ss_lc_Allow_RMA_on_PPD_i),
             .axi_wr_req(cptra_ss_lc_axi_wr_req_i),
             .axi_wr_rsp(cptra_ss_lc_axi_wr_rsp_o),
@@ -1177,13 +1155,7 @@ module caliptra_ss_top
             .lc_otp_vendor_test_i(from_otp_to_lc_vendor_test_internal),
             .lc_otp_program_o(from_lcc_to_otp_program_i),
             .lc_otp_program_i(lc_otp_program_internal),
-// -- Remove this @Emre -- TASK
-`ifdef LCC_FC_BFM_SIM
-            .otp_lc_data_i(from_lcc_bfm_to_lcc_data_override),
-`else
             .otp_lc_data_i(from_otp_to_lcc_data_i),
-`endif 
-
             .lc_dft_en_o(lc_dft_en_i),
             .lc_creator_seed_sw_rw_en_o(lc_creator_seed_sw_rw_en_internal),
             .lc_owner_seed_sw_rw_en_o(lc_owner_seed_sw_rw_en_internal),
@@ -1208,11 +1180,6 @@ module caliptra_ss_top
     // 
     //=========================================================================-
     
-    // logic otp_lc_data_o_valid;
-
-
-    caliptra_prim_mubi_pkg::mubi4_t scanmode_mubi;
-    
     assign otp_ctrl_to_mci_otp_ctrl_done = pwrmgr_pkg::pwr_otp_rsp_t'(u_otp_ctrl.pwr_otp_o.otp_done);
     assign otp_ctrl_init_req.otp_init = mci_to_otp_ctrl_init_req; 
 
@@ -1220,7 +1187,7 @@ module caliptra_ss_top
         .MemInitFile ("otp-img.2048.vmem")
     ) u_otp_ctrl (
         .clk_i                      (cptra_ss_clk_i),
-        .rst_ni                     (lcc_fc_reset),
+        .rst_ni                     (cptra_ss_rst_b_i),
         .clk_edn_i                  (1'b0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .rst_edn_ni                 (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .edn_o                      (),     // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
@@ -1276,11 +1243,6 @@ module caliptra_ss_top
         .cio_test_o                 (),    //TODO: Needs to be checked
         .cio_test_en_o              ()    //TODO: Needs to be checked
 	); 
-
-    // -- remove this @Emre -- TASK 
-    assign scanmode_mubi = cptra_ss_cptra_core_scan_mode_i ? caliptra_prim_mubi_pkg::MuBi4True : caliptra_prim_mubi_pkg::MuBi4False;
-
-    // assign otp_lc_data_o_valid = otp_lc_data_o.valid;
 
     // assign fuse_ctrl_rdy = 1;
     // De-assert cptra_rst_b only after fuse_ctrl has initialized

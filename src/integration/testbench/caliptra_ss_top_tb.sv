@@ -1487,6 +1487,23 @@ module caliptra_ss_top_tb
         .lc_clk_byp_ack_i(cptra_ss_lc_clk_byp_ack_i)
     );
 
+`ifdef LCC_FC_BFM_SIM
+    always_comb begin
+        if (!lcc_bfm_reset) begin
+            force caliptra_ss_dut.u_lc_ctrl.rst_ni = 1'b0;
+            force caliptra_ss_dut.u_otp_ctrl.rst_ni = 1'b0;
+        end else begin
+            release caliptra_ss_dut.u_lc_ctrl.rst_ni;
+            release caliptra_ss_dut.u_otp_ctrl.rst_ni;
+        end
+        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_tokens_valid = 4'b0101; //from_otp_caliptra_ss_lc_data_i.test_tokens_valid;//caliptra_ss_lc_tx_t'(On);
+        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_unlock_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_exit_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.rma_token_valid = 4'b0101;//from_otp_caliptra_ss_lc_data_i.rma_token_valid;//caliptra_ss_lc_tx_t'(On);
+        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.rma_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+    end
+`endif
+
     //--------------------------------------------------------------------------------------------
 
     assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(caliptra_ss_dut.u_lc_ctrl.pwr_lc_o.lc_done);
@@ -1739,13 +1756,6 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_generic_1_i,
         .cptra_ss_strap_generic_2_i,
         .cptra_ss_strap_generic_3_i,
-    
-    `ifdef LCC_FC_BFM_SIM
-        .lcc_bfm_reset,
-        .from_otp_to_lcc_bfm_data_override(from_otp_to_lcc_bfm_data_override),
-        .from_lcc_bfm_to_lcc_data_override(from_lcc_bfm_to_lcc_data_override),
-    `endif 
-    
     
         .cptra_ss_lc_clk_byp_ack_i           (cptra_ss_lc_clk_byp_ack_i),
         .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),
