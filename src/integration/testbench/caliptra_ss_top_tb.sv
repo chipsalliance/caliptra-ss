@@ -26,41 +26,19 @@
 `include "soc_address_map_defines.svh"
 
 module caliptra_ss_top_tb
-    import tb_top_pkg::*;
-    import aaxi_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
-) (
-
-
-    output  wire                                 SOC_DFT_EN,
-    output  wire                                 SOC_HW_DEBUG_EN,
-
-
-    `ifdef VERILATOR
-    input bit [31:0]            mem_signature_begin,
-    input bit [31:0]            mem_signature_end,
-    input bit [31:0]            mem_mailbox
-    `endif // VERILATOR
-    // I3C Interface
-`ifdef VERILATOR
-    input  logic scl_i,
-    input  logic sda_i,
-    output logic scl_o,
-    output logic sda_o,
-    output logic sel_od_pp_o
-`else
-    inout  wire  i3c_scl_io,
-    inout  wire  i3c_sda_io
-`endif
- 
 );
+
+    import tb_top_pkg::*;
+    import aaxi_pkg::*;
     import axi_pkg::*;
     import soc_ifc_pkg::*;
     import caliptra_top_tb_pkg::*;
     import ai2c_pkg::*;
     import ai3c_pkg::*;
     import avery_pkg_test::*;
+    import jtag_pkg::*;
 
 `ifndef VERILATOR
     // Time formatting for %t in display tasks
@@ -72,11 +50,9 @@ module caliptra_ss_top_tb
 `endif
 
     bit                         core_clk;
-`ifndef VERILATOR
     bit          [31:0]         mem_signature_begin = 32'd0; // TODO:
     bit          [31:0]         mem_signature_end   = 32'd0;
     bit          [31:0]         mem_mailbox         = 32'h21000410;
-`endif
     logic                       rst_l;
     logic                       porst_l;
     logic [pt.PIC_TOTAL_INT:1]  ext_int_tb;
@@ -370,51 +346,19 @@ module caliptra_ss_top_tb
 //------------------------------------------------------------------------
 
     logic pwr_otp_init_i;
-    logic Allow_RMA_on_PPD;
+    logic cptra_ss_lc_Allow_RMA_on_PPD_i;
     logic lcc_bfm_reset;
-//    //-------------------------- I3C AXI signals--------------------------
-//    // AXI Write Channels
-//        wire                             i3c_axi_awvalid;
-//        wire                             i3c_axi_awready;
-//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_awid;
-//        wire [31:0]                      i3c_axi_awaddr;
-//        wire [2:0]                       i3c_axi_awsize;
-//        wire [2:0]                       i3c_axi_awprot;
-//        wire [7:0]                       i3c_axi_awlen;
-//        wire [1:0]                       i3c_axi_awburst;
-//
-//
-//        wire                             i3c_axi_wvalid;
-//        wire                             i3c_axi_wready;
-//        wire [63:0]                      i3c_axi_wdata;
-//        wire [7:0]                       i3c_axi_wstrb;
-//        wire                             i3c_axi_wlast;
-//
-//        wire                             i3c_axi_bvalid;
-//        wire                             i3c_axi_bready;
-//        wire [1:0]                       i3c_axi_bresp;
-//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_bid;
-//
-//        // AXI Read Channels
-//        wire                             i3c_axi_arvalid;
-//        wire                             i3c_axi_arready;
-//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_arid;
-//        wire [31:0]                      i3c_axi_araddr;
-//        wire [2:0]                       i3c_axi_arsize;
-//        wire [2:0]                       i3c_axi_arprot;
-//        wire [7:0]                       i3c_axi_arlen;
-//        wire [1:0]                       i3c_axi_arburst;
-//
-//        wire                             i3c_axi_rvalid;
-//        wire                             i3c_axi_rready;
-//        wire [`CALIPTRA_AXI_ID_WIDTH:0]  i3c_axi_rid;
-//        wire [63:0]                      i3c_axi_rdata;
-//        wire [1:0]                       i3c_axi_rresp;
-//        wire                             i3c_axi_rlast;
+
+
+
+
+    //-- 
+    logic                                 cptra_ss_soc_dft_en_o;
+    logic                                 cptra_ss_soc_hw_debug_en_o;
 
     string                      abi_reg[32]; // ABI register names
-    css_mcu0_el2_mem_if         css_mcu0_el2_mem_export ();
-    el2_mem_if                  cptra_core_el2_mem_export ();        
+    css_mcu0_el2_mem_if         cptra_ss_mcu0_el2_mem_export ();
+    el2_mem_if                  cptra_ss_cptra_core_el2_mem_export ();        
 
     logic [pt.ICCM_NUM_BANKS-1:0][                   38:0] iccm_bank_wr_fdata;
     logic [pt.ICCM_NUM_BANKS-1:0][                   38:0] iccm_bank_fdout;
@@ -652,7 +596,7 @@ module caliptra_ss_top_tb
         .DW(CPTRA_AXI_DMA_DATA_WIDTH),
         .IW(CPTRA_AXI_DMA_ID_WIDTH),
         .UW(CPTRA_AXI_DMA_USER_WIDTH)
-    ) cptra_core_m_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_cptra_core_m_axi_if (.clk(core_clk), .rst_n(rst_l));
 
     // Cptra Sub AXI Interface
     axi_if #(
@@ -660,7 +604,7 @@ module caliptra_ss_top_tb
         .DW(`CALIPTRA_AXI_DATA_WIDTH),
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_core_s_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_cptra_core_s_axi_if (.clk(core_clk), .rst_n(rst_l));
 
     // MCI Mgr AXI Interface
     axi_if #(
@@ -668,7 +612,7 @@ module caliptra_ss_top_tb
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) mci_m_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_mci_m_axi_if (.clk(core_clk), .rst_n(rst_l));
 
     // MCI Sub AXI Interface
     axi_if #(
@@ -676,7 +620,7 @@ module caliptra_ss_top_tb
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) mci_s_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_mci_s_axi_if (.clk(core_clk), .rst_n(rst_l));
 
     // MCU LSU AXI Interface
     axi_if #(
@@ -684,7 +628,7 @@ module caliptra_ss_top_tb
         .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) mcu_lsu_m_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_mcu_lsu_m_axi_if (.clk(core_clk), .rst_n(rst_l));
 
     // MCU IFU AXI Interface
     axi_if #(
@@ -692,7 +636,7 @@ module caliptra_ss_top_tb
         .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) mcu_ifu_m_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_mcu_ifu_m_axi_if (.clk(core_clk), .rst_n(rst_l));
 
     // MCU DMA AXI Interface
     axi_if #(
@@ -708,32 +652,32 @@ module caliptra_ss_top_tb
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) i3c_s_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_i3c_s_axi_if (.clk(core_clk), .rst_n(rst_l));
 
-    axi_struct_pkg::axi_wr_req_t lc_axi_wr_req;
-    axi_struct_pkg::axi_wr_rsp_t lc_axi_wr_rsp;
-    axi_struct_pkg::axi_rd_req_t lc_axi_rd_req;
-    axi_struct_pkg::axi_rd_rsp_t lc_axi_rd_rsp;
+    axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i;
+    axi_struct_pkg::axi_wr_rsp_t cptra_ss_lc_axi_wr_rsp_o;
+    axi_struct_pkg::axi_rd_req_t cptra_ss_lc_axi_rd_req_i;
+    axi_struct_pkg::axi_rd_rsp_t cptra_ss_lc_axi_rd_rsp_o;
 
-    axi_struct_pkg::axi_wr_req_t core_axi_wr_req;
-    axi_struct_pkg::axi_wr_rsp_t core_axi_wr_rsp;
-    axi_struct_pkg::axi_rd_req_t core_axi_rd_req;
-    axi_struct_pkg::axi_rd_rsp_t core_axi_rd_rsp;
-    
-    logic cptra_core_m_axi_if_rd_is_upper_dw_latched;
-    logic cptra_core_m_axi_if_wr_is_upper_dw_latched;
-    logic m_axi_bfm_if_rd_is_upper_dw_latched;
-    logic m_axi_bfm_if_wr_is_upper_dw_latched;
+    axi_struct_pkg::axi_wr_req_t cptra_ss_otp_core_axi_wr_req_i;
+    axi_struct_pkg::axi_wr_rsp_t cptra_ss_otp_core_axi_wr_rsp_o;
+    axi_struct_pkg::axi_rd_req_t cptra_ss_otp_core_axi_rd_req_i;
+    axi_struct_pkg::axi_rd_rsp_t cptra_ss_otp_core_axi_rd_rsp_o;
+
     logic fuse_core_axi_rd_is_upper_dw_latched;
     logic fuse_core_axi_wr_is_upper_dw_latched;
-    logic mci_s_axi_if_rd_is_upper_dw_latched;
-    logic mci_s_axi_if_wr_is_upper_dw_latched;
-    logic cptra_core_s_axi_if_rd_is_upper_dw_latched;
-    logic cptra_core_s_axi_if_wr_is_upper_dw_latched;
     logic lc_axi_rd_is_upper_dw_latched;
     logic lc_axi_wr_is_upper_dw_latched;
-    logic i3c_s_axi_if_rd_is_upper_dw_latched;
-    logic i3c_s_axi_if_wr_is_upper_dw_latched;
+
+    `define SS_DATA_WIDTH_HACK_LOGIC_DEFINE(inf_name)\
+        logic ``inf_name``_rd_is_upper_dw_latched;\
+        logic ``inf_name``_wr_is_upper_dw_latched;
+
+    `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_cptra_core_m_axi_if)
+    `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_cptra_core_s_axi_if)
+    `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(m_axi_bfm_if)
+    `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_mci_s_axi_if)
+    `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_i3c_s_axi_if)
 
     `define SS_DATA_WIDTH_HACK(inf_name, core_clk = core_clk, rst_l = rst_l)\
     always@(posedge core_clk or negedge rst_l)\
@@ -750,41 +694,41 @@ module caliptra_ss_top_tb
     `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT``inf_name``, (``inf_name``.arvalid && ``inf_name``.arready) -> (``inf_name``.arsize < 3), core_clk, !rst_l)
     
 
-    `SS_DATA_WIDTH_HACK(cptra_core_m_axi_if)
-    `SS_DATA_WIDTH_HACK(cptra_core_s_axi_if)
+    `SS_DATA_WIDTH_HACK(cptra_ss_cptra_core_m_axi_if)
+    `SS_DATA_WIDTH_HACK(cptra_ss_cptra_core_s_axi_if)
     `SS_DATA_WIDTH_HACK(m_axi_bfm_if)
-    `SS_DATA_WIDTH_HACK(mci_s_axi_if)
-    `SS_DATA_WIDTH_HACK(i3c_s_axi_if)
+    `SS_DATA_WIDTH_HACK(cptra_ss_mci_s_axi_if)
+    `SS_DATA_WIDTH_HACK(cptra_ss_i3c_s_axi_if)
         
     //These don't fit the macro FIXME LATER
     // FIXME this is a gross hack for data width conversion
     always@(posedge core_clk or negedge rst_l)
     if (!rst_l)
         lc_axi_wr_is_upper_dw_latched <= 0;
-    else if (lc_axi_wr_req.awvalid && lc_axi_wr_rsp.awready)
-        lc_axi_wr_is_upper_dw_latched <= lc_axi_wr_req.awaddr[2] && (lc_axi_wr_req.awsize < 3);
-    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT, (lc_axi_wr_req.awvalid && lc_axi_wr_rsp.awready) -> (lc_axi_wr_req.awsize < 3), core_clk, !rst_l)
+    else if (cptra_ss_lc_axi_wr_req_i.awvalid && cptra_ss_lc_axi_wr_rsp_o.awready)
+        lc_axi_wr_is_upper_dw_latched <= cptra_ss_lc_axi_wr_req_i.awaddr[2] && (cptra_ss_lc_axi_wr_req_i.awsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT, (cptra_ss_lc_axi_wr_req_i.awvalid && cptra_ss_lc_axi_wr_rsp_o.awready) -> (cptra_ss_lc_axi_wr_req_i.awsize < 3), core_clk, !rst_l)
     // FIXME this is a gross hack for data width conversion
     always@(posedge core_clk or negedge rst_l)
         if (!rst_l)
             lc_axi_rd_is_upper_dw_latched <= 0;
-        else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready)
-            lc_axi_rd_is_upper_dw_latched <= lc_axi_rd_req.araddr[2] && (lc_axi_rd_req.arsize < 3);
-    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT, (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready) -> (lc_axi_rd_req.arsize < 3), core_clk, !rst_l)
+        else if (cptra_ss_lc_axi_rd_req_i.arvalid && cptra_ss_lc_axi_rd_rsp_o.arready)
+            lc_axi_rd_is_upper_dw_latched <= cptra_ss_lc_axi_rd_req_i.araddr[2] && (cptra_ss_lc_axi_rd_req_i.arsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT, (cptra_ss_lc_axi_rd_req_i.arvalid && cptra_ss_lc_axi_rd_rsp_o.arready) -> (cptra_ss_lc_axi_rd_req_i.arsize < 3), core_clk, !rst_l)
     // FIXME this is a gross hack for data width conversion
     always@(posedge core_clk or negedge rst_l)
         if (!rst_l)
             fuse_core_axi_wr_is_upper_dw_latched <= 0;
-        else if (core_axi_wr_req.awvalid && core_axi_wr_rsp.awready)
-            fuse_core_axi_wr_is_upper_dw_latched <= core_axi_wr_req.awaddr[2] && (core_axi_wr_req.awsize < 3);
-    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT, (core_axi_wr_req.awvalid && core_axi_wr_rsp.awready) -> (core_axi_wr_req.awsize < 3), core_clk, !rst_l)
+        else if (cptra_ss_otp_core_axi_wr_req_i.awvalid && cptra_ss_otp_core_axi_wr_rsp_o.awready)
+            fuse_core_axi_wr_is_upper_dw_latched <= cptra_ss_otp_core_axi_wr_req_i.awaddr[2] && (cptra_ss_otp_core_axi_wr_req_i.awsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT, (cptra_ss_otp_core_axi_wr_req_i.awvalid && cptra_ss_otp_core_axi_wr_rsp_o.awready) -> (cptra_ss_otp_core_axi_wr_req_i.awsize < 3), core_clk, !rst_l)
     // FIXME this is a gross hack for data width conversion
     always@(posedge core_clk or negedge rst_l)
         if (!rst_l)
             fuse_core_axi_rd_is_upper_dw_latched <= 0;
-        else if (core_axi_rd_req.arvalid && core_axi_rd_rsp.arready)
-            fuse_core_axi_rd_is_upper_dw_latched <= core_axi_rd_req.araddr[2] && (core_axi_rd_req.arsize < 3);
-    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT, (core_axi_rd_req.arvalid && core_axi_rd_rsp.arready) -> (core_axi_rd_req.arsize < 3), core_clk, !rst_l)
+        else if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready)
+            fuse_core_axi_rd_is_upper_dw_latched <= cptra_ss_otp_core_axi_rd_req_i.araddr[2] && (cptra_ss_otp_core_axi_rd_req_i.arsize < 3);
+    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT, (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready) -> (cptra_ss_otp_core_axi_rd_req_i.arsize < 3), core_clk, !rst_l)
 
     // AXI Interconnect connections
     always_comb begin
@@ -797,74 +741,74 @@ module caliptra_ss_top_tb
     end
     
     //Interconnect 0 - MCU LSU
-    assign axi_interconnect.mintf_arr[0].AWVALID = mcu_lsu_m_axi_if.awvalid;
-    assign axi_interconnect.mintf_arr[0].AWADDR[31:0]  = mcu_lsu_m_axi_if.awaddr;
-    assign axi_interconnect.mintf_arr[0].AWID    = mcu_lsu_m_axi_if.awid;
-    assign axi_interconnect.mintf_arr[0].AWLEN   = mcu_lsu_m_axi_if.awlen;
-    assign axi_interconnect.mintf_arr[0].AWSIZE  = mcu_lsu_m_axi_if.awsize;
-    assign axi_interconnect.mintf_arr[0].AWBURST = mcu_lsu_m_axi_if.awburst;
-    assign axi_interconnect.mintf_arr[0].AWLOCK  = mcu_lsu_m_axi_if.awlock;
-    assign axi_interconnect.mintf_arr[0].AWUSER  = mcu_lsu_m_axi_if.awuser;
-    assign mcu_lsu_m_axi_if.awready              = axi_interconnect.mintf_arr[0].AWREADY;
-    assign axi_interconnect.mintf_arr[0].WVALID  = mcu_lsu_m_axi_if.wvalid;
-    assign axi_interconnect.mintf_arr[0].WDATA   = mcu_lsu_m_axi_if.wdata;// Native 64-bit width, no dwidth conversion
-    assign axi_interconnect.mintf_arr[0].WSTRB   = mcu_lsu_m_axi_if.wstrb;// Native 64-bit width, no dwidth conversion
-    assign axi_interconnect.mintf_arr[0].WLAST   = mcu_lsu_m_axi_if.wlast;
-    assign mcu_lsu_m_axi_if.wready               = axi_interconnect.mintf_arr[0].WREADY;
-    assign mcu_lsu_m_axi_if.bvalid               = axi_interconnect.mintf_arr[0].BVALID;
-    assign mcu_lsu_m_axi_if.bresp                = axi_interconnect.mintf_arr[0].BRESP;
-    assign mcu_lsu_m_axi_if.bid                  = axi_interconnect.mintf_arr[0].BID;
-    assign axi_interconnect.mintf_arr[0].BREADY  = mcu_lsu_m_axi_if.bready;
-    assign axi_interconnect.mintf_arr[0].ARVALID = mcu_lsu_m_axi_if.arvalid;
-    assign axi_interconnect.mintf_arr[0].ARADDR[31:0]  = mcu_lsu_m_axi_if.araddr;
-    assign axi_interconnect.mintf_arr[0].ARID    = mcu_lsu_m_axi_if.arid;
-    assign axi_interconnect.mintf_arr[0].ARLEN   = mcu_lsu_m_axi_if.arlen;
-    assign axi_interconnect.mintf_arr[0].ARSIZE  = mcu_lsu_m_axi_if.arsize;
-    assign axi_interconnect.mintf_arr[0].ARBURST = mcu_lsu_m_axi_if.arburst;
-    assign axi_interconnect.mintf_arr[0].ARLOCK  = mcu_lsu_m_axi_if.arlock;
-    assign axi_interconnect.mintf_arr[0].ARUSER  = mcu_lsu_m_axi_if.aruser;
-    assign mcu_lsu_m_axi_if.arready              = axi_interconnect.mintf_arr[0].ARREADY;
-    assign mcu_lsu_m_axi_if.rvalid               = axi_interconnect.mintf_arr[0].RVALID;
-    assign mcu_lsu_m_axi_if.rdata                = axi_interconnect.mintf_arr[0].RDATA;// Native 64-bit width, no dwidth conversion
-    assign mcu_lsu_m_axi_if.rresp                = axi_interconnect.mintf_arr[0].RRESP;
-    assign mcu_lsu_m_axi_if.rid                  = axi_interconnect.mintf_arr[0].RID;
-    assign mcu_lsu_m_axi_if.rlast                = axi_interconnect.mintf_arr[0].RLAST;
-    assign axi_interconnect.mintf_arr[0].RREADY  = mcu_lsu_m_axi_if.rready;
+    assign axi_interconnect.mintf_arr[0].AWVALID = cptra_ss_mcu_lsu_m_axi_if.awvalid;
+    assign axi_interconnect.mintf_arr[0].AWADDR[31:0]  = cptra_ss_mcu_lsu_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[0].AWID    = cptra_ss_mcu_lsu_m_axi_if.awid;
+    assign axi_interconnect.mintf_arr[0].AWLEN   = cptra_ss_mcu_lsu_m_axi_if.awlen;
+    assign axi_interconnect.mintf_arr[0].AWSIZE  = cptra_ss_mcu_lsu_m_axi_if.awsize;
+    assign axi_interconnect.mintf_arr[0].AWBURST = cptra_ss_mcu_lsu_m_axi_if.awburst;
+    assign axi_interconnect.mintf_arr[0].AWLOCK  = cptra_ss_mcu_lsu_m_axi_if.awlock;
+    assign axi_interconnect.mintf_arr[0].AWUSER  = cptra_ss_mcu_lsu_m_axi_if.awuser;
+    assign cptra_ss_mcu_lsu_m_axi_if.awready              = axi_interconnect.mintf_arr[0].AWREADY;
+    assign axi_interconnect.mintf_arr[0].WVALID  = cptra_ss_mcu_lsu_m_axi_if.wvalid;
+    assign axi_interconnect.mintf_arr[0].WDATA   = cptra_ss_mcu_lsu_m_axi_if.wdata;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[0].WSTRB   = cptra_ss_mcu_lsu_m_axi_if.wstrb;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[0].WLAST   = cptra_ss_mcu_lsu_m_axi_if.wlast;
+    assign cptra_ss_mcu_lsu_m_axi_if.wready               = axi_interconnect.mintf_arr[0].WREADY;
+    assign cptra_ss_mcu_lsu_m_axi_if.bvalid               = axi_interconnect.mintf_arr[0].BVALID;
+    assign cptra_ss_mcu_lsu_m_axi_if.bresp                = axi_interconnect.mintf_arr[0].BRESP;
+    assign cptra_ss_mcu_lsu_m_axi_if.bid                  = axi_interconnect.mintf_arr[0].BID;
+    assign axi_interconnect.mintf_arr[0].BREADY  = cptra_ss_mcu_lsu_m_axi_if.bready;
+    assign axi_interconnect.mintf_arr[0].ARVALID = cptra_ss_mcu_lsu_m_axi_if.arvalid;
+    assign axi_interconnect.mintf_arr[0].ARADDR[31:0]  = cptra_ss_mcu_lsu_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[0].ARID    = cptra_ss_mcu_lsu_m_axi_if.arid;
+    assign axi_interconnect.mintf_arr[0].ARLEN   = cptra_ss_mcu_lsu_m_axi_if.arlen;
+    assign axi_interconnect.mintf_arr[0].ARSIZE  = cptra_ss_mcu_lsu_m_axi_if.arsize;
+    assign axi_interconnect.mintf_arr[0].ARBURST = cptra_ss_mcu_lsu_m_axi_if.arburst;
+    assign axi_interconnect.mintf_arr[0].ARLOCK  = cptra_ss_mcu_lsu_m_axi_if.arlock;
+    assign axi_interconnect.mintf_arr[0].ARUSER  = cptra_ss_mcu_lsu_m_axi_if.aruser;
+    assign cptra_ss_mcu_lsu_m_axi_if.arready              = axi_interconnect.mintf_arr[0].ARREADY;
+    assign cptra_ss_mcu_lsu_m_axi_if.rvalid               = axi_interconnect.mintf_arr[0].RVALID;
+    assign cptra_ss_mcu_lsu_m_axi_if.rdata                = axi_interconnect.mintf_arr[0].RDATA;// Native 64-bit width, no dwidth conversion
+    assign cptra_ss_mcu_lsu_m_axi_if.rresp                = axi_interconnect.mintf_arr[0].RRESP;
+    assign cptra_ss_mcu_lsu_m_axi_if.rid                  = axi_interconnect.mintf_arr[0].RID;
+    assign cptra_ss_mcu_lsu_m_axi_if.rlast                = axi_interconnect.mintf_arr[0].RLAST;
+    assign axi_interconnect.mintf_arr[0].RREADY  = cptra_ss_mcu_lsu_m_axi_if.rready;
 
     //Interconnect 1 - MCU IFU
-    assign axi_interconnect.mintf_arr[1].AWVALID = mcu_ifu_m_axi_if.awvalid;
-    assign axi_interconnect.mintf_arr[1].AWADDR[31:0]  = mcu_ifu_m_axi_if.awaddr;
-    assign axi_interconnect.mintf_arr[1].AWID    = mcu_ifu_m_axi_if.awid;
-    assign axi_interconnect.mintf_arr[1].AWLEN   = mcu_ifu_m_axi_if.awlen;
-    assign axi_interconnect.mintf_arr[1].AWSIZE  = mcu_ifu_m_axi_if.awsize;
-    assign axi_interconnect.mintf_arr[1].AWBURST = mcu_ifu_m_axi_if.awburst;
-    assign axi_interconnect.mintf_arr[1].AWLOCK  = mcu_ifu_m_axi_if.awlock;
-    assign axi_interconnect.mintf_arr[1].AWUSER  = mcu_ifu_m_axi_if.awuser;
-    assign mcu_ifu_m_axi_if.awready                = axi_interconnect.mintf_arr[1].AWREADY;
-    assign axi_interconnect.mintf_arr[1].WVALID  = mcu_ifu_m_axi_if.wvalid;
-    assign axi_interconnect.mintf_arr[1].WDATA   = mcu_ifu_m_axi_if.wdata;// Native 64-bit width, no dwidth conversion
-    assign axi_interconnect.mintf_arr[1].WSTRB   = mcu_ifu_m_axi_if.wstrb;// Native 64-bit width, no dwidth conversion
-    assign axi_interconnect.mintf_arr[1].WLAST   = mcu_ifu_m_axi_if.wlast;
-    assign mcu_ifu_m_axi_if.wready                 = axi_interconnect.mintf_arr[1].WREADY;
-    assign mcu_ifu_m_axi_if.bvalid                 = axi_interconnect.mintf_arr[1].BVALID;
-    assign mcu_ifu_m_axi_if.bresp                  = axi_interconnect.mintf_arr[1].BRESP;
-    assign mcu_ifu_m_axi_if.bid                    = axi_interconnect.mintf_arr[1].BID;
-    assign axi_interconnect.mintf_arr[1].BREADY  = mcu_ifu_m_axi_if.bready;
-    assign axi_interconnect.mintf_arr[1].ARVALID = mcu_ifu_m_axi_if.arvalid;
-    assign axi_interconnect.mintf_arr[1].ARADDR[31:0]  = mcu_ifu_m_axi_if.araddr;
-    assign axi_interconnect.mintf_arr[1].ARID    = mcu_ifu_m_axi_if.arid;
-    assign axi_interconnect.mintf_arr[1].ARLEN   = mcu_ifu_m_axi_if.arlen;
-    assign axi_interconnect.mintf_arr[1].ARSIZE  = mcu_ifu_m_axi_if.arsize;
-    assign axi_interconnect.mintf_arr[1].ARBURST = mcu_ifu_m_axi_if.arburst;
-    assign axi_interconnect.mintf_arr[1].ARLOCK  = mcu_ifu_m_axi_if.arlock;
-    assign axi_interconnect.mintf_arr[1].ARUSER  = mcu_ifu_m_axi_if.aruser;
-    assign mcu_ifu_m_axi_if.arready                = axi_interconnect.mintf_arr[1].ARREADY;
-    assign mcu_ifu_m_axi_if.rvalid                 = axi_interconnect.mintf_arr[1].RVALID;
-    assign mcu_ifu_m_axi_if.rdata                  = axi_interconnect.mintf_arr[1].RDATA;// Native 64-bit width, no dwidth conversion
-    assign mcu_ifu_m_axi_if.rresp                  = axi_interconnect.mintf_arr[1].RRESP;
-    assign mcu_ifu_m_axi_if.rid                    = axi_interconnect.mintf_arr[1].RID;
-    assign mcu_ifu_m_axi_if.rlast                  = axi_interconnect.mintf_arr[1].RLAST;
-    assign axi_interconnect.mintf_arr[1].RREADY  = mcu_ifu_m_axi_if.rready;
+    assign axi_interconnect.mintf_arr[1].AWVALID = cptra_ss_mcu_ifu_m_axi_if.awvalid;
+    assign axi_interconnect.mintf_arr[1].AWADDR[31:0]  = cptra_ss_mcu_ifu_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[1].AWID    = cptra_ss_mcu_ifu_m_axi_if.awid;
+    assign axi_interconnect.mintf_arr[1].AWLEN   = cptra_ss_mcu_ifu_m_axi_if.awlen;
+    assign axi_interconnect.mintf_arr[1].AWSIZE  = cptra_ss_mcu_ifu_m_axi_if.awsize;
+    assign axi_interconnect.mintf_arr[1].AWBURST = cptra_ss_mcu_ifu_m_axi_if.awburst;
+    assign axi_interconnect.mintf_arr[1].AWLOCK  = cptra_ss_mcu_ifu_m_axi_if.awlock;
+    assign axi_interconnect.mintf_arr[1].AWUSER  = cptra_ss_mcu_ifu_m_axi_if.awuser;
+    assign cptra_ss_mcu_ifu_m_axi_if.awready                = axi_interconnect.mintf_arr[1].AWREADY;
+    assign axi_interconnect.mintf_arr[1].WVALID  = cptra_ss_mcu_ifu_m_axi_if.wvalid;
+    assign axi_interconnect.mintf_arr[1].WDATA   = cptra_ss_mcu_ifu_m_axi_if.wdata;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[1].WSTRB   = cptra_ss_mcu_ifu_m_axi_if.wstrb;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[1].WLAST   = cptra_ss_mcu_ifu_m_axi_if.wlast;
+    assign cptra_ss_mcu_ifu_m_axi_if.wready                 = axi_interconnect.mintf_arr[1].WREADY;
+    assign cptra_ss_mcu_ifu_m_axi_if.bvalid                 = axi_interconnect.mintf_arr[1].BVALID;
+    assign cptra_ss_mcu_ifu_m_axi_if.bresp                  = axi_interconnect.mintf_arr[1].BRESP;
+    assign cptra_ss_mcu_ifu_m_axi_if.bid                    = axi_interconnect.mintf_arr[1].BID;
+    assign axi_interconnect.mintf_arr[1].BREADY  = cptra_ss_mcu_ifu_m_axi_if.bready;
+    assign axi_interconnect.mintf_arr[1].ARVALID = cptra_ss_mcu_ifu_m_axi_if.arvalid;
+    assign axi_interconnect.mintf_arr[1].ARADDR[31:0]  = cptra_ss_mcu_ifu_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[1].ARID    = cptra_ss_mcu_ifu_m_axi_if.arid;
+    assign axi_interconnect.mintf_arr[1].ARLEN   = cptra_ss_mcu_ifu_m_axi_if.arlen;
+    assign axi_interconnect.mintf_arr[1].ARSIZE  = cptra_ss_mcu_ifu_m_axi_if.arsize;
+    assign axi_interconnect.mintf_arr[1].ARBURST = cptra_ss_mcu_ifu_m_axi_if.arburst;
+    assign axi_interconnect.mintf_arr[1].ARLOCK  = cptra_ss_mcu_ifu_m_axi_if.arlock;
+    assign axi_interconnect.mintf_arr[1].ARUSER  = cptra_ss_mcu_ifu_m_axi_if.aruser;
+    assign cptra_ss_mcu_ifu_m_axi_if.arready                = axi_interconnect.mintf_arr[1].ARREADY;
+    assign cptra_ss_mcu_ifu_m_axi_if.rvalid                 = axi_interconnect.mintf_arr[1].RVALID;
+    assign cptra_ss_mcu_ifu_m_axi_if.rdata                  = axi_interconnect.mintf_arr[1].RDATA;// Native 64-bit width, no dwidth conversion
+    assign cptra_ss_mcu_ifu_m_axi_if.rresp                  = axi_interconnect.mintf_arr[1].RRESP;
+    assign cptra_ss_mcu_ifu_m_axi_if.rid                    = axi_interconnect.mintf_arr[1].RID;
+    assign cptra_ss_mcu_ifu_m_axi_if.rlast                  = axi_interconnect.mintf_arr[1].RLAST;
+    assign axi_interconnect.mintf_arr[1].RREADY  = cptra_ss_mcu_ifu_m_axi_if.rready;
 
     //Interconnect 2 MGR - Tie Off
     assign axi_interconnect.mintf_arr[2].AWVALID = '0;
@@ -928,74 +872,74 @@ module caliptra_ss_top_tb
     assign mcu_dma_s_axi_if.rready                 = axi_interconnect.sintf_arr[2].RREADY;
 
     //Interconnect 3 - CPTRA soc axi if
-    assign cptra_core_s_axi_if.awvalid           = axi_interconnect.sintf_arr[3].AWVALID;
-    assign cptra_core_s_axi_if.awaddr            = axi_interconnect.sintf_arr[3].AWADDR[31:0];
-    assign cptra_core_s_axi_if.awid              = axi_interconnect.sintf_arr[3].AWID;
-    assign cptra_core_s_axi_if.awlen             = axi_interconnect.sintf_arr[3].AWLEN;
-    assign cptra_core_s_axi_if.awsize            = axi_interconnect.sintf_arr[3].AWSIZE;
-    assign cptra_core_s_axi_if.awburst           = axi_interconnect.sintf_arr[3].AWBURST;
-    assign cptra_core_s_axi_if.awlock            = axi_interconnect.sintf_arr[3].AWLOCK;
-    assign cptra_core_s_axi_if.awuser            = axi_interconnect.sintf_arr[3].AWUSER;
-    assign axi_interconnect.sintf_arr[3].AWREADY = cptra_core_s_axi_if.awready;
-    assign cptra_core_s_axi_if.wvalid            = axi_interconnect.sintf_arr[3].WVALID;
-    assign cptra_core_s_axi_if.wdata             = axi_interconnect.sintf_arr[3].WDATA >> (cptra_core_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
-    assign cptra_core_s_axi_if.wstrb             = axi_interconnect.sintf_arr[3].WSTRB >> (cptra_core_s_axi_if_wr_is_upper_dw_latched ? 4 : 0);
-    assign cptra_core_s_axi_if.wlast             = axi_interconnect.sintf_arr[3].WLAST;
-    assign axi_interconnect.sintf_arr[3].WREADY  = cptra_core_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[3].BVALID  = cptra_core_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[3].BRESP   = cptra_core_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[3].BID     = cptra_core_s_axi_if.bid;
-    assign cptra_core_s_axi_if.bready            = axi_interconnect.sintf_arr[3].BREADY;
-    assign cptra_core_s_axi_if.arvalid           = axi_interconnect.sintf_arr[3].ARVALID;
-    assign cptra_core_s_axi_if.araddr            = axi_interconnect.sintf_arr[3].ARADDR[31:0];
-    assign cptra_core_s_axi_if.arid              = axi_interconnect.sintf_arr[3].ARID;
-    assign cptra_core_s_axi_if.arlen             = axi_interconnect.sintf_arr[3].ARLEN;
-    assign cptra_core_s_axi_if.arsize            = axi_interconnect.sintf_arr[3].ARSIZE;
-    assign cptra_core_s_axi_if.arburst           = axi_interconnect.sintf_arr[3].ARBURST;
-    assign cptra_core_s_axi_if.arlock            = axi_interconnect.sintf_arr[3].ARLOCK;
-    assign cptra_core_s_axi_if.aruser            = axi_interconnect.sintf_arr[3].ARUSER;
-    assign axi_interconnect.sintf_arr[3].ARREADY = cptra_core_s_axi_if.arready;
-    assign axi_interconnect.sintf_arr[3].RVALID  = cptra_core_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[3].RDATA   = 64'(cptra_core_s_axi_if.rdata) << (cptra_core_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
-    assign axi_interconnect.sintf_arr[3].RRESP   = cptra_core_s_axi_if.rresp;
-    assign axi_interconnect.sintf_arr[3].RID     = cptra_core_s_axi_if.rid;
-    assign axi_interconnect.sintf_arr[3].RLAST   = cptra_core_s_axi_if.rlast;
-    assign cptra_core_s_axi_if.rready            = axi_interconnect.sintf_arr[3].RREADY;
+    assign cptra_ss_cptra_core_s_axi_if.awvalid           = axi_interconnect.sintf_arr[3].AWVALID;
+    assign cptra_ss_cptra_core_s_axi_if.awaddr            = axi_interconnect.sintf_arr[3].AWADDR[31:0];
+    assign cptra_ss_cptra_core_s_axi_if.awid              = axi_interconnect.sintf_arr[3].AWID;
+    assign cptra_ss_cptra_core_s_axi_if.awlen             = axi_interconnect.sintf_arr[3].AWLEN;
+    assign cptra_ss_cptra_core_s_axi_if.awsize            = axi_interconnect.sintf_arr[3].AWSIZE;
+    assign cptra_ss_cptra_core_s_axi_if.awburst           = axi_interconnect.sintf_arr[3].AWBURST;
+    assign cptra_ss_cptra_core_s_axi_if.awlock            = axi_interconnect.sintf_arr[3].AWLOCK;
+    assign cptra_ss_cptra_core_s_axi_if.awuser            = axi_interconnect.sintf_arr[3].AWUSER;
+    assign axi_interconnect.sintf_arr[3].AWREADY = cptra_ss_cptra_core_s_axi_if.awready;
+    assign cptra_ss_cptra_core_s_axi_if.wvalid            = axi_interconnect.sintf_arr[3].WVALID;
+    assign cptra_ss_cptra_core_s_axi_if.wdata             = axi_interconnect.sintf_arr[3].WDATA >> (cptra_ss_cptra_core_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
+    assign cptra_ss_cptra_core_s_axi_if.wstrb             = axi_interconnect.sintf_arr[3].WSTRB >> (cptra_ss_cptra_core_s_axi_if_wr_is_upper_dw_latched ? 4 : 0);
+    assign cptra_ss_cptra_core_s_axi_if.wlast             = axi_interconnect.sintf_arr[3].WLAST;
+    assign axi_interconnect.sintf_arr[3].WREADY  = cptra_ss_cptra_core_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[3].BVALID  = cptra_ss_cptra_core_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[3].BRESP   = cptra_ss_cptra_core_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[3].BID     = cptra_ss_cptra_core_s_axi_if.bid;
+    assign cptra_ss_cptra_core_s_axi_if.bready            = axi_interconnect.sintf_arr[3].BREADY;
+    assign cptra_ss_cptra_core_s_axi_if.arvalid           = axi_interconnect.sintf_arr[3].ARVALID;
+    assign cptra_ss_cptra_core_s_axi_if.araddr            = axi_interconnect.sintf_arr[3].ARADDR[31:0];
+    assign cptra_ss_cptra_core_s_axi_if.arid              = axi_interconnect.sintf_arr[3].ARID;
+    assign cptra_ss_cptra_core_s_axi_if.arlen             = axi_interconnect.sintf_arr[3].ARLEN;
+    assign cptra_ss_cptra_core_s_axi_if.arsize            = axi_interconnect.sintf_arr[3].ARSIZE;
+    assign cptra_ss_cptra_core_s_axi_if.arburst           = axi_interconnect.sintf_arr[3].ARBURST;
+    assign cptra_ss_cptra_core_s_axi_if.arlock            = axi_interconnect.sintf_arr[3].ARLOCK;
+    assign cptra_ss_cptra_core_s_axi_if.aruser            = axi_interconnect.sintf_arr[3].ARUSER;
+    assign axi_interconnect.sintf_arr[3].ARREADY = cptra_ss_cptra_core_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[3].RVALID  = cptra_ss_cptra_core_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[3].RDATA   = 64'(cptra_ss_cptra_core_s_axi_if.rdata) << (cptra_ss_cptra_core_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.sintf_arr[3].RRESP   = cptra_ss_cptra_core_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[3].RID     = cptra_ss_cptra_core_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[3].RLAST   = cptra_ss_cptra_core_s_axi_if.rlast;
+    assign cptra_ss_cptra_core_s_axi_if.rready            = axi_interconnect.sintf_arr[3].RREADY;
 
     //Interconnect MGR 3 - cptra dma
-    assign axi_interconnect.mintf_arr[3].AWVALID = cptra_core_m_axi_if.awvalid;
-    assign axi_interconnect.mintf_arr[3].AWADDR[31:0]  = cptra_core_m_axi_if.awaddr;
-    assign axi_interconnect.mintf_arr[3].AWID    = cptra_core_m_axi_if.awid;
-    assign axi_interconnect.mintf_arr[3].AWLEN   = cptra_core_m_axi_if.awlen;
-    assign axi_interconnect.mintf_arr[3].AWSIZE  = cptra_core_m_axi_if.awsize;
-    assign axi_interconnect.mintf_arr[3].AWBURST = cptra_core_m_axi_if.awburst;
-    assign axi_interconnect.mintf_arr[3].AWLOCK  = cptra_core_m_axi_if.awlock;
-    assign axi_interconnect.mintf_arr[3].AWUSER  = cptra_core_m_axi_if.awuser;
-    assign cptra_core_m_axi_if.awready           = axi_interconnect.mintf_arr[3].AWREADY;
-    assign axi_interconnect.mintf_arr[3].WVALID  = cptra_core_m_axi_if.wvalid;
-    assign axi_interconnect.mintf_arr[3].WDATA   = cptra_core_m_axi_if.wdata << (cptra_core_m_axi_if_wr_is_upper_dw_latched ? 32 : 0);
-    assign axi_interconnect.mintf_arr[3].WSTRB   = cptra_core_m_axi_if.wstrb << (cptra_core_m_axi_if_wr_is_upper_dw_latched ?  4 : 0);
-    assign axi_interconnect.mintf_arr[3].WLAST   = cptra_core_m_axi_if.wlast;
-    assign cptra_core_m_axi_if.wready            = axi_interconnect.mintf_arr[3].WREADY;
-    assign cptra_core_m_axi_if.bvalid            = axi_interconnect.mintf_arr[3].BVALID;
-    assign cptra_core_m_axi_if.bresp             = axi_interconnect.mintf_arr[3].BRESP;
-    assign cptra_core_m_axi_if.bid               = axi_interconnect.mintf_arr[3].BID;
-    assign axi_interconnect.mintf_arr[3].BREADY  = cptra_core_m_axi_if.bready;
-    assign axi_interconnect.mintf_arr[3].ARVALID = cptra_core_m_axi_if.arvalid;
-    assign axi_interconnect.mintf_arr[3].ARADDR[31:0]  = cptra_core_m_axi_if.araddr;
-    assign axi_interconnect.mintf_arr[3].ARID    = cptra_core_m_axi_if.arid;
-    assign axi_interconnect.mintf_arr[3].ARLEN   = cptra_core_m_axi_if.arlen;
-    assign axi_interconnect.mintf_arr[3].ARSIZE  = cptra_core_m_axi_if.arsize;
-    assign axi_interconnect.mintf_arr[3].ARBURST = cptra_core_m_axi_if.arburst;
-    assign axi_interconnect.mintf_arr[3].ARLOCK  = cptra_core_m_axi_if.arlock;
-    assign axi_interconnect.mintf_arr[3].ARUSER  = cptra_core_m_axi_if.aruser;
-    assign cptra_core_m_axi_if.arready           = axi_interconnect.mintf_arr[3].ARREADY;
-    assign cptra_core_m_axi_if.rvalid            = axi_interconnect.mintf_arr[3].RVALID;
-    assign cptra_core_m_axi_if.rdata             = axi_interconnect.mintf_arr[3].RDATA >> (cptra_core_m_axi_if_rd_is_upper_dw_latched ? 32 : 0);
-    assign cptra_core_m_axi_if.rresp             = axi_interconnect.mintf_arr[3].RRESP;
-    assign cptra_core_m_axi_if.rid               = axi_interconnect.mintf_arr[3].RID;
-    assign cptra_core_m_axi_if.rlast             = axi_interconnect.mintf_arr[3].RLAST;
-    assign axi_interconnect.mintf_arr[3].RREADY  = cptra_core_m_axi_if.rready;
+    assign axi_interconnect.mintf_arr[3].AWVALID = cptra_ss_cptra_core_m_axi_if.awvalid;
+    assign axi_interconnect.mintf_arr[3].AWADDR[31:0]  = cptra_ss_cptra_core_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[3].AWID    = cptra_ss_cptra_core_m_axi_if.awid;
+    assign axi_interconnect.mintf_arr[3].AWLEN   = cptra_ss_cptra_core_m_axi_if.awlen;
+    assign axi_interconnect.mintf_arr[3].AWSIZE  = cptra_ss_cptra_core_m_axi_if.awsize;
+    assign axi_interconnect.mintf_arr[3].AWBURST = cptra_ss_cptra_core_m_axi_if.awburst;
+    assign axi_interconnect.mintf_arr[3].AWLOCK  = cptra_ss_cptra_core_m_axi_if.awlock;
+    assign axi_interconnect.mintf_arr[3].AWUSER  = cptra_ss_cptra_core_m_axi_if.awuser;
+    assign cptra_ss_cptra_core_m_axi_if.awready           = axi_interconnect.mintf_arr[3].AWREADY;
+    assign axi_interconnect.mintf_arr[3].WVALID  = cptra_ss_cptra_core_m_axi_if.wvalid;
+    assign axi_interconnect.mintf_arr[3].WDATA   = cptra_ss_cptra_core_m_axi_if.wdata << (cptra_ss_cptra_core_m_axi_if_wr_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.mintf_arr[3].WSTRB   = cptra_ss_cptra_core_m_axi_if.wstrb << (cptra_ss_cptra_core_m_axi_if_wr_is_upper_dw_latched ?  4 : 0);
+    assign axi_interconnect.mintf_arr[3].WLAST   = cptra_ss_cptra_core_m_axi_if.wlast;
+    assign cptra_ss_cptra_core_m_axi_if.wready            = axi_interconnect.mintf_arr[3].WREADY;
+    assign cptra_ss_cptra_core_m_axi_if.bvalid            = axi_interconnect.mintf_arr[3].BVALID;
+    assign cptra_ss_cptra_core_m_axi_if.bresp             = axi_interconnect.mintf_arr[3].BRESP;
+    assign cptra_ss_cptra_core_m_axi_if.bid               = axi_interconnect.mintf_arr[3].BID;
+    assign axi_interconnect.mintf_arr[3].BREADY  = cptra_ss_cptra_core_m_axi_if.bready;
+    assign axi_interconnect.mintf_arr[3].ARVALID = cptra_ss_cptra_core_m_axi_if.arvalid;
+    assign axi_interconnect.mintf_arr[3].ARADDR[31:0]  = cptra_ss_cptra_core_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[3].ARID    = cptra_ss_cptra_core_m_axi_if.arid;
+    assign axi_interconnect.mintf_arr[3].ARLEN   = cptra_ss_cptra_core_m_axi_if.arlen;
+    assign axi_interconnect.mintf_arr[3].ARSIZE  = cptra_ss_cptra_core_m_axi_if.arsize;
+    assign axi_interconnect.mintf_arr[3].ARBURST = cptra_ss_cptra_core_m_axi_if.arburst;
+    assign axi_interconnect.mintf_arr[3].ARLOCK  = cptra_ss_cptra_core_m_axi_if.arlock;
+    assign axi_interconnect.mintf_arr[3].ARUSER  = cptra_ss_cptra_core_m_axi_if.aruser;
+    assign cptra_ss_cptra_core_m_axi_if.arready           = axi_interconnect.mintf_arr[3].ARREADY;
+    assign cptra_ss_cptra_core_m_axi_if.rvalid            = axi_interconnect.mintf_arr[3].RVALID;
+    assign cptra_ss_cptra_core_m_axi_if.rdata             = axi_interconnect.mintf_arr[3].RDATA >> (cptra_ss_cptra_core_m_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign cptra_ss_cptra_core_m_axi_if.rresp             = axi_interconnect.mintf_arr[3].RRESP;
+    assign cptra_ss_cptra_core_m_axi_if.rid               = axi_interconnect.mintf_arr[3].RID;
+    assign cptra_ss_cptra_core_m_axi_if.rlast             = axi_interconnect.mintf_arr[3].RLAST;
+    assign axi_interconnect.mintf_arr[3].RREADY  = cptra_ss_cptra_core_m_axi_if.rready;
 
     //Interconnect 4 - master bfm
     assign axi_interconnect.mintf_arr[4].AWVALID  = m_axi_bfm_if.awvalid;
@@ -1032,74 +976,74 @@ module caliptra_ss_top_tb
     assign m_axi_bfm_if.rlast                     = axi_interconnect.mintf_arr[4].RLAST;
     assign axi_interconnect.mintf_arr[4].RREADY   = m_axi_bfm_if.rready;
 
-    assign mci_s_axi_if.awvalid                      = axi_interconnect.sintf_arr[4].AWVALID;
-    assign mci_s_axi_if.awaddr                       = axi_interconnect.sintf_arr[4].AWADDR[31:0];
-    assign mci_s_axi_if.awid                         = axi_interconnect.sintf_arr[4].AWID;
-    assign mci_s_axi_if.awlen                        = axi_interconnect.sintf_arr[4].AWLEN;
-    assign mci_s_axi_if.awsize                       = axi_interconnect.sintf_arr[4].AWSIZE;
-    assign mci_s_axi_if.awburst                      = axi_interconnect.sintf_arr[4].AWBURST;
-    assign mci_s_axi_if.awlock                       = axi_interconnect.sintf_arr[4].AWLOCK;
-    assign mci_s_axi_if.awuser                       = axi_interconnect.sintf_arr[4].AWUSER;
-    assign axi_interconnect.sintf_arr[4].AWREADY = mci_s_axi_if.awready;
-    assign mci_s_axi_if.wvalid                       = axi_interconnect.sintf_arr[4].WVALID;
-    assign mci_s_axi_if.wdata                        = axi_interconnect.sintf_arr[4].WDATA >> (mci_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
-    assign mci_s_axi_if.wstrb                        = axi_interconnect.sintf_arr[4].WSTRB >> (mci_s_axi_if_wr_is_upper_dw_latched ? 4  : 0);
-    assign mci_s_axi_if.wlast                        = axi_interconnect.sintf_arr[4].WLAST;
-    assign axi_interconnect.sintf_arr[4].WREADY      = mci_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[4].BVALID      = mci_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[4].BRESP       = mci_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[4].BID         = mci_s_axi_if.bid;
-    assign mci_s_axi_if.bready                       = axi_interconnect.sintf_arr[4].BREADY;
-    assign mci_s_axi_if.arvalid                      = axi_interconnect.sintf_arr[4].ARVALID;
-    assign mci_s_axi_if.araddr                       = axi_interconnect.sintf_arr[4].ARADDR[31:0];
-    assign mci_s_axi_if.arid                         = axi_interconnect.sintf_arr[4].ARID;
-    assign mci_s_axi_if.arlen                        = axi_interconnect.sintf_arr[4].ARLEN;
-    assign mci_s_axi_if.arsize                       = axi_interconnect.sintf_arr[4].ARSIZE;
-    assign mci_s_axi_if.arburst                      = axi_interconnect.sintf_arr[4].ARBURST;
-    assign mci_s_axi_if.arlock                       = axi_interconnect.sintf_arr[4].ARLOCK;
-    assign mci_s_axi_if.aruser                       = axi_interconnect.sintf_arr[4].ARUSER;
-    assign axi_interconnect.sintf_arr[4].ARREADY       = mci_s_axi_if.arready;
-    assign axi_interconnect.sintf_arr[4].RVALID        = mci_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[4].RDATA         = 64'(mci_s_axi_if.rdata) << (mci_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
-    assign axi_interconnect.sintf_arr[4].RRESP         = mci_s_axi_if.rresp;
-    assign axi_interconnect.sintf_arr[4].RID           = mci_s_axi_if.rid;
-    assign axi_interconnect.sintf_arr[4].RLAST         = mci_s_axi_if.rlast;
-    assign mci_s_axi_if.rready                         = axi_interconnect.sintf_arr[4].RREADY;
+    assign cptra_ss_mci_s_axi_if.awvalid                      = axi_interconnect.sintf_arr[4].AWVALID;
+    assign cptra_ss_mci_s_axi_if.awaddr                       = axi_interconnect.sintf_arr[4].AWADDR[31:0];
+    assign cptra_ss_mci_s_axi_if.awid                         = axi_interconnect.sintf_arr[4].AWID;
+    assign cptra_ss_mci_s_axi_if.awlen                        = axi_interconnect.sintf_arr[4].AWLEN;
+    assign cptra_ss_mci_s_axi_if.awsize                       = axi_interconnect.sintf_arr[4].AWSIZE;
+    assign cptra_ss_mci_s_axi_if.awburst                      = axi_interconnect.sintf_arr[4].AWBURST;
+    assign cptra_ss_mci_s_axi_if.awlock                       = axi_interconnect.sintf_arr[4].AWLOCK;
+    assign cptra_ss_mci_s_axi_if.awuser                       = axi_interconnect.sintf_arr[4].AWUSER;
+    assign axi_interconnect.sintf_arr[4].AWREADY = cptra_ss_mci_s_axi_if.awready;
+    assign cptra_ss_mci_s_axi_if.wvalid                       = axi_interconnect.sintf_arr[4].WVALID;
+    assign cptra_ss_mci_s_axi_if.wdata                        = axi_interconnect.sintf_arr[4].WDATA >> (cptra_ss_mci_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
+    assign cptra_ss_mci_s_axi_if.wstrb                        = axi_interconnect.sintf_arr[4].WSTRB >> (cptra_ss_mci_s_axi_if_wr_is_upper_dw_latched ? 4  : 0);
+    assign cptra_ss_mci_s_axi_if.wlast                        = axi_interconnect.sintf_arr[4].WLAST;
+    assign axi_interconnect.sintf_arr[4].WREADY      = cptra_ss_mci_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[4].BVALID      = cptra_ss_mci_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[4].BRESP       = cptra_ss_mci_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[4].BID         = cptra_ss_mci_s_axi_if.bid;
+    assign cptra_ss_mci_s_axi_if.bready                       = axi_interconnect.sintf_arr[4].BREADY;
+    assign cptra_ss_mci_s_axi_if.arvalid                      = axi_interconnect.sintf_arr[4].ARVALID;
+    assign cptra_ss_mci_s_axi_if.araddr                       = axi_interconnect.sintf_arr[4].ARADDR[31:0];
+    assign cptra_ss_mci_s_axi_if.arid                         = axi_interconnect.sintf_arr[4].ARID;
+    assign cptra_ss_mci_s_axi_if.arlen                        = axi_interconnect.sintf_arr[4].ARLEN;
+    assign cptra_ss_mci_s_axi_if.arsize                       = axi_interconnect.sintf_arr[4].ARSIZE;
+    assign cptra_ss_mci_s_axi_if.arburst                      = axi_interconnect.sintf_arr[4].ARBURST;
+    assign cptra_ss_mci_s_axi_if.arlock                       = axi_interconnect.sintf_arr[4].ARLOCK;
+    assign cptra_ss_mci_s_axi_if.aruser                       = axi_interconnect.sintf_arr[4].ARUSER;
+    assign axi_interconnect.sintf_arr[4].ARREADY       = cptra_ss_mci_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[4].RVALID        = cptra_ss_mci_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[4].RDATA         = 64'(cptra_ss_mci_s_axi_if.rdata) << (cptra_ss_mci_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.sintf_arr[4].RRESP         = cptra_ss_mci_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[4].RID           = cptra_ss_mci_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[4].RLAST         = cptra_ss_mci_s_axi_if.rlast;
+    assign cptra_ss_mci_s_axi_if.rready                         = axi_interconnect.sintf_arr[4].RREADY;
 
     //Interconnect 5
-    assign core_axi_wr_req.awaddr = axi_interconnect.sintf_arr[5].AWADDR[31:0];
-    assign core_axi_wr_req.awburst = axi_interconnect.sintf_arr[5].AWBURST;
-    assign core_axi_wr_req.awsize = axi_interconnect.sintf_arr[5].AWSIZE;
-    assign core_axi_wr_req.awlen = axi_interconnect.sintf_arr[5].AWLEN;
-    assign core_axi_wr_req.awuser = axi_interconnect.sintf_arr[5].AWUSER;
-    assign core_axi_wr_req.awid = axi_interconnect.sintf_arr[5].AWID;
-    assign core_axi_wr_req.awlock = axi_interconnect.sintf_arr[5].AWLOCK;
-    assign core_axi_wr_req.awvalid = axi_interconnect.sintf_arr[5].AWVALID;
-    assign core_axi_wr_req.wdata = axi_interconnect.sintf_arr[5].WDATA >> (fuse_core_axi_wr_is_upper_dw_latched ? 32 : 0);
-    assign core_axi_wr_req.wstrb = axi_interconnect.sintf_arr[5].WSTRB >> (fuse_core_axi_wr_is_upper_dw_latched ? 4 : 0);
-    assign core_axi_wr_req.wlast = axi_interconnect.sintf_arr[5].WLAST;
-    assign core_axi_wr_req.wvalid = axi_interconnect.sintf_arr[5].WVALID;
-    assign core_axi_wr_req.bready = axi_interconnect.sintf_arr[5].BREADY;
-    assign axi_interconnect.sintf_arr[5].AWREADY = core_axi_wr_rsp.awready;
-    assign axi_interconnect.sintf_arr[5].WREADY = core_axi_wr_rsp.wready;
-    assign axi_interconnect.sintf_arr[5].BRESP = core_axi_wr_rsp.bresp;
-    assign axi_interconnect.sintf_arr[5].BID = core_axi_wr_rsp.bid;
-    assign axi_interconnect.sintf_arr[5].BVALID = core_axi_wr_rsp.bvalid;
-    assign core_axi_rd_req.araddr = axi_interconnect.sintf_arr[5].ARADDR[31:0];
-    assign core_axi_rd_req.arburst = axi_interconnect.sintf_arr[5].ARBURST;
-    assign core_axi_rd_req.arsize = axi_interconnect.sintf_arr[5].ARSIZE;
-    assign core_axi_rd_req.arlen = axi_interconnect.sintf_arr[5].ARLEN;
-    assign core_axi_rd_req.aruser = axi_interconnect.sintf_arr[5].ARUSER;
-    assign core_axi_rd_req.arid = axi_interconnect.sintf_arr[5].ARID;
-    assign core_axi_rd_req.arlock = axi_interconnect.sintf_arr[5].ARLOCK;
-    assign core_axi_rd_req.arvalid = axi_interconnect.sintf_arr[5].ARVALID;
-    assign core_axi_rd_req.rready = axi_interconnect.sintf_arr[5].RREADY;
-    assign axi_interconnect.sintf_arr[5].ARREADY = core_axi_rd_rsp.arready;
-    assign axi_interconnect.sintf_arr[5].RDATA = 64'(core_axi_rd_rsp.rdata) << (fuse_core_axi_rd_is_upper_dw_latched ? 32 : 0);;
-    assign axi_interconnect.sintf_arr[5].RRESP = core_axi_rd_rsp.rresp;
-    assign axi_interconnect.sintf_arr[5].RID = core_axi_rd_rsp.rid;
-    assign axi_interconnect.sintf_arr[5].RLAST = core_axi_rd_rsp.rlast;
-    assign axi_interconnect.sintf_arr[5].RVALID = core_axi_rd_rsp.rvalid;
+    assign cptra_ss_otp_core_axi_wr_req_i.awaddr = axi_interconnect.sintf_arr[5].AWADDR[31:0];
+    assign cptra_ss_otp_core_axi_wr_req_i.awburst = axi_interconnect.sintf_arr[5].AWBURST;
+    assign cptra_ss_otp_core_axi_wr_req_i.awsize = axi_interconnect.sintf_arr[5].AWSIZE;
+    assign cptra_ss_otp_core_axi_wr_req_i.awlen = axi_interconnect.sintf_arr[5].AWLEN;
+    assign cptra_ss_otp_core_axi_wr_req_i.awuser = axi_interconnect.sintf_arr[5].AWUSER;
+    assign cptra_ss_otp_core_axi_wr_req_i.awid = axi_interconnect.sintf_arr[5].AWID;
+    assign cptra_ss_otp_core_axi_wr_req_i.awlock = axi_interconnect.sintf_arr[5].AWLOCK;
+    assign cptra_ss_otp_core_axi_wr_req_i.awvalid = axi_interconnect.sintf_arr[5].AWVALID;
+    assign cptra_ss_otp_core_axi_wr_req_i.wdata = axi_interconnect.sintf_arr[5].WDATA >> (fuse_core_axi_wr_is_upper_dw_latched ? 32 : 0);
+    assign cptra_ss_otp_core_axi_wr_req_i.wstrb = axi_interconnect.sintf_arr[5].WSTRB >> (fuse_core_axi_wr_is_upper_dw_latched ? 4 : 0);
+    assign cptra_ss_otp_core_axi_wr_req_i.wlast = axi_interconnect.sintf_arr[5].WLAST;
+    assign cptra_ss_otp_core_axi_wr_req_i.wvalid = axi_interconnect.sintf_arr[5].WVALID;
+    assign cptra_ss_otp_core_axi_wr_req_i.bready = axi_interconnect.sintf_arr[5].BREADY;
+    assign axi_interconnect.sintf_arr[5].AWREADY = cptra_ss_otp_core_axi_wr_rsp_o.awready;
+    assign axi_interconnect.sintf_arr[5].WREADY = cptra_ss_otp_core_axi_wr_rsp_o.wready;
+    assign axi_interconnect.sintf_arr[5].BRESP = cptra_ss_otp_core_axi_wr_rsp_o.bresp;
+    assign axi_interconnect.sintf_arr[5].BID = cptra_ss_otp_core_axi_wr_rsp_o.bid;
+    assign axi_interconnect.sintf_arr[5].BVALID = cptra_ss_otp_core_axi_wr_rsp_o.bvalid;
+    assign cptra_ss_otp_core_axi_rd_req_i.araddr = axi_interconnect.sintf_arr[5].ARADDR[31:0];
+    assign cptra_ss_otp_core_axi_rd_req_i.arburst = axi_interconnect.sintf_arr[5].ARBURST;
+    assign cptra_ss_otp_core_axi_rd_req_i.arsize = axi_interconnect.sintf_arr[5].ARSIZE;
+    assign cptra_ss_otp_core_axi_rd_req_i.arlen = axi_interconnect.sintf_arr[5].ARLEN;
+    assign cptra_ss_otp_core_axi_rd_req_i.aruser = axi_interconnect.sintf_arr[5].ARUSER;
+    assign cptra_ss_otp_core_axi_rd_req_i.arid = axi_interconnect.sintf_arr[5].ARID;
+    assign cptra_ss_otp_core_axi_rd_req_i.arlock = axi_interconnect.sintf_arr[5].ARLOCK;
+    assign cptra_ss_otp_core_axi_rd_req_i.arvalid = axi_interconnect.sintf_arr[5].ARVALID;
+    assign cptra_ss_otp_core_axi_rd_req_i.rready = axi_interconnect.sintf_arr[5].RREADY;
+    assign axi_interconnect.sintf_arr[5].ARREADY = cptra_ss_otp_core_axi_rd_rsp_o.arready;
+    assign axi_interconnect.sintf_arr[5].RDATA = 64'(cptra_ss_otp_core_axi_rd_rsp_o.rdata) << (fuse_core_axi_rd_is_upper_dw_latched ? 32 : 0);;
+    assign axi_interconnect.sintf_arr[5].RRESP = cptra_ss_otp_core_axi_rd_rsp_o.rresp;
+    assign axi_interconnect.sintf_arr[5].RID = cptra_ss_otp_core_axi_rd_rsp_o.rid;
+    assign axi_interconnect.sintf_arr[5].RLAST = cptra_ss_otp_core_axi_rd_rsp_o.rlast;
+    assign axi_interconnect.sintf_arr[5].RVALID = cptra_ss_otp_core_axi_rd_rsp_o.rvalid;
 
     //Interconnect 6
     assign axi_interconnect.sintf_arr[6].AWREADY = '0;
@@ -1115,130 +1059,130 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[6].RVALID = '0;
 
     //Interconnect 7 - LCC
-    assign lc_axi_wr_req.awvalid = axi_interconnect.sintf_arr[7].AWVALID;
-    assign lc_axi_wr_req.awaddr = axi_interconnect.sintf_arr[7].AWADDR[31:0];
-    assign lc_axi_wr_req.awid = axi_interconnect.sintf_arr[7].AWID;
-    assign lc_axi_wr_req.awlen = axi_interconnect.sintf_arr[7].AWLEN;
-    assign lc_axi_wr_req.awsize = axi_interconnect.sintf_arr[7].AWSIZE;
-    assign lc_axi_wr_req.awburst = axi_interconnect.sintf_arr[7].AWBURST;
-    assign lc_axi_wr_req.awlock = axi_interconnect.sintf_arr[7].AWLOCK;
-    assign lc_axi_wr_req.awuser = axi_interconnect.sintf_arr[7].AWUSER;
-    assign axi_interconnect.sintf_arr[7].AWREADY = lc_axi_wr_rsp.awready;
-    assign lc_axi_wr_req.wvalid = axi_interconnect.sintf_arr[7].WVALID;
-    assign lc_axi_wr_req.wdata = axi_interconnect.sintf_arr[7].WDATA >> (lc_axi_wr_is_upper_dw_latched ? 32 : 0);
-    assign lc_axi_wr_req.wstrb = axi_interconnect.sintf_arr[7].WSTRB >> (lc_axi_wr_is_upper_dw_latched ? 4 : 0);
-    assign lc_axi_wr_req.wlast = axi_interconnect.sintf_arr[7].WLAST;
-    assign axi_interconnect.sintf_arr[7].WREADY = lc_axi_wr_rsp.wready;
-    assign axi_interconnect.sintf_arr[7].BRESP = lc_axi_wr_rsp.bresp;
-    assign axi_interconnect.sintf_arr[7].BID = lc_axi_wr_rsp.bid;
-    assign axi_interconnect.sintf_arr[7].BVALID = lc_axi_wr_rsp.bvalid;
-    assign lc_axi_wr_req.bready = axi_interconnect.sintf_arr[7].BREADY;
-    assign lc_axi_rd_req.arvalid = axi_interconnect.sintf_arr[7].ARVALID;
-    assign lc_axi_rd_req.araddr = axi_interconnect.sintf_arr[7].ARADDR[31:0];
-    assign lc_axi_rd_req.arid = axi_interconnect.sintf_arr[7].ARID;
-    assign lc_axi_rd_req.arlen = axi_interconnect.sintf_arr[7].ARLEN;
-    assign lc_axi_rd_req.arsize = axi_interconnect.sintf_arr[7].ARSIZE;
-    assign lc_axi_rd_req.arburst = axi_interconnect.sintf_arr[7].ARBURST;
-    assign lc_axi_rd_req.arlock = axi_interconnect.sintf_arr[7].ARLOCK;
-    assign lc_axi_rd_req.aruser = axi_interconnect.sintf_arr[7].ARUSER;
-    assign axi_interconnect.sintf_arr[7].ARREADY = lc_axi_rd_rsp.arready;
-    assign axi_interconnect.sintf_arr[7].RDATA = 64'(lc_axi_rd_rsp.rdata) << (lc_axi_rd_is_upper_dw_latched ? 32 : 0);
-    assign axi_interconnect.sintf_arr[7].RRESP = lc_axi_rd_rsp.rresp;
-    assign axi_interconnect.sintf_arr[7].RID = lc_axi_rd_rsp.rid;
-    assign axi_interconnect.sintf_arr[7].RLAST = lc_axi_rd_rsp.rlast;
-    assign axi_interconnect.sintf_arr[7].RVALID = lc_axi_rd_rsp.rvalid;
-    assign lc_axi_rd_req.rready = axi_interconnect.sintf_arr[7].RREADY;
+    assign cptra_ss_lc_axi_wr_req_i.awvalid = axi_interconnect.sintf_arr[7].AWVALID;
+    assign cptra_ss_lc_axi_wr_req_i.awaddr = axi_interconnect.sintf_arr[7].AWADDR[31:0];
+    assign cptra_ss_lc_axi_wr_req_i.awid = axi_interconnect.sintf_arr[7].AWID;
+    assign cptra_ss_lc_axi_wr_req_i.awlen = axi_interconnect.sintf_arr[7].AWLEN;
+    assign cptra_ss_lc_axi_wr_req_i.awsize = axi_interconnect.sintf_arr[7].AWSIZE;
+    assign cptra_ss_lc_axi_wr_req_i.awburst = axi_interconnect.sintf_arr[7].AWBURST;
+    assign cptra_ss_lc_axi_wr_req_i.awlock = axi_interconnect.sintf_arr[7].AWLOCK;
+    assign cptra_ss_lc_axi_wr_req_i.awuser = axi_interconnect.sintf_arr[7].AWUSER;
+    assign axi_interconnect.sintf_arr[7].AWREADY = cptra_ss_lc_axi_wr_rsp_o.awready;
+    assign cptra_ss_lc_axi_wr_req_i.wvalid = axi_interconnect.sintf_arr[7].WVALID;
+    assign cptra_ss_lc_axi_wr_req_i.wdata = axi_interconnect.sintf_arr[7].WDATA >> (lc_axi_wr_is_upper_dw_latched ? 32 : 0);
+    assign cptra_ss_lc_axi_wr_req_i.wstrb = axi_interconnect.sintf_arr[7].WSTRB >> (lc_axi_wr_is_upper_dw_latched ? 4 : 0);
+    assign cptra_ss_lc_axi_wr_req_i.wlast = axi_interconnect.sintf_arr[7].WLAST;
+    assign axi_interconnect.sintf_arr[7].WREADY = cptra_ss_lc_axi_wr_rsp_o.wready;
+    assign axi_interconnect.sintf_arr[7].BRESP = cptra_ss_lc_axi_wr_rsp_o.bresp;
+    assign axi_interconnect.sintf_arr[7].BID = cptra_ss_lc_axi_wr_rsp_o.bid;
+    assign axi_interconnect.sintf_arr[7].BVALID = cptra_ss_lc_axi_wr_rsp_o.bvalid;
+    assign cptra_ss_lc_axi_wr_req_i.bready = axi_interconnect.sintf_arr[7].BREADY;
+    assign cptra_ss_lc_axi_rd_req_i.arvalid = axi_interconnect.sintf_arr[7].ARVALID;
+    assign cptra_ss_lc_axi_rd_req_i.araddr = axi_interconnect.sintf_arr[7].ARADDR[31:0];
+    assign cptra_ss_lc_axi_rd_req_i.arid = axi_interconnect.sintf_arr[7].ARID;
+    assign cptra_ss_lc_axi_rd_req_i.arlen = axi_interconnect.sintf_arr[7].ARLEN;
+    assign cptra_ss_lc_axi_rd_req_i.arsize = axi_interconnect.sintf_arr[7].ARSIZE;
+    assign cptra_ss_lc_axi_rd_req_i.arburst = axi_interconnect.sintf_arr[7].ARBURST;
+    assign cptra_ss_lc_axi_rd_req_i.arlock = axi_interconnect.sintf_arr[7].ARLOCK;
+    assign cptra_ss_lc_axi_rd_req_i.aruser = axi_interconnect.sintf_arr[7].ARUSER;
+    assign axi_interconnect.sintf_arr[7].ARREADY = cptra_ss_lc_axi_rd_rsp_o.arready;
+    assign axi_interconnect.sintf_arr[7].RDATA = 64'(cptra_ss_lc_axi_rd_rsp_o.rdata) << (lc_axi_rd_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.sintf_arr[7].RRESP = cptra_ss_lc_axi_rd_rsp_o.rresp;
+    assign axi_interconnect.sintf_arr[7].RID = cptra_ss_lc_axi_rd_rsp_o.rid;
+    assign axi_interconnect.sintf_arr[7].RLAST = cptra_ss_lc_axi_rd_rsp_o.rlast;
+    assign axi_interconnect.sintf_arr[7].RVALID = cptra_ss_lc_axi_rd_rsp_o.rvalid;
+    assign cptra_ss_lc_axi_rd_req_i.rready = axi_interconnect.sintf_arr[7].RREADY;
 
     //Interconnect 1 - I3C
-    assign i3c_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[1].AWVALID;
-    assign i3c_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[1].AWADDR[31:0];
-    assign i3c_s_axi_if.awid                       = axi_interconnect.sintf_arr[1].AWID;
-    assign i3c_s_axi_if.awlen                      = axi_interconnect.sintf_arr[1].AWLEN;
-    assign i3c_s_axi_if.awsize                     = axi_interconnect.sintf_arr[1].AWSIZE;
-    assign i3c_s_axi_if.awburst                    = axi_interconnect.sintf_arr[1].AWBURST;
-    assign i3c_s_axi_if.awlock                     = axi_interconnect.sintf_arr[1].AWLOCK;
-    assign i3c_s_axi_if.awuser                     = axi_interconnect.sintf_arr[1].AWUSER;
-    assign axi_interconnect.sintf_arr[1].AWREADY = i3c_s_axi_if.awready;
-    assign i3c_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[1].WVALID;
-    assign i3c_s_axi_if.wdata                      = axi_interconnect.sintf_arr[1].WDATA >> (i3c_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
-    assign i3c_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[1].WSTRB >> (i3c_s_axi_if_wr_is_upper_dw_latched ? 4 : 0);
-    assign i3c_s_axi_if.wlast                      = axi_interconnect.sintf_arr[1].WLAST;
-    assign axi_interconnect.sintf_arr[1].WREADY  = i3c_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[1].BVALID  = i3c_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[1].BRESP   = i3c_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[1].BID     = i3c_s_axi_if.bid;
-    assign i3c_s_axi_if.bready                     = axi_interconnect.sintf_arr[1].BREADY;
-    assign i3c_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[1].ARVALID;
-    assign i3c_s_axi_if.araddr                     = axi_interconnect.sintf_arr[1].ARADDR[31:0];
-    assign i3c_s_axi_if.arid                       = axi_interconnect.sintf_arr[1].ARID;
-    assign i3c_s_axi_if.arlen                      = axi_interconnect.sintf_arr[1].ARLEN;
-    assign i3c_s_axi_if.arsize                     = axi_interconnect.sintf_arr[1].ARSIZE;
-    assign i3c_s_axi_if.arburst                    = axi_interconnect.sintf_arr[1].ARBURST;
-    assign i3c_s_axi_if.arlock                     = axi_interconnect.sintf_arr[1].ARLOCK;
-    assign i3c_s_axi_if.aruser                     = axi_interconnect.sintf_arr[1].ARUSER;
-    assign axi_interconnect.sintf_arr[1].ARREADY = i3c_s_axi_if.arready;
-    assign axi_interconnect.sintf_arr[1].RVALID  = i3c_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[1].RDATA   = 64'(i3c_s_axi_if.rdata) << (i3c_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
-    assign axi_interconnect.sintf_arr[1].RRESP   = i3c_s_axi_if.rresp;
-    assign axi_interconnect.sintf_arr[1].RID     = i3c_s_axi_if.rid;
-    assign axi_interconnect.sintf_arr[1].RLAST   = i3c_s_axi_if.rlast;
-    assign i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[1].RREADY;
+    assign cptra_ss_i3c_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[1].AWVALID;
+    assign cptra_ss_i3c_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[1].AWADDR[31:0];
+    assign cptra_ss_i3c_s_axi_if.awid                       = axi_interconnect.sintf_arr[1].AWID;
+    assign cptra_ss_i3c_s_axi_if.awlen                      = axi_interconnect.sintf_arr[1].AWLEN;
+    assign cptra_ss_i3c_s_axi_if.awsize                     = axi_interconnect.sintf_arr[1].AWSIZE;
+    assign cptra_ss_i3c_s_axi_if.awburst                    = axi_interconnect.sintf_arr[1].AWBURST;
+    assign cptra_ss_i3c_s_axi_if.awlock                     = axi_interconnect.sintf_arr[1].AWLOCK;
+    assign cptra_ss_i3c_s_axi_if.awuser                     = axi_interconnect.sintf_arr[1].AWUSER;
+    assign axi_interconnect.sintf_arr[1].AWREADY = cptra_ss_i3c_s_axi_if.awready;
+    assign cptra_ss_i3c_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[1].WVALID;
+    assign cptra_ss_i3c_s_axi_if.wdata                      = axi_interconnect.sintf_arr[1].WDATA >> (cptra_ss_i3c_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
+    assign cptra_ss_i3c_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[1].WSTRB >> (cptra_ss_i3c_s_axi_if_wr_is_upper_dw_latched ? 4 : 0);
+    assign cptra_ss_i3c_s_axi_if.wlast                      = axi_interconnect.sintf_arr[1].WLAST;
+    assign axi_interconnect.sintf_arr[1].WREADY  = cptra_ss_i3c_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[1].BVALID  = cptra_ss_i3c_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[1].BRESP   = cptra_ss_i3c_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[1].BID     = cptra_ss_i3c_s_axi_if.bid;
+    assign cptra_ss_i3c_s_axi_if.bready                     = axi_interconnect.sintf_arr[1].BREADY;
+    assign cptra_ss_i3c_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[1].ARVALID;
+    assign cptra_ss_i3c_s_axi_if.araddr                     = axi_interconnect.sintf_arr[1].ARADDR[31:0];
+    assign cptra_ss_i3c_s_axi_if.arid                       = axi_interconnect.sintf_arr[1].ARID;
+    assign cptra_ss_i3c_s_axi_if.arlen                      = axi_interconnect.sintf_arr[1].ARLEN;
+    assign cptra_ss_i3c_s_axi_if.arsize                     = axi_interconnect.sintf_arr[1].ARSIZE;
+    assign cptra_ss_i3c_s_axi_if.arburst                    = axi_interconnect.sintf_arr[1].ARBURST;
+    assign cptra_ss_i3c_s_axi_if.arlock                     = axi_interconnect.sintf_arr[1].ARLOCK;
+    assign cptra_ss_i3c_s_axi_if.aruser                     = axi_interconnect.sintf_arr[1].ARUSER;
+    assign axi_interconnect.sintf_arr[1].ARREADY = cptra_ss_i3c_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[1].RVALID  = cptra_ss_i3c_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[1].RDATA   = 64'(cptra_ss_i3c_s_axi_if.rdata) << (cptra_ss_i3c_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.sintf_arr[1].RRESP   = cptra_ss_i3c_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[1].RID     = cptra_ss_i3c_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[1].RLAST   = cptra_ss_i3c_s_axi_if.rlast;
+    assign cptra_ss_i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[1].RREADY;
 
-    mci_mcu_sram_if mci_mcu_sram_req_if (
+    mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
 
-    mci_mcu_sram_if mci_mbox0_sram_req_if (
+    mci_mcu_sram_if cptra_ss_mci_mbox0_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
     
-    mci_mcu_sram_if mci_mbox1_sram_req_if (
+    mci_mcu_sram_if cptra_ss_mci_mbox1_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
 
     //=================== BEGIN CALIPTRA_TOP_TB ========================
-    logic                       cptra_ss_pwrgood;
+    logic                       cptra_ss_pwrgood_i;
     logic                       cptra_rst_b;
-    logic                       BootFSM_BrkPoint;
-    logic                       scan_mode;
+    logic                       cptra_ss_cptra_core_bootfsm_bp_i;
+    logic                       cptra_ss_cptra_core_scan_mode_i;
 
-    logic [`CLP_OBF_KEY_DWORDS-1:0][31:0]          cptra_obf_key;
-    logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0]     cptra_csr_hmac_key;
+    logic [`CLP_OBF_KEY_DWORDS-1:0][31:0]          cptra_ss_cptra_obf_key_i;
+    logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0]     cptra_ss_cptra_csr_hmac_key_i;
     
     logic [0:`CLP_OBF_UDS_DWORDS-1][31:0]          cptra_uds_rand;
     logic [0:`CLP_OBF_FE_DWORDS-1][31:0]           cptra_fe_rand;
     logic [0:`CLP_OBF_KEY_DWORDS-1][31:0]          cptra_obf_key_tb;
 
     //jtag interface
-    logic                      cptra_core_jtag_tck;    // JTAG clk
-    logic                      cptra_core_jtag_tms;    // JTAG TMS
-    logic                      cptra_core_jtag_tdi;    // JTAG tdi
-    logic                      cptra_core_jtag_trst_n; // JTAG Reset
-    logic                      cptra_core_jtag_tdo;    // JTAG TDO
-    logic                      cptra_core_jtag_tdoEn;  // JTAG TDO enable
+    logic                      cptra_ss_cptra_core_jtag_tck_i;    // JTAG clk
+    logic                      cptra_ss_cptra_core_jtag_tms_i;    // JTAG TMS
+    logic                      cptra_ss_cptra_core_jtag_tdi_i;    // JTAG tdi
+    logic                      cptra_ss_cptra_core_jtag_trst_n_i; // JTAG Reset
+    logic                      cptra_ss_cptra_core_jtag_tdo_o;    // JTAG TDO
+    logic                      cptra_ss_cptra_core_jtag_tdoEn_o;  // JTAG TDO enable
 
     logic ready_for_fuses;
     logic ready_for_mb_processing;
     logic mailbox_data_avail;
-    logic cptra_core_mbox_sram_cs;
-    logic cptra_core_mbox_sram_we;
-    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_core_mbox_sram_addr;
-    logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_core_mbox_sram_wdata;
-    logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_core_mbox_sram_rdata;
+    logic cptra_ss_cptra_core_mbox_sram_cs_o;
+    logic cptra_ss_cptra_core_mbox_sram_we_o;
+    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_sscptra_core_mbox_sram_addr_o;
+    logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_wdata_o;
+    logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_rdata_i;
 
-    logic cptra_core_imem_cs;
-    logic [`CALIPTRA_IMEM_ADDR_WIDTH-1:0] cptra_core_imem_addr;
-    logic [`CALIPTRA_IMEM_DATA_WIDTH-1:0] cptra_core_imem_rdata;
+    logic cptra_ss_cptra_core_imem_cs_o;
+    logic [`CALIPTRA_IMEM_ADDR_WIDTH-1:0] cptra_ss_cptra_core_imem_addr_o;
+    logic [`CALIPTRA_IMEM_DATA_WIDTH-1:0] cptra_ss_cptra_core_imem_rdata_i;
 
 
     ras_test_ctrl_t ras_test_ctrl;
-    logic [63:0] cptra_core_generic_input_wires;
-    logic        cptra_core_etrng_req;
-    logic  [3:0] cptra_core_itrng_data;
-    logic        cptra_core_itrng_valid;
+    logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
+    logic        cptra_ss_cptra_core_etrng_req_o;
+    logic  [3:0] cptra_ss_cptra_core_itrng_data_i;
+    logic        cptra_ss_cptra_core_itrng_valid_i;
 
     logic cptra_error_fatal;
     logic cptra_error_non_fatal;
@@ -1261,15 +1205,15 @@ module caliptra_ss_top_tb
     ) soc_bfm_inst (
         .core_clk        (core_clk        ),
 
-        .cptra_pwrgood   (cptra_ss_pwrgood   ),
+        .cptra_pwrgood   (cptra_ss_pwrgood_i   ),
         .cptra_rst_b     (cptra_soc_bfm_rst_b     ),
 
-        .BootFSM_BrkPoint(BootFSM_BrkPoint),
+        .BootFSM_BrkPoint(cptra_ss_cptra_core_bootfsm_bp_i),
         .cycleCnt        (cycleCnt        ),
 
 
-        .cptra_obf_key     (cptra_obf_key     ),
-        .cptra_csr_hmac_key(cptra_csr_hmac_key),
+        .cptra_obf_key     (cptra_ss_cptra_obf_key_i     ),
+        .cptra_csr_hmac_key(cptra_ss_cptra_csr_hmac_key_i),
 
         .cptra_uds_rand  (cptra_uds_rand  ),
         .cptra_fe_rand   (cptra_fe_rand   ),
@@ -1283,7 +1227,7 @@ module caliptra_ss_top_tb
 
         .ras_test_ctrl(ras_test_ctrl),
 
-        .generic_input_wires(cptra_core_generic_input_wires),
+        .generic_input_wires(cptra_ss_cptra_core_generic_input_wires_i),
 
         .cptra_error_fatal(cptra_error_fatal),
         .cptra_error_non_fatal(cptra_error_non_fatal),
@@ -1306,11 +1250,11 @@ module caliptra_ss_top_tb
     ) jtagdpi (
         .clk_i          (core_clk),
         .rst_ni         (cptra_rst_b),
-        .jtag_tck       (cptra_core_jtag_tck),
-        .jtag_tms       (cptra_core_jtag_tms),
-        .jtag_tdi       (cptra_core_jtag_tdi),
-        .jtag_tdo       (cptra_core_jtag_tdo),
-        .jtag_trst_n    (cptra_core_jtag_trst_n),
+        .jtag_tck       (cptra_ss_cptra_core_jtag_tck_i),
+        .jtag_tms       (cptra_ss_cptra_core_jtag_tms_i),
+        .jtag_tdi       (cptra_ss_cptra_core_jtag_tdi_i),
+        .jtag_tdo       (cptra_ss_cptra_core_jtag_tdo_o),
+        .jtag_trst_n    (cptra_ss_cptra_core_jtag_trst_n_i),
         .jtag_srst_n    ()
     );
 
@@ -1322,9 +1266,9 @@ module caliptra_ss_top_tb
     //=========================================================================-
     physical_rng physical_rng (
         .clk    (core_clk),
-        .enable (cptra_core_etrng_req),
-        .data   (cptra_core_itrng_data),
-        .valid  (cptra_core_itrng_valid)
+        .enable (cptra_ss_cptra_core_etrng_req_o),
+        .data   (cptra_ss_cptra_core_itrng_data_i),
+        .valid  (cptra_ss_cptra_core_itrng_valid_i)
     );
 `endif
 
@@ -1339,25 +1283,25 @@ module caliptra_ss_top_tb
         .cptra_rst_b(cptra_rst_b),
 
         // Caliptra Memory Export Interface
-        .el2_mem_export (cptra_core_el2_mem_export.veer_sram_sink),
+        .el2_mem_export (cptra_ss_cptra_core_el2_mem_export.veer_sram_sink),
 
         //SRAM interface for mbox
-        .mbox_sram_cs   (cptra_core_mbox_sram_cs   ),
-        .mbox_sram_we   (cptra_core_mbox_sram_we   ),
-        .mbox_sram_addr (cptra_core_mbox_sram_addr ),
-        .mbox_sram_wdata(cptra_core_mbox_sram_wdata),
-        .mbox_sram_rdata(cptra_core_mbox_sram_rdata),
+        .mbox_sram_cs   (cptra_ss_cptra_core_mbox_sram_cs_o   ),
+        .mbox_sram_we   (cptra_ss_cptra_core_mbox_sram_we_o   ),
+        .mbox_sram_addr (cptra_sscptra_core_mbox_sram_addr_o ),
+        .mbox_sram_wdata(cptra_ss_cptra_core_mbox_sram_wdata_o),
+        .mbox_sram_rdata(cptra_ss_cptra_core_mbox_sram_rdata_i),
 
         //SRAM interface for imem
-        .imem_cs   (cptra_core_imem_cs   ),
-        .imem_addr (cptra_core_imem_addr ),
-        .imem_rdata(cptra_core_imem_rdata),
+        .imem_cs   (cptra_ss_cptra_core_imem_cs_o   ),
+        .imem_addr (cptra_ss_cptra_core_imem_addr_o ),
+        .imem_rdata(cptra_ss_cptra_core_imem_rdata_i),
 
         // Security State
         .security_state(), // TODO: Remove this since we do not need it anymore, thanks to MCI
 
         //Scan mode
-        .scan_mode(scan_mode),
+        .scan_mode(cptra_ss_cptra_core_scan_mode_i),
 
         // TB Controls
         .ras_test_ctrl(ras_test_ctrl),
@@ -1436,11 +1380,11 @@ module caliptra_ss_top_tb
    ) lmem (
        .clk_i   (core_clk),
    
-       .cs_i    (mci_mcu_sram_req_if.req.cs),
-       .we_i    (mci_mcu_sram_req_if.req.we),
-       .addr_i  ({14'h0, mci_mcu_sram_req_if.req.addr, 2'b0}),
-       .wdata_i (mci_mcu_sram_req_if.req.wdata),
-       .rdata_o (mci_mcu_sram_req_if.resp.rdata)
+       .cs_i    (cptra_ss_mci_mcu_sram_req_if.req.cs),
+       .we_i    (cptra_ss_mci_mcu_sram_req_if.req.we),
+       .addr_i  ({14'h0, cptra_ss_mci_mcu_sram_req_if.req.addr, 2'b0}),
+       .wdata_i (cptra_ss_mci_mcu_sram_req_if.req.wdata),
+       .rdata_o (cptra_ss_mci_mcu_sram_req_if.resp.rdata)
    );
 
     //--------------------------------------------------------------------------------------------
@@ -1499,19 +1443,22 @@ module caliptra_ss_top_tb
 
    logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_otp_to_lcc_bfm_data_override;
    logic [$bits(otp_ctrl_pkg::otp_lc_data_t)-1:0] from_lcc_bfm_to_lcc_data_override;
-    lc_ctrl_pkg::lc_tx_t SOC_lc_clk_byp_ack;
-    lc_ctrl_pkg::lc_tx_t SOC_lc_clk_byp_req;
+    lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_ack_i;
+    lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_req_o;
 
+    // JTAG Assignment for top level caliptra SS design
+    jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i;
+    jtag_pkg::jtag_rsp_t cptra_ss_lc_ctrl_jtag_o;
+    assign cptra_ss_lc_ctrl_jtag_i = '0;
 
     lc_ctrl_bfm u_lc_ctrl_bfm (
         .clk(core_clk),
         .reset_n(rst_l),
 
-
-        .lc_axi_rd_req(lc_axi_rd_req),
-        .lc_axi_rd_rsp(lc_axi_rd_rsp),
+        .lc_axi_rd_req(cptra_ss_lc_axi_rd_req_i),
+        .lc_axi_rd_rsp(cptra_ss_lc_axi_rd_rsp_o),
         .fake_reset(lcc_bfm_reset),
-        .Allow_RMA_on_PPD(Allow_RMA_on_PPD),
+        .Allow_RMA_on_PPD(cptra_ss_lc_Allow_RMA_on_PPD_i),
 
 
         // Scan Interface
@@ -1533,11 +1480,11 @@ module caliptra_ss_top_tb
         // Power manager interface
         .pwr_lc_i(),
         .pwr_lc_o(pwrmgr_pkg::pwr_lc_rsp_t'(pwr_lc_o_tb)),
-        .cptra_pwrgood(cptra_ss_pwrgood),
+        .cptra_pwrgood(cptra_ss_pwrgood_i),
 
         // Clock manager interface
-        .lc_clk_byp_req_o(SOC_lc_clk_byp_req),
-        .lc_clk_byp_ack_i(SOC_lc_clk_byp_ack)
+        .lc_clk_byp_req_o(cptra_ss_lc_clk_byp_req_o),
+        .lc_clk_byp_ack_i(cptra_ss_lc_clk_byp_ack_i)
     );
 
     //--------------------------------------------------------------------------------------------
@@ -1548,7 +1495,7 @@ module caliptra_ss_top_tb
 
     fuse_ctrl_bfm u_fuse_ctrl_bfm (
         .core_clk            (core_clk            ),
-        .cptra_pwrgood       (cptra_ss_pwrgood    ),
+        .cptra_pwrgood       (cptra_ss_pwrgood_i    ),
         .fc_partition_init   (pwr_otp_init_i      ),
         .lc_dft_en_i         (),
         .lc_escalate_en_i    (),
@@ -1577,7 +1524,13 @@ module caliptra_ss_top_tb
     logic [31:0] i3c_axi_rdata_32; // FIXME
     logic [31:0] i3c_axi_wdata_32; // FIXME
     logic [3:0]  i3c_axi_wstrb_4; // FIXME
-    wire sel_od_pp_o;
+
+    `ifdef DIGITAL_IO_I3C
+        wire cptra_ss_sel_od_pp_o;
+    `else
+        wire cptra_ss_i3c_scl_io;
+        wire cptra_ss_i3c_sda_io;
+    `endif
 
     initial begin
         // --- Avery I3C slave ---
@@ -1609,138 +1562,225 @@ module caliptra_ss_top_tb
         end
     end
 
-//instantiate caliptra ss top module
+    //instantiate caliptra ss top module
+    logic [127:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
+    logic         cptra_ss_mci_boot_seq_brkpoint_i;
+    logic         cptra_ss_mcu_no_rom_config_i;
+    logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;
+    logic [63:0]  cptra_ss_mci_generic_input_wires_i; 
+    logic [63:0]  cptra_ss_mci_generic_output_wires_o;
+    logic         cptra_ss_mci_error_fatal_o;
+    logic         cptra_ss_mci_error_non_fatal_o;
+    logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
+    logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
+    logic [31:0]  cptra_ss_strap_clp_axi_user_i;
+    logic         cptra_ss_mcu_jtag_tck_i;
+    logic         cptra_ss_mcu_jtag_tms_i;
+    logic         cptra_ss_mcu_jtag_tdi_i;
+    logic         cptra_ss_mcu_jtag_trst_n_i;
+    logic         cptra_ss_mcu_jtag_tdo_o;
+    logic         cptra_ss_mcu_jtag_tdoEn_o;
+    logic [63:0]  cptra_ss_strap_caliptra_base_addr_i;
+    logic [63:0]  cptra_ss_strap_mci_base_addr_i;
+    logic [63:0]  cptra_ss_strap_recovery_ifc_base_addr_i;
+    logic [63:0]  cptra_ss_strap_otp_fc_base_addr_i;
+    logic [63:0]  cptra_ss_strap_uds_seed_base_addr_i;
+    logic [31:0]  cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i;
+    logic [31:0]  cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i;
+    logic [31:0]  cptra_ss_strap_generic_0_i;
+    logic [31:0]  cptra_ss_strap_generic_1_i;
+    logic [31:0]  cptra_ss_strap_generic_2_i;
+    logic [31:0]  cptra_ss_strap_generic_3_i;
+    logic         cptra_ss_debug_intent_i;
+    logic         cptra_ss_dbg_manuf_enable_o;
+    logic [63:0]  cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o;
+
+    assign cptra_ss_mci_boot_seq_brkpoint_i     = 1'b0;
+    assign cptra_ss_mcu_no_rom_config_i         = 1'b0;
+    assign cptra_ss_strap_mcu_reset_vector_i    = 32'h0;
+    assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
+    assign cptra_ss_strap_mcu_lsu_axi_user_i    = 32'hFFFFFFFF;
+    assign cptra_ss_strap_mcu_ifu_axi_user_i    = 32'hFFFFFFFF;
+    assign cptra_ss_strap_clp_axi_user_i        = 32'hFFFFFFFF;
+    assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
+    assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
+    assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
+    assign cptra_ss_mcu_jtag_trst_n_i           = 1'b0;
+    assign cptra_ss_strap_caliptra_base_addr_i  = 64'h0;
+    assign cptra_ss_strap_mci_base_addr_i       = 64'h0;
+    assign cptra_ss_strap_recovery_ifc_base_addr_i = 64'h0;
+    assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0;
+    assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0;
+    assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
+    assign cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i        = 32'h0;
+    assign cptra_ss_strap_generic_0_i           = 32'h0;
+    assign cptra_ss_strap_generic_1_i           = 32'h0;
+    assign cptra_ss_strap_generic_2_i           = 32'h0;
+    assign cptra_ss_strap_generic_3_i           = 32'h0;
+    assign cptra_ss_debug_intent_i              = 1'b0;
+    
     caliptra_ss_top
     caliptra_ss_dut (
-        .cptra_ss_clk(core_clk),
-        .cptra_ss_pwrgood(cptra_ss_pwrgood), //fixme
-        .cptra_ss_rst_b(rst_l),
+
+        .cptra_ss_clk_i(core_clk),
+        .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i), //fixme
+        .cptra_ss_rst_b_i(rst_l),
     
-        //SoC AXI Interface
-        .cptra_core_s_axi_if,
+    //SoC AXI Interface
+        .cptra_ss_cptra_core_s_axi_if,
     
-        // AXI Manager INF
-        .cptra_core_m_axi_if,
+    // AXI Manager INF
+        .cptra_ss_cptra_core_m_axi_if,
     
-        //SoC AXI Interface
-        .mci_s_axi_if,
+    //SoC AXI Interface
+        .cptra_ss_mci_s_axi_if,
     
-        // AXI Manager INF
-        .mci_m_axi_if,
+    // AXI Manager INF
+        .cptra_ss_mci_m_axi_if,
     
-        .mcu_lsu_m_axi_if,
-        .mcu_ifu_m_axi_if,
+        .cptra_ss_mcu_lsu_m_axi_if,
+        .cptra_ss_mcu_ifu_m_axi_if,
         .mcu_dma_s_axi_if,
-        .i3c_s_axi_if,
+        .cptra_ss_i3c_s_axi_if,
     
-        .lc_axi_wr_req,
-        .lc_axi_wr_rsp,
-        .lc_axi_rd_req,
-        .lc_axi_rd_rsp,
+        .cptra_ss_lc_axi_wr_req_i,
+        .cptra_ss_lc_axi_wr_rsp_o,
+        .cptra_ss_lc_axi_rd_req_i,
+        .cptra_ss_lc_axi_rd_rsp_o,
     
-        .core_axi_wr_req,
-        .core_axi_wr_rsp,
-        .core_axi_rd_req,
-        .core_axi_rd_rsp,
+        .cptra_ss_otp_core_axi_wr_req_i,
+        .cptra_ss_otp_core_axi_wr_rsp_o,
+        .cptra_ss_otp_core_axi_rd_req_i,
+        .cptra_ss_otp_core_axi_rd_rsp_o,
     
-        //--------------------
-        //caliptra core signals
-        //--------------------
-        .cptra_obf_key,
-        .cptra_csr_hmac_key,  
-        //Caliptra JTAG Interface
-        .cptra_core_jtag_tck,    // JTAG clk
-        .cptra_core_jtag_tms,    // JTAG TMS
-        .cptra_core_jtag_tdi,    // JTAG tdi
-        .cptra_core_jtag_trst_n, // JTAG Reset
-        .cptra_core_jtag_tdo,    // JTAG TDO
-        .cptra_core_jtag_tdoEn,  // JTAG TDO enable
+    //--------------------
+    //caliptra core signals
+    //--------------------
+        .cptra_ss_cptra_obf_key_i,
+        .cptra_ss_cptra_csr_hmac_key_i,  
     
-        // Caliptra Memory Export Interface
-        .cptra_core_el2_mem_export,
+    //Caliptra JTAG Interface
+        .cptra_ss_cptra_core_jtag_tck_i,    // JTAG clk
+        .cptra_ss_cptra_core_jtag_tms_i,    // JTAG TMS
+        .cptra_ss_cptra_core_jtag_tdi_i,    // JTAG tdi
+        .cptra_ss_cptra_core_jtag_trst_n_i, // JTAG Reset
+        .cptra_ss_cptra_core_jtag_tdo_o,    // JTAG TDO
+        .cptra_ss_cptra_core_jtag_tdoEn_o,  // JTAG TDO enable
+        .cptra_ss_cptra_generic_fw_exec_ctrl_o,
+        .cptra_ss_debug_intent_i,
+        .cptra_ss_dbg_manuf_enable_o,
+        .cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o,
+
+    // LC Controller JTAG
+        .cptra_ss_lc_ctrl_jtag_i,
+        .cptra_ss_lc_ctrl_jtag_o,
+
+    // Caliptra Memory Export Interface
+        .cptra_ss_cptra_core_el2_mem_export,
     
-        //SRAM interface for mbox
-        .cptra_core_mbox_sram_cs,
-        .cptra_core_mbox_sram_we,
-        .cptra_core_mbox_sram_addr,
-        .cptra_core_mbox_sram_wdata,
-        .cptra_core_mbox_sram_rdata,
+    //SRAM interface for mbox
+        .cptra_ss_cptra_core_mbox_sram_cs_o,
+        .cptra_ss_cptra_core_mbox_sram_we_o,
+        .cptra_sscptra_core_mbox_sram_addr_o,
+        .cptra_ss_cptra_core_mbox_sram_wdata_o,
+        .cptra_ss_cptra_core_mbox_sram_rdata_i,
     
-        //SRAM interface for imem
-        .cptra_core_imem_cs,
-        .cptra_core_imem_addr,
-        .cptra_core_imem_rdata,
-        
-        .ready_for_fuses,
-        .ready_for_mb_processing,
-    
-        .mailbox_data_avail,
-    
-        .BootFSM_BrkPoint,
-    
-        //SoC Interrupts
-        .cptra_error_fatal,
-        .cptra_error_non_fatal,
-    
-        // TRNG Interface
-        `ifdef CALIPTRA_INTERNAL_TRNG
+    //SRAM interface for imem
+        .cptra_ss_cptra_core_imem_cs_o,
+        .cptra_ss_cptra_core_imem_addr_o,
+        .cptra_ss_cptra_core_imem_rdata_i,
+
+        .cptra_ss_cptra_core_bootfsm_bp_i,
+       
+    // TRNG Interface
+    `ifdef CALIPTRA_INTERNAL_TRNG
         // External Request
-        .cptra_core_etrng_req,
+        .cptra_ss_cptra_core_etrng_req_o,
         // Physical Source for Internal TRNG
-        .cptra_core_itrng_data,
-        .cptra_core_itrng_valid,
-        `endif
+        .cptra_ss_cptra_core_itrng_data_i,
+        .cptra_ss_cptra_core_itrng_valid_i,
+    `endif
     
-        .cptra_core_generic_input_wires,
-        .cptra_core_generic_output_wires(),
+    //MCU
+        .cptra_ss_strap_mcu_lsu_axi_user_i,
+        .cptra_ss_strap_mcu_ifu_axi_user_i,
+        .cptra_ss_strap_clp_axi_user_i,
+
+        .cptra_ss_mci_mcu_sram_req_if,
+        .cptra_ss_mci_mbox0_sram_req_if,
+        .cptra_ss_mci_mbox1_sram_req_if,
+        .cptra_ss_mcu0_el2_mem_export,
+        .cptra_ss_mci_boot_seq_brkpoint_i,
+        .cptra_ss_mcu_no_rom_config_i,
+        .cptra_ss_mci_generic_input_wires_i,
+        .cptra_ss_strap_mcu_reset_vector_i,
+        .cptra_ss_lc_Allow_RMA_on_PPD_i,
+
+        .cptra_ss_mci_generic_output_wires_o,
+        .cptra_ss_mci_error_fatal_o,
+        .cptra_ss_mci_error_non_fatal_o,
+
+        .cptra_ss_mcu_jtag_tck_i,
+        .cptra_ss_mcu_jtag_tms_i,
+        .cptra_ss_mcu_jtag_tdi_i,
+        .cptra_ss_mcu_jtag_trst_n_i,
+        .cptra_ss_mcu_jtag_tdo_o,
+        .cptra_ss_mcu_jtag_tdoEn_o,
+
+    //Strap
+        .cptra_ss_strap_caliptra_base_addr_i,
+        .cptra_ss_strap_mci_base_addr_i,
+        .cptra_ss_strap_recovery_ifc_base_addr_i,
+        .cptra_ss_strap_otp_fc_base_addr_i,
+        .cptra_ss_strap_uds_seed_base_addr_i,
+        .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i,
+        .cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i,
+        .cptra_ss_strap_generic_0_i,
+        .cptra_ss_strap_generic_1_i,
+        .cptra_ss_strap_generic_2_i,
+        .cptra_ss_strap_generic_3_i,
     
-        .scan_mode,
-    
-        //MCU
-        .mci_mcu_sram_req_if,
-        .mci_mbox0_sram_req_if,
-    
-        .mci_mbox1_sram_req_if,
-    
-        .css_mcu0_el2_mem_export,
-    
-        .Allow_RMA_on_PPD,
-    
-`ifdef LCC_FC_BFM_SIM
+    `ifdef LCC_FC_BFM_SIM
         .lcc_bfm_reset,
         .from_otp_to_lcc_bfm_data_override(from_otp_to_lcc_bfm_data_override),
         .from_lcc_bfm_to_lcc_data_override(from_lcc_bfm_to_lcc_data_override),
-`endif 
+    `endif 
     
     
-        .SOC_lc_clk_byp_ack(SOC_lc_clk_byp_ack),
-        .SOC_lc_clk_byp_req(SOC_lc_clk_byp_req),
+        .cptra_ss_lc_clk_byp_ack_i           (cptra_ss_lc_clk_byp_ack_i),
+        .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),
+        .cptra_ss_lc_ctrl_scan_rst_ni_i      (1'b1), // Note: Since we do not use dmi and use JTAG we do not need this
     
         .esc_scrap_state0,
         .esc_scrap_state1,
     
-        .SOC_DFT_EN,
-        .SOC_HW_DEBUG_EN,
+        .cptra_ss_soc_dft_en_o,
+        .cptra_ss_soc_hw_debug_en_o,
 
-        .fuse_macro_prim_tl_i('0),
-        .fuse_macro_prim_tl_o(),
+        .cptra_ss_fuse_macro_prim_tl_i('0),
+        .cptra_ss_fuse_macro_prim_tl_o(),
     
-        `ifdef VERILATOR
-        .mem_signature_begin,
-        .mem_signature_end,
-        .mem_mailbox,
-        `endif // VERILATOR
-        // I3C Interface
-        `ifdef DIGITAL_IO_I3C
-        .scl_i(master0_intf.scl_and),
-        .sda_i(master0_intf.sda_and),
-        .scl_o(master0_intf.scl_and),
-        .sda_o(master0_intf.sda_and),
-        .sel_od_pp_o
-        `else
-        .i3c_scl_io,
-        .i3c_sda_io
-        `endif
+    // I3C Interface
+    `ifdef DIGITAL_IO_I3C
+        .cptra_ss_i3c_scl_i(master0_intf.scl_and),
+        .cptra_ss_i3c_sda_i(master0_intf.sda_and),
+        .cptra_ss_i3c_scl_o(master0_intf.scl_and),
+        .cptra_ss_i3c_sda_o(master0_intf.sda_and),
+        .cptra_ss_sel_od_pp_o,
+    `else
+        .cptra_ss_i3c_scl_io,
+        .cptra_ss_i3c_sda_io,
+    `endif
+
+        // -- remove in final version
+        .cptra_ss_cptra_core_generic_input_wires_i,
+        .cptra_ss_cptra_core_scan_mode_i,
+        .cptra_error_fatal,
+        .cptra_error_non_fatal,
+        .ready_for_fuses,
+        .ready_for_mb_processing,
+        .mailbox_data_avail
+
     );
     
 
@@ -2097,10 +2137,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
     int ii;
     localparam DCCM_INDEX_DEPTH = ((pt.DCCM_SIZE)*1024)/((pt.DCCM_BYTE_WIDTH)*(pt.DCCM_NUM_BANKS));  // Depth of memory bank
     // 8 Banks, 16KB each (2048 x 72)
-    always_ff @(css_mcu0_el2_mem_export.clk) begin : inject_dccm_ecc_error
+    always_ff @(cptra_ss_mcu0_el2_mem_export.clk) begin : inject_dccm_ecc_error
         // if (~error_injection_mode.dccm_single_bit_error && ~error_injection_mode.dccm_double_bit_error) begin
         //     dccm_wdata_bitflip <= '{default:0};
-        // end else if (css_mcu0_el2_mem_export.dccm_clken & css_mcu0_el2_mem_export.dccm_wren_bank) begin
+        // end else if (cptra_ss_mcu0_el2_mem_export.dccm_clken & cptra_ss_mcu0_el2_mem_export.dccm_wren_bank) begin
         //     for (ii=0; ii<pt.DCCM_NUM_BANKS; ii++) begin: dccm_bitflip_injection_loop
         //         dccm_wdata_bitflip[ii] <= get_bitflip_mask(error_injection_mode.dccm_double_bit_error);
         //     end
@@ -2109,18 +2149,18 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
     end
     for (genvar i=0; i<pt.DCCM_NUM_BANKS; i++) begin: dccm_loop
 
-        assign dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0] = {css_mcu0_el2_mem_export.dccm_wr_ecc_bank[i], css_mcu0_el2_mem_export.dccm_wr_data_bank[i]} ^ dccm_wdata_bitflip[i];
-        assign css_mcu0_el2_mem_export.dccm_bank_dout[i] = dccm_bank_fdout[i][31:0];
-        assign css_mcu0_el2_mem_export.dccm_bank_ecc[i] = dccm_bank_fdout[i][38:32];
+        assign dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0] = {cptra_ss_mcu0_el2_mem_export.dccm_wr_ecc_bank[i], cptra_ss_mcu0_el2_mem_export.dccm_wr_data_bank[i]} ^ dccm_wdata_bitflip[i];
+        assign cptra_ss_mcu0_el2_mem_export.dccm_bank_dout[i] = dccm_bank_fdout[i][31:0];
+        assign cptra_ss_mcu0_el2_mem_export.dccm_bank_ecc[i] = dccm_bank_fdout[i][38:32];
 
     `ifdef VERILATOR
 
             el2_ram #(DCCM_INDEX_DEPTH,39)  ram (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2133,10 +2173,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         if (DCCM_INDEX_DEPTH == 32768) begin : dccm
 	 	 	 	 css_mcu0_ram_32768x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2148,10 +2188,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         else if (DCCM_INDEX_DEPTH == 16384) begin : dccm
 	 	 	 	 css_mcu0_ram_16384x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2163,10 +2203,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         else if (DCCM_INDEX_DEPTH == 8192) begin : dccm
 	 	 	 	 css_mcu0_ram_8192x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2178,10 +2218,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         else if (DCCM_INDEX_DEPTH == 4096) begin : dccm
 	 	 	 	 css_mcu0_ram_4096x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2193,10 +2233,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         else if (DCCM_INDEX_DEPTH == 3072) begin : dccm
 	 	 	 	 css_mcu0_ram_3072x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2208,10 +2248,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         else if (DCCM_INDEX_DEPTH == 2048) begin : dccm
 	 	 	 	 css_mcu0_ram_2048x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2223,10 +2263,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         else if (DCCM_INDEX_DEPTH == 1024) begin : dccm
 	 	 	 	 css_mcu0_ram_1024x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2238,10 +2278,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         else if (DCCM_INDEX_DEPTH == 512) begin : dccm
 	 	 	 	 css_mcu0_ram_512x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2253,10 +2293,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         else if (DCCM_INDEX_DEPTH == 256) begin : dccm
 	 	 	 	 css_mcu0_ram_256x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2268,10 +2308,10 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
         else if (DCCM_INDEX_DEPTH == 128) begin : dccm
 	 	 	 	 css_mcu0_ram_128x39  dccm_bank (
                                     // Primary ports
-                                    .ME(css_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(css_mcu0_el2_mem_export.clk),
-                                    .WE(css_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(css_mcu0_el2_mem_export.dccm_addr_bank[i]),
+                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
+                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
+                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
                                     .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
                                     .ROP ( ),
@@ -2291,32 +2331,32 @@ if (pt.ICCM_ENABLE) begin : Gen_iccm_enable
 
 logic [pt.ICCM_NUM_BANKS-1:0] [38:0] iccm_wdata_bitflip;
 int jj;
-always_ff @(css_mcu0_el2_mem_export.clk) begin : inject_iccm_ecc_error
+always_ff @(cptra_ss_mcu0_el2_mem_export.clk) begin : inject_iccm_ecc_error
     if (~error_injection_mode.iccm_single_bit_error && ~error_injection_mode.iccm_double_bit_error) begin
         iccm_wdata_bitflip <= '{default:0};
-    end else if (css_mcu0_el2_mem_export.iccm_clken & css_mcu0_el2_mem_export.iccm_wren_bank) begin
+    end else if (cptra_ss_mcu0_el2_mem_export.iccm_clken & cptra_ss_mcu0_el2_mem_export.iccm_wren_bank) begin
         for (jj=0; jj<pt.ICCM_NUM_BANKS; jj++) begin: iccm_bitflip_injection_loop
             iccm_wdata_bitflip[jj] <= get_bitflip_mask(error_injection_mode.iccm_double_bit_error);
         end
     end
 end
 for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
-    // -- new --- assign iccm_bank_wr_fdata[i][31:0] = css_mcu0_el2_mem_export.iccm_bank_wr_data[i];
-    // -- new --- assign iccm_bank_wr_fdata[i][38:32] = css_mcu0_el2_mem_export.iccm_bank_wr_ecc[i];
-    // -- new --- assign css_mcu0_el2_mem_export.iccm_bank_dout[i] = iccm_bank_fdout[i][31:0];
-    // -- new --- assign css_mcu0_el2_mem_export.iccm_bank_ecc[i] = iccm_bank_fdout[i][38:32];
-    //assign css_mcu0_el2_mem_export.iccm_bank_wr_data[i] = iccm_bank_wr_fdata[i][31:0];
-    //assign css_mcu0_el2_mem_export.iccm_bank_wr_ecc[i] = iccm_bank_wr_fdata[i][37:32];
-    //assign iccm_bank_fdout[i] = {css_mcu0_el2_mem_export.iccm_bank_ecc[i], css_mcu0_el2_mem_export.iccm_bank_dout[i]};
+    // -- new --- assign iccm_bank_wr_fdata[i][31:0] = cptra_ss_mcu0_el2_mem_export.iccm_bank_wr_data[i];
+    // -- new --- assign iccm_bank_wr_fdata[i][38:32] = cptra_ss_mcu0_el2_mem_export.iccm_bank_wr_ecc[i];
+    // -- new --- assign cptra_ss_mcu0_el2_mem_export.iccm_bank_dout[i] = iccm_bank_fdout[i][31:0];
+    // -- new --- assign cptra_ss_mcu0_el2_mem_export.iccm_bank_ecc[i] = iccm_bank_fdout[i][38:32];
+    //assign cptra_ss_mcu0_el2_mem_export.iccm_bank_wr_data[i] = iccm_bank_wr_fdata[i][31:0];
+    //assign cptra_ss_mcu0_el2_mem_export.iccm_bank_wr_ecc[i] = iccm_bank_wr_fdata[i][37:32];
+    //assign iccm_bank_fdout[i] = {cptra_ss_mcu0_el2_mem_export.iccm_bank_ecc[i], cptra_ss_mcu0_el2_mem_export.iccm_bank_dout[i]};
 
     `ifdef VERILATOR
 
     el2_ram #(.depth(1<<pt.ICCM_INDEX_BITS), .width(39)) iccm_bank (
                                         // Primary ports
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2337,10 +2377,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         if (pt.ICCM_INDEX_BITS == 6 ) begin : iccm
 	 	 	 	 css_mcu0_ram_64x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2361,10 +2401,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
     else if (pt.ICCM_INDEX_BITS == 7 ) begin : iccm
 	 	 	 	 css_mcu0_ram_128x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2385,10 +2425,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 8 ) begin : iccm
 	 	 	 	 css_mcu0_ram_256x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2408,10 +2448,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 9 ) begin : iccm
 	 	 	 	 css_mcu0_ram_512x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2431,10 +2471,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 10 ) begin : iccm
 	 	 	 	 css_mcu0_ram_1024x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2454,10 +2494,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 11 ) begin : iccm
 	 	 	 	 css_mcu0_ram_2048x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2477,10 +2517,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 12 ) begin : iccm
 	 	 	 	 css_mcu0_ram_4096x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2500,10 +2540,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 13 ) begin : iccm
 	 	 	 	 css_mcu0_ram_8192x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2523,10 +2563,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else if (pt.ICCM_INDEX_BITS == 14 ) begin : iccm
 	 	 	 	 css_mcu0_ram_16384x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2546,10 +2586,10 @@ for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
         else begin : iccm
 	 	 	 	 css_mcu0_ram_32768x39 iccm_bank (
                                         // Primary ports
-                                        .CLK(css_mcu0_el2_mem_export.clk),
-                                        .ME(css_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(css_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(css_mcu0_el2_mem_export.iccm_addr_bank[i]),
+                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
+                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
+                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
+                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
                                         .D(iccm_bank_wr_fdata[i][38:0]),
                                         .Q(iccm_bank_fdout[i][38:0]),
                                         .ROP ( ),
@@ -2578,55 +2618,55 @@ end : Gen_iccm_enable
       for (genvar k=0; k<pt.ICACHE_BANKS_WAY; k++) begin: BANKS_WAY   // 16B subbank
       if (pt.ICACHE_ECC) begin : ECC1
         if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
-           `EL2_IC_DATA_SRAM(8192,71,i,k)
+           `EL2_IC_DATA_SRAM(8192,71,i,k,cptra_ss_mcu0_el2_mem_export)
         end
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
-           `EL2_IC_DATA_SRAM(4096,71,i,k)
+           `EL2_IC_DATA_SRAM(4096,71,i,k,cptra_ss_mcu0_el2_mem_export)
         end
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
-           `EL2_IC_DATA_SRAM(2048,71,i,k)
+           `EL2_IC_DATA_SRAM(2048,71,i,k,cptra_ss_mcu0_el2_mem_export)
         end
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
-           `EL2_IC_DATA_SRAM(1024,71,i,k)
+           `EL2_IC_DATA_SRAM(1024,71,i,k,cptra_ss_mcu0_el2_mem_export)
         end
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
-           `EL2_IC_DATA_SRAM(512,71,i,k)
+           `EL2_IC_DATA_SRAM(512,71,i,k,cptra_ss_mcu0_el2_mem_export)
         end
          else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
-           `EL2_IC_DATA_SRAM(256,71,i,k)
+           `EL2_IC_DATA_SRAM(256,71,i,k,cptra_ss_mcu0_el2_mem_export)
          end
          else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
-           `EL2_IC_DATA_SRAM(128,71,i,k)
+           `EL2_IC_DATA_SRAM(128,71,i,k,cptra_ss_mcu0_el2_mem_export)
          end
          else  begin : size_64
-           `EL2_IC_DATA_SRAM(64,71,i,k)
+           `EL2_IC_DATA_SRAM(64,71,i,k,cptra_ss_mcu0_el2_mem_export)
          end
       end // if (pt.ICACHE_ECC)
 
      else  begin  : ECC0
         if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
-           `EL2_IC_DATA_SRAM(8192,68,i,k)
+           `EL2_IC_DATA_SRAM(8192,68,i,k,cptra_ss_mcu0_el2_mem_export)
         end
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
-           `EL2_IC_DATA_SRAM(4096,68,i,k)
+           `EL2_IC_DATA_SRAM(4096,68,i,k,cptra_ss_mcu0_el2_mem_export)
         end
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
-           `EL2_IC_DATA_SRAM(2048,68,i,k)
+           `EL2_IC_DATA_SRAM(2048,68,i,k,cptra_ss_mcu0_el2_mem_export)
         end
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
-           `EL2_IC_DATA_SRAM(1024,68,i,k)
+           `EL2_IC_DATA_SRAM(1024,68,i,k,cptra_ss_mcu0_el2_mem_export)
         end
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
-           `EL2_IC_DATA_SRAM(512,68,i,k)
+           `EL2_IC_DATA_SRAM(512,68,i,k,cptra_ss_mcu0_el2_mem_export)
         end
          else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
-           `EL2_IC_DATA_SRAM(256,68,i,k)
+           `EL2_IC_DATA_SRAM(256,68,i,k,cptra_ss_mcu0_el2_mem_export)
          end
          else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
-           `EL2_IC_DATA_SRAM(128,68,i,k)
+           `EL2_IC_DATA_SRAM(128,68,i,k,cptra_ss_mcu0_el2_mem_export)
          end
          else  begin : size_64
-           `EL2_IC_DATA_SRAM(64,68,i,k)
+           `EL2_IC_DATA_SRAM(64,68,i,k,cptra_ss_mcu0_el2_mem_export)
          end
       end // else: !if(pt.ICACHE_ECC)
       end // block: BANKS_WAY
@@ -2643,73 +2683,73 @@ end : Gen_iccm_enable
         // SRAMS with ECC (single/double detect; no correct)
         if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(8192,284,71,k)    // 64b data + 7b ecc
+              `EL2_PACKED_IC_DATA_SRAM(8192,284,71,k,cptra_ss_mcu0_el2_mem_export)    // 64b data + 7b ecc
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(8192,142,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(8192,142,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_8192
 
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(4096,284,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(4096,284,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(4096,142,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(4096,142,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_4096
 
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(2048,284,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(2048,284,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(2048,142,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(2048,142,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_2048
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(1024,284,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(1024,284,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(1024,142,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(1024,142,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_1024
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(512,284,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(512,284,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(512,142,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(512,142,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_512
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(256,284,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(256,284,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(256,142,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(256,142,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_256
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(128,284,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(128,284,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(128,142,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(128,142,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_128
 
         else  begin : size_64
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(64,284,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(64,284,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(64,142,71,k)
+              `EL2_PACKED_IC_DATA_SRAM(64,142,71,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_64
        end // if (pt.ICACHE_ECC)
@@ -2718,73 +2758,73 @@ end : Gen_iccm_enable
         // SRAMs with parity
         if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(8192,272,68,k)    // 64b data + 4b parity
+              `EL2_PACKED_IC_DATA_SRAM(8192,272,68,k,cptra_ss_mcu0_el2_mem_export)    // 64b data + 4b parity
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(8192,136,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(8192,136,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_8192
 
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(4096,272,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(4096,272,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(4096,136,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(4096,136,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_4096
 
         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(2048,272,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(2048,272,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(2048,136,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(2048,136,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_2048
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(1024,272,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(1024,272,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(1024,136,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(1024,136,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_1024
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(512,272,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(512,272,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(512,136,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(512,136,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_512
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(256,272,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(256,272,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(256,136,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(256,136,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_256
 
         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(128,272,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(128,272,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(128,136,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(128,136,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_128
 
         else  begin : size_64
            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(64,272,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(64,272,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
            else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(64,136,68,k)
+              `EL2_PACKED_IC_DATA_SRAM(64,136,68,k,cptra_ss_mcu0_el2_mem_export)
            end // block: WAYS
         end // block: size_64
      end // block: ECC0
@@ -2796,28 +2836,28 @@ end : Gen_iccm_enable
 if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_11
     for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: WAYS
         if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
-                 `EL2_IC_TAG_SRAM(32,26,i)
+                 `EL2_IC_TAG_SRAM(32,26,i,cptra_ss_mcu0_el2_mem_export)
         end // if (pt.ICACHE_TAG_DEPTH == 32)
         if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
-                 `EL2_IC_TAG_SRAM(64,26,i)
+                 `EL2_IC_TAG_SRAM(64,26,i,cptra_ss_mcu0_el2_mem_export)
         end // if (pt.ICACHE_TAG_DEPTH == 64)
         if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
-                 `EL2_IC_TAG_SRAM(128,26,i)
+                 `EL2_IC_TAG_SRAM(128,26,i,cptra_ss_mcu0_el2_mem_export)
         end // if (pt.ICACHE_TAG_DEPTH == 128)
         if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
-                 `EL2_IC_TAG_SRAM(256,26,i)
+                 `EL2_IC_TAG_SRAM(256,26,i,cptra_ss_mcu0_el2_mem_export)
         end // if (pt.ICACHE_TAG_DEPTH == 256)
         if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
-                 `EL2_IC_TAG_SRAM(512,26,i)
+                 `EL2_IC_TAG_SRAM(512,26,i,cptra_ss_mcu0_el2_mem_export)
         end // if (pt.ICACHE_TAG_DEPTH == 512)
         if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
-                 `EL2_IC_TAG_SRAM(1024,26,i)
+                 `EL2_IC_TAG_SRAM(1024,26,i,cptra_ss_mcu0_el2_mem_export)
         end // if (pt.ICACHE_TAG_DEPTH == 1024)
         if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
-                 `EL2_IC_TAG_SRAM(2048,26,i)
+                 `EL2_IC_TAG_SRAM(2048,26,i,cptra_ss_mcu0_el2_mem_export)
         end // if (pt.ICACHE_TAG_DEPTH == 2048)
         if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
-                 `EL2_IC_TAG_SRAM(4096,26,i)
+                 `EL2_IC_TAG_SRAM(4096,26,i,cptra_ss_mcu0_el2_mem_export)
         end // if (pt.ICACHE_TAG_DEPTH == 4096)
    end // block: WAYS
  end // block: PACKED_11
@@ -2826,74 +2866,74 @@ if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_11
     if (pt.ICACHE_ECC) begin  : ECC1
       if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(32,104)
+                 `EL2_IC_TAG_PACKED_SRAM(32,104,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(32,52)
+                 `EL2_IC_TAG_PACKED_SRAM(32,52,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // if (pt.ICACHE_TAG_DEPTH == 32
 
       if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(64,104)
+                 `EL2_IC_TAG_PACKED_SRAM(64,104,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(64,52)
+                 `EL2_IC_TAG_PACKED_SRAM(64,52,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_64
 
       if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(128,104)
+                 `EL2_IC_TAG_PACKED_SRAM(128,104,cptra_ss_mcu0_el2_mem_export)
       end // block: WAYS
       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(128,52)
+                 `EL2_IC_TAG_PACKED_SRAM(128,52,cptra_ss_mcu0_el2_mem_export)
       end // block: WAYS
 
       end // block: size_128
 
       if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(256,104)
+                 `EL2_IC_TAG_PACKED_SRAM(256,104,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(256,52)
+                 `EL2_IC_TAG_PACKED_SRAM(256,52,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_256
 
       if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(512,104)
+                 `EL2_IC_TAG_PACKED_SRAM(512,104,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(512,52)
+                 `EL2_IC_TAG_PACKED_SRAM(512,52,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_512
 
       if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
          if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(1024,104)
+                 `EL2_IC_TAG_PACKED_SRAM(1024,104,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(1024,52)
+                 `EL2_IC_TAG_PACKED_SRAM(1024,52,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_1024
 
       if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(2048,104)
+                 `EL2_IC_TAG_PACKED_SRAM(2048,104,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(2048,52)
+                 `EL2_IC_TAG_PACKED_SRAM(2048,52,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_2048
 
       if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(4096,104)
+                 `EL2_IC_TAG_PACKED_SRAM(4096,104,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(4096,52)
+                 `EL2_IC_TAG_PACKED_SRAM(4096,52,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_4096
    end // block: ECC1
@@ -2901,74 +2941,74 @@ if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_11
    else  begin : ECC0
       if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(32,88)
+                 `EL2_IC_TAG_PACKED_SRAM(32,88,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(32,44)
+                 `EL2_IC_TAG_PACKED_SRAM(32,44,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // if (pt.ICACHE_TAG_DEPTH == 32
 
       if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(64,88)
+                 `EL2_IC_TAG_PACKED_SRAM(64,88,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(64,44)
+                 `EL2_IC_TAG_PACKED_SRAM(64,44,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_64
 
       if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(128,88)
+                 `EL2_IC_TAG_PACKED_SRAM(128,88,cptra_ss_mcu0_el2_mem_export)
       end // block: WAYS
       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(128,44)
+                 `EL2_IC_TAG_PACKED_SRAM(128,44,cptra_ss_mcu0_el2_mem_export)
       end // block: WAYS
 
       end // block: size_128
 
       if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(256,88)
+                 `EL2_IC_TAG_PACKED_SRAM(256,88,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(256,44)
+                 `EL2_IC_TAG_PACKED_SRAM(256,44,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_256
 
       if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(512,88)
+                 `EL2_IC_TAG_PACKED_SRAM(512,88,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(512,44)
+                 `EL2_IC_TAG_PACKED_SRAM(512,44,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_512
 
       if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
          if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(1024,88)
+                 `EL2_IC_TAG_PACKED_SRAM(1024,88,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(1024,44)
+                 `EL2_IC_TAG_PACKED_SRAM(1024,44,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_1024
 
       if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(2048,88)
+                 `EL2_IC_TAG_PACKED_SRAM(2048,88,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(2048,44)
+                 `EL2_IC_TAG_PACKED_SRAM(2048,44,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_2048
 
       if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(4096,88)
+                 `EL2_IC_TAG_PACKED_SRAM(4096,88,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(4096,44)
+                 `EL2_IC_TAG_PACKED_SRAM(4096,44,cptra_ss_mcu0_el2_mem_export)
         end // block: WAYS
       end // block: size_4096
    end // block: ECC0

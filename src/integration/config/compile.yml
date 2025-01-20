@@ -35,6 +35,7 @@ targets:
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0
 requires:
+  - caliptra_ss_lc_ctrl_pkg
   - caliptra_ss_top_defines
   - caliptra_ss_top
   - caliptra_top_tb_pkg
