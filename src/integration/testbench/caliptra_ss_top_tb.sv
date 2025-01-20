@@ -1430,9 +1430,9 @@ module caliptra_ss_top_tb
    assign to_bfm_lc_flash_rma_req_o = lc_ctrl_pkg::lc_tx_t'(caliptra_ss_dut.u_lc_ctrl.lc_flash_rma_req_o);
 
 
-
-   logic esc_scrap_state0;
-   logic esc_scrap_state1;
+   // driven by lc_ctrl_bfm
+   logic cptra_ss_lc_esclate_scrap_state0_i;
+   logic cptra_ss_lc_esclate_scrap_state1_i;
 
    // Scan Interface
    logic lc_ctrl_scan_rst_ni_tb;
@@ -1469,8 +1469,8 @@ module caliptra_ss_top_tb
         .lc_alerts_o('0),
 
         // Escalation State Interface
-        .esc_scrap_state0(esc_scrap_state0),
-        .esc_scrap_state1(esc_scrap_state1),
+        .esc_scrap_state0(cptra_ss_lc_esclate_scrap_state0_i),
+        .esc_scrap_state1(cptra_ss_lc_esclate_scrap_state1_i),
 
 
         // OTP hack
@@ -1635,7 +1635,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_generic_2_i           = 32'h0;
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
-    
+
     caliptra_ss_top
     caliptra_ss_dut (
 
@@ -1761,8 +1761,8 @@ module caliptra_ss_top_tb
         .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),
         .cptra_ss_lc_ctrl_scan_rst_ni_i      (1'b1), // Note: Since we do not use dmi and use JTAG we do not need this
     
-        .esc_scrap_state0,
-        .esc_scrap_state1,
+        .cptra_ss_lc_esclate_scrap_state0_i,
+        .cptra_ss_lc_esclate_scrap_state1_i,
     
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,

@@ -159,9 +159,8 @@ module caliptra_ss_top
     output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_req_o,
     input  cptra_ss_lc_ctrl_scan_rst_ni_i,
 
-    // -- Global change -- TASK
-    input logic esc_scrap_state0,   // NOTE: These two signals are very important. FIXME: Renaming is needed
-    input logic esc_scrap_state1,   // If you assert them, Caliptr-SS will enter SCRAP mode
+    input logic cptra_ss_lc_esclate_scrap_state0_i,   // NOTE: These two signals are very important. FIXME: Renaming is needed
+    input logic cptra_ss_lc_esclate_scrap_state1_i,   // If you assert them, Caliptr-SS will enter SCRAP mode
 
     output wire cptra_ss_soc_dft_en_o,
     output wire cptra_ss_soc_hw_debug_en_o,
@@ -1143,8 +1142,8 @@ module caliptra_ss_top
 
             .alerts(lc_alerts_o),
 
-            .esc_scrap_state0(esc_scrap_state0),
-            .esc_scrap_state1(esc_scrap_state1),
+            .esc_scrap_state0(cptra_ss_lc_esclate_scrap_state0_i),
+            .esc_scrap_state1(cptra_ss_lc_esclate_scrap_state1_i),
 
             .pwr_lc_i(lcc_init_req),
             .pwr_lc_o(), // Note: It is tied with this assignment: lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
