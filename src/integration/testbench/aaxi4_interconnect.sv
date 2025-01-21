@@ -18,6 +18,8 @@ TODO: slave 5 for I3C at 64'h2000_4000
 
 `timescale 1ps/1ps
 
+`include "soc_address_map_defines.svh"
+
 module aaxi4_interconnect(
     input logic		core_clk,	
     input logic      rst_l);
@@ -186,20 +188,22 @@ initial begin
 `endif
 	end
         //-- imem
-        slave[0].cfg_info.base_address[0] = 64'h8000_0000;
-        slave[0].cfg_info.limit_address[0] = 64'h8000_FFFF;
+        slave[0].cfg_info.base_address[0]  = 64'h1000_0000;
+        slave[0].cfg_info.limit_address[0] = 64'h1000_FFFF;
 
-        //-- lmem/Mailbox
-        // slave[1].cfg_info.base_address[0] = 64'h9001_0000;
-        // slave[1].cfg_info.limit_address[0] = 64'h9001_FFFF;
-        // slave[1].cfg_info.base_address[1]  = 64'hD058_0000;
-        // slave[1].cfg_info.limit_address[1] = 64'hD058_0000;
-        // slave[1].cfg_info.fifo_address[1]  = 64'hE000_0000;
-        // slave[1].cfg_info.fifo_limit[1]    = 64'hE000_1000;
+        //-- I3C
+        slave[1].cfg_info.passive_mode = 1;
+        slave[1].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[1].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[1].cfg_info.base_address[0] = 64'h2000_4000;
+        slave[1].cfg_info.limit_address[0] = 64'h2000_4FFF;
+        slave[1].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
+        slave[1].cfg_info.total_outstanding_depth = 4;
+        slave[1].cfg_info.id_outstanding_depth = 4;
 
-        //-- MCU AXI DMA sub
-        slave[2].cfg_info.base_address[0] = 64'h8002_0000;
-        slave[2].cfg_info.limit_address[0] = 64'h8002_FFFF;
+        //-- MCU ROM MACRO / MCI_TOP 2nd instance
+        slave[2].cfg_info.base_address[0] = {32'h0, 32'h8000_0000};
+        slave[2].cfg_info.limit_address[0] = {32'h0, 32'h80FF_FFFF};
 
         //-- Caliptra SoC IFC Sub
         slave[3].cfg_info.passive_mode= 1; 
@@ -207,36 +211,18 @@ initial begin
         slave[3].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.base_address[0] = 64'h3000_0000;
         slave[3].cfg_info.limit_address[0] = 64'h3FFF_FFFF;
-        // slave[3].cfg_info.fifo_address[0] = 64'hc000_0000;
-        // slave[3].cfg_info.fifo_limit[0] = 64'hc000_1000;
         slave[3].cfg_info.base_address[1]  = 64'h0003_0000;
         slave[3].cfg_info.limit_address[1] = 64'h0003_FFFF;
-        // slave[3].cfg_info.fifo_address[1] = 64'hc000_1001;
-        // slave[3].cfg_info.fifo_limit[1] = 64'hc000_2000;
         slave[3].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         slave[3].cfg_info.total_outstanding_depth = 4;
         slave[3].cfg_info.id_outstanding_depth = 4;
 
-//        //-- Caliptra SRAM
-//        slave[4].cfg_info.passive_mode= 1; 
-//        slave[4].cfg_info.opt_awuser_enable = 0; // optional, axi4_interconn_routings.sv need it
-//        slave[4].cfg_info.opt_aruser_enable = 0; // optional, axi4_interconn_routings.sv need it
-//        slave[4].cfg_info.base_address[0] = 64'h1_2345_0000;
-//        slave[4].cfg_info.limit_address[0] = 64'h1_4001_FFFF;
-//        slave[4].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH
-//        slave[4].cfg_info.total_outstanding_depth = 4;
-//        slave[4].cfg_info.id_outstanding_depth = 4;
-
-        //-- I3C --> MCI
+        //-- MCI
         slave[4].cfg_info.passive_mode= 1; 
         slave[4].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        // slave[4].cfg_info.limit_address[0] = 64'h2000_4FFF;
-        // slave[4].cfg_info.base_address[0] = 64'h2000_4000;
-        slave[4].cfg_info.base_address[0]  = {32'h0, `SOC_MCI_REG_BASE_ADDR};//64'h2100_0000;
+        slave[4].cfg_info.base_address[0]  = {32'h0, `SOC_MCI_REG_BASE_ADDR}; //64'h2100_0000;
         slave[4].cfg_info.limit_address[0] = {32'h0, `SOC_MCI_REG_BASE_ADDR + 32'h00FF_FFFF};
-        // slave[4].cfg_info.base_address[1]  = 64'h0000_0000_D058_0000;
-        // slave[4].cfg_info.limit_address[1] = 64'h0000_0000_D058_0000;
         slave[4].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         slave[4].cfg_info.total_outstanding_depth = 4;
         slave[4].cfg_info.id_outstanding_depth = 4;
@@ -271,17 +257,7 @@ initial begin
         slave[7].cfg_info.total_outstanding_depth = 4;
         slave[7].cfg_info.id_outstanding_depth = 4;
 
-        //-- MCI interface --> I3C
-        slave[8].cfg_info.passive_mode = 1;
-        slave[8].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[8].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        // slave[8].cfg_info.base_address[0] = 64'hA000_0000;
-        slave[8].cfg_info.base_address[0] = 64'h2000_4000;
-        // slave[8].cfg_info.base_address[0] = 64'hA000_0000;
-        slave[8].cfg_info.limit_address[0] = 64'h2000_4FFF;
-        slave[8].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
-        slave[8].cfg_info.total_outstanding_depth = 4;
-        slave[8].cfg_info.id_outstanding_depth = 4;
+
 
 //#1;
 //do not sure what feature of #1
@@ -362,7 +338,6 @@ initial begin
         slave[5].set("mem_uninitialized_value", 0);
         slave[6].set("mem_uninitialized_value", 0);
         slave[7].set("mem_uninitialized_value", 0);
-        slave[8].set("mem_uninitialized_value", 0);
 
 
         test.slave0= slave[0];
@@ -373,7 +348,6 @@ initial begin
         test.slave5= slave[5];
         test.slave6= slave[6];
         test.slave7= slave[7];
-        test.slave8= slave[8];
 
         for (int i=0; i< AAXI_INTC_SLAVE_CNT; i++)
             test.slv_bfms.push_back(slave[i]);

@@ -8,6 +8,7 @@
 
 // volatile char* stdout = (char *)0xd0580000;
 volatile char* stdout = (char *)0x21000410;
+
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
