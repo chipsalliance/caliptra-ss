@@ -1,0 +1,14 @@
+provides: [axi_mem_pkg]
+schema_version: 2.4.0
+targets:
+  rtl:
+    directories: [$COMPILE_ROOT/rtl]
+    files:
+      - $COMPILE_ROOT/rtl/axi_mem_if.sv
+      - $COMPILE_ROOT/rtl/axi_mem.sv
+  tb:
+    directories: [$COMPILE_ROOT/testbench]
+    files:
+      - $COMPILE_ROOT/rtl/axi_mem_if.sv
+      - $COMPILE_ROOT/rtl/axi_mem.sv
+      - $COMPILE_ROOT/testbench/rom.sv

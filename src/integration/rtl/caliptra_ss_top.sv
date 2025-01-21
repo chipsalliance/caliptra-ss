@@ -45,6 +45,7 @@ module caliptra_ss_top
 
 //MCU ROM AXI Interface
     axi_if cptra_ss_mcu_rom_s_axi_if,
+    axi_mem_if.request mcu_rom_mem_export_if,
 
 // MCI AXI Manager INF
     axi_if cptra_ss_mci_m_axi_if,
@@ -1063,9 +1064,9 @@ module caliptra_ss_top
     //=========================================================================
     // MCU ROM Interface Instance (Reuses MCI)
     //=========================================================================
-    
-    caliptra_axi_sram #(
-      .AW(20),
+
+    axi_mem #(
+      .AW(22),
       .DW(64),
       .IW(8)
     ) mcu_rom_i (
@@ -1073,8 +1074,11 @@ module caliptra_ss_top
       .rst_n(cptra_ss_rst_b_i),
 
       .s_axi_r_if(cptra_ss_mcu_rom_s_axi_if.r_sub),
-      .s_axi_w_if(cptra_ss_mcu_rom_s_axi_if.w_sub) // FIXME No write interface should go out for ROM
+      .s_axi_w_if(cptra_ss_mcu_rom_s_axi_if.w_sub),
+
+      .s_mem_req_if(mcu_rom_mem_export_if)
     );
+
     always_comb begin
        cptra_ss_mcu_rom_macro_req_if.req = '0;
        cptra_ss_mcu_rom_mbox0_sram_req_if.req = '0;

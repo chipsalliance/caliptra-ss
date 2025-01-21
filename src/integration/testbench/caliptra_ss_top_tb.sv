@@ -540,7 +540,7 @@ module caliptra_ss_top_tb
         timer_int   = 0;
 
         $readmemh("mcu_lmem.hex",     lmem.mem);
-        $readmemh("mcu_program.hex",  caliptra_ss_dut.mcu_rom_i.i_sram.ram);
+        $readmemh("mcu_program.hex",  imem.ram);
 
         tp = $fopen("trace_port.csv","w");
         el = $fopen("mcu_exec.log","w");
@@ -1173,6 +1173,14 @@ module caliptra_ss_top_tb
         .rst_b(rst_l)
     );
 
+    axi_mem_if #(
+        .ADDR_WIDTH(32),
+        .DATA_WIDTH(64)
+    ) mcu_rom_mem_export_if (
+        .clk(core_clk),
+        .rst_b(rst_l)
+    );
+
     //=================== BEGIN CALIPTRA_TOP_TB ========================
     logic                       cptra_ss_pwrgood_i;
     logic                       cptra_rst_b;
@@ -1455,6 +1463,18 @@ module caliptra_ss_top_tb
         cptra_ss_mcu_rom_macro_req_if.resp.rdata = '0;
     end
 
+    rom #(
+        .DEPTH     (16'h7FFF), // 64KB
+        .DATA_WIDTH(64),
+        .ADDR_WIDTH(22)
+    ) imem (
+        .clk_i   (core_clk),
+        .cs_i    (mcu_rom_mem_export_if.req.cs),
+        .we_i    (mcu_rom_mem_export_if.req.we),
+        .addr_i  (mcu_rom_mem_export_if.req.addr),
+        .wdata_i (mcu_rom_mem_export_if.req.wdata),
+        .rdata_o (mcu_rom_mem_export_if.resp.rdata)
+    );
 
     mci_sram #(
         .DEPTH     (18'h3_FFFF), // 1M
@@ -1462,7 +1482,6 @@ module caliptra_ss_top_tb
         .ADDR_WIDTH(32)
    ) lmem (
        .clk_i   (core_clk),
-   
        .cs_i    (cptra_ss_mci_mcu_sram_req_if.req.cs),
        .we_i    (cptra_ss_mci_mcu_sram_req_if.req.we),
        .addr_i  ({14'h0, cptra_ss_mci_mcu_sram_req_if.req.addr, 2'b0}),
@@ -1666,6 +1685,7 @@ module caliptra_ss_top_tb
     
     //MCU ROM Sub Interface
         .cptra_ss_mcu_rom_s_axi_if,
+        .mcu_rom_mem_export_if,
     
     //MCI AXI Sub Interface
         .cptra_ss_mci_s_axi_if,
