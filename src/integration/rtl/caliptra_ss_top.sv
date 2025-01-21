@@ -34,38 +34,43 @@ module caliptra_ss_top
     input logic cptra_ss_pwrgood_i,
     input logic cptra_ss_rst_b_i,
 
-//SoC AXI Interface
+// Caliptra Core AXI Sub Interface
     axi_if cptra_ss_cptra_core_s_axi_if,
 
-// AXI Manager INF
+// Caliptra Core AXI Manager Interface
     axi_if cptra_ss_cptra_core_m_axi_if,
 
-//SoC AXI Interface
+// Caliptra SS MCI AXI Sub Interface
     axi_if cptra_ss_mci_s_axi_if,
 
-//MCU ROM AXI Interface
+// Caliptra SS MCU ROM AXI Sub Interface
     axi_if cptra_ss_mcu_rom_s_axi_if,
     axi_mem_if.request mcu_rom_mem_export_if,
 
-// MCI AXI Manager INF
+// Caliptra SS MCI AXI Manager Interface
     axi_if cptra_ss_mci_m_axi_if,
 
+// Caliptra SS MCU LSU/IFU AXI Manager Interface
     axi_if cptra_ss_mcu_lsu_m_axi_if,
     axi_if cptra_ss_mcu_ifu_m_axi_if,
+
+// Caliptra SS I3C AXI Sub Interface
     axi_if cptra_ss_i3c_s_axi_if,
 
+// Caliptra SS LC Controller AXI Sub Interface
     input  axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i,
     output axi_struct_pkg::axi_wr_rsp_t cptra_ss_lc_axi_wr_rsp_o,
     input  axi_struct_pkg::axi_rd_req_t cptra_ss_lc_axi_rd_req_i,
     output axi_struct_pkg::axi_rd_rsp_t cptra_ss_lc_axi_rd_rsp_o,
 
+// Caliptra SS FC / OTP Controller AXI Sub Interface
     input  axi_struct_pkg::axi_wr_req_t cptra_ss_otp_core_axi_wr_req_i,
     output axi_struct_pkg::axi_wr_rsp_t cptra_ss_otp_core_axi_wr_rsp_o,
     input  axi_struct_pkg::axi_rd_req_t cptra_ss_otp_core_axi_rd_req_i,
     output axi_struct_pkg::axi_rd_rsp_t cptra_ss_otp_core_axi_rd_rsp_o,
 
 //--------------------
-//caliptra core signals
+// caliptra core Obf Key & CSR Signing Key
 //--------------------
     input logic [255:0]                              cptra_ss_cptra_obf_key_i,
     input logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_ss_cptra_csr_hmac_key_i,
@@ -78,7 +83,6 @@ module caliptra_ss_top
     output logic                       cptra_ss_cptra_core_jtag_tdo_o,    // JTAG TDO
     output logic                       cptra_ss_cptra_core_jtag_tdoEn_o,  // JTAG TDO enable
     output logic [124:0]               cptra_ss_cptra_generic_fw_exec_ctrl_o,
-    
 
 //LC controller JTAG
     input   jtag_pkg::jtag_req_t                       cptra_ss_lc_ctrl_jtag_i,
@@ -113,14 +117,15 @@ module caliptra_ss_top
     input  logic             cptra_ss_cptra_core_itrng_valid_i,
 `endif
 
+// Caliptra SS MCU ROM Macro Interface
     mci_mcu_sram_if.request cptra_ss_mcu_rom_macro_req_if, // MCU ROM interface
 
-//MCU 
+// Caliptra SS MCU 
     input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
     input logic [31:0] cptra_ss_strap_clp_axi_user_i,
 
-
+// Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
     mci_mcu_sram_if.request cptra_ss_mci_mbox0_sram_req_if,
     mci_mcu_sram_if.request cptra_ss_mci_mbox1_sram_req_if,
@@ -171,10 +176,11 @@ module caliptra_ss_top
     output wire cptra_ss_soc_dft_en_o,
     output wire cptra_ss_soc_hw_debug_en_o,
 
+// Caliptra SS Fuse Controller Interface (Fuse Macros)
     input  tlul_pkg::tl_h2d_t                          cptra_ss_fuse_macro_prim_tl_i,
     output tlul_pkg::tl_d2h_t                          cptra_ss_fuse_macro_prim_tl_o,
    
-    // I3C Interface
+// Caliptra SS I3C GPIO Interface
 `ifdef DIGITAL_IO_I3C
     input  logic cptra_ss_i3c_scl_i,
     input  logic cptra_ss_i3c_sda_i,
@@ -225,11 +231,9 @@ module caliptra_ss_top
     logic                       mpc_debug_run_ack;
     logic                       debug_brkpt_status;
 
-    int                         cycleCnt;
     logic                       mailbox_data_val;
 
     wire                        dma_hready_out;
-    int                         commit_count;
 
     logic                       wb_valid;
     logic [4:0]                 wb_dest;
@@ -550,21 +554,6 @@ module caliptra_ss_top
         mcu_dma_s_axi_if.bready  = '0;
         mcu_dma_s_axi_if.arvalid = '0;
         mcu_dma_s_axi_if.rready  = '0;
-
-        // -- no write to ROM in the design -- TASK: uncomment below code
-        // cptra_ss_mcu_rom_s_axi_if.awvalid = '0;
-        // cptra_ss_mcu_rom_s_axi_if.wvalid  = '0;
-        // cptra_ss_mcu_rom_s_axi_if.bready  = '0;
-
-        // -- FIXME: These are not used in the design
-        // -- Drive this to 0, for MCU ROM Master interface
-        // cptra_ss_mcu_rom_m_axi_if.awvalid = '0;
-        // cptra_ss_mcu_rom_m_axi_if.wvalid = '0;
-        // cptra_ss_mcu_rom_m_axi_if.bvalid = '0;
-        
-        // cptra_ss_mcu_rom_m_axi_if.arvalid = '0;
-        // cptra_ss_mcu_rom_m_axi_if.rvalid = '0;
-        // cptra_ss_mcu_rom_m_axi_if.rready = '0;
 
     end
 
@@ -1084,96 +1073,10 @@ module caliptra_ss_top
        cptra_ss_mcu_rom_mbox0_sram_req_if.req = '0;
        cptra_ss_mcu_rom_mbox1_sram_req_if.req = '0;
     end
-//   mci_top #(
-//       // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
-//       .AXI_DATA_WIDTH(32),
-//       .MCU_SRAM_SIZE_KB(64)
-//   ) mcu_rom_i (
-//
-//       .clk(cptra_ss_clk_i),
-//       .mci_rst_b(cptra_ss_rst_b_i),
-//       .mci_pwrgood(cptra_ss_pwrgood_i),
-//
-//       // MCI AXI Interface
-//       .s_axi_w_if(cptra_ss_mcu_rom_s_axi_if.w_sub), //No write interface should go out for ROM
-//       .s_axi_r_if(cptra_ss_mcu_rom_s_axi_if.r_sub), //Only read interface
-//
-//       // No manager interface neededinterface
-//       .m_axi_w_if(cptra_ss_mcu_rom_m_axi_if.w_mgr),
-//       .m_axi_r_if(cptra_ss_mcu_rom_m_axi_if.r_mgr),
-//       
-//       .strap_mcu_lsu_axi_user('0),
-//       .strap_mcu_ifu_axi_user(cptra_ss_strap_mcu_ifu_axi_user_i),
-//       .strap_clp_axi_user    ('0),
-//
-//       // -- connects to ss_generic_fw_exec_ctrl (bit 2)
-//       .mcu_sram_fw_exec_region_lock('1),
-//
-//       .agg_error_fatal(1'b0),
-//       .agg_error_non_fatal(1'b0),
-//
-//       .mci_error_fatal(),
-//       .mci_error_non_fatal(),
-//
-//       .mci_generic_input_wires('0),
-//       .mci_generic_output_wires(),
-//
-//       .mcu_timer_int(),
-//       .mci_intr(),
-//
-//       .strap_mcu_reset_vector('0),
-//       
-//       .mcu_reset_vector(),
-//
-//       .mcu_no_rom_config('0),
-//
-//       .nmi_intr(),
-//       .mcu_nmi_vector(),
-//
-//       .mcu_rst_b(),
-//       .cptra_rst_b(),
-//
-//       .mci_boot_seq_brkpoint('0),
-//
-//       .lc_done('1), //output from lcc
-//       .lc_init(), //input to lcc
-//       // .lc_bus_integ_error_fatal(1'b0),
-//       // .lc_state_error_fatal(1'b0),
-//       // .lc_prog_error_fatal(1'b0),
-//
-//       .fc_opt_done('1), //output from otp
-//       .fc_opt_init(), //input to otp
-//       // .fc_intr_otp_error(1'b0),
-//
-//       .mci_mcu_sram_req_if  (cptra_ss_mcu_rom_macro_req_if),
-//       .mci_mbox0_sram_req_if(cptra_ss_mcu_rom_mbox0_sram_req_if),
-//       .mci_mbox1_sram_req_if(cptra_ss_mcu_rom_mbox1_sram_req_if),
-//
-//       .from_lcc_to_otp_program_i('0),
-//       .lc_dft_en_i('0),
-//       .lc_hw_debug_en_i('0),
-//
-//       // Inputs from OTP_Ctrl
-//       .from_otp_to_lcc_program_i('0),
-//
-//       // Inputs from Caliptra_Core
-//       .ss_dbg_manuf_enable_i('0),
-//       .ss_soc_dbg_unlock_level_i('0),
-//
-//       // Converted Signals from LCC to SoC
-//       .SOC_DFT_EN(),
-//       .SOC_HW_DEBUG_EN(),
-//
-//       // Converted Signals from LCC to Caliptra-core
-//       .security_state_o()
-//
-//   );
 
     //=========================================================================
     // MCI Instance
     //=========================================================================
-    
-    
 
     //TODO: we need to open two input ports for the following signals:
             // lc_ctrl_pkg::lc_tx_t lc_escalate_en_internal;
