@@ -55,7 +55,7 @@ module mci_top
     input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_mcu_ifu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_clp_axi_user,
-    input logic [7:0][11:0][31:0]   strap_prod_debug_unlock_pk_hash,
+    // input logic [7:0][11:0][31:0]   strap_prod_debug_unlock_pk_hash, //-- FIXME : Remove this.
 
     // SRAM ADHOC connections
     input logic mcu_sram_fw_exec_region_lock,
@@ -408,6 +408,10 @@ mci_wdt_top #(
     .t2_timeout_p,
     .fatal_timeout(nmi_intr)
 );
+
+// FIXME -- Remove this.
+logic [7:0][11:0][31:0] strap_prod_debug_unlock_pk_hash;
+assign strap_prod_debug_unlock_pk_hash = '1;
 
 // MCI Reg
 // MCI CSR bank

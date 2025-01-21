@@ -39,12 +39,8 @@ module otp_ctrl
   input axi_struct_pkg::axi_rd_req_t                  core_axi_rd_req,
   output axi_struct_pkg::axi_rd_rsp_t                 core_axi_rd_rsp,
 
-  // input  tlul_pkg::tl_h2d_t                          prim_tl_i,
-  // output tlul_pkg::tl_d2h_t                          prim_tl_o,
-  // input axi_struct_pkg::axi_wr_req_t                  prim_axi_wr_req,
-  // output axi_struct_pkg::axi_wr_rsp_t                 prim_axi_wr_rsp,
-  // input axi_struct_pkg::axi_rd_req_t                  prim_axi_rd_req,
-  // output axi_struct_pkg::axi_rd_rsp_t                 prim_axi_rd_rsp,
+  input  tlul_pkg::tl_h2d_t                          prim_tl_i,
+  output tlul_pkg::tl_d2h_t                          prim_tl_o,
 
   // Interrupt Requests
   output logic                                       intr_otp_operation_done_o,
@@ -166,61 +162,6 @@ module otp_ctrl
       .tl_i           (core_tl_o)
   );
 
-  // Prim AXI2TLUL interface signals
-  tlul_pkg::tl_h2d_t      prim_tl_i;
-  tlul_pkg::tl_d2h_t      prim_tl_o;
-
-
-  axi_struct_pkg::axi_wr_req_t prim_axi_wr_req;
-  axi_struct_pkg::axi_wr_rsp_t prim_axi_wr_rsp;
-  axi_struct_pkg::axi_rd_req_t prim_axi_rd_req;
-  axi_struct_pkg::axi_rd_rsp_t prim_axi_rd_rsp;
-
-  axi_if prim_axi_if(
-    .clk(clk_i),
-    .rst_n(rst_ni)
-  );
-
-  assign prim_axi_if.awaddr      = '0;
-  assign prim_axi_if.awburst     = '0;
-  assign prim_axi_if.awsize      = '0;
-  assign prim_axi_if.awlen       = '0;
-  assign prim_axi_if.awuser      = '0;
-  assign prim_axi_if.awid        = '0;
-  assign prim_axi_if.awlock      = '0;
-  assign prim_axi_if.awvalid     = '0;
-
-  assign prim_axi_if.wdata       = '0;
-  assign prim_axi_if.wstrb       = '0;
-  assign prim_axi_if.wlast       = '0;
-  assign prim_axi_if.wvalid      = '0;
-
-  assign prim_axi_if.bready      = '0;
-
-  assign prim_axi_if.araddr      = '0;
-  assign prim_axi_if.arburst     = '0;
-  assign prim_axi_if.arsize      = '0;
-  assign prim_axi_if.arlen       = '0;
-  assign prim_axi_if.aruser      = '0;
-  assign prim_axi_if.arid        = '0;
-  assign prim_axi_if.arlock      = '0;
-  assign prim_axi_if.arvalid     = '0;
-  assign prim_axi_if.rready      = '0;
-
-  // Prim AXI2TLUL instance
-  axi2tlul #(
-      .AW     (32),
-      .DW     (32),
-      .UW     (32),
-      .IW     (8 )
-  ) u_prim_axi2tlul (
-      .clk            (clk_i),
-      .rst_n          (rst_ni),
-      .s_axi_w_if     (prim_axi_if.w_sub),
-      .s_axi_r_if     (prim_axi_if.r_sub),
-      .tl_o           (prim_tl_i),
-      .tl_i           (prim_tl_o)
-  );
 
 
 

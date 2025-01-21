@@ -180,8 +180,8 @@ class ai3ct_ext_basic extends ai3ct_base;
 		test_log.sample(AI3C_5_1_2_2n1);
 
 		//-- grabbing dynamic address for the I3C core
-		general_target_addr = sys_agt.mgr.i3c_dev_das[0]; // get 0 slave
-		recovery_target_addr = sys_agt.mgr.i3c_dev_das[1]; // get 1 slave
+		recovery_target_addr = sys_agt.mgr.i3c_dev_das[0]; // get 0 slave
+		general_target_addr = sys_agt.mgr.i3c_dev_das[1]; // get 1 slave
 		test_log.substep($psprintf("I3C Subordinate Recovery addr 'h%0h", recovery_target_addr));
 		test_log.substep($psprintf("I3C Subordinate General addr 'h%0h", general_target_addr));
 

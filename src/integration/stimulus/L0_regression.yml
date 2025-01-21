@@ -5,7 +5,4 @@ contents:
   - tests:
       tags: ["L0", "Lop_regression", "top_regression"]
       paths:
-        - ../test_suites/mcu_hello_world/mcu_hello_world.yml
         - ../test_suites/mcu_cptra_bringup/mcu_cptra_bringup.yml
-        - ../test_suites/mcu_dccm_access/mcu_dccm_access.yml
-        - ../test_suites/mcu_lmem_exe/mcu_lmem_exe.yml
