@@ -43,7 +43,10 @@ module caliptra_ss_top
 //SoC AXI Interface
     axi_if cptra_ss_mci_s_axi_if,
 
-// AXI Manager INF
+//MCU ROM AXI Interface
+    axi_if cptra_ss_mcu_rom_s_axi_if,
+
+// MCI AXI Manager INF
     axi_if cptra_ss_mci_m_axi_if,
 
     axi_if cptra_ss_mcu_lsu_m_axi_if,
@@ -109,10 +112,13 @@ module caliptra_ss_top
     input  logic             cptra_ss_cptra_core_itrng_valid_i,
 `endif
 
+    mci_mcu_sram_if.request cptra_ss_mcu_rom_macro_req_if, // MCU ROM interface
+
 //MCU 
     input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
     input logic [31:0] cptra_ss_strap_clp_axi_user_i,
+
 
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
     mci_mcu_sram_if.request cptra_ss_mci_mbox0_sram_req_if,
@@ -497,13 +503,33 @@ module caliptra_ss_top
     // tie offs
         assign reset_vector = `css_mcu0_RV_RESET_VEC;
 
-    // MCU DMA AXI Interface
+    // MCU DMA AXI Interface - UNUSED
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
         .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) mcu_dma_s_axi_if (.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+
+    
+    // MCU ROM AXI Manager INF - UNUSED
+    axi_if #(
+        .AW(32), //-- FIXME : Assign a common paramter
+        .DW(64), //-- FIXME : Assign a common paramter,
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_mcu_rom_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+
+    mci_mcu_sram_if cptra_ss_mcu_rom_mbox0_sram_req_if (
+        .clk(cptra_ss_clk_i),
+        .rst_b(cptra_ss_rst_b_i)
+    );
+    
+    mci_mcu_sram_if cptra_ss_mcu_rom_mbox1_sram_req_if (
+        .clk(cptra_ss_clk_i),
+        .rst_b(cptra_ss_rst_b_i)
+    );
+
 
      always_comb begin
         cptra_ss_mcu_lsu_m_axi_if.awuser                                              = 32'hFFFF_FFFF;
@@ -523,6 +549,21 @@ module caliptra_ss_top
         mcu_dma_s_axi_if.bready  = '0;
         mcu_dma_s_axi_if.arvalid = '0;
         mcu_dma_s_axi_if.rready  = '0;
+
+        // -- no write to ROM in the design -- TASK: uncomment below code
+        // cptra_ss_mcu_rom_s_axi_if.awvalid = '0;
+        // cptra_ss_mcu_rom_s_axi_if.wvalid  = '0;
+        // cptra_ss_mcu_rom_s_axi_if.bready  = '0;
+
+        // -- FIXME: These are not used in the design
+        // -- Drive this to 0, for MCU ROM Master interface
+        // cptra_ss_mcu_rom_m_axi_if.awvalid = '0;
+        // cptra_ss_mcu_rom_m_axi_if.wvalid = '0;
+        // cptra_ss_mcu_rom_m_axi_if.bvalid = '0;
+        
+        // cptra_ss_mcu_rom_m_axi_if.arvalid = '0;
+        // cptra_ss_mcu_rom_m_axi_if.rvalid = '0;
+        // cptra_ss_mcu_rom_m_axi_if.rready = '0;
 
     end
 
@@ -663,6 +704,7 @@ module caliptra_ss_top
     //=========================================================================-
     // MCU instance
     //=========================================================================-
+
     mcu_top rvtop_wrapper (
         .rst_l                  ( mcu_rst_b ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ), //FIXME same as caliptra?
@@ -748,7 +790,7 @@ module caliptra_ss_top
         .ifu_axi_arvalid        ( cptra_ss_mcu_ifu_m_axi_if.arvalid ),
         .ifu_axi_arready        ( cptra_ss_mcu_ifu_m_axi_if.arready ),
         .ifu_axi_arid           ( cptra_ss_mcu_ifu_m_axi_if.arid[pt.IFU_BUS_TAG-1:0]    ),
-        .ifu_axi_araddr         ( cptra_ss_mcu_ifu_m_axi_if.araddr[31:0]  ),
+        .ifu_axi_araddr         ( cptra_ss_mcu_ifu_m_axi_if.araddr[31:0] ),
         .ifu_axi_arlen          ( cptra_ss_mcu_ifu_m_axi_if.arlen   ),
         .ifu_axi_arsize         ( cptra_ss_mcu_ifu_m_axi_if.arsize  ),
         .ifu_axi_arburst        ( cptra_ss_mcu_ifu_m_axi_if.arburst ),
@@ -1017,6 +1059,111 @@ module caliptra_ss_top
 
     // TODO: Add interrupts
     );
+
+    //=========================================================================
+    // MCU ROM Interface Instance (Reuses MCI)
+    //=========================================================================
+    
+    caliptra_axi_sram #(
+      .AW(20),
+      .DW(64),
+      .IW(8)
+    ) mcu_rom_i (
+      .clk(cptra_ss_clk_i),
+      .rst_n(cptra_ss_rst_b_i),
+
+      .s_axi_r_if(cptra_ss_mcu_rom_s_axi_if.r_sub),
+      .s_axi_w_if(cptra_ss_mcu_rom_s_axi_if.w_sub) // FIXME No write interface should go out for ROM
+    );
+    always_comb begin
+       cptra_ss_mcu_rom_macro_req_if.req = '0;
+       cptra_ss_mcu_rom_mbox0_sram_req_if.req = '0;
+       cptra_ss_mcu_rom_mbox1_sram_req_if.req = '0;
+    end
+//   mci_top #(
+//       // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
+//       .AXI_DATA_WIDTH(32),
+//       .MCU_SRAM_SIZE_KB(64)
+//   ) mcu_rom_i (
+//
+//       .clk(cptra_ss_clk_i),
+//       .mci_rst_b(cptra_ss_rst_b_i),
+//       .mci_pwrgood(cptra_ss_pwrgood_i),
+//
+//       // MCI AXI Interface
+//       .s_axi_w_if(cptra_ss_mcu_rom_s_axi_if.w_sub), //No write interface should go out for ROM
+//       .s_axi_r_if(cptra_ss_mcu_rom_s_axi_if.r_sub), //Only read interface
+//
+//       // No manager interface neededinterface
+//       .m_axi_w_if(cptra_ss_mcu_rom_m_axi_if.w_mgr),
+//       .m_axi_r_if(cptra_ss_mcu_rom_m_axi_if.r_mgr),
+//       
+//       .strap_mcu_lsu_axi_user('0),
+//       .strap_mcu_ifu_axi_user(cptra_ss_strap_mcu_ifu_axi_user_i),
+//       .strap_clp_axi_user    ('0),
+//
+//       // -- connects to ss_generic_fw_exec_ctrl (bit 2)
+//       .mcu_sram_fw_exec_region_lock('1),
+//
+//       .agg_error_fatal(1'b0),
+//       .agg_error_non_fatal(1'b0),
+//
+//       .mci_error_fatal(),
+//       .mci_error_non_fatal(),
+//
+//       .mci_generic_input_wires('0),
+//       .mci_generic_output_wires(),
+//
+//       .mcu_timer_int(),
+//       .mci_intr(),
+//
+//       .strap_mcu_reset_vector('0),
+//       
+//       .mcu_reset_vector(),
+//
+//       .mcu_no_rom_config('0),
+//
+//       .nmi_intr(),
+//       .mcu_nmi_vector(),
+//
+//       .mcu_rst_b(),
+//       .cptra_rst_b(),
+//
+//       .mci_boot_seq_brkpoint('0),
+//
+//       .lc_done('1), //output from lcc
+//       .lc_init(), //input to lcc
+//       // .lc_bus_integ_error_fatal(1'b0),
+//       // .lc_state_error_fatal(1'b0),
+//       // .lc_prog_error_fatal(1'b0),
+//
+//       .fc_opt_done('1), //output from otp
+//       .fc_opt_init(), //input to otp
+//       // .fc_intr_otp_error(1'b0),
+//
+//       .mci_mcu_sram_req_if  (cptra_ss_mcu_rom_macro_req_if),
+//       .mci_mbox0_sram_req_if(cptra_ss_mcu_rom_mbox0_sram_req_if),
+//       .mci_mbox1_sram_req_if(cptra_ss_mcu_rom_mbox1_sram_req_if),
+//
+//       .from_lcc_to_otp_program_i('0),
+//       .lc_dft_en_i('0),
+//       .lc_hw_debug_en_i('0),
+//
+//       // Inputs from OTP_Ctrl
+//       .from_otp_to_lcc_program_i('0),
+//
+//       // Inputs from Caliptra_Core
+//       .ss_dbg_manuf_enable_i('0),
+//       .ss_soc_dbg_unlock_level_i('0),
+//
+//       // Converted Signals from LCC to SoC
+//       .SOC_DFT_EN(),
+//       .SOC_HW_DEBUG_EN(),
+//
+//       // Converted Signals from LCC to Caliptra-core
+//       .security_state_o()
+//
+//   );
 
     //=========================================================================
     // MCI Instance

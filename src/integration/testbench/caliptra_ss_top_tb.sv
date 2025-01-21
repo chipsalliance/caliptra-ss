@@ -540,7 +540,7 @@ module caliptra_ss_top_tb
         timer_int   = 0;
 
         $readmemh("mcu_lmem.hex",     lmem.mem);
-        $readmemh("mcu_program.hex",  imem.mem);
+        $readmemh("mcu_program.hex",  caliptra_ss_dut.mcu_rom_i.i_sram.ram);
 
         tp = $fopen("trace_port.csv","w");
         el = $fopen("mcu_exec.log","w");
@@ -622,6 +622,14 @@ module caliptra_ss_top_tb
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_mci_s_axi_if (.clk(core_clk), .rst_n(rst_l));
 
+    // MCU ROM Sub AXI Interface
+    axi_if #(
+        .AW(32), //-- FIXME : Assign a common paramter
+        .DW(64), //-- FIXME : Assign a common paramter,
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_mcu_rom_s_axi_if (.clk(core_clk), .rst_n(rst_l));
+
     // MCU LSU AXI Interface
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
@@ -677,6 +685,7 @@ module caliptra_ss_top_tb
     `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_cptra_core_s_axi_if)
     `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(m_axi_bfm_if)
     `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_mci_s_axi_if)
+    `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_mcu_rom_s_axi_if)
     `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_i3c_s_axi_if)
 
     `define SS_DATA_WIDTH_HACK(inf_name, core_clk = core_clk, rst_l = rst_l)\
@@ -698,6 +707,7 @@ module caliptra_ss_top_tb
     `SS_DATA_WIDTH_HACK(cptra_ss_cptra_core_s_axi_if)
     `SS_DATA_WIDTH_HACK(m_axi_bfm_if)
     `SS_DATA_WIDTH_HACK(cptra_ss_mci_s_axi_if)
+    `SS_DATA_WIDTH_HACK(cptra_ss_mcu_rom_s_axi_if)
     `SS_DATA_WIDTH_HACK(cptra_ss_i3c_s_axi_if)
         
     //These don't fit the macro FIXME LATER
@@ -738,6 +748,21 @@ module caliptra_ss_top_tb
         axi_interconnect.mintf_arr[1].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
         axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
         axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+
+        // Slave port 0 disconnection.
+        axi_interconnect.sintf_arr[0].ARREADY = 1'b0;
+        axi_interconnect.sintf_arr[0].RVALID = 1'b0;
+        axi_interconnect.sintf_arr[0].RDATA = 64'h0;
+        axi_interconnect.sintf_arr[0].RRESP = 2'b0;
+        axi_interconnect.sintf_arr[0].RID = 8'h0;
+        axi_interconnect.sintf_arr[0].RLAST = 1'b0;
+
+        axi_interconnect.sintf_arr[0].AWREADY = 1'b0;
+        axi_interconnect.sintf_arr[0].WREADY = 1'b0;
+        axi_interconnect.sintf_arr[0].BVALID = 1'b0;
+        axi_interconnect.sintf_arr[0].BRESP = 2'b0;
+        axi_interconnect.sintf_arr[0].BID = 8'h0;
+
     end
     
     //Interconnect 0 - MCU LSU
@@ -836,40 +861,40 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[2].ARUSER  = '0;
     assign axi_interconnect.mintf_arr[2].RREADY = '0;
 
-    //Interconnect 2 Sub - MCU DMA
-    // assign mcu_dma_s_axi_if.awvalid                = axi_interconnect.sintf_arr[2].AWVALID;
-    // assign mcu_dma_s_axi_if.awaddr                 = axi_interconnect.sintf_arr[2].AWADDR[31:0];
-    // assign mcu_dma_s_axi_if.awid                   = axi_interconnect.sintf_arr[2].AWID;
-    // assign mcu_dma_s_axi_if.awlen                  = axi_interconnect.sintf_arr[2].AWLEN;
-    // assign mcu_dma_s_axi_if.awsize                 = axi_interconnect.sintf_arr[2].AWSIZE;
-    // assign mcu_dma_s_axi_if.awburst                = axi_interconnect.sintf_arr[2].AWBURST;
-    // assign mcu_dma_s_axi_if.awlock                 = axi_interconnect.sintf_arr[2].AWLOCK;
-    // assign mcu_dma_s_axi_if.awuser                 = axi_interconnect.sintf_arr[2].AWUSER;
-    assign axi_interconnect.sintf_arr[2].AWREADY   = '0; //mcu_dma_s_axi_if.awready;
-    // assign mcu_dma_s_axi_if.wvalid                 = axi_interconnect.sintf_arr[2].WVALID;
-    // assign mcu_dma_s_axi_if.wdata                  = axi_interconnect.sintf_arr[2].WDATA;// Native 64-bit width, no dwidth conversion
-    // assign mcu_dma_s_axi_if.wstrb                  = axi_interconnect.sintf_arr[2].WSTRB;// Native 64-bit width, no dwidth conversion
-    // assign mcu_dma_s_axi_if.wlast                  = axi_interconnect.sintf_arr[2].WLAST;
-    assign axi_interconnect.sintf_arr[2].WREADY    = '0; //mcu_dma_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[2].BVALID    = '0; //mcu_dma_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[2].BRESP     = '0; //mcu_dma_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[2].BID       = '0; //mcu_dma_s_axi_if.bid;
-    // assign mcu_dma_s_axi_if.bready                 = axi_interconnect.sintf_arr[2].BREADY;
-    // assign mcu_dma_s_axi_if.arvalid                = axi_interconnect.sintf_arr[2].ARVALID;
-    // assign mcu_dma_s_axi_if.araddr                 = axi_interconnect.sintf_arr[2].ARADDR[31:0];
-    // assign mcu_dma_s_axi_if.arid                   = axi_interconnect.sintf_arr[2].ARID;
-    // assign mcu_dma_s_axi_if.arlen                  = axi_interconnect.sintf_arr[2].ARLEN;
-    // assign mcu_dma_s_axi_if.arsize                 = axi_interconnect.sintf_arr[2].ARSIZE;
-    // assign mcu_dma_s_axi_if.arburst                = axi_interconnect.sintf_arr[2].ARBURST;
-    // assign mcu_dma_s_axi_if.arlock                 = axi_interconnect.sintf_arr[2].ARLOCK;
-    // assign mcu_dma_s_axi_if.aruser                 = axi_interconnect.sintf_arr[2].ARUSER;
-    assign axi_interconnect.sintf_arr[2].ARREADY = '0; //mcu_dma_s_axi_if.arready;
-    assign axi_interconnect.sintf_arr[2].RVALID  = '0; //mcu_dma_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[2].RDATA   = '0; //64'(mcu_dma_s_axi_if.rdata);// Native 64-bit width, no dwidth conversion
-    assign axi_interconnect.sintf_arr[2].RRESP   = '0; //mcu_dma_s_axi_if.rresp;
-    assign axi_interconnect.sintf_arr[2].RID     = '0; //mcu_dma_s_axi_if.rid;
-    assign axi_interconnect.sintf_arr[2].RLAST   = '0; //mcu_dma_s_axi_if.rlast;
-    // assign mcu_dma_s_axi_if.rready               = axi_interconnect.sintf_arr[2].RREADY;
+    // //Interconnect 2 Sub - MCU DMA
+    // // assign mcu_dma_s_axi_if.awvalid                = axi_interconnect.sintf_arr[2].AWVALID;
+    // // assign mcu_dma_s_axi_if.awaddr                 = axi_interconnect.sintf_arr[2].AWADDR[31:0];
+    // // assign mcu_dma_s_axi_if.awid                   = axi_interconnect.sintf_arr[2].AWID;
+    // // assign mcu_dma_s_axi_if.awlen                  = axi_interconnect.sintf_arr[2].AWLEN;
+    // // assign mcu_dma_s_axi_if.awsize                 = axi_interconnect.sintf_arr[2].AWSIZE;
+    // // assign mcu_dma_s_axi_if.awburst                = axi_interconnect.sintf_arr[2].AWBURST;
+    // // assign mcu_dma_s_axi_if.awlock                 = axi_interconnect.sintf_arr[2].AWLOCK;
+    // // assign mcu_dma_s_axi_if.awuser                 = axi_interconnect.sintf_arr[2].AWUSER;
+    // assign axi_interconnect.sintf_arr[2].AWREADY   = '0; //mcu_dma_s_axi_if.awready;
+    // // assign mcu_dma_s_axi_if.wvalid                 = axi_interconnect.sintf_arr[2].WVALID;
+    // // assign mcu_dma_s_axi_if.wdata                  = axi_interconnect.sintf_arr[2].WDATA;// Native 64-bit width, no dwidth conversion
+    // // assign mcu_dma_s_axi_if.wstrb                  = axi_interconnect.sintf_arr[2].WSTRB;// Native 64-bit width, no dwidth conversion
+    // // assign mcu_dma_s_axi_if.wlast                  = axi_interconnect.sintf_arr[2].WLAST;
+    // assign axi_interconnect.sintf_arr[2].WREADY    = '0; //mcu_dma_s_axi_if.wready;
+    // assign axi_interconnect.sintf_arr[2].BVALID    = '0; //mcu_dma_s_axi_if.bvalid;
+    // assign axi_interconnect.sintf_arr[2].BRESP     = '0; //mcu_dma_s_axi_if.bresp;
+    // assign axi_interconnect.sintf_arr[2].BID       = '0; //mcu_dma_s_axi_if.bid;
+    // // assign mcu_dma_s_axi_if.bready                 = axi_interconnect.sintf_arr[2].BREADY;
+    // // assign mcu_dma_s_axi_if.arvalid                = axi_interconnect.sintf_arr[2].ARVALID;
+    // // assign mcu_dma_s_axi_if.araddr                 = axi_interconnect.sintf_arr[2].ARADDR[31:0];
+    // // assign mcu_dma_s_axi_if.arid                   = axi_interconnect.sintf_arr[2].ARID;
+    // // assign mcu_dma_s_axi_if.arlen                  = axi_interconnect.sintf_arr[2].ARLEN;
+    // // assign mcu_dma_s_axi_if.arsize                 = axi_interconnect.sintf_arr[2].ARSIZE;
+    // // assign mcu_dma_s_axi_if.arburst                = axi_interconnect.sintf_arr[2].ARBURST;
+    // // assign mcu_dma_s_axi_if.arlock                 = axi_interconnect.sintf_arr[2].ARLOCK;
+    // // assign mcu_dma_s_axi_if.aruser                 = axi_interconnect.sintf_arr[2].ARUSER;
+    // assign axi_interconnect.sintf_arr[2].ARREADY = '0; //mcu_dma_s_axi_if.arready;
+    // assign axi_interconnect.sintf_arr[2].RVALID  = '0; //mcu_dma_s_axi_if.rvalid;
+    // assign axi_interconnect.sintf_arr[2].RDATA   = '0; //64'(mcu_dma_s_axi_if.rdata);// Native 64-bit width, no dwidth conversion
+    // assign axi_interconnect.sintf_arr[2].RRESP   = '0; //mcu_dma_s_axi_if.rresp;
+    // assign axi_interconnect.sintf_arr[2].RID     = '0; //mcu_dma_s_axi_if.rid;
+    // assign axi_interconnect.sintf_arr[2].RLAST   = '0; //mcu_dma_s_axi_if.rlast;
+    // // assign mcu_dma_s_axi_if.rready               = axi_interconnect.sintf_arr[2].RREADY;
 
     //Interconnect 3 - CPTRA soc axi if
     assign cptra_ss_cptra_core_s_axi_if.awvalid           = axi_interconnect.sintf_arr[3].AWVALID;
@@ -1128,6 +1153,11 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[1].RLAST   = cptra_ss_i3c_s_axi_if.rlast;
     assign cptra_ss_i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[1].RREADY;
 
+    mci_mcu_sram_if cptra_ss_mcu_rom_macro_req_if (
+        .clk(core_clk),
+        .rst_b(rst_l)
+    );
+
     mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
@@ -1331,47 +1361,100 @@ module caliptra_ss_top_tb
     //=========================================================================-
     //axi_slv #(.TAGW(`css_mcu0_RV_LSU_BUS_TAG)) imem(
 
-    axi_slv #(.TAGW(8)) imem(
+    // axi_slv #(.TAGW(8)) imem(
 
-        .aclk           (core_clk),
-        .rst_l          (rst_l),
+    //     .aclk           (core_clk),
+    //     .rst_l          (rst_l),
 
-        .arvalid        (axi_interconnect.sintf_arr[0].ARVALID),
-        .arready        (axi_interconnect.sintf_arr[0].ARREADY),
-        .araddr         (axi_interconnect.sintf_arr[0].ARADDR[31:0]),
-        .arid           (axi_interconnect.sintf_arr[0].ARID),
-        .arlen          (axi_interconnect.sintf_arr[0].ARLEN),
-        .arburst        (axi_interconnect.sintf_arr[0].ARBURST),
-        .arsize         (axi_interconnect.sintf_arr[0].ARSIZE),
+    //     .arvalid        (axi_interconnect.sintf_arr[0].ARVALID),
+    //     .arready        (axi_interconnect.sintf_arr[0].ARREADY),
+    //     .araddr         (axi_interconnect.sintf_arr[0].ARADDR[31:0]),
+    //     .arid           (axi_interconnect.sintf_arr[0].ARID),
+    //     .arlen          (axi_interconnect.sintf_arr[0].ARLEN),
+    //     .arburst        (axi_interconnect.sintf_arr[0].ARBURST),
+    //     .arsize         (axi_interconnect.sintf_arr[0].ARSIZE),
 
-        .rvalid         (axi_interconnect.sintf_arr[0].RVALID),
-        .rready         (axi_interconnect.sintf_arr[0].RREADY),
-        .rdata          (axi_interconnect.sintf_arr[0].RDATA),
-        .rresp          (axi_interconnect.sintf_arr[0].RRESP),
-        .rid            (axi_interconnect.sintf_arr[0].RID),
-        .rlast          (axi_interconnect.sintf_arr[0].RLAST),
+    //     .rvalid         (axi_interconnect.sintf_arr[0].RVALID),
+    //     .rready         (axi_interconnect.sintf_arr[0].RREADY),
+    //     .rdata          (axi_interconnect.sintf_arr[0].RDATA),
+    //     .rresp          (axi_interconnect.sintf_arr[0].RRESP),
+    //     .rid            (axi_interconnect.sintf_arr[0].RID),
+    //     .rlast          (axi_interconnect.sintf_arr[0].RLAST),
 
-        .awvalid        (axi_interconnect.sintf_arr[0].AWVALID),
-        .awready        (axi_interconnect.sintf_arr[0].AWREADY),
-        .awaddr         (axi_interconnect.sintf_arr[0].AWADDR[31:0]),
-        .awid           (axi_interconnect.sintf_arr[0].AWID),
-        .awlen          (axi_interconnect.sintf_arr[0].AWLEN),
-        .awburst        (axi_interconnect.sintf_arr[0].AWBURST),
-        .awsize         (axi_interconnect.sintf_arr[0].AWSIZE),
+    //     .awvalid        (axi_interconnect.sintf_arr[0].AWVALID),
+    //     .awready        (axi_interconnect.sintf_arr[0].AWREADY),
+    //     .awaddr         (axi_interconnect.sintf_arr[0].AWADDR[31:0]),
+    //     .awid           (axi_interconnect.sintf_arr[0].AWID),
+    //     .awlen          (axi_interconnect.sintf_arr[0].AWLEN),
+    //     .awburst        (axi_interconnect.sintf_arr[0].AWBURST),
+    //     .awsize         (axi_interconnect.sintf_arr[0].AWSIZE),
 
-        .wdata          (axi_interconnect.sintf_arr[0].WDATA),
-        .wstrb          (axi_interconnect.sintf_arr[0].WSTRB),
-        .wvalid         (axi_interconnect.sintf_arr[0].WVALID),
-        .wready         (axi_interconnect.sintf_arr[0].WREADY),
+    //     .wdata          (axi_interconnect.sintf_arr[0].WDATA),
+    //     .wstrb          (axi_interconnect.sintf_arr[0].WSTRB),
+    //     .wvalid         (axi_interconnect.sintf_arr[0].WVALID),
+    //     .wready         (axi_interconnect.sintf_arr[0].WREADY),
 
-        .bvalid         (axi_interconnect.sintf_arr[0].BVALID),
-        .bready         (axi_interconnect.sintf_arr[0].BREADY),
-        .bresp          (axi_interconnect.sintf_arr[0].BRESP),
-        .bid            (axi_interconnect.sintf_arr[0].BID)
+    //     .bvalid         (axi_interconnect.sintf_arr[0].BVALID),
+    //     .bready         (axi_interconnect.sintf_arr[0].BREADY),
+    //     .bresp          (axi_interconnect.sintf_arr[0].BRESP),
+    //     .bid            (axi_interconnect.sintf_arr[0].BID)
 
-    );
+    // );
     assign axi_interconnect.sintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+
+    assign cptra_ss_mcu_rom_s_axi_if.awvalid                      = axi_interconnect.sintf_arr[2].AWVALID;
+    assign cptra_ss_mcu_rom_s_axi_if.awaddr                       = axi_interconnect.sintf_arr[2].AWADDR[31:0];
+    assign cptra_ss_mcu_rom_s_axi_if.awid                         = axi_interconnect.sintf_arr[2].AWID;
+    assign cptra_ss_mcu_rom_s_axi_if.awlen                        = axi_interconnect.sintf_arr[2].AWLEN;
+    assign cptra_ss_mcu_rom_s_axi_if.awsize                       = axi_interconnect.sintf_arr[2].AWSIZE;
+    assign cptra_ss_mcu_rom_s_axi_if.awburst                      = axi_interconnect.sintf_arr[2].AWBURST;
+    assign cptra_ss_mcu_rom_s_axi_if.awlock                       = axi_interconnect.sintf_arr[2].AWLOCK; 
+    assign cptra_ss_mcu_rom_s_axi_if.awuser                       = axi_interconnect.sintf_arr[2].AWUSER;
+    assign axi_interconnect.sintf_arr[2].AWREADY     = cptra_ss_mcu_rom_s_axi_if.awready;
+    assign cptra_ss_mcu_rom_s_axi_if.wvalid                       = axi_interconnect.sintf_arr[2].WVALID;
+    assign cptra_ss_mcu_rom_s_axi_if.wdata                        = axi_interconnect.sintf_arr[2].WDATA;// >> (cptra_ss_mcu_rom_s_axi_if_wr_is_upper_dw_latched ? 32 : 0);
+    assign cptra_ss_mcu_rom_s_axi_if.wstrb                        = axi_interconnect.sintf_arr[2].WSTRB;// >> (cptra_ss_mcu_rom_s_axi_if_wr_is_upper_dw_latched ? 4  : 0);
+    assign cptra_ss_mcu_rom_s_axi_if.wlast                        = axi_interconnect.sintf_arr[2].WLAST;
+    assign axi_interconnect.sintf_arr[2].WREADY      = cptra_ss_mcu_rom_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[2].BVALID      = cptra_ss_mcu_rom_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[2].BRESP       = cptra_ss_mcu_rom_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[2].BID         = cptra_ss_mcu_rom_s_axi_if.bid;
+    assign cptra_ss_mcu_rom_s_axi_if.bready                       = axi_interconnect.sintf_arr[2].BREADY;
+    assign cptra_ss_mcu_rom_s_axi_if.arvalid                      = axi_interconnect.sintf_arr[2].ARVALID;
+    assign cptra_ss_mcu_rom_s_axi_if.araddr                       = axi_interconnect.sintf_arr[2].ARADDR[31:0];
+    assign cptra_ss_mcu_rom_s_axi_if.arid                         = axi_interconnect.sintf_arr[2].ARID;
+    assign cptra_ss_mcu_rom_s_axi_if.arlen                        = axi_interconnect.sintf_arr[2].ARLEN;
+    assign cptra_ss_mcu_rom_s_axi_if.arsize                       = axi_interconnect.sintf_arr[2].ARSIZE;
+    assign cptra_ss_mcu_rom_s_axi_if.arburst                      = axi_interconnect.sintf_arr[2].ARBURST;
+    assign cptra_ss_mcu_rom_s_axi_if.arlock                       = axi_interconnect.sintf_arr[2].ARLOCK;
+    assign cptra_ss_mcu_rom_s_axi_if.aruser                       = axi_interconnect.sintf_arr[2].ARUSER;
+    assign axi_interconnect.sintf_arr[2].ARREADY       = cptra_ss_mcu_rom_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[2].RVALID        = cptra_ss_mcu_rom_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[2].RDATA         = 64'(cptra_ss_mcu_rom_s_axi_if.rdata);// << (cptra_ss_mcu_rom_s_axi_if_rd_is_upper_dw_latched ? 32 : 0);
+    assign axi_interconnect.sintf_arr[2].RRESP         = cptra_ss_mcu_rom_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[2].RID           = cptra_ss_mcu_rom_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[2].RLAST         = cptra_ss_mcu_rom_s_axi_if.rlast;
+    assign cptra_ss_mcu_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[2].RREADY;
+
+
+//   mci_sram #(
+//       .DEPTH     (18'h0_7FFF), // 64KB -- FIXME (need to update this value)
+//       .DATA_WIDTH(39),
+//       .ADDR_WIDTH(32)
+//  ) imem (
+//      .clk_i   (core_clk),
+//  
+//      .cs_i    (cptra_ss_mcu_rom_macro_req_if.req.cs),
+//      .we_i    (cptra_ss_mcu_rom_macro_req_if.req.we),
+//      .addr_i  ({14'h0, cptra_ss_mcu_rom_macro_req_if.req.addr, 2'b0}),
+//      .wdata_i (cptra_ss_mcu_rom_macro_req_if.req.wdata),
+//      .rdata_o (cptra_ss_mcu_rom_macro_req_if.resp.rdata)
+//  );
+    always_comb begin
+        cptra_ss_mcu_rom_macro_req_if.resp.rdata = '0;
+    end
+
 
     mci_sram #(
         .DEPTH     (18'h3_FFFF), // 1M
@@ -1581,7 +1664,10 @@ module caliptra_ss_top_tb
     // AXI Manager INF
         .cptra_ss_cptra_core_m_axi_if,
     
-    //SoC AXI Interface
+    //MCU ROM Sub Interface
+        .cptra_ss_mcu_rom_s_axi_if,
+    
+    //MCI AXI Sub Interface
         .cptra_ss_mci_s_axi_if,
     
     // AXI Manager INF
@@ -1650,11 +1736,16 @@ module caliptra_ss_top_tb
         .cptra_ss_cptra_core_itrng_valid_i,
     `endif
     
+    
     //MCU
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
         .cptra_ss_strap_clp_axi_user_i,
 
+    //MCU ROM
+        .cptra_ss_mcu_rom_macro_req_if,
+
+    //MCI
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mci_mbox0_sram_req_if,
         .cptra_ss_mci_mbox1_sram_req_if,
@@ -1753,7 +1844,8 @@ task preload_iccm;
     $display("ICCM pre-load from %h to %h", saddr, eaddr);
 
     for(addr= saddr; addr <= eaddr; addr+=4) begin
-        data = {imem.mem[addr+3],imem.mem[addr+2],imem.mem[addr+1],imem.mem[addr]};
+        //data = {imem.mem[addr+3],imem.mem[addr+2],imem.mem[addr+1],imem.mem[addr]};
+        data = 0;
         slam_iccm_ram(addr, data == 0 ? 0 : {riscv_ecc32(data),data});
     end
 

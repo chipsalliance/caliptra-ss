@@ -55,4 +55,6 @@
 ## Known Items
 - Toolset for adding Generic SoC fuses & Generic IFP Secret fuses for SoC usage
 - Regen FC for 1/16/2025 Caliptra core spec update
+- I3C high frequency domain configuration parameters testing work in progress 
+- Adams bridge memory ports
 - Lint fixes
