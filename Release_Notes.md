@@ -1,9 +1,9 @@
 # Caliptra Subsystem 0.8 Release Notes
 
 ## 1. Caliptra Core
-- **Adams Bridge**
-- **PQC Key Vault & Derivation Support**
-- **OCP Recovery Support**
+- Adams Bridge
+- PQC Key Vault & Derivation Support
+- OCP Recovery Support
 - Updated VeeR core pointing to VeeR 2.0 release
 - Increased ROM, ICCM/DCCM, and Mailbox sizes for Caliptra 2.0
 - Manufacturing Debug Unlock Support
