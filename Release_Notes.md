@@ -25,16 +25,16 @@
 - Physical presence detection capability for RMA
 
 ## 4. Fuse Controller (FC)
-- Caliptra core fuse map spec to 10/1
+- Caliptra core fuse map spec to Jan 10, 2025
 - Production Debug Unlock Support
 - Multi-test unlock token support
 - Manufacturing time generic secret fuses for SoC usage
 
-## 5. Manufacturer Control Unit (MCU)**:
+## 5. Manufacturer Control Unit (MCU):
   - A dedicated VeeR instance for SoC-specific firmware
   - PmP & User Mode Enabled
-
-## 6. Manufacturer Control Interface (MCI)**:
+  
+## 6. Manufacturer Control Interface (MCI):
   - Caliptra Subsystem Boot Sequencer
   - MCU SRAM with ECC
   - Caliptra SS Registers
@@ -44,7 +44,7 @@
   - SoC Manufacturing Debug Unlock Support
   - SoC Production Debug Unlock Support
   - MCU ROM Interface Module
-
+  
 ## Basic validation flows completed for:
   - Recovery flow over I3C
   - DMA from Caliptra to/from MCI
