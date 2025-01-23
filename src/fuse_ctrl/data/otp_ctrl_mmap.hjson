@@ -19,7 +19,7 @@
 
     otp: {
         width: "2", // bytes
-        depth: "2048"
+        depth: "1024"
     }
 
     // Definition of scrambling and digest constants and keys.
@@ -29,21 +29,41 @@
         cnst_size: "16",
         keys: [
             {
-                name:  "Secret0Key",
+                name:  "SecretManufKey",
                 value: "<random>",
-            }
+            },
             {
-                name:  "Secret1Key",
+                name:  "SecretProdKey0",
                 value: "<random>",
-            }
+            },
             {
-                name:  "Secret2Key",
+                name:  "SecretProdKey1",
                 value: "<random>",
-            }
+            },
             {
-                name:  "Secret3Key",
+                name:  "SecretProdKey2",
                 value: "<random>",
-            }
+            },
+            {
+                name:  "SecretProdKey3",
+                value: "<random>",
+            },
+            {
+                name:  "SecretLifeCycleUnlockKey",
+                value: "<random>",
+            },
+            {
+                name:  "SecretLifeCycleManufKey",
+                value: "<random>",
+            },
+            {
+                name:  "SecretLifeCycleProdKey",
+                value: "<random>",
+            },
+            {
+                name:  "SecretLifeCycleRMAKey",
+                value: "<random>",
+            },
         ]
         digests: [
             // This is the consistency digest used by all partitions.
@@ -79,33 +99,132 @@
     // Note that the digest items are added automatically to the address map.
     partitions: [
         {
-            name:       "VENDOR_TEST",
-            variant:    "Unbuffered",
-            size:       "64", // in bytes
-            secret:     false,
-            sw_digest:  true,
-            hw_digest:  false,
-            write_lock: "Digest",        
-            read_lock:  "CSR",
-            key_sel:    "NoKey",
-            integrity:  false, // Do not use integrity (ECC) on this partition.
-            bkout_type: false, // Do not use generate a breakout type for this partition.
+            name:       "SECRET_MANUF_PARTITION",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretManufKey",
+            integrity:  true,
+            bkout_type: true,
             items: [
                 {
-                    name: "SCRATCH",
-                    size: "56"
-                }
+                    name: "UDS_SEED",
+                    inv_default: "<random>",
+                    size: "64",
+                    desc: '''
+                    DICE Unique Device Secret Seed.
+                    This seed is unique per device. The seed is scrambled using an obfuscation function.
+                    '''
+                },
             ],
-            desc: '''Vendor test partition.
-            This is reserved for manufacturing smoke checks. The OTP wrapper
-            control logic inside prim_otp is allowed to read/write to this
-            region. ECC uncorrectable errors seen on the functional prim_otp
-            interface will not lead to an alert for this partition.
-            Instead, such errors will be reported as correctable ECC errors.
+            desc: '''Secret manufacturing partition.
             '''
-        }
+        },
         {
-            name:       "NON_SECRET_FUSES",
+            name:       "SECRET_PROD_PARTITION_0",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretProdKey0",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "FIELD_ENTROPY_0",
+                    inv_default: "<random>",
+                    size: "8",
+                    desc: '''
+                    Field entropy chunk 0.
+                    Field-programmable by the owner, used to hedge against UDS disclosure in the supply chain.
+                    '''
+                },
+            ],
+            desc: '''Secret production partition 0.
+            '''
+        },
+        {
+            name:       "SECRET_PROD_PARTITION_1",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretProdKey1",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "FIELD_ENTROPY_1",
+                    inv_default: "<random>",
+                    size: "8",
+                    desc: '''
+                    Field entropy chunk 1.
+                    Field-programmable by the owner, used to hedge against UDS disclosure in the supply chain.
+                    '''
+                },
+            ],
+            desc: '''Secret production partition 1.
+            '''
+        },
+        {
+            name:       "SECRET_PROD_PARTITION_2",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretProdKey2",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "FIELD_ENTROPY_2",
+                    inv_default: "<random>",
+                    size: "8",
+                    desc: '''
+                    Field entropy chunk 2.
+                    Field-programmable by the owner, used to hedge against UDS disclosure in the supply chain.
+                    '''
+                },
+            ],
+            desc: '''Secret production partition 2.
+            '''
+        },
+        {
+            name:       "SECRET_PROD_PARTITION_3",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretProdKey3",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "FIELD_ENTROPY_3",
+                    inv_default: "<random>",
+                    size: "8",
+                    desc: '''
+                    Field entropy chunk 3.
+                    Field-programmable by the owner, used to hedge against UDS disclosure in the supply chain.
+                    '''
+                },
+            ],
+            desc: '''Secret production partition 3.
+            '''
+        },
+        {
+            name:       "SW_MANUF_PARTITION",
             variant:    "Unbuffered",
             absorb:     true,
             secret:     false,
@@ -114,153 +233,315 @@
             write_lock: "Digest",
             read_lock:  "CSR",
             key_sel:    "NoKey",
-            integrity:  true,  // Use integrity (ECC) on this partition
-            bkout_type: false, // Do not generate a breakout type for this partition
+            integrity:  true,
+            bkout_type: false,
             items: [
                 {
-                    name:   "FMC_KEY_MANIFEST_SVN",
-                    size:   "4"
-                }
+                    name: "KEY_MANIFEST_PK_HASH",
+                    size: "48"
+                },
                 {
-                    name:   "RUNTIME_SVN", 
-                    size:   "16"
-                }
+                    name: "ANTI_ROLLBACK_DISABLE",
+                    size: "1",
+                    desc: '''
+                    Disables anti-rollback support from Caliptra.
+                    For example, if a Platform RoT is managing FW storage and anti-rollback protection external to the SoC.
+                    '''
+                },
                 {
-                    name:   "LMS_VERIFY",
-                    size:   "4"
-                }
+                    name: "IDEVID_CERT_IDEVID_ATTR",
+                    size: "96",
+                    desc: '''
+                    IDevID Certificate Generation Attributes.
+                    See IDevID certificate section. Caliptra only uses 352 bits. Integrator is not required
+                    to back the remaining 416 bits with physical fuses.
+                    '''
+                },
                 {
-                    name:   "LMS_REVOCATION",
-                    size:   "4"
-                }
+                    name: "IDEVID_MANUF_HSM_IDENTIFIER",
+                    size: "16",
+                    desc: '''
+                    Spare bits for Vendor IDevID provisioner CA identifiers.
+                    Caliptra does not use these bits. Integrator is not required to back these with physical fuses.
+                    '''
+                },
                 {
-                    name:   "KEY_MANIFEST_PK_HASH_MASK",
-                    size:   "4"
-                }
+                    name: "SOC_STEPPING_ID",
+                    size: "2",
+                    desc: '''
+                    Identifier assigned by vendor to differentiate silicon steppings.
+                    '''
+                },
+                {
+                    name: "MANUF_DEBUG_UNLOCK_TOKEN",
+                    size: "16",
+                    desc: '''
+                    Secret value for manufacturing debug unlock authorization.
+                    '''
+                },
+                {
+                    name: "PROD_DEBUG_UNLOCK_PKS",
+                    size: "512",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need one 512-bit location for hash of each of public keys.
+                    '''
+                },
+                {
+                    name: "VENDOR_EXPANDED_CALIPTRA_FW_AUTH_PK_HASHES",
+                    size: "48",
+                    desc: '''
+                    N is configurable from 0 (as not having this configuration) to up to 16.
+                    '''
+                },
+                {
+                    name: "VENDOR_SPECIFIC_SECRET_FUSES",
+                    size: "32"
+                },
+            ],
+            desc: '''Software manufacturing partition.
+            '''
+        },
+        {
+            name:       "SW_PROD_PARTITION",
+            variant:    "Unbuffered",
+            absorb:     true,
+            secret:     false,
+            sw_digest:  true,
+            hw_digest:  false,
+            write_lock: "Digest",
+            read_lock:  "CSR",
+            key_sel:    "NoKey",
+            integrity:  true,
+            bkout_type: false,
+            items: [
+                {
+                    name:   "ECC_REVOCATION",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
                 {
                     name:   "OWNER_PK_HASH",
-                    size:   "48"
-                }
+                    size:   "48",
+                    desc: '''
+                    SHA384 hash of the Owner ECDSA P384 and LMS or MLDSA Public Keys.
+                    '''
+                },
                 {
-                    name:   "IDEVID_CERT_ATTR",
-                    size:   "96",
-                    // Default value to be output in case partition has not
-                    // initialized or is in error state. If not specified,
-                    // a value of '0 will be used.
-                    inv_default: "<random>",
-                }
+                    name:   "LMS_REVOCATION",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
                 {
-                    name:   "IDEVID_MANUF_HSM_ID",
-                    size:   "16"
-                }
+                    name:   "MLDSA_REVOCATION",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
                 {
-                    name:   "SOC_STEPPING_ID",
-                    size:   "4"
-                }
-            ], 
-            desc: '''Non Secret Fuses partition.
-            This contains data such IDEVID, public key hash mask, owner
-            key hash, SoC Stepping ID etc. 
-            '''  
-        }
+                    name:   "VENDOR_EXPANDED_CALIPTRA_FW_AUTH_PK_HASH_VALID",
+                    size:   "1",
+                    desc: '''
+                    Once a key is marked valid, anything above should not be able to be written (essentially
+                    a volatile lock should be implemented on higher order bits).
+                    '''
+                },
+            ],
+            desc: '''Software production partition.
+            '''
+        },
         {
-            name:       "SECRET0",
+            name:       "SECRET_LC_UNLOCK_PARTITION",
             variant:    "Buffered",
             secret:     true,
             sw_digest:  false,
             hw_digest:  true,
             write_lock: "Digest",
             read_lock:  "Digest",
-            key_sel:    "Secret0Key",
+            key_sel:    "SecretLifeCycleUnlockKey",
             integrity:  true,
             bkout_type: false,
             items: [
                 {
-                    name: "TEST_UNLOCK_TOKEN",
-                    // This will generate a random default to be output in
-                    // case partition has not initialized or is in error state.
-                    // If not specified, a value of '0 will be used.
+                    name: "TEST_UNLOCK_TOKEN_0",
                     inv_default: "<random>",
                     size: "16"
-                }
+                },
                 {
-                    name: "TEST_EXIT_TOKEN",
+                    name: "TEST_UNLOCK_TOKEN_1",
                     inv_default: "<random>",
                     size: "16"
-                }
-            ],
-            desc: '''Secret partition 0.
-            This contains TEST lifecycle unlock tokens.
-            '''
-        }
-        {
-            name:       "SECRET1",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "Secret1Key",
-            integrity:  true,
-            bkout_type: false,
-            items: [
+                },
                 {
-                    name:   "UDS_SEED",
-                    size:   "48"
-                }
-            ],
-            desc:   '''Secret partition 1.
-            This contains Obfuscated UDS seed. 
-            '''
-        }
-        {
-            name:       "SECRET2",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "Secret2Key",
-            integrity:  true,
-            bkout_type: false,
-            items: [
-                {
-                    name:   "FIELD_ENTROPY",
-                    size:   "32"
-                }
-            ],
-            desc: '''Secret partition 2. 
-            This contains obfuscated field entropy. 
-            '''
-        }
-        {
-            name:       "SECRET3",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "Secret3Key",
-            integrity:  true,
-            bkout_type: false,
-            items: [
-                {
-                    name:   "KEY_MANIFEST_PK_HASH",
-                    size:   "48"
-                }
-                { 
-                    name:   "RMA_TOKEN",
+                    name: "TEST_UNLOCK_TOKEN_2",
                     inv_default: "<random>",
-                    size:   "16"
+                    size: "16"
+                },
+                {
+                    name: "TEST_UNLOCK_TOKEN_3",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+                {
+                    name: "TEST_UNLOCK_TOKEN_4",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+                {
+                    name: "TEST_UNLOCK_TOKEN_5",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+                {
+                    name: "TEST_UNLOCK_TOKEN_6",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+                {
+                    name: "TEST_UNLOCK_TOKEN_7",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+            ],
+            desc: '''Secret life-cycle unlock token partition.
+            '''
+        },
+        {
+            name:       "SECRET_LC_MANUF_PARTITION",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretLifeCycleManufKey",
+            integrity:  true,
+            bkout_type: false,
+            items: [
+                {
+                    name: "MANUF_TOKEN",
+                    inv_default: "<random>",
+                    size: "16",
+                    desc: '''
+                    Used to transition the device from TEST_UNLOCKED to MANUF state. 128-bit is
+                    the token and 64 bit is the digest of the token.
+                    '''
+                },
+            ],
+            desc: '''Secret life-cycle manufacturing token partition.
+            '''
+        },
+        {
+            name:       "SECRET_LC_PROD_PARTITION",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretLifeCycleProdKey",
+            integrity:  true,
+            bkout_type: false,
+            items: [
+                {
+                    name: "PROD_TOKEN",
+                    inv_default: "<random>",
+                    size: "16",
+                    desc: '''
+                    Used to transition the device from MANUF to PROD state. 128-bit is the token and 64 bit is the digest of the token.
+                    '''
+                },
+            ],
+            desc: '''Secret life-cycle production token partition.
+            '''
+        },
+        {
+            name:       "SECRET_LC_RMA_PARTITION",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretLifeCycleRMAKey",
+            integrity:  true,
+            bkout_type: false,
+            items: [
+                {
+                    name: "RMA_TOKEN",
+                    inv_default: "<random>",
+                    size: "16",
+                    desc: '''
+                    Used to transition the device to RMA state. 128-bit is the token and 64 bit is the digest of the token.
+                    '''
+                },
+            ],
+            desc: '''Secret life-cycle RMA token partition.
+            '''
+        },
+        {
+            name:       "SVN_PARTITION",
+            variant:    "Unbuffered",
+            absorb:     false,
+            secret:     false,
+            sw_digest:  false,
+            hw_digest:  false,
+            write_lock: "None",
+            read_lock:  "CSR",
+            key_sel:    "NoKey",
+            // This is a strike counter, hence we need to disable ECC integrity for this to work.
+            // Integrity is handled at a higher level by SW as described below.
+            integrity:  false,
+            bkout_type: false,
+            items: [
+                {
+                    name: "FMC_KEY_MANIFEST_SVN",
+                    size: "4",
+                    desc: '''
+                    FMC security version number.
+                    '''
+                },
+                {
+                    name: "RUNTIME_SVN",
+                    size: "16",
+                    desc: '''
+                    Runtime firmware security version number.
+                    '''
+                },
+            ],
+            desc: '''SVN Partition.
+            '''
+        },
+        {
+            name:       "VENDOR_TEST_PARTITION",
+            variant:    "Unbuffered",
+            size:       "64", // in bytes
+            secret:     false,
+            sw_digest:  true,
+            hw_digest:  false,
+            write_lock: "Digest",
+            read_lock:  "CSR",
+            key_sel:    "NoKey",
+            integrity:  false, // Do not use integrity (ECC) on this partition.
+            bkout_type: false, // Do not generate a breakout type for this partition.
+            items: [
+                {
+                    name: "VENDOR_TEST",
+                    size: "32",
+                    desc: '''
+                    This is a partition used to test if FUSE programming is done accordingly.
+                    It has 14 32-bit vendor test write location and one 64-bit for their digest values.
+                    '''
                 }
             ],
-            desc: '''Secret partition 3.
-            This contains public key hash and RMA unlock token. 
+            desc: '''Vendor test partition.
             '''
-        }
+        },
         {
             name:       "LIFE_CYCLE",
             variant:    "LifeCycle",
@@ -305,6 +586,6 @@
             form, since that encoding is considered a netlist secret. The LC
             controller only exposes a decoded version of this state.
             '''
-        }
+        },
     ]
 }
