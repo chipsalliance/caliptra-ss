@@ -257,9 +257,11 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 ### Parameters & Defines
 
 *Note: Additional parameter limitations can be seen in the Requirements section* 
-| AXI Integration Parameters |  |  |  |
-| ----- | :---- | :---- | :---- |
-| **Parameter name** | **Internal/External** | **Location** | **Description** |
+
+**Table: AXI Integration Parameters**
+
+| Parameter name | Internal/External | Location | Description |
+| :---- | :---- | :---- | :---- |
 | AXI\_ADDR\_WIDTH | Internal | mci\_top | AXI address width |
 | AXI\_DATA\_WIDTH | Internal | mci\_top | AXI data width |
 | AXI\_USER\_WIDTH | Internal | mci\_top | AXI user width |
@@ -267,31 +269,32 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 ##### 
 
-| MCU SRAM Integration Parameters |  |  |  |
-| :---- | :---- | :---- | :---- |
-| **Parameter name** | **Internal/External** | **Location** | **Description** |
-| MCU\_SRAM\_SIZE\_KB | external | mci\_top | Size of MCU SRAM in KB. i.e. <br>Min: 4 <br>Max: 2048(2MB) |
+**Table: MCU SRAM Integration Parameters**
 
-##### 
-
-| MCI Boot Sequencer Integration Parameters |  |  |  |
+| Parameter name | Internal/External | Location | Description |
 | :---- | :---- | :---- | :---- |
-| **Parameter name** | **Internal/External** | **Location** | **Description** |
+| MCU\_SRAM\_SIZE\_KB | external | mci\_top | Size of MCU SRAM in KB. i.e. Min: 4 Max: 2048(2MB) |
+
+**Table: MCI Boot Sequencer Integration Parameters**
+
+| Parameter name | Internal/External | Location | Description |
+| :---- | :---- | :---- | :---- |
 | MIN\_MCU\_RST\_COUNTER\_WIDTH | external | mci\_top | Size of MCU reset counter which determines the min reset time for the MCU. When the timer overflows MCU can be brought up. |
 
-| MCI MBOX Integration Parameters |  |  |  |
+**Table: MCI MBOX Integration Parameters**
+
+| Parameter name | Internal/External | Location | Description |
 | :---- | :---- | :---- | :---- |
-| **Parameter name** | **Internal/External** | **Location** | **Description** |
 | MCI\_MBOX0\_DMI\_DLEN\_ADDR | FIXME | mci\_top | FIXME |
 | MCI\_MBOX0\_SIZE\_KB | external | mci\_top | Size of MBOX0 SRAM. If set to 0 the entire MBOX0 is removed from MCI. Min: 0 Max 2048 (2MB) |
 | MCI\_MBOX1\_DMI\_DLEN\_ADDR | FIXME | mci\_top | FIXME |
 | MCI\_MBOX1\_SIZE\_KB | external | mci\_top | Size of MBOX1 SRAM. If set to 0 the entire MBOX1 is removed from MCI. Min: 0 Max 2048 (2MB) |
 
-**FIXME none right now?** 
+**FIXME none right now?**   
+**Table: MCI Integration Definitions**
 
-| MCI Integration Definitions |  |  |
+| Defines | Defines file | Description |
 | :---- | :---- | :---- |
-| **Defines** | **Defines file** | **Description** |
 |  |  |  |
 |  |  |  |
 |  |  |  |
@@ -310,18 +313,18 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 *Note: Any port with known internal and external connections (i.e. agg\_error\_fatal) will have ext/int with note in a different section on which ports are reserved for internal vs external use.*
 
-##### 
+**Table: MCI Clocks**
 
-| MCI Clocks |  |  |  |  |  |
+| Signal Name | Width | In/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **In/Ext** | **Dir** | **Clock** | **Description** |
 | clk | 1 | ext | in |  | MCI Clock |
 
 ##### 
 
-| MCI Resets |  |  |  |  |  |
+**Table: MCI Resets**
+
+| Signal Name | Width | Int/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **Int/Ext** | **Dir** | **Clock** | **Description** |
 | mci\_pwrgood | 1 | ext | in | Async assert Sync deassert clk | Active high power good indicator. Deepest reset domain for MCI.  |
 | mci\_rst\_b | 1 | ext | in | Async assert Sync deassert clk | Active low asynchronous reset for MCI.  |
 | mcu\_rst\_b | 1 | int | out | clk | Reset for MCU.  When scan\_mode set this is directly controlled by mci\_rst\_b |
@@ -329,9 +332,10 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 ##### 
 
-| MCI AXI Interface |  |  |  |  |  |
+**Table: MCI AXI Interface**
+
+| Signal Name | Width | Int/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **Int/Ext** | **Dir** | **Clock** | **Description** |
 | s\_axi\_w\_if |  | ext | interface | clk | AXI subordinate write interface. |
 | s\_axi\_r\_if |  | ext | interface | clk | AXI subordinate write interface. |
 | m\_axi\_w\_if |  | ext | interface | clk | AXI manager write interface. |
@@ -339,9 +343,10 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 ##### 
 
-| MCI Straps |  |  |  |  |  |
+**Table: MCI Straps**
+
+| Signal Name | Width | Int/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **Int/Ext** | **Dir** | **Clock** | **Description** |
 | strap\_mcu\_lsu\_axi\_user | AXI\_USER\_WIDTH | ext | in | STATIC | AXI USER for MCU’s load/store unit. |
 | strap\_mcu\_ifu\_axi\_user | AXI\_USER\_WIDTH | ext | in | STATIC | AXI USER for MCU’s instruction fetch unit. |
 | strap\_clp\_axi\_user | AXI\_USER\_WIDTH | ext | in | STATIC | AXI USER for Caliptra. |
@@ -349,9 +354,10 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 ##### 
 
-| MCI MISC Interface |  |  |  |  |  |
+**Table: MCI MISC Interface**
+
+| Signal Name | Width | Int/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **Int/Ext** | **Dir** | **Clock** | **Description** |
 | mcu\_sram\_fw\_exec\_region\_lock | 1 | int | in | Async | MCU SRAM execution region protection control.  0: Caliptra access to the region 1: MCU LSU/IFU access to the region. Negedge use as an interrupt request for MCU to reset itself.  Positive edge bring MCU out of reset during hitless update flow.  |
 | mci\_generic\_input | 64 | ext | in | Async | Placeholder of input wires for late binding features. These values are reflected into registers that are exposed to MCU firmware |
 | mci\_generic\_output | 64 | ext | out | clk | Placeholder of output wires for late binding features. Firmware can set the wires appropriately via register writes. |
@@ -361,9 +367,10 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 ##### 
 
-| MCI Errors and Interrupts Interface |  |  |  |  |  |
+**Table: MCI Errors and Interrupts Interface**
+
+| Signal Name | Width | Int/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **Int/Ext** | **Dir** | **Clock** | **Description** |
 | agg\_error\_fatal | 32 | int/ext | in | Async | Fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the all\_error\_fatal output wire of MCI |
 | agg\_error\_non\_fatal | 32 | int/ext | in | Async | Non-fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the all\_error\_non\_fatal output wire of MCI. |
 | all\_error\_fatal | 1 | ext | out | clk | Fatal error interrupt for SOC consumption |
@@ -373,36 +380,34 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | nmi\_intr | 1 | int | out | clk | Non-maskable interrupt for MCU. This is connected to the watchdog (WDT) timer within MCI and will be asserted when the wdt is in cascade mode and both timers timeout. It can only be cleared by asserting mci\_rst\_b. This interrupt is also fed into the all\_error\_fatal infrastructure for SOC consumption.  |
 | mci\_nmi\_vector | 32 | int | out | clk | Non-maskable interrupt vector for MCU. This is controllable only by MCU FW.  |
 
-##### 
+**Table: MCI LCC Bring Up Interface**
 
-| MCI LCC Bring Up Interface |  |  |  |  |  |
+| Signal Name | Width | Int/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **Int/Ext** | **Dir** | **Clock** | **Description** |
 | lc\_done | 1 | int | in | Async | LCC initialization done response used by MCU boot sequencer to move to the next state.  |
 | lc\_init | 1 | int | out | clk | LCC initialization request asserted by the MCU boot sequencer after every MCI reset.  |
 
 ##### 
 
-| MCI FC Bring Up Interface |  |  |  |  |  |
+**Table: MCI FC Bring Up Interface**
+
+| Signal Name | Width | Int/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **Int/Ext** | **Dir** | **Clock** | **Description** |
 | fc\_opt\_done | 1 | int | in | Async | FC initialization done response used by MCU boot sequencer to move to the next state.  |
 | fc\_opt\_init | 1 | int | out | clk | FC initialization request asserted by the MCU boot sequencer after every MCI reset.  |
 
-##### 
+**Table: MCI SRAM Interface**
 
-| MCI SRAM Interface |  |  |  |  |  |
+| Signal Name | Width | Int/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **Int/Ext** | **Dir** | **Clock** | **Description** |
 | mci\_mcu\_sram\_req\_if | Data width is DATA+ECC  Address width shall be wide enough to address entire SRAM. | ext | interface | clk | MCU SRAM memory interface.  |
 | mci\_mbox0\_sram\_req\_if | Data width is DATA+ECC  Address width shall be wide enough to address entire SRAM. | ext | interface | clk | MBOX0 SRAM memory interface.  |
 | mci\_mbox1\_sram\_req\_if | Data width is DATA+ECC  Address width shall be wide enough to address entire SRAM. | ext | interface | clk | MBOX1 SRAM memory interface.  |
 
-##### 
+**Table: MCI LCC Gasket Interface**
 
-| MCI LCC Gasket Interface |  |  |  |  |  |
+| Signal Name | Width | Int/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| **Signal Name** | **Width** | **Int/Ext** | **Dir** | **Clock** | **Description** |
 | from\_lcc\_to\_otp\_program\_i | otp\_ctrl\_pkg::lc\_otp\_program\_req\_t | int | in | clk | **FIXME** |
 | lc\_dft\_en\_i | lc\_ctrl\_pkg::lc\_tx\_t | int | in | clk | **FIXME** |
 | lc\_hw\_debug\_en\_i | lc\_ctrl\_pkg::lc\_tx\_t | int | in | clk | **FIXME** |
@@ -417,9 +422,8 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 #### Top Level Memory Map
 
-| MCI Memory Map |  |
+| Internal Block | Address Offset (from base address) |
 | :---- | :---- |
-| **Internal Block** | **Address Offset (from base address)** |
 | CSRs | 0x0 |
 | Mailbox 0 | 0x80000 |
 | Mailbox 1 | 0x90000 |
@@ -435,9 +439,11 @@ MCU SRAM is split into 2 sections:
 
 The two regions have different access protection. The size of the regions is dynamically changed via the FW\_SRAM\_EXEC\_REGION\_SIZE register in 4KB increments.
 
-| MCU SRAM Regions |  |
+
+**Table: MCU SRAM Regions**
+
+| MCU SRAM Region | Address Start Offset |
 | :---- | :---- |
-| **MCU SRAM Region** | **Address Start Offset** |
 | Updatable Execution Region | 0x0 |
 | Protected Region | FW\_SRAM\_EXEC\_REGION\_SIZE \* 1024 \* 4 |
 
@@ -511,9 +517,10 @@ Activity on any bit of the mci\_generic\_input triggers a notification interrupt
 
 The following table describes the allocation of functionality on mci\_generic\_input . All bits not listed in this table must be tied to 0\.
 
-| MCI Generic Input Allocation  |  |  |
+**Table: MCI Generic Input Allocation** 
+
+| Bits | Name | Description |
 | :---- | :---- | :---- |
-| **Bits** | **Name** | **Description** |
 | 64:0 | RESERVED | No allocation function |
 
 #### Error Aggregation Connectivity Requirements
@@ -533,9 +540,10 @@ All fatal and non\_fatal error signals from Caliptra SS IPs (FC, I3C, Caliptra, 
 
 The following table describes the allocation of functionality on agg\_error\_fatal
 
-| MCI Agg Error Fatal Allocation |  |  |
+**Table: MCI Agg Error Fatal Allocation**
+
+| Bits | Name | Description |
 | :---- | :---- | :---- |
-| **Bits** | **Name** | **Description** |
 |   | **LCC FATAL FIXME** |  |
 |  | **FC FATAL FIXME** |  |
 |  | **CALITPRA FATAL FIXME** |  |
@@ -543,9 +551,10 @@ The following table describes the allocation of functionality on agg\_error\_fat
 
  The following table describes the allocation of functionality on agg\_error\_non\_fatal
 
-| MCI Agg Error Non-Fatal Allocation |  |  |
+ **Table: MCI Agg Error Non-Fatal Allocation**
+
+| Bits | Name | Description |
 | :---- | :---- | :---- |
-| **Bits** | **Name** | **Description** |
 |   | **LCC NONFATAL FIXME** |  |
 |  | **FC NONFATAL FIXME** |  |
 |  | **CALITPRA NONFATAL FIXME** |  |
@@ -564,9 +573,10 @@ During Caliptra SS bring up the MCI handshakes with the FC to do initialization.
 
 Connections between MCI and FC are shown in the table below:
 
-| MCI to FC Init Connections |  |
-| ----- | ----- |
+**Table: MCI to FC Init Connections**
+
 | MCI Port | FC Port |
+| ----- | ----- |
 | fc\_opt\_init | pwr\_otp\_i.otp\_init |
 | fc\_opt\_done | pwr\_otp\_o.otp\_done |
 
@@ -579,9 +589,10 @@ During Caliptra SS bring up the MCI handshakes with the LCC to do initialization
 
 Connections between MCI and LCC are shown in the table below:
 
-| MCI to LCC Init Connections |  |
-| ----- | ----- |
+**Table: MCI to LCC Init Connections**
+
 | MCI Port | FC Port |
+| ----- | ----- |
 | lc\_init | pwr\_lc\_i.lc\_init |
 | lc\_done | pwr\_lc\_o.lc\_done |
 
@@ -589,9 +600,10 @@ Connections between MCI and LCC are shown in the table below:
 
 The table below shows connections between MCI and MCU that are not part of other features:
 
-| MCI to MCU Connections |  |  |  |
-| ----- | :---: | ----- | ----- |
+**Table: MCI to MCU Connections**
+
 | MCI Port | Direction | MCU Port | Description |
+| ----- | :---: | ----- | ----- |
 | mcu\_reset\_vector | \-\> | rst\_vec | Reset vector for MCU |
 | nmi\_intr | \-\> | nmi\_intr | WDT interrupt for MCU |
 | mcu\_nmi\_vector | \-\> | nmi\_vec | MCU nonmaskable interrupt vector |
@@ -601,20 +613,23 @@ The table below shows connections between MCI and MCU that are not part of other
 
 The table below shows connections between MCI and Caliptra Core that are not part of other features:
 
-| MCI to Caliptra Core Connections |  |  |  |
-| ----- | :---: | ----- | ----- |
+**Table: MCI to Caliptra Core Connections**
+
 | MCI Port | Direction | Caliptra Port | Description |
+| ----- | :---: | ----- | ----- |
 | mcu\_sram\_fw\_exec\_region\_lock | \<- | ss\_generic\_fw\_exec\_ctrl\[2\] | Controls MCU SRAM protection and used to bring MCU into reset for hitless match  |
 | cptra\_rst\_b | \-\> | cptra\_rst\_b | Reset for Caliptra |
+
 
 #### LCC Gasket Connectivity Requirements
 
 Below are the connections needed between MCI and LCC for the Gasket functionality
 
-| MCI to LCC Gasket Connections |  |  |  |
-| ----- | :---: | ----- | ----- |
+**Table: MCI to LCC Gasket Connections**
+
 | MCI Port | Direction | LCC Port | Description |
-| from\_lcc\_to\_otp\_program\_i | \<- | lc\_otp\_program\_o | FIXME @Emre |
+| ----- | :---: | ----- | ----- |
+| from\_lcc\_to\_otp\_program\_i | \<- | lc\_otp\_program\_o |  |
 | lc\_dft\_en\_i | \<- | lc\_dft\_en\_o | FIXME @Emre |
 | lc\_hw\_debug\_en\_i | \<- | lc\_hw\_debug\_en\_o | FIXME @Emre |
 | from\_otp\_to\_lcc\_program\_i | \<- | otp\_lc\_data\_i | FIXME @Emre |
@@ -696,13 +711,14 @@ To proceed after a breakpoint the SOC must write the **FIXME register via DMI**
 
 The following table defines the order in which resets can get asserted. A "\>\>" in a cell at row X and column Y indicates that if the reset in row X is asserted, the reset in row Y is also asserted. For the rest of the cells (in which symbol "\>\>" is not present) the preceding assumption is not true and so the paths between those resets are potential RDC violations. The "N/A" cells are ignored because they are between the same resets.
 
-| MCI Reset Ordering |  |  |  |  |
-| :---- | :---- | :---- | :---- | :---- |
+**Table: MCI Reset Ordering**
+
 |  | mci\_pwrgood | mci\_rst\_b | mcu\_rst\_b | cptra\_rst\_b |
-| mci\_pwrgood | N/A | \>\> | \>\> | \>\> |
-| mci\_rst\_b |  | N/A | \>\> | \>\> |
-| mcu\_rst\_b |  |  | N/A |  |
-| cptra\_rst\_b |  |  |  | N/A |
+| :---- | :---- | :---- | :---- | :---- |
+| **mci\_pwrgood** | N/A | \>\> | \>\> | \>\> |
+| **mci\_rst\_b** |  | N/A | \>\> | \>\> |
+| **mcu\_rst\_b** |  |  | N/A |  |
+| **cptra\_rst\_b** |  |  |  | N/A |
 
 #### MCU Hitless Patch Flow
 
