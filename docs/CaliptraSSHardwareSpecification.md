@@ -175,6 +175,165 @@ Received transfer data can be obtained by the driver via a read from XFER_DATA_P
 
 # Caliptra SS Fuse Controller
 
+FUSE controller is an RTL module that is responsible for programming and reading the FUSEs. This module has an AXI interface that is connected to Caliptra Subsystem’s AXI interconnect. This module provides the device with one-time programming functionality, resulting in non-volatile programming that cannot be reversed. This functionality is delivered via an open-source FUSE Controller and a proprietary FUSE/OTP Macro. This RTL module manages the following FUSE partition mapping, which can be found in the [OTP Controller Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md).
+
+
+## Partition Details
+
+The Fuse Controller supports a total of **13 partitions**. Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle Controller (LCC) states, such as "MANUF" or "PROD." This naming convention indicates the LCC state required to provision each partition.
+
+### Key Characteristics of Secret Partitions:
+1. **Programming Access:**  
+   - `UDS_SEED` and `FIELD_ENTROPY` partitions can only be programmed by the Caliptra-Core.
+   - Secret partitions are buffered, meaning they are stored in registers and are erased (zeroized) if Caliptra-SS enters debug mode.  
+2. **Locking Mechanism:**  
+   - Write access to a partition can be permanently locked when no further updates are required.  
+   - To lock a partition, an integrity constant is calculated and programmed alongside the data for that partition.
+
+## Partition-Specific Behaviors
+
+### Life Cycle Partition
+- The life cycle partition remains active across all stages and cannot be locked.  
+- This ensures that the device can transition back to the **RMA** state in case of unexpected failures during production.  
+
+### Vendor Test Partition
+- The vendor test partition is used for FUSE programming smoke checks during manufacturing.  
+- Unlike other partitions, ECC uncorrectable errors in this partition do not trigger fatal errors or alerts due to the nature of FUSE smoke checks, which may leave certain FUSE words in inconsistent states.
+
+
+## Hardware Integrity Checker
+
+Once partitions are locked, the hardware integrity checker performs two primary integrity checks to ensure the consistency of the volatile buffer registers:
+
+1. **ECC Protection:**  
+   - All buffered partitions include additional ECC protection (8-bit ECC for each 64-bit block), which is monitored concurrently.
+
+2. **Digest Verification:**  
+   - The digest of each partition is recomputed at semi-random intervals and compared to the digest stored alongside the partition.
+
+### Purpose
+These integrity checks verify whether the contents of the buffer registers remain consistent with the calculated digest. They do not verify the consistency between storage flops and the FUSE.
+
+
+## Notes
+- **Zeroization of Secret Partitions:**  
+  Secret partitions are automatically zeroized when Caliptra-SS enters debug mode to ensure security.  
+
+- **Locking Requirement:**  
+  After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
+- **Further Information:**  
+  For more information about the conditional states, please refer to [OpenTitan open-source silicon Root of Trust (RoT) project](https://opentitan.org/book/hw/ip/lc_ctrl/doc/theory_of_operation.html).
+
+## Programmer's Guide
+
+During provisioning and manufacturing, SW interacts with the OTP controller mostly through the Direct Access Interface (DAI), which is described below.
+Afterwards during production, SW is expected to perform only read accesses via the exposed CSRs and CSR windows, since all write access to the partitions has been locked down.
+
+The following sections provide some general guidance, followed by an explanation of the DAI and a detailed OTP memory map.
+Typical programming sequences are explained at the end of the Programmer's guide.
+
+## General Guidance
+
+### Initialization
+
+The OTP controller initializes automatically upon power-up and is fully operational by the time the processor boots.
+The only initialization steps that SW should perform are:
+
+1. Check that the OTP controller has successfully initialized by reading [`STATUS`](../src/fuse_ctrl/doc/registers.md#status). I.e., make sure that none of the ERROR bits are set, and that the DAI is idle ([`STATUS.DAI_IDLE`](../src/fuse_ctrl/doc/registers.md#status)).
+2. Set up the periodic background checks:
+    - Choose whether to enable periodic background checks by programming nonzero mask values to [`INTEGRITY_CHECK_PERIOD`](../src/fuse_ctrl/doc/registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](../src/fuse_ctrl/doc/registers.md#consistency_check_period).
+    - Choose whether such checks shall be subject to a timeout by programming a nonzero timeout cycle count to [`CHECK_TIMEOUT`](../src/fuse_ctrl/doc/registers.md#check_timeout).
+    - It is recommended to lock down the background check registers via [`CHECK_REGWEN`](../src/fuse_ctrl/doc/registers.md#check_regwen), once the background checks have been set up.
+
+If needed, one-off integrity and consistency checks can be triggered via [`CHECK_TRIGGER`](../src/fuse_ctrl/doc/registers.md#check_trigger).
+If this functionality is not needed, it is recommended to lock down the trigger register via [`CHECK_TRIGGER_REGWEN`](../src/fuse_ctrl/doc/registers.md#check_trigger_regwen).
+
+Later on during the boot process, SW may also choose to block read access to the SW managed partitions via the associated partition lock registers, e.g. [`CREATOR_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#creator_sw_cfg_read_lock) or [`OWNER_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#owner_sw_cfg_read_lock).
+
+### Reset Considerations
+
+It is important to note that values in OTP **can be corrupted** if a reset occurs during a programming operation.
+This should be of minor concern for SW, however, since all partitions except for the LIFE_CYCLE partition are being provisioned in secure and controlled environments, and not in the field.
+The LIFE_CYCLE partition is the only partition that is modified in the field - but that partition is entirely owned by the life cycle controller and not by SW.
+
+### Programming Already Programmed Regions
+
+OTP words cannot be programmed twice, and doing so may damage the memory array.
+Hence the OTP controller performs a blank check and returns an error if a write operation is issued to an already programmed location.
+
+
+
+## Direct Access Interface
+
+OTP has to be programmed via the Direct Access Interface, which is comprised of the following CSRs:
+
+CSR Name                             | Description
+-------------------------------------|------------------------------------
+[`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | Low 32bit word to be written.
+[`DIRECT_ACCESS_WDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | High 32bit word to be written.
+[`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | Low 32bit word that has been read.
+[`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | High 32bit word that has been read.
+[`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address) | byte address for the access.
+[`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd)     | Command register to trigger a read or a write access.
+[`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen)  | Write protection register for DAI.
+
+See further below for a detailed Memory Map of the address space accessible via the DAI.
+
+### Readout Sequence
+
+A typical readout sequence looks as follows:
+
+1. Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
+2. Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
+Note that the address is aligned with the granule, meaning that either 2 or 3 LSBs of the address are ignored, depending on whether the access granule is 32 or 64bit.
+3. Trigger a read command by writing 0x1 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
+4. Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
+Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
+5. If the status register flags a DAI error, additional handling is required.
+6. If the region accessed has a 32bit access granule, the 32bit chunk of read data can be read from [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata).
+If the region accessed has a 64bit access granule, the 64bit chunk of read data can be read from the [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) and [`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) registers.
+7. Go back to 1. and repeat until all data has been read.
+
+The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
+
+### Programming Sequence
+
+A typical programming sequence looks as follows:
+
+1. Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
+2. If the region to be accessed has a 32bit access granule, place a 32bit chunk of data into [`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata).
+If the region to be accessed has a 64bit access granule, both the [`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) and [`DIRECT_ACCESS_WDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) registers have to be used.
+3. Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
+Note that the address is aligned with the granule, meaning that either 2 or 3 LSBs of the address are ignored, depending on whether the access granule is 32 or 64bit.
+4. Trigger a write command by writing 0x2 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
+5. Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
+Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
+6. If the status register flags a DAI error, additional handling is required.
+7. Go back to 1. and repeat until all data has been written.
+
+The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
+
+Note that SW is responsible for keeping track of already programmed OTP word locations during the provisioning phase.
+**It is imperative that SW does not write the same word location twice**, since this can lead to ECC inconsistencies, thereby potentially rendering the device useless.
+
+### Digest Calculation Sequence
+
+The hardware digest computation for the hardware and secret partitions can be triggered as follows:
+
+1. Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
+3. Write the partition base address to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
+4. Trigger a digest calculation command by writing 0x4 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
+5. Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
+Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
+6. If the status register flags a DAI error, additional handling is required.
+
+The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
+
+It should also be noted that the effect of locking a partition via the digest only takes effect **after** the next system reset.
+To prevent integrity check failures SW must therefore ensure that no more programming operations are issued to the affected partition after initiating the digest calculation sequence.
+
+
+
 # Caliptra SS Life Cycle Controller
 It is an overview of the architecture of the Life-Cycle Controller (LCC) Module for its use in the Caliptra Subsystem. The LCC is responsible for managing the life-cycle states of the system, ensuring secure transitions between states, and enforcing security policies.
 
@@ -194,52 +353,58 @@ The figure below shows the LCC state transition and Caliptra Subsystem enhanceme
 
 ## Caliptra Subsystem LCC State Definitions
 
-| **Name** 	| **Encoding** 	| **Description** |
-| :--------- 	| :--------- 	| :--------- 	 |
-| RAW | OTP | This is the default state of the OTP. During this state, no functions other than transition to TEST_UNLOCKED0 are available. The token authorizing the transition from RAW to TEST_UNLOCKED0 is a value that is secret global to all devices. This is known as the RAW_UNLOCK token. |
-| TEST_LOCKED{N} | OTP | TEST_LOCKED{N} states have identical functionality to RAW state and serve as a way for the Silicon Creator to protect devices in transit. It is not possible to provision OTP root secrets during this state. This is enforced by hardware and is implementation defined. To progress from a TEST_LOCKED state to another TEST_UNLOCKED state, a TEST_UNLOCK token is required.|
-| TEST_UNLOCKED{N} | OTP | Transition from RAW state using OTP write. This state is used for manufacturing and production testing. During this state: uCTAPs (microcontroller TAPs) are enabled; Debug functions are enabled; DFT functions are enabled. **Note:** during this state it is not possible to provision specific OTP root secrets. This will be enforced by hardware. It is expected that during TEST_UNLOCKED0 the TEST_UNLOCK and TEST_EXIT tokens will be provisioned into OTP. Once provisioned, these tokens are no longer readable by software.|
-| PROD | OTP | Transition from TEST_UNLOCKED or TEST_LOCKED state via OTP writes. PROD is a mutually exclusive state to MANUF and PROD_END. To enter this state, a TEST_EXIT token is required. This state is used both for provisioning and mission mode. During this state: uCTAPs (microcontroller TAPs) are disabled; Debug functions are disabled; DFT functions are disabled; Caliptra Subsytem can grant SoC debug unlock flow if the conditions provided in “SoC Debug Flow and Architecture for Production Mode” section are satisfied. SoC debug unlock overwrites the signals and gives the following cases: uCTAPs (microcontroller TAPs) are enabled; Debug functions are enabled based on the defined debug policy; DFT functions are disabled |
-| PROD_END | OTP | This state is identical in functionality to PROD, except the device is never allowed to transition to RMA state. To enter this state, a TEST_EXIT token is required.|
-| MANUF | OTP | Transition from TEST_UNLOCKED state via OTP writes. This is a mutually exclusive state to PROD and PROD_END. To enter this state, a TEST_EXIT token is required. This state is used for developing provisioning and mission mode software. During this state: uCTAPs (microcontroller TAPs) are enabled conditionally (uCTAP Unlock Token Routine section); Debug functions are enabled; DFT functions are disabled |
-| RMA | OTP | Transition from TEST_UNLOCKED / PROD / MANUF via OTP write. It is not possible to reach this state from PROD_END. When transitioning from PROD or MANUF, an RMA_UNLOCK token is required. When transitioning from TEST_UNLOCKED, no RMA_UNLOCK token is required. During this state: uCTAPs (microcontroller TAPs) are enabled; Debug functions are enabled; DFT functions are enabled |
-| SCRAP | OTP | Transition from any manufacturing state via OTP write. During SCRAP state the device is completely dead. All functions, including CPU execution are disabled. The only exception is the TAP of the life cycle controller which is always accessible so that the device state can be read out. No owner consent is required to transition to SCRAP. Note also, SCRAP is meant as an EOL manufacturing state. Transition to this state is always purposeful and persistent, it is NOT part of the device’s native security countermeasure to transition to this state. |
-| INVALID | OTP | Invalid is any combination of OTP values that do not fall in the categories above. It is the “default” state of life cycle when no other conditions match. Functionally, INVALID is identical to SCRAP in that no functions are allowed and no transitions are allowed. A user is not able to explicitly transition into INVALID (unlike SCRAP), instead, INVALID is meant to cover in-field corruptions, failures or active attacks.|
+| **Name** 	         | **Encoding** 	| **Description** |
+| :--------- 	      | :--------- 	   | :--------- 	   |
+| RAW                | FUSE            | This is the default state of the FUSE. During this state, no functions other than transition to TEST_UNLOCKED0 are available. The token authorizing the transition from RAW to TEST_UNLOCKED0 is a value that is secret global to all devices. This is known as the RAW_UNLOCK token. |
+| TEST_LOCKED{N}     |    FUSE         | TEST_LOCKED{N} states have identical functionality to RAW state and serve as a way for the Silicon Creator to protect devices in transit. It is not possible to provision FUSE root secrets during this state. This is enforced by hardware and is implementation defined. To progress from a TEST_LOCKED state to another TEST_UNLOCKED state, a TEST_UNLOCKED token is required.|
+| TEST_UNLOCKED{N}   | FUSE            | Transition from RAW state using token stored in FUSE. This state is used for manufacturing and production testing. During this state: CLTAP (chip level TAPs) is enabled; Debug functions are enabled; DFT functions are enabled. It is expected that LCC tokens will be provisioned into FUSE during these states. Once provisioned, these tokens are no longer readable by software.|
+| MANUF              | FUSE            | Transition from TEST_UNLOCKED state using token stored in FUSE. This is a mutually exclusive state to PROD and PROD_END. To enter this state, MANUF_TOKEN is required. This state is used for developing provisioning and mission mode. In this state, UDS and Field Entropy FUSE partitions can be provisioned. During this state: CLTAP (chip level TAPs) is enabled; Debug functions are enabled; DFT functions are disabled |
+| PROD               | FUSE            | Transition from MANUF state using token stored in FUSE. PROD is a mutually exclusive state to MANUF and PROD_END. To enter this state, PROD_TOKEN is required. This state is used both for provisioning and mission mode. During this state: CLTAP is disabled; Debug functions are disabled; DFT functions are disabled; Caliptra Subsytem can grant SoC debug unlock flow if the conditions provided in “SoC Debug Flow and Architecture for Production Mode” section are satisfied. SoC debug unlock overwrites the signals and gives the following cases: CLTAP is enabled; Debug functions are enabled based on the defined debug policy; DFT is enabled but this DFT enable is called SOC_DFT_EN, which has less capabilities than DFT_EN granted in TEST_UNLOCKED. |
+| PROD_END           | FUSE            | This state is identical in functionality to PROD, except the device is never allowed to transition to RMA state. To enter this state, a PROD_END token is required. It also means that Caliptra-SS cannot enter debug mode anymore. Only transition to SCRAP mode is allowed.|
+| RMA                | FUSE            | Transition from TEST_UNLOCKED / PROD / MANUF using token stored in FUSE. It is not possible to reach this state from PROD_END. When transitioning from PROD or MANUF, an RMA_UNLOCK token is required. When transitioning from TEST_UNLOCKED, no RMA_UNLOCK token is required. During this state: CLTAP is enabled; Debug functions are enabled; DFT functions are enabled |
+| SCRAP              | FUSE            | Transition from any state. During SCRAP state the device is completely dead. All functions, including CPU execution are disabled. The only exception is the TAP of the life cycle controller which is always accessible so that the device state can be read out. No owner consent is required to transition to SCRAP. Note also, SCRAP is meant as an EOL manufacturing state. Transition to this state is always purposeful and persistent, it is NOT part of the device’s native security countermeasure to transition to this state.|
+| INVALID            | FUSE            | Invalid is any combination of FUSE values that do not fall in the categories above. It is the “default” state of life cycle when no other conditions match. Functionally, INVALID is identical to SCRAP in that no functions are allowed and no transitions are allowed. A user is not able to explicitly transition into INVALID (unlike SCRAP), instead, INVALID is meant to cover in-field corruptions, failures or active attacks.|
+
+**Note**
+* The LCC performs state transitions in a forward-only manner. It begins in the RAW state and follows the sequence: TEST_UNLOCKED and TEST_LOCKED, then MANUF, then PROD, and finally either PROD_END or RMA. After transitioning to TEST_UNLOCKED, the LCC can branch to any of the following states: MANUF, PROD, PROD_END, or RMA. However, once the LCC transitions to PROD, PROD_END, or RMA, it cannot return to the MANUF state. Additionally, note that the LCC cannot branch to RMA from PROD_END.
+
 
 ## DFT & DFD LC States
 
-In addition to the decoding signals of the Life-Cycle Controller (LCC) proposed in the OpenTitan open-source silicon Root of Trust (RoT) project, we introduce a new signal: Caliptra_SS_uCTAP_HW_DEBUG_EN  and renamed HW_DEBUG_EN  as SOC_HW_DEBUG_EN. These signals are critical for managing the test and debug interfaces within the Caliptra Subsystem, as well as at the broader SoC level.
+In addition to the decoding signals of the Life-Cycle Controller (LCC) proposed in the OpenTitan open-source silicon Root of Trust (RoT) project, we introduce new signals: SOC_DFT_EN as SOC_HW_DEBUG_EN. These signals are critical for managing the test and debug interfaces within the Caliptra Subsystem, as well as at the broader SoC level.
 
-While this architecture document explains how the Caliptra Subsystem provides DFT and DFD mechanisms through the DFT_EN, SOC_HW_DEBUG_EN, and Caliptra_SS_uCTAP_HW_DEBUG_EN signals, it also offers greater flexibility by supporting various SoC debugging options through the broader SoC debug infrastructure. The architecture does not constrain the SoC’s flexibility with the core security states of Caliptra and LCC states.
+While this architecture document explains how the Caliptra Subsystem provides DFT and DFD mechanisms through the DFT_EN, SOC_HW_DEBUG_EN, and SOC_DFT_EN signals, it also offers greater flexibility by supporting various SoC debugging options through the broader SoC debug infrastructure. The architecture does not constrain the SoC’s flexibility with the core security states of Caliptra and LCC states.
 We establish a set of clear guidelines for how the Caliptra Subsystem transitions through the unprovisioned, manufacturing, and production phases, ensuring security. However, this architecture remains flexible, offering multiple levels of debugging options in production debug mode. Level 0 is designated for debugging the Caliptra Subsystem itself, while higher levels can be interpreted and customized by the SoC designer to implement additional debugging features. For instance, if the SoC designer wishes to include extra DFT and DFD capabilities, they can utilize one of the debug levels provided during production debug mode and expand its functionality accordingly. For more details, see “SoC Debug Flow and Architecture for Production Mode” Section and “Masking Logic for Debugging Features in Production Debug Mode” Section.
 
-The DFT_EN signal is designed to] control the scan capabilities of both the Caliptra Subsystem and the SoC. When DFT_EN is set to HIGH, it enables the scan chains and other Design for Testability (DFT) features across the system, allowing for thorough testing of the chip. This signal is already provided by the existing LCC module, ensuring compatibility with current test structures. However, the SoC integrator has the flexibility to assign additional functionality to one of the debugging options provided by the debug level signals during production debug mode. For example, at the SoC level, an integrator may choose to use one of these levels to enable broader SoC DFT features, allowing for system-level testing while maintaining Caliptra's protection. Additionally, SoC can override DFT_EN and set it to HIGH by using the infrastructure defined in “Masking Logic for Debugging Features in Production Debug Mode” Section.
+The DFT_EN signal is designed to control the scan capabilities of both the Caliptra Subsystem and the SoC. When DFT_EN is set to HIGH, it enables the scan chains and other Design for Testability (DFT) features across the system, allowing for thorough testing of the chip. This signal is already provided by the existing LCC module, ensuring compatibility with current test structures. However, the SoC integrator has the flexibility to assign additional functionality to one of the debugging options provided by the debug level signals during production debug mode. For example, at the SoC level, an integrator may choose to use one of these levels to enable broader SoC DFT features, allowing for system-level testing while maintaining Caliptra's protection. To enable SoC DFT signal, SoC needs to set SOC_DFT_EN signal HIGH by using the infrastructure defined in “Masking Logic for Debugging Features in Production Debug Mode” Section. Note that SOC_DFT_EN has a different capabilities than DFT_EN signal. DFT_EN is contolled by LCC, while SOC_DFT_EN is controlled by MCI.
 
 The SOC_HW_DEBUG_EN signal is a new addition that governs the availability of the Chip-level TAP (CLTAP). CLTAP provides a hardware debug interface at the SoC level, and it is accessible when SOC_HW_DEBUG_EN is set to HIGH. For further details on how this signal integrates with the overall system, refer to the “TAP Pin Muxing” Section of this document.
 
 In the manufacturing phase, the Caliptra Subsystem asserts SOC_HW_DEBUG_EN high, with the signal being controlled by the LCC. In PROD mode, this signal is low. However, the SoC integrator has the flexibility to enable CLTAP during production debug mode by incorporating additional logic, such as an OR gate, to override the SOC_HW_DEBUG_EN signal, like DFT_EN. This architecture provides a mask register that allows SoC to program/configure this overriding mechanism at integration time or using MCU ROM. This allows the SoC to maintain control over hardware debug access while preserving the intended security protections in production.
 
-Finally, the Caliptra_SS_uCTAP_HW_DEBUG_EN signal is introduced to manage the microcontroller TAPs (uCTAPs) within the Caliptra subsystem. Although DFT_EN and SOC_HW_DEBUG_EN are directly controlled by LCC, Caliptra_SS_uCTAP_HW_DEBUG_EN is controlled by two conditions set by LCC and Caliptra. This document provides more details about these two conditions in uCTAP Unlock Token Routine. These TAPs are open before the development phase has been entered; and after that will be accessible during the LCC’s MANUF and PROD states, only if the token authentication is successful. The following table shows DFT_EN, SOC_HW_DEBUG_EN, and Caliptra_SS_uCTAP_HW_DEBUG_EN positions based on the LCC’s states. 
 
 *Table: LCC State and State Decoder output ports*
-| **LCC State\Decoder Output** 	| **DFT_EN** 	| **SOC_HW_DEBUG_EN** 	| **Caliptra_SS_uCTAP_HW_DEBUG_EN** |
-| :--------- 			| :--------- 	| :--------- 	 	| :--------- 	 |
-| RAW 				| Low 		| Low 			| Low |
-| TEST_LOCKED 			| Low 		| Low 			| Low |
-| TEST_UNLOCKED 		| High 		| High 			| High |
-| MANUF* 			| Low 		| High 			| TOKEN - CONDITIONED** |
-| PROD* 			| TOKEN - CONDITIONED** | TOKEN - CONDITIONED** | TOKEN - CONDITIONED** |
-| PROD_END 			| Low 		| Low 			| Low | 
-| RMA 				| High 		| High 			| High | 
-| SCRAP 			| Low 		| Low 			| Low |
-| INVALID 			| Low 		| Low 			| Low |
-| POST_TRANSITION 		| Low 		| Low 			| Low |
+## LCC State and State Decoder Output Ports
+| **LCC State\Decoder Output** 	| **DFT_EN** 	         | **SOC_DFT_EN** 	      | **SOC_HW_DEBUG_EN** 	|
+| :--------- 			            | :--------- 	         | :--------- 	 	      | :--------- 	 	      |
+| RAW 				               | Low 		            | Low 			         | Low 			         |
+| TEST_LOCKED 			            | Low 		            | Low 			         | Low 			         |
+| TEST_UNLOCKED 		            | High 		            | High 			         | High 			         |
+| MANUF* 			               | Low 		            | Low 			         | High 			         |
+| PROD* 			                  | Low 		            | TOKEN - CONDITIONED** | TOKEN - CONDITIONED** |
+| PROD_END 			               | Low 		            | Low 			         | Low 			         |
+| RMA 				               | High***	            | High 			         | High 			         | 
+| SCRAP 			                  | Low 		            | Low 			         | Low 			         |
+| INVALID 			               | Low 		            | Low 			         | Low 			         |
+| POST_TRANSITION 	            | Low 		            | Low 			         | Low 			         |
 
 
 
-*: Caliptra can enter debug mode and update these signals even though LCC is in MANUF or PROD states. This case is explained in “How does Caliptra enable uCTAP_UNLOCK?” and “SoC Debug Flow and Architecture for Production Mode”.
+*: Caliptra can enter debug mode and update these signals even though LCC is in MANUF or PROD states. This case is explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”.
 
-**: Caliptra_SS_uCTAP_HW_DEBUG_EN can be high if Caliptra SS grants debug mode (either manufacturing or production). This case is explained in “How does Caliptra enable uCTAP_UNLOCK?” and “SoC Debug Flow and Architecture for Production Mode”. SOC_HW_DEBUG_EN and DEF_EN can be also set high to open CLTAP and enable DFT by SoC design support. However, this condition also needs to go through the flow described in “SoC Debug Flow and Architecture for Production Mode”.
+**: SOC_DFT_EN and SOC_HW_DEBUG_EN can be high if Caliptra SS grants debug mode (either manufacturing or production). This case is explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”. SOC_HW_DEBUG_EN is set high to open CLTAP and SOC_DFT_EN enables DFT by SoC design support. However, this condition also needs to go through the flow described in “SoC Debug Flow and Architecture for Production Mode”. Caliptra Subsystem state should be set to either the manufacturing mode debug unlock or Level 0 of the production debug unlock.
+
+***: RMA state enables DFT_EN but Caliptra-Core enters the debug mode when LCC enters RMA state. Thus, Caliptra-Core clears UDS and Field Entropy secrets. 
 
 ## TAP Pin Muxing
 The LCC includes a TAP interface, which operates on its own dedicated clock and is used for injecting tokens into the LCC. Notably, the LCC TAP interface remains accessible in all life cycle states, providing a consistent entry point for test and debug operations. This TAP interface can be driven by either the TAP GPIO pins or internal chip-level wires, depending on the system's current configuration.
@@ -250,31 +415,18 @@ The LCC includes a TAP interface, which operates on its own dedicated clock and 
 
 SOC logic incorporates the TAP pin muxing to provide the integration support and manage the connection between the TAP GPIO pins and the Chip-Level TAP (CLTAP). As illustrated in figure above, this muxing logic determines the source that drives the LCC TAP interface. The selection between these two sources is controlled by the SOC_HW_DEBUG_EN signal. When SOC_HW_DEBUG_EN is set to high, control is handed over to the CLTAP, allowing for chip-level debug access through the TAP GPIO pins. Conversely, when SOC_HW_DEBUG_EN is low, the TAP GPIO pins take control, enabling external access to the LCC TAP interface.
 
-**_LCC State and State Decoder Output Ports Table_** (**TODO:** Add link) outlines the specific LCC states that enable the SOC_HW_DEBUG_EN signal. These states include TEST_UNLOCK, MANUF, PRDO, and RMA. In these states, the LCC allows internal chip-level debug access via CLTAP, thereby facilitating advanced debugging capabilities. This muxing approach ensures that the TAP interface is appropriately secured, and that access is granted only under specific conditions, aligning with the overall security and functional requirements of the Caliptra Subsystem.
+**[LCC State and State Decoder Output Ports Table](#lcc-state-and-state-decoder-output-ports)**  outlines the specific LCC states that enable the SOC_HW_DEBUG_EN signal. These states include TEST_UNLOCK, MANUF, PROD (debug unlocked version only), and RMA. In these states, the LCC allows internal chip-level debug access via CLTAP, thereby facilitating advanced debugging capabilities. This muxing approach ensures that the TAP interface is appropriately secured, and that access is granted only under specific conditions, aligning with the overall security and functional requirements of the Caliptra Subsystem. 
+**Note:** It is important to note that CLTAP provides access to the TAP interfaces of the LCC, MCU, or Caliptra-core. This functionality is managed by SoC logic, not by Caliptra-SS. Consequently, the SoC integration effort should ideally include an additional mux after CTAP to route the connection to one of the following: the LCC TAP, MCU TAP, or Caliptra-core TAP.
 
-TAP pin muxing also enables routing to Caliptra TAP. This selection happens when DEBUG_INTENT_STRAP is high. This selection is done through the GPIO and indicates that Caliptra will enter debug mode if the secret tokens are provided. Caliptra Subsystem has two debug modes: manufacturing debug and production debug. Entering these debug flows are explained in the following sections: 
-	* **“How does Caliptra enable uCTAP_UNLOCK?”** *TODO:** Add links
-	* **“SoC Debug Flow and Architecture for Production Mode” and “Masking Logic for Debugging Features in Production Debug Mode”**. **TODO:** Add links
-  
+TAP pin muxing also enables routing to Caliptra TAP. This selection happens when DEBUG_INTENT_STRAP is high. This selection is done through the GPIO and indicates that Caliptra will enter debug mode if the secret tokens are provided. Caliptra Subsystem has two debug modes: manufacturing debug and production debug. Entering these debug flows are explained in the following sections:
+**[How does Caliptra Subsystem enable manufacturing debug mode?](#how-does-caliptra-subsystem-enable-manufacturing-debug-mode), 
+[SoC Debug Flow and Architecture for Production Mode](#soc-debug-flow-and-architecture-for-production-mode) and
+[Masking Logic for Debugging Features in Production Debug Mode](#masking-logic-for-debugging-features-in-production-debug-mode)**
+
+
 **Note:** The Caliptra TAP can run exact flow with AXI, targeting the mailbox and SOC provides that interface to platform.
 
-## Manufacturing Debug Unlock Hardware Logic
-
-The figure below illustrates the logic used to control the Caliptra_SS_uCTAP_HW_DEBUG_EN signal, which is a critical part of enabling the microcontroller TAP (uCTAP) debugging interface in the Caliptra Subsystem. This diagram shows an illustration of how uCTAP opens. However, the functionality of this logic will be implemented in MCI. The Caliptra_SS_uCTAP_HW_DEBUG_EN signal is governed by two primary inputs: SOC_HW_DEBUG_EN and a control signal driven by Caliptra. This signal opens uCTAP for MCU and Caliptra.
-
-*Figure: Caliptra Subsystem Manuf Debug Unlock Hardware Logic*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Manuf-Debug-Unlock.png)
-**Note:** This qualification logic is implemented within MCI block
-
-To assert Caliptra_SS_uCTAP_HW_DEBUG_EN high, the SOC_HW_DEBUG_EN signal must always be high, except SOC production debug mode case (see “SoC Debug Flow and Architecture for Production Mode” Section). This ensures that the uCTAP interface is only enabled when the system is in a secure and authorized state. According to the figure, SOC_HW_DEBUG_EN is derived from the LCC states. Specifically, SOC_HW_DEBUG_EN is high when the LCC is in the TEST_UNLOCKED, MANUF, or RMA states. These are the only states where hardware debugging via the uCTAP interface is permitted. However, SOC_HW_DEBUG_EN can be set high by SoC during the production debug mode (see “Masking Logic for Debugging Features in Production Debug Mode”).
-
-When the LCC is in the MANUF state, an additional condition is required for Caliptra_SS_uCTAP_HW_DEBUG_EN to be asserted high. In this case, Caliptra must actively enable the signal, which is indicated by the uCTAP_UNLOCK control line. This allows for controlled and conditional access to the uCTAP interface during the development phase, ensuring that debugging is only allowed when it is explicitly permitted by the system's security policies.
-
-The AND gate in the figure symbolizes this logic, showing that Caliptra_SS_uCTAP_HW_DEBUG_EN can only be high if both SOC_HW_DEBUG_EN is high, and the specific conditions driven by Caliptra are met. This design ensures that the uCTAP interface is securely controlled, limiting access to authorized lifecycle states and further protected by additional checks during the development phase.
-
-**Note:** This architecture provides an extension on LCC state with SoC production debug logic. This logic is configured to provide an additional layer to unlock debugging in the production phase. This logic can override Caliptra_SS_uCTAP_HW_DEBUG_EN and sets this signal high (see “SoC Debug Flow and Architecture for Production Mode” Section and “Masking Logic for Debugging Features in Production Debug Mode”).
-
-### How does Caliptra enable uCTAP_UNLOCK for manufacturing debug mode?
+### How does Caliptra Subsystem enable manufacturing debug mode?
 
 The following figure illustrates how Caliptra Subsystem enters the manufacturing debug mode. To enter this mode, LCC should be in MANUF state. While being in manufacturing debug mode, LCC does not change its state from MANUF to any other state. During the MANUF state, Caliptra Subsystem can enable manufacturing debug flow by following steps:
 
@@ -297,50 +449,55 @@ The following figure illustrates how Caliptra Subsystem enters the manufacturing
 **Note:** The manufacturing debug flow relies on the hash comparison hardness rather than an authentication check provided with an asymmetric cryptography scheme. However, the following sections show that production debug flow relies on asymmetric cryptography scheme hardness. The reason behind this choice is that the manufacturing phase is the early phase of the delivery, and this phase is entered in an authorized entity’s facility. Therefore, this architecture keeps the manufacturing phase simpler.
 
 The pseudo code given below explains the details of the token authentication.
+```c
+{
+   // Step 1: Assert BootFSMBrk to Caliptra and Debug intent strap GPIO pin
+   Assert DEBUG_INTENT_STRAP  // Caliptra HW erases the secret assets and opens Caliptra TAP.
 
-**// Step 1: Assert BootFSMBrk to Caliptra and Debug intent strap GPIO pin**
-Assert DEBUG_INTENT_STRAP  // Caliptra HW erases the secret assets and open Caliptra TAP.
+   Assert BootFSMBrk()        // Caliptra HW is paused
 
-Assert BootFSMBrk() // Caliptra HW is paused
+   // Step 2: Request MANUF_DEBUG_UNLOCK_REQ service
+   WriteToRegister(DEBUG_SERVICE_REQ_MANUF_DEBUG_UNLOCK, 1)  // TAP writes to Caliptra HW
 
-**// Step 2: Request MANUF_DEBUG_UNLOCK_REQ service**
-WriteToRegister(DEBUG_SERVICE_REQ_MANUF_DEBUG_UNLOCK, 1)  // TAP write to Caliptra HW
+   // Step 3: Write to Boot Continue to proceed with the boot sequence
+   WriteToRegister(BOOT_CONTINUE, 1)  // Caliptra ROM continues with GO command via TAP
 
-**// Step 3: Write to Boot Continue to proceed with the boot sequence**
-WriteToRegister(BOOT_CONTINUE, 1)  // Caliptra ROM continues by GO command of TAP
+   // Step 4: TAP reads waiting for Caliptra mailbox lock
+   ReadRegister(CALIPTRA_MAILBOX_STS)
 
-**// Step 4: TAP reads waiting for Caliptra mailbox lock**
-ReadRegister(CALIPTRA MAILBOX STS)
+   // Step 5: TAP writes to Caliptra mailbox with payload & command
+   MANUF_DEBUG_token_via_Caliptra_TAP = ReceiveTokenViaTAP()  // Token injected via Caliptra TAP
 
-**// Step 5: TAP Write to Caliptra mailbox with payload & command**
-MANUF_DEBUG_token_via_Caliptra_TAP = ReceiveTokenViaTAP() // Token injected through Caliptra TAP
+   // Step 6: Caliptra ROM indicates that the authentication process is in progress
+   if (LCC_state == MANUF) {
+      WriteToRegister(MANUF_DEBUG_UNLOCK_IN_PROGRESS, 1)  // Indicated by Caliptra ROM
 
-**// Step 6: Caliptra ROM indicates that the authentication process is in progress**
-if (LCC_state == MANUF) {
-	WriteToRegister(MANUF_DEBUG_UNLOCK_IN_PROGRESS, 1)  // by Caliptra ROM
-/*        	TOKEN FORMAT =  (64’h0 || 128-bit raw data || 64’h0)
-The raw data is padded with 64-bit zeros by adding suffix and prefix by Caliptra ROM.
-256-bit nonce is generated and concatenated with padded token  by Caliptra ROM.*/
-WriteToRegister(SHA_512_API_Reg, (token || nonce_0)) // Store token in the pre-message register
+      /* TOKEN FORMAT = (64’h0 || 128-bit raw data || 64’h0)
+         Raw data is padded with 64-bit zeros (prefix and suffix) by Caliptra ROM. */
+      WriteToRegister(SHA_512_API_Reg, (token || nonce_0))  // Store token in the pre-message register
 
-**// Step 7: Caliptra ROM.performs hashing and token verification**
-ROM_ExecAlgorithm() {
-expected_token = SHA_512(SHA_512_API_Reg) // Hash-based token calculation by Caliptra ROM.
-fuse_value = ReadFromFUSE() // Read secret value from FUSE by Caliptra ROM.
- // Hash-based token calculation   by Caliptra ROM.   
-stored_token = SHA_512(64’h0 || fuse_value || 64’h0  || nonce_0) 
-	if (expected_token == stored_token) {
-	WriteToRegister(MANUF_DEBUG_UNLOCK_SUCCESS, 1)  // set by Caliptra ROM
-	WriteToRegister(MANUF_DEBUG_UNLOCK_IN_PROGRESS, 0)  // set by Caliptra ROM
-    	WriteToRegister(uCTAP_UNLOCK, 1) // If tokens do match, unlock uCTAP by Caliptra ROM
-	} else {
-	WriteToRegister(MANUF_DEBUG_UNLOCK_FAILURE, 1)  // set by Caliptra ROM
-	WriteToRegister(MANUF_DEBUG_UNLOCK_IN_PROGRESS, 0)  // set by Caliptra ROM
-    	WriteToRegister(uCTAP_UNLOCK, 0) // If tokens don't match, do not unlock uCTAP by Caliptra ROM
-	}
- }
+      // Step 7: Caliptra ROM performs hashing and token verification
+      ROM_ExecAlgorithm() {
+         expected_token = SHA_512(SHA_512_API_Reg)        // Calculate token hash via Caliptra ROM
+         fuse_value = ReadFromFUSE()                     // Read secret value from FUSE
+
+         // Calculate stored token hash via Caliptra ROM
+         stored_token = SHA_512(64’h0 || fuse_value || 64’h0 || nonce_0)
+
+         if (expected_token == stored_token) {
+               WriteToRegister(MANUF_DEBUG_UNLOCK_SUCCESS, 1)      // Success: set by Caliptra ROM
+               WriteToRegister(MANUF_DEBUG_UNLOCK_IN_PROGRESS, 0)  // Clear in-progress flag
+               WriteToRegister(uCTAP_UNLOCK, 1)                   // Unlock uCTAP
+         } else {
+               WriteToRegister(MANUF_DEBUG_UNLOCK_FAILURE, 1)      // Failure: set by Caliptra ROM
+               WriteToRegister(MANUF_DEBUG_UNLOCK_IN_PROGRESS, 0)  // Clear in-progress flag
+               WriteToRegister(uCTAP_UNLOCK, 0)                   // Do not unlock uCTAP
+         }
+      }
+   }
 }
-
+```
+<!--Emre: update the pseudocode visibility-->  
 ## Production Debug Unlock Architecture
 
 The Caliptra Subsystem includes SoC debugger logic that supports Caliptra’s production debug mode. This debugger logic extends the capabilities of the Lifecycle Controller (LCC) by providing a production debug mode architecture that the LCC does not inherently support, except in the RMA state. This architecture manages the initiation and handling of the production debug mode separately from the LCC's lifecycle states.
@@ -388,8 +545,8 @@ This flow establishes a secure and controlled process for entering Caliptra’s 
 * Caliptra ROM writes CALIPTRA_SS_SOC_DEBUG_UNLOCK_LEVEL register, which will be wired to the specific debug enable signal. This signal is part of an N-wide signal that is mapped to the payload encoding received during the debug request. N is defined by NUM_OF_ DEBUG_AUTH_PK_HASHES. The default version of N is 8. The payload encoding can either be one-hot encoded or a general encoded format, and this signal is passed to the SoC to allow it to make the final decision about the level of debug access that should be granted. In Caliptra’s subsystem-specific implementation, the logic is configured to handle one-hot encoding for these 8 bits. The level 0 bit is routed to both Caliptra and the MCU TAP interface, allowing them to unlock based on this level of debug access. This granular approach ensures that the system can selectively unlock different levels of debugging capability, depending on the payload and the authorization level provided by the debugger.
 
 ## Masking Logic for Debugging Features in Production Debug Mode (MCI)
-In the production debug mode, the SoC can enable certain debugging features—such as DFT_EN, SOC_HW_DEBUG_EN, and Caliptra_SS_uCTAP_HW_DEBUG_EN—using a masking mechanism implemented within the Manufacturer Control Interface (MCI). This masking infrastructure allows the SoC to selectively control debug features that are normally gated by Caliptra’s internal signals. The masking logic functions as a set of registers, implemented in the MCI, that can be written by the SoC to override or enable specific debugging functionalities in production debug mode.
-The masking registers in the MCI act as an OR gate with the existing debug signals. For instance, if DFT_EN is controlled by Caliptra, the SoC can assert the corresponding mask register to enable Design for Test (DFT) capabilities in the SoC, even if Caliptra has not explicitly enabled it. Similarly, the SOC_HW_DEBUG_EN and Caliptra_SS_uCTAP_HW_DEBUG_EN signals can be masked through the MCI registers, giving the SoC the flexibility to unlock TAP interfaces and provide the required debugging in production.
+In the production debug mode, the SoC can enable certain debugging features—such as DFT_EN and SOC_HW_DEBUG_EN—using a masking mechanism implemented within the Manufacturer Control Interface (MCI). This masking infrastructure allows the SoC to selectively control debug features that are normally gated by Caliptra’s internal signals. The masking logic functions as a set of registers, implemented in the MCI, that can be written by the SoC to override or enable specific debugging functionalities in production debug mode.
+The masking registers in the MCI act as an OR gate with the existing debug signals. For instance, if DFT_EN is controlled by Caliptra, the SoC can assert the corresponding mask register to enable Design for Test (DFT) capabilities in the SoC, even if Caliptra has not explicitly enabled it. Similarly, the SOC_HW_DEBUG_EN signal can be masked through the MCI registers, giving the SoC the flexibility to unlock TAP interfaces and provide the required debugging in production.
 
 *Figure: Caliptra Subsystem Infrastructure for SOC flexibility to override various debug signals*
 ![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/SOC-Debug-Unlock-Qual.png)
@@ -434,8 +591,8 @@ The private keys corresponding to these public keys are stored securely on an ex
 * Having SHA_512 infrastructure
 
 ### MCU and MCI Requirements
-* Masking registers to override  DFT_EN, SOC_HW_DEBUG_EN, and Caliptra_SS_uCTAP_HW_DEBUG_EN
-* uCTAP Unlock logic
+* Masking registers to override  DFT_EN, SOC_HW_DEBUG_EN
+* CLTAP Unlock logic
 * Caliptra Subsystem’s Boot/Reset Sequencer signals for LCC’s power manager interface
 * MCU ROM reading flow for hashed public key and allocate to registers implemented at “SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET” with "SS_NUM_OF_DEBUG_AUTH_PK_HASHES" of PK hashes
 
@@ -450,44 +607,50 @@ Caliptra Core has five security states as given with the figure below (Copied fr
 ![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/Caliptra_security_states.png)
 
 This translation is essential for ensuring that the system behaves correctly according to its current lifecycle stage, whether it is in a development phase, production, or end-of-life states.
-The LCC provides specific decoding signals—DFT_EN, SOC_HW_DEBUG_EN, and Caliptra_SS_uCTAP_HW_DEBUG_EN—that accommodates the debug capabilities and security states of the Caliptra Core. Depending on the values of these signals, the Caliptra Core transitions between different security states as follows:
+The LCC provides specific decoding signals—DFT_EN, SOC_DFT_EN, SOC_HW_DEBUG_EN—that accommodates the debug capabilities and security states of the Caliptra Core. Depending on the values of these signals, the Caliptra Core transitions between different security states as follows:
 
-**Non-Debug Mode:** This state is enforced when the LCC is in RAW, TEST_LOCKED, SCRAP, INVALID, or POST_TRANSITION states. In these states, the DFT_EN, SOC_HW_DEBUG_EN, and Caliptra_SS_uCTAP_HW_DEBUG_EN signals are all low, ensuring that no debug functionality is available. Caliptra remains in a secure, non-debug state, with no access to debugging interfaces.
+**Non-Debug Mode:** This state is enforced when the LCC is in RAW, TEST_LOCKED, SCRAP, INVALID, or POST_TRANSITION states. In these states, the DFT_EN, SOC_DFT_EN, SOC_HW_DEBUG_EN signals are all low, ensuring that no debug functionality is available. Caliptra remains in a secure, non-debug state, with no access to debugging interfaces.
 
-**Unprovisioned Debug Mode:** When the LCC is in the TEST_UNLOCKED state, the DFT_EN, SOC_HW_DEBUG_EN, and Caliptra_SS_uCTAP_HW_DEBUG_EN signals are all set high, enabling debug functionality. In this mode, the Caliptra Core allows extensive debugging capabilities, which is typically used during early development and bring-up phases.
+**Unprovisioned Debug Mode:** When the LCC is in the TEST_UNLOCKED state, the DFT_EN, SOC_DFT_EN, SOC_HW_DEBUG_EN signals are all set high, enabling debug functionality. In this mode, the Caliptra Core allows extensive debugging capabilities, which is typically used during early development and bring-up phases.
 
-**Manufacturing Non-Debug Mode:** This state occurs when the LCC is in the MANUF state, with SOC_HW_DEBUG_EN high and Caliptra_SS_uCTAP_HW_DEBUG_EN low. In this state, the secrets have been programmed into the system, and the Caliptra can generate CSR (Certificate Signing Request) upon request. However, it remains in a secure, non-debug mode to prevent reading secrets through the debugging interfaces.
+**Manufacturing Non-Debug Mode:** This state occurs when the LCC is in the MANUF state, with SOC_HW_DEBUG_EN high and DFT_EN and  SOC_DFT_EN low. In this state, the secrets have been programmed into the system, and the Caliptra can generate CSR (Certificate Signing Request) upon request. However, it remains in a secure, non-debug mode to prevent reading secrets through the debugging interfaces.
 
-**Manufacturing Debug Mode:** Also occurring in the MANUF state, this mode is enabled when both SOC_HW_DEBUG_EN and Caliptra_SS_uCTAP_HW_DEBUG_EN are high. Here, the Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments.
+**Manufacturing Debug Mode:** Also occurring in the MANUF state, this mode is enabled when SOC_HW_DEBUG_EN is high. Here, the Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. In this state, DFT_EN is low. However, it is important to note that it is up to SoC integrator if there is a need to enable DFT_EN with another set of mask register since LCC state is reflected to SoC. 
 
-**Production Non-Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with all debug signals (DFT_EN, SOC_HW_DEBUG_EN, and Caliptra_SS_uCTAP_HW_DEBUG_EN) set to low. The Caliptra Core operates in a secure mode with no debug access, suitable for fully deployed production environments.
+**Production Non-Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with all debug signals (DFT_EN, SOC_HW_DEBUG_EN) set to low. The Caliptra Core operates in a secure mode with no debug access, suitable for fully deployed production environments.
 
-**Production Debug Mode:** This state is active when the LCC is in the PROD state, with debug DFT_EN, SOC_HW_DEBUG_EN set to low, and Caliptra_SS_uCTAP_HW_DEBUG_EN is high. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments.
+**Production Debug Mode:** This state is active when the LCC is in the PROD, with debug DFT_EN, SOC_HW_DEBUG_EN set to low. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. However, SOC_DFT_EN can be set high and CLTAP can be open if MCI masking logic is used.
 
-**Production Debug Mode in RMA:** In the RMA state, all debug signals are set high, allowing full debugging access. This state is typically used for end-of-life scenarios where detailed inspection of the system's operation is required. However, the LCC is not standalone enough to put Caliptra into production debug mode. Steps described in SoC Debug Flow and Architecture for Production Mode Section should be followed.
+**Production Debug Mode in RMA:** In the RMA state, all debug signals are set high, allowing full debugging access. This state is typically used for end-of-life scenarios where detailed inspection of the system's operation is required.
 
 The table below summarizes the relationship between the LCC state, the decoder output signals, and the resulting Caliptra “Core” security state:
 
 *Table: LCC state translation to Caliptra "Core" security states*
 
-| **LCC State vs Decoder Output** 	| **DFT_EN** 	| **SOC_HW_DEBUG_EN** 	| **Caliptra_SS_uCTAP_HW_DEBUG_EN** 	| **Caliptra “Core” Security States** |
-| :--------- 	      			| :--------- 	| :--------- 	      	| :---------  				| :--------- |
-| RAW 					| Low 		| Low 			|  Low 					| Non-Debug |
-| TEST_LOCKED 				| Low 		| Low 			|  Low 					| Non-Debug |
-| TEST_UNLOCKED  			| High  	| High	 		|  High 				| Unprovisioned Debug |
-| MANUF 				| Low 		| High 			|  Low 					| Manuf Non-Debug |
-| MANUF* 				| Low 		| High 			|  High 				| Manuf Debug |
-| PROD 					| Low 		| Low 			|  Low 					| Prod Non-Debug |
-| PROD* 				| Low** 	| High** 		|  High 				| Prod Debug |
-| PROD_END 				| Low 		| Low 			|  Low 					| Prod Non-Debug |
-| RMA 					| High 		| High 			|  High					| Prod Debug |
-| SCRAP 				| Low 		| Low 			|  Low 					| Non-Debug |
-| INVALID 				| Low 		| Low 			|  Low 					| Non-Debug |
-| POST_TRANSITION 			| Low 		| Low 			|  Low 					| Prod Non-Debug |
+| **LCC State vs Decoder Output** 	| **DFT_EN** 	| **SOC_DFT_EN** 	| **SOC_HW_DEBUG_EN**   | **Caliptra “Core” Security States**  |
+| :--------- 	      			      | :--------- 	| :--------- 	   | :--------- 	         | :---------                           |
+| RAW 					               | Low 		   | Low 		      | Low 			         | Non-Debug                            |
+| TEST_LOCKED 				            | Low 		   | Low 		      | Low 			         | Non-Debug                            |
+| TEST_UNLOCKED  			            | High  	      | High  	         | High	 		         | Unprovisioned Debug                  |
+| MANUF 				                  | Low 		   | Low 		      | High 			         | Manuf Non-Debug                      |
+| MANUF* 				               | Low 		   | Low 		      | High 			         | Manuf Debug                          |
+| PROD 					               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
+| PROD* 				                  | Low 	      | High**          | High** 		         | Prod Debug                           |
+| PROD_END 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
+| RMA 					               | High 		   | High 		      | High 			         | Prod Debug                           |
+| SCRAP 				                  | Low 		   | Low 		      | Low 			         | Non-Debug                            |
+| INVALID 				               | Low 		   | Low 		      | Low 			         | Non-Debug                            |
 
 **Note:** In RAW, TEST_LOCKED, SCRAP and INVALID states, Caliptra “Core” is not brought out of reset.
-*: These states are Caliptra SS’s extension to LCC. Although the LCC is in either MANUF or PROD states, Caliptra core can grant debug mode through the logics explained in “How does Caliptra enable uCTAP_UNLOCK?” and “SoC Debug Flow and Architecture for Production Mode”. 
+*: These states are Caliptra SS’s extension to LCC. Although the LCC is in either MANUF or PROD states, Caliptra core can grant debug mode through the logics explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”. 
 **: SOC_HW_DEBUG_EN and DFT_EN can be overridden by SoC support in PROD state.
+
+## Exception: Non-Volatile Debugging Infrastructure and Initial RAW State Operations
+The Caliptra Subsystem features a non-volatile debugging infrastructure that allows the SoC integrator to utilize a dedicated SRAM for early-stage debugging during the VolatileUnlock state. This SRAM provides a means to store executable content for the MCU, enabling early manufacturing debug operations.
+
+It is important to note that the VolatileUnlock state is not a standard LCC state but rather a temporary state. Unlike other LCC states, the LCC can transition to this state without requiring a power cycle, provided the necessary global VolatileUnlock token is passed. This token is unique in that it is not stored in the FUSE partition but is instead a global netlist secret.
+
+Once in the VolatileUnlock state, the MCU can execute instructions stored in the SRAM, which can be initialized through a backdoor mechanism. This capability allows for basic FUSE tests and calibration operations during early debugging. However, the VolatileUnlock state is inherently unstable and temporary—if a reset is applied or the Caliptra Subsystem undergoes a power cycle, the LCC will return to the RAW state.
 
 ## SOC LCC Interface usage & requirements
 
@@ -495,11 +658,9 @@ The interaction between the SoC and the LCC within the Caliptra Subsystem is piv
 
 **SOC_HW_DEBUG_EN Utilization:** The SOC_HW_DEBUG_EN signal plays a crucial role in controlling access to the Chip-Level TAP (CLTAP). When SOC_HW_DEBUG_EN is asserted high, it enables the exposure of registers to the TAP interface that are deemed secure for access during debugging. This is particularly important when CLTAP is open, as it allows authorized debugging operations while ensuring that sensitive or secure information remains protected.
 
-**uController TAPs Debug Access:** For security reasons, SoCs must restrict access to their uCTAPs. These TAPs should only be opened for debugging when the Caliptra_SS_uCTAP_HW_DEBUG_EN signal, driven by the Caliptra, is set high. This ensures that debug access is only permitted under controlled conditions, typically during development or when specific secure transitions are in place.
-
 **LCC Outputs for Security/Debug Purposes:** Beyond the primary debug controls, all other LCC outputs, as listed in the signal table below, are available for use by the SoC for any security or debugging purposes. These outputs provide the SoC with additional control signals that can be leveraged to enhance system security, monitor debug operations, or implement custom security features.
 
-**Integration with Clock/Voltage Monitoring Logic:** If the SoC includes clock or voltage monitoring logic, it is recommended that these components be connected to the LCC's alert handling interface. By integrating with the LCC’s alert system, the SoC can ensure that any detected anomalies, such as voltage fluctuations or clock inconsistencies, trigger appropriate secure transitions as defined in [this document](https://opentitan.org/book/hw/ip/lc_ctrl/doc/theory_of_operation.html). This connection enhances the overall security posture by enabling the LCC to respond dynamically to potential threats or system irregularities.
+**Integration with Clock/Voltage Monitoring Logic:** If the SoC includes clock or voltage monitoring logic, it is recommended that these components be connected to the LCC's escalation interface. By integrating with the LCC, the SoC can ensure that any detected anomalies, such as voltage fluctuations or clock inconsistencies, trigger appropriate secure transitions as defined in [this document](https://opentitan.org/book/hw/ip/lc_ctrl/doc/theory_of_operation.html). This connection enhances the overall security posture by enabling the LCC to respond dynamically to potential threats or system irregularities.
 
 These requirements ensure that the SoC and LCC work in tandem to maintain a secure environment, particularly during debugging and system monitoring. By adhering to these guidelines, the SoC can leverage the LCC’s capabilities to protect sensitive operations and enforce security policies across the system.
 
@@ -509,9 +670,9 @@ The LCC is designed to handle the various life-cycle states of the device, from 
 
 LCC has the same power up sequence as described in Life cycle controller documentation of [OpenTitan open-source silicon Root of Trust (RoT) project](https://opentitan.org/book/hw/ip/lc_ctrl/doc/theory_of_operation.html). After completing the power up sequence, the LCC enters the normal operation routine. During this phase, its output remains static unless specifically requested to change. The LCC accepts life-cycle transition change requests from its TAP interface (TAP Pin Muxing). There are two types of state transitions: (i) unconditional transitions and (ii) conditional transitions.
 
-For unconditional transitions, the LCC advances the state by requesting an OTP update to the FUSE controller. Once the programming is confirmed, the life cycle controller reports a success to the requesting agent and waits for the device to reboot.
+For unconditional transitions, the LCC advances the state by requesting an FUSE update to the FUSE controller. Once the programming is confirmed, the life cycle controller reports a success to the requesting agent and waits for the device to reboot.
 
-For conditional transitions, the LCC can also branch different states (RAW_UNLOCK, TEST_UNLOCK, TEST_EXIT, RMA_UNLOCK) based on the received token through the TAP interface and compared the received tokens against the ones stored in FUSE . This branching is called conditional transitions. For more information about the conditional states, please refer to [OpenTitan open-source silicon Root of Trust (RoT) project](https://opentitan.org/book/hw/ip/lc_ctrl/doc/theory_of_operation.html).
+For conditional transitions, the LCC can also branch different states (TEST_UNLOCK, MANUF, PROD, PROD_EN, RMA) based on the received token through the TAP interface and compared the received tokens against the ones stored in FUSE . This branching is called conditional transitions. For more information about the conditional states, please refer to [OpenTitan open-source silicon Root of Trust (RoT) project](https://opentitan.org/book/hw/ip/lc_ctrl/doc/theory_of_operation.html).
 
 **Notes:**
 * Some tokens are hardcoded design constants (specifically for RAW to TEST_UNLOCK), while others are stored in FUSE.
@@ -546,50 +707,33 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 **Note:** SOC may have other HW FSM steps that were done before Caliptra (CSS) is brought out of reset such as locking a PLL or calibrating a CRO, setting up GPIOs, test logic bring up etc. using SOC HW FSM.
 
 1. SOC asserts Caliptra SS powergood and desserts Caliptra SS reset to MCI
-
    a. SOC may choose to connect the same signals to the AXI fabric or bring it out of reset using a different signals. But the requirement is that before MCU is out of reset, fabric should be operational.
-
 2. CSS-BootFSM will sample straps on the MCI and will drive its outputs to reset defaults.
 3. CSS-BootFSM will go through Caliptra Subsystem Fuse controller (CSS FC) Init Sequence Init Sequence/handshakes
 4. CSS-BootFSM will go through Caliptra Subsystem Life Cycle Controller (CSS LCC) Init Sequence/handshakes
-
    a. **SOC Note:** Note that LCC shall start on an SOC generated internal clock to prevent clock stretch attacks
-
-   b. **SOC Note:** If the life cycle state is in RAW, TEST* or RMA, and if LCC.TRANSITION_CTRL.EXT_CLOCK_EN is set to one, the LCC.CLK_BYP_REQ signal is asserted in order to switch the main system clock to an external clock signal. This functionality is needed in certain life cycle states where the SOC internal clock source may not be fully calibrated yet, since the OTP macro requires a stable clock frequency in order to reliably program the fuse array. Note that the LCC.TRANSITION_CTRL.EXT_CLOCK_EN register can only be set to one if the transition interface has been claimed via the CLAIM_TRANSITION_IF mutex. This function is not available in production life cycle states.
-
-
+   b. **SOC Note:** If the life cycle state is in RAW, TEST* or RMA, and if TRANSITION_CTRL.EXT_CLOCK_EN is set to one, the CLK_BYP_REQ signal is asserted in order to switch the main system clock to an external clock signal. This functionality is needed in certain life cycle states where the SOC internal clock source may not be fully calibrated yet, since the FUSE macro requires a stable clock frequency in order to reliably program the fuse array. Note that the TRANSITION_CTRL.EXT_CLOCK_EN register can only be set to one if the transition interface has been claimed via the CLAIM_TRANSITION_IF mutex. This function is not available in production life cycle states.
 5. If MCU-No-ROM-Config strap is not set, then CSS-BootFSM will bring MCU out of reset and MCU ROM will start executing.
-
    a. **Note:** MCU ROM may be used by some SOCs for doing additional SOC specific initializations.An example of such a SoC construction is MCI, MCU, CSS Fabric are running on external clock initially. MCU brings up PLL, some GPIO peripherals, does I3C init sequence etc and then performs clock switch to internal PLL clock domain so that the fabric is running on the internal clock domain before secrets are read on it from the fuse controller.
-
-   b. **Note:** In allowed LCC states, MCU TAP will be open to use as soon as MCU is out of reset.
-
+   c. **Note:** In allowed LCC states, MCU TAP will be open to use as soon as MCU is out of reset.
 6. If MCU-No-ROM-Config is not set, MCU ROM will bring Caliptra out of reset by writing a MCI register
 7. If MCU-No-ROM-Config is set, CSS-BootFSM waits for a Caliptra GO write from SOC to bring Caliptra out of reset.
-
    a. **Note:** MCU Reset Vector will be strapped to the MCU SRAM executable location at integration time.
-
-   b. **Note:** MCI will allow a “TEST AXI ID” to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM in the debug mode to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
-   
+   b. **Note:** MCI will allow a “TEST AXI ID” to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
 8. Caliptra reset (cptra_rst_b) is deasserted.
 9. Caliptra BootFSM will go through its own boot flow as documented in Caliptra spec, reads secret fuses and sets “ready_for_fuses” to MCI.
 
-   a. **Note:** In MCU-NO-ROM-CONFIG, steps 11 through 14 & steps 16 through 18 are done by a SOC entity. Otherwise, MCU ROM will do the below steps. 
+   **Note:** In MCU-NO-ROM-CONFIG, steps 11 through 14 & steps 16 through 18 are done by a SOC entity. Otherwise, MCU ROM will do the below steps. 
    
 10. MCU ROM will be polling for this indication
 11. MCU ROM will now read FC’s SW partition for all the required fuses including its own and also write Caliptra fuses. Note that only non-secret fuses are accessible for MCU ROM by fuse controller construction.
-
-      a. **Note**: All fuses will be zero if FC is not programmed
-
-12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here) and then write the fuse_write_done to MCI.
+    a. Note: All fuses will be zero if FC is not programmed
+12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here)
 13. MCU ROM will do a fuse_write_done write to Caliptra
-14. Caliptra ROM starts to execute from here on.
-15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
-16. CSS-BootFSM will wait for a confirmation from MCU ROM and assert and deassert the MCU reset based on a min clock counter in MCI
-
-      a. **Note:** The CSS-BootFSM min reset counter is configurable via an MCI parameter (MIN_MCU_RST_COUNTER_WIDTH). When the counter overflows CSS-BootFSM checks for FW_EXEC_CTL[2] to be set and will bring MCU out of reset. 
-
-17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
+15. Caliptra ROM starts to execute from here on.
+16. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
+17. CSS-BootFSM will wait for a confirmation from MCU ROM and assert the reset to MCU and deassert the reset to MCU after 10 cycles.
+18. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
 ![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/Caliptra-SS-BootFSM.png)
 
@@ -670,6 +814,5 @@ MCI also provides capability to store fuses required for Caliptra subsystem for 
 Standard RISC-V timer interrupts for MCU are implemented using the mtime and mtimecmp registers defined in the RISC-V Privileged Architecture Specification. Both mtime and mtimecmp are included in the MCI register bank, and are accessible by the MCU to facilitate precise timing tasks. Frequency for the timers is configured by the SoC using the dedicated timer configuration register, which satisfies the requirement prescribed in the RISC-V specification for such a mechanism. These timer registers drive the timer_int pin into the MCU.
 
 # Subsystem Memory Map
-Please see integration specification
 
 # Subsystem HW Security
