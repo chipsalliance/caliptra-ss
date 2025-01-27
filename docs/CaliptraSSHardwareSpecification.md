@@ -174,60 +174,9 @@ Received transfer data can be obtained by the driver via a read from XFER_DATA_P
 # Caliptra AXI Manager & DMA assist
 
 # Caliptra SS Fuse Controller
-FUSE controller is the IP that is responsible for programming and reading the FUSEs. This IP has an AXI interface that is connected to Caliptra Subsystem’s AXI interconnect. This module provides the device with one-time programming functionality, resulting in non-volatile programming that cannot be reversed. This functionality is delivered via an open-source FUSE Controller and a proprietary FUSE/OTP Macro. The IP manages the following FUSE partition mapping:
 
+FUSE controller is an RTL module that is responsible for programming and reading the FUSEs. This module has an AXI interface that is connected to Caliptra Subsystem’s AXI interconnect. This module provides the device with one-time programming functionality, resulting in non-volatile programming that cannot be reversed. This functionality is delivered via an open-source FUSE Controller and a proprietary FUSE/OTP Macro. This RTL module manages the following FUSE partition mapping, which can be found in the [OTP Controller Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md).
 
-*Table: Caliptra-Subsystem Partition Map*
-|  Index  |         Partition          |  Size [B]  |  Access Granule  |                                     Item                                      |  Byte Address  |  Size [B]  |
-|:-------:|:--------------------------:|:----------:|:----------------:|:-----------------------------------------------------------------------------:|:--------------:|:----------:|
-|    0    |   SECRET_MANUF_PARTITION   |     72     |      64bit       |                                   UDS_SEED                                    |     0x000      |     64     |
-|         |                            |            |      64bit       |     [SECRET_MANUF_PARTITION_DIGEST](#Reg_secret_manuf_partition_digest_0)     |     0x040      |     8      |
-|    1    |  SECRET_PROD_PARTITION_0   |     16     |      64bit       |                                FIELD_ENTROPY_0                                |     0x048      |     8      |
-|         |                            |            |      64bit       |    [SECRET_PROD_PARTITION_0_DIGEST](#Reg_secret_prod_partition_0_digest_0)    |     0x050      |     8      |
-|    2    |  SECRET_PROD_PARTITION_1   |     16     |      64bit       |                                FIELD_ENTROPY_1                                |     0x058      |     8      |
-|         |                            |            |      64bit       |    [SECRET_PROD_PARTITION_1_DIGEST](#Reg_secret_prod_partition_1_digest_0)    |     0x060      |     8      |
-|    3    |  SECRET_PROD_PARTITION_2   |     16     |      64bit       |                                FIELD_ENTROPY_2                                |     0x068      |     8      |
-|         |                            |            |      64bit       |    [SECRET_PROD_PARTITION_2_DIGEST](#Reg_secret_prod_partition_2_digest_0)    |     0x070      |     8      |
-|    4    |  SECRET_PROD_PARTITION_3   |     16     |      64bit       |                                FIELD_ENTROPY_3                                |     0x078      |     8      |
-|         |                            |            |      64bit       |    [SECRET_PROD_PARTITION_3_DIGEST](#Reg_secret_prod_partition_3_digest_0)    |     0x080      |     8      |
-|    5    |     SW_MANUF_PARTITION     |    1120    |      32bit       |                             KEY_MANIFEST_PK_HASH                              |     0x088      |     48     |
-|         |                            |            |      32bit       |                             ANTI_ROLLBACK_DISABLE                             |     0x0B8      |     1      |
-|         |                            |            |      32bit       |                            IDEVID_CERT_IDEVID_ATTR                            |     0x0B9      |     96     |
-|         |                            |            |      32bit       |                          IDEVID_MANUF_HSM_IDENTIFIER                          |     0x119      |     16     |
-|         |                            |            |      32bit       |                                SOC_STEPPING_ID                                |     0x129      |     2      |
-|         |                            |            |      32bit       |                           MANUF_DEBUG_UNLOCK_TOKEN                            |     0x12B      |     16     |
-|         |                            |            |      32bit       |                             PROD_DEBUG_UNLOCK_PKS                             |     0x13B      |    512     |
-|         |                            |            |      32bit       |                  VENDOR_EXPANDED_CALIPTRA_FW_AUTH_PK_HASHES                   |     0x33B      |     48     |
-|         |                            |            |      32bit       |                         VENDOR_SPECIFIC_SECRET_FUSES                          |     0x36B      |     32     |
-|         |                            |            |      64bit       |         [SW_MANUF_PARTITION_DIGEST](#Reg_sw_manuf_partition_digest_0)         |     0x4E0      |     8      |
-|    6    |     SW_PROD_PARTITION      |    408     |      32bit       |                                ECC_REVOCATION                                 |     0x4E8      |     1      |
-|         |                            |            |      32bit       |                                 OWNER_PK_HASH                                 |     0x4E9      |     48     |
-|         |                            |            |      32bit       |                                LMS_REVOCATION                                 |     0x519      |     4      |
-|         |                            |            |      32bit       |                               MLDSA_REVOCATION                                |     0x51D      |     4      |
-|         |                            |            |      32bit       |                VENDOR_EXPANDED_CALIPTRA_FW_AUTH_PK_HASH_VALID                 |     0x521      |     1      |
-|         |                            |            |      64bit       |          [SW_PROD_PARTITION_DIGEST](#Reg_sw_prod_partition_digest_0)          |     0x678      |     8      |
-|    7    | SECRET_LC_UNLOCK_PARTITION |    136     |      64bit       |                              TEST_UNLOCK_TOKEN_0                              |     0x680      |     16     |
-|         |                            |            |      64bit       |                              TEST_UNLOCK_TOKEN_1                              |     0x690      |     16     |
-|         |                            |            |      64bit       |                              TEST_UNLOCK_TOKEN_2                              |     0x6A0      |     16     |
-|         |                            |            |      64bit       |                              TEST_UNLOCK_TOKEN_3                              |     0x6B0      |     16     |
-|         |                            |            |      64bit       |                              TEST_UNLOCK_TOKEN_4                              |     0x6C0      |     16     |
-|         |                            |            |      64bit       |                              TEST_UNLOCK_TOKEN_5                              |     0x6D0      |     16     |
-|         |                            |            |      64bit       |                              TEST_UNLOCK_TOKEN_6                              |     0x6E0      |     16     |
-|         |                            |            |      64bit       |                              TEST_UNLOCK_TOKEN_7                              |     0x6F0      |     16     |
-|         |                            |            |      64bit       | [SECRET_LC_UNLOCK_PARTITION_DIGEST](#Reg_secret_lc_unlock_partition_digest_0) |     0x700      |     8      |
-|    8    | SECRET_LC_MANUF_PARTITION  |     24     |      64bit       |                                  MANUF_TOKEN                                  |     0x708      |     16     |
-|         |                            |            |      64bit       |  [SECRET_LC_MANUF_PARTITION_DIGEST](#Reg_secret_lc_manuf_partition_digest_0)  |     0x718      |     8      |
-|    9    |  SECRET_LC_PROD_PARTITION  |     24     |      64bit       |                                  PROD_TOKEN                                   |     0x720      |     16     |
-|         |                            |            |      64bit       |   [SECRET_LC_PROD_PARTITION_DIGEST](#Reg_secret_lc_prod_partition_digest_0)   |     0x730      |     8      |
-|   10    |  SECRET_LC_RMA_PARTITION   |     24     |      64bit       |                                   RMA_TOKEN                                   |     0x738      |     16     |
-|         |                            |            |      64bit       |    [SECRET_LC_RMA_PARTITION_DIGEST](#Reg_secret_lc_rma_partition_digest_0)    |     0x748      |     8      |
-|   11    |       SVN_PARTITION        |     24     |      32bit       |                             FMC_KEY_MANIFEST_SVN                              |     0x750      |     4      |
-|         |                            |            |      32bit       |                                  RUNTIME_SVN                                  |     0x754      |     16     |
-|   12    |   VENDOR_TEST_PARTITION    |     64     |      32bit       |                                  VENDOR_TEST                                  |     0x768      |     32     |
-|         |                            |            |      64bit       |      [VENDOR_TEST_PARTITION_DIGEST](#Reg_vendor_test_partition_digest_0)      |     0x7A0      |     8      |
-|   13    |         LIFE_CYCLE         |     88     |      32bit       |                               LC_TRANSITION_CNT                               |     0x7A8      |     48     |
-|         |                            |            |      32bit       |                                   LC_STATE                                    |     0x7D8      |     40     |
----
 
 ## Partition Details
 
@@ -290,16 +239,16 @@ Typical programming sequences are explained at the end of the Programmer's guide
 The OTP controller initializes automatically upon power-up and is fully operational by the time the processor boots.
 The only initialization steps that SW should perform are:
 
-1. Check that the OTP controller has successfully initialized by reading [`STATUS`](registers.md#status). I.e., make sure that none of the ERROR bits are set, and that the DAI is idle ([`STATUS.DAI_IDLE`](registers.md#status)).
+1. Check that the OTP controller has successfully initialized by reading [`STATUS`](../src/fuse_ctrl/doc/registers.md#status). I.e., make sure that none of the ERROR bits are set, and that the DAI is idle ([`STATUS.DAI_IDLE`](../src/fuse_ctrl/doc/registers.md#status)).
 2. Set up the periodic background checks:
-    - Choose whether to enable periodic [background checks](#partition-checks) by programming nonzero mask values to [`INTEGRITY_CHECK_PERIOD`](registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](registers.md#consistency_check_period).
-    - Choose whether such checks shall be subject to a timeout by programming a nonzero timeout cycle count to [`CHECK_TIMEOUT`](registers.md#check_timeout).
-    - It is recommended to lock down the background check registers via [`CHECK_REGWEN`](registers.md#check_regwen), once the background checks have been set up.
+    - Choose whether to enable periodic background checks by programming nonzero mask values to [`INTEGRITY_CHECK_PERIOD`](../src/fuse_ctrl/doc/registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](../src/fuse_ctrl/doc/registers.md#consistency_check_period).
+    - Choose whether such checks shall be subject to a timeout by programming a nonzero timeout cycle count to [`CHECK_TIMEOUT`](../src/fuse_ctrl/doc/registers.md#check_timeout).
+    - It is recommended to lock down the background check registers via [`CHECK_REGWEN`](../src/fuse_ctrl/doc/registers.md#check_regwen), once the background checks have been set up.
 
-If needed, one-off integrity and consistency checks can be triggered via [`CHECK_TRIGGER`](registers.md#check_trigger).
-If this functionality is not needed, it is recommended to lock down the trigger register via [`CHECK_TRIGGER_REGWEN`](registers.md#check_trigger_regwen).
+If needed, one-off integrity and consistency checks can be triggered via [`CHECK_TRIGGER`](../src/fuse_ctrl/doc/registers.md#check_trigger).
+If this functionality is not needed, it is recommended to lock down the trigger register via [`CHECK_TRIGGER_REGWEN`](../src/fuse_ctrl/doc/registers.md#check_trigger_regwen).
 
-Later on during the boot process, SW may also choose to block read access to the SW managed partitions via the associated partition lock registers, e.g. [`CREATOR_SW_CFG_READ_LOCK`](registers.md#creator_sw_cfg_read_lock) or [`OWNER_SW_CFG_READ_LOCK`](registers.md#owner_sw_cfg_read_lock).
+Later on during the boot process, SW may also choose to block read access to the SW managed partitions via the associated partition lock registers, e.g. [`CREATOR_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#creator_sw_cfg_read_lock) or [`OWNER_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#owner_sw_cfg_read_lock).
 
 ### Reset Considerations
 
@@ -320,49 +269,49 @@ OTP has to be programmed via the Direct Access Interface, which is comprised of 
 
 CSR Name                             | Description
 -------------------------------------|------------------------------------
-[`DIRECT_ACCESS_WDATA_0`](registers.md#direct_access_wdata) | Low 32bit word to be written.
-[`DIRECT_ACCESS_WDATA_1`](registers.md#direct_access_wdata) | High 32bit word to be written.
-[`DIRECT_ACCESS_RDATA_0`](registers.md#direct_access_rdata) | Low 32bit word that has been read.
-[`DIRECT_ACCESS_RDATA_1`](registers.md#direct_access_rdata) | High 32bit word that has been read.
-[`DIRECT_ACCESS_ADDRESS`](registers.md#direct_access_address) | byte address for the access.
-[`DIRECT_ACCESS_CMD`](registers.md#direct_access_cmd)     | Command register to trigger a read or a write access.
-[`DIRECT_ACCESS_REGWEN`](registers.md#direct_access_regwen)  | Write protection register for DAI.
+[`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | Low 32bit word to be written.
+[`DIRECT_ACCESS_WDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | High 32bit word to be written.
+[`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | Low 32bit word that has been read.
+[`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | High 32bit word that has been read.
+[`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address) | byte address for the access.
+[`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd)     | Command register to trigger a read or a write access.
+[`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen)  | Write protection register for DAI.
 
-See further below for a detailed [Memory Map](#direct-access-memory-map) of the address space accessible via the DAI.
+See further below for a detailed Memory Map of the address space accessible via the DAI.
 
 ### Readout Sequence
 
 A typical readout sequence looks as follows:
 
-1. Check whether the DAI is idle by reading the [`STATUS`](registers.md#status) register.
-2. Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](registers.md#direct_access_address).
+1. Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
+2. Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
 Note that the address is aligned with the granule, meaning that either 2 or 3 LSBs of the address are ignored, depending on whether the access granule is 32 or 64bit.
-3. Trigger a read command by writing 0x1 to [`DIRECT_ACCESS_CMD`](registers.md#direct_access_cmd).
-4. Poll the [`STATUS`](registers.md#status) until the DAI state goes back to idle.
+3. Trigger a read command by writing 0x1 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
+4. Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
 Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
-5. If the status register flags a DAI error, additional handling is required (see [Section on Error handling](#error-handling)).
-6. If the region accessed has a 32bit access granule, the 32bit chunk of read data can be read from [`DIRECT_ACCESS_RDATA_0`](registers.md#direct_access_rdata).
-If the region accessed has a 64bit access granule, the 64bit chunk of read data can be read from the [`DIRECT_ACCESS_RDATA_0`](registers.md#direct_access_rdata) and [`DIRECT_ACCESS_RDATA_1`](registers.md#direct_access_rdata) registers.
+5. If the status register flags a DAI error, additional handling is required.
+6. If the region accessed has a 32bit access granule, the 32bit chunk of read data can be read from [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata).
+If the region accessed has a 64bit access granule, the 64bit chunk of read data can be read from the [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) and [`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) registers.
 7. Go back to 1. and repeat until all data has been read.
 
-The hardware will set [`DIRECT_ACCESS_REGWEN`](registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
+The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
 
 ### Programming Sequence
 
 A typical programming sequence looks as follows:
 
-1. Check whether the DAI is idle by reading the [`STATUS`](registers.md#status) register.
-2. If the region to be accessed has a 32bit access granule, place a 32bit chunk of data into [`DIRECT_ACCESS_WDATA_0`](registers.md#direct_access_wdata).
-If the region to be accessed has a 64bit access granule, both the [`DIRECT_ACCESS_WDATA_0`](registers.md#direct_access_wdata) and [`DIRECT_ACCESS_WDATA_1`](registers.md#direct_access_wdata) registers have to be used.
-3. Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](registers.md#direct_access_address).
+1. Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
+2. If the region to be accessed has a 32bit access granule, place a 32bit chunk of data into [`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata).
+If the region to be accessed has a 64bit access granule, both the [`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) and [`DIRECT_ACCESS_WDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) registers have to be used.
+3. Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
 Note that the address is aligned with the granule, meaning that either 2 or 3 LSBs of the address are ignored, depending on whether the access granule is 32 or 64bit.
-4. Trigger a write command by writing 0x2 to [`DIRECT_ACCESS_CMD`](registers.md#direct_access_cmd).
-5. Poll the [`STATUS`](registers.md#status) until the DAI state goes back to idle.
+4. Trigger a write command by writing 0x2 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
+5. Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
 Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
-6. If the status register flags a DAI error, additional handling is required (see [Section on Error handling](#error-handling)).
+6. If the status register flags a DAI error, additional handling is required.
 7. Go back to 1. and repeat until all data has been written.
 
-The hardware will set [`DIRECT_ACCESS_REGWEN`](registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
+The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
 
 Note that SW is responsible for keeping track of already programmed OTP word locations during the provisioning phase.
 **It is imperative that SW does not write the same word location twice**, since this can lead to ECC inconsistencies, thereby potentially rendering the device useless.
@@ -371,14 +320,14 @@ Note that SW is responsible for keeping track of already programmed OTP word loc
 
 The hardware digest computation for the hardware and secret partitions can be triggered as follows:
 
-1. Check whether the DAI is idle by reading the [`STATUS`](registers.md#status) register.
-3. Write the partition base address to [`DIRECT_ACCESS_ADDRESS`](registers.md#direct_access_address).
-4. Trigger a digest calculation command by writing 0x4 to [`DIRECT_ACCESS_CMD`](registers.md#direct_access_cmd).
-5. Poll the [`STATUS`](registers.md#status) until the DAI state goes back to idle.
+1. Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
+3. Write the partition base address to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
+4. Trigger a digest calculation command by writing 0x4 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
+5. Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
 Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
-6. If the status register flags a DAI error, additional handling is required (see [Section on Error handling](#error-handling)).
+6. If the status register flags a DAI error, additional handling is required.
 
-The hardware will set [`DIRECT_ACCESS_REGWEN`](registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
+The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
 
 It should also be noted that the effect of locking a partition via the digest only takes effect **after** the next system reset.
 To prevent integrity check failures SW must therefore ensure that no more programming operations are issued to the affected partition after initiating the digest calculation sequence.
