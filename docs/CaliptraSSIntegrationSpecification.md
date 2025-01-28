@@ -1,36 +1,113 @@
-# Caliptra SS Integration Specification
+![OCP Logo](./images/OCP_logo.png)
 
-## Calpitra SS top level diagram - @Nilesh
+# Caliptra SS Integration Specification v0p8
 
-### Overview
+## Scope 
 
-### Links to individual IPs
+<span style="color:red">**Disclaimer**: Internal Draft Document</span>
+This document is a work in progress and intended for internal use only. It may contain incomplete or preliminary information subject to change. Do not refer to, share, or rely on this document unless explicitly released in its final version.
+
+For Caliptra SS, this document serves as a hardware integration specification. The scope of this document is to assist integrators in the integration of Caliptra SS. It is not intended to serve as a hardware specification or to include micro-architectural details.
+
+
+
+This document includes Caliptra SS top-level details along with parameters, defines, interfaces, memory map, programming reference, and guidelines on how to test the integration of the design.
+
+<div align="center">
+
+| Date            |   Document Version | Description       |
+|-----------------|--------------------|-------------------|
+| Jan 31st, 2025  |   v0p5             | Work in progress  |
+
+</div>
+
+# Overview
+
+The Caliptra Subsystem is designed to provide a robust Root of Trust (RoT) for datacenter-class System on Chips (SoCs), including CPUs, GPUs, DPUs, and TPUs. It integrates both hardware and firmware components to deliver essential security services such as identity establishment, measured boot, and attestation. By incorporating the Caliptra Subsystem, integrators can enhance the security capabilities of their SoCs, providing a reliable RoT that meets industry standards and addresses the evolving security needs of datacenter environments.
+
+
+## Integration Considerations
+
+By performing these design and verification tasks, the integrator ensures that the Caliptra SS subsystem is properly integrated and can function as intended within the larger system.
+
+### Design Consideration
+
+1. **Replace the AXI Interconnect Component**: 
+The subsystem utilizes an AXI-based interconnect to facilitate communication between components, with the Caliptra core connecting via an AXI interface. The integrator must replace the default AXI interconnect component with their proprietary interface. This ensures that the subsystem can communicate effectively with the rest of the subsystem components using the integrator's specific interconnect architecture.
+
+2. **Connect the Memories**: The integrator must connect the various memory components required by the subsystem. These memory components are used for storing data and instructions necessary for the operation of the Caliptra SS subsystem.
+
+3. **No Changes to Internals**: Integrators are not expected to make any changes to the internals of the design. The focus should be on ensuring proper integration and connectivity of the subsystem components.
+
+### Verification Considerations
+
+1. **Connect the I3C Core with GPIO Driver**: 
+The integrator must connect the I3C core to the appropriate driver for the GPIO pins. This connection is crucial for enabling communication with I3C devices, which are used for communication within the subsystem.
+
+
+## Calpitra SS High level diagram
+
+The following diagram provides a high-level overview of the Caliptra SS subsystem. It illustrates the key components and their interconnections within the system. The diagram includes:
+
+- **Caliptra Core**: The Caliptra Core IP. For more information, see[ Caliptra: A Datacenter System on a Chip (SoC) Root of Trust (RoT)](https://chipsalliance.github.io/Caliptra/doc/Caliptra.html).
+
+- **MCU (Manufactures Control Unit)**: A microcontroller unit that manages various control tasks within the subsystem.
+
+- **I3C Core**: An interface for connecting and communicating with I3C devices, which are used for sensor and peripheral communication.
+
+- **Life Cycle Controller**: A component that manages the different stages of the subsystem's lifecycle, including initialization, operation, and shutdown.
+
+- **Fuse Controller (OTP)**: A one-time programmable memory controller used for storing critical configuration data and security keys.
+
+- **MCI (Memory Controller Interface)**: Manages the communication between the processor and the memory components.
+
+- **Memories**: Various memory components used for storing data and instructions required by the subsystem.
+
+Following high-level diagram helps integrators understand the overall architecture and the relationships between different components within the Caliptra SS subsystem.
+
+![Caliptra Subsystem High Level Diagram](./images/CaliptraSubsystem.png)
+
+## References and related specifications
+
+The components described in this document are either obtained from open-source GitHub repositories, developed from scratch, or modified versions of open-source implementations. Links to relevant documentation and GitHub sources are shared in the following table.
+
+*Table 1: Subcomponent specifications*
+
+| IP/Block | GitHub URL | Documentation | Link |
+| :--------- | :--------- | :--------- |:--------- |
+| Cores-VeeR | [GitHub - chipsalliance/Cores-VeeR-EL2](https://github.com/chipsalliance/Cores-VeeR-EL2) | VeeR EL2 Programmer’s Reference Manual | [chipsalliance/Cores-VeeR-EL2 · GitHubPDF](http://cores-swerv-el2/RISC-V_SweRV_EL2_PRM.pdf%20at%20master%20%C2%B7) |
+| I3C-Core | [GitHub - chipsalliance/i3c-core](https://github.com/chipsalliance/i3c-core) | I3C core documentation | [I3C core documentation](https://github.com/chipsalliance/i3c-core?tab=readme-ov-file#i3c-core)
+
 
 ### Top level Address map
 
-| Slave | Connected to  | Start Address | End Address |
-|---|---|---|---|
-| 0 | imem | 64'h1000_0000 | 64'h1000_FFFF |
-| 1 | I3c | 64'h2000_4000 | 64'h2000_4FFF |
-| 2 | n/a | 64'h8000_0000 | 64'h80FF_FFFF |
-| 3 | SoC IFC (tb) | 64'h3000_0000,
-  64'h0003_0000 | 64'h3FFF_FFFF,
-  64'h0003_FFFF |
-| 4 | MCI | 64'h2100_0000 | 64'h2200_0000 |
-| 5 | Fuse Ctrl | 64'h7000_0000 | 64'h7000_01FF |
-| 6 | Fuse Ctrl Core | 64'h7000_0200 | 64'h7000_03FF |
-| 7 | Life Cycle Ctrl | 64'h7000_0400 | 64'h7000_05FF |
+The following address map is a suggested address map for the given subsystem design. It details the memory layout and the connections between different components within the Caliptra SS subsystem.
 
-### Same as MCU
+| Start Address | End Address | Slave | Name  | Description |
+|---|---|---|---|---|
+| 64'h1000_0000 | 64'h1000_FFFF | 0 | imem | MCU Instruction memory |
+| 64'h2000_4000 | 64'h2000_4FFF | 1 | I3c | I3C Core |
+| 64'h8000_0000 | 64'h80FF_FFFF | 2 | n/a | Reserved |
+| 64'h3000_0000 | 64'h3FFF_FFFF | 3 | SoC IFC (tb) | SoC / Testbench |
+| 64'h2100_0000 | 64'h2200_0000 | 4 | MCI | Memory Controller Interface |
+| 64'h7000_0000 | 64'h7000_01FF | 5 | Fuse Ctrl | Fuse Controller |
+| 64'h7000_0200 | 64'h7000_03FF | 6 | Fuse Ctrl Core | Fuse Controller Core |
+| 64'h7000_0400 | 64'h7000_05FF | 7 | Life Cycle Ctrl | Life Cycle Controller |
 
-## Top level / remaining functional flows & signals. - @Nilesh
+## Top Level Parameters & Defines
 
-### Overview
+### Parameter 
+| Start Address | End Address | Slave | Name  | Description |
+|---|---|---|---|---|
+| 64'h1000_0000 | 64'h1000_FFFF | 0 | imem | MCU Instruction memory |
 
-### Parameters & Defines
+### Defines
+| Start Address | End Address | Slave | Name  | Description |
+|---|---|---|---|---|
+| 64'h1000_0000 | 64'h1000_FFFF | 0 | imem | MCU Instruction memory |
 
-### Interface
 
+## Top Level Interface & Signals
 
 | Facing | Type | width | Name | Description |
 |---|---|---|---|---|
@@ -138,8 +215,6 @@
 | External | output | 1 | ready_for_mb_processing | Ready for mailbox processing output |
 | External | output | 1 | mailbox_data_avail | Mailbox data available output |
 
-### Memory Map	/ Address map
-
 ### Requirements : Connectivity, Clock & Reset, Constraints & Violations etc
 
 ### Programming interface
@@ -150,11 +225,11 @@
 
 ### Other requirements
 
-## Caliptra Core -
+## Caliptra Core
+Follow the link for 
+[Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md)
 
-## Integration specification link
-
-# MCU - @Nilesh
+# MCU 
 
 ### Overview
 
@@ -275,4 +350,10 @@
 ### Other requirements
 
 ## Terminology
-## 
+
+| Abbreviation | Description                                                                                      |
+| :--------- | :--------- |
+| AXI          | Advanced eXtensible Interface, a high-performance, high-frequency communication protocol |
+| I3C          | Improved Inter-Integrated Circuit, a communication protocol for connecting sensors and other peripherals. |
+| ECC          | Error Correction Code, a method of detecting and correcting errors in data storage and transmission. |
+| RISCV        | Reduced Instruction Set Computer Five, an open standard instruction set architecture based on established RISC principles. |                                               |
