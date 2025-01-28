@@ -180,6 +180,7 @@
 
 The Fuse Controller is a core component in the secure infrastructure of the system, responsible for managing the fuses and ensuring the integrity, consistency, and secure storage of sensitive data. It provides essential interfaces for direct fuse programming. The Fuse Controller interacts closely with the Lifecycle Controller (LC), FUSE macros, MCI, and Caliptra-core.
 
+For an in-depth understanding of the Fuse Controller's functionality, including its programming flow, refer to the[Hardware Specification Document](CaliptraSSHardwareSpecification.md).
 ### Parameters & Defines
 
 | Parameter                | Default                        | Description                                         |
@@ -191,30 +192,30 @@ The Fuse Controller is a core component in the secure infrastructure of the syst
 
 ### Interface
 
-| Facing     | Type       | Width   | Name                          | Description                                            |
-|------------|------------|-------  |-------------------------------|--------------------------------------------------------|
-| External   | Input      | 1       | `clk_i`                       | Fuse Controller clock input.                          |
-| External   | Input      | 1       | `rst_ni`                      | Reset signal input, active low.                       |
-| External   | interface  | 1       | `core_axi_wr_req`             | AXI write request.                         |
-| External   | interface  | 1       | `core_axi_wr_rsp`             | AXI write response.                          |
-| External   | interface  | 1       | `core_axi_rd_req`             | AXI read request.                          |
-| External   | interface  | 1       | `core_axi_rd_rsp`             | AXI read response.                           |
-| External   | interface  | 1       | `prim_tl_i`                   | Input to the Fuse Macro's primitive TL interface.                                                |
-| External   | interface  | 1       | `prim_tl_o`                   | Output from the Fuse Macro's primitive TL interface.                                             |
-| Internal   | Output     | 1       | `intr_otp_operation_done_o`   | Indicates that the OTP operation has completed.                                                  |
-| Internal   | Output     | 1       | `intr_otp_error_o`            | OTP error interrupt output (to be connected to MCI).                                             |
-| Internal   | Output     | 5       | `alerts`                      | Alert signals for critical errors.                                                               |
-| Internal   | Input      | 1       | `pwr_otp_i`                   | OTP initialization request from the power manager.                                               |
-| Internal   | Output     | Struct  | `pwr_otp_o`                   | OTP response to the power manager.                                                               |
-| Internal   | Input      | Struct  | `lc_otp_vendor_test_i`        | Vendor test request input from LC Controller.                                                    |
-| Internal   | Output     | Struct  | `lc_otp_vendor_test_o`        | Vendor test response to LC Controller.                                                           |
-| Internal   | Input      | Struct  | `lc_otp_program_i`            | Lifecycle OTP programming request from LC Controller.                                            |
-| Internal   | Output     | Struct  | `lc_otp_program_o`            | Lifecycle OTP programming response to LC Controller.                                             |
-| Internal   | Input      | 1       | `lc_dft_en_i`                 | DFT enable input from LC Controller.                                                             |
-| Internal   | Input      | 1       | `lc_escalate_en_i`            | Escalation enable input from LC Controller.                                                      |
-| Internal   | Input      | 1       | `lc_check_byp_en_i`           | Clock bypass check enable input from LC Controller.                                              |
-| Internal   | Output     | Struct  | `otp_lc_data_o`               | Lifecycle broadcasted data output to LC Controller.                                              |
-| Internal   | Output     | Struct  | `otp_broadcast_o`             | FUSE broadcast output to Caliptra-core. This board broadcasts UDS and Field-entropy.             |
+| Facing     | Type       | Width   | Name                          | External Name in SoC Level        | Description                                            |
+|------------|------------|-------  |-------------------------------|-----------------------------------|--------------------------------------------------------|
+| External   | Input      | 1       | `clk_i`                       | `cptra_ss_clk_i`                  | Fuse Controller clock input.                          |
+| External   | Input      | 1       | `rst_ni`                      | `cptra_ss_rst_b_i`                | Reset signal input, active low.                       |
+| External   | interface  | 1       | `core_axi_wr_req`             | `cptra_ss_otp_core_axi_wr_req_i`  | AXI write request.                         |
+| External   | interface  | 1       | `core_axi_wr_rsp`             | `cptra_ss_otp_core_axi_wr_rsp_o`  | AXI write response.                          |
+| External   | interface  | 1       | `core_axi_rd_req`             | `cptra_ss_otp_core_axi_rd_req_i`  | AXI read request.                          |
+| External   | interface  | 1       | `core_axi_rd_rsp`             | `cptra_ss_otp_core_axi_rd_rsp_o`  | AXI read response.                           |
+| External   | interface  | 1       | `prim_tl_i`                   | `cptra_ss_fuse_macro_prim_tl_i`   | Input to the Fuse Macro's primitive TL interface.                                                |
+| External   | interface  | 1       | `prim_tl_o`                   | `cptra_ss_fuse_macro_prim_tl_o`   | Output from the Fuse Macro's primitive TL interface.                                             |
+| Internal   | Output     | 1       | `intr_otp_operation_done_o`   |                                   | Indicates that the OTP operation has completed.                                                  |
+| Internal   | Output     | 1       | `intr_otp_error_o`            |                                   | OTP error interrupt output (to be connected to MCI).                                             |
+| Internal   | Output     | 5       | `alerts`                      |                                   | Alert signals for critical errors.                                                               |
+| Internal   | Input      | 1       | `pwr_otp_i`                   |                                   | OTP initialization request from the power manager.                                               |
+| Internal   | Output     | Struct  | `pwr_otp_o`                   |                                   | OTP response to the power manager.                                                               |
+| Internal   | Input      | Struct  | `lc_otp_vendor_test_i`        |                                   | Vendor test request input from LC Controller.                                                    |
+| Internal   | Output     | Struct  | `lc_otp_vendor_test_o`        |                                   | Vendor test response to LC Controller.                                                           |
+| Internal   | Input      | Struct  | `lc_otp_program_i`            |                                   | Lifecycle OTP programming request from LC Controller.                                            |
+| Internal   | Output     | Struct  | `lc_otp_program_o`            |                                   | Lifecycle OTP programming response to LC Controller.                                             |
+| Internal   | Input      | 1       | `lc_dft_en_i`                 |                                   | DFT enable input from LC Controller.                                                             |
+| Internal   | Input      | 1       | `lc_escalate_en_i`            |                                   | Escalation enable input from LC Controller.                                                      |
+| Internal   | Input      | 1       | `lc_check_byp_en_i`           |                                   | Clock bypass check enable input from LC Controller.                                              |
+| Internal   | Output     | Struct  | `otp_lc_data_o`               |                                   | Lifecycle broadcasted data output to LC Controller.                                              |
+| Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra-core. This port broadcasts UDS and Field-entropy.             |
 
 
 ### Memory Map	/ Address map
@@ -228,7 +229,7 @@ See [Fuse Controller Register Map](../src/fuse_ctrl/doc/registers.md).
 
 1. **Connectivity**:
    - The Fuse Controller must interface seamlessly with the Fuse Macros, ensuring proper ECC support during programming and read operations.
-   - All AXI interfaces (`core_axi_wr_req`, `core_axi_rd_req`) must follow the protocol specifications for data integrity and error reporting.
+   - All AXI interfaces (`core_axi_wr_req`, `core_axi_rd_req`) must follow the protocol specifications.
    - Inputs like `lc_otp_program_i` and `pwr_otp_i` should connect properly to the Lifecycle Controller (LC) and MCI respectively.
    - Alerts must propagate correctly to the system's alert manager for error handling.
 
@@ -294,6 +295,8 @@ The smoke test focuses on ensuring basic functionality and connectivity of the F
 
 The LC Controller (Lifecycle Controller) is a critical component of the Caliptra Subsystem, responsible for securely managing the lifecycle states of the chip. The LC Controller interacts with other subsystems such as the Fuse Controller, MCI, AXI interconnect, and JTAG TAP to enforce secure transitions, validate tokens, and generate error conditions. Additionally, it implements escalation mechanisms to respond to security breaches, enabling the chip to enter secure states like SCRAP.
 
+For a detailed description of the Lifecycle Controller's architecture, design, and operational flow, refer to [Hardware Specification Document](CaliptraSSHardwareSpecification.md).
+
 ### Parameters & Defines
 
 Parameter                        | Default (Max)  | Description
@@ -308,41 +311,44 @@ Parameter                        | Default (Max)  | Description
 
 ### Interface
 
-Facing      | Type       | width  | Name                         | Description   |
-------------|:-----------|:-------|:-----------------------------|:-------       |
-External    |input       |   1    | clk_i                        | clock         |
-External    |input       |   1    | rst_ni                       | LC controller reset input, active low|
-External    |input       |   1    | Allow_RMA_on_PPD             | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA.|
-External    |interface   |   1    | axi_wr_req                   | LC controller AXI write request input |
-External    |interface   |   1    | axi_wr_rsp                   | LC controller AXI write response output|
-External    |interface   |   1    | axi_rd_req                   | LC controller AXI read request input |
-External    |interface   |   1    | axi_rd_rsp                   | LC controller AXI read response output |
-External    |interface   |   1    | jtag_i                       | LC controller JTAG input ports  |
-External    |interface   |   1    | jtag_o                       | LC controller JTAG output ports|
-External    |input       |   1    | scan_rst_ni                  | LC controller scan reset input, active low|
-Internal    |output      |   3    | alerts                       | Alert outputs generated by LCC if there is an error due to one of following: register bus, lc state and fuse programming |
-External    |input       |   1    | esc_scrap_state0             | An escalation input that leads LC controller to enter into SCRAP mode  |
-External    |input       |   1    | esc_scrap_state1             | An escalation input that eads LC controller to enter into SCRAP mode  |
-Internal    |input       |   1    | pwr_lc_i                     | A power initilization input coming from MCI |
-Internal    |struct      |   1    | pwr_lc_o                     | Two outputs show: (i) LC controller can accept a request, (ii) LC is initialized. |
-Internal    |struct      |   1    | lc_otp_vendor_test_o         | Access to fuse controller for vendor test partitions |
-Internal    |struct      |   1    | lc_otp_vendor_test_i         | Access to fuse controller for vendor test partitions |
-Internal    |struct      |   1    | lc_otp_program_o             | Programming interface to fuse controller to update LCC state and couter |
-Internal    |struct      |   1    | lc_otp_program_i             | Programming interface from fuse controller to update LCC state and couter |
-Internal    |struct      |   1    | otp_lc_data_i                | Broadcasted values from the fuse controller |
-Internal    |output      |   1    | lc_dft_en_o                  | DFT enable to MCI |
-Internal    |output      |   1    | lc_hw_debug_en_o             | CLTAP enable to MCI |
-Internal    |output      |   1    | lc_escalate_en_o             | Broadcast signal to promote esclation in SoC |
-Internal    |output      |   1    | lc_check_byp_en_o            | External clock status delivery signal to fuse controller |
-External    |output      |   1    | lc_clk_byp_req_o             | A request port to swtich from LCC clock to external clock |
-External    |input       |   1    | lc_clk_byp_ack_i             | Acknowledgment signal to indicate external clock request is accepted              |
-Internal    |input       |   1    | otp_device_id_i              | Fuse device ID              |
-Internal    |input       |   1    | otp_manuf_state_i            | Fuse manufacturing ID               |
-Internal    |output      |   1    | hw_rev_o                     | Reflection of HW revision ID read from fuse controller              |
+
+Facing      | Type       | width  | Name                           |  External Name in SoC Level    | Description   |
+------------|:-----------|:-------|:-------------------------------|:-------------------------------|:-------       |
+External    |input       |   1    | `clk_i                `        | `cptra_ss_clk_i       `                        | clock         |
+External    |input       |   1    | `rst_ni               `        | `cptra_ss_rst_b_i     `                        | LC controller reset input, active low|
+External    |input       |   1    | `Allow_RMA_on_PPD     `        | `cptra_ss_lc_Allow_RMA_on_PPD_i     `          | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA.|
+External    |interface   |   1    | `axi_wr_req           `        | `cptra_ss_lc_axi_wr_req_i           `          | LC controller AXI write request input |
+External    |interface   |   1    | `axi_wr_rsp           `        | `cptra_ss_lc_axi_wr_rsp_o           `          | LC controller AXI write response output|
+External    |interface   |   1    | `axi_rd_req           `        | `cptra_ss_lc_axi_rd_req_i           `          | LC controller AXI read request input |
+External    |interface   |   1    | `axi_rd_rsp           `        | `cptra_ss_lc_axi_rd_rsp_o           `          | LC controller AXI read response output |
+External    |interface   |   1    | `jtag_i               `        | `cptra_ss_lc_ctrl_jtag_i               `       | LC controller JTAG input ports  |
+External    |interface   |   1    | `jtag_o               `        | `cptra_ss_lc_ctrl_jtag_o               `       | LC controller JTAG output ports|
+External    |input       |   1    | `scan_rst_ni          `        | `cptra_ss_lc_ctrl_scan_rst_ni_i          `     | LC controller scan reset input, active low|
+Internal    |output      |   3    | `alerts               `        | `alerts               `                        | Alert outputs generated by LCC if there is an error due to one of following: register bus, lc state and fuse programming |
+External    |input       |   1    | `esc_scrap_state0     `        | `cptra_ss_lc_esclate_scrap_state0_i     `      | An escalation input that leads LC controller to enter into SCRAP mode  |
+External    |input       |   1    | `esc_scrap_state1     `        | `cptra_ss_lc_esclate_scrap_state1_i     `      | An escalation input that eads LC controller to enter into SCRAP mode  |
+Internal    |input       |   1    | `pwr_lc_i             `        | `pwr_lc_i             `                        | A power initilization input coming from MCI |
+Internal    |struct      |   1    | `pwr_lc_o             `        | `pwr_lc_o             `                        | Two outputs show: (i) LC controller can accept a request, (ii) LC is initialized. |
+Internal    |struct      |   1    | `lc_otp_vendor_test_o `        | `lc_otp_vendor_test_o `                        | Access to fuse controller for vendor test partitions |
+Internal    |struct      |   1    | `lc_otp_vendor_test_i `        | `lc_otp_vendor_test_i `                        | Access to fuse controller for vendor test partitions |
+Internal    |struct      |   1    | `lc_otp_program_o     `        | `lc_otp_program_o     `                        | Programming interface to fuse controller to update LCC state and couter |
+Internal    |struct      |   1    | `lc_otp_program_i     `        | `lc_otp_program_i     `                        | Programming interface from fuse controller to update LCC state and couter |
+Internal    |struct      |   1    | `otp_lc_data_i        `        | `otp_lc_data_i        `                        | Broadcasted values from the fuse controller |
+Internal    |output      |   1    | `lc_dft_en_o          `        | `lc_dft_en_o          `                        | DFT enable to MCI |
+Internal    |output      |   1    | `lc_hw_debug_en_o     `        | `lc_hw_debug_en_o     `                        | CLTAP enable to MCI |
+Internal    |output      |   1    | `lc_escalate_en_o     `        | `lc_escalate_en_o     `                        | Broadcast signal to promote esclation in SoC |
+Internal    |output      |   1    | `lc_check_byp_en_o    `        | `lc_check_byp_en_o    `                        | External clock status delivery signal to fuse controller |
+External    |output      |   1    | `lc_clk_byp_req_o     `        | `cptra_ss_lc_clk_byp_req_o     `               | A request port to swtich from LCC clock to external clock |
+External    |input       |   1    | `lc_clk_byp_ack_i     `        | `cptra_ss_lc_clk_byp_ack_i     `               | Acknowledgment signal to indicate external clock request is accepted              |
+Internal    |input       |   1    | `otp_device_id_i      `        | `otp_device_id_i      `                        | Fuse device ID              |
+Internal    |input       |   1    | `otp_manuf_state_i    `        | `otp_manuf_state_i    `                        | Fuse manufacturing ID               |
+Internal    |output      |   1    | `hw_rev_o             `        | `hw_rev_o             `                        | Reflection of HW revision ID read from fuse controller              |
+
 
 ### Memory Map / Address Map
 
-Register Offset                             | Description                                           | Address
+See LC Controller Register Map**TODO: link will be provided**.
+<!-- Register Offset                             | Description                                           | Address
 -----------------------------------------   |:------------------------------------------------------|:------    |                                         
 `LC_CTRL_ALERT_TEST_OFFSET`                 | Alert test register                                   |   0x0   |         
 `LC_CTRL_STATUS_OFFSET`                     | Status register                                       |   0x4   |     
@@ -378,7 +384,7 @@ Register Offset                             | Description                       
 `LC_CTRL_MANUF_STATE_4_OFFSET`              | Manufacturing state register (part 4)                 |   0x7c  |                             
 `LC_CTRL_MANUF_STATE_5_OFFSET`              | Manufacturing state register (part 5)                 |   0x80  |                             
 `LC_CTRL_MANUF_STATE_6_OFFSET`              | Manufacturing state register (part 6)                 |   0x84  |                             
-`LC_CTRL_MANUF_STATE_7_OFFSET`              | Manufacturing state register (part 7)                 |   0x88  |                             
+`LC_CTRL_MANUF_STATE_7_OFFSET`              | Manufacturing state register (part 7)                 |   0x88  |                              -->
 
 ### Requirements: Connectivity, Clock & Reset, Constraints & Violations
 
