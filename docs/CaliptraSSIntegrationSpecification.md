@@ -31,6 +31,27 @@
 
 ### Interface
 
+**Table: Caliptra SS Straps**
+
+| Facing | Type | width | Name | Description |
+|---|---|---|---|---|
+| External | input | 1 | cptra_ss_strap_mcu_lsu_axi_user_i | MCU LSU AXI user strap input |
+| External | input | 1 | cptra_ss_strap_mcu_ifu_axi_user_i | MCU IFU AXI user strap input |
+| External | input | 1 | cptra_ss_strap_clp_axi_user_i | CLP AXI user strap input |
+| External | input | 1 | cptra_ss_strap_mcu_reset_vector_i | MCU reset vector strap input |
+| External | input | 1 | cptra_ss_strap_caliptra_base_addr_i | Caliptra base address strap input |
+| External | input | 1 | cptra_ss_strap_mci_base_addr_i | MCI base address strap input |
+| External | input | 1 | cptra_ss_strap_recovery_ifc_base_addr_i | Recovery interface base address strap input |
+| External | input | 1 | cptra_ss_strap_otp_fc_base_addr_i | OTP FC base address strap input |
+| External | input | 1 | cptra_ss_strap_uds_seed_base_addr_i | UDS seed base address strap input |
+| External | input | 1 | cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i | Prod debug unlock auth PK hash reg bank offset input |
+| External | input | 1 | cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i | Number of prod debug unlock auth PK hashes input |
+| External | input | 1 | cptra_ss_strap_generic_0_i | Generic strap input 0 |
+| External | input | 1 | cptra_ss_strap_generic_1_i | Generic strap input 1 |
+| External | input | 1 | cptra_ss_strap_generic_2_i | Generic strap input 2 |
+| External | input | 1 | cptra_ss_strap_generic_3_i | Generic strap input 3 |
+
+**Table: Caliptra SS Ports**
 
 | Facing | Type | width | Name | Description |
 |---|---|---|---|---|
@@ -79,15 +100,11 @@
 | External | input | 1 | cptra_ss_cptra_core_itrng_data_i | Internal TRNG data input |
 | External | input | 1 | cptra_ss_cptra_core_itrng_valid_i | Internal TRNG valid input |
 | External | interface | 1 | cptra_ss_mcu_rom_macro_req_if | MCU ROM macro request interface |
-| External | input | 1 | cptra_ss_strap_mcu_lsu_axi_user_i | MCU LSU AXI user strap input |
-| External | input | 1 | cptra_ss_strap_mcu_ifu_axi_user_i | MCU IFU AXI user strap input |
-| External | input | 1 | cptra_ss_strap_clp_axi_user_i | CLP AXI user strap input |
 | External | interface | 1 | cptra_ss_mci_mcu_sram_req_if | MCI MCU SRAM request interface |
 | External | interface | 1 | cptra_ss_mci_mbox0_sram_req_if | MCI mailbox 0 SRAM request interface |
 | External | interface | 1 | cptra_ss_mci_mbox1_sram_req_if | MCI mailbox 1 SRAM request interface |
 | External | interface | 1 | cptra_ss_mcu0_el2_mem_export | MCU0 EL2 memory export interface |
 | External | input | 1 | cptra_ss_mci_generic_input_wires_i | Generic input wires for MCI |
-| External | input | 1 | cptra_ss_strap_mcu_reset_vector_i | MCU reset vector strap input |
 | External | input | 1 | cptra_ss_mcu_no_rom_config_i | No ROM configuration input |
 | External | input | 1 | cptra_ss_mci_boot_seq_brkpoint_i | MCI boot sequence breakpoint input |
 | External | input | 1 | cptra_ss_lc_Allow_RMA_on_PPD_i | Allow RMA on PPD input |
@@ -100,17 +117,6 @@
 | External | input | 1 | cptra_ss_mcu_jtag_trst_n_i | MCU JTAG reset input, active low |
 | External | output | 1 | cptra_ss_mcu_jtag_tdo_o | MCU JTAG TDO output |
 | External | output | 1 | cptra_ss_mcu_jtag_tdoEn_o | MCU JTAG TDO enable output |
-| External | input | 1 | cptra_ss_strap_caliptra_base_addr_i | Caliptra base address strap input |
-| External | input | 1 | cptra_ss_strap_mci_base_addr_i | MCI base address strap input |
-| External | input | 1 | cptra_ss_strap_recovery_ifc_base_addr_i | Recovery interface base address strap input |
-| External | input | 1 | cptra_ss_strap_otp_fc_base_addr_i | OTP FC base address strap input |
-| External | input | 1 | cptra_ss_strap_uds_seed_base_addr_i | UDS seed base address strap input |
-| External | input | 1 | cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i | Prod debug unlock auth PK hash reg bank offset input |
-| External | input | 1 | cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i | Number of prod debug unlock auth PK hashes input |
-| External | input | 1 | cptra_ss_strap_generic_0_i | Generic strap input 0 |
-| External | input | 1 | cptra_ss_strap_generic_1_i | Generic strap input 1 |
-| External | input | 1 | cptra_ss_strap_generic_2_i | Generic strap input 2 |
-| External | input | 1 | cptra_ss_strap_generic_3_i | Generic strap input 3 |
 | External | input | 1 | cptra_ss_debug_intent_i | Debug intent signal input |
 | External | output | 1 | cptra_ss_dbg_manuf_enable_o | Debug manufacturing enable output |
 | External | output | 1 | cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o | SoC production debug unlock level output |
@@ -137,6 +143,8 @@
 | External | output | 1 | ready_for_fuses | Ready for fuses output |
 | External | output | 1 | ready_for_mb_processing | Ready for mailbox processing output |
 | External | output | 1 | mailbox_data_avail | Mailbox data available output |
+
+
 
 ### Memory Map	/ Address map
 
@@ -239,8 +247,6 @@ Manufacturer Control Interface provides the following features for Caliptra SS:
 
 * LCC State Translator for Caliptra Core
 
-* DMA for MCU
-
 * Error Aggregation
 
 * Register Bank for MCU/SOC
@@ -262,10 +268,10 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 | Parameter name | Internal/External | Location | Description |
 | :---- | :---- | :---- | :---- |
-| AXI\_ADDR\_WIDTH | Internal | mci\_top | AXI address width |
-| AXI\_DATA\_WIDTH | Internal | mci\_top | AXI data width |
-| AXI\_USER\_WIDTH | Internal | mci\_top | AXI user width |
-| AXI\_ID\_WIDTH | Internal | mci\_top | AXI ID width |
+| AXI\_ADDR\_WIDTH | External | mci\_top | AXI address width |
+| AXI\_DATA\_WIDTH | External | mci\_top | AXI data width |
+| AXI\_USER\_WIDTH | External | mci\_top | AXI user width |
+| AXI\_ID\_WIDTH | External | mci\_top | AXI ID width |
 
 ##### 
 
@@ -273,7 +279,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 | Parameter name | Internal/External | Location | Description |
 | :---- | :---- | :---- | :---- |
-| MCU\_SRAM\_SIZE\_KB | external | mci\_top | Size of MCU SRAM in KB. i.e. Min: 4 Max: 2048(2MB) |
+| MCU\_SRAM\_SIZE\_KB | External | mci\_top | Size of MCU SRAM in KB. i.e. Min: 4 Max: 2048(2MB) |
 
 **Table: MCI Boot Sequencer Integration Parameters**
 
@@ -317,7 +323,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 | Signal Name | Width | In/Ext | Dir | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| clk | 1 | ext | in |  | MCI Clock |
+| clk | 1 | ext | in |  | MCI Clock. Connected to subsystem top level clk input.|
 
 ##### 
 
@@ -625,19 +631,29 @@ The table below shows connections between MCI and Caliptra Core that are not par
 
 Below are the connections needed between MCI and LCC for the Gasket functionality
 
-**Table: MCI to LCC Gasket Connections**
+**Table: LCC Gasket - MCI to LCC Connections**
 
 | MCI Port | Direction | LCC Port | Description |
 | ----- | :---: | ----- | ----- |
-| from\_lcc\_to\_otp\_program\_i | \<- | lc\_otp\_program\_o |  |
+| from\_lcc\_to\_otp\_program\_i | \<- | lc\_otp\_program\_o | FIXME @Emtre |
 | lc\_dft\_en\_i | \<- | lc\_dft\_en\_o | FIXME @Emre |
 | lc\_hw\_debug\_en\_i | \<- | lc\_hw\_debug\_en\_o | FIXME @Emre |
 | from\_otp\_to\_lcc\_program\_i | \<- | otp\_lc\_data\_i | FIXME @Emre |
-| ss\_dbg\_manuf\_enable\_i | \<- | ***caliptra\_core.***ss\_dbg\_manuf\_enable | FIXME @Emre |
-| ss\_soc\_dbg\_unlock\_level\_i | \<- | ***caliptra\_core.***ss\_soc\_dbg\_unlock\_level | FIXME @Emre |
-| SOC\_DFT\_EN | \-\> | **SS PORT** | FIXME @Emre |
-| SOC\_HW\_DEBUG\_EN | \-\> | **SS PORT** | FIXME @Emre |
-| security\_state\_o | \-\> | ***caliptra\_core.***security\_state | FIXME @Emre |
+
+**Table: LCC Gasket - MCI to Caliptra Core Connections**
+
+| MCI Port | Direction | Caliptra Core Port | Description |
+| ----- | :---: | ----- | ----- |
+| ss\_dbg\_manuf\_enable\_i | \<- | ss\_dbg\_manuf\_enable | FIXME @Emre |
+| ss\_soc\_dbg\_unlock\_level\_i | \<- | ss\_soc\_dbg\_unlock\_level | FIXME @Emre |
+| security\_state\_o | \-\> | security\_state | FIXME @Emre |
+
+**Table: LCC Gasket - MCI to Caliptra SS Port Connections**
+
+| MCI Port | Direction | SS Port | Description |
+| ----- | :---: | ----- | ----- |
+| SOC\_DFT\_EN | \-\> | cptra_ss_soc_dft_en_o | FIXME @Emre |
+| SOC\_HW\_DEBUG\_EN | \-\> | cptra_ss_soc_hw_debug_en_o | FIXME @Emre |
 
 #### MCU SRAM Sizing Requirements
 
@@ -722,25 +738,18 @@ The following table defines the order in which resets can get asserted. A "\>\>"
 
 #### MCU Hitless Patch Flow
 
-Once both MCU and Caliptra have been brought up the MCI Boot Sequencer is in a “listening” state waiting for a MCU reset request. This reset request indicates there is a new Hitless FW update for MCU. This is the required flow (can been seen in the MCI boot sequencer diagram):
+Once both MCU and Caliptra have been brought up the MCI Boot Sequencer is in a “listening” state waiting for a MCU reset request. 
 
-1. MCI Boot Sequencer in BOOT\_WAIT\_MCU\_RST\_REQ  
-2. Caliptra clears the “EXECGO\[2\]” which will clear mcu\_sram\_fw\_exec\_region\_lock port on MCI  
-3. Caliptra polls on RESET\_STATU.mcu to be asserted indicating MCU is in reset  
-4. MCI will send an interrupt to MCU  
-5. MCU preps for reset  
-6. MCU request reset to MCI via the MCU\_RESET\_REQ CSR  
-7. MCI resets the MCU for a minimum time determined by the MIN\_MCU\_RST\_COUNTER\_WIDTH parameter  
-   1. MCU SRAM Execution region is now accessible to Caliptra  
-8. MCI waits for mcu\_sram\_fw\_exec\_region\_lock to be set  
-9. Caliptra loads new FW image into MCU SRAM  
-10. Caliptra sets “EXECGO\[2\]” which will assert the mcu\_sram\_fw\_exec\_region\_lock  
-11. MCI brings MCU out of reset  
-12. MCU ROM will check MCI RESET\_REASON if it was a hitless or a boot update.  
-13. If boot update  
-    1. When jumping to the runtime image everything needs to be initialized  
-14. If hitless update  
-    1. Certain data in the SRAM is preserved and MCU FW doesn’t have to initialized everything. 
+To see the MCU Hitless Flow please see the following spec: [Caliptra Hitless Update Support](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates)
+
+MCI registers relevant to this flow are:
+
+- Caliptra
+   - SS_GENERIC_FW_EXEC_CTRL[0].go[2]
+- MCI 
+   - RESET_STATUS.mcu
+   - MCU_RESET_REQ
+   - RESET_REASON
 
 #### Error Flows
 
