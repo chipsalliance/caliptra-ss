@@ -180,7 +180,7 @@
 
 The Fuse Controller is a core component in the secure infrastructure of the system, responsible for managing the fuses and ensuring the integrity, consistency, and secure storage of sensitive data. It provides essential interfaces for direct fuse programming. The Fuse Controller interacts closely with the Lifecycle Controller (LC), FUSE macros, MCI, and Caliptra-core.
 
-For an in-depth understanding of the Fuse Controller's functionality, including its programming flow, refer to the[Hardware Specification Document](CaliptraSSHardwareSpecification.md).
+For an in-depth understanding of the Fuse Controller's functionality, including its programming flow, refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md).
 ### Parameters & Defines
 
 | Parameter                | Default                        | Description                                         |
@@ -295,7 +295,7 @@ The smoke test focuses on ensuring basic functionality and connectivity of the F
 
 The LC Controller (Lifecycle Controller) is a critical component of the Caliptra Subsystem, responsible for securely managing the lifecycle states of the chip. The LC Controller interacts with other subsystems such as the Fuse Controller, MCI, AXI interconnect, and JTAG TAP to enforce secure transitions, validate tokens, and generate error conditions. Additionally, it implements escalation mechanisms to respond to security breaches, enabling the chip to enter secure states like SCRAP.
 
-For a detailed description of the Lifecycle Controller's architecture, design, and operational flow, refer to [Hardware Specification Document](CaliptraSSHardwareSpecification.md).
+For a detailed description of the Lifecycle Controller's architecture, design, and operational flow, refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md).
 
 ### Parameters & Defines
 
