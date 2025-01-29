@@ -1,9 +1,9 @@
 
 ![OCP Logo](./images/OCP_logo.png)
 
-# 1. Caliptra SS Integration Specification v0p8
+<title> Caliptra SS Integration Specification </title>
 
-## 1.1. Content
+Content
 
 - [1. Caliptra SS Integration Specification v0p8](#1-caliptra-ss-integration-specification-v0p8)
   - [1.1. Content](#11-content)
@@ -21,9 +21,9 @@
   - [7.1. Address map](#71-address-map)
   - [7.2. Parameters](#72-parameters)
   - [7.3. Defines](#73-defines)
-  - [7.4. Top Level Interfaces \& Signals](#74-top-level-interfaces--signals)
+  - [7.4. Interfaces \& Signals](#74-interfaces--signals)
     - [7.4.1. AXI Interface (axi\_if)](#741-axi-interface-axi_if)
-    - [7.4.2. Caliptra Subsystem Top : I/f \& signals](#742-caliptra-subsystem-top--if--signals)
+    - [7.4.2. Caliptra Subsystem Top Interface \& signals](#742-caliptra-subsystem-top-interface--signals)
   - [7.5. Integration Requirements](#75-integration-requirements)
       - [7.5.0.1. Clock](#7501-clock)
       - [7.5.0.2. Reset](#7502-reset)
