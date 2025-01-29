@@ -572,7 +572,7 @@ The following table describes the allocation of functionality on agg\_error\_fat
 
 A more detailed microarchitecture of the error aggregation can be found in the Caliptra SS Hardware specification. 
 
-#### Internal Fuse Controller Initialization Connectivity Requirements
+#### Subsystem Internal Fuse Controller Initialization Connectivity Requirements
 
 During Caliptra SS bring up the MCI handshakes with the FC to do initialization. The flow is:
 
@@ -588,7 +588,7 @@ Connections between MCI and FC are shown in the table below:
 | fc\_opt\_init | pwr\_otp\_i.otp\_init |
 | fc\_opt\_done | pwr\_otp\_o.otp\_done |
 
-#### Internal Life Cycle Controller Initialization Connectivity Requirements
+#### Subsystem Internal Life Cycle Controller Initialization Connectivity Requirements
 
 During Caliptra SS bring up the MCI handshakes with the LCC to do initialization. The flow is:
 
