@@ -475,11 +475,11 @@ AXI ADDR\_WIDTH must be wide enough to fully address the MCI address space.
 
 The base address assigned to MCI must align to the MCI total addressable space. This can be calculated based off of the MCU SRAM size since it is the last block in the MCI memory map. 
 
-To calculate the base address alignment use the following calculation:
+    To calculate the base address alignment use the following calculation:
 
       bits \= $clog2(MCU\_SRAM\_OFFSET \+ ((MCU\_SRAM\_SIZE\_KB-1) \* 1024))
 
-MCU\_SRAM\_OFFSET can be found in the MCI’s [Top Level Memory Map](#top-level-memory-map).
+    MCU\_SRAM\_OFFSET can be found in the MCI’s [Top Level Memory Map](#top-level-memory-map).
 
 *Example:*
 
