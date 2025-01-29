@@ -199,7 +199,7 @@ The following address map is a suggested address map for the given subsystem des
 ### 5.4.2. Caliptra Subsystem Top Interface & signals 
 
 | Facing   | Type      | width | Signal or Interface Name             | Description                              |
-|----------|-----------|-------|--------------------------------------|------------------------------------------|
+|:---|:----|:---|:-------------------------------|:-----------------------------------------|
 | External | input     | 1     | cptra_ss_clk_i                       | Caliptra subsystem clock input           |
 | External | input     | 1     | cptra_ss_pwrgood_i                   | Power good signal input                  |
 | External | input     | 1     | cptra_ss_rst_b_i                     | Reset signal input, active low           |
@@ -221,7 +221,7 @@ The following address map is a suggested address map for the given subsystem des
 | External | input     | na    | cptra_ss_otp_core_axi_rd_req_i       | OTP controller AXI read request input    |
 | External | output    | na    | cptra_ss_otp_core_axi_rd_rsp_o       | OTP controller AXI read response output  |
 | External | input     | 256   | cptra_ss_cptra_obf_key_i             | Caliptra core obfuscation key input      |
-| External | input     | `CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] | cptra_ss_cptra_csr_hmac_key_i        | Caliptra core CSR HMAC key input         |
+| External | input     | CLP_CSR_HMAC_KEY_DWORDS | cptra_ss_cptra_csr_hmac_key_i        | Caliptra core CSR HMAC key input         |
 | External | input     | 1     | cptra_ss_cptra_core_jtag_tck_i       | JTAG clock input                         |
 | External | input     | 1     | cptra_ss_cptra_core_jtag_tms_i       | JTAG TMS input                           |
 | External | input     | 1     | cptra_ss_cptra_core_jtag_tdi_i       | JTAG TDI input                           |
@@ -238,8 +238,8 @@ The following address map is a suggested address map for the given subsystem des
 | External | output    | CPTRA_MBOX_DATA_AND_ECC_W | cptra_ss_cptra_core_mbox_sram_wdata_o| Mailbox SRAM write data output           |
 | External | input     | CPTRA_MBOX_DATA_AND_ECC_W | cptra_ss_cptra_core_mbox_sram_rdata_i| Mailbox SRAM read data input             |
 | External | output    | 1     | cptra_ss_cptra_core_imem_cs_o        | Instruction memory chip select output    |
-| External | output    | `CALIPTRA_IMEM_ADDR_WIDTH | cptra_ss_cptra_core_imem_addr_o      | Instruction memory address output        |
-| External | input     | `CALIPTRA_IMEM_DATA_WIDTH | cptra_ss_cptra_core_imem_rdata_i     | Instruction memory read data input       |
+| External | output    | CALIPTRA_IMEM_ADDR_WIDTH | cptra_ss_cptra_core_imem_addr_o      | Instruction memory address output        |
+| External | input     | CALIPTRA_IMEM_DATA_WIDTH | cptra_ss_cptra_core_imem_rdata_i     | Instruction memory read data input       |
 | External | input     | 1     | cptra_ss_cptra_core_bootfsm_bp_i     | Boot FSM breakpoint input                |
 | External | output    | 1     | cptra_ss_cptra_core_etrng_req_o      | External TRNG request output             |
 | External | input     | 4     | cptra_ss_cptra_core_itrng_data_i     | Internal TRNG data input                 |
