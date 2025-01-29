@@ -1,50 +1,47 @@
 
+
 ![OCP Logo](./images/OCP_logo.png)
 
-<title> Caliptra SS Integration Specification </title>
 
-Content
+<h1 align="center"> Caliptra SS Integration Specification  </h1>
 
-- [1. Caliptra SS Integration Specification v0p8](#1-caliptra-ss-integration-specification-v0p8)
-  - [1.1. Content](#11-content)
-- [2. Scope](#2-scope)
-  - [2.1. Version](#21-version)
-- [3. Overview](#3-overview)
-- [4. Calpitra SS High level diagram](#4-calpitra-ss-high-level-diagram)
-- [5. Integration Considerations](#5-integration-considerations)
-  - [5.1. Design Consideration](#51-design-consideration)
-  - [5.2. Verification Considerations](#52-verification-considerations)
-- [6. References](#6-references)
-  - [6.1. Related specifications](#61-related-specifications)
-  - [6.2. Important files \& Path](#62-important-files--path)
-- [7. Caliptra Subsystem](#7-caliptra-subsystem)
-  - [7.1. Address map](#71-address-map)
-  - [7.2. Parameters](#72-parameters)
-  - [7.3. Defines](#73-defines)
-  - [7.4. Interfaces \& Signals](#74-interfaces--signals)
-    - [7.4.1. AXI Interface (axi\_if)](#741-axi-interface-axi_if)
-    - [7.4.2. Caliptra Subsystem Top Interface \& signals](#742-caliptra-subsystem-top-interface--signals)
-  - [7.5. Integration Requirements](#75-integration-requirements)
-      - [7.5.0.1. Clock](#7501-clock)
-      - [7.5.0.2. Reset](#7502-reset)
-  - [7.6. Programming interface](#76-programming-interface)
-  - [7.7. Sequences](#77-sequences)
-  - [7.8. How to test : Smoke \& more](#78-how-to-test--smoke--more)
-  - [7.9. Other requirements](#79-other-requirements)
-- [8. Caliptra Core](#8-caliptra-core)
-- [9. MCU](#9-mcu)
-  - [9.1. Overview](#91-overview)
-    - [9.1.1. Parameters \& Defines](#911-parameters--defines)
-    - [9.1.2. MCU Top : Interface \& Signals](#912-mcu-top--interface--signals)
-- [10. FC Controller - @Emre](#10-fc-controller---emre)
-- [11. LC Controller - @Emre](#11-lc-controller---emre)
-- [12. MCI - @Clayton](#12-mci---clayton)
-- [13. I3C core - @Nilesh](#13-i3c-core---nilesh)
-- [14. Memories - @Nilesh](#14-memories---nilesh)
-- [15. Terminology](#15-terminology)
+- [1. Scope](#1-scope)
+  - [1.1. Document Version](#11-document-version)
+  - [1.2. Related specifications](#12-related-specifications)
+  - [1.3. Important files \& Path](#13-important-files--path)
+- [2. Overview](#2-overview)
+- [3. Calpitra SS High level diagram](#3-calpitra-ss-high-level-diagram)
+- [4. Integration Considerations](#4-integration-considerations)
+  - [4.1. Design Consideration](#41-design-consideration)
+  - [4.2. Verification Considerations](#42-verification-considerations)
+- [5. Caliptra Subsystem](#5-caliptra-subsystem)
+  - [5.1. Address map](#51-address-map)
+  - [5.2. Parameters](#52-parameters)
+  - [5.3. Defines](#53-defines)
+  - [5.4. Interfaces \& Signals](#54-interfaces--signals)
+    - [5.4.1. AXI Interface (axi\_if)](#541-axi-interface-axi_if)
+    - [5.4.2. Caliptra Subsystem Top Interface \& signals](#542-caliptra-subsystem-top-interface--signals)
+  - [5.5. Integration Requirements](#55-integration-requirements)
+      - [5.5.0.1. Clock](#5501-clock)
+      - [5.5.0.2. Reset](#5502-reset)
+  - [5.6. Programming interface](#56-programming-interface)
+  - [5.7. Sequences](#57-sequences)
+  - [5.8. How to test : Smoke \& more](#58-how-to-test--smoke--more)
+  - [5.9. Other requirements](#59-other-requirements)
+- [6. Caliptra Core](#6-caliptra-core)
+- [7. MCU](#7-mcu)
+  - [7.1. Overview](#71-overview)
+    - [7.1.1. Parameters \& Defines](#711-parameters--defines)
+    - [7.1.2. MCU Top : Interface \& Signals](#712-mcu-top--interface--signals)
+- [8. FC Controller - @Emre](#8-fc-controller---emre)
+- [9. LC Controller - @Emre](#9-lc-controller---emre)
+- [10. MCI - @Clayton](#10-mci---clayton)
+- [11. I3C core - @Nilesh](#11-i3c-core---nilesh)
+- [12. Memories - @Nilesh](#12-memories---nilesh)
+- [13. Terminology](#13-terminology)
 
 
-# 2. Scope 
+# 1. Scope 
 
 <span style="color:red">**Disclaimer**: Internal Draft Document</span>
 This document is a work in progress and intended for internal use only. It may contain incomplete or preliminary information subject to change. Do not refer to, share, or rely on this document unless explicitly released in its final version.
@@ -53,7 +50,7 @@ For Caliptra Subsystem, this document serves as a hardware integration specifica
 
 This document includes Caliptra Subsystem top-level details along with parameters, defines, interfaces, memory map, programming reference, and guidelines on how to test the integration of the design.
 
-## 2.1. Version
+## 1.1. Document Version
 <div align="center">
 
 | Date            |   Document Version | Description       |
@@ -62,12 +59,32 @@ This document includes Caliptra Subsystem top-level details along with parameter
 
 </div>
 
+## 1.2. Related specifications
 
-# 3. Overview
+The components described in this document are either obtained from open-source GitHub repositories, developed from scratch, or modified versions of open-source implementations. Links to relevant documentation and GitHub sources are shared in the following table.
+
+*Table 1: Subcomponent specifications*
+
+| IP/Block      | Code (GitHub URL)                                                         | Documentation (URL)                                                           |
+|---------------|---------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| Caliptra-rtl  | [GitHub - chipsalliance/caliptra-rtl](https://github.com/chipsalliance/caliptra-rtl)      | [Caliptra RTL documentation](https://github.com/chipsalliance/caliptra-rtl/tree/main/docs) |
+| Cores-VeeR    | [GitHub - chipsalliance/Cores-VeeR-EL2](https://github.com/chipsalliance/Cores-VeeR-EL2)  | [VeeR EL2 Programmer’s Reference Manual](http://cores-swerv-el2/RISC-V_SweRV_EL2_PRM.pdf%20at%20master%20%C2%B7) |
+| I3C-Core      | [GitHub - chipsalliance/i3c-core](https://github.com/chipsalliance/i3c-core)              | [I3C core documentation](https://github.com/chipsalliance/i3c-core?tab=readme-ov-file#i3c-core) |
+| Adams Bridge  | [GitHub - chipsalliance/adams-bridge](https://github.com/chipsalliance/adams-bridge)      | [Adams Bridge Documentation](https://github.com/chipsalliance/adams-bridge/tree/main/docs) |
+
+## 1.3. Important files & Path
+
+| Type | Name | Path |
+|------|------|------|
+| rtl | Design Top       | caliptra-ss\src\integration\rtl\caliptra_ss_top.sv          |
+| tb  | Interconnect Top | caliptra-ss\src\integration\testbench\aaxi4_interconnect.sv |
+| tb  | Testbench Top    | caliptra-ss\src\integration\testbench\caliptra_ss_top_tb.sv |
+
+# 2. Overview
 
 The Caliptra Subsystem is designed to provide a robust Root of Trust (RoT) for datacenter-class System on Chips (SoCs), including CPUs, GPUs, DPUs, and TPUs. It integrates both hardware and firmware components to deliver essential security services such as identity establishment, measured boot, and attestation. By incorporating the Caliptra Subsystem, integrators can enhance the security capabilities of their SoCs, providing a reliable RoT that meets industry standards and addresses the evolving security needs of datacenter environments.
 
-# 4. Calpitra SS High level diagram
+# 3. Calpitra SS High level diagram
 
 The following diagram provides a high-level overview of the Caliptra SS subsystem. It illustrates the key components and their interconnections within the system. The diagram includes:
 
@@ -89,11 +106,11 @@ Following high-level diagram helps integrators understand the overall architectu
 
 ![Caliptra Subsystem High Level Diagram](./images/CaliptraSubsystem.png)
 
-# 5. Integration Considerations
+# 4. Integration Considerations
 
 By performing these design and verification tasks, the integrator ensures that the Caliptra Subsystem is properly integrated and can function as intended within the larger system.
 
-## 5.1. Design Consideration
+## 4.1. Design Consideration
 
 1. **Replace the AXI Interconnect**: 
 The subsystem utilizes an AXI-based interconnect to facilitate communication between components, with the Caliptra core connecting via an AXI interface. The integrator must replace the default AXI interconnect component with their proprietary interface. This ensures that the subsystem can communicate effectively with the rest of the subsystem components using the integrator's specific interconnect architecture.
@@ -102,40 +119,16 @@ The subsystem utilizes an AXI-based interconnect to facilitate communication bet
 
 3. **No Changes to Internals**: Integrators are not expected to make any changes to the internals of the design. The focus should be on ensuring proper integration and connectivity of the subsystem components.
 
-## 5.2. Verification Considerations
+## 4.2. Verification Considerations
 
 1. **Connect the I3C Core GPIO with I3C host Driver**: 
 The integrator must connect the I3C core to the appropriate driver for the GPIO pins. This connection is crucial for enabling communication with I3C devices, which are used for communication within the subsystem.
 
-# 6. References 
-## 6.1. Related specifications
-
-The components described in this document are either obtained from open-source GitHub repositories, developed from scratch, or modified versions of open-source implementations. Links to relevant documentation and GitHub sources are shared in the following table.
-
-*Table 1: Subcomponent specifications*
-
-| IP/Block      | Code (GitHub URL)                                                         | Documentation (URL)                                                           |
-|---------------|---------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| Caliptra-rtl  | [GitHub - chipsalliance/caliptra-rtl](https://github.com/chipsalliance/caliptra-rtl)      | [Caliptra RTL documentation](https://github.com/chipsalliance/caliptra-rtl/tree/main/docs) |
-| Cores-VeeR    | [GitHub - chipsalliance/Cores-VeeR-EL2](https://github.com/chipsalliance/Cores-VeeR-EL2)  | [VeeR EL2 Programmer’s Reference Manual](http://cores-swerv-el2/RISC-V_SweRV_EL2_PRM.pdf%20at%20master%20%C2%B7) |
-| I3C-Core      | [GitHub - chipsalliance/i3c-core](https://github.com/chipsalliance/i3c-core)              | [I3C core documentation](https://github.com/chipsalliance/i3c-core?tab=readme-ov-file#i3c-core) |
-| Adams Bridge  | [GitHub - chipsalliance/adams-bridge](https://github.com/chipsalliance/adams-bridge)      | [Adams Bridge Documentation](https://github.com/chipsalliance/adams-bridge/tree/main/docs) |
-
-## 6.2. Important files & Path
-
-| Type | Name | Path |
-|------|------|------|
-| rtl | Design Top       | caliptra-ss\src\integration\rtl\caliptra_ss_top.sv          |
-| tb  | Interconnect Top | caliptra-ss\src\integration\testbench\aaxi4_interconnect.sv |
-| tb  | Testbench Top    | caliptra-ss\src\integration\testbench\caliptra_ss_top_tb.sv |
-
-
-
-# 7. Caliptra Subsystem
+# 5. Caliptra Subsystem
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-## 7.1. Address map
+## 5.1. Address map
 
 The following address map is a suggested address map for the given subsystem design. It details the memory layout and the connections between different components within the Caliptra SS subsystem.
 
@@ -149,23 +142,23 @@ The following address map is a suggested address map for the given subsystem des
 | 64'h7000_0000 | 64'h7000_01FF | 5 | Fuse Ctrl | Fuse Controller |
 | 64'h7000_0200 | 64'h7000_03FF | 6 | Fuse Ctrl Core | Fuse Controller Core |
 | 64'h7000_0400 | 64'h7000_05FF | 7 | Life Cycle Ctrl | Life Cycle Controller |
-## 7.2. Parameters 
+## 5.2. Parameters 
 | Parameter                  | Value | Description                              |
 |----------------------------|-------|------------------------------------------|
 | ADDR_WIDTH                 | 64    | Address width                            |
 | DATA_WIDTH                 | 64    | Data width                               |
 
 
-## 7.3. Defines
+## 5.3. Defines
 
 | Define                  | Value | Description                             | 
 |-------------------------|-------|-----------------------------------------|
 | CLP_CSR_HMAC_KEY_DWORDS | 16    | HMAC Key Dwords                         |
 | 
 
-## 7.4. Interfaces & Signals
+## 5.4. Interfaces & Signals
 
-### 7.4.1. AXI Interface (axi_if)
+### 5.4.1. AXI Interface (axi_if)
 
 | Signal          | Width                  | Direction (mgr) | Direction (sub) |
 |-----------------|------------------------|-----------------|-----------------|
@@ -203,7 +196,7 @@ The following address map is a suggested address map for the given subsystem des
 | bvalid          | 1                      | input           | output          |
 | bready          | 1                      | output          | input           |
 
-### 7.4.2. Caliptra Subsystem Top Interface & signals 
+### 5.4.2. Caliptra Subsystem Top Interface & signals 
 
 | Facing   | Type      | width | Signal or Interface Name             | Description                              |
 |----------|-----------|-------|--------------------------------------|------------------------------------------|
@@ -311,20 +304,20 @@ The following address map is a suggested address map for the given subsystem des
 | External | output    | 1     | ready_for_mb_processing              | Ready for mailbox processing output      |
 | External | output    | 1     | mailbox_data_avail                   | Mailbox data available output            |
 
-## 7.5. Integration Requirements
+## 5.5. Integration Requirements
 
-#### 7.5.0.1. Clock
+#### 5.5.0.1. Clock
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-#### 7.5.0.2. Reset
+#### 5.5.0.2. Reset
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 
-## 7.6. Programming interface
+## 5.6. Programming interface
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-## 7.7. Sequences
+## 5.7. Sequences
 
     Notes : 
         Reset
@@ -332,26 +325,26 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-## 7.8. How to test : Smoke & more
+## 5.8. How to test : Smoke & more
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-## 7.9. Other requirements
+## 5.9. Other requirements
 
-# 8. Caliptra Core
+# 6. Caliptra Core
 
 Follow the link for 
 [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md)
 
-# 9. MCU 
+# 7. MCU 
 
-## 9.1. Overview
+## 7.1. Overview
 
 MCU encapusaltes the RISCV instance of Veer Core EL2 instance.
 
-### 9.1.1. Parameters & Defines
+### 7.1.1. Parameters & Defines
 
-### 9.1.2. MCU Top : Interface & Signals
+### 7.1.2. MCU Top : Interface & Signals
 
 | Facing   | Type           | Width | Name                                 | Description                              |
 |----------|----------------|-------|--------------------------------------|------------------------------------------|
@@ -448,27 +441,27 @@ MCU encapusaltes the RISCV instance of Veer Core EL2 instance.
 | External | output         | 1     | dmi_active                           | DMI active output                        |
 
 
-# 10. FC Controller - @Emre
+# 8. FC Controller - @Emre
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-# 11. LC Controller - @Emre
+# 9. LC Controller - @Emre
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-# 12. MCI - @Clayton
+# 10. MCI - @Clayton
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-# 13. I3C core - @Nilesh
+# 11. I3C core - @Nilesh
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-# 14. Memories - @Nilesh
+# 12. Memories - @Nilesh
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-# 15. Terminology
+# 13. Terminology
 
 | Abbreviation | Description                                                                                      |
 | :--------- | :--------- |
