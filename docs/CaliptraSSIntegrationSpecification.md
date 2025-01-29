@@ -4,12 +4,12 @@
   <img src="./images/OCP_logo.png" alt="OCP Logo">
 </div>
 
+
 <h1 align="center"> Caliptra SS Integration Specification v0p8 </h1>
 
 - [1. Scope](#1-scope)
   - [1.1. Document Version](#11-document-version)
   - [1.2. Related specifications](#12-related-specifications)
-  - [1.3. Important files \& Path](#13-important-files--path)
 - [2. Overview](#2-overview)
 - [3. Calpitra SS High level diagram](#3-calpitra-ss-high-level-diagram)
 - [4. Integration Considerations](#4-integration-considerations)
@@ -23,22 +23,26 @@
     - [5.4.1. AXI Interface (axi\_if)](#541-axi-interface-axi_if)
     - [5.4.2. Caliptra Subsystem Top Interface \& signals](#542-caliptra-subsystem-top-interface--signals)
   - [5.5. Integration Requirements](#55-integration-requirements)
-    - [5.5..1. Clock](#551-clock)
-    - [5.5.3. Reset](#553-reset)
+    - [5.5.1. Clock](#551-clock)
+    - [5.5.2. Reset](#552-reset)
+    - [5.5.3. Power Good Signal](#553-power-good-signal)
   - [5.6. Programming interface](#56-programming-interface)
   - [5.7. Sequences](#57-sequences)
-  - [5.8. How to test : Smoke \& more](#58-how-to-test--smoke--more)
+  - [5.8. How to test](#58-how-to-test)
   - [5.9. Other requirements](#59-other-requirements)
 - [6. Caliptra Core](#6-caliptra-core)
 - [7. MCU](#7-mcu)
   - [7.1. Overview](#71-overview)
     - [7.1.1. Parameters \& Defines](#711-parameters--defines)
     - [7.1.2. MCU Top : Interface \& Signals](#712-mcu-top--interface--signals)
+  - [7.2. Programming interface](#72-programming-interface)
+    - [7.2.1. MCU Linker Script Integration](#721-mcu-linker-script-integration)
 - [8. FC Controller - @Emre](#8-fc-controller---emre)
 - [9. LC Controller - @Emre](#9-lc-controller---emre)
 - [10. MCI - @Clayton](#10-mci---clayton)
 - [11. I3C core - @Nilesh](#11-i3c-core---nilesh)
-- [12. Memories - @Nilesh](#12-memories---nilesh)
+- [12. Memories](#12-memories)
+    - [List of Memories](#list-of-memories)
 - [13. Terminology](#13-terminology)
 
 
@@ -72,14 +76,6 @@ The components described in this document are either obtained from open-source G
 | I3C-Core      | [GitHub - chipsalliance/i3c-core](https://github.com/chipsalliance/i3c-core)              | [I3C core documentation](https://github.com/chipsalliance/i3c-core?tab=readme-ov-file#i3c-core) |
 | Adams Bridge  | [GitHub - chipsalliance/adams-bridge](https://github.com/chipsalliance/adams-bridge)      | [Adams Bridge Documentation](https://github.com/chipsalliance/adams-bridge/tree/main/docs) |
 
-## 1.3. Important files & Path
-
-| Type | Name | Path |
-|------|------|------|
-| rtl | Design Top       | [caliptra_ss_top.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/rtl/caliptra_ss_top.sv)          |
-| tb  | Interconnect Top | [testbench\aaxi4_interconnect.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/aaxi4_interconnect.sv) |
-| tb  | Testbench Top    | [testbench\caliptra_ss_top_tb.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/caliptra_ss_top_tb.sv) |
-
 # 2. Overview
 
 The Caliptra Subsystem is designed to provide a robust Root of Trust (RoT) for datacenter-class System on Chips (SoCs), including CPUs, GPUs, DPUs, and TPUs. It integrates both hardware and firmware components to deliver essential security services such as identity establishment, measured boot, and attestation. By incorporating the Caliptra Subsystem, integrators can enhance the security capabilities of their SoCs, providing a reliable RoT that meets industry standards and addresses the evolving security needs of datacenter environments.
@@ -88,19 +84,13 @@ The Caliptra Subsystem is designed to provide a robust Root of Trust (RoT) for d
 
 The following diagram provides a high-level overview of the Caliptra SS subsystem. It illustrates the key components and their interconnections within the system. The diagram includes:
 
-- **Caliptra Core**: The Caliptra Core IP. For more information, see[ Caliptra: A Datacenter System on a Chip (SoC) Root of Trust (RoT)](https://chipsalliance.github.io/Caliptra/doc/Caliptra.html).
-
-- **MCU (Manufactures Control Unit)**: A microcontroller unit that manages various control tasks within the subsystem.
-
-- **I3C Core**: An interface for connecting and communicating with I3C devices, which are used for sensor and peripheral communication.
-
-- **Life Cycle Controller**: A component that manages the different stages of the subsystem's lifecycle, including initialization, operation, and shutdown.
-
-- **Fuse Controller (OTP)**: A one-time programmable memory controller used for storing critical configuration data and security keys.
-
-- **MCI (Memory Controller Interface)**: Manages the communication between the processor and the memory components.
-
-- **Memories**: Various memory components used for storing data and instructions required by the subsystem.
+  - **Caliptra Core**: The Caliptra Core IP. For more information, see[ Caliptra: A Datacenter System on a Chip (SoC) Root of Trust (RoT)](https://chipsalliance.github.io/Caliptra/doc/Caliptra.html).
+  - **MCU (Manufactures Control Unit)**: A microcontroller unit that manages various control tasks within the subsystem.
+  - **I3C Core**: An interface for connecting and communicating with I3C devices, which are used for sensor and peripheral ommunication.
+  - **Life Cycle Controller**: A component that manages the different stages of the subsystem's lifecycle, including initialization, operation, and shutdown.
+  - **Fuse Controller (OTP)**: A one-time programmable memory controller used for storing critical configuration data and security keys.
+  - **MCI (Memory Controller Interface)**: Manages the communication between the processor and the memory components.
+  - **Memories**: Various memory components used for storing data and instructions required by the subsystem.
 
 Following high-level diagram helps integrators understand the overall architecture and the relationships between different components within the Caliptra SS subsystem.
 
@@ -108,16 +98,22 @@ Following high-level diagram helps integrators understand the overall architectu
 
 # 4. Integration Considerations
 
-By performing these design and verification tasks, the integrator ensures that the Caliptra Subsystem is properly integrated and can function as intended within the larger system.
+By performing these design and verification tasks, the integrator ensures that the Caliptra Subsystem is properly integrated and can function as intended within the larger system. Several files contain code that may be specific to an integrator's implementation and should be overridden. This overridable code is either configuration parameters with integrator-specific values or modules that implement process-specific functionality. Code in these files should be modified or replaced by integrators using components from the cell library of their fabrication vendor. The following table describes recommended modifications for each file.
+
+| Type | Name | Path |
+|------|------|------|
+| rtl | Design Top       | [caliptra_ss_top.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/rtl/caliptra_ss_top.sv)          |
+| tb  | Interconnect Top | [testbench\aaxi4_interconnect.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/aaxi4_interconnect.sv) |
+| tb  | Testbench Top    | [testbench\caliptra_ss_top_tb.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/caliptra_ss_top_tb.sv) |
 
 ## 4.1. Design Considerations
 
 1. **Replace the AXI Interconnect**: 
 The subsystem utilizes an AXI-based interconnect to facilitate communication between components, with the Caliptra core connecting via an AXI interface. The integrator must replace the default AXI interconnect component with their proprietary interface. This ensures that the subsystem can communicate effectively with the rest of the subsystem components using the integrator's specific interconnect architecture.
-
 2. **Connect the Memories**: The integrator must connect the various memory components required by the subsystem. These memory components are used for storing data and instructions necessary for the operation of the Caliptra SS subsystem.
-
 3. **No Changes to Internals**: Integrators are not expected to make any changes to the internals of the design. The focus should be on ensuring proper integration and connectivity of the subsystem components.
+
+
 
 ## 4.2. Verification Considerations
 
@@ -126,23 +122,15 @@ The integrator must connect the I3C core to the appropriate driver for the GPIO 
 
 # 5. Caliptra Subsystem
 
-The integration of the Caliptra Subsystem begins with the instantiation of the top-level RTL module, caliptra_ss_top.sv. This module serves as the primary entry point for the subsystem and encapsulates all the logic and components required for the functionality of the Caliptra Root of Trust (RoT). 
-
-All signals must be connected based on the detailed interface and signal descriptions provided in this document. Ensure adherence to the signal direction, width, and functionality to guarantee proper integration with the host SoC.
+The integration of the Caliptra Subsystem begins with the instantiation of the top-level RTL module, caliptra_ss_top.sv. This module serves as the primary entry point for the subsystem and encapsulates all the logic and components required for the functionality of the Caliptra Root of Trust (RoT). All signals must be connected based on the detailed interface and signal descriptions provided in this document. Ensure adherence to the signal direction, width, and functionality to guarantee proper integration with the host SoC.
 
 ## 5.1. Parameters 
-| Parameter                  | Value | Description                              |
-|----------------------------|-------|------------------------------------------|
-| ADDR_WIDTH                 | 64    | Address width                            |
-| DATA_WIDTH                 | 64    | Data width                               |
 
+> Add the location to parameters file
 
 ## 5.2. Defines
 
-| Define                  | Value | Description                             | 
-|-------------------------|-------|-----------------------------------------|
-| CLP_CSR_HMAC_KEY_DWORDS | 16    | HMAC Key Dwords                         |
-| 
+> Add the location to defines file
 
 ## 5.3. Address map
 
@@ -309,33 +297,47 @@ The following address map is a suggested address map for the given subsystem des
 
 ## 5.5. Integration Requirements
 
-### 5.5..1. Clock
+### 5.5.1. Clock
 
 The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem. This signal must be connected to a 100 MHz system clock to ensure proper operation.
 
-- **Signal Name** `cptra_ss_clk_i`
-- **Required Frequency** 100 MHz
-- **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
-- **Constraints** 
-  - Ensure minimal clock jitter.
-  - Maintain a duty cycle close to 50% for optimal performance.
-- **Integration Notes**
-  
-  1. Verify that the SoC or system-level clock source provides a stable 100 MHz clock.
-  2. The clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.
-  3. If a different frequency is required, ensure that a clock divider or PLL is used to generate the 100 MHz clock before connection.
+  - **Signal Name** `cptra_ss_clk_i`
+  - **Required Frequency** 100 MHz
+  - **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
+  - **Constraints** 
+    - Ensure minimal clock jitter.
+    - Maintain a duty cycle close to 50% for optimal performance.
+  - **Integration Notes**
+     1. Verify that the SoC or system-level clock source provides a stable 100 MHz clock.
+     2. The clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.
+     3. If a different frequency is required, ensure that a clock divider or PLL is used to generate the 100 MHz clock before connection.
 
-### 5.5.3. Reset
+### 5.5.2. Reset
+
 The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles at 100 MHz) to allow all internal logic to initialize properly.
 
-- **Signal Name:** `cptra_ss_reset_n`
-- **Direction:** Input
-- **Active Level:** Active-low (`0` resets the subsystem, `1` releases reset)
-- **Reset Type:** Synchronous with the `cptra_ss_clk_i` signal
-- **Integration Notes:**
-  - The reset signal must be synchronized to the 100 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
-  - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
-  - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
+   - **Signal Name** `cptra_ss_reset_n`
+   - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
+   - **Reset Type** Synchronous with the `cptra_ss_clk_i` signal
+   - **Integration Notes**
+     - The reset signal must be synchronized to the 100 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
+     - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
+     - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
+
+### 5.5.3. Power Good Signal 
+
+The `cptra_ss_pwrgood_i` signal serves as an indicator of stable power for the Caliptra Subsystem. When asserted (`1`), it confirms that power is stable and the subsystem can operate normally. When deasserted (`0`), the signal triggers a **hard reset** of the subsystem. Deassertion must be synchronized to `cptra_ss_clk_i` to avoid metastability issues.
+
+  - **Signal Name** `cptra_ss_pwrgood_i`
+  - **Active Level** Active-high (`1` indicates stable power, `0` triggers reset)
+  - **Assertion Type** Asynchronous  
+  - **Deassertion Type** Synchronous to `cptra_ss_clk_i`  
+  - **Integration Notes**  
+    1. Ensure `cptra_ss_pwrgood_i` is properly generated by the power management unit or system power controller.
+    2. Since assertion is asynchronous, it must be immediately driven high once power is stable.
+    3. Use a synchronizer to properly align deassertion with `cptra_ss_clk_i` to prevent glitches.
+    4. If `cptra_ss_pwrgood_i` remains low, the Caliptra Subsystem will remain in a hard reset state.
+
 
 ## 5.6. Programming interface
 
@@ -343,15 +345,11 @@ The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsys
 
 ## 5.7. Sequences
 
-    Notes : 
-        Reset
-        Boot 
-
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-## 5.8. How to test : Smoke & more
+## 5.8. How to test
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
 
 ## 5.9. Other requirements
 
@@ -368,102 +366,76 @@ MCU encapusaltes the RISCV instance of Veer Core EL2 instance.
 
 ### 7.1.1. Parameters & Defines
 
+> Add the path to MCU parameters and defines.
+
 ### 7.1.2. MCU Top : Interface & Signals
 
-| Facing   | Type           | Width | Name                                 | Description                              |
-|----------|----------------|-------|--------------------------------------|------------------------------------------|
-| External | input          | 1     | clk                                  | Clock input                              |
-| External | input          | 1     | rst_l                                | Reset input, active low                  |
-| External | input          | 1     | dbg_rst_l                            | Debug reset input, active low            |
-| External | input          | 32    | rst_vec                              | Reset vector input                       |
-| External | input          | 1     | nmi_int                              | Non-maskable interrupt input             |
-| External | input          | 32    | nmi_vec                              | Non-maskable interrupt vector input      |
-| External | output         | 32    | trace_rv_i_insn_ip                   | Trace instruction input                  |
-| External | output         | 32    | trace_rv_i_address_ip                | Trace address input                      |
-| External | output         | 1     | trace_rv_i_valid_ip                  | Trace valid input                        |
-| External | output         | 1     | trace_rv_i_exception_ip              | Trace exception input                    |
-| External | output         | 5     | trace_rv_i_ecause_ip                 | Trace exception cause input              |
-| External | output         | 1     | trace_rv_i_interrupt_ip              | Trace interrupt input                    |
-| External | output         | 32    | trace_rv_i_tval_ip                   | Trace trap value input                   |
-| External | mcu_axi_if     | na    | lsu_axi_*                            | LSU AXI interface signals                |
-| External | mcu_axi_if     | na    | ifu_axi_*                            | IFU AXI interface signals                |
-| External | mcu_axi_if     | na    | sb_axi_*                             | SB AXI interface signals                 |
-| External | mcu_axi_if     | na    | dma_axi_*                            | DMA AXI interface signals                |
-| External | input          | 1     | lsu_bus_clk_en                       | LSU bus clock enable input               |
-| External | input          | 1     | ifu_bus_clk_en                       | IFU bus clock enable input               |
-| External | input          | 1     | dbg_bus_clk_en                       | Debug bus clock enable input             |
-| External | input          | 1     | dma_bus_clk_en                       | DMA bus clock enable input               |
-| External | input          | 1     | timer_int                            | Timer interrupt input                    |
-| External | input          | 1     | soft_int                             | Software interrupt input                 |
-| External | input          | pt.PIC_TOTAL_INT:1 | extintsrc_req           | External interrupt source request input  |
-| External | output         | 1     | dec_tlu_perfcnt0                     | Performance counter 0 toggle output      |
-| External | output         | 1     | dec_tlu_perfcnt1                     | Performance counter 1 toggle output      |
-| External | output         | 1     | dec_tlu_perfcnt2                     | Performance counter 2 toggle output      |
-| External | output         | 1     | dec_tlu_perfcnt3                     | Performance counter 3 toggle output      |
-| External | input          | 1     | jtag_tck                             | JTAG clock input                         |
-| External | input          | 1     | jtag_tms                             | JTAG TMS input                           |
-| External | input          | 1     | jtag_tdi                             | JTAG TDI input                           |
-| External | input          | 1     | jtag_trst_n                          | JTAG reset input, active low             |
-| External | output         | 1     | jtag_tdo                             | JTAG TDO output                          |
-| External | output         | 1     | jtag_tdoEn                           | JTAG TDO enable output                   |
-| External | input          | 28    | core_id                              | Core ID input                            |
-| External | output         | 1     | mem_clk                              | Memory clock output                      |
-| External | output         | pt.ICCM_NUM_BANKS | iccm_clken             | ICCM clock enable output                 |
-| External | output         | pt.ICCM_NUM_BANKS | iccm_wren_bank         | ICCM write enable bank output            |
-| External | output         | pt.ICCM_NUM_BANKS | iccm_addr_bank         | ICCM address bank output                 |
-| External | output         | pt.ICCM_NUM_BANKS | iccm_bank_wr_data      | ICCM bank write data output              |
-| External | output         | pt.ICCM_NUM_BANKS | iccm_bank_wr_ecc       | ICCM bank write ECC output               |
-| External | input          | pt.ICCM_NUM_BANKS | iccm_bank_dout         | ICCM bank data output                    |
-| External | input          | pt.ICCM_NUM_BANKS | iccm_bank_ecc          | ICCM bank ECC output                     |
-| External | output         | pt.DCCM_NUM_BANKS | dccm_clken             | DCCM clock enable output                 |
-| External | output         | pt.DCCM_NUM_BANKS | dccm_wren_bank         | DCCM write enable bank output            |
-| External | output         | pt.DCCM_NUM_BANKS | dccm_addr_bank         | DCCM address bank output                 |
-| External | output         | pt.DCCM_NUM_BANKS | dccm_wr_data_bank      | DCCM write data bank output              |
-| External | output         | pt.DCCM_NUM_BANKS | dccm_wr_ecc_bank       | DCCM write ECC bank output               |
-| External | input          | pt.DCCM_NUM_BANKS | dccm_bank_dout         | DCCM bank data output                    |
-| External | input          | pt.DCCM_NUM_BANKS | dccm_bank_ecc          | DCCM bank ECC output                     |
-| External | output         | pt.ICACHE_BANKS_WAY | ic_b_sb_wren          | ICache bank way write enable output      |
-| External | output         | pt.ICACHE_BANKS_WAY | ic_b_sb_bit_en_vec    | ICache bank way bit enable vector output |
-| External | output         | pt.ICACHE_BANKS_WAY | ic_sb_wr_data         | ICache bank way write data output        |
-| External | output         | pt.ICACHE_BANKS_WAY | ic_rw_addr_bank_q     | ICache read/write address bank output    |
-| External | output         | pt.ICACHE_BANKS_WAY | ic_bank_way_clken_final | ICache bank way clock enable output    |
-| External | output         | pt.ICACHE_NUM_WAYS | ic_bank_way_clken_final_up | ICache bank way clock enable up output |
-| External | input          | pt.ICACHE_BANKS_WAY | wb_packeddout_pre     | Write-back packed data output            |
-| External | input          | pt.ICACHE_NUM_WAYS | wb_dout_pre_up        | Write-back data output up                |
-| External | output         | pt.ICACHE_NUM_WAYS | ic_tag_clken_final    | ICache tag clock enable output           |
-| External | output         | pt.ICACHE_NUM_WAYS | ic_tag_wren_q         | ICache tag write enable output           |
-| External | output         | pt.ICACHE_NUM_WAYS | ic_tag_wren_biten_vec | ICache tag write enable bit vector output|
-| External | output         | 26    | ic_tag_wr_data                       | ICache tag write data output             |
-| External | output         | pt.ICACHE_INDEX_HI | ic_rw_addr_q          | ICache read/write address output         |
-| External | input          | pt.ICACHE_NUM_WAYS | ic_tag_data_raw_pre   | ICache tag data raw output               |
-| External | input          | pt.ICACHE_NUM_WAYS | ic_tag_data_raw_packed_pre | ICache tag data raw packed output     |
-| External | output         | 1     | iccm_ecc_single_error                | ICCM ECC single error output             |
-| External | output         | 1     | iccm_ecc_double_error                | ICCM ECC double error output             |
-| External | output         | 1     | dccm_ecc_single_error                | DCCM ECC single error output             |
-| External | output         | 1     | dccm_ecc_double_error                | DCCM ECC double error output             |
-| External | input          | 1     | mpc_debug_halt_req                   | MPC debug halt request input             |
-| External | input          | 1     | mpc_debug_run_req                    | MPC debug run request input              |
-| External | input          | 1     | mpc_reset_run_req                    | MPC reset run request input              |
-| External | output         | 1     | mpc_debug_halt_ack                   | MPC debug halt acknowledge output        |
-| External | output         | 1     | mpc_debug_run_ack                    | MPC debug run acknowledge output         |
-| External | output         | 1     | debug_brkpt_status                   | Debug breakpoint status output           |
-| External | input          | 1     | i_cpu_halt_req                       | CPU halt request input                   |
-| External | output         | 1     | o_cpu_halt_ack                       | CPU halt acknowledge output              |
-| External | output         | 1     | o_cpu_halt_status                    | CPU halt status output                   |
-| External | output         | 1     | o_debug_mode_status                  | Debug mode status output                 |
-| External | input          | 1     | i_cpu_run_req                        | CPU run request input                    |
-| External | output         | 1     | o_cpu_run_ack                        | CPU run acknowledge output               |
-| External | input          | 1     | scan_mode                            | Scan mode input                          |
-| External | input          | 1     | mbist_mode                           | MBIST mode input                         |
-| External | input          | 1     | dmi_core_enable                      | DMI core enable input                    |
-| External | input          | 1     | dmi_uncore_enable                    | DMI uncore enable input                  |
-| External | output         | 1     | dmi_uncore_en                        | DMI uncore enable output                 |
-| External | output         | 1     | dmi_uncore_wr_en                     | DMI uncore write enable output           |
-| External | output         | 7     | dmi_uncore_addr                      | DMI uncore address output                |
-| External | output         | 32    | dmi_uncore_wdata                     | DMI uncore write data output             |
-| External | input          | 32    | dmi_uncore_rdata                     | DMI uncore read data input               |
-| External | output         | 1     | dmi_active                           | DMI active output                        |
+> Add the link to MCU top signals.
 
+## 7.2. Programming interface
+
+### 7.2.1. MCU Linker Script Integration
+
+This linker script defines the memory layout for the **Caliptra Subsystem** firmware. It specifies the placement of various sections, ensuring proper memory mapping and execution flow.
+
+> Add path to example linker file.
+
+The following memory regions are defined and must be adhered to during integration:
+
+- **Memory Region Allocation**
+
+  - **DCCM (Data Closely Coupled Memory)**
+    - **Base Address:** `0x50000000`
+    - **Section:** `.dccm`
+    - **Usage:** Used for tightly coupled memory operations.
+    - **End Symbol:** `_dccm_end` (marks the end of this region).
+
+  - **Instruction Memory (.text)**
+    - **Base Address:** `0x80000000`
+    - **Section:** `.text`
+    - **Usage:** Stores executable code and functions.
+    - **End Symbol:** `_text_end`
+
+  - **Data and Read-Only Sections**
+    - **Base Address:** `0x21200000`
+    - **Sections:** `.data`, `.rodata`, `.srodata`, `.sbss`
+    - **Usage:** Stores initialized data, read-only data, and small uninitialized sections.
+    - **End Symbol:** `_data_end`
+
+  - **BSS (Uninitialized Data Section)**
+    - **Base Address:** `0x21210000`
+    - **Section:** `.bss`
+    - **Usage:** Stores uninitialized global and static variables.
+    - **End Symbol:** `_bss_end`
+
+  - **Stack Configuration**
+    - **Alignment:** 16-byte boundary
+    - **Size:** `0x1000` (4 KB)
+    - **Usage:** Defines the stack memory location for runtime operations.
+
+  - **I/O Mapped Data Section**
+    - **Base Address:** `0x21000410`
+    - **Section:** `.data.io`
+    - **Usage:** Used for memory-mapped I/O operations.
+
+- **Integration Notes**
+  1. **Ensure Proper Memory Mapping:**  
+     - The memory layout must match the physical memory configuration of the SoC.
+     - If modifications are required, update the base addresses and section placements accordingly.
+
+  2. **Code Placement & Execution:**  
+     - The `.text` section starts at `0x80000000` and should be mapped to executable memory.
+     - The `_start` entry point must be correctly set to align with boot ROM execution.
+
+  3. **Data and Stack Placement Considerations:**  
+     - The `.bss` and `.data` sections should be properly initialized by the runtime startup code.
+     - The stack must be correctly set up before function execution to avoid memory corruption.
+
+  4. **I/O Mapped Data Handling:**  
+     - The `.data.io` section at `0x21000410` is used for memory-mapped peripherals.  
+     - Ensure correct access permissions are configured in the memory controller.
+
+By following this linker script configuration, the firmware can be correctly mapped and executed within the **Caliptra Subsystem**.
 
 # 8. FC Controller - @Emre
 
@@ -479,11 +451,40 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 # 11. I3C core - @Nilesh
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Documentation : https://github.com/chipsalliance/i3c-core/blob/main/docs/source/top.md 
 
-# 12. Memories - @Nilesh
+- Connections
+  - Connection to AXI interface
+  - GPIO connection to I3C Host (VIP or RTL)
+- Two target device 
+  - Recovery Target 
+  - General Target
+- Programming sequence
+  - Programming sequence from AXI side to initialize the device
+  - Programming sequence from GPIO side 
+- Execution 
+  - CCC commands to program dynamic address for both the targets
+  - Read the dynamic Address for each target
+- Smoke test
+  - Program & Read Recovery interface registers
+  - Write and read TTI interface from each side.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+# 12. Memories 
+
+### List of Memories
+
+| **Memory Category**                     | **Memory Name**                         | **Interface**                                    | **Size**           | **Access Type**   | **Description**                                             |
+|-----------------------------------------|-----------------------------------------|--------------------------------------------------|--------------------|-------------------|-------------------------------------------------------------|
+| **Caliptra SS MCU0**                    | **Instruction ROM**                     | `mcu_rom_mem_export_if`                          | TBD                | Read-Only         | Stores the instructions for MCU0 execution                   |
+| **Caliptra SS MCU0**                    | **Memory Export**                       | `cptra_ss_mcu0_el2_mem_export`                   | TBD                | Read/Write        | Memory export for MCU0 access                               |
+| **Caliptra SS MCU0**                    | **Shared Memory (SRAM)**                | `cptra_ss_mci_mcu_sram_req_if`                   | TBD                | Read/Write        | Shared memory between MCI and MCU for data storage           |
+| **Caliptra SS MBOX**                   | **MBOX0 Memory**                        | `cptra_ss_mci_mbox0_sram_req_if`                 | TBD                | Read/Write        | Memory for MBOX0 communication                               |
+| **Caliptra SS MBOX**                   | **MBOX1 Memory**                        | `cptra_ss_mci_mbox1_sram_req_if`                 | TBD                | Read/Write        | Memory for MBOX1 communication                               |
+| **Caliptra Core**                       | **ICCM, DCCM IF**                       | `cptra_ss_cptra_core_el2_mem_export`             | TBD                | Read/Write        | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core |
+| **Caliptra Core**                       | **IFU (Instruction Fetch Unit)**        | `cptra_ss_mcu_rom_macro_req_if`                  | TBD                | Read-Only         | Interface for instruction fetch unit (IFU)                   |
+
+
+
 
 # 13. Terminology
 
