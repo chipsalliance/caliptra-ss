@@ -257,7 +257,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 *MCI Block Diagram*:
 
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-Integ-Block-Diagram.png)
+![](images/MCI-Integ-Block-Diagram.png)
 
 
 ### Parameters & Defines
@@ -553,6 +553,7 @@ The following table describes the allocation of functionality on agg\_error\_fat
 |   | **LCC FATAL FIXME** |  |
 |  | **FC FATAL FIXME** |  |
 |  | **CALITPRA FATAL FIXME** |  |
+|  | **I3C FATAL FIXME** |  |
 |  | RESERVED | No allocation function |
 
  The following table describes the allocation of functionality on agg\_error\_non\_fatal
@@ -564,6 +565,7 @@ The following table describes the allocation of functionality on agg\_error\_fat
 |   | **LCC NONFATAL FIXME** |  |
 |  | **FC NONFATAL FIXME** |  |
 |  | **CALITPRA NONFATAL FIXME** |  |
+|  | **I3C NONFATAL FIXME** |  |
 |  | RESERVED | No allocation function |
 
 ###### 
@@ -635,25 +637,25 @@ Below are the connections needed between MCI and LCC for the Gasket functionalit
 
 | MCI Port | Direction | LCC Port | Description |
 | ----- | :---: | ----- | ----- |
-| from\_lcc\_to\_otp\_program\_i | \<- | lc\_otp\_program\_o | FIXME @Emtre |
-| lc\_dft\_en\_i | \<- | lc\_dft\_en\_o | FIXME @Emre |
-| lc\_hw\_debug\_en\_i | \<- | lc\_hw\_debug\_en\_o | FIXME @Emre |
-| from\_otp\_to\_lcc\_program\_i | \<- | otp\_lc\_data\_i | FIXME @Emre |
+| from\_lcc\_to\_otp\_program\_i | \<- | lc\_otp\_program\_o | See [LCC Section](LC-Controller) |
+| lc\_dft\_en\_i | \<- | lc\_dft\_en\_o | See [LCC Section](LC-Controller)|
+| lc\_hw\_debug\_en\_i | \<- | lc\_hw\_debug\_en\_o | See [LCC Section](LC-Controller)|
+| from\_otp\_to\_lcc\_program\_i | \<- | otp\_lc\_data\_i | See [LCC Section](LC-Controller) |
 
 **Table: LCC Gasket - MCI to Caliptra Core Connections**
 
 | MCI Port | Direction | Caliptra Core Port | Description |
 | ----- | :---: | ----- | ----- |
-| ss\_dbg\_manuf\_enable\_i | \<- | ss\_dbg\_manuf\_enable | FIXME @Emre |
-| ss\_soc\_dbg\_unlock\_level\_i | \<- | ss\_soc\_dbg\_unlock\_level | FIXME @Emre |
-| security\_state\_o | \-\> | security\_state | FIXME @Emre |
+| ss\_dbg\_manuf\_enable\_i | \<- | ss\_dbg\_manuf\_enable |  See [Caliptra Integration spec](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#soc-interface-definition)|
+| ss\_soc\_dbg\_unlock\_level\_i | \<- | ss\_soc\_dbg\_unlock\_level | See [Caliptra Integration spec](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#soc-interface-definition)|
+| security\_state\_o | \-\> | security\_state | See [LCC state tranlation table](CaliptraSSHardwareSpecification.md#lcc-interpretation-for-caliptra-core-security-states) |
 
 **Table: LCC Gasket - MCI to Caliptra SS Port Connections**
 
 | MCI Port | Direction | SS Port | Description |
 | ----- | :---: | ----- | ----- |
-| SOC\_DFT\_EN | \-\> | cptra_ss_soc_dft_en_o | FIXME @Emre |
-| SOC\_HW\_DEBUG\_EN | \-\> | cptra_ss_soc_hw_debug_en_o | FIXME @Emre |
+| SOC\_DFT\_EN | \-\> | cptra_ss_soc_dft_en_o | SOC DFT enable see [DFT LC States](CaliptraSSHardwareSpecification.md#dft--dfd-lc-states)|
+| SOC\_HW\_DEBUG\_EN | \-\> | cptra_ss_soc_hw_debug_en_o | SOC HW Debug Enable see: [DFD LC States](CaliptraSSHardwareSpecification.md#dft--dfd-lc-states) |
 
 #### MCU SRAM Sizing Requirements
 
@@ -698,7 +700,7 @@ FIXME use MCI AXI DMA block during secret fuse population (won’t be available)
 
 #### MCI Boot Sequencer
 
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/Caliptra-SS-BootFSM.png)
+![](images/Caliptra-SS-BootFSM.png)
 
 The MCI is responsible for bringing up the Caliptra SS. This is done via the MCI Boot Sequencer. The primary job of this FSM is to:
 
@@ -717,7 +719,7 @@ This port shall be set and stable before mcu\_rst\_b is deasserted. Failure to d
 
 At this point a user can use the MCU JTAG to configure MCI or other components within the Caliptra SS for debug. 
 
-To proceed after a breakpoint the SOC must write the **FIXME register via DMI**
+To proceed after a breakpoint the SOC must write the BREKPOINT_GO register via AXI DEBUG USER or MCI DMI port.
 
 ##### MCU No ROM Config
 
