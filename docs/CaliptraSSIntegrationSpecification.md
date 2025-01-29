@@ -42,7 +42,7 @@
 - [10. MCI - @Clayton](#10-mci---clayton)
 - [11. I3C core - @Nilesh](#11-i3c-core---nilesh)
 - [12. Memories](#12-memories)
-    - [List of Memories](#list-of-memories)
+    - [12.0.1. List of Memories](#1201-list-of-memories)
 - [13. Terminology](#13-terminology)
 
 
@@ -471,7 +471,7 @@ Documentation : https://github.com/chipsalliance/i3c-core/blob/main/docs/source/
 
 # 12. Memories 
 
-### List of Memories
+### 12.0.1. List of Memories
 
 | **Memory Category**                     | **Memory Name**                         | **Interface**                                    | **Size**           | **Access Type**   | **Description**                                             |
 |-----------------------------------------|-----------------------------------------|--------------------------------------------------|--------------------|-------------------|-------------------------------------------------------------|
@@ -488,7 +488,7 @@ Documentation : https://github.com/chipsalliance/i3c-core/blob/main/docs/source/
 
 # 13. Terminology
 
-| Abbreviation | Description                                                                                      |
+| Abbreviation | Description |
 | :--------- | :--------- |
 | AXI          | Advanced eXtensible Interface, a high-performance, high-frequency communication protocol |
 | I3C          | Improved Inter-Integrated Circuit, a communication protocol for connecting sensors and other peripherals. |
