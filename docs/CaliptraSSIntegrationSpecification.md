@@ -31,6 +31,7 @@
 
 ### Interface
 
+====== Start of MCI Doc ====
 **Table: Caliptra SS Straps**
 
 | Facing | Type | width | Name | Description |
@@ -50,6 +51,8 @@
 | External | input | 1 | cptra_ss_strap_generic_1_i | Generic strap input 1 |
 | External | input | 1 | cptra_ss_strap_generic_2_i | Generic strap input 2 |
 | External | input | 1 | cptra_ss_strap_generic_3_i | Generic strap input 3 |
+
+===== End of MCI Doc ====
 
 **Table: Caliptra SS Ports**
 
@@ -224,6 +227,7 @@
 
 # Manufacturer Control Interface (MCI) - @Clayton
 
+====== Start of MCI Doc ====
 ### Overview
 Manufacturer Control Interface provides the following features for Caliptra SS:
 
@@ -807,6 +811,7 @@ Setup assumes all interrupts to MCU and all\_error\_non\_fatal are enabled via M
 ### How to test : Smoke & more
 
 ### Other requirements
+====== End of MCI Doc ====
 
 ## I3C core - @Nilesh
 
