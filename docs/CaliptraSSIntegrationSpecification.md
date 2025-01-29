@@ -477,25 +477,25 @@ The base address assigned to MCI must align to the MCI total addressable space. 
 
 To calculate the base address alignment use the following calculation:
 
-***bits \= $clog2(MCU\_SRAM\_OFFSET \+ ((MCU\_SRAM\_SIZE\_KB-1) \* 1024))***
+      bits \= $clog2(MCU\_SRAM\_OFFSET \+ ((MCU\_SRAM\_SIZE\_KB-1) \* 1024))
 
 MCU\_SRAM\_OFFSET can be found in the MCI’s [Top Level Memory Map](#top-level-memory-map).
 
 *Example:*
 
-*MCU\_SRAM\_OFFSET \= 0x200000 (2097152 decimal)*
-
-*MCU\_SRAM\_SIZE\_KB \= 1024 (1MB)*
-
-*bits \= $clog2(2097152 \+ ((1024-1) \* 1024))*
-
-*bits \= 22*
-
-*MCI base address would need to align to 0x20\_0000*
+      MCU\_SRAM\_OFFSET \= 0x200000 (2097152 decimal)
+      
+      MCU\_SRAM\_SIZE\_KB \= 1024 (1MB)
+      
+      bits \= $clog2(2097152 \+ ((1024-1) \* 1024))
+      
+      bits \= 22
+      
+      MCI base address would need to align to 0x20\_0000
 
 #### Reset Synchronization
 
-MCI does not synchronize any resets inside the IP. It is expected all reset inputs are properly synchronized to the MCI clock domain before being passed to MCI. 
+**MCI does not synchronize any resets inside the IP. It is expected all reset inputs are properly synchronized to the MCI clock domain before being passed to MCI.**
 
 All MCI reset outputs are synchronous to the MCI clock domain and if they are used in a different clock domain they shall be properly synchronized outside of MCI. 
 
@@ -503,7 +503,7 @@ All MCI reset outputs are synchronous to the MCI clock domain and if they are us
 
 MCI input resets do not have any built-in DFT reset control for scan. It is the integrator’s responsibility to add any DFT controls outside of MCI before the reset is connected to MCI. 
 
-When scan\_mode is set the MCI generated resets  (mcu\_rst\_b, clpra\_rst\_b) will switch from MCI logic control to directly connected to the mci\_rst\_b. This gives DFT complete control of these resets within Caliptra SS.  
+Simlar to Caliptra core - When scan\_mode is set the MCI generated resets  (mcu\_rst\_b, clpra\_rst\_b) will switch from MCI logic control to directly connected to the mci\_rst\_b. This gives DFT complete control of these resets within Caliptra SS.  
 
 #### Integrator RTL modification requirements
 
@@ -572,7 +572,7 @@ The following table describes the allocation of functionality on agg\_error\_fat
 
 A more detailed microarchitecture of the error aggregation can be found in the Caliptra SS Hardware specification. 
 
-#### Fuse Controller Initialization Connectivity Requirements
+#### Internal Fuse Controller Initialization Connectivity Requirements
 
 During Caliptra SS bring up the MCI handshakes with the FC to do initialization. The flow is:
 
@@ -588,7 +588,7 @@ Connections between MCI and FC are shown in the table below:
 | fc\_opt\_init | pwr\_otp\_i.otp\_init |
 | fc\_opt\_done | pwr\_otp\_o.otp\_done |
 
-#### Life Cycle Controller Initialization Connectivity Requirements
+#### Internal Life Cycle Controller Initialization Connectivity Requirements
 
 During Caliptra SS bring up the MCI handshakes with the LCC to do initialization. The flow is:
 
@@ -849,4 +849,3 @@ Setup assumes all interrupts to MCU and all\_error\_non\_fatal are enabled via M
 ### Other requirements
 
 ## Terminology
-## 
