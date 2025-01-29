@@ -1,13 +1,9 @@
-![OCP Logo](./images/OCP_logo.png)
+<div align="center">
+  <img src="./images/OCP_logo.png" alt="OCP Logo">
+</div>
 
-<p style="text-align: center;">Caliptra Subsystem Hardware Specification</p>
+<h1 align="center"> Caliptra Subsystem Hardware Specification v0p8 </h1>
 
-<p style="text-align: center;">Version 0.5</p>
-
-<div style="page-break-after: always"></div>
-
-# Content
-- [Content](#content)
 - [Scope](#scope)
 - [Caliptra Subsystem Requirements](#caliptra-subsystem-requirements)
   - [Definitions](#definitions)
