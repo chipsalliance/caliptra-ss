@@ -174,7 +174,7 @@
 
 ### Other requirements
 
-# FC Controller - @Emre
+# FC Controller
 
 ### Overview
 
@@ -289,7 +289,7 @@ The programming interface for the Fuse Controller (FC) is designed to manage lif
 The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
 **TODO** More details will be provided once FC is ready to test.
 
-# LC Controller - @Emre
+# LC Controller
 
 ### Overview
 
