@@ -690,7 +690,7 @@ MCU is another instance of VeeR EL2 core. The following features are enabled on 
 The Manufacturer Control Interface (MCI) is a critical hardware block designed to supplement the Manufacturer Control Unit (MCU) within a System on Chip (SoC). The primary functions of the MCI include providing an SRAM bank, facilitating restricted communication through a mailbox from external entities, and managing a bank of Control/Status Registers (CSRs). Additionally, the MCI incorporates a Watchdog Timer and a Boot Sequencing Finite State Machine (FSM) to manage timing and control during the SoC boot sequence after power application. This boot sequence encompasses reset deassertion, initialization of the Fuse Controller, initialization of the Lifecycle Controller, and enabling the JTAG block for debugging and manufacturing processes.
 
 The following diagram illustrates the internal components of the MCI.
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-block-diagram.png)
+![](images/MCI-block-diagram.png)
 
 ## Sub-block Descriptions
 ### Control/Status Registers (CSRs)
@@ -735,7 +735,7 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 17. CSS-BootFSM will wait for a confirmation from MCU ROM and assert the reset to MCU and deassert the reset to MCU after 10 cycles.
 18. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/Caliptra-SS-BootFSM.png)
+![](images/Caliptra-SS-BootFSM.png)
 
 ### Watchdog Timer
 The Watchdog Timer within the MCI is a crucial component designed to enhance the reliability and robustness of the SoC. This timer monitors the operation of the system and can trigger a system reset if it detects that the system is not functioning correctly. The Watchdog Timer is configurable through CSRs and provides various timeout periods and control mechanisms to ensure the system operates within defined parameters.
@@ -800,11 +800,13 @@ SW access to all interrupt registers are restricted to MCU.
 
 ### MCI Error handling
 
-MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any error signals that fuse controller, i3c etc.) and provides subsystem level FATAL and NON FATAL error signals. For all the error information being collected from other subystem modules, MCI also provides masking capability for MCU FW to program/enable based on SOC specific architectures to provide maximux flexibility.
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-error-agg.png)
+MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any error signals that fuse controller, i3c etc.) and provides subsystem level FATAL and NON FATAL error signals. For all the error information being collected from other subystem modules, MCI also provides masking capability for MCU FW to program/enable based on SOC specific architectures to provide maximum flexibility.
+
+![](images/MCI-error-agg.png)
 
 MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-internal-error.png)
+
+![](images/MCI-internal-error.png)
 
 
 ### MCI Fuse Storage Support
@@ -812,6 +814,49 @@ MCI also provides capability to store fuses required for Caliptra subsystem for 
 
 ### MCU Timer
 Standard RISC-V timer interrupts for MCU are implemented using the mtime and mtimecmp registers defined in the RISC-V Privileged Architecture Specification. Both mtime and mtimecmp are included in the MCI register bank, and are accessible by the MCU to facilitate precise timing tasks. Frequency for the timers is configured by the SoC using the dedicated timer configuration register, which satisfies the requirement prescribed in the RISC-V specification for such a mechanism. These timer registers drive the timer_int pin into the MCU.
+
+## MCI Debug
+
+### MCI Debug Access
+
+MCI provides DMI access via MCU TAP and an DEBUG AXI USER address for debug access to MCI. 
+
+### MCI DMI
+
+
+**FIXME ADD:**
+- **How to Disable Disable**
+- **Registers accessable via DMI**
+- **Diagram showing connectivity**
+
+The MCI DMI port is a dedicated debug port for accessing specific registers within MCI. 
+
+This port is connected to the MCU DMI port. Meaning DMI transactions are generated via the MCI TAP port. 
+
+The MCU allows TAP -> DMI access when the MCU is in reset. This allows users to access MCI via DMI in the BOOT_BREAKPOINT state when MCU reset is still asserted. 
+
+### MCI DEBUG AXI USER
+
+In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This user will be given full access to the entire MCI IP. This means the MCI DEBUG AXI USER can be used read and write to privilaged data like the MCU SRAM or access protected data within the MCI Register Bank. 
+
+#### Disabling MCI DEBUG
+
+If this feature is not needed by the SOC the integrator shall tie this this port to 0. This will indicate to MCI that there are no debug users within the design and no debug access is needed via AXI. 
+
+### MCI Boot FSM Breakpoint
+
+The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At this breakpoint the user can either use one of the [MCI Debug Access](#MCI-Debug-Access) mechanisms to configure MCI before bringing MCU or Caliptra out of reset.
+
+#### MCI Boot FSM Breakpoint Flow
+
+1. Assert mci_boot_seq_brkpoint
+2. Deassert MCI Reset
+3. DEBUG ACCESS TO MCI
+4. Set MCI's BREKPOINT_GO register to 1
+    - Through one of the [MCI Debug Access](#MCI-Debug-Access) methods. 
+5. FSM will continue
+
+
 
 # Subsystem Memory Map
 
