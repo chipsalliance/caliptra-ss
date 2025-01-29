@@ -3,20 +3,20 @@
 </div>
 
 
-<h1 align="center"> Caliptra SS Integration Specification v0p8 </h1>
+<h1 align="center"> Caliptra Subsystem Integration Specification v0p8 </h1>
 
 - [1. Scope](#1-scope)
   - [1.1. Document Version](#11-document-version)
-  - [1.2. Related specifications](#12-related-specifications)
+  - [1.2. Related repositories \& specifications](#12-related-repositories--specifications)
 - [2. Overview](#2-overview)
-- [3. Calpitra SS High level diagram](#3-calpitra-ss-high-level-diagram)
+- [3. Calpitra Subsystem High level diagram](#3-calpitra-subsystem-high-level-diagram)
 - [4. Integration Considerations](#4-integration-considerations)
   - [4.1. Design Considerations](#41-design-considerations)
   - [4.2. Verification Considerations](#42-verification-considerations)
 - [5. Caliptra Subsystem](#5-caliptra-subsystem)
   - [5.1. Parameters](#51-parameters)
   - [5.2. Defines](#52-defines)
-  - [5.3. Address map](#53-address-map)
+  - [5.3. Slave Address map](#53-slave-address-map)
   - [5.4. Interfaces \& Signals](#54-interfaces--signals)
     - [5.4.1. AXI Interface (axi\_if)](#541-axi-interface-axi_if)
     - [5.4.2. Caliptra Subsystem Top Interface \& signals](#542-caliptra-subsystem-top-interface--signals)
@@ -35,7 +35,7 @@
     - [7.1.2. MCU Top : Interface \& Signals](#712-mcu-top--interface--signals)
   - [7.2. Programming interface](#72-programming-interface)
     - [7.2.1. MCU Linker Script Integration](#721-mcu-linker-script-integration)
-- [8. FC Controller](#8-fc-controller)
+- [8. Fuse Controller](#8-fuse-controller)
   - [8.1. Overview](#81-overview)
   - [8.2. Parameters \& Defines](#82-parameters--defines)
   - [8.3. Interface](#83-interface)
@@ -44,7 +44,7 @@
   - [8.6. Programming interface](#86-programming-interface)
   - [8.7. Sequences: Reset, Boot](#87-sequences-reset-boot)
   - [8.8. How to test : Smoke \& more](#88-how-to-test--smoke--more)
-- [9. LC Controller - @Emre](#9-lc-controller---emre)
+- [9. Life Cycle Controller](#9-life-cycle-controller)
   - [9.1. Overview](#91-overview)
   - [9.2. Parameters \& Defines](#92-parameters--defines)
   - [9.3. Interface](#93-interface)
@@ -57,9 +57,18 @@
     - [9.8.2. Functional Tests](#982-functional-tests)
     - [9.8.3. Advanced Tests](#983-advanced-tests)
 - [10. MCI - @Clayton](#10-mci---clayton)
-- [11. I3C core - @Nilesh](#11-i3c-core---nilesh)
+- [11. I3C core](#11-i3c-core)
+  - [11.1. Overview](#111-overview)
+  - [11.2. Integration Considerations](#112-integration-considerations)
+  - [11.3. Paratmeters and defines](#113-paratmeters-and-defines)
+  - [11.4. Interface](#114-interface)
+  - [11.5. Programming Sequence](#115-programming-sequence)
+    - [11.5.1. Programming Sequence from AXI Side](#1151-programming-sequence-from-axi-side)
+    - [11.5.2. Programming Sequence from GPIO Side](#1152-programming-sequence-from-gpio-side)
+  - [11.6. How to test : Smoke \& more](#116-how-to-test--smoke--more)
+    - [11.6.1. Smoke Test](#1161-smoke-test)
+    - [11.6.2. Advance Test](#1162-advance-test)
 - [12. Memories](#12-memories)
-    - [12.0.1. List of Memories](#1201-list-of-memories)
 - [13. Terminology](#13-terminology)
 
 
@@ -79,7 +88,7 @@ For Caliptra Subsystem, this document serves as a hardware integration specifica
 
 </div>
 
-## 1.2. Related specifications
+## 1.2. Related repositories & specifications
 
 The components described in this document are either obtained from open-source GitHub repositories, developed from scratch, or modified versions of open-source implementations. Links to relevant documentation and GitHub sources are shared in the following table.
 
@@ -97,9 +106,16 @@ The components described in this document are either obtained from open-source G
 
 The Caliptra Subsystem is designed to provide a robust Root of Trust (RoT) for datacenter-class System on Chips (SoCs), including CPUs, GPUs, DPUs, and TPUs. It integrates both hardware and firmware components to deliver essential security services such as identity establishment, measured boot, and attestation. By incorporating the Caliptra Subsystem, integrators can enhance the security capabilities of their SoCs, providing a reliable RoT that meets industry standards and addresses the evolving security needs of datacenter environments.
 
-# 3. Calpitra SS High level diagram
+# 3. Calpitra Subsystem High level diagram
 
-The following diagram provides a high-level overview of the Caliptra SS subsystem. It illustrates the key components and their interconnections within the system. The diagram includes:
+The following diagram provides a high-level overview of the Caliptra subsystem. It illustrates the key components and their interconnections within the system. For an in-depth understanding of the Caliptra Subystem refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md). 
+
+
+Following high-level diagram helps integrators understand the overall architecture and the relationships between different components within the Caliptra subsystem.
+
+![Caliptra Subsystem High Level Diagram](./images/CaliptraSubsystem.png)
+
+Caliptra Subsystem includes:
 
   - **Caliptra Core**: The Caliptra Core IP. For more information, see[ Caliptra: A Datacenter System on a Chip (SoC) Root of Trust (RoT)](https://chipsalliance.github.io/Caliptra/doc/Caliptra.html).
   - **MCU (Manufactures Control Unit)**: A microcontroller unit that manages various control tasks within the subsystem.
@@ -108,10 +124,6 @@ The following diagram provides a high-level overview of the Caliptra SS subsyste
   - **Fuse Controller (OTP)**: A one-time programmable memory controller used for storing critical configuration data and security keys.
   - **MCI (Memory Controller Interface)**: Manages the communication between the processor and the memory components.
   - **Memories**: Various memory components used for storing data and instructions required by the subsystem.
-
-Following high-level diagram helps integrators understand the overall architecture and the relationships between different components within the Caliptra SS subsystem.
-
-![Caliptra Subsystem High Level Diagram](./images/CaliptraSubsystem.png)
 
 # 4. Integration Considerations
 
@@ -127,10 +139,8 @@ By performing these design and verification tasks, the integrator ensures that t
 
 1. **Replace the AXI Interconnect**: 
 The subsystem utilizes an AXI-based interconnect to facilitate communication between components, with the Caliptra core connecting via an AXI interface. The integrator must replace the default AXI interconnect component with their proprietary interface. This ensures that the subsystem can communicate effectively with the rest of the subsystem components using the integrator's specific interconnect architecture.
-2. **Connect the Memories**: The integrator must connect the various memory components required by the subsystem. These memory components are used for storing data and instructions necessary for the operation of the Caliptra SS subsystem.
+2. **Connect the Memories**: The integrator must connect the various memory components required by the subsystem. These memory components are used for storing data and instructions necessary for the operation of the Caliptra subsystem.
 3. **No Changes to Internals**: Integrators are not expected to make any changes to the internals of the design. The focus should be on ensuring proper integration and connectivity of the subsystem components.
-
-
 
 ## 4.2. Verification Considerations
 
@@ -149,20 +159,20 @@ The integration of the Caliptra Subsystem begins with the instantiation of the t
 
 > Add the location to defines file
 
-## 5.3. Address map
+## 5.3. Slave Address map
 
-The following address map is a suggested address map for the given subsystem design. It details the memory layout and the connections between different components within the Caliptra SS subsystem.
+The following address map is a suggested address map for the given subsystem design. It details the memory layout and the connections between different components within the Caliptra subsystem.
 
-| Start Address | End Address | Slave | Name  | Description |
-|---|---|---|---|---|
-| 64'h1000_0000 | 64'h1000_FFFF | 0 | imem | MCU Instruction memory |
-| 64'h2000_4000 | 64'h2000_4FFF | 1 | I3c | I3C Core |
-| 64'h8000_0000 | 64'h80FF_FFFF | 2 | n/a | Reserved |
-| 64'h3000_0000 | 64'h3FFF_FFFF | 3 | SoC IFC (tb) | SoC / Testbench |
-| 64'h2100_0000 | 64'h2200_0000 | 4 | MCI | Memory Controller Interface |
-| 64'h7000_0000 | 64'h7000_01FF | 5 | Fuse Ctrl | Fuse Controller |
-| 64'h7000_0200 | 64'h7000_03FF | 6 | Fuse Ctrl Core | Fuse Controller Core |
-| 64'h7000_0400 | 64'h7000_05FF | 7 | Life Cycle Ctrl | Life Cycle Controller |
+| Start Address    | End Address      | Slave | Name              | Description               |
+|------------------|------------------|-------|-------------------|---------------------------|
+| 64'h1000_0000    | 64'h1000_FFFF    | 0     | imem              | MCU Instruction memory    |
+| 64'h2000_4000    | 64'h2000_4FFF    | 1     | I3c               | I3C Core                  |
+| 64'h8000_0000    | 64'h80FF_FFFF    | 2     | n/a               | Reserved                  |
+| 64'h3000_0000    | 64'h3FFF_FFFF    | 3     | SoC IFC (tb)      | SoC / Testbench           |
+| 64'h2100_0000    | 64'h2200_0000    | 4     | MCI               | Memory Controller Interface |
+| 64'h7000_0000    | 64'h7000_01FF    | 5     | Fuse Ctrl         | Fuse Controller           |
+| 64'h7000_0200    | 64'h7000_03FF    | 6     | Fuse Ctrl Core    | Fuse Controller Core      |
+| 64'h7000_0400    | 64'h7000_05FF    | 7     | Life Cycle Ctrl   | Life Cycle Controller     |
 
 ## 5.4. Interfaces & Signals
 
@@ -213,13 +223,13 @@ The following address map is a suggested address map for the given subsystem des
 | External | input     | 1     | cptra_ss_rst_b_i                     | Reset signal input, active low           |
 | External | axi_if    | na    | cptra_ss_cptra_core_s_axi_if         | Caliptra core AXI sub-interface          |
 | External | axi_if    | na    | cptra_ss_cptra_core_m_axi_if         | Caliptra core AXI manager interface      |
-| External | axi_if    | na    | cptra_ss_mci_s_axi_if                | Caliptra SS MCI AXI sub-interface        |
-| External | axi_if    | na    | cptra_ss_mcu_rom_s_axi_if            | Caliptra SS MCU ROM AXI sub-interface    |
+| External | axi_if    | na    | cptra_ss_mci_s_axi_if                | Caliptra Subsystem MCI AXI sub-interface        |
+| External | axi_if    | na    | cptra_ss_mcu_rom_s_axi_if            | Caliptra Subsystem MCU ROM AXI sub-interface    |
 | External | axi_if    | na    | mcu_rom_mem_export_if                | MCU ROM memory export interface          |
-| External | axi_if    | na    | cptra_ss_mci_m_axi_if                | Caliptra SS MCI AXI manager interface    |
-| External | axi_if    | na    | cptra_ss_mcu_lsu_m_axi_if            | Caliptra SS MCU LSU AXI manager interface|
-| External | axi_if    | na    | cptra_ss_mcu_ifu_m_axi_if            | Caliptra SS MCU IFU AXI manager interface|
-| External | axi_if    | na    | cptra_ss_i3c_s_axi_if                | Caliptra SS I3C AXI sub-interface        |
+| External | axi_if    | na    | cptra_ss_mci_m_axi_if                | Caliptra Subsystem MCI AXI manager interface    |
+| External | axi_if    | na    | cptra_ss_mcu_lsu_m_axi_if            | Caliptra Subsystem MCU LSU AXI manager interface|
+| External | axi_if    | na    | cptra_ss_mcu_ifu_m_axi_if            | Caliptra Subsystem MCU IFU AXI manager interface|
+| External | axi_if    | na    | cptra_ss_i3c_s_axi_if                | Caliptra Subsystem I3C AXI sub-interface        |
 | External | input     | na    | cptra_ss_lc_axi_wr_req_i             | LC controller AXI write request input    |
 | External | output    | na    | cptra_ss_lc_axi_wr_rsp_o             | LC controller AXI write response output  |
 | External | input     | na    | cptra_ss_lc_axi_rd_req_i             | LC controller AXI read request input     |
@@ -355,17 +365,19 @@ The `cptra_ss_pwrgood_i` signal serves as an indicator of stable power for the C
     3. Use a synchronizer to properly align deassertion with `cptra_ss_clk_i` to prevent glitches.
     4. If `cptra_ss_pwrgood_i` remains low, the Caliptra Subsystem will remain in a hard reset state.
 
-
 ## 5.6. Programming interface
 
 
 
 ## 5.7. Sequences
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+**Reset Sequence**:
+  - De-assert `cptra_ss_rst_b_i` after the primary clock (`clk_i`) stabilizes.
+   
+**Boot Sequence**:
+
 
 ## 5.8. How to test
-
 
 
 ## 5.9. Other requirements
@@ -395,7 +407,7 @@ MCU encapusaltes the RISCV instance of Veer Core EL2 instance.
 
 This linker script defines the memory layout for the **Caliptra Subsystem** firmware. It specifies the placement of various sections, ensuring proper memory mapping and execution flow.
 
-> Add path to example linker file.
+**Example** Linker File can be found at : [ integration/test_suite/libs/riscv_hw_if/link.ld  ](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/test_suites/libs/riscv_hw_if/link.ld)
 
 The following memory regions are defined and must be adhered to during integration:
 
@@ -406,12 +418,6 @@ The following memory regions are defined and must be adhered to during integrati
     - **Section:** `.dccm`
     - **Usage:** Used for tightly coupled memory operations.
     - **End Symbol:** `_dccm_end` (marks the end of this region).
-
-  - **Instruction Memory (.text)**
-    - **Base Address:** `0x80000000`
-    - **Section:** `.text`
-    - **Usage:** Stores executable code and functions.
-    - **End Symbol:** `_text_end`
 
   - **Data and Read-Only Sections**
     - **Base Address:** `0x21200000`
@@ -454,13 +460,14 @@ The following memory regions are defined and must be adhered to during integrati
 
 By following this linker script configuration, the firmware can be correctly mapped and executed within the **Caliptra Subsystem**.
 
-# 8. FC Controller
+# 8. Fuse Controller
 
 ## 8.1. Overview
 
 The Fuse Controller is a core component in the secure infrastructure of the system, responsible for managing the fuses and ensuring the integrity, consistency, and secure storage of sensitive data. It provides essential interfaces for direct fuse programming. The Fuse Controller interacts closely with the Lifecycle Controller (LC), FUSE macros, MCI, and Caliptra-core.
 
 For an in-depth understanding of the Fuse Controller's functionality, including its programming flow, refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md).
+
 ## 8.2. Parameters & Defines
 
 | Parameter                | Default                        | Description                                         |
@@ -468,7 +475,6 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 | `AlertAsyncOn`           | 5                              | Enables asynchronous transitions on alerts.         |
 | `MemInitFile`            | `""`                           | Hex file to initialize the OTP macro, including ECC.|
 
----
 
 ## 8.3. Interface
 
@@ -569,7 +575,7 @@ The programming interface for the Fuse Controller (FC) is designed to manage lif
 The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
 **TODO** More details will be provided once FC is ready to test.
 
-# 9. LC Controller - @Emre
+# 9. Life Cycle Controller
 
 ## 9.1. Overview
 
@@ -628,8 +634,8 @@ Internal    |output      |   1    | `hw_rev_o`            |                     
 ## 9.4. Memory Map / Address Map
 
 See LC Controller Register Map**TODO: link will be provided**.
-<!-- Register Offset                             | Description                                           | Address
------------------------------------------   |:------------------------------------------------------|:------    |                                         
+| Register Offset  | Description        | Address  |
+|------------------|:-------------------|:-------- |                                      
 `LC_CTRL_ALERT_TEST_OFFSET`                 | Alert test register                                   |   0x0   |         
 `LC_CTRL_STATUS_OFFSET`                     | Status register                                       |   0x4   |     
 `LC_CTRL_CLAIM_TRANSITION_IF_REGWEN_OFFSET` | Claim transition interface write-enable register      |   0x8   |                                         
@@ -698,7 +704,6 @@ The LC Controller's programming interface facilitates lifecycle state transition
 4. **RMA Strap Handling**:
    - Ensure the `Allow_RMA_on_PPD` GPIO strap is asserted for RMA transitions. Transitions without this strap will fail with an appropriate status in the `LC_CTRL_STATUS_OFFSET` register.
 
----
 
 ## 9.7. Sequences: Reset, Boot
 
@@ -712,8 +717,6 @@ The LC Controller's programming interface facilitates lifecycle state transition
 
 4. **Error Scenarios**:
    - Test scenarios where invalid tokens, Fuse errors, or missing RMA straps are injected to validate error handling and system recovery mechanisms.
-
----
 
 ## 9.8. How to Test: Smoke & More
 
@@ -753,37 +756,174 @@ The LC Controller's programming interface facilitates lifecycle state transition
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-# 11. I3C core - @Nilesh
+# 11. I3C core
 
-Documentation : https://github.com/chipsalliance/i3c-core/blob/main/docs/source/top.md 
+## 11.1. Overview 
+
+The I3C core in the Caliptra Subsystem is an I3C target composed of two separate I3C targets:
+1. The first target manages standard (non-recovery) flows.
+2. The second target is dedicated to the recovery interface.
+
+- This I3C code integrates with an AXI interconnect, allowing AXI read and write transactions to access I3C registers. For details on the core’s internal registers and functionality, see:  
+  - [I3C Core Documentation](https://github.com/chipsalliance/i3c-core/blob/main/docs/source/top.md)  
+  - [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md)
+
+## 11.2. Integration Considerations
 
 - Connections
   - Connection to AXI interface
   - GPIO connection to I3C Host (VIP or RTL)
-- Two target device 
-  - Recovery Target 
-  - General Target
-- Programming sequence
-  - Programming sequence from AXI side to initialize the device
-  - Programming sequence from GPIO side 
-- Execution 
-  - CCC commands to program dynamic address for both the targets
-  - Read the dynamic Address for each target
-- Smoke test
-  - Program & Read Recovery interface registers
-  - Write and read TTI interface from each side.
+
+## 11.3. Paratmeters and defines
+
+| Parameter        | Default Value                        | Description                                 |
+|------------------|--------------------------------------|---------------------------------------------|
+| AxiDataWidth     | `AXI_DATA_WIDTH                      | Width (in bits) of the AXI data bus         |
+| AxiAddrWidth     | `AXI_ADDR_WIDTH                      | Width (in bits) of the AXI address bus      |
+| AxiUserWidth     | `AXI_USER_WIDTH                      | Width (in bits) of the AXI user signals     |
+| AxiIdWidth       | `AXI_ID_WIDTH                        | Width (in bits) of the AXI ID signals       |
+| DatAw            | i3c_pkg::DatAw                       | Data address width (defined in i3c_pkg)     |
+| DctAw            | i3c_pkg::DctAw                       | Device context address width (i3c_pkg)      |
+| CsrAddrWidth     | I3CCSR_pkg::I3CCSR_MIN_ADDR_WIDTH     | CSR address width (defined in I3CCSR_pkg)   |
+| CsrDataWidth     | I3CCSR_pkg::I3CCSR_DATA_WIDTH         | CSR data width (defined in I3CCSR_pkg)      |
+
+## 11.4. Interface 
+
+| Signal                            | Direction | Width                     | Description                                                          |
+|-----------------------------------|----------:|---------------------------|----------------------------------------------------------------------|
+| clk_i                             | input     | 1 bit                     | Clock input                                                          |
+| rst_ni                            | input     | 1 bit                     | Active-low reset                                                     |
+| araddr_i                          | input     | [AxiAddrWidth-1:0]        | AXI read address                                                     |
+| arburst_i                         | input     | 2 bits                    | AXI read burst type                                                  |
+| arsize_i                          | input     | 3 bits                    | AXI read transfer size                                               |
+| arlen_i                           | input     | 8 bits                    | AXI read burst length                                                |
+| aruser_i                          | input     | [AxiUserWidth-1:0]        | AXI read user signal                                                 |
+| arid_i                            | input     | [AxiIdWidth-1:0]          | AXI read transaction ID                                              |
+| arlock_i                          | input     | 1 bit                     | AXI read lock signal                                                 |
+| arvalid_i                         | input     | 1 bit                     | AXI read address valid                                               |
+| arready_o                         | output    | 1 bit                     | AXI read address ready                                               |
+| rdata_o                           | output    | [AxiDataWidth-1:0]        | AXI read data                                                        |
+| rresp_o                           | output    | 2 bits                    | AXI read response                                                    |
+| rid_o                             | output    | [AxiIdWidth-1:0]          | AXI read transaction ID (response)                                   |
+| rlast_o                           | output    | 1 bit                     | AXI read last signal                                                 |
+| rvalid_o                          | output    | 1 bit                     | AXI read valid                                                       |
+| rready_i                          | input     | 1 bit                     | AXI read ready                                                       |
+| awaddr_i                          | input     | [AxiAddrWidth-1:0]        | AXI write address                                                    |
+| awburst_i                         | input     | 2 bits                    | AXI write burst type                                                 |
+| awsize_i                          | input     | 3 bits                    | AXI write transfer size                                              |
+| awlen_i                           | input     | 8 bits                    | AXI write burst length                                               |
+| awuser_i                          | input     | [AxiUserWidth-1:0]        | AXI write user signal                                                |
+| awid_i                            | input     | [AxiIdWidth-1:0]          | AXI write transaction ID                                             |
+| awlock_i                          | input     | 1 bit                     | AXI write lock signal                                                |
+| awvalid_i                         | input     | 1 bit                     | AXI write address valid                                              |
+| awready_o                         | output    | 1 bit                     | AXI write address ready                                              |
+| wdata_i                           | input     | [AxiDataWidth-1:0]        | AXI write data                                                       |
+| wstrb_i                           | input     | [AxiDataWidth/8-1:0]      | AXI write strobe                                                     |
+| wlast_i                           | input     | 1 bit                     | AXI write last                                                       |
+| wvalid_i                          | input     | 1 bit                     | AXI write valid                                                      |
+| wready_o                          | output    | 1 bit                     | AXI write ready                                                      |
+| bresp_o                           | output    | 2 bits                    | AXI write response                                                   |
+| bid_o                             | output    | [AxiIdWidth-1:0]          | AXI write transaction ID (response)                                  |
+| bvalid_o                          | output    | 1 bit                     | AXI write response valid                                             |
+| bready_i                          | input     | 1 bit                     | AXI write response ready                                             |
+| scl_i                             | input     | 1 bit (if DIGITAL_IO_I3C) | I3C clock input (digital)                                            |
+| sda_i                             | input     | 1 bit (if DIGITAL_IO_I3C) | I3C data input (digital)                                             |
+| scl_o                             | output    | 1 bit (if DIGITAL_IO_I3C) | I3C clock output (digital)                                           |
+| sda_o                             | output    | 1 bit (if DIGITAL_IO_I3C) | I3C data output (digital)                                            |
+| sel_od_pp_o                       | output    | 1 bit (if DIGITAL_IO_I3C) | Open-drain / push-pull selection (digital output)                    |
+| i3c_scl_io                        | inout     | 1 bit (else)              | I3C clock line (analog/digital)                                      |
+| i3c_sda_io                        | inout     | 1 bit (else)              | I3C data line (analog/digital)                                       |
+| recovery_payload_available_o      | output    | 1 bit                     | Indicates recovery payload is available                              |
+| recovery_image_activated_o        | output    | 1 bit                     | Indicates the recovery image is activated                            |
+| peripheral_reset_o                | output    | 1 bit                     | Resets connected peripherals                                         |
+| peripheral_reset_done_i           | input     | 1 bit                     | Acknowledges peripheral reset completion                             |
+| escalated_reset_o                 | output    | 1 bit                     | Escalated reset output                                               |
+| irq_o                             | output    | 1 bit                     | Interrupt request                                                    |
+
+## 11.5. Programming Sequence
+
+### 11.5.1. Programming Sequence from AXI Side
+
+1. **Initialize the Device**:
+
+   - Write to the necessary AXI registers to configure the I3C core.
+   - Ensure that the AXI interface is properly set up for communication.
+
+    ```c
+    // Reference Code to Initialize the I3C core (Target Mode)
+    uint32_t i3c_reg_data;
+    i3c_reg_data = 0x00000000;
+
+    i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL);
+    i3c_reg_data = (2 << I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL_STBY_CR_ENABLE_INIT_LOW) | i3c_reg_data;
+    i3c_reg_data = (1 << I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL_TARGET_XACT_ENABLE_LOW) | i3c_reg_data;
+    lsu_write_32(SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL, i3c_reg_data);
+
+    i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3CBASE_HC_CONTROL);
+    i3c_reg_data = (1 << I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW) | i3c_reg_data;
+    lsu_write_32(SOC_I3CCSR_I3CBASE_HC_CONTROL, i3c_reg_data);
+    ```
+
+
+2. **Program I3C core targets with unique static addresses**:
+
+   - Write to the necessary AXI registers to configure the I3C core with unique static target address.
+   - Ensure that the AXI interface is properly set up for communication.
+
+    ```c
+    // Reference Code to Program Unique Static Address for I3C Core
+    uint32_t i3c_reg_data;
+    i3c_reg_data = 0x00000000;
+    //setting device address to 0x5A
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 90 << 0  | i3c_reg_data;
+    i3c_reg_data = 1  << 15 | i3c_reg_data;
+    lsu_write_32( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_DEVICE_ADDR, i3c_reg_data);
+
+    //setting virtual device address to 0x5B
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 91 << 0  | i3c_reg_data; //0x5B
+    i3c_reg_data = 1  << 15 | i3c_reg_data;   
+    lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
+    ```
+
+### 11.5.2. Programming Sequence from GPIO Side
+
+1. **Program Dynamic Address for Both Targets**:
+   - Use CCC (Common Command Code) commands to assign dynamic addresses to both I3C targets.
+   - Ensure that each target is programmed with a unique dynamic address.
+  
+2. **Read the Dynamic Address for Each Target**:
+   - Verify the dynamic addresses assigned to each target by reading back the addresses.
+   - Ensure that the addresses are correctly programmed and accessible.
+
+## 11.6. How to test : Smoke & more
+
+### 11.6.1. Smoke Test
+
+  - **Basic Connectivity**
+    - CCC command execution for programming Dynamic Address
+    - Program & Read Recovery interface registers
+    - Write and read TTI interface from each side.
+ 
+### 11.6.2. Advance Test
+
+  - **Recovery Sequence** 
+    - Test transfers the recovery image
+    - Boots the device using the recovery image
+  - **MCTP Test seqeunce**
+    - TBD
+
 
 # 12. Memories 
 
-### 12.0.1. List of Memories
-
 | **Memory Category**                     | **Memory Name**                         | **Interface**                                    | **Size**           | **Access Type**   | **Description**                                             |
 |-----------------------------------------|-----------------------------------------|--------------------------------------------------|--------------------|-------------------|-------------------------------------------------------------|
-| **Caliptra SS MCU0**                    | **Instruction ROM**                     | `mcu_rom_mem_export_if`                          | TBD                | Read-Only         | Stores the instructions for MCU0 execution                   |
-| **Caliptra SS MCU0**                    | **Memory Export**                       | `cptra_ss_mcu0_el2_mem_export`                   | TBD                | Read/Write        | Memory export for MCU0 access                               |
-| **Caliptra SS MCU0**                    | **Shared Memory (SRAM)**                | `cptra_ss_mci_mcu_sram_req_if`                   | TBD                | Read/Write        | Shared memory between MCI and MCU for data storage           |
-| **Caliptra SS MBOX**                   | **MBOX0 Memory**                        | `cptra_ss_mci_mbox0_sram_req_if`                 | TBD                | Read/Write        | Memory for MBOX0 communication                               |
-| **Caliptra SS MBOX**                   | **MBOX1 Memory**                        | `cptra_ss_mci_mbox1_sram_req_if`                 | TBD                | Read/Write        | Memory for MBOX1 communication                               |
+| **Caliptra Subsystem MCU0**                    | **Instruction ROM**                     | `mcu_rom_mem_export_if`                          | TBD                | Read-Only         | Stores the instructions for MCU0 execution                   |
+| **Caliptra Subsystem MCU0**                    | **Memory Export**                       | `cptra_ss_mcu0_el2_mem_export`                   | TBD                | Read/Write        | Memory export for MCU0 access                               |
+| **Caliptra Subsystem MCU0**                    | **Shared Memory (SRAM)**                | `cptra_ss_mci_mcu_sram_req_if`                   | TBD                | Read/Write        | Shared memory between MCI and MCU for data storage           |
+| **Caliptra Subsystem MBOX**                   | **MBOX0 Memory**                        | `cptra_ss_mci_mbox0_sram_req_if`                 | TBD                | Read/Write        | Memory for MBOX0 communication                               |
+| **Caliptra Subsystem MBOX**                   | **MBOX1 Memory**                        | `cptra_ss_mci_mbox1_sram_req_if`                 | TBD                | Read/Write        | Memory for MBOX1 communication                               |
 | **Caliptra Core**                       | **ICCM, DCCM IF**                       | `cptra_ss_cptra_core_el2_mem_export`             | TBD                | Read/Write        | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core |
 | **Caliptra Core**                       | **IFU (Instruction Fetch Unit)**        | `cptra_ss_mcu_rom_macro_req_if`                  | TBD                | Read-Only         | Interface for instruction fetch unit (IFU)                   |
 
