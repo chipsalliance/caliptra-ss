@@ -4,102 +4,102 @@
 
 <h1 align="center"> Caliptra Subsystem Integration Specification v0p8 </h1>
 
-- [1. Scope](#1-scope)
-  - [1.1. Document Version](#11-document-version)
-  - [1.2. Related repositories \& specifications](#12-related-repositories--specifications)
-- [2. Overview](#2-overview)
-- [3. Calpitra Subsystem High level diagram](#3-calpitra-subsystem-high-level-diagram)
-- [4. Integration Considerations](#4-integration-considerations)
-  - [4.1. Design Considerations](#41-design-considerations)
-  - [4.2. Verification Considerations](#42-verification-considerations)
-- [5. Caliptra Subsystem](#5-caliptra-subsystem)
-  - [5.1. Parameters](#51-parameters)
-  - [5.2. Defines](#52-defines)
-  - [5.3. Slave Address map](#53-slave-address-map)
-  - [5.4. Interfaces \& Signals](#54-interfaces--signals)
-    - [5.4.1. AXI Interface (axi\_if)](#541-axi-interface-axi_if)
-    - [5.4.2. Caliptra Subsystem Top Interface \& signals](#542-caliptra-subsystem-top-interface--signals)
-  - [5.5. Integration Requirements](#55-integration-requirements)
-    - [5.5.1. Clock](#551-clock)
-    - [5.5.2. Reset](#552-reset)
-    - [5.5.3. Power Good Signal](#553-power-good-signal)
-  - [5.6. Programming interface](#56-programming-interface)
-  - [5.7. Sequences](#57-sequences)
-  - [5.8. How to test](#58-how-to-test)
-  - [5.9. Other requirements](#59-other-requirements)
-- [6. Caliptra Core](#6-caliptra-core)
-- [7. MCU](#7-mcu)
-  - [7.1. Overview](#71-overview)
-    - [7.1.1. Parameters \& Defines](#711-parameters--defines)
-    - [7.1.2. MCU Top : Interface \& Signals](#712-mcu-top--interface--signals)
-  - [7.2. Programming interface](#72-programming-interface)
-    - [7.2.1. MCU Linker Script Integration](#721-mcu-linker-script-integration)
-- [8. Fuse Controller](#8-fuse-controller)
-  - [8.1. Overview](#81-overview)
-  - [8.2. Parameters \& Defines](#82-parameters--defines)
-  - [8.3. Interface](#83-interface)
-  - [8.4. Memory Map	/ Address map](#84-memory-map-address-map)
-  - [8.5. Requirements: Connectivity, Clock \& Reset, Constraints \& Violations](#85-requirements-connectivity-clock--reset-constraints--violations)
-  - [8.6. Programming interface](#86-programming-interface)
-  - [8.7. Sequences: Reset, Boot](#87-sequences-reset-boot)
-  - [8.8. How to test : Smoke \& more](#88-how-to-test--smoke--more)
-- [9. Life Cycle Controller](#9-life-cycle-controller)
-  - [9.1. Overview](#91-overview)
-  - [9.2. Parameters \& Defines](#92-parameters--defines)
-  - [9.3. Interface](#93-interface)
-  - [9.4. Memory Map / Address Map](#94-memory-map--address-map)
-  - [9.5. Requirements: Connectivity, Clock \& Reset, Constraints \& Violations](#95-requirements-connectivity-clock--reset-constraints--violations)
-  - [9.6. Programming Interface](#96-programming-interface)
-  - [9.7. Sequences: Reset, Boot](#97-sequences-reset-boot)
-  - [9.8. How to Test: Smoke \& More](#98-how-to-test-smoke--more)
-    - [9.8.1. Smoke Test](#981-smoke-test)
-    - [9.8.2. Functional Tests](#982-functional-tests)
-    - [9.8.3. Advanced Tests](#983-advanced-tests)
-- [10. MCI](#10-mci)
-  - [10.1. Overview](#101-overview)
-  - [10.2. Parameters \& Defines](#102-parameters--defines)
-  - [10.3. Interface](#103-interface)
-  - [10.4. Memory Map	/ Address map](#104-memory-map-address-map)
-  - [10.5. Requirements : Connectivity, Clock \& Reset, Constraints \& Violations etc](#105-requirements--connectivity-clock--reset-constraints--violations-etc)
-    - [10.5.1. Error Aggregation Connectivity Requirements](#1051-error-aggregation-connectivity-requirements)
-    - [10.5.2. Subsystem Internal Fuse Controller Initialization Connectivity Requirements](#1052-subsystem-internal-fuse-controller-initialization-connectivity-requirements)
-    - [10.5.3. Subsystem Internal Life Cycle Controller Initialization Connectivity Requirements](#1053-subsystem-internal-life-cycle-controller-initialization-connectivity-requirements)
-    - [10.5.4. MCI MCU Connectivity Requirements](#1054-mci-mcu-connectivity-requirements)
-    - [10.5.5. MCI Caliptra Core Connectivity Requirements](#1055-mci-caliptra-core-connectivity-requirements)
-    - [10.5.6. LCC Gasket Connectivity Requirements](#1056-lcc-gasket-connectivity-requirements)
-    - [10.5.7. MCU SRAM Sizing Requirements](#1057-mcu-sram-sizing-requirements)
-    - [10.5.8. MCI AXI DMA Requirements](#1058-mci-axi-dma-requirements)
-  - [10.6. Programming interface](#106-programming-interface)
-    - [10.6.1. Mailbox FIXME waiting on Caliptra MBOX integration spec updates before doing this section](#1061-mailbox-fixme-waiting-on-caliptra-mbox-integration-spec-updates-before-doing-this-section)
-  - [10.7. Sequences : Reset, Boot,](#107-sequences--reset-boot)
-    - [10.7.1. MCI Boot Sequencer](#1071-mci-boot-sequencer)
-    - [10.7.2. MCU Hitless Patch Flow](#1072-mcu-hitless-patch-flow)
-    - [10.7.3. Error Flows](#1073-error-flows)
-  - [10.8. How to test : Smoke \& more](#108-how-to-test--smoke--more)
-  - [10.9. Other requirements](#109-other-requirements)
-- [11. I3C core](#11-i3c-core)
-  - [11.1. Overview](#111-overview)
-  - [11.2. Integration Considerations](#112-integration-considerations)
-  - [11.3. Paratmeters and defines](#113-paratmeters-and-defines)
-  - [11.4. Interface](#114-interface)
-  - [11.5. Programming Sequence](#115-programming-sequence)
-    - [11.5.1. Programming Sequence from AXI Side](#1151-programming-sequence-from-axi-side)
-    - [11.5.2. Programming Sequence from GPIO Side](#1152-programming-sequence-from-gpio-side)
-  - [11.6. How to test : Smoke \& more](#116-how-to-test--smoke--more)
-    - [11.6.1. Smoke Test](#1161-smoke-test)
-    - [11.6.2. Advance Test](#1162-advance-test)
-- [12. Memories](#12-memories)
-- [13. Terminology](#13-terminology)
+- [Scope](#scope)
+  - [Document Version](#document-version)
+  - [Related repositories \& specifications](#related-repositories--specifications)
+- [Overview](#overview)
+- [Calpitra Subsystem High level diagram](#calpitra-subsystem-high-level-diagram)
+- [Integration Considerations](#integration-considerations)
+  - [Design Considerations](#design-considerations)
+  - [Verification Considerations](#verification-considerations)
+- [Caliptra Subsystem](#caliptra-subsystem)
+  - [Parameters](#parameters)
+  - [Defines](#defines)
+  - [Slave Address map](#slave-address-map)
+  - [Interfaces \& Signals](#interfaces--signals)
+    - [AXI Interface (axi\_if)](#axi-interface-axi_if)
+    - [Caliptra Subsystem Top Interface \& signals](#caliptra-subsystem-top-interface--signals)
+  - [Integration Requirements](#integration-requirements)
+    - [Clock](#clock)
+    - [Reset](#reset)
+    - [Power Good Signal](#power-good-signal)
+  - [Programming interface](#programming-interface)
+  - [Sequences](#sequences)
+  - [How to test](#how-to-test)
+  - [Other requirements](#other-requirements)
+- [Caliptra Core](#caliptra-core)
+- [MCU](#mcu)
+  - [Overview](#overview-1)
+    - [Parameters \& Defines](#parameters--defines)
+    - [MCU Top : Interface \& Signals](#mcu-top--interface--signals)
+  - [Programming interface](#programming-interface-1)
+    - [MCU Linker Script Integration](#mcu-linker-script-integration)
+- [Fuse Controller](#fuse-controller)
+  - [Overview](#overview-2)
+  - [Parameters \& Defines](#parameters--defines-1)
+  - [Interface](#interface)
+  - [Memory Map	/ Address map](#memory-map-address-map)
+  - [Requirements: Connectivity, Clock \& Reset, Constraints \& Violations](#requirements-connectivity-clock--reset-constraints--violations)
+  - [Programming interface](#programming-interface-2)
+  - [Sequences: Reset, Boot](#sequences-reset-boot)
+  - [How to test : Smoke \& more](#how-to-test--smoke--more)
+- [Life Cycle Controller](#life-cycle-controller)
+  - [Overview](#overview-3)
+  - [Parameters \& Defines](#parameters--defines-2)
+  - [Interface](#interface-1)
+  - [Memory Map / Address Map](#memory-map--address-map)
+  - [Requirements: Connectivity, Clock \& Reset, Constraints \& Violations](#requirements-connectivity-clock--reset-constraints--violations-1)
+  - [Programming Interface](#programming-interface-3)
+  - [Sequences: Reset, Boot](#sequences-reset-boot-1)
+  - [How to Test: Smoke \& More](#how-to-test-smoke--more)
+    - [Smoke Test](#smoke-test)
+    - [Functional Tests](#functional-tests)
+    - [Advanced Tests](#advanced-tests)
+- [MCI](#mci)
+  - [Overview](#overview-4)
+  - [Parameters \& Defines](#parameters--defines-3)
+  - [Interface](#interface-2)
+  - [Memory Map	/ Address map](#memory-map-address-map-1)
+  - [Requirements : Connectivity, Clock \& Reset, Constraints \& Violations etc](#requirements--connectivity-clock--reset-constraints--violations-etc)
+    - [Error Aggregation Connectivity Requirements](#error-aggregation-connectivity-requirements)
+    - [Subsystem Internal Fuse Controller Initialization Connectivity Requirements](#subsystem-internal-fuse-controller-initialization-connectivity-requirements)
+    - [Subsystem Internal Life Cycle Controller Initialization Connectivity Requirements](#subsystem-internal-life-cycle-controller-initialization-connectivity-requirements)
+    - [MCI MCU Connectivity Requirements](#mci-mcu-connectivity-requirements)
+    - [MCI Caliptra Core Connectivity Requirements](#mci-caliptra-core-connectivity-requirements)
+    - [LCC Gasket Connectivity Requirements](#lcc-gasket-connectivity-requirements)
+    - [MCU SRAM Sizing Requirements](#mcu-sram-sizing-requirements)
+    - [MCI AXI DMA Requirements](#mci-axi-dma-requirements)
+  - [Programming interface](#programming-interface-4)
+    - [Mailbox FIXME waiting on Caliptra MBOX integration spec updates before doing this section](#mailbox-fixme-waiting-on-caliptra-mbox-integration-spec-updates-before-doing-this-section)
+  - [Sequences : Reset, Boot,](#sequences--reset-boot)
+    - [MCI Boot Sequencer](#mci-boot-sequencer)
+    - [MCU Hitless Patch Flow](#mcu-hitless-patch-flow)
+    - [Error Flows](#error-flows)
+  - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
+  - [Other requirements](#other-requirements-1)
+- [I3C core](#i3c-core)
+  - [Overview](#overview-5)
+  - [Integration Considerations](#integration-considerations-1)
+  - [Paratmeters and defines](#paratmeters-and-defines)
+  - [Interface](#interface-3)
+  - [Programming Sequence](#programming-sequence)
+    - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
+    - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
+  - [How to test : Smoke \& more](#how-to-test--smoke--more-2)
+    - [Smoke Test](#smoke-test-1)
+    - [Advance Test](#advance-test)
+- [Memories](#memories)
+- [Terminology](#terminology)
 
 
-# 1. Scope 
+# Scope 
 
 <span style="color:red">**Disclaimer**: Internal Draft Document
 This document is a work in progress and intended for internal use only. It may contain incomplete or preliminary information subject to change. Do not refer to, share, or rely on this document unless explicitly released in its final version. </span>
 
 For Caliptra Subsystem, this document serves as a hardware integration specification. The scope of this document is to assist integrators in the integration of Caliptra Subsystem. It is not intended to serve as a hardware specification or to include micro-architectural details. This document includes Caliptra Subsystem top-level details along with parameters, defines, interfaces, memory map, programming reference, and guidelines on how to test the integration of the design.
 
-## 1.1. Document Version
+## Document Version
 <div align="center">
 
 | Date            |   Document Version | Description       |
@@ -108,7 +108,7 @@ For Caliptra Subsystem, this document serves as a hardware integration specifica
 
 </div>
 
-## 1.2. Related repositories & specifications
+## Related repositories & specifications
 
 The components described in this document are either obtained from open-source GitHub repositories, developed from scratch, or modified versions of open-source implementations. Links to relevant documentation and GitHub sources are shared in the following table.
 
@@ -122,11 +122,11 @@ The components described in this document are either obtained from open-source G
 | I3C-Core      | [GitHub - chipsalliance/i3c-core](https://github.com/chipsalliance/i3c-core)              | [I3C core documentation](https://github.com/chipsalliance/i3c-core?tab=readme-ov-file#i3c-core) |
 | Adams Bridge  | [GitHub - chipsalliance/adams-bridge](https://github.com/chipsalliance/adams-bridge)      | [Adams Bridge Documentation](https://github.com/chipsalliance/adams-bridge/tree/main/docs) |
 
-# 2. Overview
+# Overview
 
 The Caliptra Subsystem is designed to provide a robust Root of Trust (RoT) for datacenter-class System on Chips (SoCs), including CPUs, GPUs, DPUs, and TPUs. It integrates both hardware and firmware components to deliver essential security services such as identity establishment, measured boot, and attestation. By incorporating the Caliptra Subsystem, integrators can enhance the security capabilities of their SoCs, providing a reliable RoT that meets industry standards and addresses the evolving security needs of datacenter environments.
 
-# 3. Calpitra Subsystem High level diagram
+# Calpitra Subsystem High level diagram
 
 The following diagram provides a high-level overview of the Caliptra subsystem. It illustrates the key components and their interconnections within the system. For an in-depth understanding of the Caliptra Subystem refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md). 
 
@@ -145,7 +145,7 @@ Caliptra Subsystem includes:
   - **MCI (Memory Controller Interface)**: Manages the communication between the processor and the memory components.
   - **Memories**: Various memory components used for storing data and instructions required by the subsystem.
 
-# 4. Integration Considerations
+# Integration Considerations
 
 By performing these design and verification tasks, the integrator ensures that the Caliptra Subsystem is properly integrated and can function as intended within the larger system. Several files contain code that may be specific to an integrator's implementation and should be overridden. This overridable code is either configuration parameters with integrator-specific values or modules that implement process-specific functionality. Code in these files should be modified or replaced by integrators using components from the cell library of their fabrication vendor. The following table describes recommended modifications for each file.
 
@@ -155,31 +155,31 @@ By performing these design and verification tasks, the integrator ensures that t
 | tb  | Interconnect Top | [testbench\aaxi4_interconnect.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/aaxi4_interconnect.sv) |
 | tb  | Testbench Top    | [testbench\caliptra_ss_top_tb.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/caliptra_ss_top_tb.sv) |
 
-## 4.1. Design Considerations
+## Design Considerations
 
 1. **Replace the AXI Interconnect**: 
 The subsystem utilizes an AXI-based interconnect to facilitate communication between components, with the Caliptra core connecting via an AXI interface. The integrator must replace the default AXI interconnect component with their proprietary interface. This ensures that the subsystem can communicate effectively with the rest of the subsystem components using the integrator's specific interconnect architecture.
 2. **Connect the Memories**: The integrator must connect the various memory components required by the subsystem. These memory components are used for storing data and instructions necessary for the operation of the Caliptra subsystem.
 3. **No Changes to Internals**: Integrators are not expected to make any changes to the internals of the design. The focus should be on ensuring proper integration and connectivity of the subsystem components.
 
-## 4.2. Verification Considerations
+## Verification Considerations
 
 1. **Connect the I3C Core GPIO with I3C host Driver**: 
 The integrator must connect the I3C core to the appropriate driver for the GPIO pins. This connection is crucial for enabling communication with I3C devices, which are used for communication within the subsystem.
 
-# 5. Caliptra Subsystem
+# Caliptra Subsystem
 
 The integration of the Caliptra Subsystem begins with the instantiation of the top-level RTL module, caliptra_ss_top.sv. This module serves as the primary entry point for the subsystem and encapsulates all the logic and components required for the functionality of the Caliptra Root of Trust (RoT). All signals must be connected based on the detailed interface and signal descriptions provided in this document. Ensure adherence to the signal direction, width, and functionality to guarantee proper integration with the host SoC.
 
-## 5.1. Parameters 
+## Parameters 
 
 > Add the location to parameters file
 
-## 5.2. Defines
+## Defines
 
 > Add the location to defines file
 
-## 5.3. Slave Address map
+## Slave Address map
 
 The following address map is a suggested address map for the given subsystem design. It details the memory layout and the connections between different components within the Caliptra subsystem.
 
@@ -194,7 +194,7 @@ The following address map is a suggested address map for the given subsystem des
 | 64'h7000_0200    | 64'h7000_03FF    | 6     | Fuse Ctrl Core    | Fuse Controller Core      |
 | 64'h7000_0400    | 64'h7000_05FF    | 7     | Life Cycle Ctrl   | Life Cycle Controller     |
 
-## 5.4. Interfaces & Signals
+## Interfaces & Signals
 
 **Table: Caliptra SS Straps**
 
@@ -216,7 +216,7 @@ The following address map is a suggested address map for the given subsystem des
 | External | input | 1 | cptra_ss_strap_generic_2_i | Generic strap input 2 |
 | External | input | 1 | cptra_ss_strap_generic_3_i | Generic strap input 3 |
 
-### 5.4.1. AXI Interface (axi_if)
+### AXI Interface (axi_if)
 
 | Signal          | Width                  | Direction (mgr) | Direction (sub) |
 |-----------------|------------------------|-----------------|-----------------|
@@ -254,7 +254,7 @@ The following address map is a suggested address map for the given subsystem des
 | bvalid          | 1                      | input           | output          |
 | bready          | 1                      | output          | input           |
 
-### 5.4.2. Caliptra Subsystem Top Interface & signals 
+### Caliptra Subsystem Top Interface & signals 
 
 | Facing   | Type      | width | Signal or Interface Name             | Description                              |
 |:---------|:----------|:------|:-------------------------------------|:-----------------------------------------|
@@ -362,9 +362,9 @@ The following address map is a suggested address map for the given subsystem des
 | External | output    | 1     | ready_for_mb_processing              | Ready for mailbox processing output      |
 | External | output    | 1     | mailbox_data_avail                   | Mailbox data available output            |
 
-## 5.5. Integration Requirements
+## Integration Requirements
 
-### 5.5.1. Clock
+### Clock
 
 The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem. This signal must be connected to a 100 MHz system clock to ensure proper operation.
 
@@ -379,7 +379,7 @@ The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsyste
      2. The clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.
      3. If a different frequency is required, ensure that a clock divider or PLL is used to generate the 100 MHz clock before connection.
 
-### 5.5.2. Reset
+### Reset
 
 The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles at 100 MHz) to allow all internal logic to initialize properly.
 
@@ -391,7 +391,7 @@ The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsys
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
 
-### 5.5.3. Power Good Signal 
+### Power Good Signal 
 
 The `cptra_ss_pwrgood_i` signal serves as an indicator of stable power for the Caliptra Subsystem. When asserted (`1`), it confirms that power is stable and the subsystem can operate normally. When deasserted (`0`), the signal triggers a **hard reset** of the subsystem. Deassertion must be synchronized to `cptra_ss_clk_i` to avoid metastability issues.
 
@@ -405,11 +405,11 @@ The `cptra_ss_pwrgood_i` signal serves as an indicator of stable power for the C
     3. Use a synchronizer to properly align deassertion with `cptra_ss_clk_i` to prevent glitches.
     4. If `cptra_ss_pwrgood_i` remains low, the Caliptra Subsystem will remain in a hard reset state.
 
-## 5.6. Programming interface
+## Programming interface
 
 
 
-## 5.7. Sequences
+## Sequences
 
 **Reset Sequence**:
   - De-assert `cptra_ss_rst_b_i` after the primary clock (`clk_i`) stabilizes.
@@ -417,33 +417,33 @@ The `cptra_ss_pwrgood_i` signal serves as an indicator of stable power for the C
 **Boot Sequence**:
 
 
-## 5.8. How to test
+## How to test
 
 
-## 5.9. Other requirements
+## Other requirements
 
-# 6. Caliptra Core
+# Caliptra Core
 
 Follow the link for 
 [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md)
 
-# 7. MCU 
+# MCU 
 
-## 7.1. Overview
+## Overview
 
 MCU encapusaltes the RISCV instance of Veer Core EL2 instance.
 
-### 7.1.1. Parameters & Defines
+### Parameters & Defines
 
 > Add the path to MCU parameters and defines.
 
-### 7.1.2. MCU Top : Interface & Signals
+### MCU Top : Interface & Signals
 
 > Add the link to MCU top signals.
 
-## 7.2. Programming interface
+## Programming interface
 
-### 7.2.1. MCU Linker Script Integration
+### MCU Linker Script Integration
 
 This linker script defines the memory layout for the **Caliptra Subsystem** firmware. It specifies the placement of various sections, ensuring proper memory mapping and execution flow.
 
@@ -500,15 +500,15 @@ The following memory regions are defined and must be adhered to during integrati
 
 By following this linker script configuration, the firmware can be correctly mapped and executed within the **Caliptra Subsystem**.
 
-# 8. Fuse Controller
+# Fuse Controller
 
-## 8.1. Overview
+## Overview
 
 The Fuse Controller is a core component in the secure infrastructure of the system, responsible for managing the fuses and ensuring the integrity, consistency, and secure storage of sensitive data. It provides essential interfaces for direct fuse programming. The Fuse Controller interacts closely with the Lifecycle Controller (LC), FUSE macros, MCI, and Caliptra-core.
 
 For an in-depth understanding of the Fuse Controller's functionality, including its programming flow, refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md).
 
-## 8.2. Parameters & Defines
+## Parameters & Defines
 
 | Parameter                | Default                        | Description                                         |
 |--------------------------|--------------------------      |-----------------------------------------------------|
@@ -516,7 +516,7 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 | `MemInitFile`            | `""`                           | Hex file to initialize the OTP macro, including ECC.|
 
 
-## 8.3. Interface
+## Interface
 
 | Facing     | Type       | Width   | Name                          | External Name in SoC Level        | Description                                            |
 |------------|------------|-------  |-------------------------------|-----------------------------------|--------------------------------------------------------|
@@ -544,14 +544,14 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 | Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra-core. This port broadcasts UDS and Field-entropy.             |
 
 
-## 8.4. Memory Map	/ Address map
+## Memory Map	/ Address map
 
 
 See [Fuse Controller Register Map](../src/fuse_ctrl/doc/registers.md).
 
 ---
 
-## 8.5. Requirements: Connectivity, Clock & Reset, Constraints & Violations
+## Requirements: Connectivity, Clock & Reset, Constraints & Violations
 
 1. **Connectivity**:
    - The Fuse Controller must interface seamlessly with the Fuse Macros, ensuring proper ECC support during programming and read operations.
@@ -566,7 +566,7 @@ See [Fuse Controller Register Map](../src/fuse_ctrl/doc/registers.md).
 
 ---
 
-## 8.6. Programming interface
+## Programming interface
 The programming interface for the Fuse Controller (FC) is designed to manage lifecycle states, handle fuses with ECC support, and ensure secure interactions with the Fuse Macros. Below are the key operations supported by the programming interface:
 
 1. **Direct Access Interface (DAI)**:
@@ -597,7 +597,7 @@ The programming interface for the Fuse Controller (FC) is designed to manage lif
      - Poll the `DAI_IDLE` bit in `FUSE_CTRL_STATUS` to confirm the operation is complete.
 ---
 
-## 8.7. Sequences: Reset, Boot
+## Sequences: Reset, Boot
 
 1. **Reset Sequence**:
    - De-assert `rst_ni` after the primary clock (`clk_i`) stabilizes.
@@ -611,19 +611,19 @@ The programming interface for the Fuse Controller (FC) is designed to manage lif
 
 ---
 
-## 8.8. How to test : Smoke & more
+## How to test : Smoke & more
 The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
 **TODO** More details will be provided once FC is ready to test.
 
-# 9. Life Cycle Controller
+# Life Cycle Controller
 
-## 9.1. Overview
+## Overview
 
 The LC Controller (Lifecycle Controller) is a critical component of the Caliptra Subsystem, responsible for securely managing the lifecycle states of the chip. The LC Controller interacts with other subsystems such as the Fuse Controller, MCI, AXI interconnect, and JTAG TAP to enforce secure transitions, validate tokens, and generate error conditions. Additionally, it implements escalation mechanisms to respond to security breaches, enabling the chip to enter secure states like SCRAP.
 
 For a detailed description of the Lifecycle Controller's architecture, design, and operational flow, refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md).
 
-## 9.2. Parameters & Defines
+## Parameters & Defines
 
 Parameter                        | Default (Max)  | Description
 ---------------------------------|----------------|---------------
@@ -635,7 +635,7 @@ Parameter                        | Default (Max)  | Description
 `RndCnstLcKeymgrDivProduction`   | (see RTL)      | Diversification value used for the PROD/PROD_END life cycle states.
 `RndCnstLcKeymgrDivRma`          | (see RTL)      | Diversification value used for the RMA life cycle state.
 
-## 9.3. Interface
+## Interface
 
 
 Facing      | Type       | width  | Name                  |  External Name in SoC Level         | Description   |
@@ -671,7 +671,7 @@ Internal    |input       |   1    | `otp_manuf_state_i`   |                     
 Internal    |output      |   1    | `hw_rev_o`            |                                     | Reflection of HW revision ID read from fuse controller              |
 
 
-## 9.4. Memory Map / Address Map
+## Memory Map / Address Map
 
 See LC Controller Register Map**TODO: link will be provided**.
 | Register Offset  | Description        | Address  |
@@ -712,7 +712,7 @@ See LC Controller Register Map**TODO: link will be provided**.
 `LC_CTRL_MANUF_STATE_6_OFFSET`              | Manufacturing state register (part 6)                 |   0x84  |                             
 `LC_CTRL_MANUF_STATE_7_OFFSET`              | Manufacturing state register (part 7)                 |   0x88  |                              -->
 
-## 9.5. Requirements: Connectivity, Clock & Reset, Constraints & Violations
+## Requirements: Connectivity, Clock & Reset, Constraints & Violations
 
 1. **Connectivity**:
    - Ensure proper routing of all signals to avoid conflicts with other modules.
@@ -722,7 +722,7 @@ See LC Controller Register Map**TODO: link will be provided**.
    - Avoid glitches on `Allow_RMA_on_PPD` and escalation inputs (`esc_scrap_state0`, `esc_scrap_state1`) that could cause unintended transitions.
    - Verify that all output signals, including alerts, remain within the expected ranges under normal operation.
 
-## 9.6. Programming Interface
+## Programming Interface
 
 The LC Controller's programming interface facilitates lifecycle state transitions, secure token authentication, and system initialization. Below are the key programming steps:
 
@@ -745,7 +745,7 @@ The LC Controller's programming interface facilitates lifecycle state transition
    - Ensure the `Allow_RMA_on_PPD` GPIO strap is asserted for RMA transitions. Transitions without this strap will fail with an appropriate status in the `LC_CTRL_STATUS_OFFSET` register.
 
 
-## 9.7. Sequences: Reset, Boot
+## Sequences: Reset, Boot
 
 1. **Reset Sequence**:
    - Bring the LC Controller out of reset by asserting and de-asserting `rst_ni` after clock stabilization.
@@ -758,9 +758,9 @@ The LC Controller's programming interface facilitates lifecycle state transition
 4. **Error Scenarios**:
    - Test scenarios where invalid tokens, Fuse errors, or missing RMA straps are injected to validate error handling and system recovery mechanisms.
 
-## 9.8. How to Test: Smoke & More
+## How to Test: Smoke & More
 
-### 9.8.1. Smoke Test
+### Smoke Test
 1. **Basic Connectivity**:
    - Verify the LC Controller responds to read and write operations on key registers (e.g., `LC_CTRL_STATUS_OFFSET`, `LC_CTRL_CLAIM_TRANSITION_IF_OFFSET`).
 
@@ -770,7 +770,7 @@ The LC Controller's programming interface facilitates lifecycle state transition
 3. **Lifecycle Transition**:
    - Perform a single state transition (e.g., `RAW` to `TEST_UNLOCKED0`)
 
-### 9.8.2. Functional Tests
+### Functional Tests
 1. **Full Lifecycle Sequence**:
    - Run all lifecycle transition functions and validate each transition step via the status register and debug messages.
 
@@ -782,7 +782,7 @@ The LC Controller's programming interface facilitates lifecycle state transition
 3. **Boundary Testing**:
    - Verify correct operation under boundary conditions, such as repeated transitions, simultaneous requests, or rapid reset sequences.
 
-### 9.8.3. Advanced Tests
+### Advanced Tests
 1. **Stress Test**:
    - Perform rapid transitions through multiple lifecycle states to validate system robustness.
    - Simulate power interruptions during critical operations.
@@ -792,9 +792,9 @@ The LC Controller's programming interface facilitates lifecycle state transition
 
 
 
-# 10. MCI 
+# MCI 
 
-## 10.1. Overview
+## Overview
 Manufacturer Control Interface provides the following features for Caliptra SS:
 
 * Boot Sequencer for the SS
@@ -830,7 +830,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 ![](images/MCI-Integ-Block-Diagram.png)
 
 
-## 10.2. Parameters & Defines
+## Parameters & Defines
 
 *Note: Additional parameter limitations can be seen in the Requirements section* 
 
@@ -873,7 +873,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 |  |  |  |
 |  |  |  |
 
-## 10.3. Interface
+## Interface
 
 *Note: Additional interface connection requirements/guidance can be seen in the Requirements section* 
 
@@ -982,7 +982,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | External | Output | 1 | SOC\_HW\_DEBUG\_EN | clk | **FIXME** |
 | Internal | Output | Struct | security\_state\_o | clk | **FIXME** |
 
-## 10.4. Memory Map	/ Address map
+## Memory Map	/ Address map
 
 - Top Level Memory Map
 
@@ -1015,7 +1015,7 @@ The two regions have different access protection. The size of the regions is dyn
 
 *NOTE: If FW\_SRAM\_EXEC\_REGION\_SIZE is the size of the SRAM, there is no protected Region.* 
 
-## 10.5. Requirements : Connectivity, Clock & Reset, Constraints & Violations etc
+## Requirements : Connectivity, Clock & Reset, Constraints & Violations etc
 
 - **AXI Parameters and AXI Interface Parameter Alignment**
 
@@ -1089,7 +1089,7 @@ The two regions have different access protection. The size of the regions is dyn
 | :---- | :---- | :---- |
 | 64:0 | RESERVED | No allocation function |
 
-### 10.5.1. Error Aggregation Connectivity Requirements
+### Error Aggregation Connectivity Requirements
 
 MCI provides two ports (agg\_error\_fatal and agg\_error\_non\_fatal), for the SOC to connect any fatal or non-fatal error that need to be:
 
@@ -1132,7 +1132,7 @@ The following table describes the allocation of functionality on agg\_error\_fat
  - A more detailed microarchitecture of the error aggregation can be found in the Caliptra SS Hardware specification. 
 ---
 
-### 10.5.2. Subsystem Internal Fuse Controller Initialization Connectivity Requirements
+### Subsystem Internal Fuse Controller Initialization Connectivity Requirements
 
 During Caliptra SS bring up the MCI handshakes with the FC to do initialization. The flow is:
 
@@ -1148,7 +1148,7 @@ Connections between MCI and FC are shown in the table below:
 | fc\_opt\_init | pwr\_otp\_i.otp\_init |
 | fc\_opt\_done | pwr\_otp\_o.otp\_done |
 
-### 10.5.3. Subsystem Internal Life Cycle Controller Initialization Connectivity Requirements
+### Subsystem Internal Life Cycle Controller Initialization Connectivity Requirements
 
 During Caliptra SS bring up the MCI handshakes with the LCC to do initialization. The flow is:
 
@@ -1164,7 +1164,7 @@ Connections between MCI and LCC are shown in the table below:
 | lc\_init | pwr\_lc\_i.lc\_init |
 | lc\_done | pwr\_lc\_o.lc\_done |
 
-### 10.5.4. MCI MCU Connectivity Requirements
+### MCI MCU Connectivity Requirements
 
 The table below shows connections between MCI and MCU that are not part of other features:
 
@@ -1177,7 +1177,7 @@ The table below shows connections between MCI and MCU that are not part of other
 | mcu\_nmi\_vector | \-\> | nmi\_vec | MCU nonmaskable interrupt vector |
 | mcu\_rst\_b | \-\> | rst\_l | MCU reset |
 
-### 10.5.5. MCI Caliptra Core Connectivity Requirements
+### MCI Caliptra Core Connectivity Requirements
 
 The table below shows connections between MCI and Caliptra Core that are not part of other features:
 
@@ -1189,7 +1189,7 @@ The table below shows connections between MCI and Caliptra Core that are not par
 | cptra\_rst\_b | \-\> | cptra\_rst\_b | Reset for Caliptra |
 
 
-### 10.5.6. LCC Gasket Connectivity Requirements
+### LCC Gasket Connectivity Requirements
 
 Below are the connections needed between MCI and LCC for the Gasket functionality
 
@@ -1217,7 +1217,7 @@ Below are the connections needed between MCI and LCC for the Gasket functionalit
 | SOC\_DFT\_EN | \-\> | cptra_ss_soc_dft_en_o | SOC DFT enable see [DFT LC States](CaliptraSSHardwareSpecification.md#dft--dfd-lc-states)|
 | SOC\_HW\_DEBUG\_EN | \-\> | cptra_ss_soc_hw_debug_en_o | SOC HW Debug Enable see: [DFD LC States](CaliptraSSHardwareSpecification.md#dft--dfd-lc-states) |
 
-### 10.5.7. MCU SRAM Sizing Requirements
+### MCU SRAM Sizing Requirements
 
 MCU SRAM size is set via the MCU\_SRAM\_SIZE\_KB parameter. 
 
@@ -1248,17 +1248,17 @@ Storage guidance for Execution vs Protected region are as follows:
 
 Access to MCU SRAM Execution Region is controlled by mcu\_sram\_fw\_exec\_region\_lock. Before MCU is brought out of reset for a hitless patch this signal must be asserted giving access to the MCU. Failure to do so will trigger an AXI access error since Caliptra will be the only entity allowed to access the SRAM until this signal is asserted.
 
-### 10.5.8. MCI AXI DMA Requirements
+### MCI AXI DMA Requirements
 
 FIXME use MCI AXI DMA block during secret fuse population (won’t be available)
 
-## 10.6. Programming interface
+## Programming interface
 
-### 10.6.1. Mailbox FIXME waiting on Caliptra MBOX integration spec updates before doing this section
+### Mailbox FIXME waiting on Caliptra MBOX integration spec updates before doing this section
 
-## 10.7. Sequences : Reset, Boot,
+## Sequences : Reset, Boot,
 
-### 10.7.1. MCI Boot Sequencer
+### MCI Boot Sequencer
 
 ![](images/Caliptra-SS-BootFSM.png)
 
@@ -1298,7 +1298,7 @@ The following table defines the order in which resets can get asserted. A "\>\>"
 | **mcu\_rst\_b** |  |  | N/A |  |
 | **cptra\_rst\_b** |  |  |  | N/A |
 
-### 10.7.2. MCU Hitless Patch Flow
+### MCU Hitless Patch Flow
 
 Once both MCU and Caliptra have been brought up the MCI Boot Sequencer is in a “listening” state waiting for a MCU reset request. 
 
@@ -1313,7 +1313,7 @@ MCI registers relevant to this flow are:
    - MCU_RESET_REQ
    - RESET_REASON
 
-### 10.7.3. Error Flows
+### Error Flows
 
 - **Example all\_error\_fatal Flow**
 
@@ -1364,13 +1364,13 @@ Setup assumes all interrupts to MCU and all\_error\_non\_fatal are enabled via M
 4. Once MCU and SOC have finished their flows all interrupts will be cleared
 
 
-## 10.8. How to test : Smoke & more
+## How to test : Smoke & more
 
-## 10.9. Other requirements
+## Other requirements
 
-# 11. I3C core
+# I3C core
 
-## 11.1. Overview 
+## Overview 
 
 The I3C core in the Caliptra Subsystem is an I3C target composed of two separate I3C targets:
 1. The first target manages standard (non-recovery) flows.
@@ -1380,13 +1380,13 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
   - [I3C Core Documentation](https://github.com/chipsalliance/i3c-core/blob/main/docs/source/top.md)  
   - [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md)
 
-## 11.2. Integration Considerations
+## Integration Considerations
 
 - Connections
   - Connection to AXI interface
   - GPIO connection to I3C Host (VIP or RTL)
 
-## 11.3. Paratmeters and defines
+## Paratmeters and defines
 
 | Parameter        | Default Value                        | Description                                 |
 |------------------|--------------------------------------|---------------------------------------------|
@@ -1399,7 +1399,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | CsrAddrWidth     | I3CCSR_pkg::I3CCSR_MIN_ADDR_WIDTH     | CSR address width (defined in I3CCSR_pkg)   |
 | CsrDataWidth     | I3CCSR_pkg::I3CCSR_DATA_WIDTH         | CSR data width (defined in I3CCSR_pkg)      |
 
-## 11.4. Interface 
+## Interface 
 
 | Signal                            | Direction | Width                     | Description                                                          |
 |-----------------------------------|----------:|---------------------------|----------------------------------------------------------------------|
@@ -1452,9 +1452,9 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | escalated_reset_o                 | output    | 1 bit                     | Escalated reset output                                               |
 | irq_o                             | output    | 1 bit                     | Interrupt request                                                    |
 
-## 11.5. Programming Sequence
+## Programming Sequence
 
-### 11.5.1. Programming Sequence from AXI Side
+### Programming Sequence from AXI Side
 
 1. **Initialize the Device**:
 
@@ -1499,7 +1499,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
     lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
     ```
 
-### 11.5.2. Programming Sequence from GPIO Side
+### Programming Sequence from GPIO Side
 
 1. **Program Dynamic Address for Both Targets**:
    - Use CCC (Common Command Code) commands to assign dynamic addresses to both I3C targets.
@@ -1509,16 +1509,16 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
    - Verify the dynamic addresses assigned to each target by reading back the addresses.
    - Ensure that the addresses are correctly programmed and accessible.
 
-## 11.6. How to test : Smoke & more
+## How to test : Smoke & more
 
-### 11.6.1. Smoke Test
+### Smoke Test
 
   - **Basic Connectivity**
     - CCC command execution for programming Dynamic Address
     - Program & Read Recovery interface registers
     - Write and read TTI interface from each side.
  
-### 11.6.2. Advance Test
+### Advance Test
 
   - **Recovery Sequence** 
     - Test transfers the recovery image
@@ -1527,7 +1527,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
     - TBD
 
 
-# 12. Memories 
+# Memories 
 
 | **Memory Category**                     | **Memory Name**                         | **Interface**                                    | **Size**           | **Access Type**   | **Description**                                             |
 |-----------------------------------------|-----------------------------------------|--------------------------------------------------|--------------------|-------------------|-------------------------------------------------------------|
@@ -1542,7 +1542,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 
 
 
-# 13. Terminology
+# Terminology
 
 | Abbreviation | Description                                                                                      |
 | :--------- | :--------- |
