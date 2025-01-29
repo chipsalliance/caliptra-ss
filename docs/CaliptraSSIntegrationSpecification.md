@@ -1,7 +1,8 @@
 
 
-![OCP Logo](./images/OCP_logo.png)
-
+<div align="center">
+  <img src="./images/OCP_logo.png" alt="OCP Logo">
+</div>
 
 <h1 align="center"> Caliptra SS Integration Specification v0p8 </h1>
 
@@ -12,18 +13,18 @@
 - [2. Overview](#2-overview)
 - [3. Calpitra SS High level diagram](#3-calpitra-ss-high-level-diagram)
 - [4. Integration Considerations](#4-integration-considerations)
-  - [4.1. Design Consideration](#41-design-consideration)
+  - [4.1. Design Considerations](#41-design-considerations)
   - [4.2. Verification Considerations](#42-verification-considerations)
 - [5. Caliptra Subsystem](#5-caliptra-subsystem)
-  - [5.1. Address map](#51-address-map)
-  - [5.2. Parameters](#52-parameters)
-  - [5.3. Defines](#53-defines)
+  - [5.1. Parameters](#51-parameters)
+  - [5.2. Defines](#52-defines)
+  - [5.3. Address map](#53-address-map)
   - [5.4. Interfaces \& Signals](#54-interfaces--signals)
     - [5.4.1. AXI Interface (axi\_if)](#541-axi-interface-axi_if)
     - [5.4.2. Caliptra Subsystem Top Interface \& signals](#542-caliptra-subsystem-top-interface--signals)
   - [5.5. Integration Requirements](#55-integration-requirements)
-      - [5.5.0.1. Clock](#5501-clock)
-      - [5.5.0.2. Reset](#5502-reset)
+    - [5.5..1. Clock](#551-clock)
+    - [5.5.3. Reset](#553-reset)
   - [5.6. Programming interface](#56-programming-interface)
   - [5.7. Sequences](#57-sequences)
   - [5.8. How to test : Smoke \& more](#58-how-to-test--smoke--more)
@@ -43,19 +44,17 @@
 
 # 1. Scope 
 
-<span style="color:red">**Disclaimer**: Internal Draft Document</span>
-This document is a work in progress and intended for internal use only. It may contain incomplete or preliminary information subject to change. Do not refer to, share, or rely on this document unless explicitly released in its final version.
+<span style="color:red">**Disclaimer**: Internal Draft Document
+This document is a work in progress and intended for internal use only. It may contain incomplete or preliminary information subject to change. Do not refer to, share, or rely on this document unless explicitly released in its final version. </span>
 
-For Caliptra Subsystem, this document serves as a hardware integration specification. The scope of this document is to assist integrators in the integration of Caliptra SS. It is not intended to serve as a hardware specification or to include micro-architectural details.
-
-This document includes Caliptra Subsystem top-level details along with parameters, defines, interfaces, memory map, programming reference, and guidelines on how to test the integration of the design.
+For Caliptra Subsystem, this document serves as a hardware integration specification. The scope of this document is to assist integrators in the integration of Caliptra Subsystem. It is not intended to serve as a hardware specification or to include micro-architectural details. This document includes Caliptra Subsystem top-level details along with parameters, defines, interfaces, memory map, programming reference, and guidelines on how to test the integration of the design.
 
 ## 1.1. Document Version
 <div align="center">
 
 | Date            |   Document Version | Description       |
 |-----------------|--------------------|-------------------|
-| Jan 31st, 2025  |   v0p5             | Work in progress  |
+| Jan 31st, 2025  |   v0p8             | Work in progress  |
 
 </div>
 
@@ -63,10 +62,11 @@ This document includes Caliptra Subsystem top-level details along with parameter
 
 The components described in this document are either obtained from open-source GitHub repositories, developed from scratch, or modified versions of open-source implementations. Links to relevant documentation and GitHub sources are shared in the following table.
 
-*Table 1: Subcomponent specifications*
+*Table 1: Related specification and repositories*
 
 | IP/Block      | Code (GitHub URL)                                                         | Documentation (URL)                                                           |
 |---------------|---------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| Caliptra-SS   | [GitHub - chipsalliance/caliptra-ss](https://github.com/chipsalliance/caliptra-ss)| [Hardware Specification Document](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md)
 | Caliptra-rtl  | [GitHub - chipsalliance/caliptra-rtl](https://github.com/chipsalliance/caliptra-rtl)      | [Caliptra RTL documentation](https://github.com/chipsalliance/caliptra-rtl/tree/main/docs) |
 | Cores-VeeR    | [GitHub - chipsalliance/Cores-VeeR-EL2](https://github.com/chipsalliance/Cores-VeeR-EL2)  | [VeeR EL2 Programmer’s Reference Manual](http://cores-swerv-el2/RISC-V_SweRV_EL2_PRM.pdf%20at%20master%20%C2%B7) |
 | I3C-Core      | [GitHub - chipsalliance/i3c-core](https://github.com/chipsalliance/i3c-core)              | [I3C core documentation](https://github.com/chipsalliance/i3c-core?tab=readme-ov-file#i3c-core) |
@@ -76,9 +76,9 @@ The components described in this document are either obtained from open-source G
 
 | Type | Name | Path |
 |------|------|------|
-| rtl | Design Top       | caliptra-ss\src\integration\rtl\caliptra_ss_top.sv          |
-| tb  | Interconnect Top | caliptra-ss\src\integration\testbench\aaxi4_interconnect.sv |
-| tb  | Testbench Top    | caliptra-ss\src\integration\testbench\caliptra_ss_top_tb.sv |
+| rtl | Design Top       | [caliptra_ss_top.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/rtl/caliptra_ss_top.sv)          |
+| tb  | Interconnect Top | [testbench\aaxi4_interconnect.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/aaxi4_interconnect.sv) |
+| tb  | Testbench Top    | [testbench\caliptra_ss_top_tb.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/caliptra_ss_top_tb.sv) |
 
 # 2. Overview
 
@@ -110,7 +110,7 @@ Following high-level diagram helps integrators understand the overall architectu
 
 By performing these design and verification tasks, the integrator ensures that the Caliptra Subsystem is properly integrated and can function as intended within the larger system.
 
-## 4.1. Design Consideration
+## 4.1. Design Considerations
 
 1. **Replace the AXI Interconnect**: 
 The subsystem utilizes an AXI-based interconnect to facilitate communication between components, with the Caliptra core connecting via an AXI interface. The integrator must replace the default AXI interconnect component with their proprietary interface. This ensures that the subsystem can communicate effectively with the rest of the subsystem components using the integrator's specific interconnect architecture.
@@ -126,9 +126,25 @@ The integrator must connect the I3C core to the appropriate driver for the GPIO 
 
 # 5. Caliptra Subsystem
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+The integration of the Caliptra Subsystem begins with the instantiation of the top-level RTL module, caliptra_ss_top.sv. This module serves as the primary entry point for the subsystem and encapsulates all the logic and components required for the functionality of the Caliptra Root of Trust (RoT). 
 
-## 5.1. Address map
+All signals must be connected based on the detailed interface and signal descriptions provided in this document. Ensure adherence to the signal direction, width, and functionality to guarantee proper integration with the host SoC.
+
+## 5.1. Parameters 
+| Parameter                  | Value | Description                              |
+|----------------------------|-------|------------------------------------------|
+| ADDR_WIDTH                 | 64    | Address width                            |
+| DATA_WIDTH                 | 64    | Data width                               |
+
+
+## 5.2. Defines
+
+| Define                  | Value | Description                             | 
+|-------------------------|-------|-----------------------------------------|
+| CLP_CSR_HMAC_KEY_DWORDS | 16    | HMAC Key Dwords                         |
+| 
+
+## 5.3. Address map
 
 The following address map is a suggested address map for the given subsystem design. It details the memory layout and the connections between different components within the Caliptra SS subsystem.
 
@@ -142,19 +158,6 @@ The following address map is a suggested address map for the given subsystem des
 | 64'h7000_0000 | 64'h7000_01FF | 5 | Fuse Ctrl | Fuse Controller |
 | 64'h7000_0200 | 64'h7000_03FF | 6 | Fuse Ctrl Core | Fuse Controller Core |
 | 64'h7000_0400 | 64'h7000_05FF | 7 | Life Cycle Ctrl | Life Cycle Controller |
-## 5.2. Parameters 
-| Parameter                  | Value | Description                              |
-|----------------------------|-------|------------------------------------------|
-| ADDR_WIDTH                 | 64    | Address width                            |
-| DATA_WIDTH                 | 64    | Data width                               |
-
-
-## 5.3. Defines
-
-| Define                  | Value | Description                             | 
-|-------------------------|-------|-----------------------------------------|
-| CLP_CSR_HMAC_KEY_DWORDS | 16    | HMAC Key Dwords                         |
-| 
 
 ## 5.4. Interfaces & Signals
 
@@ -199,7 +202,7 @@ The following address map is a suggested address map for the given subsystem des
 ### 5.4.2. Caliptra Subsystem Top Interface & signals 
 
 | Facing   | Type      | width | Signal or Interface Name             | Description                              |
-|:---|:----|:---|:-------------------------------|:-----------------------------------------|
+|:---------|:----------|:------|:-------------------------------------|:-----------------------------------------|
 | External | input     | 1     | cptra_ss_clk_i                       | Caliptra subsystem clock input           |
 | External | input     | 1     | cptra_ss_pwrgood_i                   | Power good signal input                  |
 | External | input     | 1     | cptra_ss_rst_b_i                     | Reset signal input, active low           |
@@ -306,16 +309,37 @@ The following address map is a suggested address map for the given subsystem des
 
 ## 5.5. Integration Requirements
 
-#### 5.5.0.1. Clock
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+### 5.5..1. Clock
 
-#### 5.5.0.2. Reset
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem. This signal must be connected to a 100 MHz system clock to ensure proper operation.
 
+- **Signal Name** `cptra_ss_clk_i`
+- **Required Frequency** 100 MHz
+- **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
+- **Constraints** 
+  - Ensure minimal clock jitter.
+  - Maintain a duty cycle close to 50% for optimal performance.
+- **Integration Notes**
+  
+  1. Verify that the SoC or system-level clock source provides a stable 100 MHz clock.
+  2. The clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.
+  3. If a different frequency is required, ensure that a clock divider or PLL is used to generate the 100 MHz clock before connection.
+
+### 5.5.3. Reset
+The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles at 100 MHz) to allow all internal logic to initialize properly.
+
+- **Signal Name:** `cptra_ss_reset_n`
+- **Direction:** Input
+- **Active Level:** Active-low (`0` resets the subsystem, `1` releases reset)
+- **Reset Type:** Synchronous with the `cptra_ss_clk_i` signal
+- **Integration Notes:**
+  - The reset signal must be synchronized to the 100 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
+  - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
+  - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
 
 ## 5.6. Programming interface
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
 
 ## 5.7. Sequences
 
