@@ -3,7 +3,7 @@
 ![OCP Logo](./images/OCP_logo.png)
 
 
-<h1 align="center"> Caliptra SS Integration Specification  </h1>
+<h1 align="center"> Caliptra SS Integration Specification v0p8 </h1>
 
 - [1. Scope](#1-scope)
   - [1.1. Document Version](#11-document-version)
