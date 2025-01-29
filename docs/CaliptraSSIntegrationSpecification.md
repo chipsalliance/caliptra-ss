@@ -1,5 +1,3 @@
-
-
 <div align="center">
   <img src="./images/OCP_logo.png" alt="OCP Logo">
 </div>
@@ -37,8 +35,27 @@
     - [7.1.2. MCU Top : Interface \& Signals](#712-mcu-top--interface--signals)
   - [7.2. Programming interface](#72-programming-interface)
     - [7.2.1. MCU Linker Script Integration](#721-mcu-linker-script-integration)
-- [8. FC Controller - @Emre](#8-fc-controller---emre)
+- [8. FC Controller](#8-fc-controller)
+  - [8.1. Overview](#81-overview)
+  - [8.2. Parameters \& Defines](#82-parameters--defines)
+  - [8.3. Interface](#83-interface)
+  - [8.4. Memory Map	/ Address map](#84-memory-map-address-map)
+  - [8.5. Requirements: Connectivity, Clock \& Reset, Constraints \& Violations](#85-requirements-connectivity-clock--reset-constraints--violations)
+  - [8.6. Programming interface](#86-programming-interface)
+  - [8.7. Sequences: Reset, Boot](#87-sequences-reset-boot)
+  - [8.8. How to test : Smoke \& more](#88-how-to-test--smoke--more)
 - [9. LC Controller - @Emre](#9-lc-controller---emre)
+  - [9.1. Overview](#91-overview)
+  - [9.2. Parameters \& Defines](#92-parameters--defines)
+  - [9.3. Interface](#93-interface)
+  - [9.4. Memory Map / Address Map](#94-memory-map--address-map)
+  - [9.5. Requirements: Connectivity, Clock \& Reset, Constraints \& Violations](#95-requirements-connectivity-clock--reset-constraints--violations)
+  - [9.6. Programming Interface](#96-programming-interface)
+  - [9.7. Sequences: Reset, Boot](#97-sequences-reset-boot)
+  - [9.8. How to Test: Smoke \& More](#98-how-to-test-smoke--more)
+    - [9.8.1. Smoke Test](#981-smoke-test)
+    - [9.8.2. Functional Tests](#982-functional-tests)
+    - [9.8.3. Advanced Tests](#983-advanced-tests)
 - [10. MCI - @Clayton](#10-mci---clayton)
 - [11. I3C core - @Nilesh](#11-i3c-core---nilesh)
 - [12. Memories](#12-memories)
@@ -437,13 +454,300 @@ The following memory regions are defined and must be adhered to during integrati
 
 By following this linker script configuration, the firmware can be correctly mapped and executed within the **Caliptra Subsystem**.
 
-# 8. FC Controller - @Emre
+# 8. FC Controller
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+## 8.1. Overview
+
+The Fuse Controller is a core component in the secure infrastructure of the system, responsible for managing the fuses and ensuring the integrity, consistency, and secure storage of sensitive data. It provides essential interfaces for direct fuse programming. The Fuse Controller interacts closely with the Lifecycle Controller (LC), FUSE macros, MCI, and Caliptra-core.
+
+For an in-depth understanding of the Fuse Controller's functionality, including its programming flow, refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md).
+## 8.2. Parameters & Defines
+
+| Parameter                | Default                        | Description                                         |
+|--------------------------|--------------------------      |-----------------------------------------------------|
+| `AlertAsyncOn`           | 5                              | Enables asynchronous transitions on alerts.         |
+| `MemInitFile`            | `""`                           | Hex file to initialize the OTP macro, including ECC.|
+
+---
+
+## 8.3. Interface
+
+| Facing     | Type       | Width   | Name                          | External Name in SoC Level        | Description                                            |
+|------------|------------|-------  |-------------------------------|-----------------------------------|--------------------------------------------------------|
+| External   | Input      | 1       | `clk_i`                       | `cptra_ss_clk_i`                  | Fuse Controller clock input.                          |
+| External   | Input      | 1       | `rst_ni`                      | `cptra_ss_rst_b_i`                | Reset signal input, active low.                       |
+| External   | interface  | 1       | `core_axi_wr_req`             | `cptra_ss_otp_core_axi_wr_req_i`  | AXI write request.                         |
+| External   | interface  | 1       | `core_axi_wr_rsp`             | `cptra_ss_otp_core_axi_wr_rsp_o`  | AXI write response.                          |
+| External   | interface  | 1       | `core_axi_rd_req`             | `cptra_ss_otp_core_axi_rd_req_i`  | AXI read request.                          |
+| External   | interface  | 1       | `core_axi_rd_rsp`             | `cptra_ss_otp_core_axi_rd_rsp_o`  | AXI read response.                           |
+| External   | interface  | 1       | `prim_tl_i`                   | `cptra_ss_fuse_macro_prim_tl_i`   | Input to the Fuse Macro's primitive TL interface.                                                |
+| External   | interface  | 1       | `prim_tl_o`                   | `cptra_ss_fuse_macro_prim_tl_o`   | Output from the Fuse Macro's primitive TL interface.                                             |
+| Internal   | Output     | 1       | `intr_otp_operation_done_o`   |                                   | Indicates that the OTP operation has completed.                                                  |
+| Internal   | Output     | 1       | `intr_otp_error_o`            |                                   | OTP error interrupt output (to be connected to MCI).                                             |
+| Internal   | Output     | 5       | `alerts`                      |                                   | Alert signals for critical errors.                                                               |
+| Internal   | Input      | 1       | `pwr_otp_i`                   |                                   | OTP initialization request from the power manager.                                               |
+| Internal   | Output     | Struct  | `pwr_otp_o`                   |                                   | OTP response to the power manager.                                                               |
+| Internal   | Input      | Struct  | `lc_otp_vendor_test_i`        |                                   | Vendor test request input from LC Controller.                                                    |
+| Internal   | Output     | Struct  | `lc_otp_vendor_test_o`        |                                   | Vendor test response to LC Controller.                                                           |
+| Internal   | Input      | Struct  | `lc_otp_program_i`            |                                   | Lifecycle OTP programming request from LC Controller.                                            |
+| Internal   | Output     | Struct  | `lc_otp_program_o`            |                                   | Lifecycle OTP programming response to LC Controller.                                             |
+| Internal   | Input      | 1       | `lc_dft_en_i`                 |                                   | DFT enable input from LC Controller.                                                             |
+| Internal   | Input      | 1       | `lc_escalate_en_i`            |                                   | Escalation enable input from LC Controller.                                                      |
+| Internal   | Input      | 1       | `lc_check_byp_en_i`           |                                   | Clock bypass check enable input from LC Controller.                                              |
+| Internal   | Output     | Struct  | `otp_lc_data_o`               |                                   | Lifecycle broadcasted data output to LC Controller.                                              |
+| Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra-core. This port broadcasts UDS and Field-entropy.             |
+
+
+## 8.4. Memory Map	/ Address map
+
+
+See [Fuse Controller Register Map](../src/fuse_ctrl/doc/registers.md).
+
+---
+
+## 8.5. Requirements: Connectivity, Clock & Reset, Constraints & Violations
+
+1. **Connectivity**:
+   - The Fuse Controller must interface seamlessly with the Fuse Macros, ensuring proper ECC support during programming and read operations.
+   - All AXI interfaces (`core_axi_wr_req`, `core_axi_rd_req`) must follow the protocol specifications.
+   - Inputs like `lc_otp_program_i` and `pwr_otp_i` should connect properly to the Lifecycle Controller (LC) and MCI respectively.
+   - Alerts must propagate correctly to the system's alert manager for error handling.
+
+2. **Constraints & Violations**:
+   - Any access to fuses must be gated by the `FUSE_CTRL_DIRECT_ACCESS_REGWEN` bit to prevent unauthorized writes.
+   - Timeout conditions during consistency checks (`FUSE_CTRL_CHECK_TIMEOUT`) should trigger appropriate alerts.
+   - Errors like invalid data, ECC failures, or access violations should raise alerts via the `alerts` signal.
+
+---
+
+## 8.6. Programming interface
+The programming interface for the Fuse Controller (FC) is designed to manage lifecycle states, handle fuses with ECC support, and ensure secure interactions with the Fuse Macros. Below are the key operations supported by the programming interface:
+
+1. **Direct Access Interface (DAI)**:
+   - **Registers**:
+     - `FUSE_CTRL_DIRECT_ACCESS_CMD`: Specifies the operation (`FUSE_CTRL_CMD_DAI_WRITE` for write, `FUSE_CTRL_CMD_DAI_READ` for read).
+     - `FUSE_CTRL_DIRECT_ACCESS_ADDRESS`: Specifies the fuse memory address to access.
+     - `FUSE_CTRL_DIRECT_ACCESS_WDATA_0`: Write data (32-bit granularity).
+     - `FUSE_CTRL_DIRECT_ACCESS_WDATA_1`: Write data for 64-bit operations.
+     - `FUSE_CTRL_DIRECT_ACCESS_RDATA_0`: Read data (32-bit granularity).
+     - `FUSE_CTRL_DIRECT_ACCESS_RDATA_1`: Read data for 64-bit operations.
+   - **Procedure**:
+     - Write the address to `FUSE_CTRL_DIRECT_ACCESS_ADDRESS`.
+     - For write operations:
+       - Populate `FUSE_CTRL_DIRECT_ACCESS_WDATA_0` (and `FUSE_CTRL_DIRECT_ACCESS_WDATA_1` for 64-bit operations).
+     - Set the command in `FUSE_CTRL_DIRECT_ACCESS_CMD`.
+     - Wait for the operation to complete by polling the `DAI_IDLE` bit in `FUSE_CTRL_STATUS`.
+   - **ECC Support**:
+     - ECC is automatically applied during programming to ensure data integrity.
+
+2. **Digest Calculation**:
+   - Used to lock a partition after programming is complete.
+   - **Registers**:
+     - `FUSE_CTRL_DIRECT_ACCESS_CMD`: Use command `0x4` for digest calculation.
+     - `FUSE_CTRL_DIRECT_ACCESS_ADDRESS`: Partition base address.
+   - **Procedure**:
+     - Write the partition base address to `FUSE_CTRL_DIRECT_ACCESS_ADDRESS`.
+     - Trigger the digest calculation command (`0x4`) in `FUSE_CTRL_DIRECT_ACCESS_CMD`.
+     - Poll the `DAI_IDLE` bit in `FUSE_CTRL_STATUS` to confirm the operation is complete.
+---
+
+## 8.7. Sequences: Reset, Boot
+
+1. **Reset Sequence**:
+   - De-assert `rst_ni` after the primary clock (`clk_i`) stabilizes.
+   - Verify reset state by reading `FUSE_CTRL_STATUS`. All errors in the status register should be 0.
+   - Ensure Fuse Macros are in their default state after reset.
+
+2. **Boot Sequence**:
+   - Initialize Fuse Macros by programming essential fuses using the programming interface.
+   - Perform a full integrity check by triggering `FUSE_CTRL_CHECK_TRIGGER` and ensure the system is error-free before proceeding.
+   - Validate readiness by checking the `FUSE_CTRL_STATUS` register.
+
+---
+
+## 8.8. How to test : Smoke & more
+The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
+**TODO** More details will be provided once FC is ready to test.
 
 # 9. LC Controller - @Emre
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+## 9.1. Overview
+
+The LC Controller (Lifecycle Controller) is a critical component of the Caliptra Subsystem, responsible for securely managing the lifecycle states of the chip. The LC Controller interacts with other subsystems such as the Fuse Controller, MCI, AXI interconnect, and JTAG TAP to enforce secure transitions, validate tokens, and generate error conditions. Additionally, it implements escalation mechanisms to respond to security breaches, enabling the chip to enter secure states like SCRAP.
+
+For a detailed description of the Lifecycle Controller's architecture, design, and operational flow, refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md).
+
+## 9.2. Parameters & Defines
+
+Parameter                        | Default (Max)  | Description
+---------------------------------|----------------|---------------
+`AlertAsyncOn`                   | 2'b11          |
+`IdcodeValue`                    | `32'h00000001` | Idcode for the LC JTAG TAP.
+`RndCnstLcKeymgrDivInvalid`      | (see RTL)      | Diversification value used for all invalid life cycle states.
+`RndCnstLcKeymgrDivTestUnlocked` | (see RTL)      | Diversification value used for the TEST_UNLOCKED* life cycle states.
+`RndCnstLcKeymgrDivDev`          | (see RTL)      | Diversification value used for the DEV life cycle state.
+`RndCnstLcKeymgrDivProduction`   | (see RTL)      | Diversification value used for the PROD/PROD_END life cycle states.
+`RndCnstLcKeymgrDivRma`          | (see RTL)      | Diversification value used for the RMA life cycle state.
+
+## 9.3. Interface
+
+
+Facing      | Type       | width  | Name                  |  External Name in SoC Level         | Description   |
+------------|:-----------|:-------|:----------------------|:------------------------------------|:-------       |
+External    |input       |   1    | `clk_i`               | `cptra_ss_clk_i`                    | clock         |
+External    |input       |   1    | `rst_ni`              | `cptra_ss_rst_b_i`                  | LC controller reset input, active low|
+External    |input       |   1    | `Allow_RMA_on_PPD`    | `cptra_ss_lc_Allow_RMA_on_PPD_i`    | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA.|
+External    |interface   |   1    | `axi_wr_req`          | `cptra_ss_lc_axi_wr_req_i`          | LC controller AXI write request input |
+External    |interface   |   1    | `axi_wr_rsp`          | `cptra_ss_lc_axi_wr_rsp_o`          | LC controller AXI write response output|
+External    |interface   |   1    | `axi_rd_req`          | `cptra_ss_lc_axi_rd_req_i`          | LC controller AXI read request input |
+External    |interface   |   1    | `axi_rd_rsp`          | `cptra_ss_lc_axi_rd_rsp_o`          | LC controller AXI read response output |
+External    |interface   |   1    | `jtag_i`              | `cptra_ss_lc_ctrl_jtag_i`           | LC controller JTAG input ports  |
+External    |interface   |   1    | `jtag_o`              | `cptra_ss_lc_ctrl_jtag_o`           | LC controller JTAG output ports|
+External    |input       |   1    | `scan_rst_ni`         | `cptra_ss_lc_ctrl_scan_rst_ni_i`    | LC controller scan reset input, active low|
+Internal    |output      |   3    | `alerts`              |                                     | Alert outputs generated by LCC if there is an error due to one of following: register bus, lc state and fuse programming |
+External    |input       |   1    | `esc_scrap_state0`    | `cptra_ss_lc_esclate_scrap_state0_i`| An escalation input that leads LC controller to enter into SCRAP mode  |
+External    |input       |   1    | `esc_scrap_state1`    | `cptra_ss_lc_esclate_scrap_state1_i`| An escalation input that eads LC controller to enter into SCRAP mode  |
+Internal    |input       |   1    | `pwr_lc_i`            |                                     | A power initilization input coming from MCI |
+Internal    |struct      |   1    | `pwr_lc_o`            |                                     | Two outputs show: (i) LC controller can accept a request, (ii) LC is initialized. |
+Internal    |struct      |   1    | `lc_otp_vendor_test_o`|                                     | Access to fuse controller for vendor test partitions |
+Internal    |struct      |   1    | `lc_otp_vendor_test_i`|                                     | Access to fuse controller for vendor test partitions |
+Internal    |struct      |   1    | `lc_otp_program_o`    |                                     | Programming interface to fuse controller to update LCC state and couter |
+Internal    |struct      |   1    | `lc_otp_program_i`    |                                     | Programming interface from fuse controller to update LCC state and couter |
+Internal    |struct      |   1    | `otp_lc_data_i`       |                                     | Broadcasted values from the fuse controller |
+Internal    |output      |   1    | `lc_dft_en_o`         |                                     | DFT enable to MCI |
+Internal    |output      |   1    | `lc_hw_debug_en_o`    |                                     | CLTAP enable to MCI |
+Internal    |output      |   1    | `lc_escalate_en_o`    |                                     | Broadcast signal to promote esclation in SoC |
+Internal    |output      |   1    | `lc_check_byp_en_o`   |                                     | External clock status delivery signal to fuse controller |
+External    |output      |   1    | `lc_clk_byp_req_o`    | `cptra_ss_lc_clk_byp_req_o`         | A request port to swtich from LCC clock to external clock |
+External    |input       |   1    | `lc_clk_byp_ack_i`    | `cptra_ss_lc_clk_byp_ack_i`         | Acknowledgment signal to indicate external clock request is accepted              |
+Internal    |input       |   1    | `otp_device_id_i`     |                                     | Fuse device ID              |
+Internal    |input       |   1    | `otp_manuf_state_i`   |                                     | Fuse manufacturing ID               |
+Internal    |output      |   1    | `hw_rev_o`            |                                     | Reflection of HW revision ID read from fuse controller              |
+
+
+## 9.4. Memory Map / Address Map
+
+See LC Controller Register Map**TODO: link will be provided**.
+<!-- Register Offset                             | Description                                           | Address
+-----------------------------------------   |:------------------------------------------------------|:------    |                                         
+`LC_CTRL_ALERT_TEST_OFFSET`                 | Alert test register                                   |   0x0   |         
+`LC_CTRL_STATUS_OFFSET`                     | Status register                                       |   0x4   |     
+`LC_CTRL_CLAIM_TRANSITION_IF_REGWEN_OFFSET` | Claim transition interface write-enable register      |   0x8   |                                         
+`LC_CTRL_CLAIM_TRANSITION_IF_OFFSET`        | Claim transition interface register                   |   0xc   |                         
+`LC_CTRL_TRANSITION_REGWEN_OFFSET`          | Transition write-enable register                      |   0x10  |                     
+`LC_CTRL_TRANSITION_CMD_OFFSET`             | Transition command register                           |   0x14  |                 
+`LC_CTRL_TRANSITION_CTRL_OFFSET`            | Transition control register                           |   0x18  |                 
+`LC_CTRL_TRANSITION_TOKEN_0_OFFSET`         | Transition token register (part 0)                    |   0x1c  |                         
+`LC_CTRL_TRANSITION_TOKEN_1_OFFSET`         | Transition token register (part 1)                    |   0x20  |                         
+`LC_CTRL_TRANSITION_TOKEN_2_OFFSET`         | Transition token register (part 2)                    |   0x24  |                         
+`LC_CTRL_TRANSITION_TOKEN_3_OFFSET`         | Transition token register (part 3)                    |   0x28  |                         
+`LC_CTRL_TRANSITION_TARGET_OFFSET`          | Transition target register                            |   0x2c  |                 
+`LC_CTRL_OTP_VENDOR_TEST_CTRL_OFFSET`       | OTP vendor test control register                      |   0x30  |                     
+`LC_CTRL_OTP_VENDOR_TEST_STATUS_OFFSET`     | OTP vendor test status register                       |   0x34  |                     
+`LC_CTRL_LC_STATE_OFFSET`                   | Life cycle state register                             |   0x38  |                 
+`LC_CTRL_LC_TRANSITION_CNT_OFFSET`          | Life cycle transition count register                  |   0x3c  |                         
+`LC_CTRL_LC_ID_STATE_OFFSET`                | Life cycle ID state register                          |   0x40  |                 
+`LC_CTRL_HW_REVISION0_OFFSET`               | Hardware revision register (part 0)                   |   0x44  |                         
+`LC_CTRL_HW_REVISION1_OFFSET`               | Hardware revision register (part 1)                   |   0x48  |                         
+`LC_CTRL_DEVICE_ID_0_OFFSET`                | Device ID register (part 0)                           |   0x4c  |                 
+`LC_CTRL_DEVICE_ID_1_OFFSET`                | Device ID register (part 1)                           |   0x50  |                 
+`LC_CTRL_DEVICE_ID_2_OFFSET`                | Device ID register (part 2)                           |   0x54  |                 
+`LC_CTRL_DEVICE_ID_3_OFFSET`                | Device ID register (part 3)                           |   0x58  |                 
+`LC_CTRL_DEVICE_ID_4_OFFSET`                | Device ID register (part 4)                           |   0x5c  |                 
+`LC_CTRL_DEVICE_ID_5_OFFSET`                | Device ID register (part 5)                           |   0x60  |                 
+`LC_CTRL_DEVICE_ID_6_OFFSET`                | Device ID register (part 6)                           |   0x64  |                 
+`LC_CTRL_DEVICE_ID_7_OFFSET`                | Device ID register (part 7)                           |   0x68  |                 
+`LC_CTRL_MANUF_STATE_0_OFFSET`              | Manufacturing state register (part 0)                 |   0x6c  |                             
+`LC_CTRL_MANUF_STATE_1_OFFSET`              | Manufacturing state register (part 1)                 |   0x70  |                             
+`LC_CTRL_MANUF_STATE_2_OFFSET`              | Manufacturing state register (part 2)                 |   0x74  |                             
+`LC_CTRL_MANUF_STATE_3_OFFSET`              | Manufacturing state register (part 3)                 |   0x78  |                             
+`LC_CTRL_MANUF_STATE_4_OFFSET`              | Manufacturing state register (part 4)                 |   0x7c  |                             
+`LC_CTRL_MANUF_STATE_5_OFFSET`              | Manufacturing state register (part 5)                 |   0x80  |                             
+`LC_CTRL_MANUF_STATE_6_OFFSET`              | Manufacturing state register (part 6)                 |   0x84  |                             
+`LC_CTRL_MANUF_STATE_7_OFFSET`              | Manufacturing state register (part 7)                 |   0x88  |                              -->
+
+## 9.5. Requirements: Connectivity, Clock & Reset, Constraints & Violations
+
+1. **Connectivity**:
+   - Ensure proper routing of all signals to avoid conflicts with other modules.
+   - Interfaces like `jtag` and `axi` must adhere to the defined protocol specifications.
+   - Esclation signals (`esc_scrap_state0` and `esc_scrap_state1`) brings LC controller into SCRAP mode and therefore needs to be connected to a dedicated controller.
+   - `Allow_RMA_on_PPD` needs to be tied 0 if it is not being used. Otherwise, it might break LC controller's internal FSM.
+   - Avoid glitches on `Allow_RMA_on_PPD` and escalation inputs (`esc_scrap_state0`, `esc_scrap_state1`) that could cause unintended transitions.
+   - Verify that all output signals, including alerts, remain within the expected ranges under normal operation.
+
+## 9.6. Programming Interface
+
+The LC Controller's programming interface facilitates lifecycle state transitions, secure token authentication, and system initialization. Below are the key programming steps:
+
+1. **Initialization**:
+   - Ensure the LC Controller is ready by polling the `LC_CTRL_STATUS_OFFSET` register for the `READY_MASK` bit.
+   - Verify initialization is complete using the `INIT_MASK` bit in the same register.
+   - Corresponding fuse partitions need to be provisioned in order to perform state transitions
+
+2. **Lifecycle State Transitions**:
+   - Claim the transition mutex by writing `0x96` (MuBi8True) to `LC_CTRL_CLAIM_TRANSITION_IF_OFFSET` and polling until the value is correctly latched.
+   - Set the desired next lifecycle state by writing to `LC_CTRL_TRANSITION_TARGET_OFFSET`.
+   - Write the 128-bit transition token (if required) into the `LC_CTRL_TRANSITION_TOKEN_*_OFFSET` registers.
+   - Trigger the state transition by writing `0x1` to `LC_CTRL_TRANSITION_CMD_OFFSET`.
+   - Poll the `LC_CTRL_STATUS_OFFSET` register to monitor for successful state transition or detect errors such as token errors, OTP errors, or RMA strap violations.
+
+3. **Token Validation**:
+   - For conditional state transitions, provide the transition token before the transition request.
+
+4. **RMA Strap Handling**:
+   - Ensure the `Allow_RMA_on_PPD` GPIO strap is asserted for RMA transitions. Transitions without this strap will fail with an appropriate status in the `LC_CTRL_STATUS_OFFSET` register.
+
+---
+
+## 9.7. Sequences: Reset, Boot
+
+1. **Reset Sequence**:
+   - Bring the LC Controller out of reset by asserting and de-asserting `rst_ni` after clock stabilization.
+   - Perform a reset sequence after each state transition routine
+
+2. **Boot Sequence**:
+   - Enable MCI that intilaize the LC controller.
+   - Verify successful initialization by reading `LC_CTRL_STATUS_OFFSET`.
+
+4. **Error Scenarios**:
+   - Test scenarios where invalid tokens, Fuse errors, or missing RMA straps are injected to validate error handling and system recovery mechanisms.
+
+---
+
+## 9.8. How to Test: Smoke & More
+
+### 9.8.1. Smoke Test
+1. **Basic Connectivity**:
+   - Verify the LC Controller responds to read and write operations on key registers (e.g., `LC_CTRL_STATUS_OFFSET`, `LC_CTRL_CLAIM_TRANSITION_IF_OFFSET`).
+
+2. **Basic Initialization**:
+   - Check that the `READY_MASK` and `INIT_MASK` bits in `LC_CTRL_STATUS_OFFSET` transition to the expected values during initialization.
+
+3. **Lifecycle Transition**:
+   - Perform a single state transition (e.g., `RAW` to `TEST_UNLOCKED0`)
+
+### 9.8.2. Functional Tests
+1. **Full Lifecycle Sequence**:
+   - Run all lifecycle transition functions and validate each transition step via the status register and debug messages.
+
+2. **Error Injection**:
+   - Test token errors by providing invalid tokens during a transition request.
+   - Simulate OTP errors by corrupting OTP data or configuration.
+   - Test RMA transitions with and without the `Allow_RMA_on_PPD` GPIO strap.
+
+3. **Boundary Testing**:
+   - Verify correct operation under boundary conditions, such as repeated transitions, simultaneous requests, or rapid reset sequences.
+
+### 9.8.3. Advanced Tests
+1. **Stress Test**:
+   - Perform rapid transitions through multiple lifecycle states to validate system robustness.
+   - Simulate power interruptions during critical operations.
+
+2. **Integration Tests**:
+   - Verify interaction with other modules such as the fuse controller and MCI during state transitions.
+
+
 
 # 10. MCI - @Clayton
 
@@ -488,7 +792,7 @@ Documentation : https://github.com/chipsalliance/i3c-core/blob/main/docs/source/
 
 # 13. Terminology
 
-| Abbreviation | Description |
+| Abbreviation | Description                                                                                      |
 | :--------- | :--------- |
 | AXI          | Advanced eXtensible Interface, a high-performance, high-frequency communication protocol |
 | I3C          | Improved Inter-Integrated Circuit, a communication protocol for connecting sensors and other peripherals. |

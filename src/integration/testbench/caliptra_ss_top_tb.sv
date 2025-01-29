@@ -49,6 +49,18 @@ module caliptra_ss_top_tb
     initial $timeformat(-9, 3, " ns", 15); // up to 99ms representable in this width
 `endif
 
+    // -----------------------------------------------------------
+    // Parameters
+    // -----------------------------------------------------------
+    localparam MCU_SRAM_SIZE_KB = 1024;
+    localparam MCU_SRAM_DATA_WIDTH   = 32;
+    localparam MCU_SRAM_DATA_WIDTH_BYTES = MCU_SRAM_DATA_WIDTH / 8;
+    localparam MCU_SRAM_ECC_WIDTH = 7;
+    localparam MCU_SRAM_DATA_TOTAL_WIDTH = MCU_SRAM_DATA_WIDTH + MCU_SRAM_ECC_WIDTH;
+    localparam MCU_SRAM_DEPTH   = (MCU_SRAM_SIZE_KB * 1024) / MCU_SRAM_DATA_WIDTH_BYTES;
+    localparam MCU_SRAM_ADDR_WIDTH = $clog2(MCU_SRAM_DEPTH);
+
+
     bit                         core_clk;
     bit          [31:0]         mem_signature_begin = 32'd0; // TODO:
     bit          [31:0]         mem_signature_end   = 32'd0;
@@ -539,7 +551,10 @@ module caliptra_ss_top_tb
         ext_int_tb  = {pt.PIC_TOTAL_INT-1{1'b0}};
         timer_int   = 0;
 
-        $readmemh("mcu_lmem.hex",     lmem.mem);
+        hex_file_is_empty = $system("test -s mcu_lmem.hex");
+        if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram); // FIXME - should there bit a limit like Caliptra has for iccm.hex?
+
+
         $readmemh("mcu_program.hex",  imem.ram);
 
         tp = $fopen("trace_port.csv","w");
@@ -554,7 +569,7 @@ module caliptra_ss_top_tb
 
         // preload_dccm();
         preload_css_mcu0_dccm();
-        preload_iccm();
+        preload_mcu_sram();
 
 // `ifndef VERILATOR
 //         // if($test$plusargs("dumpon")) $dumpvars;
@@ -1158,7 +1173,9 @@ module caliptra_ss_top_tb
         .rst_b(rst_l)
     );
 
-    mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if (
+    mci_mcu_sram_if #(
+        .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
+    ) cptra_ss_mci_mcu_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
@@ -1476,19 +1493,34 @@ module caliptra_ss_top_tb
         .rdata_o (mcu_rom_mem_export_if.resp.rdata)
     );
 
-    mci_sram #(
-        .DEPTH     (18'h3_FFFF), // 1M
-        .DATA_WIDTH(39),
-        .ADDR_WIDTH(32)
+    caliptra_ss_sram #(
+        .DEPTH     (MCU_SRAM_DEPTH),
+        .DATA_WIDTH(MCU_SRAM_DATA_TOTAL_WIDTH),
+        .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
    ) lmem (
        .clk_i   (core_clk),
        .cs_i    (cptra_ss_mci_mcu_sram_req_if.req.cs),
        .we_i    (cptra_ss_mci_mcu_sram_req_if.req.we),
-       .addr_i  ({14'h0, cptra_ss_mci_mcu_sram_req_if.req.addr, 2'b0}),
+       .addr_i  (cptra_ss_mci_mcu_sram_req_if.req.addr),
        .wdata_i (cptra_ss_mci_mcu_sram_req_if.req.wdata),
        .rdata_o (cptra_ss_mci_mcu_sram_req_if.resp.rdata)
    );
 
+    // -- LMEM PRELOAD
+    caliptra_sram #(
+         .DEPTH     (MCU_SRAM_DEPTH        ), 
+         .DATA_WIDTH(MCU_SRAM_DATA_WIDTH   ), 
+         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH   )
+
+    ) lmem_dummy_preloader (
+        .clk_i   (core_clk),
+
+        .cs_i    (        ),
+        .we_i    (        ),
+        .addr_i  (        ),
+        .wdata_i (        ),
+        .rdata_o (        )
+    );
 
    // driven by lc_ctrl_bfm
    logic cptra_ss_lc_esclate_scrap_state0_i;
@@ -1838,35 +1870,20 @@ module caliptra_ss_top_tb
     
 
 
-task preload_iccm;
-    bit[31:0] data;
-    bit[31:0] addr, eaddr, saddr;
+task preload_mcu_sram;
+    bit[MCU_SRAM_ECC_WIDTH-1:0] ecc;
+    bit[MCU_SRAM_DATA_WIDTH-1:0] data;
+    bit[31:0] addr;
 
-    /*
-    addresses:
-     0xfffffff0 - ICCM start address to load
-     0xfffffff4 - ICCM end address to load
-    */
     `ifndef VERILATOR
-    init_iccm();
+    lmem.ram = '{default: '0};
     `endif
-    addr = 'hffff_fff0;
-    saddr = {lmem.mem[addr+3],lmem.mem[addr+2],lmem.mem[addr+1],lmem.mem[addr]};
-    if ( (saddr < `css_mcu0_RV_ICCM_SADR) || (saddr > `css_mcu0_RV_ICCM_EADR)) return;
-    `ifndef MCU_RV_ICCM_ENABLE
-        $display("********************************************************");
-        $display("ICCM preload: there is no ICCM in VeeR, terminating !!!");
-        $display("********************************************************");
-        $finish;
-    `endif
-    addr += 4;
-    eaddr = {lmem.mem[addr+3],lmem.mem[addr+2],lmem.mem[addr+1],lmem.mem[addr]};
-    $display("ICCM pre-load from %h to %h", saddr, eaddr);
+    $display("MCU SRAM pre-load from %h to %h", 0, MCU_SRAM_DEPTH-1);
 
-    for(addr= saddr; addr <= eaddr; addr+=4) begin
-        //data = {imem.mem[addr+3],imem.mem[addr+2],imem.mem[addr+1],imem.mem[addr]};
-        data = 0;
-        slam_iccm_ram(addr, data == 0 ? 0 : {riscv_ecc32(data),data});
+    for(addr= 0; addr < MCU_SRAM_DEPTH; addr++) begin
+        data = {lmem_dummy_preloader.ram[addr][3],lmem_dummy_preloader.ram[addr][2],lmem_dummy_preloader.ram[addr][1],lmem_dummy_preloader.ram[addr][0]};
+        ecc = |data  ? riscv_ecc32(data) : 0; 
+        lmem.ram[addr] = {ecc,data};
     end
 
 endtask
@@ -1915,78 +1932,6 @@ endtask
 
 
 
-task slam_iccm_ram( input[31:0] addr, input[38:0] data);
-    int bank, idx;
-
-    bank = get_iccm_bank(addr, idx);
-    `ifdef css_mcu0_RV_ICCM_ENABLE
-    case(bank) // {
-      0: `MCU_IRAM(0)[idx] = data;
-      1: `MCU_IRAM(1)[idx] = data;
-     `ifdef css_mcu0_RV_ICCM_NUM_BANKS_4
-      2: `MCU_IRAM(2)[idx] = data;
-      3: `MCU_IRAM(3)[idx] = data;
-     `endif
-     `ifdef css_mcu0_RV_ICCM_NUM_BANKS_8
-      2: `MCU_IRAM(2)[idx] = data;
-      3: `MCU_IRAM(3)[idx] = data;
-      4: `MCU_IRAM(4)[idx] = data;
-      5: `MCU_IRAM(5)[idx] = data;
-      6: `MCU_IRAM(6)[idx] = data;
-      7: `MCU_IRAM(7)[idx] = data;
-     `endif
-
-     `ifdef MCU_RV_ICCM_NUM_BANKS_16
-      2: `MCU_IRAM(2)[idx] = data;
-      3: `MCU_IRAM(3)[idx] = data;
-      4: `MCU_IRAM(4)[idx] = data;
-      5: `MCU_IRAM(5)[idx] = data;
-      6: `MCU_IRAM(6)[idx] = data;
-      7: `MCU_IRAM(7)[idx] = data;
-      8: `MCU_IRAM(8)[idx] = data;
-      9: `MCU_IRAM(9)[idx] = data;
-      10: `MCU_IRAM(10)[idx] = data;
-      11: `MCU_IRAM(11)[idx] = data;
-      12: `MCU_IRAM(12)[idx] = data;
-      13: `MCU_IRAM(13)[idx] = data;
-      14: `MCU_IRAM(14)[idx] = data;
-      15: `MCU_IRAM(15)[idx] = data;
-     `endif
-    endcase // }
-    `endif
-endtask
-
-task init_iccm;
-    `ifdef css_mcu0_RV_ICCM_ENABLE
-        `MCU_IRAM(0) = '{default:39'h0};
-        `MCU_IRAM(1) = '{default:39'h0};
-    `ifdef css_mcu0_RV_ICCM_NUM_BANKS_4
-        `MCU_IRAM(2) = '{default:39'h0};
-        `MCU_IRAM(3) = '{default:39'h0};
-    `endif
-    `ifdef css_mcu0_RV_ICCM_NUM_BANKS_8
-        `MCU_IRAM(4) = '{default:39'h0};
-        `MCU_IRAM(5) = '{default:39'h0};
-        `MCU_IRAM(6) = '{default:39'h0};
-        `MCU_IRAM(7) = '{default:39'h0};
-    `endif
-
-    `ifdef css_mcu0_RV_ICCM_NUM_BANKS_16
-        `MCU_IRAM(4) = '{default:39'h0};
-        `MCU_IRAM(5) = '{default:39'h0};
-        `MCU_IRAM(6) = '{default:39'h0};
-        `MCU_IRAM(7) = '{default:39'h0};
-        `MCU_IRAM(8) = '{default:39'h0};
-        `MCU_IRAM(9) = '{default:39'h0};
-        `MCU_IRAM(10) = '{default:39'h0};
-        `MCU_IRAM(11) = '{default:39'h0};
-        `MCU_IRAM(12) = '{default:39'h0};
-        `MCU_IRAM(13) = '{default:39'h0};
-        `MCU_IRAM(14) = '{default:39'h0};
-        `MCU_IRAM(15) = '{default:39'h0};
-     `endif
-    `endif
-endtask
 
 
 function[6:0] riscv_ecc32(input[31:0] data);
@@ -2071,10 +2016,10 @@ task dump_signature ();
             // From RAM
             begin
                 $fwrite(fp, "%02X%02X%02X%02X\n",
-                    lmem.mem[i+3],
-                    lmem.mem[i+2],
-                    lmem.mem[i+1],
-                    lmem.mem[i+0]
+                    lmem.ram[i+3],
+                    lmem.ram[i+2],
+                    lmem.ram[i+1],
+                    lmem.ram[i+0]
                 );
             end
         end
