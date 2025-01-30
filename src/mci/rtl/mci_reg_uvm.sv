@@ -129,17 +129,17 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_CONFIG
 
-    // Reg - mci_reg::BOOT_STATUS
-    class mci_reg__BOOT_STATUS extends uvm_reg;
+    // Reg - mci_reg::FW_FLOW_STATUS
+    class mci_reg__FW_FLOW_STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__BOOT_STATUS_bit_cg status_bit_cg[32];
-        mci_reg__BOOT_STATUS_fld_cg fld_cg;
+        mci_reg__FW_FLOW_STATUS_bit_cg status_bit_cg[32];
+        mci_reg__FW_FLOW_STATUS_fld_cg fld_cg;
         rand uvm_reg_field status;
 
-        function new(string name = "mci_reg__BOOT_STATUS");
+        function new(string name = "mci_reg__FW_FLOW_STATUS");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -157,23 +157,19 @@ package mci_reg_uvm;
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__BOOT_STATUS
+    endclass : mci_reg__FW_FLOW_STATUS
 
-    // Reg - mci_reg::FLOW_STATUS
-    class mci_reg__FLOW_STATUS extends uvm_reg;
+    // Reg - mci_reg::HW_FLOW_STATUS
+    class mci_reg__HW_FLOW_STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__FLOW_STATUS_bit_cg status_bit_cg[24];
-        mci_reg__FLOW_STATUS_bit_cg rsvd_bit_cg[3];
-        mci_reg__FLOW_STATUS_bit_cg boot_fsm_ps_bit_cg[5];
-        mci_reg__FLOW_STATUS_fld_cg fld_cg;
-        rand uvm_reg_field status;
-        rand uvm_reg_field rsvd;
-        rand uvm_reg_field boot_fsm_ps;
+        mci_reg__HW_FLOW_STATUS_bit_cg boot_fsm_bit_cg[4];
+        mci_reg__HW_FLOW_STATUS_fld_cg fld_cg;
+        rand uvm_reg_field boot_fsm;
 
-        function new(string name = "mci_reg__FLOW_STATUS");
+        function new(string name = "mci_reg__HW_FLOW_STATUS");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -183,21 +179,15 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.status = new("status");
-            this.status.configure(this, 24, 0, "RW", 0, 'h0, 1, 1, 0);
-            this.rsvd = new("rsvd");
-            this.rsvd.configure(this, 3, 24, "RO", 0, 'h0, 1, 1, 0);
-            this.boot_fsm_ps = new("boot_fsm_ps");
-            this.boot_fsm_ps.configure(this, 5, 27, "RO", 1, 'h0, 0, 1, 0);
+            this.boot_fsm = new("boot_fsm");
+            this.boot_fsm.configure(this, 4, 0, "RO", 1, 'h0, 0, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(status_bit_cg[bt]) status_bit_cg[bt] = new();
-                foreach(rsvd_bit_cg[bt]) rsvd_bit_cg[bt] = new();
-                foreach(boot_fsm_ps_bit_cg[bt]) boot_fsm_ps_bit_cg[bt] = new();
+                foreach(boot_fsm_bit_cg[bt]) boot_fsm_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__FLOW_STATUS
+    endclass : mci_reg__HW_FLOW_STATUS
 
     // Reg - mci_reg::RESET_REASON
     class mci_reg__RESET_REASON extends uvm_reg;
@@ -245,11 +235,11 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__RESET_STATUS_bit_cg status_bit_cg[22];
-        mci_reg__RESET_STATUS_bit_cg rsvd_bit_cg[3];
+        mci_reg__RESET_STATUS_bit_cg cptra_reset_sts_bit_cg[1];
+        mci_reg__RESET_STATUS_bit_cg mcu_reset_sts_bit_cg[1];
         mci_reg__RESET_STATUS_fld_cg fld_cg;
-        rand uvm_reg_field status;
-        rand uvm_reg_field rsvd;
+        rand uvm_reg_field cptra_reset_sts;
+        rand uvm_reg_field mcu_reset_sts;
 
         function new(string name = "mci_reg__RESET_STATUS");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -261,13 +251,13 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.status = new("status");
-            this.status.configure(this, 22, 0, "RW", 0, 'h0, 1, 1, 0);
-            this.rsvd = new("rsvd");
-            this.rsvd.configure(this, 3, 22, "RO", 0, 'h0, 1, 1, 0);
+            this.cptra_reset_sts = new("cptra_reset_sts");
+            this.cptra_reset_sts.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.mcu_reset_sts = new("mcu_reset_sts");
+            this.mcu_reset_sts.configure(this, 1, 1, "RO", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(status_bit_cg[bt]) status_bit_cg[bt] = new();
-                foreach(rsvd_bit_cg[bt]) rsvd_bit_cg[bt] = new();
+                foreach(cptra_reset_sts_bit_cg[bt]) cptra_reset_sts_bit_cg[bt] = new();
+                foreach(mcu_reset_sts_bit_cg[bt]) mcu_reset_sts_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -1779,17 +1769,17 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__RESET_REQUEST
 
-    // Reg - mci_reg::CALIPTRA_BOOT_GO
-    class mci_reg__CALIPTRA_BOOT_GO extends uvm_reg;
+    // Reg - mci_reg::MCI_BOOTFSM_GO
+    class mci_reg__MCI_BOOTFSM_GO extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__CALIPTRA_BOOT_GO_bit_cg go_bit_cg[1];
-        mci_reg__CALIPTRA_BOOT_GO_fld_cg fld_cg;
+        mci_reg__MCI_BOOTFSM_GO_bit_cg go_bit_cg[1];
+        mci_reg__MCI_BOOTFSM_GO_fld_cg fld_cg;
         rand uvm_reg_field go;
 
-        function new(string name = "mci_reg__CALIPTRA_BOOT_GO");
+        function new(string name = "mci_reg__MCI_BOOTFSM_GO");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -1800,14 +1790,14 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.go = new("go");
-            this.go.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.go.configure(this, 1, 0, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(go_bit_cg[bt]) go_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__CALIPTRA_BOOT_GO
+    endclass : mci_reg__MCI_BOOTFSM_GO
 
     // Reg - mci_reg::FW_SRAM_EXEC_REGION_SIZE
     class mci_reg__FW_SRAM_EXEC_REGION_SIZE extends uvm_reg;
@@ -8898,8 +8888,8 @@ package mci_reg_uvm;
         rand mci_reg__HW_REV_ID HW_REV_ID;
         rand mci_reg__FW_REV_ID FW_REV_ID[2];
         rand mci_reg__HW_CONFIG HW_CONFIG;
-        rand mci_reg__BOOT_STATUS BOOT_STATUS;
-        rand mci_reg__FLOW_STATUS FLOW_STATUS;
+        rand mci_reg__FW_FLOW_STATUS FW_FLOW_STATUS;
+        rand mci_reg__HW_FLOW_STATUS HW_FLOW_STATUS;
         rand mci_reg__RESET_REASON RESET_REASON;
         rand mci_reg__RESET_STATUS RESET_STATUS;
         rand mci_reg__HW_ERROR_FATAL HW_ERROR_FATAL;
@@ -8931,7 +8921,7 @@ package mci_reg_uvm;
         rand mci_reg__MCU_RV_MTIMECMP_L MCU_RV_MTIMECMP_L;
         rand mci_reg__MCU_RV_MTIMECMP_H MCU_RV_MTIMECMP_H;
         rand mci_reg__RESET_REQUEST RESET_REQUEST;
-        rand mci_reg__CALIPTRA_BOOT_GO CALIPTRA_BOOT_GO;
+        rand mci_reg__MCI_BOOTFSM_GO MCI_BOOTFSM_GO;
         rand mci_reg__FW_SRAM_EXEC_REGION_SIZE FW_SRAM_EXEC_REGION_SIZE;
         rand mci_reg__MCU_NMI_VECTOR MCU_NMI_VECTOR;
         rand mci_reg__MCU_RESET_VECTOR MCU_RESET_VECTOR;
@@ -8984,16 +8974,16 @@ package mci_reg_uvm;
 
             this.HW_CONFIG.build();
             this.default_map.add_reg(this.HW_CONFIG, 'h10);
-            this.BOOT_STATUS = new("BOOT_STATUS");
-            this.BOOT_STATUS.configure(this);
+            this.FW_FLOW_STATUS = new("FW_FLOW_STATUS");
+            this.FW_FLOW_STATUS.configure(this);
 
-            this.BOOT_STATUS.build();
-            this.default_map.add_reg(this.BOOT_STATUS, 'h20);
-            this.FLOW_STATUS = new("FLOW_STATUS");
-            this.FLOW_STATUS.configure(this);
+            this.FW_FLOW_STATUS.build();
+            this.default_map.add_reg(this.FW_FLOW_STATUS, 'h20);
+            this.HW_FLOW_STATUS = new("HW_FLOW_STATUS");
+            this.HW_FLOW_STATUS.configure(this);
 
-            this.FLOW_STATUS.build();
-            this.default_map.add_reg(this.FLOW_STATUS, 'h24);
+            this.HW_FLOW_STATUS.build();
+            this.default_map.add_reg(this.HW_FLOW_STATUS, 'h24);
             this.RESET_REASON = new("RESET_REASON");
             this.RESET_REASON.configure(this);
 
@@ -9157,11 +9147,11 @@ package mci_reg_uvm;
 
             this.RESET_REQUEST.build();
             this.default_map.add_reg(this.RESET_REQUEST, 'h100);
-            this.CALIPTRA_BOOT_GO = new("CALIPTRA_BOOT_GO");
-            this.CALIPTRA_BOOT_GO.configure(this);
+            this.MCI_BOOTFSM_GO = new("MCI_BOOTFSM_GO");
+            this.MCI_BOOTFSM_GO.configure(this);
 
-            this.CALIPTRA_BOOT_GO.build();
-            this.default_map.add_reg(this.CALIPTRA_BOOT_GO, 'h104);
+            this.MCI_BOOTFSM_GO.build();
+            this.default_map.add_reg(this.MCI_BOOTFSM_GO, 'h104);
             this.FW_SRAM_EXEC_REGION_SIZE = new("FW_SRAM_EXEC_REGION_SIZE");
             this.FW_SRAM_EXEC_REGION_SIZE.configure(this);
 

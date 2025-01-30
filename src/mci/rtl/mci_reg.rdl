@@ -87,24 +87,26 @@ addrmap mci_reg {
     // ----------------------------------------
     // ---------------- STATUS ----------------
     reg {
-        name = "Boot Status";
-        desc = "Reports the boot status.
+        name = "FW Flow Status";
+        desc = "Reports the status of the firmware flows.
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO
                 [br]TAP Access [in debug/manuf mode]: RO";
         field {swwe = mcu_req; hw=r; resetsignal = mci_rst_b;} status[32]=0;
-    } BOOT_STATUS @0x20;
+    } FW_FLOW_STATUS @0x20;
     reg {
         name = "Flow Status";
-        desc = "Reports the status of the firmware flows.
+        desc = "Reports the status of HW FSMs and other flows.
                 [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="Generic Status";                                            sw=rw; swwe = mcu_req; hw=r ; resetsignal = mci_rst_b;} status[24]=0;
-        field {desc="DEV ID CSR ready";                                          sw=r;                         /* no storage, no reset */} rsvd[3]=0;
-        field {desc="Boot FSM State";                                            sw=r;                  hw=w ; /* no storage, no reset */} boot_fsm_ps[5];
-    } FLOW_STATUS;
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug/manuf mode]: RO";
+        field {desc="MCI Boot FSM State";                                            sw=r;                  hw=w ; /* no storage, no reset */} boot_fsm[4];
+    } HW_FLOW_STATUS;
+
+
+
     reg {
         name = "Reset Reason";
         desc = "Indicates to ROM the originating cause for the PC to be reset to 0.
@@ -117,14 +119,15 @@ addrmap mci_reg {
         field {desc = "FW update reset has been executed first time since MCI reset"; sw=r; hw=rw; resetsignal = mci_rst_b;  } FW_BOOT_UPD_RESET=0;
         field {desc = "Warm reset has been executed";      sw=r; hw=rw;          resetsignal = mci_pwrgood;} WARM_RESET=0;
     } RESET_REASON;
+
     reg {
-        name = "Flow Status";
-        desc = "Reports the status of the firmware flows.
+        name = "Reset Status";
+        desc = "Reports the status of the rests controlled by MCI.
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RO
                 [br]SOC Access:      RO";
-        field {desc="caliptra reset status";                                            sw=rw; swwe = mcu_req; hw=r ; resetsignal = mci_rst_b;} status[22]=0;
-        field {desc="MCU reset status";                                          sw=r;                         /* no storage, no reset */} rsvd[3]=0;
+        field {desc="caliptra reset status. 1: Reset asserted. 0: Reset deasserted";    sw=r;  hw=rw ;} cptra_reset_sts=0;
+        field {desc="MCU reset status. 1: Reset asserted. 0: Reset deasserted";         sw=r;  hw=rw ;} mcu_reset_sts=0;
     } RESET_STATUS;
 
     // ----------------------------------------
@@ -680,13 +683,20 @@ addrmap mci_reg {
                 [br]Caliptra Access: R0
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field { desc = "Request. Writable by MCU. Causes MCU reset to be asserted by MCI."; sw=rw; hw=r; hwclr=true; swwe=mcu_req; resetsignal=mci_rst_b; } mcu_req=1'b0;
+        field { desc = "Request. Writable by MCU. Causes MCU reset to be asserted by MCI. Cleared when reset is asserted."; sw=rw; hw=r; hwclr=true; swwe=mcu_req; resetsignal=mci_rst_b; } mcu_req=1'b0;
         // FIXME mcu_or_no_rom_config we need to privide a strap for allowed AXI users other than MCU that can access this bit.
     } RESET_REQUEST @0x100;
-// TODO finish desc for these
+
+
     reg {
-        field { desc="fixme"; swwe = mcu_req; hw = r;} go=1'b0;
-    } CALIPTRA_BOOT_GO;
+        name = "MCI BOOT FSM GO";
+        desc = "Indicates that the MCI BootFSM can continue to execute to bring MCU and Caliptra out of reset.
+                [br]Caliptra Access: RW
+                [br]MCU Access:      RW
+                [br]SOC Access:      RW";
+        field { sw=rw; hw = rw;} go=1'b0;
+    } MCI_BOOTFSM_GO;
+
     reg {
         name = "Firmware SRAM Exec Region Size";
         desc = "Dynamic size assignment for the region of sram that contains executable instructions for MCU.";
@@ -709,8 +719,8 @@ addrmap mci_reg {
         desc = "32-bit register providing the reset vector for RISC-V do the initial fetch.
                 Default is determined by a HW strap strap_mcu_reset_vector, but may be modified by SW while in debug mode.
                 Bit [0] is ignored to enforce half-word alignment of address.
-                [br]Caliptra Access: R)
-                [br]MCU Access:      RW
+                [br]Caliptra Access: RW
+                [br]MCU Access:      RO
                 [br]SOC Access:      RO";
 
         field {desc = "NMI Vector"; hw = rw; we; sw = rw; swwe = cptra_req;} vec[32] = 32'h0; // FIXME : is this the right access?
@@ -725,8 +735,23 @@ addrmap mci_reg {
 
     // ----------------------------------------
     // ------------ DEBUG/GENERIC -------------
-    reg { field {/*TODO*/sw=r;  hw=w;} wires[32]=32'b0; } GENERIC_INPUT_WIRES[2] @0x400;
-    reg { field {/*TODO*/sw=rw; hw=r;} wires[32]=32'b0; } GENERIC_OUTPUT_WIRES[2];
+    reg { 
+        desc = "Generic input wires connected to SoC interface.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO";
+        field {sw=r;  hw=w;} wires[32]=32'b0; 
+    } GENERIC_INPUT_WIRES[2] @0x400;
+    
+    reg {
+        name = "Generic Output Wires";
+        desc = "Generic output wires connected to SoC interface.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {sw=rw; hw=r; swwe = mcu_req;} wires[32]=32'b0; 
+    } GENERIC_OUTPUT_WIRES[2];
+    
     reg { 
         field {sw=rw; hw=na; resetsignal = mci_rst_b;} FIXME=0;
     } DEBUG_IN; // i.e. stdin

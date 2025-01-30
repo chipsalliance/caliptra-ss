@@ -31,12 +31,12 @@ package mci_reg_pkg;
     } mci_reg__HW_CONFIG__in_t;
 
     typedef struct packed{
-        logic [4:0] next;
-    } mci_reg__FLOW_STATUS__boot_fsm_ps__in_t;
+        logic [3:0] next;
+    } mci_reg__HW_FLOW_STATUS__boot_fsm__in_t;
 
     typedef struct packed{
-        mci_reg__FLOW_STATUS__boot_fsm_ps__in_t boot_fsm_ps;
-    } mci_reg__FLOW_STATUS__in_t;
+        mci_reg__HW_FLOW_STATUS__boot_fsm__in_t boot_fsm;
+    } mci_reg__HW_FLOW_STATUS__in_t;
 
     typedef struct packed{
         logic next;
@@ -55,6 +55,19 @@ package mci_reg_pkg;
         mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t FW_BOOT_UPD_RESET;
         mci_reg__RESET_REASON__WARM_RESET__in_t WARM_RESET;
     } mci_reg__RESET_REASON__in_t;
+
+    typedef struct packed{
+        logic next;
+    } mci_reg__RESET_STATUS__cptra_reset_sts__in_t;
+
+    typedef struct packed{
+        logic next;
+    } mci_reg__RESET_STATUS__mcu_reset_sts__in_t;
+
+    typedef struct packed{
+        mci_reg__RESET_STATUS__cptra_reset_sts__in_t cptra_reset_sts;
+        mci_reg__RESET_STATUS__mcu_reset_sts__in_t mcu_reset_sts;
+    } mci_reg__RESET_STATUS__in_t;
 
     typedef struct packed{
         logic next;
@@ -189,6 +202,14 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__RESET_REQUEST__mcu_req__in_t mcu_req;
     } mci_reg__RESET_REQUEST__in_t;
+
+    typedef struct packed{
+        logic next;
+    } mci_reg__MCI_BOOTFSM_GO__go__in_t;
+
+    typedef struct packed{
+        mci_reg__MCI_BOOTFSM_GO__go__in_t go;
+    } mci_reg__MCI_BOOTFSM_GO__in_t;
 
     typedef struct packed{
         logic swwe;
@@ -665,8 +686,9 @@ package mci_reg_pkg;
         mci_reg__CAPABILITIES__in_t CAPABILITIES;
         mci_reg__HW_REV_ID__in_t HW_REV_ID;
         mci_reg__HW_CONFIG__in_t HW_CONFIG;
-        mci_reg__FLOW_STATUS__in_t FLOW_STATUS;
+        mci_reg__HW_FLOW_STATUS__in_t HW_FLOW_STATUS;
         mci_reg__RESET_REASON__in_t RESET_REASON;
+        mci_reg__RESET_STATUS__in_t RESET_STATUS;
         mci_reg__HW_ERROR_FATAL__in_t HW_ERROR_FATAL;
         mci_reg__AGG_ERROR_FATAL__in_t AGG_ERROR_FATAL;
         mci_reg__HW_ERROR_NON_FATAL__in_t HW_ERROR_NON_FATAL;
@@ -677,6 +699,7 @@ package mci_reg_pkg;
         mci_reg__MCU_RV_MTIME_L__in_t MCU_RV_MTIME_L;
         mci_reg__MCU_RV_MTIME_H__in_t MCU_RV_MTIME_H;
         mci_reg__RESET_REQUEST__in_t RESET_REQUEST;
+        mci_reg__MCI_BOOTFSM_GO__in_t MCI_BOOTFSM_GO;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__in_t FW_SRAM_EXEC_REGION_SIZE;
         mci_reg__MCU_RESET_VECTOR__in_t MCU_RESET_VECTOR;
         mci_reg__GENERIC_INPUT_WIRES__in_t [2-1:0]GENERIC_INPUT_WIRES;
@@ -695,19 +718,11 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic [31:0] value;
-    } mci_reg__BOOT_STATUS__status__out_t;
+    } mci_reg__FW_FLOW_STATUS__status__out_t;
 
     typedef struct packed{
-        mci_reg__BOOT_STATUS__status__out_t status;
-    } mci_reg__BOOT_STATUS__out_t;
-
-    typedef struct packed{
-        logic [23:0] value;
-    } mci_reg__FLOW_STATUS__status__out_t;
-
-    typedef struct packed{
-        mci_reg__FLOW_STATUS__status__out_t status;
-    } mci_reg__FLOW_STATUS__out_t;
+        mci_reg__FW_FLOW_STATUS__status__out_t status;
+    } mci_reg__FW_FLOW_STATUS__out_t;
 
     typedef struct packed{
         logic value;
@@ -728,11 +743,16 @@ package mci_reg_pkg;
     } mci_reg__RESET_REASON__out_t;
 
     typedef struct packed{
-        logic [21:0] value;
-    } mci_reg__RESET_STATUS__status__out_t;
+        logic value;
+    } mci_reg__RESET_STATUS__cptra_reset_sts__out_t;
 
     typedef struct packed{
-        mci_reg__RESET_STATUS__status__out_t status;
+        logic value;
+    } mci_reg__RESET_STATUS__mcu_reset_sts__out_t;
+
+    typedef struct packed{
+        mci_reg__RESET_STATUS__cptra_reset_sts__out_t cptra_reset_sts;
+        mci_reg__RESET_STATUS__mcu_reset_sts__out_t mcu_reset_sts;
     } mci_reg__RESET_STATUS__out_t;
 
     typedef struct packed{
@@ -1056,11 +1076,11 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
-    } mci_reg__CALIPTRA_BOOT_GO__go__out_t;
+    } mci_reg__MCI_BOOTFSM_GO__go__out_t;
 
     typedef struct packed{
-        mci_reg__CALIPTRA_BOOT_GO__go__out_t go;
-    } mci_reg__CALIPTRA_BOOT_GO__out_t;
+        mci_reg__MCI_BOOTFSM_GO__go__out_t go;
+    } mci_reg__MCI_BOOTFSM_GO__out_t;
 
     typedef struct packed{
         logic [15:0] value;
@@ -1187,8 +1207,7 @@ package mci_reg_pkg;
     } mci_reg__intr_block_t__out_t;
 
     typedef struct packed{
-        mci_reg__BOOT_STATUS__out_t BOOT_STATUS;
-        mci_reg__FLOW_STATUS__out_t FLOW_STATUS;
+        mci_reg__FW_FLOW_STATUS__out_t FW_FLOW_STATUS;
         mci_reg__RESET_REASON__out_t RESET_REASON;
         mci_reg__RESET_STATUS__out_t RESET_STATUS;
         mci_reg__HW_ERROR_FATAL__out_t HW_ERROR_FATAL;
@@ -1218,7 +1237,7 @@ package mci_reg_pkg;
         mci_reg__MCU_RV_MTIMECMP_L__out_t MCU_RV_MTIMECMP_L;
         mci_reg__MCU_RV_MTIMECMP_H__out_t MCU_RV_MTIMECMP_H;
         mci_reg__RESET_REQUEST__out_t RESET_REQUEST;
-        mci_reg__CALIPTRA_BOOT_GO__out_t CALIPTRA_BOOT_GO;
+        mci_reg__MCI_BOOTFSM_GO__out_t MCI_BOOTFSM_GO;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__out_t FW_SRAM_EXEC_REGION_SIZE;
         mci_reg__MCU_NMI_VECTOR__out_t MCU_NMI_VECTOR;
         mci_reg__MCU_RESET_VECTOR__out_t MCU_RESET_VECTOR;

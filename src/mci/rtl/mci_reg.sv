@@ -70,8 +70,8 @@ module mci_reg (
         logic HW_REV_ID;
         logic [2-1:0]FW_REV_ID;
         logic HW_CONFIG;
-        logic BOOT_STATUS;
-        logic FLOW_STATUS;
+        logic FW_FLOW_STATUS;
+        logic HW_FLOW_STATUS;
         logic RESET_REASON;
         logic RESET_STATUS;
         logic HW_ERROR_FATAL;
@@ -103,7 +103,7 @@ module mci_reg (
         logic MCU_RV_MTIMECMP_L;
         logic MCU_RV_MTIMECMP_H;
         logic RESET_REQUEST;
-        logic CALIPTRA_BOOT_GO;
+        logic MCI_BOOTFSM_GO;
         logic FW_SRAM_EXEC_REGION_SIZE;
         logic MCU_NMI_VECTOR;
         logic MCU_RESET_VECTOR;
@@ -293,8 +293,8 @@ module mci_reg (
             decoded_reg_strb.FW_REV_ID[i0] = cpuif_req_masked & (cpuif_addr == 13'h8 + i0*13'h4);
         end
         decoded_reg_strb.HW_CONFIG = cpuif_req_masked & (cpuif_addr == 13'h10);
-        decoded_reg_strb.BOOT_STATUS = cpuif_req_masked & (cpuif_addr == 13'h20);
-        decoded_reg_strb.FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 13'h24);
+        decoded_reg_strb.FW_FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 13'h20);
+        decoded_reg_strb.HW_FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 13'h24);
         decoded_reg_strb.RESET_REASON = cpuif_req_masked & (cpuif_addr == 13'h28);
         decoded_reg_strb.RESET_STATUS = cpuif_req_masked & (cpuif_addr == 13'h2c);
         decoded_reg_strb.HW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 13'h40);
@@ -334,7 +334,7 @@ module mci_reg (
         decoded_reg_strb.MCU_RV_MTIMECMP_L = cpuif_req_masked & (cpuif_addr == 13'hec);
         decoded_reg_strb.MCU_RV_MTIMECMP_H = cpuif_req_masked & (cpuif_addr == 13'hf0);
         decoded_reg_strb.RESET_REQUEST = cpuif_req_masked & (cpuif_addr == 13'h100);
-        decoded_reg_strb.CALIPTRA_BOOT_GO = cpuif_req_masked & (cpuif_addr == 13'h104);
+        decoded_reg_strb.MCI_BOOTFSM_GO = cpuif_req_masked & (cpuif_addr == 13'h104);
         decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE = cpuif_req_masked & (cpuif_addr == 13'h108);
         decoded_reg_strb.MCU_NMI_VECTOR = cpuif_req_masked & (cpuif_addr == 13'h10c);
         decoded_reg_strb.MCU_RESET_VECTOR = cpuif_req_masked & (cpuif_addr == 13'h110);
@@ -569,13 +569,7 @@ module mci_reg (
                 logic [31:0] next;
                 logic load_next;
             } status;
-        } BOOT_STATUS;
-        struct packed{
-            struct packed{
-                logic [23:0] next;
-                logic load_next;
-            } status;
-        } FLOW_STATUS;
+        } FW_FLOW_STATUS;
         struct packed{
             struct packed{
                 logic next;
@@ -592,9 +586,13 @@ module mci_reg (
         } RESET_REASON;
         struct packed{
             struct packed{
-                logic [21:0] next;
+                logic next;
                 logic load_next;
-            } status;
+            } cptra_reset_sts;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mcu_reset_sts;
         } RESET_STATUS;
         struct packed{
             struct packed{
@@ -1287,7 +1285,7 @@ module mci_reg (
                 logic next;
                 logic load_next;
             } go;
-        } CALIPTRA_BOOT_GO;
+        } MCI_BOOTFSM_GO;
         struct packed{
             struct packed{
                 logic [15:0] next;
@@ -3387,12 +3385,7 @@ module mci_reg (
             struct packed{
                 logic [31:0] value;
             } status;
-        } BOOT_STATUS;
-        struct packed{
-            struct packed{
-                logic [23:0] value;
-            } status;
-        } FLOW_STATUS;
+        } FW_FLOW_STATUS;
         struct packed{
             struct packed{
                 logic value;
@@ -3406,8 +3399,11 @@ module mci_reg (
         } RESET_REASON;
         struct packed{
             struct packed{
-                logic [21:0] value;
-            } status;
+                logic value;
+            } cptra_reset_sts;
+            struct packed{
+                logic value;
+            } mcu_reset_sts;
         } RESET_STATUS;
         struct packed{
             struct packed{
@@ -3939,7 +3935,7 @@ module mci_reg (
             struct packed{
                 logic value;
             } go;
-        } CALIPTRA_BOOT_GO;
+        } MCI_BOOTFSM_GO;
         struct packed{
             struct packed{
                 logic [15:0] value;
@@ -5410,44 +5406,25 @@ module mci_reg (
             end
         end
     end
-    // Field: mci_reg.BOOT_STATUS.status
+    // Field: mci_reg.FW_FLOW_STATUS.status
     always_comb begin
-        automatic logic [31:0] next_c = field_storage.BOOT_STATUS.status.value;
+        automatic logic [31:0] next_c = field_storage.FW_FLOW_STATUS.status.value;
         automatic logic load_next_c = '0;
-        if(decoded_reg_strb.BOOT_STATUS && decoded_req_is_wr && hwif_in.mcu_req) begin // SW write
-            next_c = (field_storage.BOOT_STATUS.status.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.FW_FLOW_STATUS && decoded_req_is_wr && hwif_in.mcu_req) begin // SW write
+            next_c = (field_storage.FW_FLOW_STATUS.status.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.BOOT_STATUS.status.next = next_c;
-        field_combo.BOOT_STATUS.status.load_next = load_next_c;
+        field_combo.FW_FLOW_STATUS.status.next = next_c;
+        field_combo.FW_FLOW_STATUS.status.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.BOOT_STATUS.status.value <= 32'h0;
-        end else if(field_combo.BOOT_STATUS.status.load_next) begin
-            field_storage.BOOT_STATUS.status.value <= field_combo.BOOT_STATUS.status.next;
+            field_storage.FW_FLOW_STATUS.status.value <= 32'h0;
+        end else if(field_combo.FW_FLOW_STATUS.status.load_next) begin
+            field_storage.FW_FLOW_STATUS.status.value <= field_combo.FW_FLOW_STATUS.status.next;
         end
     end
-    assign hwif_out.BOOT_STATUS.status.value = field_storage.BOOT_STATUS.status.value;
-    // Field: mci_reg.FLOW_STATUS.status
-    always_comb begin
-        automatic logic [23:0] next_c = field_storage.FLOW_STATUS.status.value;
-        automatic logic load_next_c = '0;
-        if(decoded_reg_strb.FLOW_STATUS && decoded_req_is_wr && hwif_in.mcu_req) begin // SW write
-            next_c = (field_storage.FLOW_STATUS.status.value & ~decoded_wr_biten[23:0]) | (decoded_wr_data[23:0] & decoded_wr_biten[23:0]);
-            load_next_c = '1;
-        end
-        field_combo.FLOW_STATUS.status.next = next_c;
-        field_combo.FLOW_STATUS.status.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.FLOW_STATUS.status.value <= 24'h0;
-        end else if(field_combo.FLOW_STATUS.status.load_next) begin
-            field_storage.FLOW_STATUS.status.value <= field_combo.FLOW_STATUS.status.next;
-        end
-    end
-    assign hwif_out.FLOW_STATUS.status.value = field_storage.FLOW_STATUS.status.value;
+    assign hwif_out.FW_FLOW_STATUS.status.value = field_storage.FW_FLOW_STATUS.status.value;
     // Field: mci_reg.RESET_REASON.FW_HITLESS_UPD_RESET
     always_comb begin
         automatic logic [0:0] next_c = field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value;
@@ -5505,25 +5482,44 @@ module mci_reg (
         end
     end
     assign hwif_out.RESET_REASON.WARM_RESET.value = field_storage.RESET_REASON.WARM_RESET.value;
-    // Field: mci_reg.RESET_STATUS.status
+    // Field: mci_reg.RESET_STATUS.cptra_reset_sts
     always_comb begin
-        automatic logic [21:0] next_c = field_storage.RESET_STATUS.status.value;
+        automatic logic [0:0] next_c = field_storage.RESET_STATUS.cptra_reset_sts.value;
         automatic logic load_next_c = '0;
-        if(decoded_reg_strb.RESET_STATUS && decoded_req_is_wr && hwif_in.mcu_req) begin // SW write
-            next_c = (field_storage.RESET_STATUS.status.value & ~decoded_wr_biten[21:0]) | (decoded_wr_data[21:0] & decoded_wr_biten[21:0]);
-            load_next_c = '1;
-        end
-        field_combo.RESET_STATUS.status.next = next_c;
-        field_combo.RESET_STATUS.status.load_next = load_next_c;
+        
+        // HW Write
+        next_c = hwif_in.RESET_STATUS.cptra_reset_sts.next;
+        load_next_c = '1;
+        field_combo.RESET_STATUS.cptra_reset_sts.next = next_c;
+        field_combo.RESET_STATUS.cptra_reset_sts.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.RESET_STATUS.status.value <= 22'h0;
-        end else if(field_combo.RESET_STATUS.status.load_next) begin
-            field_storage.RESET_STATUS.status.value <= field_combo.RESET_STATUS.status.next;
+            field_storage.RESET_STATUS.cptra_reset_sts.value <= 1'h0;
+        end else if(field_combo.RESET_STATUS.cptra_reset_sts.load_next) begin
+            field_storage.RESET_STATUS.cptra_reset_sts.value <= field_combo.RESET_STATUS.cptra_reset_sts.next;
         end
     end
-    assign hwif_out.RESET_STATUS.status.value = field_storage.RESET_STATUS.status.value;
+    assign hwif_out.RESET_STATUS.cptra_reset_sts.value = field_storage.RESET_STATUS.cptra_reset_sts.value;
+    // Field: mci_reg.RESET_STATUS.mcu_reset_sts
+    always_comb begin
+        automatic logic [0:0] next_c = field_storage.RESET_STATUS.mcu_reset_sts.value;
+        automatic logic load_next_c = '0;
+        
+        // HW Write
+        next_c = hwif_in.RESET_STATUS.mcu_reset_sts.next;
+        load_next_c = '1;
+        field_combo.RESET_STATUS.mcu_reset_sts.next = next_c;
+        field_combo.RESET_STATUS.mcu_reset_sts.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.RESET_STATUS.mcu_reset_sts.value <= 1'h0;
+        end else if(field_combo.RESET_STATUS.mcu_reset_sts.load_next) begin
+            field_storage.RESET_STATUS.mcu_reset_sts.value <= field_combo.RESET_STATUS.mcu_reset_sts.next;
+        end
+    end
+    assign hwif_out.RESET_STATUS.mcu_reset_sts.value = field_storage.RESET_STATUS.mcu_reset_sts.value;
     // Field: mci_reg.HW_ERROR_FATAL.mcu_sram_ecc_unc
     always_comb begin
         automatic logic [0:0] next_c = field_storage.HW_ERROR_FATAL.mcu_sram_ecc_unc.value;
@@ -8737,25 +8733,28 @@ module mci_reg (
         end
     end
     assign hwif_out.RESET_REQUEST.mcu_req.value = field_storage.RESET_REQUEST.mcu_req.value;
-    // Field: mci_reg.CALIPTRA_BOOT_GO.go
+    // Field: mci_reg.MCI_BOOTFSM_GO.go
     always_comb begin
-        automatic logic [0:0] next_c = field_storage.CALIPTRA_BOOT_GO.go.value;
+        automatic logic [0:0] next_c = field_storage.MCI_BOOTFSM_GO.go.value;
         automatic logic load_next_c = '0;
-        if(decoded_reg_strb.CALIPTRA_BOOT_GO && decoded_req_is_wr && hwif_in.mcu_req) begin // SW write
-            next_c = (field_storage.CALIPTRA_BOOT_GO.go.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+        if(decoded_reg_strb.MCI_BOOTFSM_GO && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.MCI_BOOTFSM_GO.go.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end else begin // HW Write
+            next_c = hwif_in.MCI_BOOTFSM_GO.go.next;
             load_next_c = '1;
         end
-        field_combo.CALIPTRA_BOOT_GO.go.next = next_c;
-        field_combo.CALIPTRA_BOOT_GO.go.load_next = load_next_c;
+        field_combo.MCI_BOOTFSM_GO.go.next = next_c;
+        field_combo.MCI_BOOTFSM_GO.go.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.CALIPTRA_BOOT_GO.go.value <= 1'h0;
-        end else if(field_combo.CALIPTRA_BOOT_GO.go.load_next) begin
-            field_storage.CALIPTRA_BOOT_GO.go.value <= field_combo.CALIPTRA_BOOT_GO.go.next;
+            field_storage.MCI_BOOTFSM_GO.go.value <= 1'h0;
+        end else if(field_combo.MCI_BOOTFSM_GO.go.load_next) begin
+            field_storage.MCI_BOOTFSM_GO.go.value <= field_combo.MCI_BOOTFSM_GO.go.next;
         end
     end
-    assign hwif_out.CALIPTRA_BOOT_GO.go.value = field_storage.CALIPTRA_BOOT_GO.go.value;
+    assign hwif_out.MCI_BOOTFSM_GO.go.value = field_storage.MCI_BOOTFSM_GO.go.value;
     // Field: mci_reg.FW_SRAM_EXEC_REGION_SIZE.size
     always_comb begin
         automatic logic [15:0] next_c = field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value;
@@ -8901,7 +8900,7 @@ module mci_reg (
         always_comb begin
             automatic logic [31:0] next_c = field_storage.GENERIC_OUTPUT_WIRES[i0].wires.value;
             automatic logic load_next_c = '0;
-            if(decoded_reg_strb.GENERIC_OUTPUT_WIRES[i0] && decoded_req_is_wr) begin // SW write
+            if(decoded_reg_strb.GENERIC_OUTPUT_WIRES[i0] && decoded_req_is_wr && hwif_in.mcu_req) begin // SW write
                 next_c = (field_storage.GENERIC_OUTPUT_WIRES[i0].wires.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
                 load_next_c = '1;
             end
@@ -17834,17 +17833,16 @@ module mci_reg (
     end
     assign readback_array[4][0:0] = (decoded_reg_strb.HW_CONFIG && !decoded_req_is_wr) ? hwif_in.HW_CONFIG.RSVD_en.next : '0;
     assign readback_array[4][31:1] = '0;
-    assign readback_array[5][31:0] = (decoded_reg_strb.BOOT_STATUS && !decoded_req_is_wr) ? field_storage.BOOT_STATUS.status.value : '0;
-    assign readback_array[6][23:0] = (decoded_reg_strb.FLOW_STATUS && !decoded_req_is_wr) ? field_storage.FLOW_STATUS.status.value : '0;
-    assign readback_array[6][26:24] = (decoded_reg_strb.FLOW_STATUS && !decoded_req_is_wr) ? 'h0 : '0;
-    assign readback_array[6][31:27] = (decoded_reg_strb.FLOW_STATUS && !decoded_req_is_wr) ? hwif_in.FLOW_STATUS.boot_fsm_ps.next : '0;
+    assign readback_array[5][31:0] = (decoded_reg_strb.FW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.FW_FLOW_STATUS.status.value : '0;
+    assign readback_array[6][3:0] = (decoded_reg_strb.HW_FLOW_STATUS && !decoded_req_is_wr) ? hwif_in.HW_FLOW_STATUS.boot_fsm.next : '0;
+    assign readback_array[6][31:4] = '0;
     assign readback_array[7][0:0] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value : '0;
     assign readback_array[7][1:1] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value : '0;
     assign readback_array[7][2:2] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.WARM_RESET.value : '0;
     assign readback_array[7][31:3] = '0;
-    assign readback_array[8][21:0] = (decoded_reg_strb.RESET_STATUS && !decoded_req_is_wr) ? field_storage.RESET_STATUS.status.value : '0;
-    assign readback_array[8][24:22] = (decoded_reg_strb.RESET_STATUS && !decoded_req_is_wr) ? 'h0 : '0;
-    assign readback_array[8][31:25] = '0;
+    assign readback_array[8][0:0] = (decoded_reg_strb.RESET_STATUS && !decoded_req_is_wr) ? field_storage.RESET_STATUS.cptra_reset_sts.value : '0;
+    assign readback_array[8][1:1] = (decoded_reg_strb.RESET_STATUS && !decoded_req_is_wr) ? field_storage.RESET_STATUS.mcu_reset_sts.value : '0;
+    assign readback_array[8][31:2] = '0;
     assign readback_array[9][0:0] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_sram_ecc_unc.value : '0;
     assign readback_array[9][1:1] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.nmi_pin.value : '0;
     assign readback_array[9][31:2] = '0;
@@ -18019,7 +18017,7 @@ module mci_reg (
     assign readback_array[46][31:0] = (decoded_reg_strb.MCU_RV_MTIMECMP_H && !decoded_req_is_wr) ? field_storage.MCU_RV_MTIMECMP_H.compare_h.value : '0;
     assign readback_array[47][0:0] = (decoded_reg_strb.RESET_REQUEST && !decoded_req_is_wr) ? field_storage.RESET_REQUEST.mcu_req.value : '0;
     assign readback_array[47][31:1] = '0;
-    assign readback_array[48][0:0] = (decoded_reg_strb.CALIPTRA_BOOT_GO && !decoded_req_is_wr) ? field_storage.CALIPTRA_BOOT_GO.go.value : '0;
+    assign readback_array[48][0:0] = (decoded_reg_strb.MCI_BOOTFSM_GO && !decoded_req_is_wr) ? field_storage.MCI_BOOTFSM_GO.go.value : '0;
     assign readback_array[48][31:1] = '0;
     assign readback_array[49][15:0] = (decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE && !decoded_req_is_wr) ? field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value : '0;
     assign readback_array[49][31:16] = '0;

@@ -31,6 +31,7 @@ import mci_pkg::*;
     output logic fw_boot_upd_reset,     // First MCU reset request
     output logic fw_hitless_upd_reset,  // Other MCU reset requests
     output logic mcu_reset_once, // Has MCU been reset before?
+    output mci_boot_fsm_state_e boot_fsm,
 
     // SoC signals
     input  logic mci_boot_seq_brkpoint,
@@ -48,7 +49,6 @@ import mci_pkg::*;
     // Caliptra signals
 );
 
-mci_boot_fsm_state_e boot_fsm;
 mci_boot_fsm_state_e boot_fsm_nxt;
 mci_boot_fsm_state_e boot_fsm_prev;
 

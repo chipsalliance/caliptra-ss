@@ -16,6 +16,7 @@
 
 module mci_reg_top 
     import mci_reg_pkg::*;
+    import mci_pkg::*;
     #(
     )
     (
@@ -24,6 +25,7 @@ module mci_reg_top
     // Resets
     input logic mci_rst_b,
     input logic mcu_rst_b,
+    input logic cptra_rst_b,
     input logic mci_pwrgood,
 
     // REG HWIF signals
@@ -75,10 +77,11 @@ module mci_reg_top
     input logic mcu_sram_single_ecc_error,
     input logic mcu_sram_double_ecc_error,
 
-    // Reset status
+    // Boot status
     input  logic mcu_reset_once,
     input  logic fw_boot_upd_reset,     // First MCU reset request
     input  logic fw_hitless_upd_reset,  // Other MCU reset requests
+    input  mci_boot_fsm_state_e boot_fsm, 
 
     
     // Caliptra internal fabric response interface
@@ -245,7 +248,8 @@ assign mci_reg_hwif_in.mcu_req      = mcu_req;
 assign mci_reg_hwif_in.CAPABILITIES = '0; // FIXME
 assign mci_reg_hwif_in.HW_REV_ID = '0; // FIXME
 assign mci_reg_hwif_in.HW_CONFIG = '0; // FIXME
-assign mci_reg_hwif_in.FLOW_STATUS = '0; // FIXME
+
+assign mci_reg_hwif_in.MCI_BOOTFSM_GO.go = '0; // FIXME connect to DMI
 
 
 assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE = '1; // FIXME
@@ -257,6 +261,14 @@ assign mci_reg_hwif_in.STICKY_LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
 assign mci_reg_hwif_in.STICKY_LOCKABLE_SCRATCH_REG = '0; // FIXME
 assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG_CTRL = '0; // FIXME
 assign mci_reg_hwif_in.LOCKABLE_SCRATCH_REG = '0; // FIXME
+
+
+
+
+
+
+
+
 
 // mtime always increments, but if it's being written by software the write
 // value will update the register. Deasserting incr in this case prevents the
@@ -326,8 +338,13 @@ end
 assign mci_reg_hwif_in.RESET_REQUEST.mcu_req.hwclr = ~mcu_rst_b;
 
 ///////////////////////////////////////////////
-// Reset reason
+// Boot FSM Status
 ///////////////////////////////////////////////
+
+assign mci_reg_hwif_in.RESET_STATUS.cptra_reset_sts.next = ~cptra_rst_b;
+assign mci_reg_hwif_in.RESET_STATUS.mcu_reset_sts.next   = ~mcu_rst_b;
+
+assign mci_reg_hwif_in.HW_FLOW_STATUS.boot_fsm.next = boot_fsm;
 
 assign mci_reg_hwif_in.RESET_REASON.FW_BOOT_UPD_RESET.next = fw_boot_upd_reset; 
 

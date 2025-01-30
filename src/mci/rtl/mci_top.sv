@@ -173,6 +173,7 @@ module mci_top
     logic mcu_reset_once;
     logic fw_boot_upd_reset;     // First MCU reset request
     logic fw_hitless_upd_reset;  // Other MCU reset requests
+     mci_boot_fsm_state_e boot_fsm;
 
 
 // AIX MANAGER TIEOFFS - FIXME
@@ -313,11 +314,12 @@ mci_boot_seqr #(
     .cptra_rst_b,
 
     // Internal signals
-    .caliptra_boot_go(mci_reg_hwif_out.CALIPTRA_BOOT_GO.go),
+    .caliptra_boot_go(mci_reg_hwif_out.MCI_BOOTFSM_GO.go),
     .mcu_rst_req(mci_reg_hwif_out.RESET_REQUEST.mcu_req),
     .fw_boot_upd_reset,     // First MCU reset request
     .fw_hitless_upd_reset,  // Other MCU reset requests
     .mcu_reset_once,
+    .boot_fsm,
 
     // SoC signals
     .mci_boot_seq_brkpoint,
@@ -419,9 +421,10 @@ mci_reg_top i_mci_reg_top (
     .clk,
 
     // MCI Resets
-    .mci_rst_b      (mci_rst_b),// FIXME: Need to sync reset
-    .mcu_rst_b      (mcu_rst_b),// FIXME: Need to sync reset
-    .mci_pwrgood    (mci_pwrgood),       // FIXME: Need to sync
+    .mci_rst_b      (mci_rst_b),    // FIXME: Need to sync reset
+    .mcu_rst_b      (mcu_rst_b),    // FIXME: Need to sync reset
+    .cptra_rst_b    (cptra_rst_b),  // FIXME: Need to sync reset
+    .mci_pwrgood    (mci_pwrgood),  // FIXME: Need to sync
 
     // REG HWIF signals
     .mci_reg_hwif_out,
@@ -472,10 +475,11 @@ mci_reg_top i_mci_reg_top (
     .mcu_sram_single_ecc_error,
     .mcu_sram_double_ecc_error,
 
-    // Reset status
+    // Boot status
     .mcu_reset_once,
     .fw_boot_upd_reset,     // First MCU reset request
     .fw_hitless_upd_reset,  // Other MCU reset requests
+    .boot_fsm,
     
     // Caliptra internal fabric response interface
     .cif_resp_if (mci_reg_req_if.response)
