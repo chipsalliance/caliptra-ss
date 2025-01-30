@@ -26,9 +26,8 @@
   - [Programming interface](#programming-interface)
   - [Sequences](#sequences)
   - [How to test](#how-to-test)
-  - [Other requirements](#other-requirements)
 - [Caliptra Core](#caliptra-core)
-- [MCU](#mcu)
+- [MCU (Manufacturer Control Unit)](#mcu-manufacturer-control-unit)
   - [Overview](#overview-1)
     - [Parameters \& Defines](#parameters--defines)
     - [MCU Top : Interface \& Signals](#mcu-top--interface--signals)
@@ -76,7 +75,7 @@
     - [MCU Hitless Patch Flow](#mcu-hitless-patch-flow)
     - [Error Flows](#error-flows)
   - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
-  - [Other requirements](#other-requirements-1)
+  - [Other requirements](#other-requirements)
 - [I3C core](#i3c-core)
   - [Overview](#overview-5)
   - [Integration Considerations](#integration-considerations-1)
@@ -88,7 +87,6 @@
   - [How to test : Smoke \& more](#how-to-test--smoke--more-2)
     - [Smoke Test](#smoke-test-1)
     - [Advance Test](#advance-test)
-- [Memories](#memories)
 - [Terminology](#terminology)
 
 
@@ -160,6 +158,17 @@ By performing these design and verification tasks, the integrator ensures that t
 1. **Replace the AXI Interconnect**: 
 The subsystem utilizes an AXI-based interconnect to facilitate communication between components, with the Caliptra core connecting via an AXI interface. The integrator must replace the default AXI interconnect component with their proprietary interface. This ensures that the subsystem can communicate effectively with the rest of the subsystem components using the integrator's specific interconnect architecture.
 2. **Connect the Memories**: The integrator must connect the various memory components required by the subsystem. These memory components are used for storing data and instructions necessary for the operation of the Caliptra subsystem.
+
+  | **Memory Category** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
+  |---------------------|-----------------------|--------------------------------------|----------|-----------------|---------------------------------------------------------------------------------|
+  | **MCU0**            | Instruction ROM       | `mcu_rom_mem_export_if`              | TBD      | Read-Only       | Stores the instructions for MCU0 execution                                      |
+  | **MCU0**            | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | TBD      | Read/Write      | Memory export for MCU0 access                                                   |
+  | **MCU0**            | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | TBD      | Read/Write      | Shared memory between MCI and MCU for data storage                              |
+  | **MAILBOX**         | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | TBD      | Read/Write      | Memory for MBOX0 communication                                                  |
+  | **MAILBOX**         | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | TBD      | Read/Write      | Memory for MBOX1 communication                                                  |
+  | **Caliptra Core**   | ICCM, DCCM IF         | `cptra_ss_cptra_core_el2_mem_export` | TBD      | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core |
+  | **Caliptra Core**   | IFU                   | `cptra_ss_mcu_rom_macro_req_if` | TBD      | Read-Only       | Interface for instruction fetch unit (IFU)                                      |
+
 3. **No Changes to Internals**: Integrators are not expected to make any changes to the internals of the design. The focus should be on ensuring proper integration and connectivity of the subsystem components.
 
 ## Verification Considerations
@@ -181,6 +190,9 @@ The integration of the Caliptra Subsystem begins with the instantiation of the t
 
 ## Slave Address map
 
+caliptra-ss\src\integration\rtl\soc_address_map.h
+caliptra-ss\src\integration\rtl\soc_address_map_defines.svh 
+ 
 The following address map is a **suggested address** map for the given subsystem design. It details the memory layout and the connections between different components within the Caliptra subsystem.
 
 | Start Address    | End Address      | Slave | Name              | Description               |
@@ -377,7 +389,15 @@ The `cptra_ss_pwrgood_i` signal serves as an indicator of stable power for the C
 
 ## Programming interface
 
+There are two primary programming avenues to interface with the Caliptra Subsystem:
 
+1. **MCU Firmware**
+   - **Description**: This method involves programming the Microcontroller Unit (MCU) to execute firmware.
+   - **Details**: For more information on how to program the MCU and execute firmware via the MCU, please refer to the [MCU Programming Interface](#) documentation.
+
+2. **Caliptra Firmware**
+   - **Description**: This method involves programming the Caliptra Core to execute firmware.
+   - **Details**: For more information on how to program and execute Caliptra Core firmware, please refer to the [Caliptra Programming Interface](#) documentation.
 
 ## Sequences
 
@@ -389,15 +409,27 @@ The `cptra_ss_pwrgood_i` signal serves as an indicator of stable power for the C
 
 ## How to test
 
+Reference tests are available at `caliptra-ss\src\integration\test_suites` 
 
-## Other requirements
+| Test Suite Name                | Description                                                                 |
+|--------------------------------|-----------------------------------------------------------------------------|
+| `MCU_HELLO_WORLD`              | Runs a basic "Hello World" program on the MCU to verify basic operation.    |
+| `MCU_CPTRA_BRINGUP`            | Tests the bring-up sequence of the MCU in the Caliptra Subsystem.           |
+| `MCU_DCCM_ACCESS`              | Validates access to the Data Closely Coupled Memory (DCCM) by the MCU.      |
+| `MCU_FUSE_CTRL_BRINGUP`        | Tests the bring-up sequence of the Fuse Controller by the MCU.              |
+| `MCU_LMEM_EXE`                 | Tests execution from the Local Memory (LMEM) by the MCU.                    |
+| `I3C_SMOKE`                    | Performs basic smoke tests on the I3C interface to ensure proper functionality. |
+| `FUSE_PROV_WITH_LC_CTRL`       | Tests fuse provisioning in conjunction with the Lifecycle Controller.       |
+| `CALIPTRA_SS_LC_CTRL_BRINGUP`  | Tests the bring-up sequence of the Lifecycle Controller.                    |
+| `CALIPTRA_SS_LC_CTRL_ST_TRANS` | Validates state transitions of the Lifecycle Controller.                    |
+
 
 # Caliptra Core
 
 Follow the link for 
 [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md)
 
-# MCU 
+# MCU (Manufacturer Control Unit)
 
 ## Overview
 
@@ -567,7 +599,6 @@ The programming interface for the Fuse Controller (FC) is designed to manage lif
      - Write the partition base address to `FUSE_CTRL_DIRECT_ACCESS_ADDRESS`.
      - Trigger the digest calculation command (`0x4`) in `FUSE_CTRL_DIRECT_ACCESS_CMD`.
      - Poll the `DAI_IDLE` bit in `FUSE_CTRL_STATUS` to confirm the operation is complete.
----
 
 ## Sequences: Reset, Boot
 
@@ -581,7 +612,7 @@ The programming interface for the Fuse Controller (FC) is designed to manage lif
    - Perform a full integrity check by triggering `FUSE_CTRL_CHECK_TRIGGER` and ensure the system is error-free before proceeding.
    - Validate readiness by checking the `FUSE_CTRL_STATUS` register.
 
----
+
 
 ## How to test : Smoke & more
 The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
@@ -1497,22 +1528,6 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
     - Boots the device using the recovery image
   - **MCTP Test seqeunce**
     - TBD
-
-
-# Memories 
-
-| **Memory Category**                     | **Memory Name**                         | **Interface**                                    | **Size**           | **Access Type**   | **Description**                                             |
-|-----------------------------------------|-----------------------------------------|--------------------------------------------------|--------------------|-------------------|-------------------------------------------------------------|
-| **Caliptra Subsystem MCU0**                    | **Instruction ROM**                     | `mcu_rom_mem_export_if`                          | TBD                | Read-Only         | Stores the instructions for MCU0 execution                   |
-| **Caliptra Subsystem MCU0**                    | **Memory Export**                       | `cptra_ss_mcu0_el2_mem_export`                   | TBD                | Read/Write        | Memory export for MCU0 access                               |
-| **Caliptra Subsystem MCU0**                    | **Shared Memory (SRAM)**                | `cptra_ss_mci_mcu_sram_req_if`                   | TBD                | Read/Write        | Shared memory between MCI and MCU for data storage           |
-| **Caliptra Subsystem MBOX**                   | **MBOX0 Memory**                        | `cptra_ss_mci_mbox0_sram_req_if`                 | TBD                | Read/Write        | Memory for MBOX0 communication                               |
-| **Caliptra Subsystem MBOX**                   | **MBOX1 Memory**                        | `cptra_ss_mci_mbox1_sram_req_if`                 | TBD                | Read/Write        | Memory for MBOX1 communication                               |
-| **Caliptra Core**                       | **ICCM, DCCM IF**                       | `cptra_ss_cptra_core_el2_mem_export`             | TBD                | Read/Write        | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core |
-| **Caliptra Core**                       | **IFU (Instruction Fetch Unit)**        | `cptra_ss_mcu_rom_macro_req_if`                  | TBD                | Read-Only         | Interface for instruction fetch unit (IFU)                   |
-
-
-
 
 # Terminology
 
