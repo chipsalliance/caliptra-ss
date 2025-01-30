@@ -23,7 +23,7 @@
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
 `include "i3c_defines.svh"
-// `include "caliptra_ss_includes.svh"
+`include "caliptra_ss_includes.svh"
 
 module caliptra_ss_top
     import axi_pkg::*;
@@ -122,9 +122,9 @@ module caliptra_ss_top
     mci_mcu_sram_if.request cptra_ss_mcu_rom_macro_req_if, // MCU ROM interface
 
 // Caliptra SS MCU 
-    input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
-    input logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
-    input logic [31:0] cptra_ss_strap_clp_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_clp_axi_user_i,
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,

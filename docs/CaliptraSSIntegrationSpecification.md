@@ -180,13 +180,9 @@ The integrator must connect the I3C core to the appropriate driver for the GPIO 
 
 The integration of the Caliptra Subsystem begins with the instantiation of the top-level RTL module, caliptra_ss_top.sv. This module serves as the primary entry point for the subsystem and encapsulates all the logic and components required for the functionality of the Caliptra Root of Trust (RoT). All signals must be connected based on the detailed interface and signal descriptions provided in this document. Ensure adherence to the signal direction, width, and functionality to guarantee proper integration with the host SoC.
 
-## Parameters 
+## Parameters & Defines
 
-> Add the location to parameters file
-
-## Defines
-
-> Add the location to defines file
+File at path includes parameters and defines for Caliptra Subystem `src/integration/rtl/caliptra_ss_includes.svh`
 
 ## Slave Address map
 
