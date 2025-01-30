@@ -248,7 +248,7 @@ assign mci_reg_hwif_in.HW_CONFIG = '0; // FIXME
 assign mci_reg_hwif_in.FLOW_STATUS = '0; // FIXME
 
 
-assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE = '0; // FIXME
+assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE = '1; // FIXME
 assign mci_reg_hwif_in.STICKY_DATA_VAULT_CTRL = '0; // FIXME
 assign mci_reg_hwif_in.STICKY_DATA_VAULT_ENTRY = '0; // FIXME
 assign mci_reg_hwif_in.DATA_VAULT_CTRL = '0; // FIXME
