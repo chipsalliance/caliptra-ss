@@ -23,6 +23,7 @@
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
 `include "i3c_defines.svh"
+// `include "caliptra_ss_includes.svh"
 
 module caliptra_ss_top
     import axi_pkg::*;
