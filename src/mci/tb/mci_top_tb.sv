@@ -91,8 +91,8 @@ module mci_top_tb
     .agg_error_non_fatal('0),
 
     // SOC Interrupts
-    .mci_error_fatal(),
-    .mci_error_non_fatal(),
+    .all_error_fatal(),
+    .all_error_non_fatal(),
     
     // Generic in/out
     .mci_generic_input_wires('0),

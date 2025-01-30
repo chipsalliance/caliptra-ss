@@ -140,8 +140,8 @@ module caliptra_ss_top
     input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
 
     output logic [63:0] cptra_ss_mci_generic_output_wires_o,
-    output logic cptra_ss_mci_error_fatal_o,
-    output logic cptra_ss_mci_error_non_fatal_o,
+    output logic cptra_ss_all_error_fatal_o,
+    output logic cptra_ss_all_error_non_fatal_o,
 
     input logic cptra_ss_mcu_jtag_tck_i,
     input logic cptra_ss_mcu_jtag_tms_i,
@@ -1112,8 +1112,8 @@ module caliptra_ss_top
         .agg_error_fatal(1'b0),
         .agg_error_non_fatal(1'b0),
 
-        .mci_error_fatal(cptra_ss_mci_error_fatal_o),
-        .mci_error_non_fatal(cptra_ss_mci_error_non_fatal_o),
+        .all_error_fatal(cptra_ss_all_error_fatal_o),
+        .all_error_non_fatal(cptra_ss_all_error_non_fatal_o),
 
         .mci_generic_input_wires(cptra_ss_mci_generic_input_wires_i),
         .mci_generic_output_wires(cptra_ss_mci_generic_output_wires_o),

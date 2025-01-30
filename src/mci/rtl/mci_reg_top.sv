@@ -52,8 +52,8 @@ module mci_reg_top
     input logic [31:0] agg_error_non_fatal,
 
     // SOC Interrupts
-    output logic mci_error_fatal,
-    output logic mci_error_non_fatal,
+    output logic all_error_fatal,
+    output logic all_error_non_fatal,
 
     // MCU interrupts
     output logic mcu_timer_int,
@@ -684,54 +684,54 @@ always_comb unmasked_agg_error_non_fatal_is_set = (mci_reg_hwif_out.AGG_ERROR_NO
 // Interrupt only deasserts on reset
 always_ff@(posedge clk or negedge mci_rst_b) begin
     if(~mci_rst_b) begin
-        mci_error_fatal <= 1'b0;
+        all_error_fatal <= 1'b0;
     end
     // FW write that SETS a new (non-masked) bit results in interrupt assertion
     else if (cif_resp_if.dv &&
              mci_reg_hwif_out.FW_ERROR_FATAL.error_code.swmod &&
              |(cif_resp_if.req_data.wdata & ~mci_reg_hwif_out.internal_fw_error_fatal_mask.mask.value & ~mci_reg_hwif_out.FW_ERROR_FATAL.error_code.value)) begin
-        mci_error_fatal <= 1'b1;
+        all_error_fatal <= 1'b1;
     end
     // HW event that SETS a new (non-masked) bit results in interrupt assertion
     else if (unmasked_hw_error_fatal_write) begin
-        mci_error_fatal <= 1'b1;
+        all_error_fatal <= 1'b1;
     end
     // AGG event that SETS a new (non-masked) bit results in interrupt assertion
     else if (unmasked_agg_error_fatal_write) begin
-        mci_error_fatal <= 1'b1;
+        all_error_fatal <= 1'b1;
     end
     // NOTE: There is no mechanism to clear interrupt assertion by design.
     //       Platform MUST perform mci_rst_b in order to clear error_fatal
     //       output signal, per the integration spec.
     else begin
-        mci_error_fatal <= mci_error_fatal;
+        all_error_fatal <= all_error_fatal;
     end
 end
 always_ff@(posedge clk or negedge mci_rst_b) begin
     if(~mci_rst_b) begin
-        mci_error_non_fatal <= 1'b0;
+        all_error_non_fatal <= 1'b0;
     end
     // FW write that SETS a new (non-masked) bit results in interrupt assertion
     else if (cif_resp_if.dv &&
              mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.swmod &&
              |(cif_resp_if.req_data.wdata & ~mci_reg_hwif_out.internal_fw_error_non_fatal_mask.mask.value  & ~mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.value)) begin
-        mci_error_non_fatal <= 1'b1;
+        all_error_non_fatal <= 1'b1;
     end
     // HW event that SETS a new (non-masked) bit results in interrupt assertion
     else if (unmasked_hw_error_non_fatal_write) begin
-        mci_error_non_fatal <= 1'b1;
+        all_error_non_fatal <= 1'b1;
     end
     // AGG event that SETS a new (non-masked) bit results in interrupt assertion
     else if (unmasked_agg_error_non_fatal_write) begin
-        mci_error_non_fatal <= 1'b1;
+        all_error_non_fatal <= 1'b1;
     end
     // If FW performs a write that clears all outstanding (unmasked) ERROR_NON_FATAL events, deassert interrupt
     else if (~unmasked_hw_error_non_fatal_is_set && ~unmasked_agg_error_non_fatal_is_set && 
              ~|(~mci_reg_hwif_out.internal_fw_error_non_fatal_mask.mask.value & mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.value)) begin
-        mci_error_non_fatal <= 1'b0;
+        all_error_non_fatal <= 1'b0;
     end
     else begin
-        mci_error_non_fatal <= mci_error_non_fatal;
+        all_error_non_fatal <= all_error_non_fatal;
     end
 end
 

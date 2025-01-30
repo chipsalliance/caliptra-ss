@@ -65,8 +65,8 @@ module mci_top
     input logic [31:0] agg_error_non_fatal,
 
     // SOC Interrupts
-    output logic mci_error_fatal,
-    output logic mci_error_non_fatal,
+    output logic all_error_fatal,
+    output logic all_error_non_fatal,
     
     // Generic in/out
     input  logic [63:0] mci_generic_input_wires,
@@ -454,8 +454,8 @@ mci_reg_top i_mci_reg_top (
     .agg_error_non_fatal,
 
     // SOC Interrupts
-    .mci_error_fatal,
-    .mci_error_non_fatal,
+    .all_error_fatal,
+    .all_error_non_fatal,
     
     // Straps
     .strap_prod_debug_unlock_pk_hash,

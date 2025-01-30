@@ -1652,8 +1652,8 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;
     logic [63:0]  cptra_ss_mci_generic_input_wires_i; 
     logic [63:0]  cptra_ss_mci_generic_output_wires_o;
-    logic         cptra_ss_mci_error_fatal_o;
-    logic         cptra_ss_mci_error_non_fatal_o;
+    logic         cptra_ss_all_error_fatal_o;
+    logic         cptra_ss_all_error_non_fatal_o;
     logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
     logic [31:0]  cptra_ss_strap_clp_axi_user_i;
@@ -1809,8 +1809,8 @@ module caliptra_ss_top_tb
         .cptra_ss_lc_Allow_RMA_on_PPD_i,
 
         .cptra_ss_mci_generic_output_wires_o,
-        .cptra_ss_mci_error_fatal_o,
-        .cptra_ss_mci_error_non_fatal_o,
+        .cptra_ss_all_error_fatal_o,
+        .cptra_ss_all_error_non_fatal_o,
 
         .cptra_ss_mcu_jtag_tck_i,
         .cptra_ss_mcu_jtag_tms_i,
