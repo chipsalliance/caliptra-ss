@@ -782,6 +782,8 @@ The entire MCU SRAM has ECC protection. Unlike MCI mailboxes, there is no config
 
 ### Interrupts
 
+![](images/MCI-Interrupts.png)
+
 All interrupt status and control registers live in the CSR block. Each interrupt has the following properties:
 - Status: W1C for SW to clear
 - Enable: Prevents status from propagating. It does not block the status from being set.
@@ -794,7 +796,7 @@ There are two different groups of interrupts
 
 Each group of interrupts has its own global status and enable registers that are an aggregate of all interrupts in the group. These status and enable registers have the same properties as the individual interrupt status and enable registers.  
 
-All interrupt groups are ORed and sent out on a signal mci_inter pin. 
+All interrupt groups are ORed and sent out on a signal mci_intr pin. 
 
 SW access to all interrupt registers are restricted to MCU.
 
@@ -852,7 +854,7 @@ The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At thi
 1. Assert mci_boot_seq_brkpoint
 2. Deassert MCI Reset
 3. DEBUG ACCESS TO MCI
-4. Set MCI's BREKPOINT_GO register to 1
+4. Set MCI's BRKPOINT_GO register to 1
     - Through one of the [MCI Debug Access](#MCI-Debug-Access) methods. 
 5. FSM will continue
 
