@@ -12,6 +12,7 @@
 - [Integration Considerations](#integration-considerations)
   - [Design Considerations](#design-considerations)
   - [Verification Considerations](#verification-considerations)
+- [Verification View of Caliptra Subsystem](#verification-view-of-caliptra-subsystem)
   - [Caliptra Subsystem integration requirements (WIP)](#caliptra-subsystem-integration-requirements-wip)
   - [Memory Requirements](#memory-requirements)
 - [Caliptra Subsystem Top](#caliptra-subsystem-top)
@@ -142,7 +143,7 @@ Caliptra Subsystem includes:
   - **I3C Core**: An interface for connecting and communicating with I3C devices, which are used for providing streaming boot support and communicates with other I3C host controllers.
   - **Life Cycle Controller**: A component that manages the different stages of the subsystem's lifecycle, including initialization, operation, and shutdown.
   - **Fuse Controller (OTP)**: A one-time programmable memory controller used for storing critical configuration data and security keys.
-  - **MCI (Memory Controller Interface)**: Manages the communication between the processor and the memory components.
+  - **MCI (Manufacturer Control Interface (for MCU))**: Manages the communication between the processor and the memory components.
   - **Memories**: Various memory components used for storing data and instructions required by the subsystem.
 
 # Integration Considerations
@@ -166,6 +167,12 @@ The subsystem utilizes an AXI-based interconnect to facilitate communication bet
 
 1. **Connect the I3C Core GPIO with I3C host driver**: 
 The integrator must connect the I3C core (two target I3C devices) to the appropriate driver for the GPIO pins. This connection is crucial for enabling communication with I3C devices, which are used for communication within the subsystem.
+
+# Verification View of Caliptra Subsystem 
+
+Follwing block diagram shows details on verification view of Caliptra Subsystem
+
+![alt text](./images/ValidationViewofSS.png)
 
 ## Caliptra Subsystem integration requirements (WIP)
 
@@ -397,7 +404,7 @@ Integrator must connect, following list of manager and subordinates to axi inter
   |-------------------------------|-------------------------------------------------------------------|
   | `cptra_ss_mcu_lsu_m_axi_if`   | Manager interface for MCU Load/Store Unit (LSU)                   |
   | `cptra_ss_mcu_ifu_m_axi_if`   | Manager interface for MCU Instruction Fetch Unit (IFU)            |
-  | `cptra_ss_mci_m_axi_if`       | Manager interface for Memory Controller Interface (MCI)           |
+  | `cptra_ss_mci_m_axi_if`       | Manager interface for Manufacturer Control Interface (for MCU) (MCI)           |
   | `cptra_ss_cptra_core_m_axi_if`| Manager interface for the Caliptra Core AXI transactions          |
 
 - Subordinate Address Map (reference only) / List of sub connected to Interconnect
@@ -410,7 +417,7 @@ Integrator must connect, following list of manager and subordinates to axi inter
     | 64'h2000_4000    | 64'h2000_4FFF    | 1     | I3c               | I3C Core                  |
     | 64'h8000_0000    | 64'h80FF_FFFF    | 2     | n/a               | Reserved                  |
     | 64'h3000_0000    | 64'h3FFF_FFFF    | 3     | SoC IFC (tb)      | SoC / Testbench           |
-    | 64'h2100_0000    | 64'h2200_0000    | 4     | MCI               | Memory Controller Interface |
+    | 64'h2100_0000    | 64'h2200_0000    | 4     | MCI               | Manufacturer Control Interface (for MCU) |
     | 64'h7000_0000    | 64'h7000_01FF    | 5     | Fuse Ctrl         | Fuse Controller           |
     | 64'h7000_0200    | 64'h7000_03FF    | 6     | Fuse Ctrl Core    | Fuse Controller Core      |
     | 64'h7000_0400    | 64'h7000_05FF    | 7     | Life Cycle Ctrl   | Life Cycle Controller     |
@@ -713,8 +720,8 @@ Internal    |output      |   1    | `hw_rev_o`            |                     
 ## Memory Map / Address Map
 
 See LC Controller Register Map**TODO: link will be provided**.
-| Register Offset  | Description        | Address  |
-|------------------|:-------------------|:-------- |                                      
+<!-- Register Offset                             | Description                                           | Address
+-----------------------------------------   |:------------------------------------------------------|:------    |                                       
 `LC_CTRL_ALERT_TEST_OFFSET`                 | Alert test register                                   |   0x0   |         
 `LC_CTRL_STATUS_OFFSET`                     | Status register                                       |   0x4   |     
 `LC_CTRL_CLAIM_TRANSITION_IF_REGWEN_OFFSET` | Claim transition interface write-enable register      |   0x8   |                                         
@@ -1576,6 +1583,8 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
   - **MCTP Test seqeunce**
     - TBD
 
+
+
 # Terminology
 
 | Abbreviation | Term                                   | Description                                                                                      |
@@ -1585,6 +1594,6 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | ECC          | Error Correction Code                  | A method of detecting and correcting errors in data storage and transmission.                    |
 | RISCV        | Reduced Instruction Set Computer Five  | An open standard instruction set architecture based on established RISC principles.         |
 | MCU          | Manufacturer Control Unit              | A small computer on a single integrated circuit containing a processor core, memory, and programmable input/output peripherals. |
-| MCI          | Memory Controller Interface            | Manages the communication between the processor and the memory components.                       |
+| MCI          | Manufacturer Control Interface (for MCU)    | Manages the communication between the processor and the memory components.                       |
 | FC           | Fuse Controller                        | A one-time programmable memory controller used for storing critical configuration data and security keys. |
 | LCC          | Life Cycle Controller                  | Manages the different stages of the subsystem's lifecycle, including initialization, operation, and shutdown. |
