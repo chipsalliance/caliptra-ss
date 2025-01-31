@@ -88,8 +88,6 @@
     - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
     - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
   - [How to test : Smoke \& more](#how-to-test--smoke--more-2)
-    - [Smoke Test](#smoke-test-1)
-    - [Advance Test](#advance-test)
 - [Terminology](#terminology)
 
 
@@ -886,16 +884,16 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 | Facing | Parameter name | Location | Description |
 | :---- | :---- | :---- | :---- |
-| External | AXI\_ADDR\_WIDTH | mci\_top | AXI address width |
-| External | AXI\_DATA\_WIDTH | mci\_top | AXI data width |
-| External | AXI\_USER\_WIDTH | mci\_top | AXI user width |
-| External | AXI\_ID\_WIDTH | mci\_top | AXI ID width |
+| External | `AXI\_ADDR\_WIDTH` | mci\_top | AXI address width |
+| External | `AXI\_DATA\_WIDTH` | mci\_top | AXI data width |
+| External | `AXI\_USER\_WIDTH` | mci\_top | AXI user width |
+| External | `AXI\_ID\_WIDTH` | mci\_top | AXI ID width |
 
 **Table: MCU SRAM Integration Parameters**
 
 | Facing | Parameter name | Location | Description |
 | :---- | :---- | :---- | :---- |
-| External | MCU\_SRAM\_SIZE\_KB  | mci\_top | Size of MCU SRAM in KB. i.e. Min: 4 Max: 2048(2MB) |
+| External | `MCU\_SRAM\_SIZE\_KB`  | mci\_top | Size of MCU SRAM in KB. i.e. Min: 4 Max: 2048(2MB) |
 
 **Table: MCI Boot Sequencer Integration Parameters**
 
@@ -905,12 +903,12 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 **Table: MCI MBOX Integration Parameters**
 
-| Facing | Parameter name | Location | Description |
-| :---- | :---- | :---- | :---- |
-| FIXME    | MCI\_MBOX0\_DMI\_DLEN\_ADDR |  mci\_top | FIXME |
-| External | MCI\_MBOX0\_SIZE\_KB | external | mci\_top | Size of MBOX0 SRAM. If set to 0 the entire MBOX0 is removed from MCI. Min: 0 Max 2048 (2MB) |
-| FIXME    | MCI\_MBOX1\_DMI\_DLEN\_ADDR |  mci\_top | FIXME |
-| External | MCI\_MBOX1\_SIZE\_KB | external | mci\_top | Size of MBOX1 SRAM. If set to 0 the entire MBOX1 is removed from MCI. Min: 0 Max 2048 (2MB) |
+| Facing   | Parameter name              | Location | Description                                                                 |
+|:-------- |:----------------------------|:---------|:-------------------------------------------------------------------------- |
+| FIXME    | `MCI_MBOX0_DMI_DLEN_ADDR`   | mci_top  | FIXME                                                                      |
+| External | `MCI_MBOX0_SIZE_KB`         | external | Size of MBOX0 SRAM. If set to 0 the entire MBOX0 is removed from MCI. Min: 0 Max: 2048 (2MB) |
+| FIXME    | `MCI_MBOX1_DMI_DLEN_ADDR`   | mci_top  | FIXME                                                                      |
+| External | `MCI_MBOX1_SIZE_KB`         | external | Size of MBOX1 SRAM. If set to 0 the entire MBOX1 is removed from MCI. Min: 0 Max: 2048 (2MB) |
 
 **FIXME none right now?**   
 **Table: MCI Integration Definitions**
@@ -939,47 +937,48 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 | Facing | Type | Width | Name | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| External | Input | 1 | clk |  | MCI Clock. Connected to subsystem top level clk input.|
+| External | Input | 1 | `clk` |  | MCI Clock. Connected to subsystem top level clk input.|
 
 **Table: MCI Resets**
 
-| Facing | Type | Width | Name | Clock | Description |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| External | Input | 1 | mci\_pwrgood | Async assert Sync deassert clk | Active high power good indicator. Deepest reset domain for MCI.  |
-| External | Input | 1 | mci\_rst\_b | Async assert Sync deassert clk | Active low asynchronous reset for MCI.  |
-| Internal | Output | 1 | mcu\_rst\_b | clk | Reset for MCU.  When scan\_mode set this is directly controlled by mci\_rst\_b |
-| Internal | Output | 1 | cptra\_rst\_b | clk | Reset for Caliptra. When scan\_mode set this is directly controlled by mci\_rst\_b  |
+| Facing   | Type   | Width | Name          | Clock | Description                                                                 |
+|:-------- |:------ |:----- |:------------- |:----- |:-------------------------------------------------------------------------- |
+| External | Input  | 1     | `mci_pwrgood` | Async assert Sync deassert clk | Active high power good indicator. Deepest reset domain for MCI.             |
+| External | Input  | 1     | `mci_rst_b`   | Async assert Sync deassert clk | Active low asynchronous reset for MCI.                                      |
+| Internal | Output | 1     | `mcu_rst_b`   | clk   | Reset for MCU. When `scan_mode` is set, this is directly controlled by `mci_rst_b`. |
+| Internal | Output | 1     | `cptra_rst_b` | clk   | Reset for Caliptra. When `scan_mode` is set, this is directly controlled by `mci_rst_b`. |
 
 **Table: MCI AXI Interface**
 
-| Facing | Type | Width | Name | Clock | Description |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| External | interface |    | s\_axi\_w\_if | clk | AXI subordinate write interface. |
-| External | interface |    | s\_axi\_r\_if | clk | AXI subordinate write interface. |
-| External | interface |    | m\_axi\_w\_if | clk | AXI manager write interface. |
-| External | interface |    | m\_axi\_r\_if | clk | AXI manager read interface. |
+| Facing   | Type      | Width | Name          | Clock | Description                      |
+|:-------- |:--------- |:----- |:------------- |:----- |:-------------------------------- |
+| External | interface |       | `s_axi_w_if`  | clk   | AXI subordinate write interface. |
+| External | interface |       | `s_axi_r_if`  | clk   | AXI subordinate read interface.  |
+| External | interface |       | `m_axi_w_if`  | clk   | AXI manager write interface.     |
+| External | interface |       | `m_axi_r_if`  | clk   | AXI manager read interface.      |
 
 
 **Table: MCI Straps**
 
-| Facing | Type | Width | Name | Clock | Description |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| External | Input | AXI\_USER\_WIDTH | strap\_mcu\_lsu\_axi\_user | STATIC | AXI USER for MCU’s load/store unit. |
-| External | Input | AXI\_USER\_WIDTH | strap\_mcu\_ifu\_axi\_user | STATIC | AXI USER for MCU’s instruction fetch unit. |
-| External | Input | AXI\_USER\_WIDTH | strap\_clp\_axi\_user | STATIC | AXI USER for Caliptra. |
-| External | Input | 32 | strap\_mcu\_reset\_vector | STATIC | Default reset vector for MCI. Can be overridden via MCI register write.  |
-
+| Facing   | Type   | Width          | Name                      | Clock  | Description                                                   |
+|:-------- |:------ |:-------------- |:------------------------- |:------ |:------------------------------------------------------------- |
+| External | Input  | `AXI_USER_WIDTH` | `strap_mcu_lsu_axi_user`   | STATIC | AXI USER for MCU’s load/store unit.                           |
+| External | Input  | `AXI_USER_WIDTH` | `strap_mcu_ifu_axi_user`   | STATIC | AXI USER for MCU’s instruction fetch unit.                    |
+| External | Input  | `AXI_USER_WIDTH` | `strap_clp_axi_user`       | STATIC | AXI USER for Caliptra.                                        |
+| External | Input  | 32             | `strap_mcu_reset_vector`  | STATIC | Default reset vector for MCI. Can be overridden via MCI register write. |
 
 **Table: MCI MISC Interface**
 
-| Facing | Type | Width | Name | Clock | Description |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| Internal | Input | 1 | mcu\_sram\_fw\_exec\_region\_lock | Async | MCU SRAM execution region protection control.  0: Caliptra access to the region 1: MCU LSU/IFU access to the region. Negedge use as an interrupt request for MCU to reset itself.  Positive edge bring MCU out of reset during hitless update flow.  |
-| External | Input | 64 | mci\_generic\_input | Async | Placeholder of input wires for late binding features. These values are reflected into registers that are exposed to MCU firmware |
-| External | Output | 64 | mci\_generic\_output | clk | Placeholder of output wires for late binding features. Firmware can set the wires appropriately via register writes. |
-| Internal | Output | 32 | mcu\_reset\_vector | clk | Reset vector for MCU whose default value is strap\_mcu\_reset\_vector but can be overridden via MCI registers. This value shall be stable whenever MCU is out of reset.  |
-| External | Input | 1 | mcu\_no\_rom\_config | Async | Enables the MCU no rom configuration flow. On boot this means MCU is held in reset until mcu\_sram\_fw\_exec\_region\_lock is asserted is asserted allowing for caliptra or some other SOC entity to populate the MCU SRAM and then bring MCU out of reset.  **FIXME** |
-| External | Input | 1 | mci\_boot\_seq\_brkpoint | Async | MCI boot sequencer breakpoint request. This should be set before mcu\_rst\_b is deasserted to ensure the MCI boot sequencer sees the request. When set the MCI boot sequencer will halt after it initializes LCC and FC. At this point the user can run any debug flows required. Once the user is ready they can assert the GO\_BREKPOINT CSR VIA FIXME allowing MCU and Caliptra to be brought out of reset.  |
+| Facing            | Type      | Width | Name                  | Clock | Description                                                                                                                                            |
+|:------------------|:----------|:------|:----------------------|:------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Internal/External | interface | 32    | `agg_error_fatal`     | Async | Fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the `all_error_fatal` output wire of MCI |
+| Internal/External | interface | 32    | `agg_error_non_fatal` | Async | Non-fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the `all_error_non_fatal` output wire of MCI. |
+| External          | Output    | 1     | `all_error_fatal`     | clk   | Fatal error interrupt for SOC consumption                                                                                                              |
+| External          | Output    | 1     | `all_error_non_fatal` | clk   | Non-fatal error interrupt for SOC consumption                                                                                                          |
+| Internal          | Output    | 1     | `mcu_timer_int`       | clk   | MCU’s standard RISC-V MTIMER interrupt.                                                                                                                |
+| Internal          | Output    | 1     | `mci_intr`            | clk   | MCI interrupt indication for MCU. This will be set when an unmasked interrupt occurs within MCI. This is a level interrupt and must be cleared by MCU firmware. |
+| Internal          | Output    | 1     | `nmi_intr`            | clk   | Non-maskable interrupt for MCU. This is connected to the watchdog (WDT) timer within MCI and will be asserted when the WDT is in cascade mode and both timers timeout. It can only be cleared by asserting `mci_rst_b`. This interrupt is also fed into the `all_error_fatal` infrastructure for SOC consumption. |
+| Internal          | Output    | 32    | `mci_nmi_vector`      | clk   | Non-maskable interrupt vector for MCU. This is controllable only by MCU FW.                                                                            |
 
 **Table: MCI Errors and Interrupts Interface**
 
@@ -996,39 +995,39 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 **Table: MCI LCC Bring Up Interface**
 
-| Facing | Type | Width | Name | Clock | Description |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| Internal | Input | 1 | lc\_done | Async | LCC initialization done response used by MCU boot sequencer to move to the next state.  |
-| Internal | Output | 1 | lc\_init | clk | LCC initialization request asserted by the MCU boot sequencer after every MCI reset.  |
+| Facing   | Type   | Width | Name          | Clock | Description                                                                 |
+|:-------- |:------ |:----- |:------------- |:----- |:-------------------------------------------------------------------------- |
+| Internal | Input  | 1     | `lc_done`     | Async | LCC initialization done response used by MCU boot sequencer to move to the next state. |
+| Internal | Output | 1     | `lc_init`     | clk   | LCC initialization request asserted by the MCU boot sequencer after every MCI reset.  |
 
 **Table: MCI FC Bring Up Interface**
 
-| Facing | Type | Width | Name | Clock | Description |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| Internal | Input | 1 | fc\_opt\_done | Async | FC initialization done response used by MCU boot sequencer to move to the next state.  |
-| Internal | Output | 1 | fc\_opt\_init | clk | FC initialization request asserted by the MCU boot sequencer after every MCI reset.  |
+| Facing   | Type   | Width | Name          | Clock | Description                                                                 |
+|:-------- |:------ |:----- |:------------- |:----- |:-------------------------------------------------------------------------- |
+| Internal | Input  | 1     | `fc_opt_done` | Async | FC initialization done response used by MCU boot sequencer to move to the next state. |
+| Internal | Output | 1     | `fc_opt_init` | clk   | FC initialization request asserted by the MCU boot sequencer after every MCI reset.  |
 
 **Table: MCI SRAM Interface**
 
-| Facing | Type | Width | Name | Clock | Description |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| External | interface | mci\_mcu\_sram\_req\_if | Data width is DATA+ECC  Address width shall be wide enough to address entire SRAM.   | clk | MCU SRAM memory interface.  |
-| External | interface | mci\_mbox0\_sram\_req\_if | Data width is DATA+ECC  Address width shall be wide enough to address entire SRAM. | clk | MBOX0 SRAM memory interface.  |
-| External | interface | mci\_mbox1\_sram\_req\_if | Data width is DATA+ECC  Address width shall be wide enough to address entire SRAM. | clk | MBOX1 SRAM memory interface.  |
+| Facing   | Type      | Width                     | Name                     | Clock | Description                                                                      |
+|:-------- |:--------- |:------------------------- |:------------------------ |:----- |:--------------------------------------------------------------------------------- |
+| External | interface | `mci_mcu_sram_req_if`     | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM.   | clk   | MCU SRAM memory interface.                                                        |
+| External | interface | `mci_mbox0_sram_req_if`   | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM.  | clk   | MBOX0 SRAM memory interface.                                                      |
+| External | interface | `mci_mbox1_sram_req_if`   | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM.  | clk   | MBOX1 SRAM memory interface.                                                      |
 
 **Table: MCI LCC Gasket Interface**
 
-| Facing | Type | Width | Name | Clock | Description |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| Internal | Input | Struct | from\_lcc\_to\_otp\_program\_i | clk | **FIXME** |
-| Internal | Input | Struct | lc\_dft\_en\_i | clk | **FIXME** |
-| Internal | Input | Struct | lc\_hw\_debug\_en\_i | clk | **FIXME** |
-| Internal | Input | Struct | from\_otp\_to\_lcc\_program\_i  | clk | **FIXME** |
-| Internal | Input | 1 | ss\_dbg\_manuf\_enable\_i | clk | **FIXME** |
-| Internal | Input | 64 | ss\_soc\_dbg\_unlock\_level\_i | clk | **FIXME** |
-| External | Output | 1 | SOC\_DFT\_EN | clk | **FIXME** |
-| External | Output | 1 | SOC\_HW\_DEBUG\_EN | clk | **FIXME** |
-| Internal | Output | Struct | security\_state\_o | clk | **FIXME** |
+| Facing   | Type   | Width  | Name                                    | Clock | Description |
+|:---------|:-------|:-------|:----------------------------------------|:------|:-----------|
+| Internal | Input  | Struct | `from_lcc_to_otp_program_i`             | clk   | **FIXME**   |
+| Internal | Input  | Struct | `lc_dft_en_i`                           | clk   | **FIXME**   |
+| Internal | Input  | Struct | `lc_hw_debug_en_i`                      | clk   | **FIXME**   |
+| Internal | Input  | Struct | `from_otp_to_lcc_program_i`             | clk   | **FIXME**   |
+| Internal | Input  | 1      | `ss_dbg_manuf_enable_i`                 | clk   | **FIXME**   |
+| Internal | Input  | 64     | `ss_soc_dbg_unlock_level_i`             | clk   | **FIXME**   |
+| External | Output | 1      | `SOC_DFT_EN`                            | clk   | **FIXME**   |
+| External | Output | 1      | `SOC_HW_DEBUG_EN`                       | clk   | **FIXME**   |
+| Internal | Output | Struct | `security_state_o`                      | clk   | **FIXME**   |
 
 ## Memory Map	/ Address map
 
@@ -1429,6 +1428,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 - This I3C code integrates with an AXI interconnect, allowing AXI read and write transactions to access I3C registers. For details on the core’s internal registers and functionality, see:  
   - [I3C Core Documentation](https://github.com/chipsalliance/i3c-core/blob/main/docs/source/top.md)  
   - [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md)
+  - [I3C Core Registers](https://github.com/chipsalliance/i3c-core/tree/main/src/rdl)
 
 ## Integration Considerations
 
@@ -1517,6 +1517,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 
    - Write to the necessary AXI registers to configure the I3C core.
    - Ensure that the AXI interface is properly set up for communication.
+   - Refer to I3C register documentation at [I3C Core Registers](https://github.com/chipsalliance/i3c-core/tree/main/src/rdl) for more details.
 
     ```c
     // Reference Code to Initialize the I3C core (Target Mode)
@@ -1538,6 +1539,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 
    - Write to the necessary AXI registers to configure the I3C core with unique static target address.
    - Ensure that the AXI interface is properly set up for communication.
+   - Refer to I3C register documentation at [I3C Core Registers](https://github.com/chipsalliance/i3c-core/tree/main/src/rdl) for more details.
 
     ```c
     // Reference Code to Program Unique Static Address for I3C Core
@@ -1568,15 +1570,11 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 
 ## How to test : Smoke & more
 
-### Smoke Test
-
   - **Basic Connectivity**
     - CCC command execution for programming Dynamic Address
     - Program & Read Recovery interface registers
     - Write and read TTI interface from each side.
  
-### Advance Test
-
   - **Recovery Sequence** 
     - Test transfers the recovery image
     - Boots the device using the recovery image
