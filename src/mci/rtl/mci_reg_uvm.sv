@@ -2722,9 +2722,11 @@ package mci_reg_uvm;
 
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_mcu_sram_ecc_cor_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_clpra_mcu_reset_req_en_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_gen_in_toggle_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_fld_cg fld_cg;
         rand uvm_reg_field notif_mcu_sram_ecc_cor_en;
         rand uvm_reg_field notif_clpra_mcu_reset_req_en;
+        rand uvm_reg_field notif_gen_in_toggle_en;
 
         function new(string name = "mci_reg__intr_block_t__notif0_intr_en_t");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -2740,9 +2742,12 @@ package mci_reg_uvm;
             this.notif_mcu_sram_ecc_cor_en.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
             this.notif_clpra_mcu_reset_req_en = new("notif_clpra_mcu_reset_req_en");
             this.notif_clpra_mcu_reset_req_en.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
+            this.notif_gen_in_toggle_en = new("notif_gen_in_toggle_en");
+            this.notif_gen_in_toggle_en.configure(this, 1, 2, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_en_bit_cg[bt]) notif_mcu_sram_ecc_cor_en_bit_cg[bt] = new();
                 foreach(notif_clpra_mcu_reset_req_en_bit_cg[bt]) notif_clpra_mcu_reset_req_en_bit_cg[bt] = new();
+                foreach(notif_gen_in_toggle_en_bit_cg[bt]) notif_gen_in_toggle_en_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -3224,19 +3229,21 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb
 
-    // Reg - mci_reg::intr_block_t::notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb
-    class mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb extends uvm_reg;
+    // Reg - mci_reg::intr_block_t::notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_gen_in_toggle_sts_86556041_notif_mcu_sram_ecc_cor_sts_95e5c2eb
+    class mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_gen_in_toggle_sts_86556041_notif_mcu_sram_ecc_cor_sts_95e5c2eb extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_mcu_sram_ecc_cor_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_clpra_mcu_reset_req_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb_fld_cg fld_cg;
+        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_gen_in_toggle_sts_86556041_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_mcu_sram_ecc_cor_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_gen_in_toggle_sts_86556041_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_clpra_mcu_reset_req_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_gen_in_toggle_sts_86556041_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_gen_in_toggle_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_gen_in_toggle_sts_86556041_notif_mcu_sram_ecc_cor_sts_95e5c2eb_fld_cg fld_cg;
         rand uvm_reg_field notif_mcu_sram_ecc_cor_sts;
         rand uvm_reg_field notif_clpra_mcu_reset_req_sts;
+        rand uvm_reg_field notif_gen_in_toggle_sts;
 
-        function new(string name = "mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb");
+        function new(string name = "mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_gen_in_toggle_sts_86556041_notif_mcu_sram_ecc_cor_sts_95e5c2eb");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -3250,14 +3257,17 @@ package mci_reg_uvm;
             this.notif_mcu_sram_ecc_cor_sts.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
             this.notif_clpra_mcu_reset_req_sts = new("notif_clpra_mcu_reset_req_sts");
             this.notif_clpra_mcu_reset_req_sts.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
+            this.notif_gen_in_toggle_sts = new("notif_gen_in_toggle_sts");
+            this.notif_gen_in_toggle_sts.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_sts_bit_cg[bt]) notif_mcu_sram_ecc_cor_sts_bit_cg[bt] = new();
                 foreach(notif_clpra_mcu_reset_req_sts_bit_cg[bt]) notif_clpra_mcu_reset_req_sts_bit_cg[bt] = new();
+                foreach(notif_gen_in_toggle_sts_bit_cg[bt]) notif_gen_in_toggle_sts_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb
+    endclass : mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_gen_in_toggle_sts_86556041_notif_mcu_sram_ecc_cor_sts_95e5c2eb
 
     // Reg - mci_reg::intr_block_t::notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3
     class mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3 extends uvm_reg;
@@ -3672,9 +3682,11 @@ package mci_reg_uvm;
 
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_mcu_sram_ecc_cor_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_clpra_mcu_reset_req_trig_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_gen_in_toggle_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_fld_cg fld_cg;
         rand uvm_reg_field notif_mcu_sram_ecc_cor_trig;
         rand uvm_reg_field notif_clpra_mcu_reset_req_trig;
+        rand uvm_reg_field notif_gen_in_toggle_trig;
 
         function new(string name = "mci_reg__intr_block_t__notif0_intr_trig_t");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -3690,9 +3702,12 @@ package mci_reg_uvm;
             this.notif_mcu_sram_ecc_cor_trig.configure(this, 1, 0, "W1S", 0, 'h0, 1, 1, 0);
             this.notif_clpra_mcu_reset_req_trig = new("notif_clpra_mcu_reset_req_trig");
             this.notif_clpra_mcu_reset_req_trig.configure(this, 1, 1, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_gen_in_toggle_trig = new("notif_gen_in_toggle_trig");
+            this.notif_gen_in_toggle_trig.configure(this, 1, 2, "W1S", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_trig_bit_cg[bt]) notif_mcu_sram_ecc_cor_trig_bit_cg[bt] = new();
                 foreach(notif_clpra_mcu_reset_req_trig_bit_cg[bt]) notif_clpra_mcu_reset_req_trig_bit_cg[bt] = new();
+                foreach(notif_gen_in_toggle_trig_bit_cg[bt]) notif_gen_in_toggle_trig_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -4963,6 +4978,36 @@ package mci_reg_uvm;
                 fld_cg = new();
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_0ef015b9
+
+    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_57528cc1
+    class mci_reg__intr_block_t__intr_count_t_cnt_57528cc1 extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_t_cnt_57528cc1_bit_cg cnt_bit_cg[32];
+        mci_reg__intr_block_t__intr_count_t_cnt_57528cc1_fld_cg fld_cg;
+        rand uvm_reg_field cnt;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_t_cnt_57528cc1");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.cnt = new("cnt");
+            this.cnt.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(cnt_bit_cg[bt]) cnt_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_t_cnt_57528cc1
 
     // Reg - mci_reg::intr_block_t::intr_count_t_cnt_8c9c92fc
     class mci_reg__intr_block_t__intr_count_t_cnt_8c9c92fc extends uvm_reg;
@@ -7004,6 +7049,36 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_3bafbbba
 
+    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_7a9ff349
+    class mci_reg__intr_block_t__intr_count_incr_t_pulse_7a9ff349 extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_7a9ff349_bit_cg pulse_bit_cg[1];
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_7a9ff349_fld_cg fld_cg;
+        rand uvm_reg_field pulse;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_incr_t_pulse_7a9ff349");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.pulse = new("pulse");
+            this.pulse.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(pulse_bit_cg[bt]) pulse_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_7a9ff349
+
     // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_1907ed9d
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_1907ed9d extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -7975,7 +8050,7 @@ package mci_reg_uvm;
         rand mci_reg__intr_block_t__global_intr_t_agg_sts0_fbbcc271_agg_sts1_5df57496 notif_global_intr_r;
         rand mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2 error0_internal_intr_r;
         rand mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb error1_internal_intr_r;
-        rand mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb notif0_internal_intr_r;
+        rand mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_gen_in_toggle_sts_86556041_notif_mcu_sram_ecc_cor_sts_95e5c2eb notif0_internal_intr_r;
         rand mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3 notif1_internal_intr_r;
         rand mci_reg__intr_block_t__error0_intr_trig_t error0_intr_trig_r;
         rand mci_reg__intr_block_t__error1_intr_trig_t error1_intr_trig_r;
@@ -8017,6 +8092,7 @@ package mci_reg_uvm;
         rand mci_reg__intr_block_t__intr_count_t_cnt_896729f1 error_agg_error_fatal31_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_9b47838c notif_mcu_sram_ecc_cor_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_0ef015b9 notif_clpra_mcu_reset_req_intr_count_r;
+        rand mci_reg__intr_block_t__intr_count_t_cnt_57528cc1 notif_gen_in_toggle_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_8c9c92fc notif_agg_error_non_fatal0_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_21a01ace notif_agg_error_non_fatal1_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_2eb23480 notif_agg_error_non_fatal2_intr_count_r;
@@ -8085,6 +8161,7 @@ package mci_reg_uvm;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_43abecb1 error_agg_error_fatal31_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_c24554e4 notif_mcu_sram_ecc_cor_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_3bafbbba notif_clpra_mcu_reset_req_intr_count_incr_r;
+        rand mci_reg__intr_block_t__intr_count_incr_t_pulse_7a9ff349 notif_gen_in_toggle_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_1907ed9d notif_agg_error_non_fatal0_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_8961fa6e notif_agg_error_non_fatal1_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_fe81e5d8 notif_agg_error_non_fatal2_intr_count_incr_r;
@@ -8379,166 +8456,171 @@ package mci_reg_uvm;
 
             this.notif_clpra_mcu_reset_req_intr_count_r.build();
             this.default_map.add_reg(this.notif_clpra_mcu_reset_req_intr_count_r, 'h204);
+            this.notif_gen_in_toggle_intr_count_r = new("notif_gen_in_toggle_intr_count_r");
+            this.notif_gen_in_toggle_intr_count_r.configure(this);
+
+            this.notif_gen_in_toggle_intr_count_r.build();
+            this.default_map.add_reg(this.notif_gen_in_toggle_intr_count_r, 'h208);
             this.notif_agg_error_non_fatal0_intr_count_r = new("notif_agg_error_non_fatal0_intr_count_r");
             this.notif_agg_error_non_fatal0_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal0_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal0_intr_count_r, 'h208);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal0_intr_count_r, 'h20c);
             this.notif_agg_error_non_fatal1_intr_count_r = new("notif_agg_error_non_fatal1_intr_count_r");
             this.notif_agg_error_non_fatal1_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal1_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal1_intr_count_r, 'h20c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal1_intr_count_r, 'h210);
             this.notif_agg_error_non_fatal2_intr_count_r = new("notif_agg_error_non_fatal2_intr_count_r");
             this.notif_agg_error_non_fatal2_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal2_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal2_intr_count_r, 'h210);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal2_intr_count_r, 'h214);
             this.notif_agg_error_non_fatal3_intr_count_r = new("notif_agg_error_non_fatal3_intr_count_r");
             this.notif_agg_error_non_fatal3_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal3_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal3_intr_count_r, 'h214);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal3_intr_count_r, 'h218);
             this.notif_agg_error_non_fatal4_intr_count_r = new("notif_agg_error_non_fatal4_intr_count_r");
             this.notif_agg_error_non_fatal4_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal4_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal4_intr_count_r, 'h218);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal4_intr_count_r, 'h21c);
             this.notif_agg_error_non_fatal5_intr_count_r = new("notif_agg_error_non_fatal5_intr_count_r");
             this.notif_agg_error_non_fatal5_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal5_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal5_intr_count_r, 'h21c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal5_intr_count_r, 'h220);
             this.notif_agg_error_non_fatal6_intr_count_r = new("notif_agg_error_non_fatal6_intr_count_r");
             this.notif_agg_error_non_fatal6_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal6_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal6_intr_count_r, 'h220);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal6_intr_count_r, 'h224);
             this.notif_agg_error_non_fatal7_intr_count_r = new("notif_agg_error_non_fatal7_intr_count_r");
             this.notif_agg_error_non_fatal7_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal7_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal7_intr_count_r, 'h224);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal7_intr_count_r, 'h228);
             this.notif_agg_error_non_fatal8_intr_count_r = new("notif_agg_error_non_fatal8_intr_count_r");
             this.notif_agg_error_non_fatal8_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal8_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal8_intr_count_r, 'h228);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal8_intr_count_r, 'h22c);
             this.notif_agg_error_non_fatal9_intr_count_r = new("notif_agg_error_non_fatal9_intr_count_r");
             this.notif_agg_error_non_fatal9_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal9_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal9_intr_count_r, 'h22c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal9_intr_count_r, 'h230);
             this.notif_agg_error_non_fatal10_intr_count_r = new("notif_agg_error_non_fatal10_intr_count_r");
             this.notif_agg_error_non_fatal10_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal10_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal10_intr_count_r, 'h230);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal10_intr_count_r, 'h234);
             this.notif_agg_error_non_fatal11_intr_count_r = new("notif_agg_error_non_fatal11_intr_count_r");
             this.notif_agg_error_non_fatal11_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal11_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal11_intr_count_r, 'h234);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal11_intr_count_r, 'h238);
             this.notif_agg_error_non_fatal12_intr_count_r = new("notif_agg_error_non_fatal12_intr_count_r");
             this.notif_agg_error_non_fatal12_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal12_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal12_intr_count_r, 'h238);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal12_intr_count_r, 'h23c);
             this.notif_agg_error_non_fatal13_intr_count_r = new("notif_agg_error_non_fatal13_intr_count_r");
             this.notif_agg_error_non_fatal13_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal13_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal13_intr_count_r, 'h23c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal13_intr_count_r, 'h240);
             this.notif_agg_error_non_fatal14_intr_count_r = new("notif_agg_error_non_fatal14_intr_count_r");
             this.notif_agg_error_non_fatal14_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal14_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal14_intr_count_r, 'h240);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal14_intr_count_r, 'h244);
             this.notif_agg_error_non_fatal15_intr_count_r = new("notif_agg_error_non_fatal15_intr_count_r");
             this.notif_agg_error_non_fatal15_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal15_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal15_intr_count_r, 'h244);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal15_intr_count_r, 'h248);
             this.notif_agg_error_non_fatal16_intr_count_r = new("notif_agg_error_non_fatal16_intr_count_r");
             this.notif_agg_error_non_fatal16_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal16_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal16_intr_count_r, 'h248);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal16_intr_count_r, 'h24c);
             this.notif_agg_error_non_fatal17_intr_count_r = new("notif_agg_error_non_fatal17_intr_count_r");
             this.notif_agg_error_non_fatal17_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal17_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal17_intr_count_r, 'h24c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal17_intr_count_r, 'h250);
             this.notif_agg_error_non_fatal18_intr_count_r = new("notif_agg_error_non_fatal18_intr_count_r");
             this.notif_agg_error_non_fatal18_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal18_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal18_intr_count_r, 'h250);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal18_intr_count_r, 'h254);
             this.notif_agg_error_non_fatal19_intr_count_r = new("notif_agg_error_non_fatal19_intr_count_r");
             this.notif_agg_error_non_fatal19_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal19_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal19_intr_count_r, 'h254);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal19_intr_count_r, 'h258);
             this.notif_agg_error_non_fatal20_intr_count_r = new("notif_agg_error_non_fatal20_intr_count_r");
             this.notif_agg_error_non_fatal20_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal20_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal20_intr_count_r, 'h258);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal20_intr_count_r, 'h25c);
             this.notif_agg_error_non_fatal21_intr_count_r = new("notif_agg_error_non_fatal21_intr_count_r");
             this.notif_agg_error_non_fatal21_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal21_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal21_intr_count_r, 'h25c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal21_intr_count_r, 'h260);
             this.notif_agg_error_non_fatal22_intr_count_r = new("notif_agg_error_non_fatal22_intr_count_r");
             this.notif_agg_error_non_fatal22_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal22_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal22_intr_count_r, 'h260);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal22_intr_count_r, 'h264);
             this.notif_agg_error_non_fatal23_intr_count_r = new("notif_agg_error_non_fatal23_intr_count_r");
             this.notif_agg_error_non_fatal23_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal23_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal23_intr_count_r, 'h264);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal23_intr_count_r, 'h268);
             this.notif_agg_error_non_fatal24_intr_count_r = new("notif_agg_error_non_fatal24_intr_count_r");
             this.notif_agg_error_non_fatal24_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal24_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal24_intr_count_r, 'h268);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal24_intr_count_r, 'h26c);
             this.notif_agg_error_non_fatal25_intr_count_r = new("notif_agg_error_non_fatal25_intr_count_r");
             this.notif_agg_error_non_fatal25_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal25_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal25_intr_count_r, 'h26c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal25_intr_count_r, 'h270);
             this.notif_agg_error_non_fatal26_intr_count_r = new("notif_agg_error_non_fatal26_intr_count_r");
             this.notif_agg_error_non_fatal26_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal26_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal26_intr_count_r, 'h270);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal26_intr_count_r, 'h274);
             this.notif_agg_error_non_fatal27_intr_count_r = new("notif_agg_error_non_fatal27_intr_count_r");
             this.notif_agg_error_non_fatal27_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal27_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal27_intr_count_r, 'h274);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal27_intr_count_r, 'h278);
             this.notif_agg_error_non_fatal28_intr_count_r = new("notif_agg_error_non_fatal28_intr_count_r");
             this.notif_agg_error_non_fatal28_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal28_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal28_intr_count_r, 'h278);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal28_intr_count_r, 'h27c);
             this.notif_agg_error_non_fatal29_intr_count_r = new("notif_agg_error_non_fatal29_intr_count_r");
             this.notif_agg_error_non_fatal29_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal29_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal29_intr_count_r, 'h27c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal29_intr_count_r, 'h280);
             this.notif_agg_error_non_fatal30_intr_count_r = new("notif_agg_error_non_fatal30_intr_count_r");
             this.notif_agg_error_non_fatal30_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal30_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal30_intr_count_r, 'h280);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal30_intr_count_r, 'h284);
             this.notif_agg_error_non_fatal31_intr_count_r = new("notif_agg_error_non_fatal31_intr_count_r");
             this.notif_agg_error_non_fatal31_intr_count_r.configure(this);
 
             this.notif_agg_error_non_fatal31_intr_count_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal31_intr_count_r, 'h284);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal31_intr_count_r, 'h288);
             this.error_wdt_timer1_timeout_intr_count_incr_r = new("error_wdt_timer1_timeout_intr_count_incr_r");
             this.error_wdt_timer1_timeout_intr_count_incr_r.configure(this);
 
@@ -8719,166 +8801,171 @@ package mci_reg_uvm;
 
             this.notif_clpra_mcu_reset_req_intr_count_incr_r.build();
             this.default_map.add_reg(this.notif_clpra_mcu_reset_req_intr_count_incr_r, 'h38c);
+            this.notif_gen_in_toggle_intr_count_incr_r = new("notif_gen_in_toggle_intr_count_incr_r");
+            this.notif_gen_in_toggle_intr_count_incr_r.configure(this);
+
+            this.notif_gen_in_toggle_intr_count_incr_r.build();
+            this.default_map.add_reg(this.notif_gen_in_toggle_intr_count_incr_r, 'h390);
             this.notif_agg_error_non_fatal0_intr_count_incr_r = new("notif_agg_error_non_fatal0_intr_count_incr_r");
             this.notif_agg_error_non_fatal0_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal0_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal0_intr_count_incr_r, 'h390);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal0_intr_count_incr_r, 'h394);
             this.notif_agg_error_non_fatal1_intr_count_incr_r = new("notif_agg_error_non_fatal1_intr_count_incr_r");
             this.notif_agg_error_non_fatal1_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal1_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal1_intr_count_incr_r, 'h394);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal1_intr_count_incr_r, 'h398);
             this.notif_agg_error_non_fatal2_intr_count_incr_r = new("notif_agg_error_non_fatal2_intr_count_incr_r");
             this.notif_agg_error_non_fatal2_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal2_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal2_intr_count_incr_r, 'h398);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal2_intr_count_incr_r, 'h39c);
             this.notif_agg_error_non_fatal3_intr_count_incr_r = new("notif_agg_error_non_fatal3_intr_count_incr_r");
             this.notif_agg_error_non_fatal3_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal3_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal3_intr_count_incr_r, 'h39c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal3_intr_count_incr_r, 'h3a0);
             this.notif_agg_error_non_fatal4_intr_count_incr_r = new("notif_agg_error_non_fatal4_intr_count_incr_r");
             this.notif_agg_error_non_fatal4_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal4_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal4_intr_count_incr_r, 'h3a0);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal4_intr_count_incr_r, 'h3a4);
             this.notif_agg_error_non_fatal5_intr_count_incr_r = new("notif_agg_error_non_fatal5_intr_count_incr_r");
             this.notif_agg_error_non_fatal5_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal5_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal5_intr_count_incr_r, 'h3a4);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal5_intr_count_incr_r, 'h3a8);
             this.notif_agg_error_non_fatal6_intr_count_incr_r = new("notif_agg_error_non_fatal6_intr_count_incr_r");
             this.notif_agg_error_non_fatal6_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal6_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal6_intr_count_incr_r, 'h3a8);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal6_intr_count_incr_r, 'h3ac);
             this.notif_agg_error_non_fatal7_intr_count_incr_r = new("notif_agg_error_non_fatal7_intr_count_incr_r");
             this.notif_agg_error_non_fatal7_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal7_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal7_intr_count_incr_r, 'h3ac);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal7_intr_count_incr_r, 'h3b0);
             this.notif_agg_error_non_fatal8_intr_count_incr_r = new("notif_agg_error_non_fatal8_intr_count_incr_r");
             this.notif_agg_error_non_fatal8_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal8_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal8_intr_count_incr_r, 'h3b0);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal8_intr_count_incr_r, 'h3b4);
             this.notif_agg_error_non_fatal9_intr_count_incr_r = new("notif_agg_error_non_fatal9_intr_count_incr_r");
             this.notif_agg_error_non_fatal9_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal9_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal9_intr_count_incr_r, 'h3b4);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal9_intr_count_incr_r, 'h3b8);
             this.notif_agg_error_non_fatal10_intr_count_incr_r = new("notif_agg_error_non_fatal10_intr_count_incr_r");
             this.notif_agg_error_non_fatal10_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal10_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal10_intr_count_incr_r, 'h3b8);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal10_intr_count_incr_r, 'h3bc);
             this.notif_agg_error_non_fatal11_intr_count_incr_r = new("notif_agg_error_non_fatal11_intr_count_incr_r");
             this.notif_agg_error_non_fatal11_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal11_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal11_intr_count_incr_r, 'h3bc);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal11_intr_count_incr_r, 'h3c0);
             this.notif_agg_error_non_fatal12_intr_count_incr_r = new("notif_agg_error_non_fatal12_intr_count_incr_r");
             this.notif_agg_error_non_fatal12_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal12_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal12_intr_count_incr_r, 'h3c0);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal12_intr_count_incr_r, 'h3c4);
             this.notif_agg_error_non_fatal13_intr_count_incr_r = new("notif_agg_error_non_fatal13_intr_count_incr_r");
             this.notif_agg_error_non_fatal13_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal13_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal13_intr_count_incr_r, 'h3c4);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal13_intr_count_incr_r, 'h3c8);
             this.notif_agg_error_non_fatal14_intr_count_incr_r = new("notif_agg_error_non_fatal14_intr_count_incr_r");
             this.notif_agg_error_non_fatal14_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal14_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal14_intr_count_incr_r, 'h3c8);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal14_intr_count_incr_r, 'h3cc);
             this.notif_agg_error_non_fatal15_intr_count_incr_r = new("notif_agg_error_non_fatal15_intr_count_incr_r");
             this.notif_agg_error_non_fatal15_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal15_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal15_intr_count_incr_r, 'h3cc);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal15_intr_count_incr_r, 'h3d0);
             this.notif_agg_error_non_fatal16_intr_count_incr_r = new("notif_agg_error_non_fatal16_intr_count_incr_r");
             this.notif_agg_error_non_fatal16_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal16_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal16_intr_count_incr_r, 'h3d0);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal16_intr_count_incr_r, 'h3d4);
             this.notif_agg_error_non_fatal17_intr_count_incr_r = new("notif_agg_error_non_fatal17_intr_count_incr_r");
             this.notif_agg_error_non_fatal17_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal17_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal17_intr_count_incr_r, 'h3d4);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal17_intr_count_incr_r, 'h3d8);
             this.notif_agg_error_non_fatal18_intr_count_incr_r = new("notif_agg_error_non_fatal18_intr_count_incr_r");
             this.notif_agg_error_non_fatal18_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal18_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal18_intr_count_incr_r, 'h3d8);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal18_intr_count_incr_r, 'h3dc);
             this.notif_agg_error_non_fatal19_intr_count_incr_r = new("notif_agg_error_non_fatal19_intr_count_incr_r");
             this.notif_agg_error_non_fatal19_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal19_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal19_intr_count_incr_r, 'h3dc);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal19_intr_count_incr_r, 'h3e0);
             this.notif_agg_error_non_fatal20_intr_count_incr_r = new("notif_agg_error_non_fatal20_intr_count_incr_r");
             this.notif_agg_error_non_fatal20_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal20_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal20_intr_count_incr_r, 'h3e0);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal20_intr_count_incr_r, 'h3e4);
             this.notif_agg_error_non_fatal21_intr_count_incr_r = new("notif_agg_error_non_fatal21_intr_count_incr_r");
             this.notif_agg_error_non_fatal21_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal21_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal21_intr_count_incr_r, 'h3e4);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal21_intr_count_incr_r, 'h3e8);
             this.notif_agg_error_non_fatal22_intr_count_incr_r = new("notif_agg_error_non_fatal22_intr_count_incr_r");
             this.notif_agg_error_non_fatal22_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal22_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal22_intr_count_incr_r, 'h3e8);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal22_intr_count_incr_r, 'h3ec);
             this.notif_agg_error_non_fatal23_intr_count_incr_r = new("notif_agg_error_non_fatal23_intr_count_incr_r");
             this.notif_agg_error_non_fatal23_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal23_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal23_intr_count_incr_r, 'h3ec);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal23_intr_count_incr_r, 'h3f0);
             this.notif_agg_error_non_fatal24_intr_count_incr_r = new("notif_agg_error_non_fatal24_intr_count_incr_r");
             this.notif_agg_error_non_fatal24_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal24_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal24_intr_count_incr_r, 'h3f0);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal24_intr_count_incr_r, 'h3f4);
             this.notif_agg_error_non_fatal25_intr_count_incr_r = new("notif_agg_error_non_fatal25_intr_count_incr_r");
             this.notif_agg_error_non_fatal25_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal25_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal25_intr_count_incr_r, 'h3f4);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal25_intr_count_incr_r, 'h3f8);
             this.notif_agg_error_non_fatal26_intr_count_incr_r = new("notif_agg_error_non_fatal26_intr_count_incr_r");
             this.notif_agg_error_non_fatal26_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal26_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal26_intr_count_incr_r, 'h3f8);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal26_intr_count_incr_r, 'h3fc);
             this.notif_agg_error_non_fatal27_intr_count_incr_r = new("notif_agg_error_non_fatal27_intr_count_incr_r");
             this.notif_agg_error_non_fatal27_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal27_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal27_intr_count_incr_r, 'h3fc);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal27_intr_count_incr_r, 'h400);
             this.notif_agg_error_non_fatal28_intr_count_incr_r = new("notif_agg_error_non_fatal28_intr_count_incr_r");
             this.notif_agg_error_non_fatal28_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal28_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal28_intr_count_incr_r, 'h400);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal28_intr_count_incr_r, 'h404);
             this.notif_agg_error_non_fatal29_intr_count_incr_r = new("notif_agg_error_non_fatal29_intr_count_incr_r");
             this.notif_agg_error_non_fatal29_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal29_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal29_intr_count_incr_r, 'h404);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal29_intr_count_incr_r, 'h408);
             this.notif_agg_error_non_fatal30_intr_count_incr_r = new("notif_agg_error_non_fatal30_intr_count_incr_r");
             this.notif_agg_error_non_fatal30_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal30_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal30_intr_count_incr_r, 'h408);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal30_intr_count_incr_r, 'h40c);
             this.notif_agg_error_non_fatal31_intr_count_incr_r = new("notif_agg_error_non_fatal31_intr_count_incr_r");
             this.notif_agg_error_non_fatal31_intr_count_incr_r.configure(this);
 
             this.notif_agg_error_non_fatal31_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_agg_error_non_fatal31_intr_count_incr_r, 'h40c);
+            this.default_map.add_reg(this.notif_agg_error_non_fatal31_intr_count_incr_r, 'h410);
         endfunction : build
     endclass : mci_reg__intr_block_t
 

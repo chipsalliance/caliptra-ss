@@ -128,6 +128,9 @@ logic mcu_sram_fw_exec_region_lock_prev;
 // Fuse write done
 logic strap_we;
 
+// Misc
+logic [1:0] generic_input_toggle;
+
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
 ///////////////////////////////////////////////
@@ -170,6 +173,14 @@ caliptra_prim_flop_2sync #(
   .q_o({mci_reg_hwif_in.GENERIC_INPUT_WIRES[1].wires.next, mci_reg_hwif_in.GENERIC_INPUT_WIRES[0].wires.next}));
 
 assign mci_generic_output_wires = {mci_reg_hwif_out.GENERIC_OUTPUT_WIRES[1].wires.value, mci_reg_hwif_out.GENERIC_OUTPUT_WIRES[0].wires.value};
+
+always_comb begin
+    for (int i = 0; i < 2; i++) begin
+        generic_input_toggle[i] = |(mci_reg_hwif_out.GENERIC_INPUT_WIRES[i].wires.value ^ mci_reg_hwif_in.GENERIC_INPUT_WIRES[i].wires.next);
+    end
+end
+
+assign  mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_gen_in_toggle_sts.hwset  = |generic_input_toggle;
 
 ///////////////////////////////////////////////
 // Error handling logic
