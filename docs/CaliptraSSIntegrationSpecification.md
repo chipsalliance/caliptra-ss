@@ -12,10 +12,11 @@
 - [Integration Considerations](#integration-considerations)
   - [Design Considerations](#design-considerations)
   - [Verification Considerations](#verification-considerations)
-- [Caliptra Subsystem](#caliptra-subsystem)
-  - [Parameters](#parameters)
-  - [Defines](#defines)
-  - [Slave Address map](#slave-address-map)
+  - [Caliptra Subsystem integration requirements (WIP)](#caliptra-subsystem-integration-requirements-wip)
+  - [Memory Requirements](#memory-requirements)
+- [Caliptra Subsystem Top](#caliptra-subsystem-top)
+  - [Parameters \& Defines](#parameters--defines)
+  - [Slave Address Map (reference only)](#slave-address-map-reference-only)
   - [Interfaces \& Signals](#interfaces--signals)
     - [AXI Interface (axi\_if)](#axi-interface-axi_if)
     - [Caliptra Subsystem Top Interface \& signals](#caliptra-subsystem-top-interface--signals)
@@ -29,26 +30,26 @@
 - [Caliptra Core](#caliptra-core)
 - [MCU (Manufacturer Control Unit)](#mcu-manufacturer-control-unit)
   - [Overview](#overview-1)
-    - [Parameters \& Defines](#parameters--defines)
-    - [MCU Top : Interface \& Signals](#mcu-top--interface--signals)
-  - [Programming interface](#programming-interface-1)
+    - [Parameters \& Defines](#parameters--defines-1)
+  - [MCU Integration Requirements](#mcu-integration-requirements)
+  - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
 - [Fuse Controller](#fuse-controller)
   - [Overview](#overview-2)
-  - [Parameters \& Defines](#parameters--defines-1)
+  - [Parameters \& Defines](#parameters--defines-2)
   - [Interface](#interface)
   - [Memory Map	/ Address map](#memory-map-address-map)
-  - [Requirements: Connectivity, Clock \& Reset, Constraints \& Violations](#requirements-connectivity-clock--reset-constraints--violations)
-  - [Programming interface](#programming-interface-2)
+  - [FC Integration Requirements](#fc-integration-requirements)
+  - [Programming interface](#programming-interface-1)
   - [Sequences: Reset, Boot](#sequences-reset-boot)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
 - [Life Cycle Controller](#life-cycle-controller)
   - [Overview](#overview-3)
-  - [Parameters \& Defines](#parameters--defines-2)
+  - [Parameters \& Defines](#parameters--defines-3)
   - [Interface](#interface-1)
   - [Memory Map / Address Map](#memory-map--address-map)
-  - [Requirements: Connectivity, Clock \& Reset, Constraints \& Violations](#requirements-connectivity-clock--reset-constraints--violations-1)
-  - [Programming Interface](#programming-interface-3)
+  - [LC Integration Requirements](#lc-integration-requirements)
+  - [Programming Interface](#programming-interface-2)
   - [Sequences: Reset, Boot](#sequences-reset-boot-1)
   - [How to Test: Smoke \& More](#how-to-test-smoke--more)
     - [Smoke Test](#smoke-test)
@@ -56,10 +57,10 @@
     - [Advanced Tests](#advanced-tests)
 - [MCI](#mci)
   - [Overview](#overview-4)
-  - [Parameters \& Defines](#parameters--defines-3)
+  - [Parameters \& Defines](#parameters--defines-4)
   - [Interface](#interface-2)
   - [Memory Map	/ Address map](#memory-map-address-map-1)
-  - [Requirements : Connectivity, Clock \& Reset, Constraints \& Violations etc](#requirements--connectivity-clock--reset-constraints--violations-etc)
+  - [MCI Integration Requirements](#mci-integration-requirements)
     - [Error Aggregation Connectivity Requirements](#error-aggregation-connectivity-requirements)
     - [Subsystem Internal Fuse Controller Initialization Connectivity Requirements](#subsystem-internal-fuse-controller-initialization-connectivity-requirements)
     - [Subsystem Internal Life Cycle Controller Initialization Connectivity Requirements](#subsystem-internal-life-cycle-controller-initialization-connectivity-requirements)
@@ -68,7 +69,7 @@
     - [LCC Gasket Connectivity Requirements](#lcc-gasket-connectivity-requirements)
     - [MCU SRAM Sizing Requirements](#mcu-sram-sizing-requirements)
     - [MCI AXI DMA Requirements](#mci-axi-dma-requirements)
-  - [Programming interface](#programming-interface-4)
+  - [Programming interface](#programming-interface-3)
     - [Mailbox FIXME waiting on Caliptra MBOX integration spec updates before doing this section](#mailbox-fixme-waiting-on-caliptra-mbox-integration-spec-updates-before-doing-this-section)
   - [Sequences : Reset, Boot,](#sequences--reset-boot)
     - [MCI Boot Sequencer](#mci-boot-sequencer)
@@ -81,6 +82,7 @@
   - [Integration Considerations](#integration-considerations-1)
   - [Paratmeters and defines](#paratmeters-and-defines)
   - [Interface](#interface-3)
+  - [I3C Integration Requirements](#i3c-integration-requirements)
   - [Programming Sequence](#programming-sequence)
     - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
     - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
@@ -157,26 +159,43 @@ By performing these design and verification tasks, the integrator ensures that t
 
 1. **Replace the AXI Interconnect**: 
 The subsystem utilizes an AXI-based interconnect to facilitate communication between components, with the Caliptra core connecting via an AXI interface. The integrator must replace the default AXI interconnect component with their proprietary interface. This ensures that the subsystem can communicate effectively with the rest of the subsystem components using the integrator's specific interconnect architecture.
-2. **Connect the Memories**: The integrator must connect the various memory components required by the subsystem. These memory components are used for storing data and instructions necessary for the operation of the Caliptra subsystem.
+2. **Connect the Memories**: The integrator must connect the various memory components required by the subsystem. These memory components are used for storing data and instructions necessary for the operation of the Caliptra subsystem. 
+3. **No Changes to Internals**: Integrators are not expected to make any changes to the internals of the design. The focus should be on ensuring proper integration and connectivity of the subsystem components.
 
-  | **Memory Category** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
+## Verification Considerations
+
+1. **Connect the I3C Core GPIO with I3C host driver**: 
+The integrator must connect the I3C core (two target I3C devices) to the appropriate driver for the GPIO pins. This connection is crucial for enabling communication with I3C devices, which are used for communication within the subsystem.
+
+## Caliptra Subsystem integration requirements (WIP)
+
+
+
+The following table describes Caliptra Subsystem integration requirements.
+
+| Block        | Requirement         | Definition of Done       |
+|-----------------|---------------------|--------------------------|
+| Caliptra Core   | [Caliptra Core Integration Requirements](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#soc-integration-requirements) | Statement of conformance |
+| MCU | [MCU Integration Requirements (WIP)](#mcu-integration-requirements-wip) | Statement of conformance |
+| I3C | [I3C Integration Requirements](#i3c-integration-requirements) | Statement of conformance |
+| MCI | [MCI Integration Requirements](#MCI-Integration-Requirements) | Statement of conformance | MCI Integration requirement
+| LC Controller | [LC Integration Requirements](#lc-integration-requirements) | Statement of conformance |
+| Fuse Controller | [FC Integration Requirements](#fc-integration-requirements)| Statement of conformance |
+
+## Memory Requirements
+
+Caliptra Subsystem required following memory export connected to various memories to function as per the specification. 
+| **Memory Category** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
   |---------------------|-----------------------|--------------------------------------|----------|-----------------|---------------------------------------------------------------------------------|
   | **MCU0**            | Instruction ROM       | `mcu_rom_mem_export_if`              | TBD      | Read-Only       | Stores the instructions for MCU0 execution                                      |
   | **MCU0**            | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | TBD      | Read/Write      | Memory export for MCU0 access                                                   |
   | **MCU0**            | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | TBD      | Read/Write      | Shared memory between MCI and MCU for data storage                              |
   | **MAILBOX**         | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | TBD      | Read/Write      | Memory for MBOX0 communication                                                  |
   | **MAILBOX**         | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | TBD      | Read/Write      | Memory for MBOX1 communication                                                  |
-  | **Caliptra Core**   | ICCM, DCCM IF         | `cptra_ss_cptra_core_el2_mem_export` | TBD      | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core |
+  | **Caliptra Core**   | ICCM, DCCM   | `cptra_ss_cptra_core_el2_mem_export` | TBD      | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core |
   | **Caliptra Core**   | IFU                   | `cptra_ss_mcu_rom_macro_req_if` | TBD      | Read-Only       | Interface for instruction fetch unit (IFU)                                      |
 
-3. **No Changes to Internals**: Integrators are not expected to make any changes to the internals of the design. The focus should be on ensuring proper integration and connectivity of the subsystem components.
-
-## Verification Considerations
-
-1. **Connect the I3C Core GPIO with I3C host Driver**: 
-The integrator must connect the I3C core to the appropriate driver for the GPIO pins. This connection is crucial for enabling communication with I3C devices, which are used for communication within the subsystem.
-
-# Caliptra Subsystem
+# Caliptra Subsystem Top
 
 The integration of the Caliptra Subsystem begins with the instantiation of the top-level RTL module, caliptra_ss_top.sv. This module serves as the primary entry point for the subsystem and encapsulates all the logic and components required for the functionality of the Caliptra Root of Trust (RoT). All signals must be connected based on the detailed interface and signal descriptions provided in this document. Ensure adherence to the signal direction, width, and functionality to guarantee proper integration with the host SoC.
 
@@ -184,11 +203,8 @@ The integration of the Caliptra Subsystem begins with the instantiation of the t
 
 File at path includes parameters and defines for Caliptra Subystem `src/integration/rtl/caliptra_ss_includes.svh`
 
-## Slave Address map
+## Slave Address Map (reference only)
 
-caliptra-ss\src\integration\rtl\soc_address_map.h
-caliptra-ss\src\integration\rtl\soc_address_map_defines.svh 
- 
 The following address map is a **suggested address** map for the given subsystem design. It details the memory layout and the connections between different components within the Caliptra subsystem.
 
 | Start Address    | End Address      | Slave | Name              | Description               |
@@ -201,6 +217,13 @@ The following address map is a **suggested address** map for the given subsystem
 | 64'h7000_0000    | 64'h7000_01FF    | 5     | Fuse Ctrl         | Fuse Controller           |
 | 64'h7000_0200    | 64'h7000_03FF    | 6     | Fuse Ctrl Core    | Fuse Controller Core      |
 | 64'h7000_0400    | 64'h7000_05FF    | 7     | Life Cycle Ctrl   | Life Cycle Controller     |
+
+Follwing are the header files path for the below suggested address map. These files would be useful in defining the address map using the given RDL Files. 
+
+`caliptra-ss\src\integration\rtl\soc_address_map.h`
+
+`caliptra-ss\src\integration\rtl\soc_address_map_defines.svh `
+
 
 ## Interfaces & Signals
 
@@ -397,11 +420,8 @@ There are two primary programming avenues to interface with the Caliptra Subsyst
 
 ## Sequences
 
-**Reset Sequence**:
+**Reset Sequence**: 
   - De-assert `cptra_ss_rst_b_i` after the primary clock (`clk_i`) stabilizes.
-   
-**Boot Sequence**:
-
 
 ## How to test
 
@@ -429,17 +449,40 @@ Follow the link for
 
 ## Overview
 
-MCU encapusaltes the RISCV instance of Veer Core EL2 instance.
+MCU is encapsulates VeeR EL2 core that includes an iCache, a dedicated DCCM, and AXI interfaces with separate AXI USER IDs to ROM and MCI. For more details refer to [RISCV VeeR-EL2 Overview](https://github.com/chipsalliance/Cores-VeeR-EL2/blob/main/docs/source/overview.md)
 
 ### Parameters & Defines
 
 > Add the path to MCU parameters and defines.
+src/riscv_core/veer_el2/rtl/defines/css_mcu0_common_defines.vh
+src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_param.vh
+src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_pdef.vh
+src/riscv_core/veer_el2/rtl/defines/defines.h
 
-### MCU Top : Interface & Signals
+## MCU Integration Requirements
 
-> Add the link to MCU top signals.
+There are two main requirements for the MCU integration. 
+  
+- **Ensure Proper Memory Mapping**  
+  - The memory layout must match the physical memory configuration of the SoC.
+  - If modifications are required, update the base addresses and section placements accordingly.
 
-## Programming interface
+- **Code Placement & Execution:**  
+  - The `.text` section starts at `0x80000000` and should be mapped to executable memory.
+  - The `_start` entry point must be correctly set to align with boot ROM execution.
+
+- **Enabling Programming interface.**
+  - Please refer to section [MCU Programming Interface](#MCU-Programming-interface) for details on reference linker file for the MCU bringup. 
+ 
+- **Data and Stack Placement Considerations**  
+  - The `.bss` and `.data` sections should be properly initialized by the runtime startup code.
+  - The stack must be correctly set up before function execution to avoid memory corruption.
+
+- **I/O Mapped Data Handling**  
+  - The `.data.io` section at `0x21000410` is used for memory-mapped peripherals.  
+  - Ensure correct access permissions are configured in the memory controller.
+
+## MCU Programming interface
 
 ### MCU Linker Script Integration
 
@@ -479,26 +522,7 @@ The following memory regions are defined and must be adhered to during integrati
     - **Section:** `.data.io`
     - **Usage:** Used for memory-mapped I/O operations.
 
-- **Integration Notes**
-  1. **Ensure Proper Memory Mapping:**  
-     - The memory layout must match the physical memory configuration of the SoC.
-     - If modifications are required, update the base addresses and section placements accordingly.
-
-  2. **Code Placement & Execution:**  
-     - The `.text` section starts at `0x80000000` and should be mapped to executable memory.
-     - The `_start` entry point must be correctly set to align with boot ROM execution.
-
-  3. **Data and Stack Placement Considerations:**  
-     - The `.bss` and `.data` sections should be properly initialized by the runtime startup code.
-     - The stack must be correctly set up before function execution to avoid memory corruption.
-
-  4. **I/O Mapped Data Handling:**  
-     - The `.data.io` section at `0x21000410` is used for memory-mapped peripherals.  
-     - Ensure correct access permissions are configured in the memory controller.
-
-By following this linker script configuration, the validation firmware can be correctly mapped and executed within the **Caliptra Subsystem**.
-
-> PATELN_FIXME : Add link to production firmware
+By following this linker script configuration, the **validation** firmware can be correctly mapped and executed within the **Caliptra Subsystem**.
 
 # Fuse Controller
 
@@ -551,7 +575,9 @@ See [Fuse Controller Register Map](../src/fuse_ctrl/doc/registers.md).
 
 ---
 
-## Requirements: Connectivity, Clock & Reset, Constraints & Violations
+## FC Integration Requirements
+
+**Connectivity, Clock & Reset, Constraints & Violations**
 
 1. **Connectivity**:
    - The Fuse Controller must interface seamlessly with the Fuse Macros, ensuring proper ECC support during programming and read operations.
@@ -711,7 +737,9 @@ See LC Controller Register Map**TODO: link will be provided**.
 `LC_CTRL_MANUF_STATE_6_OFFSET`              | Manufacturing state register (part 6)                 |   0x84  |                             
 `LC_CTRL_MANUF_STATE_7_OFFSET`              | Manufacturing state register (part 7)                 |   0x88  |                              -->
 
-## Requirements: Connectivity, Clock & Reset, Constraints & Violations
+## LC Integration Requirements
+
+**Connectivity, Clock & Reset, Constraints & Violations**
 
 1. **Connectivity**:
    - Ensure proper routing of all signals to avoid conflicts with other modules.
@@ -1014,79 +1042,81 @@ The two regions have different access protection. The size of the regions is dyn
 
 *NOTE: If FW\_SRAM\_EXEC\_REGION\_SIZE is the size of the SRAM, there is no protected Region.* 
 
-## Requirements : Connectivity, Clock & Reset, Constraints & Violations etc
+## MCI Integration Requirements
 
-- **AXI Parameters and AXI Interface Parameter Alignment**
+- **Connectivity, Clock & Reset, Constraints & Violations etc**
 
-  Due to SystemVerilog limitations MCI exposed both AXI parameters and AXI interfaces that are parameterized. Parameters between all AXI interface and the MCI AXI parameters must be consistent. 
+  - **AXI Parameters and AXI Interface Parameter Alignment**
 
-- **AXI DATA\_WIDTH Limitation**
+    Due to SystemVerilog limitations MCI exposed both AXI parameters and AXI interfaces that are parameterized. Parameters between all AXI interface and the MCI AXI parameters must be consistent. 
 
-  MCI DATA\_WIDTH was only verified with a value of 32\. If a different width is required the user will have to make internal MCI changes and no functionality is guaranteed. 
+  - **AXI DATA\_WIDTH Limitation**
 
-- **AXI ADDR\_WIDTH Limitation**
+    MCI DATA\_WIDTH was only verified with a value of 32\. If a different width is required the user will have to make internal MCI changes and no functionality is guaranteed. 
 
-  AXI ADDR\_WIDTH must be wide enough to fully address the MCI address space. 
+  - **AXI ADDR\_WIDTH Limitation**
 
-- **MCI Base Address Requirement**
+    AXI ADDR\_WIDTH must be wide enough to fully address the MCI address space. 
 
-  The base address assigned to MCI must align to the MCI total addressable space. This can be calculated based off of the MCU SRAM size since it is the last block in the MCI memory map. 
+  - **MCI Base Address Requirement**
 
-    To calculate the base address alignment use the following calculation:
+    The base address assigned to MCI must align to the MCI total addressable space. This can be calculated based off of the MCU SRAM size since it is the last block in the MCI memory map. 
 
-      bits \= $clog2(MCU\_SRAM\_OFFSET \+ ((MCU\_SRAM\_SIZE\_KB-1) \* 1024))
+      To calculate the base address alignment use the following calculation:
 
-    MCU\_SRAM\_OFFSET can be found in the MCI’s [Top Level Memory Map](#top-level-memory-map).
+        bits \= $clog2(MCU\_SRAM\_OFFSET \+ ((MCU\_SRAM\_SIZE\_KB-1) \* 1024))
 
-  *Example:*
+      MCU\_SRAM\_OFFSET can be found in the MCI’s [Top Level Memory Map](#top-level-memory-map).
 
-      MCU\_SRAM\_OFFSET \= 0x200000 (2097152 decimal)
-      
-      MCU\_SRAM\_SIZE\_KB \= 1024 (1MB)
-      
-      bits \= $clog2(2097152 \+ ((1024-1) \* 1024))
-      
-      bits \= 22
-      
-      MCI base address would need to align to 0x20\_0000
+    *Example:*
 
-- **Reset Synchronization**
+        MCU\_SRAM\_OFFSET \= 0x200000 (2097152 decimal)
+        
+        MCU\_SRAM\_SIZE\_KB \= 1024 (1MB)
+        
+        bits \= $clog2(2097152 \+ ((1024-1) \* 1024))
+        
+        bits \= 22
+        
+        MCI base address would need to align to 0x20\_0000
 
-  **MCI does not synchronize any resets inside the IP. It is expected all reset inputs are properly synchronized to the MCI clock domain before being passed to MCI.**
+  - **Reset Synchronization**
 
-  All MCI reset outputs are synchronous to the MCI clock domain and if they are used in a different clock domain they shall be properly synchronized outside of MCI. 
+    **MCI does not synchronize any resets inside the IP. It is expected all reset inputs are properly synchronized to the MCI clock domain before being passed to MCI.**
 
-- **DFT Reset Control**
+    All MCI reset outputs are synchronous to the MCI clock domain and if they are used in a different clock domain they shall be properly synchronized outside of MCI. 
 
-  MCI input resets do not have any built-in DFT reset control for scan. It is the integrator’s responsibility to add any DFT controls outside of MCI before the reset is connected to MCI. 
+  - **DFT Reset Control**
 
-  Simlar to Caliptra core - When scan\_mode is set the MCI generated resets  (mcu\_rst\_b, clpra\_rst\_b) will switch from MCI logic control to directly connected to the mci\_rst\_b. This gives DFT complete control of these resets within Caliptra SS.  
+    MCI input resets do not have any built-in DFT reset control for scan. It is the integrator’s responsibility to add any DFT controls outside of MCI before the reset is connected to MCI. 
 
-- **Integrator RTL modification requirements**
+    Simlar to Caliptra core - When scan\_mode is set the MCI generated resets  (mcu\_rst\_b, clpra\_rst\_b) will switch from MCI logic control to directly connected to the mci\_rst\_b. This gives DFT complete control of these resets within Caliptra SS.  
 
-  MCI reused synchronizer modules from Caliptra Core like caliptra\_2ff\_syn.sv. Integrators are required to replace these modules with technology-specific sync cells. 
+  - **Integrator RTL modification requirements**
 
-  MCI does not itself contain modules that need to be directly modified by the integrator. 
+    MCI reused synchronizer modules from Caliptra Core like caliptra\_2ff\_syn.sv. Integrators are required to replace these modules with technology-specific sync cells. 
 
-- **Late Binding interface signals**
+    MCI does not itself contain modules that need to be directly modified by the integrator. 
 
-  The interface signals mci\_generic\_input and  mci\_generic\_output\_wires are placeholders on the SoC interface reserved for late binding features. This may include any feature that is required for correct operation of the design in the final integrated SoC and that may not be accommodated through existing interface signaling (such as the mailbox).
+  - **Late Binding interface signals**
 
-  While these late binding interface pins are generic in nature until assigned a function, integrators must not define non-standard use cases for these pins. Defining standard use cases ensures that the security posture of MCI/MCU in the final implementation is not degraded relative to the consortium design intent. Bits in mci\_generic\_input that don't have a function defined in MCI must be tied to a 0-value. These undefined input bits shall not be connected to any flip flops (which would allow run-time transitions on the value).
+    The interface signals mci\_generic\_input and  mci\_generic\_output\_wires are placeholders on the SoC interface reserved for late binding features. This may include any feature that is required for correct operation of the design in the final integrated SoC and that may not be accommodated through existing interface signaling (such as the mailbox).
 
-  Each wire connects to a register in the MCI register bank through which communication to the MCU may be facilitated. Each of the generic wire signals is 64 bits in size.These signals are considered ASYNC and each of the 64 bits are considered separate adhoc signals. Meaning there is no bus synchronization which means the connections to this port need to be thoroughly thought through to ensure the MCU doesn’t drop any requests. 
+    While these late binding interface pins are generic in nature until assigned a function, integrators must not define non-standard use cases for these pins. Defining standard use cases ensures that the security posture of MCI/MCU in the final implementation is not degraded relative to the consortium design intent. Bits in mci\_generic\_input that don't have a function defined in MCI must be tied to a 0-value. These undefined input bits shall not be connected to any flip flops (which would allow run-time transitions on the value).
 
-  Activity on any bit of the mci\_generic\_input triggers a notification interrupt to the microcontroller indicating a bit toggle.
+    Each wire connects to a register in the MCI register bank through which communication to the MCU may be facilitated. Each of the generic wire signals is 64 bits in size.These signals are considered ASYNC and each of the 64 bits are considered separate adhoc signals. Meaning there is no bus synchronization which means the connections to this port need to be thoroughly thought through to ensure the MCU doesn’t drop any requests. 
 
-  The following table describes the allocation of functionality on mci\_generic\_input . All bits not listed in this table must be tied to 0\.
+    Activity on any bit of the mci\_generic\_input triggers a notification interrupt to the microcontroller indicating a bit toggle.
 
----
+    The following table describes the allocation of functionality on mci\_generic\_input . All bits not listed in this table must be tied to 0\.
 
-**Table: MCI Generic Input Allocation** 
+  ---
 
-| Bits | Name | Description |
-| :---- | :---- | :---- |
-| 64:0 | RESERVED | No allocation function |
+  **Table: MCI Generic Input Allocation** 
+
+  | Bits | Name | Description |
+  | :---- | :---- | :---- |
+  | 64:0 | RESERVED | No allocation function |
 
 ### Error Aggregation Connectivity Requirements
 
@@ -1451,6 +1481,13 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | escalated_reset_o                 | output    | 1 bit                     | Escalated reset output                                               |
 | irq_o                             | output    | 1 bit                     | Interrupt request                                                    |
 
+
+## I3C Integration Requirements
+
+  1. Connect the `cptra_ss_i3c_s_axi_if` with AXI interconnect.
+  2. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#1** to initialize the I3C targets. 
+  3. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#2** to set both I3C target device with static addresses.
+  
 ## Programming Sequence
 
 ### Programming Sequence from AXI Side
