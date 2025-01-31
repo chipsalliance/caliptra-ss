@@ -867,7 +867,27 @@ Illegal accesses will result in writes being dropped and reads returning 0.
 
 #### DMI MCU SRAM Access
 
-FIXME
+MCU SRAM is only accessable via DMI while in **Debug Unlock**. While in **Debug Unlock** DMI has RW permission to the entire MCU SRAM.
+
+Due to limited DMI address space the MCU SRAM is accessable via a two register mailbox.
+
+* `MCU_SRAM_ADDR`
+* `MCU_SRAM_DATA`
+
+The first MCU SRAM address is at address 0x0. The address is byte addressable, but all accesses must be DWORD aligned. Failure to align the address will result in undefined behavior. Access to addresses beyond the MCU SRAM size will result in address wrapping. 
+
+To write content to the MCU SRAM the flow is:
+
+1. Write `MCU_SRAM_ADDR`
+2. Write `MCU_SRAM_DATA`
+
+To read content from the MCU SRAM the flow is:
+
+1. Write `MCU_SRAM_ADDR`
+2. Read `MCU_SRAM_DATA`
+
+There is no error response on the DMI port, so any ECC error must be checked via the ECC registers in the MCI Register Bank.  
+
 
 #### DMI MCU Trace Buffer Access
 
