@@ -765,9 +765,9 @@ Each mailbox is paired with an SRAM to store staged data. These SRAMs are **conf
 
 The MCU SRAM provides essential data and instruction memory for the Manufacturer Control Unit. This SRAM bank is utilized by the MCU to load firmware images, store application data structures, and create a runtime stack. The SRAM is accessible via the AXI interface and is mapped into the MCI's memory space for easy access and management. Exposing this SRAM via a restricted API through the SoC AXI interconnect enables seamless and secured Firmware Updates to be managed by Caliptra.
 
-AXI ID filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI_ID that is enabled through the MCU_RUNTIME_LOCK register (either the Caliptra AXI_ID, or the MCU IFU/LSU AXI IDs). Any write attempt by an invalid AXI_ID is discarded and returns an error status. Any read attempt returns 0 data and an error status.
+AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the Caliptra AXI_USER, or the MCU IFU/LSU AXI USERSs). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
 
-The MCU SRAM contains two regions, a Protected Data Region and an Updateable Execution Region, each with a different set of access rules.
+The MCU SRAM contains two regions, a Protected Data Region and an Updatable Execution Region, each with a different set of access rules.
 
 The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing is locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation.
 
@@ -821,21 +821,57 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 ### MCI Debug Access
 
-MCI provides DMI access via MCU TAP and an DEBUG AXI USER address for debug access to MCI. 
+MCI provides DMI access via MCU TAP and a DEBUG AXI USER address for debug access to MCI. 
 
 ### MCI DMI
 
+The DMI port on MCU is a dedicated interface that is controled via the MCU TAP interface. MCI provides two services when it comes to DMI:
 
-**FIXME ADD:**
-- **How to Disable Disable**
-- **Registers accessable via DMI**
-- **Diagram showing connectivity**
+1. MCU DMI enable control (uncore and core)
 
-The MCI DMI port is a dedicated debug port for accessing specific registers within MCI. 
+2. DMI interface for debug access to MCI address space
 
-This port is connected to the MCU DMI port. Meaning DMI transactions are generated via the MCI TAP port. 
+#### MCU DMI ENABLE Control
 
-The MCU allows TAP -> DMI access when the MCU is in reset. This allows users to access MCI via DMI in the BOOT_BREAKPOINT state when MCU reset is still asserted. 
+The MCU has two different DMI enables:
+
+1. Core
+   - Access to internal MCU registers
+2. Uncore
+   - Access to MCI registers
+
+
+MCI provides the logic for these enables. When the following condition(s) are met the enables are set:
+
+**MCU Core Enable**: Debug Mode
+
+**MCU Uncore Enable**: Debug Mode OR LCC Manufacturing Mode OR DEBUG_INTENT strap set
+
+*Note: These are the exact same controls Calipitra Core uses for DMI enable* 
+
+#### MCI DMI Interface
+
+The MCI DMI Interface gives select access to the blocks inside MCI.
+
+Access to MCI's DMI space is split into three different levels of security:
+
+| **Access** 	| **Description** 	| 
+| :--------- 	| :--------- 	| 
+| **Debug Intent**|  Always accessable over DMI as long as uncore DMI Enable is set.| 
+| **Manufacturing Mode**|  Accessable over DMI only if LCC is in Manufacturing mode or Debug Unlocked| 
+| **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked| 
+
+Illegal accesses will result in writes being dropped and reads returning 0.
+
+*NOTE: MCI DMI address space is different than MCI AXI address space.*
+
+#### DMI MCU SRAM Access
+
+FIXME
+
+#### DMI MCU Trace Buffer Access
+
+FIXME
 
 ### MCI DEBUG AXI USER
 
@@ -857,8 +893,6 @@ The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At thi
 4. Set MCI's BRKPOINT_GO register to 1
     - Through one of the [MCI Debug Access](#MCI-Debug-Access) methods. 
 5. FSM will continue
-
-
 
 # Subsystem Memory Map
 
