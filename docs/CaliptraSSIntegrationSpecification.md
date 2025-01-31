@@ -13,7 +13,6 @@
   - [Design Considerations](#design-considerations)
   - [Verification Considerations](#verification-considerations)
 - [Verification View of Caliptra Subsystem](#verification-view-of-caliptra-subsystem)
-  - [Caliptra Subsystem integration requirements (WIP)](#caliptra-subsystem-integration-requirements-wip)
   - [Memory Requirements](#memory-requirements)
 - [Caliptra Subsystem Top](#caliptra-subsystem-top)
   - [Parameters \& Defines](#parameters--defines)
@@ -172,7 +171,7 @@ Follwing block diagram shows details on verification view of Caliptra Subsystem
 
 ![alt text](./images/ValidationViewofSS.png)
 
-## Caliptra Subsystem integration requirements (WIP)
+<!-- ## Caliptra Subsystem integration requirements (WIP)
 
 
 
@@ -185,7 +184,7 @@ The following table describes Caliptra Subsystem integration requirements.
 | I3C | [I3C Integration Requirements](#i3c-integration-requirements) | Statement of conformance |
 | MCI | [MCI Integration Requirements](#MCI-Integration-Requirements) | Statement of conformance | MCI Integration requirement
 | LC Controller | [LC Integration Requirements](#lc-integration-requirements) | Statement of conformance |
-| Fuse Controller | [FC Integration Requirements](#fc-integration-requirements)| Statement of conformance |
+| Fuse Controller | [FC Integration Requirements](#fc-integration-requirements)| Statement of conformance | -->
 
 ## Memory Requirements
 
@@ -207,8 +206,6 @@ The integration of the Caliptra Subsystem begins with the instantiation of the t
 ## Parameters & Defines
 
 File at path includes parameters and defines for Caliptra Subystem `src/integration/rtl/caliptra_ss_includes.svh`
-
-
 
 
 ## Interfaces & Signals
@@ -509,6 +506,8 @@ This linker script defines the memory layout for the **MCU** firmware. It specif
 
 **Example** Linker File can be found at : [ integration/test_suite/libs/riscv_hw_if/link.ld  ](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/test_suites/libs/riscv_hw_if/link.ld)
 
+By following this linker script configuration, the **validation** firmware can be correctly mapped and executed within the **Caliptra Subsystem**.
+
 The following memory regions are defined and must be adhered to during integration:
 
 - **Memory Region Allocation**
@@ -541,7 +540,7 @@ The following memory regions are defined and must be adhered to during integrati
     - **Section:** `.data.io`
     - **Usage:** Used for memory-mapped I/O operations.
 
-By following this linker script configuration, the **validation** firmware can be correctly mapped and executed within the **Caliptra Subsystem**.
+
 
 # Fuse Controller
 
@@ -1453,55 +1452,54 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 
 | Signal                            | Direction | Width                     | Description                                                          |
 |-----------------------------------|----------:|---------------------------|----------------------------------------------------------------------|
-| clk_i                             | input     | 1 bit                     | Clock input                                                          |
-| rst_ni                            | input     | 1 bit                     | Active-low reset                                                     |
-| araddr_i                          | input     | [AxiAddrWidth-1:0]        | AXI read address                                                     |
-| arburst_i                         | input     | 2 bits                    | AXI read burst type                                                  |
-| arsize_i                          | input     | 3 bits                    | AXI read transfer size                                               |
-| arlen_i                           | input     | 8 bits                    | AXI read burst length                                                |
-| aruser_i                          | input     | [AxiUserWidth-1:0]        | AXI read user signal                                                 |
-| arid_i                            | input     | [AxiIdWidth-1:0]          | AXI read transaction ID                                              |
-| arlock_i                          | input     | 1 bit                     | AXI read lock signal                                                 |
-| arvalid_i                         | input     | 1 bit                     | AXI read address valid                                               |
-| arready_o                         | output    | 1 bit                     | AXI read address ready                                               |
-| rdata_o                           | output    | [AxiDataWidth-1:0]        | AXI read data                                                        |
-| rresp_o                           | output    | 2 bits                    | AXI read response                                                    |
-| rid_o                             | output    | [AxiIdWidth-1:0]          | AXI read transaction ID (response)                                   |
-| rlast_o                           | output    | 1 bit                     | AXI read last signal                                                 |
-| rvalid_o                          | output    | 1 bit                     | AXI read valid                                                       |
-| rready_i                          | input     | 1 bit                     | AXI read ready                                                       |
-| awaddr_i                          | input     | [AxiAddrWidth-1:0]        | AXI write address                                                    |
-| awburst_i                         | input     | 2 bits                    | AXI write burst type                                                 |
-| awsize_i                          | input     | 3 bits                    | AXI write transfer size                                              |
-| awlen_i                           | input     | 8 bits                    | AXI write burst length                                               |
-| awuser_i                          | input     | [AxiUserWidth-1:0]        | AXI write user signal                                                |
-| awid_i                            | input     | [AxiIdWidth-1:0]          | AXI write transaction ID                                             |
-| awlock_i                          | input     | 1 bit                     | AXI write lock signal                                                |
-| awvalid_i                         | input     | 1 bit                     | AXI write address valid                                              |
-| awready_o                         | output    | 1 bit                     | AXI write address ready                                              |
-| wdata_i                           | input     | [AxiDataWidth-1:0]        | AXI write data                                                       |
-| wstrb_i                           | input     | [AxiDataWidth/8-1:0]      | AXI write strobe                                                     |
-| wlast_i                           | input     | 1 bit                     | AXI write last                                                       |
-| wvalid_i                          | input     | 1 bit                     | AXI write valid                                                      |
-| wready_o                          | output    | 1 bit                     | AXI write ready                                                      |
-| bresp_o                           | output    | 2 bits                    | AXI write response                                                   |
-| bid_o                             | output    | [AxiIdWidth-1:0]          | AXI write transaction ID (response)                                  |
-| bvalid_o                          | output    | 1 bit                     | AXI write response valid                                             |
-| bready_i                          | input     | 1 bit                     | AXI write response ready                                             |
-| scl_i                             | input     | 1 bit (if DIGITAL_IO_I3C) | I3C clock input (digital)                                            |
-| sda_i                             | input     | 1 bit (if DIGITAL_IO_I3C) | I3C data input (digital)                                             |
-| scl_o                             | output    | 1 bit (if DIGITAL_IO_I3C) | I3C clock output (digital)                                           |
-| sda_o                             | output    | 1 bit (if DIGITAL_IO_I3C) | I3C data output (digital)                                            |
-| sel_od_pp_o                       | output    | 1 bit (if DIGITAL_IO_I3C) | Open-drain / push-pull selection (digital output)                    |
-| i3c_scl_io                        | inout     | 1 bit (else)              | I3C clock line (analog/digital)                                      |
-| i3c_sda_io                        | inout     | 1 bit (else)              | I3C data line (analog/digital)                                       |
-| recovery_payload_available_o      | output    | 1 bit                     | Indicates recovery payload is available                              |
-| recovery_image_activated_o        | output    | 1 bit                     | Indicates the recovery image is activated                            |
-| peripheral_reset_o                | output    | 1 bit                     | Resets connected peripherals                                         |
-| peripheral_reset_done_i           | input     | 1 bit                     | Acknowledges peripheral reset completion                             |
-| escalated_reset_o                 | output    | 1 bit                     | Escalated reset output                                               |
-| irq_o                             | output    | 1 bit                     | Interrupt request                                                    |
-
+| `clk_i`                           | input     | 1 bit                     | Clock input                                                          |
+| `rst_ni`                          | input     | 1 bit                     | Active-low reset                                                     |
+| `araddr_i`                        | input     | [AxiAddrWidth-1:0]        | AXI read address                                                     |
+| `arburst_i`                       | input     | 2 bits                    | AXI read burst type                                                  |
+| `arsize_i`                        | input     | 3 bits                    | AXI read transfer size                                               |
+| `arlen_i`                         | input     | 8 bits                    | AXI read burst length                                                |
+| `aruser_i`                        | input     | [AxiUserWidth-1:0]        | AXI read user signal                                                 |
+| `arid_i`                          | input     | [AxiIdWidth-1:0]          | AXI read transaction ID                                              |
+| `arlock_i`                        | input     | 1 bit                     | AXI read lock signal                                                 |
+| `arvalid_i`                       | input     | 1 bit                     | AXI read address valid                                               |
+| `arready_o`                       | output    | 1 bit                     | AXI read address ready                                               |
+| `rdata_o`                         | output    | [AxiDataWidth-1:0]        | AXI read data                                                        |
+| `rresp_o`                         | output    | 2 bits                    | AXI read response                                                    |
+| `rid_o`                           | output    | [AxiIdWidth-1:0]          | AXI read transaction ID (response)                                   |
+| `rlast_o`                         | output    | 1 bit                     | AXI read last signal                                                 |
+| `rvalid_o`                        | output    | 1 bit                     | AXI read valid                                                       |
+| `rready_i`                        | input     | 1 bit                     | AXI read ready                                                       |
+| `awaddr_i`                        | input     | [AxiAddrWidth-1:0]        | AXI write address                                                    |
+| `awburst_i`                       | input     | 2 bits                    | AXI write burst type                                                 |
+| `awsize_i`                        | input     | 3 bits                    | AXI write transfer size                                              |
+| `awlen_i`                         | input     | 8 bits                    | AXI write burst length                                               |
+| `awuser_i`                        | input     | [AxiUserWidth-1:0]        | AXI write user signal                                                |
+| `awid_i`                          | input     | [AxiIdWidth-1:0]          | AXI write transaction ID                                             |
+| `awlock_i`                        | input     | 1 bit                     | AXI write lock signal                                                |
+| `awvalid_i`                       | input     | 1 bit                     | AXI write address valid                                              |
+| `awready_o`                       | output    | 1 bit                     | AXI write address ready                                              |
+| `wdata_i`                         | input     | [AxiDataWidth-1:0]        | AXI write data                                                       |
+| `wstrb_i`                         | input     | [AxiDataWidth/8-1:0]      | AXI write strobe                                                     |
+| `wlast_i`                         | input     | 1 bit                     | AXI write last                                                       |
+| `wvalid_i`                        | input     | 1 bit                     | AXI write valid                                                      |
+| `wready_o`                        | output    | 1 bit                     | AXI write ready                                                      |
+| `bresp_o`                         | output    | 2 bits                    | AXI write response                                                   |
+| `bid_o`                           | output    | [AxiIdWidth-1:0]          | AXI write transaction ID (response)                                  |
+| `bvalid_o`                        | output    | 1 bit                     | AXI write response valid                                             |
+| `bready_i`                        | input     | 1 bit                     | AXI write response ready                                             |
+| `scl_i`                           | input     | 1 bit (if DIGITAL_IO_I3C) | I3C clock input (digital)                                            |
+| `sda_i`                           | input     | 1 bit (if DIGITAL_IO_I3C) | I3C data input (digital)                                             |
+| `scl_o`                           | output    | 1 bit (if DIGITAL_IO_I3C) | I3C clock output (digital)                                           |
+| `sda_o`                           | output    | 1 bit (if DIGITAL_IO_I3C) | I3C data output (digital)                                            |
+| `sel_od_pp_o`                     | output    | 1 bit (if DIGITAL_IO_I3C) | Open-drain / push-pull selection (digital output)                    |
+| `i3c_scl_io`                      | inout     | 1 bit (else)              | I3C clock line (analog/digital)                                      |
+| `i3c_sda_io`                      | inout     | 1 bit (else)              | I3C data line (analog/digital)                                       |
+| `recovery_payload_available_o`    | output    | 1 bit                     | Indicates recovery payload is available                              |
+| `recovery_image_activated_o`      | output    | 1 bit                     | Indicates the recovery image is activated                            |
+| `peripheral_reset_o`              | output    | 1 bit                     | Resets connected peripherals                                         |
+| `peripheral_reset_done_i`         | input     | 1 bit                     | Acknowledges peripheral reset completion                             |
+| `escalated_reset_o`               | output    | 1 bit                     | Escalated reset output                                               |
+| `irq_o`                           | output    | 1 bit                     | Interrupt request                                                    |
 
 ## I3C Integration Requirements
 
@@ -1521,6 +1519,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 
     ```c
     // Reference Code to Initialize the I3C core (Target Mode)
+    // This code initialized I3C core for default settings.
     uint32_t i3c_reg_data;
     i3c_reg_data = 0x00000000;
 
