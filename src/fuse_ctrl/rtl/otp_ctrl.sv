@@ -1502,7 +1502,7 @@ end
   //////////////////////////////////////////////////////////
 
   // Test unlock and exit tokens and RMA token
-  assign otp_lc_data_o.test_exit_token   = part_buf_data[TestUnlockToken0Offset +:
+  assign otp_lc_data_o.test_exit_dev_token   = part_buf_data[TestUnlockToken0Offset +:
                                                          TestUnlockToken0Size];
   assign otp_lc_data_o.test_unlock_token = part_buf_data[TestUnlockToken0Offset +:
                                                          TestUnlockToken0Size];

@@ -119,7 +119,9 @@ package otp_ctrl_pkg;
     // test tokens has been locked.
     lc_ctrl_pkg::lc_tx_t             test_tokens_valid;
     lc_ctrl_state_pkg::lc_token_t    test_unlock_token;
-    lc_ctrl_state_pkg::lc_token_t    test_exit_token;
+    lc_ctrl_state_pkg::lc_token_t    test_exit_dev_token;
+    lc_ctrl_state_pkg::lc_token_t    dev_exit_prod_token;
+    lc_ctrl_state_pkg::lc_token_t    prod_exit_prodend_token;
     // This is set to "On" if the partition containing the
     // rma token has been locked.
     lc_ctrl_pkg::lc_tx_t             rma_token_valid;
@@ -138,7 +140,9 @@ package otp_ctrl_pkg;
     secrets_valid: lc_ctrl_pkg::Off,
     test_tokens_valid: lc_ctrl_pkg::Off,
     test_unlock_token: '0,
-    test_exit_token: '0,
+    test_exit_dev_token: '0,
+    dev_exit_prod_token: '0,
+    prod_exit_prodend_token: '0,
     rma_token_valid: lc_ctrl_pkg::Off,
     rma_token: '0
   };

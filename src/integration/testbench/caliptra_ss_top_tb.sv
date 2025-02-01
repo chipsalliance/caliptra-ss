@@ -1564,9 +1564,11 @@ module caliptra_ss_top_tb
         end
         force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_tokens_valid = 4'b0101; //from_otp_caliptra_ss_lc_data_i.test_tokens_valid;//caliptra_ss_lc_tx_t'(On);
         force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_unlock_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
-        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_exit_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_exit_dev_token = 128'hee4f_e51a_73f2_9e7b_542f_2d2d_e65e_577c;
+        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.dev_exit_prod_token = 128'h3656_71d1_31ba_fcef_ac7f_4d2a_776a_6ed3;
+        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.prod_exit_prodend_token = 128'h5622_8106_a663_40c7_0f86_ccda_dcbc_2b7f;
         force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.rma_token_valid = 4'b0101;//from_otp_caliptra_ss_lc_data_i.rma_token_valid;//caliptra_ss_lc_tx_t'(On);
-        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.rma_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
+        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.rma_token = 128'h9704_5d52_04f2_f7fc_8756_e714_5ad7_6df9;
     end
 `endif
 
