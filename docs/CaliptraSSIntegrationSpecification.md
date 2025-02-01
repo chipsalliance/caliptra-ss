@@ -1437,16 +1437,16 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 
 ## Paratmeters and defines
 
-| Parameter        | Default Value                        | Description                                 |
-|------------------|--------------------------------------|---------------------------------------------|
-| AxiDataWidth     | `AXI_DATA_WIDTH                      | Width (in bits) of the AXI data bus         |
-| AxiAddrWidth     | `AXI_ADDR_WIDTH                      | Width (in bits) of the AXI address bus      |
-| AxiUserWidth     | `AXI_USER_WIDTH                      | Width (in bits) of the AXI user signals     |
-| AxiIdWidth       | `AXI_ID_WIDTH                        | Width (in bits) of the AXI ID signals       |
-| DatAw            | i3c_pkg::DatAw                       | Data address width (defined in i3c_pkg)     |
-| DctAw            | i3c_pkg::DctAw                       | Device context address width (i3c_pkg)      |
-| CsrAddrWidth     | I3CCSR_pkg::I3CCSR_MIN_ADDR_WIDTH     | CSR address width (defined in I3CCSR_pkg)   |
-| CsrDataWidth     | I3CCSR_pkg::I3CCSR_DATA_WIDTH         | CSR data width (defined in I3CCSR_pkg)      |
+| Parameter          | Default Value                         | Description                                 |
+|--------------------|---------------------------------------|---------------------------------------------|
+| `AxiDataWidth`     | `AXI_DATA_WIDTH                       | Width (in bits) of the AXI data bus         |
+| `AxiAddrWidth`     | `AXI_ADDR_WIDTH                       | Width (in bits) of the AXI address bus      |
+| `AxiUserWidth`     | `AXI_USER_WIDTH                       | Width (in bits) of the AXI user signals     |
+| `AxiIdWidth`       | `AXI_ID_WIDTH                         | Width (in bits) of the AXI ID signals       |
+| `DatAw`            | i3c_pkg::DatAw                        | Data address width (defined in i3c_pkg)     |
+| `DctAw`            | i3c_pkg::DctAw                        | Device context address width (i3c_pkg)      |
+| `CsrAddrWidth`     | I3CCSR_pkg::I3CCSR_MIN_ADDR_WIDTH     | CSR address width (defined in I3CCSR_pkg)   |
+| `CsrDataWidth`     | I3CCSR_pkg::I3CCSR_DATA_WIDTH         | CSR data width (defined in I3CCSR_pkg)      |
 
 ## Interface 
 
