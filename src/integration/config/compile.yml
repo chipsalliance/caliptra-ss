@@ -30,6 +30,7 @@ targets:
     directories: 
       - $COMPILE_ROOT/rtl
     files:
+      - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_top.sv
     tops: [caliptra_ss_top]
 --- 
