@@ -25,7 +25,7 @@ module mci_reg_top
     (
     input logic clk,
 
-    // Reset5
+    // Resets
     input logic mci_rst_b,
     input logic mcu_rst_b,
     input logic cptra_rst_b,
