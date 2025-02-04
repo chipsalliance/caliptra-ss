@@ -56,9 +56,7 @@ module mci_top_tb
     .MCU_SRAM_SIZE_KB(MCI_TB_MCU_SRAM_SIZE_KB), 
 
     //Mailbox configuration
-    .MCI_MBOX0_DMI_DLEN_ADDR(MCI_TB_MBOX0_DMI_DLEN_ADDR),
     .MCI_MBOX0_SIZE_KB(MCI_TB_MBOX0_SIZE_KB),
-    .MCI_MBOX1_DMI_DLEN_ADDR(MCI_TB_MBOX1_DMI_DLEN_ADDR),
     .MCI_MBOX1_SIZE_KB(MCI_TB_MBOX1_SIZE_KB)
   )
   mci_top_inst
@@ -82,6 +80,7 @@ module mci_top_tb
     .strap_mcu_lsu_axi_user('0),
     .strap_mcu_ifu_axi_user('0),
     .strap_clp_axi_user('0),
+    .ss_debug_intent('0),
 
     // SRAM ADHOC connections
     .mcu_sram_fw_exec_region_lock('0),

@@ -196,6 +196,8 @@ package mci_reg_pkg;
     } mci_reg__MCU_RV_MTIME_H__in_t;
 
     typedef struct packed{
+        logic next;
+        logic we;
         logic hwclr;
     } mci_reg__RESET_REQUEST__mcu_req__in_t;
 
@@ -205,6 +207,7 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic next;
+        logic we;
     } mci_reg__MCI_BOOTFSM_GO__go__in_t;
 
     typedef struct packed{
@@ -212,12 +215,23 @@ package mci_reg_pkg;
     } mci_reg__MCI_BOOTFSM_GO__in_t;
 
     typedef struct packed{
+        logic [15:0] next;
+        logic we;
         logic swwe;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__in_t;
 
     typedef struct packed{
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__in_t size;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__in_t;
+
+    typedef struct packed{
+        logic [31:0] next;
+        logic we;
+    } mci_reg__MCU_NMI_VECTOR__vec__in_t;
+
+    typedef struct packed{
+        mci_reg__MCU_NMI_VECTOR__vec__in_t vec;
+    } mci_reg__MCU_NMI_VECTOR__in_t;
 
     typedef struct packed{
         logic [31:0] next;
@@ -237,86 +251,29 @@ package mci_reg_pkg;
     } mci_reg__GENERIC_INPUT_WIRES__in_t;
 
     typedef struct packed{
-        logic swwe;
-    } mci_reg__FUSE_WR_DONE__done__in_t;
-
-    typedef struct packed{
-        mci_reg__FUSE_WR_DONE__done__in_t done;
-    } mci_reg__FUSE_WR_DONE__in_t;
-
-    typedef struct packed{
-        logic [31:0] next;
+        logic next;
         logic we;
+    } mci_reg__SS_DEBUG_INTENT__strap__in_t;
+
+    typedef struct packed{
+        mci_reg__SS_DEBUG_INTENT__strap__in_t debug_intent;
+    } mci_reg__SS_DEBUG_INTENT__in_t;
+
+    typedef struct packed{
+        logic swwe;
+    } mci_reg__SS_CONFIG_DONE__done__in_t;
+
+    typedef struct packed{
+        mci_reg__SS_CONFIG_DONE__done__in_t done;
+    } mci_reg__SS_CONFIG_DONE__in_t;
+
+    typedef struct packed{
         logic swwel;
     } mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__hash__in_t;
 
     typedef struct packed{
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__hash__in_t hash;
     } mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__STICKY_DATA_VAULT_CTRL__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_DATA_VAULT_CTRL__lock_entry__in_t lock_entry;
-    } mci_reg__STICKY_DATA_VAULT_CTRL__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__STICKY_DATA_VAULT_ENTRY__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_DATA_VAULT_ENTRY__lock_entry__in_t lock_entry;
-    } mci_reg__STICKY_DATA_VAULT_ENTRY__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__DATA_VAULT_CTRL__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__DATA_VAULT_CTRL__lock_entry__in_t lock_entry;
-    } mci_reg__DATA_VAULT_CTRL__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__DATA_VAULT_ENTRY__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__DATA_VAULT_ENTRY__lock_entry__in_t lock_entry;
-    } mci_reg__DATA_VAULT_ENTRY__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__lock_entry__in_t lock_entry;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG__data__in_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG__data__in_t data;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__LOCKABLE_SCRATCH_REG_CTRL__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL__lock_entry__in_t lock_entry;
-    } mci_reg__LOCKABLE_SCRATCH_REG_CTRL__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__LOCKABLE_SCRATCH_REG__data__in_t;
-
-    typedef struct packed{
-        mci_reg__LOCKABLE_SCRATCH_REG__data__in_t data;
-    } mci_reg__LOCKABLE_SCRATCH_REG__in_t;
 
     typedef struct packed{
         logic hwset;
@@ -684,7 +641,6 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic mci_rst_b;
-        logic mcu_rst_b;
         logic mci_pwrgood;
         logic cptra_req;
         logic mcu_req;
@@ -706,18 +662,12 @@ package mci_reg_pkg;
         mci_reg__RESET_REQUEST__in_t RESET_REQUEST;
         mci_reg__MCI_BOOTFSM_GO__in_t MCI_BOOTFSM_GO;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__in_t FW_SRAM_EXEC_REGION_SIZE;
+        mci_reg__MCU_NMI_VECTOR__in_t MCU_NMI_VECTOR;
         mci_reg__MCU_RESET_VECTOR__in_t MCU_RESET_VECTOR;
         mci_reg__GENERIC_INPUT_WIRES__in_t [2-1:0]GENERIC_INPUT_WIRES;
-        mci_reg__FUSE_WR_DONE__in_t FUSE_WR_DONE;
+        mci_reg__SS_DEBUG_INTENT__in_t SS_DEBUG_INTENT;
+        mci_reg__SS_CONFIG_DONE__in_t SS_CONFIG_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__in_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
-        mci_reg__STICKY_DATA_VAULT_CTRL__in_t [10-1:0]STICKY_DATA_VAULT_CTRL;
-        mci_reg__STICKY_DATA_VAULT_ENTRY__in_t [10-1:0][12-1:0]STICKY_DATA_VAULT_ENTRY;
-        mci_reg__DATA_VAULT_CTRL__in_t [10-1:0]DATA_VAULT_CTRL;
-        mci_reg__DATA_VAULT_ENTRY__in_t [10-1:0][12-1:0]DATA_VAULT_ENTRY;
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__in_t [8-1:0]STICKY_LOCKABLE_SCRATCH_REG_CTRL;
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG__in_t [8-1:0]STICKY_LOCKABLE_SCRATCH_REG;
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL__in_t [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
-        mci_reg__LOCKABLE_SCRATCH_REG__in_t [10-1:0]LOCKABLE_SCRATCH_REG;
         mci_reg__intr_block_t__in_t intr_block_rf;
     } mci_reg__in_t;
 
@@ -728,6 +678,14 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__FW_FLOW_STATUS__status__out_t status;
     } mci_reg__FW_FLOW_STATUS__out_t;
+
+    typedef struct packed{
+        logic [3:0] value;
+    } mci_reg__HW_FLOW_STATUS__boot_fsm__out_t;
+
+    typedef struct packed{
+        mci_reg__HW_FLOW_STATUS__boot_fsm__out_t boot_fsm;
+    } mci_reg__HW_FLOW_STATUS__out_t;
 
     typedef struct packed{
         logic value;
@@ -1129,12 +1087,20 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
-        logic swmod;
-    } mci_reg__FUSE_WR_DONE__done__out_t;
+    } mci_reg__SS_DEBUG_INTENT__strap__out_t;
 
     typedef struct packed{
-        mci_reg__FUSE_WR_DONE__done__out_t done;
-    } mci_reg__FUSE_WR_DONE__out_t;
+        mci_reg__SS_DEBUG_INTENT__strap__out_t debug_intent;
+    } mci_reg__SS_DEBUG_INTENT__out_t;
+
+    typedef struct packed{
+        logic value;
+        logic swmod;
+    } mci_reg__SS_CONFIG_DONE__done__out_t;
+
+    typedef struct packed{
+        mci_reg__SS_CONFIG_DONE__done__out_t done;
+    } mci_reg__SS_CONFIG_DONE__out_t;
 
     typedef struct packed{
         logic [31:0] value;
@@ -1143,38 +1109,6 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__hash__out_t hash;
     } mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t;
-
-    typedef struct packed{
-        logic value;
-    } mci_reg__STICKY_DATA_VAULT_CTRL__lock_entry__out_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_DATA_VAULT_CTRL__lock_entry__out_t lock_entry;
-    } mci_reg__STICKY_DATA_VAULT_CTRL__out_t;
-
-    typedef struct packed{
-        logic value;
-    } mci_reg__DATA_VAULT_CTRL__lock_entry__out_t;
-
-    typedef struct packed{
-        mci_reg__DATA_VAULT_CTRL__lock_entry__out_t lock_entry;
-    } mci_reg__DATA_VAULT_CTRL__out_t;
-
-    typedef struct packed{
-        logic value;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__lock_entry__out_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__lock_entry__out_t lock_entry;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__out_t;
-
-    typedef struct packed{
-        logic value;
-    } mci_reg__LOCKABLE_SCRATCH_REG_CTRL__lock_entry__out_t;
-
-    typedef struct packed{
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL__lock_entry__out_t lock_entry;
-    } mci_reg__LOCKABLE_SCRATCH_REG_CTRL__out_t;
 
     typedef struct packed{
         logic intr;
@@ -1221,6 +1155,7 @@ package mci_reg_pkg;
 
     typedef struct packed{
         mci_reg__FW_FLOW_STATUS__out_t FW_FLOW_STATUS;
+        mci_reg__HW_FLOW_STATUS__out_t HW_FLOW_STATUS;
         mci_reg__RESET_REASON__out_t RESET_REASON;
         mci_reg__RESET_STATUS__out_t RESET_STATUS;
         mci_reg__HW_ERROR_FATAL__out_t HW_ERROR_FATAL;
@@ -1256,12 +1191,9 @@ package mci_reg_pkg;
         mci_reg__MCU_RESET_VECTOR__out_t MCU_RESET_VECTOR;
         mci_reg__GENERIC_INPUT_WIRES__out_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__GENERIC_OUTPUT_WIRES__out_t [2-1:0]GENERIC_OUTPUT_WIRES;
-        mci_reg__FUSE_WR_DONE__out_t FUSE_WR_DONE;
+        mci_reg__SS_DEBUG_INTENT__out_t SS_DEBUG_INTENT;
+        mci_reg__SS_CONFIG_DONE__out_t SS_CONFIG_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
-        mci_reg__STICKY_DATA_VAULT_CTRL__out_t [10-1:0]STICKY_DATA_VAULT_CTRL;
-        mci_reg__DATA_VAULT_CTRL__out_t [10-1:0]DATA_VAULT_CTRL;
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__out_t [8-1:0]STICKY_LOCKABLE_SCRATCH_REG_CTRL;
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL__out_t [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
         mci_reg__intr_block_t__out_t intr_block_rf;
     } mci_reg__out_t;
 

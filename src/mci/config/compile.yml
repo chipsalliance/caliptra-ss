@@ -6,11 +6,13 @@ targets:
     files:
       - $COMPILE_ROOT/rtl/mci_pkg.sv
       - $COMPILE_ROOT/rtl/mci_reg_pkg.sv
+      - $COMPILE_ROOT/rtl/mci_dmi_pkg.sv
   tb:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/mci_pkg.sv
       - $COMPILE_ROOT/rtl/mci_reg_pkg.sv
+      - $COMPILE_ROOT/rtl/mci_dmi_pkg.sv
 ---
 provides: [mci_top]
 schema_version: 2.4.0

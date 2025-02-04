@@ -1820,7 +1820,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.size = new("size");
-            this.size.configure(this, 16, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.size.configure(this, 16, 0, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(size_bit_cg[bt]) size_bit_cg[bt] = new();
             end
@@ -1850,7 +1850,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.vec = new("vec");
-            this.vec.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.vec.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(vec_bit_cg[bt]) vec_bit_cg[bt] = new();
             end
@@ -2129,17 +2129,47 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__DEBUG_OUT
 
-    // Reg - mci_reg::FUSE_WR_DONE
-    class mci_reg__FUSE_WR_DONE extends uvm_reg;
+    // Reg - mci_reg::SS_DEBUG_INTENT
+    class mci_reg__SS_DEBUG_INTENT extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__FUSE_WR_DONE_bit_cg done_bit_cg[1];
-        mci_reg__FUSE_WR_DONE_fld_cg fld_cg;
+        mci_reg__SS_DEBUG_INTENT_bit_cg debug_intent_bit_cg[1];
+        mci_reg__SS_DEBUG_INTENT_fld_cg fld_cg;
+        rand uvm_reg_field debug_intent;
+
+        function new(string name = "mci_reg__SS_DEBUG_INTENT");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.debug_intent = new("debug_intent");
+            this.debug_intent.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(debug_intent_bit_cg[bt]) debug_intent_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__SS_DEBUG_INTENT
+
+    // Reg - mci_reg::SS_CONFIG_DONE
+    class mci_reg__SS_CONFIG_DONE extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__SS_CONFIG_DONE_bit_cg done_bit_cg[1];
+        mci_reg__SS_CONFIG_DONE_fld_cg fld_cg;
         rand uvm_reg_field done;
 
-        function new(string name = "mci_reg__FUSE_WR_DONE");
+        function new(string name = "mci_reg__SS_CONFIG_DONE");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -2157,7 +2187,7 @@ package mci_reg_uvm;
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__FUSE_WR_DONE
+    endclass : mci_reg__SS_CONFIG_DONE
 
     // Reg - mci_reg::PROD_DEBUG_UNLOCK_PK_HASH_REG
     class mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG extends uvm_reg;
@@ -2180,7 +2210,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.hash = new("hash");
-            this.hash.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
+            this.hash.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(hash_bit_cg[bt]) hash_bit_cg[bt] = new();
             end
@@ -2188,276 +2218,6 @@ package mci_reg_uvm;
                 fld_cg = new();
         endfunction : build
     endclass : mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG
-
-    // Reg - mci_reg::STICKY_DATA_VAULT_CTRL
-    class mci_reg__STICKY_DATA_VAULT_CTRL extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__STICKY_DATA_VAULT_CTRL_bit_cg lock_entry_bit_cg[1];
-        mci_reg__STICKY_DATA_VAULT_CTRL_fld_cg fld_cg;
-        rand uvm_reg_field lock_entry;
-
-        function new(string name = "mci_reg__STICKY_DATA_VAULT_CTRL");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.lock_entry = new("lock_entry");
-            this.lock_entry.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(lock_entry_bit_cg[bt]) lock_entry_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__STICKY_DATA_VAULT_CTRL
-
-    // Reg - mci_reg::STICKY_DATA_VAULT_ENTRY
-    class mci_reg__STICKY_DATA_VAULT_ENTRY extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__STICKY_DATA_VAULT_ENTRY_bit_cg lock_entry_bit_cg[1];
-        mci_reg__STICKY_DATA_VAULT_ENTRY_fld_cg fld_cg;
-        rand uvm_reg_field lock_entry;
-
-        function new(string name = "mci_reg__STICKY_DATA_VAULT_ENTRY");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.lock_entry = new("lock_entry");
-            this.lock_entry.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(lock_entry_bit_cg[bt]) lock_entry_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__STICKY_DATA_VAULT_ENTRY
-
-    // Reg - mci_reg::DATA_VAULT_CTRL
-    class mci_reg__DATA_VAULT_CTRL extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__DATA_VAULT_CTRL_bit_cg lock_entry_bit_cg[1];
-        mci_reg__DATA_VAULT_CTRL_fld_cg fld_cg;
-        rand uvm_reg_field lock_entry;
-
-        function new(string name = "mci_reg__DATA_VAULT_CTRL");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.lock_entry = new("lock_entry");
-            this.lock_entry.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(lock_entry_bit_cg[bt]) lock_entry_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__DATA_VAULT_CTRL
-
-    // Reg - mci_reg::DATA_VAULT_ENTRY
-    class mci_reg__DATA_VAULT_ENTRY extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__DATA_VAULT_ENTRY_bit_cg lock_entry_bit_cg[1];
-        mci_reg__DATA_VAULT_ENTRY_fld_cg fld_cg;
-        rand uvm_reg_field lock_entry;
-
-        function new(string name = "mci_reg__DATA_VAULT_ENTRY");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.lock_entry = new("lock_entry");
-            this.lock_entry.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(lock_entry_bit_cg[bt]) lock_entry_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__DATA_VAULT_ENTRY
-
-    // Reg - mci_reg::STICKY_LOCKABLE_SCRATCH_REG_CTRL
-    class mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL_bit_cg lock_entry_bit_cg[1];
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL_fld_cg fld_cg;
-        rand uvm_reg_field lock_entry;
-
-        function new(string name = "mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.lock_entry = new("lock_entry");
-            this.lock_entry.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(lock_entry_bit_cg[bt]) lock_entry_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL
-
-    // Reg - mci_reg::STICKY_LOCKABLE_SCRATCH_REG
-    class mci_reg__STICKY_LOCKABLE_SCRATCH_REG extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_bit_cg data_bit_cg[32];
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_fld_cg fld_cg;
-        rand uvm_reg_field data;
-
-        function new(string name = "mci_reg__STICKY_LOCKABLE_SCRATCH_REG");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.data = new("data");
-            this.data.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(data_bit_cg[bt]) data_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__STICKY_LOCKABLE_SCRATCH_REG
-
-    // Reg - mci_reg::LOCKABLE_SCRATCH_REG_CTRL
-    class mci_reg__LOCKABLE_SCRATCH_REG_CTRL extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL_bit_cg lock_entry_bit_cg[1];
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL_fld_cg fld_cg;
-        rand uvm_reg_field lock_entry;
-
-        function new(string name = "mci_reg__LOCKABLE_SCRATCH_REG_CTRL");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.lock_entry = new("lock_entry");
-            this.lock_entry.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(lock_entry_bit_cg[bt]) lock_entry_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__LOCKABLE_SCRATCH_REG_CTRL
-
-    // Reg - mci_reg::LOCKABLE_SCRATCH_REG
-    class mci_reg__LOCKABLE_SCRATCH_REG extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__LOCKABLE_SCRATCH_REG_bit_cg data_bit_cg[32];
-        mci_reg__LOCKABLE_SCRATCH_REG_fld_cg fld_cg;
-        rand uvm_reg_field data;
-
-        function new(string name = "mci_reg__LOCKABLE_SCRATCH_REG");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.data = new("data");
-            this.data.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(data_bit_cg[bt]) data_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__LOCKABLE_SCRATCH_REG
-
-    // Reg - mci_reg::NON_STICKY_GENERIC_SCRATCH_REG
-    class mci_reg__NON_STICKY_GENERIC_SCRATCH_REG extends uvm_reg;
-        protected uvm_reg_data_t m_current;
-        protected uvm_reg_data_t m_data;
-        protected bit            m_is_read;
-
-        mci_reg__NON_STICKY_GENERIC_SCRATCH_REG_bit_cg data_bit_cg[32];
-        mci_reg__NON_STICKY_GENERIC_SCRATCH_REG_fld_cg fld_cg;
-        rand uvm_reg_field data;
-
-        function new(string name = "mci_reg__NON_STICKY_GENERIC_SCRATCH_REG");
-            super.new(name, 32, build_coverage(UVM_CVR_ALL));
-        endfunction : new
-        extern virtual function void sample_values();
-        extern protected virtual function void sample(uvm_reg_data_t  data,
-                                                      uvm_reg_data_t  byte_en,
-                                                      bit             is_read,
-                                                      uvm_reg_map     map);
-
-        virtual function void build();
-            this.data = new("data");
-            this.data.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
-            if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(data_bit_cg[bt]) data_bit_cg[bt] = new();
-            end
-            if (has_coverage(UVM_CVR_FIELD_VALS))
-                fld_cg = new();
-        endfunction : build
-    endclass : mci_reg__NON_STICKY_GENERIC_SCRATCH_REG
 
     // Reg - mci_reg::intr_block_t::global_intr_en_t
     class mci_reg__intr_block_t__global_intr_en_t extends uvm_reg;
@@ -9020,17 +8780,9 @@ package mci_reg_uvm;
         rand mci_reg__GENERIC_OUTPUT_WIRES GENERIC_OUTPUT_WIRES[2];
         rand mci_reg__DEBUG_IN DEBUG_IN;
         rand mci_reg__DEBUG_OUT DEBUG_OUT;
-        rand mci_reg__FUSE_WR_DONE FUSE_WR_DONE;
+        rand mci_reg__SS_DEBUG_INTENT SS_DEBUG_INTENT;
+        rand mci_reg__SS_CONFIG_DONE SS_CONFIG_DONE;
         rand mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12];
-        rand mci_reg__STICKY_DATA_VAULT_CTRL STICKY_DATA_VAULT_CTRL[10];
-        rand mci_reg__STICKY_DATA_VAULT_ENTRY STICKY_DATA_VAULT_ENTRY[10][12];
-        rand mci_reg__DATA_VAULT_CTRL DATA_VAULT_CTRL[10];
-        rand mci_reg__DATA_VAULT_ENTRY DATA_VAULT_ENTRY[10][12];
-        rand mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL STICKY_LOCKABLE_SCRATCH_REG_CTRL[8];
-        rand mci_reg__STICKY_LOCKABLE_SCRATCH_REG STICKY_LOCKABLE_SCRATCH_REG[8];
-        rand mci_reg__LOCKABLE_SCRATCH_REG_CTRL LOCKABLE_SCRATCH_REG_CTRL[10];
-        rand mci_reg__LOCKABLE_SCRATCH_REG LOCKABLE_SCRATCH_REG[10];
-        rand mci_reg__NON_STICKY_GENERIC_SCRATCH_REG NON_STICKY_GENERIC_SCRATCH_REG[8];
         rand mci_reg__intr_block_t intr_block_rf;
 
         function new(string name = "mci_reg");
@@ -9306,80 +9058,22 @@ package mci_reg_uvm;
 
             this.DEBUG_OUT.build();
             this.default_map.add_reg(this.DEBUG_OUT, 'h414);
-            this.FUSE_WR_DONE = new("FUSE_WR_DONE");
-            this.FUSE_WR_DONE.configure(this);
+            this.SS_DEBUG_INTENT = new("SS_DEBUG_INTENT");
+            this.SS_DEBUG_INTENT.configure(this);
 
-            this.FUSE_WR_DONE.build();
-            this.default_map.add_reg(this.FUSE_WR_DONE, 'h440);
+            this.SS_DEBUG_INTENT.build();
+            this.default_map.add_reg(this.SS_DEBUG_INTENT, 'h418);
+            this.SS_CONFIG_DONE = new("SS_CONFIG_DONE");
+            this.SS_CONFIG_DONE.configure(this);
+
+            this.SS_CONFIG_DONE.build();
+            this.default_map.add_reg(this.SS_CONFIG_DONE, 'h440);
             foreach(this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0, i1]) begin
                 this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] = new($sformatf("PROD_DEBUG_UNLOCK_PK_HASH_REG[%0d][%0d]", i0, i1));
                 this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].configure(this);
                 
                 this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].build();
                 this.default_map.add_reg(this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1], 'h480 + i0*'h30 + i1*'h4);
-            end
-            foreach(this.STICKY_DATA_VAULT_CTRL[i0]) begin
-                this.STICKY_DATA_VAULT_CTRL[i0] = new($sformatf("STICKY_DATA_VAULT_CTRL[%0d]", i0));
-                this.STICKY_DATA_VAULT_CTRL[i0].configure(this);
-                
-                this.STICKY_DATA_VAULT_CTRL[i0].build();
-                this.default_map.add_reg(this.STICKY_DATA_VAULT_CTRL[i0], 'h800 + i0*'h4);
-            end
-            foreach(this.STICKY_DATA_VAULT_ENTRY[i0, i1]) begin
-                this.STICKY_DATA_VAULT_ENTRY[i0][i1] = new($sformatf("STICKY_DATA_VAULT_ENTRY[%0d][%0d]", i0, i1));
-                this.STICKY_DATA_VAULT_ENTRY[i0][i1].configure(this);
-                
-                this.STICKY_DATA_VAULT_ENTRY[i0][i1].build();
-                this.default_map.add_reg(this.STICKY_DATA_VAULT_ENTRY[i0][i1], 'h828 + i0*'h30 + i1*'h4);
-            end
-            foreach(this.DATA_VAULT_CTRL[i0]) begin
-                this.DATA_VAULT_CTRL[i0] = new($sformatf("DATA_VAULT_CTRL[%0d]", i0));
-                this.DATA_VAULT_CTRL[i0].configure(this);
-                
-                this.DATA_VAULT_CTRL[i0].build();
-                this.default_map.add_reg(this.DATA_VAULT_CTRL[i0], 'ha08 + i0*'h4);
-            end
-            foreach(this.DATA_VAULT_ENTRY[i0, i1]) begin
-                this.DATA_VAULT_ENTRY[i0][i1] = new($sformatf("DATA_VAULT_ENTRY[%0d][%0d]", i0, i1));
-                this.DATA_VAULT_ENTRY[i0][i1].configure(this);
-                
-                this.DATA_VAULT_ENTRY[i0][i1].build();
-                this.default_map.add_reg(this.DATA_VAULT_ENTRY[i0][i1], 'ha30 + i0*'h30 + i1*'h4);
-            end
-            foreach(this.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0]) begin
-                this.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0] = new($sformatf("STICKY_LOCKABLE_SCRATCH_REG_CTRL[%0d]", i0));
-                this.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].configure(this);
-                
-                this.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0].build();
-                this.default_map.add_reg(this.STICKY_LOCKABLE_SCRATCH_REG_CTRL[i0], 'hc10 + i0*'h4);
-            end
-            foreach(this.STICKY_LOCKABLE_SCRATCH_REG[i0]) begin
-                this.STICKY_LOCKABLE_SCRATCH_REG[i0] = new($sformatf("STICKY_LOCKABLE_SCRATCH_REG[%0d]", i0));
-                this.STICKY_LOCKABLE_SCRATCH_REG[i0].configure(this);
-                
-                this.STICKY_LOCKABLE_SCRATCH_REG[i0].build();
-                this.default_map.add_reg(this.STICKY_LOCKABLE_SCRATCH_REG[i0], 'hc30 + i0*'h4);
-            end
-            foreach(this.LOCKABLE_SCRATCH_REG_CTRL[i0]) begin
-                this.LOCKABLE_SCRATCH_REG_CTRL[i0] = new($sformatf("LOCKABLE_SCRATCH_REG_CTRL[%0d]", i0));
-                this.LOCKABLE_SCRATCH_REG_CTRL[i0].configure(this);
-                
-                this.LOCKABLE_SCRATCH_REG_CTRL[i0].build();
-                this.default_map.add_reg(this.LOCKABLE_SCRATCH_REG_CTRL[i0], 'hc50 + i0*'h4);
-            end
-            foreach(this.LOCKABLE_SCRATCH_REG[i0]) begin
-                this.LOCKABLE_SCRATCH_REG[i0] = new($sformatf("LOCKABLE_SCRATCH_REG[%0d]", i0));
-                this.LOCKABLE_SCRATCH_REG[i0].configure(this);
-                
-                this.LOCKABLE_SCRATCH_REG[i0].build();
-                this.default_map.add_reg(this.LOCKABLE_SCRATCH_REG[i0], 'hc78 + i0*'h4);
-            end
-            foreach(this.NON_STICKY_GENERIC_SCRATCH_REG[i0]) begin
-                this.NON_STICKY_GENERIC_SCRATCH_REG[i0] = new($sformatf("NON_STICKY_GENERIC_SCRATCH_REG[%0d]", i0));
-                this.NON_STICKY_GENERIC_SCRATCH_REG[i0].configure(this);
-                
-                this.NON_STICKY_GENERIC_SCRATCH_REG[i0].build();
-                this.default_map.add_reg(this.NON_STICKY_GENERIC_SCRATCH_REG[i0], 'hca0 + i0*'h4);
             end
             this.intr_block_rf = new("intr_block_rf");
             this.intr_block_rf.configure(this);

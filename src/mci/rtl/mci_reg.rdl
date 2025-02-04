@@ -27,7 +27,6 @@ addrmap mci_reg {
 
     default hw = na;
     signal {activelow; async; cpuif_reset; field_reset;} mci_rst_b;
-    signal {activelow; async;} mcu_rst_b; // uC reset only
     signal {activelow; async;} mci_pwrgood;
 
     //signal to indicate request origin
@@ -102,7 +101,7 @@ addrmap mci_reg {
                 [br]MCU Access:      RO
                 [br]SOC Access:      RO
                 [br]TAP Access [in debug/manuf mode]: RO";
-        field {desc="MCI Boot FSM State";                                            sw=r;                  hw=w ; /* no storage, no reset */} boot_fsm[4];
+        field {desc="MCI Boot FSM State";                                            sw=r;                  hw=rw ; /* no storage, no reset */} boot_fsm[4];
     } HW_FLOW_STATUS;
 
 
@@ -142,7 +141,8 @@ addrmap mci_reg {
                 Only an MCI reset will clear the fatal error interrupt.
                 [br]Caliptra Access: RW1C
                 [br]MCU Access:      RW1C
-                [br]SOC Access:      RW1C";
+                [br]SOC Access:      RW1C
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky_hw mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
         rw_rw_sticky_hw nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
     } HW_ERROR_FATAL @0x40;
@@ -156,7 +156,8 @@ addrmap mci_reg {
                 Only an MCI reset will clear the fatal error interrupt.
                 [br]Caliptra Access: RW1C
                 [br]MCU Access:      RW1C
-                [br]SOC Access:      RW1C";
+                [br]SOC Access:      RW1C
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky_hw agg_error_fatal31 = 1'b0;
         rw_rw_sticky_hw agg_error_fatal30 = 1'b0;
         rw_rw_sticky_hw agg_error_fatal29 = 1'b0;
@@ -211,7 +212,8 @@ addrmap mci_reg {
                 [/list]
                 [br]Caliptra Access: RW1C
                 [br]MCU Access:      RW1C
-                [br]SOC Access:      RW1C";
+                [br]SOC Access:      RW1C
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky_hw RSVD=1'b0;
     } HW_ERROR_NON_FATAL;
     reg {
@@ -235,7 +237,8 @@ addrmap mci_reg {
                 [/list]
                 [br]Caliptra Access: RW1C
                 [br]MCU Access:      RW1C
-                [br]SOC Access:      RW1C";
+                [br]SOC Access:      RW1C
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky_hw agg_error_non_fatal31 = 1'b0;
         rw_rw_sticky_hw agg_error_non_fatal30 = 1'b0;
         rw_rw_sticky_hw agg_error_non_fatal29 = 1'b0;
@@ -279,7 +282,8 @@ addrmap mci_reg {
                 Only an MCI reset will clear the fatal error interrupt.
                 [br]Caliptra Access: RW
                 [br]MCU Access:      RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky error_code[32]=0; 
     } FW_ERROR_FATAL;
     reg {
@@ -303,28 +307,32 @@ addrmap mci_reg {
                 [/list]
                 [br]Caliptra Access: RW
                 [br]MCU Access:      RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky error_code[32]=0; 
     } FW_ERROR_NON_FATAL;
     reg {
         name = "Hardware Error Encoding";
         desc = "Encoded error value for hardware errors.
                 [br]Caliptra Access: RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
          field {resetsignal = mci_pwrgood; hw=r;}error_code[32]=0; 
     } HW_ERROR_ENC;
     reg {
         name = "Firmware Error Encoding";
         desc = "Encoded error value for firmware errors.
                 [br]Caliptra Access: RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
         field {resetsignal = mci_pwrgood; hw=r;} error_code[32]=0; 
     } FW_ERROR_ENC;
     reg {
         name = "Firmware Extended Error Information";
         desc = "Firmware Extended Error information for firmware errors.
                 [br]Caliptra Access: RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
         field {resetsignal = mci_pwrgood; hw=r;} error_info[32]=0; 
     } FW_EXTENDED_ERROR_INFO[8];
 
@@ -682,8 +690,9 @@ addrmap mci_reg {
                 the MCU before the MCU is reset and executes updated firmware.
                 [br]Caliptra Access: R0
                 [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field { desc = "Request. Writable by MCU. Causes MCU reset to be asserted by MCI. Cleared when reset is asserted."; sw=rw; hw=r; hwclr=true; swwe=mcu_req; resetsignal=mci_rst_b; } mcu_req=1'b0;
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug mode]: RW";
+        field { desc = "Request. Writable by MCU. Causes MCU reset to be asserted by MCI. Cleared when reset is asserted."; sw=rw; hw=rw; hwclr=true; swwe=mcu_req; resetsignal=mci_rst_b; we;} mcu_req=1'b0;
         // FIXME mcu_or_no_rom_config we need to privide a strap for allowed AXI users other than MCU that can access this bit.
     } RESET_REQUEST @0x100;
 
@@ -693,25 +702,27 @@ addrmap mci_reg {
         desc = "Indicates that the MCI BootFSM can continue to execute to bring MCU and Caliptra out of reset.
                 [br]Caliptra Access: RW
                 [br]MCU Access:      RW
-                [br]SOC Access:      RW";
-        field { sw=rw; hw = rw;} go=1'b0;
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RW";
+        field { sw=rw; hw = rw; we;} go=1'b0;
     } MCI_BOOTFSM_GO;
 
     reg {
         name = "Firmware SRAM Exec Region Size";
-        desc = "Dynamic size assignment for the region of sram that contains executable instructions for MCU.";
-        field { desc="Size (in multiples of 4KiB)"; sw=rw; hw=r; swwe=true; } size[16] = 16'h0;
+        desc = "Dynamic size assignment for the region of sram that contains executable instructions for MCU.
+                [br]TAP Access [in debug mode]: RW";
+        field { desc="Size (in multiples of 4KiB)"; sw=rw; hw=rw; swwel=true; we;} size[16] = 16'h0;
     } FW_SRAM_EXEC_REGION_SIZE;
     reg {
         name = "MCU NMI Vector";
         desc = "32-bit register providing the jump vector for RISC-V to transition for NMI handling code.
                 Default is the base address of ROM, but may be updated for enhanced handling by runtime images.
                 Bit [0] is ignored to enforce half-word alignment of address.
-                [br]Caliptra Access: R)
+                [br]Caliptra Access: RO
                 [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-
-        field {desc = "NMI Vector"; hw = r; sw = rw; swwe = mcu_req;} vec[32] = 32'h0;
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug mode]: RW";
+        field {desc = "NMI Vector"; hw = rw; we; sw = rw; swwe = mcu_req;} vec[32] = 32'h0;
     } MCU_NMI_VECTOR;
 
     reg {
@@ -721,8 +732,8 @@ addrmap mci_reg {
                 Bit [0] is ignored to enforce half-word alignment of address.
                 [br]Caliptra Access: RW
                 [br]MCU Access:      RO
-                [br]SOC Access:      RO";
-
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug mode]: RW";
         field {desc = "NMI Vector"; hw = rw; we; sw = rw; swwe = cptra_req;} vec[32] = 32'h0; // FIXME : is this the right access?
     } MCU_RESET_VECTOR;
 
@@ -758,115 +769,128 @@ addrmap mci_reg {
     reg { 
         field {sw=rw; hw=na; resetsignal = mci_rst_b;} FIXME=0;
     } DEBUG_OUT; // i.e. stdout
+    
+    reg {
+        name = "DEBUG INTENT";
+        desc = "Strap from SoC in Subsystem configuration that indicates if this boot cycle will be used for debug. In passive mode this register always reflects a value of 0.
+                [br]MCU      Access: RO
+                [br]Caliptra Access: RO
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug/manuf mode]: RW";
+        field strap {sw = r; hw = rw; we; resetsignal = mci_pwrgood;} debug_intent=1'b0;
+    } SS_DEBUG_INTENT;
+
 
     reg {
-        name = "FUSE Write Done";
-        desc = "Set to indicate that all fuse registers have been populated in MCI.
-                Locks fuse registers from further modification.
+        name = "Subsystem Config Done";
+        desc = "Set to indicate that all configuration registers have been populated in MCI.
+                Locks configuration registers from further modification.
                 Sticky until cold reset once set.
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {sw = rw; hw=r; swwe; swmod=true; resetsignal = mci_pwrgood;} done=1'h0; // TODO
-    } FUSE_WR_DONE @0x440;
+        field {sw = rw; hw=r; swwe; swmod=true; resetsignal = mci_pwrgood;} done=1'h0; 
+    } SS_CONFIG_DONE @0x440;
 
     reg {
         name = "Production Debug Unlock PK HASH";
-        desc = "Production Debug Unlock PK HASH. Initialized from strap inputs, overwritable by MCU until FUSE_WR_DONE is set.
+        desc = "Production Debug Unlock PK HASH. Initialized from strap inputs, overwritable by MCU until SS_CONFIG_DONE is set.
                 Once FUSE_WR_DONE is set value persists until cold reset.
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {sw = rw; hw = rw; we; swwel; resetsignal = mci_pwrgood;} hash[32]=32'h0; // TODO
+        field {sw = rw; hw = r; swwel; resetsignal = mci_pwrgood;} hash[32]=32'h0; // TODO
     } PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12] @0x480;
 
     // ----------------------------------------
     // ----- DATA_VAULT/SCRATCH/RESERVED ------
-     reg {
-         name = "STICKY DATA VAULT CTRL";
-         desc = "Controls for the Sticky Data Vault Entries (cleared on cold reset)
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
-                sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0; //TODO Shoud reflect STICKY_DV_NUM_ENTRIES from dv_defines_pkg.sv
-     } STICKY_DATA_VAULT_CTRL[10] @0x800;
+    
+    // TODO: Add datavalue and lockable scratch registers in the future
+    // reg {
+    //     name = "STICKY DATA VAULT CTRL";
+    //     desc = "Controls for the Sticky Data Vault Entries (cleared on cold reset)
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
+    //            sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0; //TODO Shoud reflect STICKY_DV_NUM_ENTRIES from dv_defines_pkg.sv
+    // } STICKY_DATA_VAULT_CTRL[10] @0x800;
 
-     reg {
-         name = "STICKY DATA VAULT ENTRY";
-         desc = "Sticky Data Vault Entry (cleared on cold reset). Lockable.
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
-     } STICKY_DATA_VAULT_ENTRY[10][12];//TODO Shoud reflect STICKY_DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    // reg {
+    //     name = "STICKY DATA VAULT ENTRY";
+    //     desc = "Sticky Data Vault Entry (cleared on cold reset). Lockable.
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
+    // } STICKY_DATA_VAULT_ENTRY[10][12];//TODO Shoud reflect STICKY_DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
 
-     reg {
-         name = "DATA VAULT CTRL";
-         desc = "Controls for the Data Vault Entries (cleared on warm reset)
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
-                sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0; // TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
-     } DATA_VAULT_CTRL[10];// CAREFUL with the address extensions
+    // reg {
+    //     name = "DATA VAULT CTRL";
+    //     desc = "Controls for the Data Vault Entries (cleared on warm reset)
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
+    //            sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0; // TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    // } DATA_VAULT_CTRL[10];// CAREFUL with the address extensions
 
-     reg {
-         name = "DATA VAULT ENTRY";
-         desc = "Data Vault Entry (cleared on cold reset). Lockable.
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
-     } DATA_VAULT_ENTRY[10][12];// TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    // reg {
+    //     name = "DATA VAULT ENTRY";
+    //     desc = "Data Vault Entry (cleared on cold reset). Lockable.
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
+    // } DATA_VAULT_ENTRY[10][12];// TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
 
-     reg {
-         name = "STICKY LOCKABLE SCRATCH REG CTRL";
-         desc = "Sticky Scratch Register Controls (cleared on cold reset)
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
-                sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0;
-     } STICKY_LOCKABLE_SCRATCH_REG_CTRL[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
+    // reg {
+    //     name = "STICKY LOCKABLE SCRATCH REG CTRL";
+    //     desc = "Sticky Scratch Register Controls (cleared on cold reset)
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
+    //            sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0;
+    // } STICKY_LOCKABLE_SCRATCH_REG_CTRL[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
 
 
-    reg {
-        name = "STICKY LOCKABLE SCRATCH REG";
-        desc = "Sticky Scratch Register Entries (cleared on cold reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
-    } STICKY_LOCKABLE_SCRATCH_REG[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
+    //reg {
+    //    name = "STICKY LOCKABLE SCRATCH REG";
+    //    desc = "Sticky Scratch Register Entries (cleared on cold reset)
+    //            [br]Caliptra Access: RO
+    //            [br]MCU Access:      RW
+    //            [br]SOC Access:      RO";
+    //    field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
+    //} STICKY_LOCKABLE_SCRATCH_REG[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
 
-    reg {
-        name = "LOCKABLE SCRATCH REG CTRL";
-        desc = "Scratch Register Controls (cleared on warm reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
-               sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0;
-    } LOCKABLE_SCRATCH_REG_CTRL[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
+    //reg {
+    //    name = "LOCKABLE SCRATCH REG CTRL";
+    //    desc = "Scratch Register Controls (cleared on warm reset)
+    //            [br]Caliptra Access: RO
+    //            [br]MCU Access:      RW
+    //            [br]SOC Access:      RO";
+    //    field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
+    //           sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0;
+    //} LOCKABLE_SCRATCH_REG_CTRL[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
 
-    reg {
-        name = "LOCKABLE SCRATCH REG";
-        desc = "Scratch Register Entry (cleared on cold reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
-    } LOCKABLE_SCRATCH_REG[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv
+    //reg {
+    //    name = "LOCKABLE SCRATCH REG";
+    //    desc = "Scratch Register Entry (cleared on cold reset)
+    //            [br]Caliptra Access: RO
+    //            [br]MCU Access:      RW
+    //            [br]SOC Access:      RO";
+    //    field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
+    //} LOCKABLE_SCRATCH_REG[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv
 
-     reg {
-         name = "NON STICKY GENERIC SCRATCH REG";
-         desc = "
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {sw=rw; hw=na; resetsignal=mci_rst_b;} data[32]=0; // FIXME mcu_rst_b instead?
-     } NON_STICKY_GENERIC_SCRATCH_REG[8]; // TODO Shoud reflect NONSTICKY_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
+    // reg {
+    //     name = "NON STICKY GENERIC SCRATCH REG";
+    //     desc = "
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {sw=rw; hw=na; resetsignal=mci_rst_b;} data[32]=0; // FIXME mcu_rst_b instead?
+    // } NON_STICKY_GENERIC_SCRATCH_REG[8]; // TODO Shoud reflect NONSTICKY_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
 
 ////////////////////////////////////////////////////////////////
 // Interrupts

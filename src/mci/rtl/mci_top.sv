@@ -16,6 +16,7 @@
 module mci_top 
     import mci_reg_pkg::*;
     import mci_pkg::*;
+    import mci_dmi_pkg::*;
     import mbox_pkg::*;
     #(    
     parameter AXI_ADDR_WIDTH = 32,
@@ -30,9 +31,7 @@ module mci_top
                                             // to come out of reset during a FW RT Update
 
     //Mailbox configuration
-    ,parameter MCI_MBOX0_DMI_DLEN_ADDR = 0 //TODO define
     ,parameter MCI_MBOX0_SIZE_KB = 4
-    ,parameter MCI_MBOX1_DMI_DLEN_ADDR = 0 //TODO define
     ,parameter MCI_MBOX1_SIZE_KB = 4
 
     )
@@ -55,7 +54,7 @@ module mci_top
     input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_mcu_ifu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_clp_axi_user,
-    // input logic [7:0][11:0][31:0]   strap_prod_debug_unlock_pk_hash, //-- FIXME : Remove this.
+    input logic ss_debug_intent,
 
     // SRAM ADHOC connections
     input logic mcu_sram_fw_exec_region_lock,
@@ -84,6 +83,16 @@ module mci_top
     // NMI Vector 
     output logic nmi_intr,
     output logic [31:0] mcu_nmi_vector,
+
+    // MCU DMI
+    output logic        mcu_dmi_core_enable,
+    output logic        mcu_dmi_uncore_enable,
+    input  logic        mcu_dmi_uncore_en,
+    input  logic        mcu_dmi_uncore_wr_en,
+    input  logic [ 6:0] mcu_dmi_uncore_addr,
+    input  logic [31:0] mcu_dmi_uncore_wdata,
+    output logic [31:0] mcu_dmi_uncore_rdata,
+    input  logic        mcu_dmi_active, // FIXME: This is not used in the design
     
     // Reset controls
     output logic mcu_rst_b,
@@ -173,8 +182,20 @@ module mci_top
     logic mcu_reset_once;
     logic fw_boot_upd_reset;     // First MCU reset request
     logic fw_hitless_upd_reset;  // Other MCU reset requests
-     mci_boot_fsm_state_e boot_fsm;
+    mci_boot_fsm_state_e boot_fsm;
 
+    // MBOX
+    mbox_dmi_reg_t mbox0_dmi_reg;
+    mbox_dmi_reg_t mbox1_dmi_reg;
+    logic dmi_mbox0_inc_rdptr;
+    logic dmi_mbox0_inc_wrptr;
+    logic dmi_mbox1_inc_rdptr;
+    logic dmi_mbox1_inc_wrptr;
+    logic dmi_mbox0_wen;
+    logic dmi_mbox1_wen;
+
+    // Other
+    logic mci_ss_debug_intent;
 
 // AIX MANAGER TIEOFFS - FIXME
 assign m_axi_w_if.wlast = '0; // FIXME
@@ -411,9 +432,6 @@ mci_wdt_top #(
     .fatal_timeout(nmi_intr)
 );
 
-// FIXME -- Remove this.
-logic [7:0][11:0][31:0] strap_prod_debug_unlock_pk_hash;
-assign strap_prod_debug_unlock_pk_hash = '1;
 
 // MCI Reg
 // MCI CSR bank
@@ -445,6 +463,10 @@ mci_reg_top i_mci_reg_top (
     .mci_generic_input_wires,
     .mci_generic_output_wires,
     
+    // Debug intent
+    .ss_debug_intent,
+    .mci_ss_debug_intent,
+    
     // MCU Reset vector
     .strap_mcu_reset_vector, // default reset vector
     .mcu_reset_vector,       // reset vector used by MCU
@@ -452,13 +474,33 @@ mci_reg_top i_mci_reg_top (
     // SS error signals
     .agg_error_fatal,
     .agg_error_non_fatal,
+    
+    // DMI
+    .mcu_dmi_core_enable,
+    .mcu_dmi_uncore_enable,
+    .mcu_dmi_uncore_en,
+    .mcu_dmi_uncore_wr_en,
+    .mcu_dmi_uncore_addr,
+    .mcu_dmi_uncore_wdata,
+    .mcu_dmi_uncore_rdata,
+    
+    // MBOX
+    .mbox0_dmi_reg,
+    .mbox1_dmi_reg,
+    .dmi_mbox0_inc_rdptr,
+    .dmi_mbox0_inc_wrptr,
+    .dmi_mbox1_inc_rdptr,
+    .dmi_mbox1_inc_wrptr,
+    .dmi_mbox0_wen,
+    .dmi_mbox1_wen,
+
+    // LCC Gasket signals
+    .security_state_o,
 
     // SOC Interrupts
     .all_error_fatal,
     .all_error_non_fatal,
     
-    // Straps
-    .strap_prod_debug_unlock_pk_hash,
 
     // MCU interrupts
     .mcu_timer_int,
@@ -502,7 +544,7 @@ if (MCI_MBOX0_SIZE_KB == 0) begin
 end else begin
 mbox
 #(
-    .DMI_REG_MBOX_DLEN_ADDR(MCI_MBOX0_DMI_DLEN_ADDR),
+    .DMI_REG_MBOX_DLEN_ADDR(MCI_DMI_REG_MBOX0_DLEN),
     .MBOX_SIZE_KB(MCI_MBOX0_SIZE_KB),
     .MBOX_DATA_W(MCI_MBOX_DATA_W),
     .MBOX_ECC_DATA_W(MCI_MBOX_ECC_DATA_W),
@@ -558,12 +600,12 @@ mci_mbox0_i (
     .dma_sram_hold    (),
     .dma_sram_error   (),
     //dmi port
-    .dmi_inc_rdptr('0),
-    .dmi_inc_wrptr('0),
-    .dmi_reg_wen('0),
-    .dmi_reg_addr('0),
-    .dmi_reg_wdata('0),
-    .dmi_reg()
+    .dmi_inc_rdptr(dmi_mbox0_inc_rdptr),
+    .dmi_inc_wrptr(dmi_mbox0_inc_wrptr),
+    .dmi_reg_wen(dmi_mbox0_wen),
+    .dmi_reg_addr(mcu_dmi_uncore_addr),
+    .dmi_reg_wdata(mcu_dmi_uncore_wdata),
+    .dmi_reg(mbox0_dmi_reg)
 );
 end
 endgenerate
@@ -585,7 +627,7 @@ if (MCI_MBOX1_SIZE_KB == 0) begin
 end else begin
 mbox
 #(
-    .DMI_REG_MBOX_DLEN_ADDR(MCI_MBOX1_DMI_DLEN_ADDR),
+    .DMI_REG_MBOX_DLEN_ADDR(MCI_DMI_REG_MBOX1_DLEN),
     .MBOX_SIZE_KB(MCI_MBOX1_SIZE_KB),
     .MBOX_DATA_W(MCI_MBOX_DATA_W),
     .MBOX_ECC_DATA_W(MCI_MBOX_ECC_DATA_W),
@@ -631,13 +673,12 @@ mci_mbox1_i (
     .dma_sram_rdata   (),
     .dma_sram_hold    (),
     .dma_sram_error   (),
-    //dmi FIXME
-    .dmi_inc_rdptr('0),
-    .dmi_inc_wrptr('0),
-    .dmi_reg_wen('0),
-    .dmi_reg_addr('0),
-    .dmi_reg_wdata('0),
-    .dmi_reg(),
+    .dmi_inc_rdptr(dmi_mbox1_inc_rdptr),
+    .dmi_inc_wrptr(dmi_mbox1_inc_wrptr),
+    .dmi_reg_wen(dmi_mbox1_wen),
+    .dmi_reg_addr(mcu_dmi_uncore_addr),
+    .dmi_reg_wdata(mcu_dmi_uncore_wdata),
+    .dmi_reg(mbox1_dmi_reg),
     //direct request unsupported
     .dir_req_dv(1'b0),
     .dir_rdata(),
