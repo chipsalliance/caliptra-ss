@@ -1094,6 +1094,9 @@ module caliptra_ss_top
         .clk(cptra_ss_clk_i),
         .mci_rst_b(cptra_ss_rst_b_i),
         .mci_pwrgood(cptra_ss_pwrgood_i),
+        
+        // DFT
+        .scan_mode     (cptra_ss_cptra_core_scan_mode_i)
 
         // MCI AXI Interface
         .s_axi_w_if(cptra_ss_mci_s_axi_if.w_sub),
@@ -1110,8 +1113,8 @@ module caliptra_ss_top
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
         .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_internal[2]),
 
-        .agg_error_fatal(1'b0),
-        .agg_error_non_fatal(1'b0),
+        .agg_error_fatal('0),       // FIXME connect to internal IPs
+        .agg_error_non_fatal('0),   // FIXME connect to internal IPs
 
         .all_error_fatal(cptra_ss_all_error_fatal_o),
         .all_error_non_fatal(cptra_ss_all_error_non_fatal_o),

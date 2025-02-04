@@ -42,6 +42,9 @@ module mci_top
     input logic mci_rst_b,
     input logic mci_pwrgood,
 
+    // DFT
+    input scan_mode,
+
     // MCI AXI Interface
     axi_if.w_sub s_axi_w_if,
     axi_if.r_sub s_axi_r_if,
@@ -328,7 +331,10 @@ mci_boot_seqr #(
     .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH)
 )i_boot_seqr (
     .clk,
-    .mci_rst_b,
+    .mci_rst_b, // FIXME RDC?
+
+    // DFT
+    .scan_mode,
 
     // Reset controls
     .mcu_rst_b,
