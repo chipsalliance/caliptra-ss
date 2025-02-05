@@ -67,6 +67,8 @@ module mci_top_tb
     // MCI Resets
     .mci_rst_b('0),
     .mci_pwrgood('0),
+    
+    .scan_mode('0),
 
     // MCI AXI Interface
     .s_axi_w_if,

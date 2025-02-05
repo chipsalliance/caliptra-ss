@@ -55,9 +55,11 @@ module mci_axi_sub_decode
 
     //MCI Mbox0 inf
     cif_if.request  mci_mbox0_req_if,
+    input logic [4:0][soc_resp_if.USER_WIDTH-1:0] valid_mbox0_users,
 
-    //MCI Mbox1 inf
+    // Mbox1 SRAM Interface
     cif_if.request  mci_mbox1_req_if,
+    input logic [4:0][soc_resp_if.USER_WIDTH-1:0] valid_mbox1_users,
 
     // Privileged requests 
     output logic mcu_lsu_req,
@@ -72,6 +74,10 @@ module mci_axi_sub_decode
     input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_ifu_axi_user,
     input logic [soc_resp_if.USER_WIDTH-1:0] strap_clp_axi_user
 );
+
+// Valid signals
+logic valid_mbox0_req;
+logic valid_mbox1_req;
 
 // GRANT signals
 logic soc_mcu_sram_gnt;
@@ -94,11 +100,37 @@ always_comb soc_mcu_sram_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_
 always_comb soc_mci_reg_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCI_REG_START_ADDR:MCI_REG_END_ADDR]}));
 
 // SoC request to MCI Mbox0
-always_comb soc_mci_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX0_START_ADDR:MBOX0_END_ADDR]}));
+always_comb soc_mci_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX0_START_ADDR:MBOX0_END_ADDR]})) & valid_mbox0_req;
+
+//Check if SoC request is coming from a valid user
+//There are 5 valid user registers, check if user attribute matches any of them
+//Check if user matches Default Valid user parameter - this user value is always valid
+//Check if request is coming from MCU (privilaged access)
+always_comb begin
+    valid_mbox0_req = '0;
+    for (int i=0; i < 5; i++) begin
+        valid_mbox0_req |= soc_resp_if.dv & (soc_resp_if.req_data.user == valid_mbox0_users[i]);
+    end
+    valid_mbox0_req |= soc_resp_if.dv & (soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0]);
+    valid_mbox0_req |= mcu_req;
+end
+
 
 // SoC request to MCI Mbox1
-always_comb soc_mci_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX1_START_ADDR:MBOX1_END_ADDR]}));
+always_comb soc_mci_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX1_START_ADDR:MBOX1_END_ADDR]})) & valid_mbox1_req;
 
+//Check if SoC request is coming from a valid user
+//There are 5 valid user registers, check if user attribute matches any of them
+//Check if user matches Default Valid user parameter - this user value is always valid
+//Check if request is coming from MCU (privilaged access)
+always_comb begin
+    valid_mbox1_req = '0;
+    for (int i=0; i < 5; i++) begin
+        valid_mbox1_req |= soc_resp_if.dv & (soc_resp_if.req_data.user == valid_mbox1_users[i]);
+    end
+    valid_mbox1_req |= soc_resp_if.dv & (soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0]);
+    valid_mbox1_req |= mcu_req;
+end
 
 ///////////////////////////////////////////////////////////
 // Drive DV to appropriate destination

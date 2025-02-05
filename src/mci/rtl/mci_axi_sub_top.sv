@@ -44,9 +44,11 @@ module mci_axi_sub_top
 
     // Mbox0 SRAM Interface
     cif_if.request  mci_mbox0_req_if,
+    input logic [4:0][s_axi_w_if.UW-1:0] valid_mbox0_users,
 
     // Mbox1 SRAM Interface
     cif_if.request  mci_mbox1_req_if,
+    input logic [4:0][s_axi_w_if.UW-1:0] valid_mbox1_users,
 
 
     // Privileged requests 
@@ -136,9 +138,11 @@ mci_axi_sub_decode #(
 
     //MCI Mbox0
     .mci_mbox0_req_if,
+    .valid_mbox0_users,
 
     //MCI Mbox1
     .mci_mbox1_req_if,
+    .valid_mbox1_users,
 
     // Privileged requests 
     .mcu_lsu_req,

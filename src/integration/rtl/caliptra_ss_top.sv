@@ -30,6 +30,12 @@ module caliptra_ss_top
     import soc_ifc_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
+    ,parameter MCI_MBOX0_SIZE_KB = 4
+    ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+    ,parameter MCI_MBOX1_SIZE_KB = 4
+    ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
 ) (
     input logic cptra_ss_clk_i,
     input logic cptra_ss_pwrgood_i,
@@ -1088,7 +1094,14 @@ module caliptra_ss_top
     mci_top #(
         // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
         .AXI_DATA_WIDTH(32),
-        .MCU_SRAM_SIZE_KB(256)
+        .MCU_SRAM_SIZE_KB(256),
+
+        .MCI_MBOX0_SIZE_KB(MCI_MBOX0_SIZE_KB),
+        .MCI_SET_MBOX0_AXI_USER_INTEG(MCI_SET_MBOX0_AXI_USER_INTEG),  
+        .MCI_MBOX0_VALID_AXI_USER(MCI_MBOX0_VALID_AXI_USER),    
+        .MCI_MBOX1_SIZE_KB(MCI_MBOX1_SIZE_KB),
+        .MCI_SET_MBOX1_AXI_USER_INTEG(MCI_SET_MBOX1_AXI_USER_INTEG),  
+        .MCI_MBOX1_VALID_AXI_USER(MCI_MBOX1_VALID_AXI_USER)    
     ) mci_top_i (
 
         .clk(cptra_ss_clk_i),
@@ -1096,7 +1109,7 @@ module caliptra_ss_top
         .mci_pwrgood(cptra_ss_pwrgood_i),
         
         // DFT
-        .scan_mode     (cptra_ss_cptra_core_scan_mode_i)
+        .scan_mode     (cptra_ss_cptra_core_scan_mode_i),
 
         // MCI AXI Interface
         .s_axi_w_if(cptra_ss_mci_s_axi_if.w_sub),

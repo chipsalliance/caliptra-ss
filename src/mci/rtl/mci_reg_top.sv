@@ -21,6 +21,11 @@ module mci_reg_top
     import mci_dmi_pkg::*;
     import soc_ifc_pkg::*;
     #(
+        parameter AXI_USER_WIDTH = 32
+        ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+        ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+        ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+        ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     )
     (
     input logic clk,
@@ -72,7 +77,20 @@ module mci_reg_top
     output logic dmi_mbox1_inc_wrptr,
     output logic dmi_mbox0_wen,
     output logic dmi_mbox1_wen,
-
+    input  logic mci_mbox0_data_avail,
+    input  logic mci_mbox1_data_avail,
+    output logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox0_users,
+    output logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox1_users,
+    input  logic soc_req_mbox0_lock,
+    input  logic soc_req_mbox1_lock,
+    input  mbox_protocol_error_t mbox0_protocol_error,
+    input  mbox_protocol_error_t mbox1_protocol_error,
+    input  logic mbox0_inv_user_p,
+    input  logic mbox1_inv_user_p,
+    input  logic mbox0_sram_single_ecc_error,
+    input  logic mbox0_sram_double_ecc_error,
+    input  logic mbox1_sram_single_ecc_error,
+    input  logic mbox1_sram_double_ecc_error,
 
     // LCC Gasket
     input soc_ifc_pkg::security_state_t                security_state_o,
@@ -173,6 +191,12 @@ logic strap_we;
 // Misc
 logic [1:0] generic_input_toggle;
 
+// MBOX
+logic mci_mbox0_data_avail_d;
+logic mci_mbox0_cmd_avail_p;
+logic mci_mbox1_data_avail_d;
+logic mci_mbox1_cmd_avail_p;
+
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
 ///////////////////////////////////////////////
@@ -223,6 +247,8 @@ always_comb begin
 end
 
 assign  mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_gen_in_toggle_sts.hwset  = |generic_input_toggle;
+
+assign  mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_internal_sts.hwset  = '0; // TODO
 
 ///////////////////////////////////////////////
 // Error handling logic
@@ -440,7 +466,7 @@ assign mci_reg_hwif_in.mcu_req      = mcu_req;
 
 
 
-assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.swwe = '0; // FIXME
+assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.swwel = '0; // FIXME
 assign mci_reg_hwif_in.CAPABILITIES = '0; // FIXME
 assign mci_reg_hwif_in.HW_REV_ID = '0; // FIXME
 assign mci_reg_hwif_in.HW_CONFIG = '0; // FIXME
@@ -457,6 +483,39 @@ assign mci_reg_hwif_in.MCU_RV_MTIME_H.count_h.incr = !(cif_resp_if.dv && mci_reg
 assign mcu_timer_int  =  {mci_reg_hwif_out.MCU_RV_MTIME_H.count_h.value     ,mci_reg_hwif_out.MCU_RV_MTIME_L.count_l.value}
                      >=
                      {mci_reg_hwif_out.MCU_RV_MTIMECMP_H.compare_h.value,mci_reg_hwif_out.MCU_RV_MTIMECMP_L.compare_l.value};
+///////////////////////////////////////////////
+// Filtering by AXI_USER       
+///////////////////////////////////////////////
+
+
+always_comb begin
+    for (int i=0; i<5; i++) begin
+        //once locked, can't be cleared until reset
+        mci_reg_hwif_in.MBOX0_AXI_USER_LOCK[i].LOCK.swwel = mci_reg_hwif_out.MBOX0_AXI_USER_LOCK[i].LOCK.value;
+        //lock the writes to valid user field once lock is set
+        mci_reg_hwif_in.MBOX0_VALID_AXI_USER[i].AXI_USER.swwel = mci_reg_hwif_out.MBOX0_AXI_USER_LOCK[i].LOCK.value;
+        //If integrator set AXI_USER values at integration time, pick it up from the define
+        valid_mbox0_users[i] = MCI_SET_MBOX0_AXI_USER_INTEG[i] ? MCI_MBOX0_VALID_AXI_USER[i][AXI_USER_WIDTH-1:0] :
+                               mci_reg_hwif_out.MBOX0_AXI_USER_LOCK[i].LOCK.value ?
+                               mci_reg_hwif_out.MBOX0_VALID_AXI_USER[i].AXI_USER.value[AXI_USER_WIDTH-1:0] :
+                               MCI_DEF_MBOX_VALID_AXI_USER;
+    end
+end
+
+
+always_comb begin
+    for (int i=0; i<5; i++) begin
+        //once locked, can't be cleared until reset
+        mci_reg_hwif_in.MBOX1_AXI_USER_LOCK[i].LOCK.swwel = mci_reg_hwif_out.MBOX1_AXI_USER_LOCK[i].LOCK.value;
+        //lock the writes to valid user field once lock is set
+        mci_reg_hwif_in.MBOX1_VALID_AXI_USER[i].AXI_USER.swwel = mci_reg_hwif_out.MBOX1_AXI_USER_LOCK[i].LOCK.value;
+        //If integrator set AXI_USER values at integration time, pick it up from the define
+        valid_mbox1_users[i] = MCI_SET_MBOX1_AXI_USER_INTEG[i] ? MCI_MBOX1_VALID_AXI_USER[i][AXI_USER_WIDTH-1:0] :
+                               mci_reg_hwif_out.MBOX1_AXI_USER_LOCK[i].LOCK.value ?
+                               mci_reg_hwif_out.MBOX1_VALID_AXI_USER[i].AXI_USER.value[AXI_USER_WIDTH-1:0] :
+                               MCI_DEF_MBOX_VALID_AXI_USER;
+    end
+end
 
 ///////////////////////////////////////////////
 // MCU Reset Request interrupt 
@@ -564,6 +623,52 @@ always_comb begin
     end
 end
 
+
+////////////////////////////////////////////////////////
+// MAILBOX 
+////////////////////////////////////////////////////////
+// Generate a pulse to set the interrupt bit
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        mci_mbox0_data_avail_d <= '0;
+    end  
+    else begin
+        mci_mbox0_data_avail_d <= mci_mbox0_data_avail;
+    end  
+end
+
+always_comb mci_mbox0_cmd_avail_p = mci_mbox0_data_avail & !mci_mbox0_data_avail_d;
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox0_cmd_avail_sts.hwset          = mci_mbox0_cmd_avail_p;
+
+
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        mci_mbox1_data_avail_d <= '0;
+    end  
+    else begin
+        mci_mbox1_data_avail_d <= mci_mbox1_data_avail;
+    end  
+end
+
+always_comb mci_mbox1_cmd_avail_p = mci_mbox1_data_avail & !mci_mbox1_data_avail_d;
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox1_cmd_avail_sts.hwset          = mci_mbox1_cmd_avail_p;
+
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts.hwset       = soc_req_mbox0_lock;
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.hwset       = soc_req_mbox1_lock;
+
+
+always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mbox0_cmd_fail_sts.hwset           = |mbox0_protocol_error; // Set by any protocol error violation (mirrors the bits in CPTRA_HW_ERROR_NON_FATAL)
+always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mbox1_cmd_fail_sts.hwset           = |mbox1_protocol_error; // Set by any protocol error violation (mirrors the bits in CPTRA_HW_ERROR_NON_FATAL)
+
+
+always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mbox0_inv_dev_sts.hwset            = mbox0_inv_user_p; // All        invalid user, or only 'valid user but != mbox_user.user'?
+always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mbox1_inv_dev_sts.hwset            = mbox1_inv_user_p; // All        invalid user, or only 'valid user but != mbox_user.user'?
+
+
+always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mbox0_ecc_unc_sts.hwset  = mbox0_sram_double_ecc_error;
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox0_ecc_cor_sts.hwset  = mbox0_sram_single_ecc_error;
+always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mbox1_ecc_unc_sts.hwset  = mbox1_sram_double_ecc_error;
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox1_ecc_cor_sts.hwset  = mbox1_sram_single_ecc_error;
 
 
 ///////////////////////////////////////////////
@@ -694,26 +799,34 @@ always_comb unmasked_agg_error_fatal_write = (mci_reg_hwif_in.AGG_ERROR_FATAL.ag
                                               
 
 
-always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.RSVD.we = '0; // FIXME remove
-// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_no_lock.we = mbox_protocol_error.axs_without_lock;
-// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_ooo    .we = mbox_protocol_error.axs_incorrect_order;
-// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_ecc_unc     .we = sram_double_ecc_error;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_prot_no_lock.we = mbox0_protocol_error.axs_without_lock;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_prot_ooo    .we = mbox0_protocol_error.axs_incorrect_order;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_prot_no_lock.we = mbox1_protocol_error.axs_without_lock;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_prot_ooo    .we = mbox1_protocol_error.axs_incorrect_order;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .we = mbox0_sram_double_ecc_error;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .we = mbox1_sram_double_ecc_error;
 // Using we+next instead of hwset allows us to encode the reserved fields in some fashion
 // other than bit-hot in the future, if needed (e.g. we need to encode > 32 NON-FATAL events)
-always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.RSVD.next = 1'b1; // FIXME remove
-// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_no_lock.next = 1'b1;
-// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_ooo    .next = 1'b1;
-// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_ecc_unc     .next = 1'b1;
-// FIXME always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.rsvd.next[28:0]        = 29'h0;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_prot_no_lock.next = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_prot_ooo    .next = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_prot_no_lock.next = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_prot_ooo    .next = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .next = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .next = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
-always_comb unmasked_hw_error_non_fatal_write = '0; // FIXME 
-                                                // FIXME (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_no_lock.we && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_prot_no_lock.value && |soc_ifc_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_no_lock.next) ||
-                                                // FIXME (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_ooo    .we && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_prot_ooo    .value && |soc_ifc_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_prot_ooo    .next) ||
-                                                // FIXME (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_ecc_unc     .we && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_ecc_unc     .value && |soc_ifc_reg_hwif_in.HW_ERROR_NON_FATAL.mbox_ecc_unc     .next);
-always_comb unmasked_hw_error_non_fatal_is_set = '0; // FIXME 
-                                                 // FIXME (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox_prot_no_lock.value && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_prot_no_lock.value) ||
-                                                 // FIXME (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox_prot_ooo    .value && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_prot_ooo    .value) ||
-                                                 // FIXME (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox_ecc_unc     .value && ~soc_ifc_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox_ecc_unc     .value);
+always_comb unmasked_hw_error_non_fatal_write =  
+                                                (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_prot_no_lock.we && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox0_prot_no_lock.value && |mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_prot_no_lock.next) ||
+                                                (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_prot_ooo    .we && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox0_prot_ooo    .value && |mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_prot_ooo    .next) ||
+                                                (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_prot_no_lock.we && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_prot_no_lock.value && |mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_prot_no_lock.next) ||
+                                                (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_prot_ooo    .we && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_prot_ooo    .value && |mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_prot_ooo    .next) || 
+                                                (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .we && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc     .value && |mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .next) ||
+                                                (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .we && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc     .value && |mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .next);
+always_comb unmasked_hw_error_non_fatal_is_set = (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox0_prot_no_lock.value && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox0_prot_no_lock.value) ||
+                                                 (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox1_prot_no_lock.value && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_prot_no_lock.value) ||
+                                                 (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox0_prot_ooo    .value && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox0_prot_ooo    .value) ||
+                                                 (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox1_prot_ooo    .value && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_prot_ooo    .value) ||
+                                                 (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .value && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc     .value) ||
+                                                 (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .value && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc     .value);
 
 always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.we  = agg_error_non_fatal_sync[0];
 always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.we  = agg_error_non_fatal_sync[1];
@@ -914,6 +1027,8 @@ always_comb begin
     mci_reg_hwif_in.FW_ERROR_NON_FATAL.error_code.we = 'b0;
     mci_reg_hwif_in.FW_ERROR_NON_FATAL.error_code.next = 'h0;
 end
+
+
 
 ////////////////////////////////////////////////////////
 // AGG MCI Interrupts

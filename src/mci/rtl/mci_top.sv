@@ -32,7 +32,11 @@ module mci_top
 
     //Mailbox configuration
     ,parameter MCI_MBOX0_SIZE_KB = 4
+    ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCI_MBOX1_SIZE_KB = 4
+    ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
 
     )
     (
@@ -108,6 +112,9 @@ module mci_top
     input  logic lc_done,
     output logic lc_init,
 
+    // MBOX
+    output logic mbox0_data_avail,
+    output logic mbox1_data_avail,
 
     // FC Signals
     input  logic fc_opt_done,
@@ -154,12 +161,6 @@ module mci_top
     logic mcu_sram_double_ecc_error;
     logic mcu_sram_fw_exec_region_lock_sync;
 
-    // Mbox0 SRAM signals
-    logic mbox0_sram_single_ecc_error;
-    logic mbox0_sram_double_ecc_error;
-    logic mbox1_sram_single_ecc_error;
-    logic mbox1_sram_double_ecc_error;
-
     // WDT signals
     logic timer1_en;
     logic timer2_en;
@@ -180,6 +181,8 @@ module mci_top
     logic mcu_req    ;
     logic clp_req    ;
     logic soc_req    ;
+    logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox0_users;
+    logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox1_users;
 
     // Boot Sequencer
     logic mcu_reset_once;
@@ -188,6 +191,10 @@ module mci_top
     mci_boot_fsm_state_e boot_fsm;
 
     // MBOX
+    logic mbox0_sram_single_ecc_error;
+    logic mbox0_sram_double_ecc_error;
+    logic mbox1_sram_single_ecc_error;
+    logic mbox1_sram_double_ecc_error;
     mbox_dmi_reg_t mbox0_dmi_reg;
     mbox_dmi_reg_t mbox1_dmi_reg;
     logic dmi_mbox0_inc_rdptr;
@@ -196,6 +203,14 @@ module mci_top
     logic dmi_mbox1_inc_wrptr;
     logic dmi_mbox0_wen;
     logic dmi_mbox1_wen;
+    logic mci_mbox0_data_avail;
+    logic mci_mbox1_data_avail;
+    logic soc_req_mbox0_lock;
+    logic soc_req_mbox1_lock;
+    mbox_protocol_error_t mbox0_protocol_error;
+    mbox_protocol_error_t mbox1_protocol_error;
+    logic mbox0_inv_user_p;
+    logic mbox1_inv_user_p;
 
     // Other
     logic mci_ss_debug_intent;
@@ -284,7 +299,7 @@ cif_if #(
 //The SoC sends read and write requests using AXI Protocol
 //This wrapper decodes that protocol, collapses the full-duplex protocol to
 // simplex, and issues requests to the MIC decode block
-mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
+mci_axi_sub_top #( 
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH), 
     .AXI_DATA_WIDTH(AXI_DATA_WIDTH), 
     .AXI_ID_WIDTH(AXI_ID_WIDTH),
@@ -309,9 +324,11 @@ mci_axi_sub_top #( // FIXME: Should SUB and MAIN be under same AXI_TOP module?
 
     // MCI Mbox0 Interface
     .mci_mbox0_req_if ( mci_mbox0_req_if.request ),
+    .valid_mbox0_users,
 
     // MCI Mbox1 Interface
     .mci_mbox1_req_if ( mci_mbox1_req_if.request ),
+    .valid_mbox1_users,
 
     // Privileged requests 
     .mcu_lsu_req,
@@ -441,7 +458,13 @@ mci_wdt_top #(
 
 // MCI Reg
 // MCI CSR bank
-mci_reg_top i_mci_reg_top (
+mci_reg_top #(
+    .AXI_USER_WIDTH(AXI_USER_WIDTH),   
+    .MCI_SET_MBOX0_AXI_USER_INTEG(MCI_SET_MBOX0_AXI_USER_INTEG),  
+    .MCI_MBOX0_VALID_AXI_USER(MCI_MBOX0_VALID_AXI_USER),    
+    .MCI_SET_MBOX1_AXI_USER_INTEG(MCI_SET_MBOX1_AXI_USER_INTEG),  
+    .MCI_MBOX1_VALID_AXI_USER(MCI_MBOX1_VALID_AXI_USER)    
+)i_mci_reg_top (
     .clk,
 
     // MCI Resets
@@ -499,6 +522,20 @@ mci_reg_top i_mci_reg_top (
     .dmi_mbox1_inc_wrptr,
     .dmi_mbox0_wen,
     .dmi_mbox1_wen,
+    .valid_mbox0_users,
+    .valid_mbox1_users,
+    .mci_mbox0_data_avail,
+    .mci_mbox1_data_avail,
+    .soc_req_mbox0_lock,
+    .soc_req_mbox1_lock,
+    .mbox0_protocol_error, 
+    .mbox1_protocol_error, 
+    .mbox0_inv_user_p,
+    .mbox1_inv_user_p,
+    .mbox0_sram_single_ecc_error,
+    .mbox0_sram_double_ecc_error,
+    .mbox1_sram_single_ecc_error,
+    .mbox1_sram_double_ecc_error,
 
     // LCC Gasket signals
     .security_state_o,
@@ -583,11 +620,11 @@ mci_mbox0_i (
     //status
     .uc_mbox_lock(), //FIXME
     //interrupts
-    .soc_mbox_data_avail(), //FIXME
-    .uc_mbox_data_avail(), //FIXME
-    .soc_req_mbox_lock(), //FIXME
-    .mbox_protocol_error(), //FIXME
-    .mbox_inv_axi_user_axs(), //FIXME
+    .soc_mbox_data_avail(mbox0_data_avail), 
+    .uc_mbox_data_avail(mci_mbox0_data_avail), 
+    .soc_req_mbox_lock(soc_req_mbox0_lock),
+    .mbox_protocol_error(mbox0_protocol_error),
+    .mbox_inv_axi_user_axs(mbox0_inv_user_p), 
     //direct request unsupported
     .dir_req_dv(1'b0),
     .dir_rdata(),
@@ -597,7 +634,7 @@ mci_mbox0_i (
     .sha_sram_resp_ecc(),
     .sha_sram_resp_data(),
     .sha_sram_hold(),
-    //dma unsupported
+    //FIXME dma
     .dma_sram_req_dv  ('0),
     .dma_sram_req_write('0),
     .dma_sram_req_addr('0),
@@ -666,11 +703,11 @@ mci_mbox1_i (
     //status
     .uc_mbox_lock(), //FIXME
     //interrupts
-    .soc_mbox_data_avail(), //FIXME
-    .uc_mbox_data_avail(), //FIXME
-    .soc_req_mbox_lock(), //FIXME
-    .mbox_protocol_error(), //FIXME
-    .mbox_inv_axi_user_axs(), //FIXME
+    .soc_mbox_data_avail(mbox1_data_avail), 
+    .uc_mbox_data_avail(mci_mbox1_data_avail), 
+    .soc_req_mbox_lock(soc_req_mbox1_lock), 
+    .mbox_protocol_error(mbox1_protocol_error), 
+    .mbox_inv_axi_user_axs(mbox1_inv_user_p), 
     //dma FIXME
     .dma_sram_req_dv  ('0),
     .dma_sram_req_write('0),
