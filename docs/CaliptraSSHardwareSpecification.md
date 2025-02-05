@@ -1059,6 +1059,8 @@ FIXME
 
 In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This user will be given full access to the entire MCI IP. This means the MCI DEBUG AXI USER can be used read and write to privilaged data like the MCU SRAM or access protected data within the MCI Register Bank. 
 
+*NOTE: This user cannot bypass locks within MCI. It only bypasses AXI filtering*
+
 ##### Disabling MCI DEBUG AXI USER
 
 If this feature is not needed by the SOC the integrator shall tie this port to 0. This will indicate to MCI that there are no AXI debug users within the design and no debug access is needed via AXI. 
