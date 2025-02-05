@@ -76,8 +76,9 @@ module mci_axi_sub_decode
 );
 
 // Valid signals
-logic valid_mbox0_req;
-logic valid_mbox1_req;
+logic mbox0_valid_user;
+logic mbox1_valid_user;
+logic all_strb_set;
 
 // GRANT signals
 logic soc_mcu_sram_gnt;
@@ -85,6 +86,11 @@ logic soc_mci_reg_gnt;
 logic soc_mci_mbox0_gnt;
 logic soc_mci_mbox1_gnt;
 
+// REQ signals
+logic soc_mcu_sram_req;
+logic soc_mci_reg_req;
+logic soc_mci_mbox0_req;
+logic soc_mci_mbox1_req;
 
 // MISC signals
 logic soc_req_miss;
@@ -100,53 +106,73 @@ always_comb soc_mcu_sram_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_
 always_comb soc_mci_reg_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCI_REG_START_ADDR:MCI_REG_END_ADDR]}));
 
 // SoC request to MCI Mbox0
-always_comb soc_mci_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX0_START_ADDR:MBOX0_END_ADDR]})) & valid_mbox0_req;
+always_comb soc_mci_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX0_START_ADDR:MBOX0_END_ADDR]}));
 
-//Check if SoC request is coming from a valid user
-//There are 5 valid user registers, check if user attribute matches any of them
-//Check if user matches Default Valid user parameter - this user value is always valid
-//Check if request is coming from MCU (privilaged access)
-always_comb begin
-    valid_mbox0_req = '0;
-    for (int i=0; i < 5; i++) begin
-        valid_mbox0_req |= soc_resp_if.dv & (soc_resp_if.req_data.user == valid_mbox0_users[i]);
-    end
-    valid_mbox0_req |= soc_resp_if.dv & (soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0]);
-    valid_mbox0_req |= mcu_req;
-end
 
 
 // SoC request to MCI Mbox1
-always_comb soc_mci_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX1_START_ADDR:MBOX1_END_ADDR]})) & valid_mbox1_req;
+always_comb soc_mci_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX1_START_ADDR:MBOX1_END_ADDR]}));
+
+///////////////////////////////////////////////////////////
+// Add qualifiers to grant before sending to IPs
+///////////////////////////////////////////////////////////
+
+always_comb all_strb_set = &soc_resp_if.req_data.wstrb;
+
+// MCU SRAM
+always_comb soc_mcu_sram_req = soc_mcu_sram_gnt;
+
+// MCI REG 
+always_comb soc_mci_reg_req   = soc_mci_reg_gnt & all_strb_set;
+
+// MCI Mbox0
+always_comb soc_mci_mbox0_req = soc_mci_mbox0_gnt & mbox0_valid_user & all_strb_set;
 
 //Check if SoC request is coming from a valid user
 //There are 5 valid user registers, check if user attribute matches any of them
 //Check if user matches Default Valid user parameter - this user value is always valid
 //Check if request is coming from MCU (privilaged access)
 always_comb begin
-    valid_mbox1_req = '0;
+    mbox0_valid_user = '0;
     for (int i=0; i < 5; i++) begin
-        valid_mbox1_req |= soc_resp_if.dv & (soc_resp_if.req_data.user == valid_mbox1_users[i]);
+        mbox0_valid_user |= (soc_resp_if.req_data.user == valid_mbox0_users[i]);
     end
-    valid_mbox1_req |= soc_resp_if.dv & (soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0]);
-    valid_mbox1_req |= mcu_req;
+    mbox0_valid_user |= soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0];
+    mbox0_valid_user |= mcu_req;
 end
+
+// MCI Mbox1
+always_comb soc_mci_mbox1_req = soc_mci_mbox1_gnt & mbox1_valid_user & all_strb_set;
+
+//Check if SoC request is coming from a valid user
+//There are 5 valid user registers, check if user attribute matches any of them
+//Check if user matches Default Valid user parameter - this user value is always valid
+//Check if request is coming from MCU (privilaged access)
+always_comb begin
+    mbox1_valid_user = '0;
+    for (int i=0; i < 5; i++) begin
+        mbox1_valid_user |= (soc_resp_if.req_data.user == valid_mbox1_users[i]);
+    end
+    mbox1_valid_user |= (soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0]);
+    mbox1_valid_user |= mcu_req;
+end
+
 
 ///////////////////////////////////////////////////////////
 // Drive DV to appropriate destination
 ///////////////////////////////////////////////////////////
 
 // MCU SRAM
-always_comb mcu_sram_req_if.dv = soc_mcu_sram_gnt;
+always_comb mcu_sram_req_if.dv = soc_mcu_sram_req;
 
 // MCI REG 
-always_comb mci_reg_req_if.dv = soc_mci_reg_gnt;
+always_comb mci_reg_req_if.dv = soc_mci_reg_req;
 
 // MCI Mbox0
-always_comb mci_mbox0_req_if.dv = soc_mci_mbox0_gnt;
+always_comb mci_mbox0_req_if.dv = soc_mci_mbox0_req;
 
 // MCI Mbox1
-always_comb mci_mbox1_req_if.dv = soc_mci_mbox1_gnt;
+always_comb mci_mbox1_req_if.dv = soc_mci_mbox1_req;
 
 
 ///////////////////////////////////////////////////////////
@@ -170,10 +196,10 @@ always_comb mci_mbox1_req_if.req_data = soc_resp_if.req_data;
 // Drive read data back
 ///////////////////////////////////////////////////////////
 
-assign soc_resp_if.rdata =  soc_mcu_sram_gnt    ? mcu_sram_req_if.rdata : 
-                            soc_mci_reg_gnt     ? mci_reg_req_if.rdata  :
-                            soc_mci_mbox0_gnt   ? mci_mbox0_req_if.rdata  :
-                            soc_mci_mbox1_gnt   ? mci_mbox1_req_if.rdata  :
+assign soc_resp_if.rdata =  soc_mcu_sram_req    ? mcu_sram_req_if.rdata : 
+                            soc_mci_reg_req     ? mci_reg_req_if.rdata  :
+                            soc_mci_mbox0_req   ? mci_mbox0_req_if.rdata  :
+                            soc_mci_mbox1_req   ? mci_mbox1_req_if.rdata  :
                             '0;
 
 
@@ -183,10 +209,10 @@ assign soc_resp_if.rdata =  soc_mcu_sram_gnt    ? mcu_sram_req_if.rdata :
 // Drive appropriate hold back
 ///////////////////////////////////////////////////////////
 
-always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sram_req_if.hold)) |
-                                (soc_mci_reg_gnt & (~soc_mci_reg_gnt | mci_reg_req_if.hold)) |
-                                (soc_mci_mbox0_gnt & (~soc_mci_mbox0_gnt | mci_mbox0_req_if.hold)) |
-                                (soc_mci_mbox1_gnt & (~soc_mci_mbox1_gnt | mci_mbox1_req_if.hold)) ;
+always_comb soc_resp_if.hold =  (soc_mcu_sram_req & (~soc_mcu_sram_req | mcu_sram_req_if.hold)) |
+                                (soc_mci_reg_req & (~soc_mci_reg_req | mci_reg_req_if.hold)) |
+                                (soc_mci_mbox0_req & (~soc_mci_mbox0_req | mci_mbox0_req_if.hold)) |
+                                (soc_mci_mbox1_req & (~soc_mci_mbox1_req | mci_mbox1_req_if.hold)) ;
 
 
 
@@ -195,13 +221,13 @@ always_comb soc_resp_if.hold =  (soc_mcu_sram_gnt & (~soc_mcu_sram_gnt | mcu_sra
 ///////////////////////////////////////////////////////////
 
 // Missed all destinations 
-always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_gnt | soc_mci_reg_gnt | soc_mci_mbox0_gnt | soc_mci_mbox1_gnt);
+always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_req | soc_mci_reg_req | soc_mci_mbox0_req | soc_mci_mbox1_req);
 
 // Error for SOC
-always_comb soc_resp_if.error = (soc_mcu_sram_gnt  & mcu_sram_req_if.error)  |
-                                (soc_mci_reg_gnt   & mci_reg_req_if.error)   |
-                                (soc_mci_mbox0_gnt & mci_mbox0_req_if.error) |
-                                (soc_mci_mbox1_gnt & mci_mbox1_req_if.error) |
+always_comb soc_resp_if.error = (soc_mcu_sram_req  & mcu_sram_req_if.error)  |
+                                (soc_mci_reg_req   & mci_reg_req_if.error)   |
+                                (soc_mci_mbox0_req & mci_mbox0_req_if.error) |
+                                (soc_mci_mbox1_req & mci_mbox1_req_if.error) |
                                 soc_req_miss;
 
 ///////////////////////////////////////////////

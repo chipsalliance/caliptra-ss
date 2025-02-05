@@ -109,15 +109,15 @@ axi_sub #(
     .user  (soc_resp_if.req_data.user    ), 
     .id    (soc_resp_if.req_data.id      ),
     .wdata (soc_resp_if.req_data.wdata   ), // Requires: Component dwidth == AXI dwidth
-    .wstrb (soc_resp_if.req_data.wstrb   ), // FIXME unused today Requires: Component dwidth == AXI dwidth
+    .wstrb (soc_resp_if.req_data.wstrb   ), 
     .rdata (soc_resp_if.rdata   ), // Requires: Component dwidth == AXI dwidth
-    .last  (soc_resp_if.req_data.last), // FIXME unused in code today Asserted with final 'dv' of a burst
+    .last  (soc_resp_if.req_data.last), 
     .hld   (soc_resp_if.hold    ),
     .rd_err(soc_resp_if.error   ),
     .wr_err(soc_resp_if.error   )
 );
 
-assign soc_resp_if.req_data.size = '0; // FIXME unused?
+assign soc_resp_if.req_data.size = '0; 
 
 //AXI Interface
 //This module contains the logic for interfacing with the SoC over the AXI Interface
@@ -158,10 +158,6 @@ mci_axi_sub_decode #(
     .strap_clp_axi_user
 
 );
-
-//req from axi is for soc always
-// always_comb soc_req.soc_req = 1'b1; FIXME remove?
-
 
 
 endmodule

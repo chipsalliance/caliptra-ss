@@ -589,7 +589,7 @@ addrmap mci_reg {
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
         field {desc = "WDT timer1 timeout period"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer1_timeout_period[32] = 32'hFFFFFFFF;
-    } WDT_TIMER1_TIMEOUT_PERIOD[2]; // This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in FIXME _pkg
+    } WDT_TIMER1_TIMEOUT_PERIOD[2]; // This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in mci_pkg.sv
 
     //Timer2
     reg {
@@ -617,7 +617,7 @@ addrmap mci_reg {
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
         field {desc = "WDT timer2 timeout period"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer2_timeout_period[32] = 32'hFFFFFFFF;
-    } WDT_TIMER2_TIMEOUT_PERIOD[2]; //This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in FIXME _pkg
+    } WDT_TIMER2_TIMEOUT_PERIOD[2]; //This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in mci_pkg.sv
 
     //Status
     reg {
@@ -936,7 +936,7 @@ addrmap mci_reg {
     //             [br]Caliptra Access: RO
     //             [br]MCU Access:      RW
     //             [br]SOC Access:      RO";
-    //     field {sw=rw; hw=na; resetsignal=mci_rst_b;} data[32]=0; // FIXME mcu_rst_b instead?
+    //     field {sw=rw; hw=na; resetsignal=mci_rst_b;} data[32]=0; 
     // } NON_STICKY_GENERIC_SCRATCH_REG[8]; // TODO Shoud reflect NONSTICKY_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
 
 ////////////////////////////////////////////////////////////////
@@ -1069,7 +1069,6 @@ regfile intr_block_t {
         // FIXME add back? field {desc = "Enable bit for Scan mode";                                 } notif_scan_mode_en = 1'b0;
         field {desc = "Enable bit for SoC requested the mailbox while locked";    } notif_mbox0_soc_req_lock_en = 1'b0;
         field {desc = "Enable bit for SoC requested the mailbox while locked";    } notif_mbox1_soc_req_lock_en = 1'b0;
-        // FIXME add back? field {desc = "Enable bit for Generic Input Wires Toggle";                } notif_gen_in_toggle_en = 1'b0;
     };
     reg notif1_intr_en_t {
         name = "Per-Event Interrupt Enable Register";
