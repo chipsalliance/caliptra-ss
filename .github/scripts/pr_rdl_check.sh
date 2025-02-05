@@ -53,7 +53,7 @@ rdl_mod_count=$(git diff --merge-base "${merge_dest}" --name-only | grep -c -e '
 if [[ "${rdl_mod_count}" -gt 0 ]]; then
     # Run the HTML Doc generator script (to update the REG macro header files)
     # and the individual reg generator script but then remove the docs directories
-    bash "${CALIPTRA_SS_ROOT}/tools/scripts/reg_soc_gen.sh"
+    bash "${CALIPTRA_SS_ROOT}/tools/scripts/gen_soc_regs.sh"
 
     # Check for any file changes
     if [[ $(git status -s --untracked-files=all --ignored=traditional -- "${CALIPTRA_SS_ROOT}/src/" | wc -l) -gt 0 ]]; then
