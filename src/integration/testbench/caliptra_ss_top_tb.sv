@@ -1656,7 +1656,7 @@ module caliptra_ss_top_tb
     logic         cptra_ss_all_error_non_fatal_o;
     logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
-    logic [31:0]  cptra_ss_strap_clp_axi_user_i;
+    logic [31:0]  cptra_ss_strap_cptra_axi_user_i;
     logic         cptra_ss_mcu_jtag_tck_i;
     logic         cptra_ss_mcu_jtag_tms_i;
     logic         cptra_ss_mcu_jtag_tdi_i;
@@ -1684,7 +1684,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
     assign cptra_ss_strap_mcu_lsu_axi_user_i    = 32'hFFFFFFFF;
     assign cptra_ss_strap_mcu_ifu_axi_user_i    = 32'hFFFFFFFF;
-    assign cptra_ss_strap_clp_axi_user_i        = 32'hFFFFFFFF;
+    assign cptra_ss_strap_cptra_axi_user_i        = 32'hFFFFFFFF;
     assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
@@ -1792,7 +1792,7 @@ module caliptra_ss_top_tb
     //MCU
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
-        .cptra_ss_strap_clp_axi_user_i,
+        .cptra_ss_strap_cptra_axi_user_i,
 
     //MCU ROM
         .cptra_ss_mcu_rom_macro_req_if,

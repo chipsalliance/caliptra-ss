@@ -65,14 +65,15 @@ module mci_axi_sub_decode
     output logic mcu_lsu_req,
     output logic mcu_ifu_req,
     output logic mcu_req    ,
-    output logic clp_req    ,
-    output logic soc_req    ,
+    output logic debug_req    ,
+    output logic cptra_req    ,
 
     
     // Privileged AXI users
     input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_lsu_axi_user,
     input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_ifu_axi_user,
-    input logic [soc_resp_if.USER_WIDTH-1:0] strap_clp_axi_user
+    input logic [soc_resp_if.USER_WIDTH-1:0] strap_cptra_axi_user,
+    input logic [soc_resp_if.USER_WIDTH-1:0] strap_debug_axi_user
 );
 
 // Valid signals
@@ -132,6 +133,7 @@ always_comb soc_mci_mbox0_req = soc_mci_mbox0_gnt & mbox0_valid_user & all_strb_
 //There are 5 valid user registers, check if user attribute matches any of them
 //Check if user matches Default Valid user parameter - this user value is always valid
 //Check if request is coming from MCU (privilaged access)
+//Check if request is coming from Debug (privilaged access)
 always_comb begin
     mbox0_valid_user = '0;
     for (int i=0; i < 5; i++) begin
@@ -139,6 +141,7 @@ always_comb begin
     end
     mbox0_valid_user |= soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0];
     mbox0_valid_user |= mcu_req;
+    mbox0_valid_user |= debug_req;
 end
 
 // MCI Mbox1
@@ -148,6 +151,7 @@ always_comb soc_mci_mbox1_req = soc_mci_mbox1_gnt & mbox1_valid_user & all_strb_
 //There are 5 valid user registers, check if user attribute matches any of them
 //Check if user matches Default Valid user parameter - this user value is always valid
 //Check if request is coming from MCU (privilaged access)
+//Check if request is coming from Debug (privilaged access)
 always_comb begin
     mbox1_valid_user = '0;
     for (int i=0; i < 5; i++) begin
@@ -155,6 +159,7 @@ always_comb begin
     end
     mbox1_valid_user |= (soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0]);
     mbox1_valid_user |= mcu_req;
+    mbox1_valid_user |= debug_req;
 end
 
 
@@ -235,13 +240,15 @@ always_comb soc_resp_if.error = (soc_mcu_sram_req  & mcu_sram_req_if.error)  |
 // privileged users
 ///////////////////////////////////////////////
 
+
+assign debug_req    = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_debug_axi_user));
+
 assign mcu_lsu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_lsu_axi_user));
 assign mcu_ifu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_ifu_axi_user));
 assign mcu_req      = mcu_lsu_req | mcu_ifu_req; 
 
-assign clp_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_clp_axi_user));
+assign cptra_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_cptra_axi_user));
 
-assign soc_req      = soc_resp_if.dv & ~(mcu_req | clp_req);
 
 
 endmodule

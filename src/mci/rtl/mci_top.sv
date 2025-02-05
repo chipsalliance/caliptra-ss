@@ -60,7 +60,8 @@ module mci_top
     // Straps
     input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_mcu_ifu_axi_user,
-    input logic [s_axi_r_if.UW-1:0] strap_clp_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_cptra_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_debug_axi_user,
     input logic ss_debug_intent,
 
     // SRAM ADHOC connections
@@ -183,11 +184,11 @@ module mci_top
     logic [MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer2_timeout_period;
 
     // AXI SUB Privileged requests
+    logic debug_req;
     logic mcu_lsu_req;
     logic mcu_ifu_req;
     logic mcu_req    ;
-    logic clp_req    ;
-    logic soc_req    ;
+    logic cptra_req    ;
     logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox0_users;
     logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox1_users;
 
@@ -338,17 +339,18 @@ mci_axi_sub_top #(
     .valid_mbox1_users,
 
     // Privileged requests 
+    .debug_req,
     .mcu_lsu_req,
     .mcu_ifu_req,
     .mcu_req    ,
-    .clp_req    ,
-    .soc_req    ,
+    .cptra_req    ,
 
     
     // Privileged AXI users
+    .strap_debug_axi_user,
     .strap_mcu_lsu_axi_user,
     .strap_mcu_ifu_axi_user,
-    .strap_clp_axi_user
+    .strap_cptra_axi_user
 );
 
 mci_boot_seqr #(
@@ -409,9 +411,10 @@ mci_mcu_sram_ctrl #(
     .cif_resp_if (mcu_sram_req_if.response),
 
     // AXI Privileged requests
+    .debug_req,
     .mcu_lsu_req,
     .mcu_ifu_req,
-    .clp_req    ,
+    .cptra_req    ,
 
     // Access lock interface
     .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),  
@@ -493,7 +496,8 @@ mci_reg_top #(
     .mci_reg_hwif_out,
     
     // AXI Privileged requests
-    .clp_req,
+    .debug_req,
+    .cptra_req,
     .mcu_req,
 
     // WDT specific signals

@@ -191,11 +191,11 @@ always_comb begin
                 boot_fsm_nxt = BOOT_WAIT_MCU_RST_REQ;
             end
             else begin 
-                boot_fsm_nxt = BOOT_WAIT_CLPA_GO;
+                boot_fsm_nxt = BOOT_WAIT_CPTRA_GO;
             end
             mcu_rst_b_nxt = 1'b1;
         end
-        BOOT_WAIT_CLPA_GO: begin
+        BOOT_WAIT_CPTRA_GO: begin
             if(caliptra_boot_go) begin
                 boot_fsm_nxt = BOOT_CPTRA;
             end

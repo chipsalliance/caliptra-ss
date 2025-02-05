@@ -70,9 +70,10 @@ module mci_mcu_sram_ctrl
     cif_if.response  cif_resp_if,
 
     // AXI Privileged requests
+    input logic debug_req,
     input logic mcu_lsu_req,
     input logic mcu_ifu_req,
-    input logic clp_req ,
+    input logic cptra_req ,
 
 
     // Access lock interface
@@ -238,7 +239,7 @@ assign prot_region_req = cif_resp_if.dv & !exec_region_match;
 // 2. Reads take 2 clock cycles. But we can use these signals
 //    to detect an illegal access and respond with an error 
 //    on the first clock cycle
-assign prot_region_filter_success = prot_region_req & mcu_lsu_req;
+assign prot_region_filter_success = prot_region_req & (mcu_lsu_req | debug_req);
 assign prot_region_filter_error   = prot_region_req & ~prot_region_filter_success;
 
 
@@ -275,11 +276,11 @@ always_comb begin
     exec_region_filter_error   = '0;
     if (exec_region_req) begin
         if (fw_exec_region_mcu_access) begin
-            exec_region_filter_success = (mcu_lsu_req | mcu_ifu_req);
+            exec_region_filter_success = (mcu_lsu_req | mcu_ifu_req | debug_req);
             exec_region_filter_error   = ~exec_region_filter_success;
         end 
         else begin
-            exec_region_filter_success = clp_req;
+            exec_region_filter_success = cptra_req | debug_req;
             exec_region_filter_error   = ~exec_region_filter_success;
         end
     end

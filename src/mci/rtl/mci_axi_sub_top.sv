@@ -52,17 +52,18 @@ module mci_axi_sub_top
 
 
     // Privileged requests 
+    output logic debug_req,
     output logic mcu_lsu_req,
     output logic mcu_ifu_req,
     output logic mcu_req    ,
-    output logic clp_req    ,
-    output logic soc_req    ,
+    output logic cptra_req    ,
 
     
     // Privileged AXI users
+    input logic [s_axi_w_if.UW-1:0] strap_debug_axi_user,
     input logic [s_axi_w_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_w_if.UW-1:0] strap_mcu_ifu_axi_user,
-    input logic [s_axi_w_if.UW-1:0] strap_clp_axi_user
+    input logic [s_axi_w_if.UW-1:0] strap_cptra_axi_user
 
 
 
@@ -145,17 +146,18 @@ mci_axi_sub_decode #(
     .valid_mbox1_users,
 
     // Privileged requests 
+    .debug_req,
     .mcu_lsu_req,
     .mcu_ifu_req,
     .mcu_req    ,
-    .clp_req    ,
-    .soc_req    ,
+    .cptra_req    ,
 
     
     // Privileged AXI users
+    .strap_debug_axi_user,
     .strap_mcu_lsu_axi_user,
     .strap_mcu_ifu_axi_user,
-    .strap_clp_axi_user
+    .strap_cptra_axi_user
 
 );
 

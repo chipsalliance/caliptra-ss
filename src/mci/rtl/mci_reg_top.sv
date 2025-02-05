@@ -40,7 +40,8 @@ module mci_reg_top
     output mci_reg__out_t mci_reg_hwif_out,
 
     // AXI Privileged requests
-    input logic clp_req,
+    input logic debug_req,
+    input logic cptra_req,
     input logic mcu_req,
 
     // WDT specific signals
@@ -196,6 +197,8 @@ logic strap_we;
 
 // Misc
 logic [1:0] generic_input_toggle;
+logic mcu_or_debug_req;
+logic cptra_or_debug_req;
 
 // MBOX
 logic mci_mbox0_data_avail_d;
@@ -290,7 +293,7 @@ end
 
 // Fuse write done can be written by MCU if it is already NOT '1.
 // The bit gets reset on cold reset
-always_comb mci_reg_hwif_in.SS_CONFIG_DONE.done.swwe = (mcu_req & cif_resp_if.dv) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
+always_comb mci_reg_hwif_in.SS_CONFIG_DONE.done.swwe = (mcu_or_debug_req & cif_resp_if.dv) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
 
 // Subsystem straps capture the initial value from input port on rising edge of cptra_pwrgood
 always_ff @(posedge clk or negedge mci_pwrgood) begin
@@ -472,8 +475,10 @@ assign mci_reg_hwif_in.mci_rst_b = mci_rst_b;
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
-assign mci_reg_hwif_in.cptra_req    = clp_req; 
-assign mci_reg_hwif_in.mcu_req      = mcu_req;
+assign mcu_or_debug_req                     = mcu_req | debug_req;
+assign cptra_or_debug_req                   = cptra_req | debug_req;
+assign mci_reg_hwif_in.cptra_or_debug_req   = cptra_or_debug_req; 
+assign mci_reg_hwif_in.mcu_or_debug_req     = mcu_or_debug_req;
 
 ///////////////////////////////////////////////
 // TEMP CONNECTIONS FIXME
@@ -568,7 +573,7 @@ always_comb begin
     end
 end
 
-assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_clpra_mcu_reset_req_sts.hwset = cptra_mcu_rst_req;
+assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts.hwset = cptra_mcu_rst_req;
 
 ///////////////////////////////////////////////
 // MCI Interrupt aggregation
