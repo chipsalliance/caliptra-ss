@@ -157,9 +157,16 @@ module mci_top
     mci_reg__out_t mci_reg_hwif_out;
 
     // MCU SRAM signals
-    logic mcu_sram_single_ecc_error;
-    logic mcu_sram_double_ecc_error;
-    logic mcu_sram_fw_exec_region_lock_sync;
+    logic        mcu_sram_single_ecc_error;
+    logic        mcu_sram_double_ecc_error;
+    logic        mcu_sram_fw_exec_region_lock_sync;
+    logic        mcu_sram_dmi_axi_collision_error;
+    logic        mcu_sram_dmi_uncore_en;
+    logic        mcu_sram_dmi_uncore_wr_en;
+    logic [ 6:0] mcu_sram_dmi_uncore_addr;
+    logic [31:0] mcu_sram_dmi_uncore_wdata;
+    logic [31:0] mcu_sram_dmi_uncore_rdata;
+
 
     // WDT signals
     logic timer1_en;
@@ -389,6 +396,7 @@ mci_mcu_sram_ctrl #(
 
     // MCI Resets
     .rst_b (mci_rst_b), // FIXME: Need to sync reset
+    .mci_pwrgood (mci_pwrgood), // FIXME: Need to sync reset
 
     
     // MCU Reset
@@ -407,10 +415,18 @@ mci_mcu_sram_ctrl #(
 
     // Access lock interface
     .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),  
+    
+    // DMI
+    .dmi_uncore_en    (mcu_sram_dmi_uncore_en),
+    .dmi_uncore_wr_en (mcu_sram_dmi_uncore_wr_en),
+    .dmi_uncore_addr  (mcu_sram_dmi_uncore_addr),
+    .dmi_uncore_wdata (mcu_sram_dmi_uncore_wdata),
+    .dmi_uncore_rdata (mcu_sram_dmi_uncore_rdata),
 
     // ECC Status
     .sram_single_ecc_error(mcu_sram_single_ecc_error),  
     .sram_double_ecc_error(mcu_sram_double_ecc_error),  
+    .dmi_axi_collision_error(mcu_sram_dmi_axi_collision_error),
 
     // Interface with SRAM
     .mci_mcu_sram_req_if(mci_mcu_sram_req_if)
@@ -559,6 +575,12 @@ mci_reg_top #(
     // MCU SRAM specific signals
     .mcu_sram_single_ecc_error,
     .mcu_sram_double_ecc_error,
+    .mcu_sram_dmi_axi_collision_error,
+    .mcu_sram_dmi_uncore_en,
+    .mcu_sram_dmi_uncore_wr_en,
+    .mcu_sram_dmi_uncore_addr,
+    .mcu_sram_dmi_uncore_wdata,
+    .mcu_sram_dmi_uncore_rdata,
 
     // Boot status
     .mcu_reset_once,

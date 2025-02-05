@@ -145,6 +145,7 @@ addrmap mci_reg {
                 [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky_hw mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
         rw_rw_sticky_hw nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
+        rw_rw_sticky_hw mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
     } HW_ERROR_FATAL @0x40;
     reg {
         name = "Aggregate Error Fatal";
@@ -362,6 +363,7 @@ addrmap mci_reg {
                 [br]SOC Access:      RO";
         rw_ro_ro_hw mask_mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
         rw_ro_ro_hw mask_nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
+        rw_ro_ro_hw mask_mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
     } internal_hw_error_fatal_mask;
     reg {
         name = "Hardware Error Non-Fatal Mask";
@@ -996,6 +998,7 @@ regfile intr_block_t {
 
         // Specific enables for the events defined in this
         // event type in the instantiating peripheral.
+        field {desc = "Enable bit for Collision between AXI and DMI port in MCU SRAM.";                            } error_mcu_sram_dmi_axi_collision_en = 1'b0;
         field {desc = "Enable bit for Internal Errors";                                                            } error_internal_en = 1'b0;
         field {desc = "Enable bit for Invalid Device in Pauser field";                                             } error_mbox0_inv_dev_en  = 1'b0;
         field {desc = "Enable bit for Invalid Device in Pauser field";                                             } error_mbox1_inv_dev_en  = 1'b0;
@@ -1125,6 +1128,7 @@ regfile intr_block_t {
         default woclr = true;
         default level intr;
 
+        field {desc = "Collision between AXI and DMI port in MCU SRAM.";                 } error_mcu_sram_dmi_axi_collision_sts = 1'b0;
         field {desc = "Internal Errors status bit";                                      } error_internal_sts = 1'b0;
         field {desc = "Invalid Device in Pauser field status bit";                       } error_mbox0_inv_dev_sts = 1'b0;
         field {desc = "Invalid Device in Pauser field status bit";                       } error_mbox1_inv_dev_sts = 1'b0;
@@ -1288,15 +1292,16 @@ regfile intr_block_t {
         default singlepulse = true;
 
         // Instantiate triggers bit-by-bit.
-        field {desc = "Internal Errors trigger bit";                             } error_internal_trig = 1'b0;
-        field {desc = "Invalid Device in Pauser field trigger bit";              } error_mbox0_inv_dev_trig  = 1'b0;
-        field {desc = "Invalid Device in Pauser field trigger bit";              } error_mbox1_inv_dev_trig  = 1'b0;
-        field {desc = "Failed Commands trigger bit";                             } error_mbox0_cmd_fail_trig = 1'b0;
-        field {desc = "Failed Commands trigger bit";                             } error_mbox1_cmd_fail_trig = 1'b0;
-        field {desc = "Mailbox ECC Double-bit Error (uncorrectable) trigger bit";} error_mbox0_ecc_unc_trig = 1'b0;
-        field {desc = "Mailbox ECC Double-bit Error (uncorrectable) trigger bit";} error_mbox1_ecc_unc_trig = 1'b0;
-        field {desc = "WDT Timer1 timeout trigger bit";                          } error_wdt_timer1_timeout_trig = 1'b0;
-        field {desc = "WDT Timer2 timeout trigger bit";                          } error_wdt_timer2_timeout_trig = 1'b0;
+        field {desc = "Collision between AXI and DMI port in MCU SRAM trigger bit";     } error_mcu_sram_dmi_axi_collision_trig = 1'b0;
+        field {desc = "Internal Errors trigger bit";                                    } error_internal_trig = 1'b0;
+        field {desc = "Invalid Device in Pauser field trigger bit";                     } error_mbox0_inv_dev_trig  = 1'b0;
+        field {desc = "Invalid Device in Pauser field trigger bit";                     } error_mbox1_inv_dev_trig  = 1'b0;
+        field {desc = "Failed Commands trigger bit";                                    } error_mbox0_cmd_fail_trig = 1'b0;
+        field {desc = "Failed Commands trigger bit";                                    } error_mbox1_cmd_fail_trig = 1'b0;
+        field {desc = "Mailbox ECC Double-bit Error (uncorrectable) trigger bit";       } error_mbox0_ecc_unc_trig = 1'b0;
+        field {desc = "Mailbox ECC Double-bit Error (uncorrectable) trigger bit";       } error_mbox1_ecc_unc_trig = 1'b0;
+        field {desc = "WDT Timer1 timeout trigger bit";                                 } error_wdt_timer1_timeout_trig = 1'b0;
+        field {desc = "WDT Timer2 timeout trigger bit";                                 } error_wdt_timer2_timeout_trig = 1'b0;
     };
     reg error1_intr_trig_t {
         name = "Interrupt Trigger Register type definition";
@@ -1485,6 +1490,7 @@ regfile intr_block_t {
     intr_count_t      error_mbox1_cmd_fail_intr_count_r;         /* Per error */                                           //
     intr_count_t      error_mbox0_ecc_unc_intr_count_r;     /* Per error */                                           //
     intr_count_t      error_mbox1_ecc_unc_intr_count_r;     /* Per error */                                           //
+    intr_count_t      error_mcu_sram_dmi_axi_collision_intr_count_r;     /* Per error */                                           //
     intr_count_t      error_wdt_timer1_timeout_intr_count_r;  /* Per error */                                         //
     intr_count_t      error_wdt_timer2_timeout_intr_count_r; /* Per error */                                         //
     intr_count_t      error_agg_error_fatal0_intr_count_r;    /* Per error  */                              //
@@ -1577,6 +1583,7 @@ regfile intr_block_t {
     intr_count_incr_t error_mbox1_ecc_unc_intr_count_incr_r;    /* Per error count incrementor pulse */               //
     intr_count_incr_t error_wdt_timer1_timeout_intr_count_incr_r;  /* Per error count incrementor pulse */            //
     intr_count_incr_t error_wdt_timer2_timeout_intr_count_incr_r; /* Per error count incrementor pulse */            //
+    intr_count_incr_t error_mcu_sram_dmi_axi_collision_intr_count_incr_r;     /* Per error count incrementor pulse */                                           //
     intr_count_incr_t error_agg_error_fatal0_intr_count_incr_r;    /* Per error count incrementor pulse */                              //
     intr_count_incr_t error_agg_error_fatal1_intr_count_incr_r;    /* Per error count incrementor pulse */                              //
     intr_count_incr_t error_agg_error_fatal2_intr_count_incr_r;    /* Per error count incrementor pulse */                              //
@@ -1664,6 +1671,7 @@ regfile intr_block_t {
     error0_internal_intr_r.error_mbox1_ecc_unc_sts -> resetsignal = mci_pwrgood;
     error0_internal_intr_r.error_wdt_timer1_timeout_sts -> resetsignal = mci_pwrgood;
     error0_internal_intr_r.error_wdt_timer2_timeout_sts -> resetsignal = mci_pwrgood;
+    error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> resetsignal = mci_pwrgood;
     error1_internal_intr_r.error_agg_error_fatal0_sts -> resetsignal = mci_pwrgood;
     error1_internal_intr_r.error_agg_error_fatal1_sts -> resetsignal = mci_pwrgood;
     error1_internal_intr_r.error_agg_error_fatal2_sts -> resetsignal = mci_pwrgood;
@@ -1705,6 +1713,7 @@ regfile intr_block_t {
     error_mbox1_ecc_unc_intr_count_r.cnt      -> resetsignal = mci_pwrgood;
     error_wdt_timer1_timeout_intr_count_r.cnt -> resetsignal = mci_pwrgood;
     error_wdt_timer2_timeout_intr_count_r.cnt -> resetsignal = mci_pwrgood;
+    error_mcu_sram_dmi_axi_collision_intr_count_r.cnt -> resetsignal = mci_pwrgood;
     error_agg_error_fatal0_intr_count_r.cnt -> resetsignal = mci_pwrgood;
     error_agg_error_fatal1_intr_count_r.cnt -> resetsignal = mci_pwrgood;
     error_agg_error_fatal2_intr_count_r.cnt -> resetsignal = mci_pwrgood;
@@ -1749,6 +1758,7 @@ regfile intr_block_t {
     error0_internal_intr_r.error_mbox1_ecc_unc_sts -> enable = error0_intr_en_r.error_mbox1_ecc_unc_en;
     error0_internal_intr_r.error_wdt_timer1_timeout_sts -> enable = error0_intr_en_r.error_wdt_timer1_timeout_en;
     error0_internal_intr_r.error_wdt_timer2_timeout_sts -> enable = error0_intr_en_r.error_wdt_timer2_timeout_en;
+    error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> enable = error0_intr_en_r.error_mcu_sram_dmi_axi_collision_en;
     error1_internal_intr_r.error_agg_error_fatal0_sts -> enable = error1_intr_en_r.error_agg_error_fatal0_en;
     error1_internal_intr_r.error_agg_error_fatal1_sts -> enable = error1_intr_en_r.error_agg_error_fatal1_en;
     error1_internal_intr_r.error_agg_error_fatal2_sts -> enable = error1_intr_en_r.error_agg_error_fatal2_en;
@@ -1834,6 +1844,7 @@ regfile intr_block_t {
     error0_internal_intr_r.error_mbox1_ecc_unc_sts -> next   = error0_intr_trig_r.error_mbox1_ecc_unc_trig;
     error0_internal_intr_r.error_wdt_timer1_timeout_sts -> next   = error0_intr_trig_r.error_wdt_timer1_timeout_trig;
     error0_internal_intr_r.error_wdt_timer2_timeout_sts -> next   = error0_intr_trig_r.error_wdt_timer2_timeout_trig;
+    error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> next   = error0_intr_trig_r.error_mcu_sram_dmi_axi_collision_trig;
     error1_internal_intr_r.error_agg_error_fatal0_sts  -> next = error1_intr_trig_r.error_agg_error_fatal0_trig;
     error1_internal_intr_r.error_agg_error_fatal1_sts  -> next = error1_intr_trig_r.error_agg_error_fatal1_trig;
     error1_internal_intr_r.error_agg_error_fatal2_sts  -> next = error1_intr_trig_r.error_agg_error_fatal2_trig;
@@ -1982,6 +1993,13 @@ regfile intr_block_t {
     error_wdt_timer2_timeout_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_wdt_timer2_timeout_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
     error_wdt_timer2_timeout_intr_count_incr_r.pulse -> decr     = error_wdt_timer2_timeout_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     error_wdt_timer2_timeout_intr_count_r.cnt        -> incr     = error_wdt_timer2_timeout_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    
+    error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse -> decr     = error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    error_mcu_sram_dmi_axi_collision_intr_count_r.cnt        -> incr     = error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+
 
     error_agg_error_fatal0_intr_count_incr_r.pulse -> hwset    = error1_internal_intr_r.error_agg_error_fatal0_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
     error_agg_error_fatal0_intr_count_incr_r.pulse -> next     = error1_internal_intr_r.error_agg_error_fatal0_sts -> next;  // /      as a pulse to increment the intr_count_r register

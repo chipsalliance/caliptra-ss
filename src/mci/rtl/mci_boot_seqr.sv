@@ -15,7 +15,7 @@
 module mci_boot_seqr
 import mci_pkg::*;
 #(
-    parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Determines 
+    parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Determines the minimum time MCU is in reset 
 )
 (
     input logic clk,

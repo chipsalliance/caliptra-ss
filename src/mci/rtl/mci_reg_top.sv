@@ -119,8 +119,14 @@ module mci_reg_top
     input logic mcu_sram_fw_exec_region_lock,
 
     // MCU SRAM specific signals
-    input logic mcu_sram_single_ecc_error,
-    input logic mcu_sram_double_ecc_error,
+    input  logic        mcu_sram_single_ecc_error,
+    input  logic        mcu_sram_double_ecc_error,
+    input  logic        mcu_sram_dmi_axi_collision_error,
+    output logic        mcu_sram_dmi_uncore_en,
+    output logic        mcu_sram_dmi_uncore_wr_en,
+    output logic [ 6:0] mcu_sram_dmi_uncore_addr,
+    output logic [31:0] mcu_sram_dmi_uncore_wdata,
+    input  logic [31:0] mcu_sram_dmi_uncore_rdata,
 
     // Boot status
     input  logic mcu_reset_once,
@@ -362,7 +368,9 @@ always_comb mcu_dmi_uncore_manuf_unlocked_wr_en = (mcu_dmi_uncore_wr_en & mcu_dm
 always_comb mcu_dmi_uncore_locked_wr_en         = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_locked_en);
 
 //DMI unlocked register read mux
-always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
+always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_ADDR              )}}   &  mcu_sram_dmi_uncore_rdata                   )  | 
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_DATA              )}}   &  mcu_sram_dmi_uncore_rdata                   )  | 
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  | 
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_STATUS           )}}   &  mbox0_dmi_reg.MBOX_STATUS                   )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  | 
@@ -429,6 +437,14 @@ always_comb dmi_mbox1_inc_rdptr = mcu_dmi_uncore_mbox1_dout_access_f & ~mcu_dmi_
 always_comb dmi_mbox1_inc_wrptr = mcu_dmi_uncore_mbox1_din_access_f &  ~mcu_dmi_uncore_locked_en;
 always_comb dmi_mbox0_wen = mcu_dmi_uncore_locked_en & mcu_dmi_uncore_wr_en;
 always_comb dmi_mbox1_wen = mcu_dmi_uncore_locked_en & mcu_dmi_uncore_wr_en;
+    
+
+always_comb mcu_sram_dmi_uncore_en = mcu_dmi_uncore_dbg_unlocked_en;
+always_comb mcu_sram_dmi_uncore_wr_en = mcu_dmi_uncore_locked_wr_en;
+always_comb mcu_sram_dmi_uncore_addr = mcu_dmi_uncore_addr;
+always_comb mcu_sram_dmi_uncore_wdata = mcu_dmi_uncore_wdata;
+
+always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts.hwset           = mcu_sram_dmi_axi_collision_error; // Set by any protocol error violation (mirrors the bits in CPTRA_HW_ERROR_NON_FATAL)
                                               
 // FIXME RDC clock?
 always_ff @(posedge clk or negedge mci_pwrgood) begin
@@ -674,7 +690,7 @@ always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox1_ecc
 ///////////////////////////////////////////////
 // NMI Vector   
 ///////////////////////////////////////////////
-assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec; // FIXME reset for this? MCI reset 
+assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec;  
 
 ////////////////////////////////////////////////////////
 // Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL
@@ -682,13 +698,16 @@ assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec; // FIXME reset for 
 // trigger the SOC interrupt signal
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_double_ecc_error; // FIXME do we need to add a reset window disable like in caliptra?
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      = nmi_intr;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  = mcu_sram_dmi_axi_collision_error;
 // Using we+next instead of hwset allows us to encode the reserved fields in some fashion
 // other than bit-hot in the future, if needed (e.g. we need to encode > 32 FATAL events)
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next    = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next        = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next  = AXI_USER_WIDTH;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
 always_comb unmasked_hw_error_fatal_write = (mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin.value && |mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next) ||
-                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next);
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next)  ||
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next);
 
 ////////////////////////////////////////////////////////
 // Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL
