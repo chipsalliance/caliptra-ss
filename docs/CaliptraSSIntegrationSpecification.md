@@ -615,7 +615,7 @@ The Fuse Controller (FC) programming interface is designed to manage lifecycle s
 
 Atomic fuse provisioning means that only one entity can initiate the programming sequence at a time. The entire sequence—data write, address write, and command write—must complete successfully. If any phase fails or if an inconsistency is detected (for example, if the AXI user ID changes between phases), the operation is aborted, and a cold reset is required before any new programming attempt can be made.
 
-The access control table, which defines allowed fuse address ranges along with the corresponding authorized AXI user IDs, is automatically generated from an HJSON configuration file. A Python script is used for this purpose. See `tools/scripts/fc_access_control_table.py`
+The access control table, which defines allowed fuse address ranges along with the corresponding authorized AXI user IDs, is automatically generated from an HJSON configuration file. A Python script is used for this purpose. See `tools/scripts/fc_access_control_table.py`.
 
 Below are the key operations supported by the programming interface:
 
