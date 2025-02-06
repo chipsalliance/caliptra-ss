@@ -1,0 +1,12 @@
+[
+  {
+    lower_addr: "0x00000000",
+    upper_addr: "0x00000080",
+    axi_user_id: "CALIPTRA_CORE_AXI_USER_ID"  // manually entered string
+  },
+  {
+    lower_addr: "0x00000088",
+    upper_addr: "0x000007A0",
+    axi_user_id: "MCU_AXI_USER_ID"
+  }
+]
