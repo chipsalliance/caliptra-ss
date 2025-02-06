@@ -37,7 +37,9 @@ module fuse_ctrl_filter
     output logic discard_fuse_write_o
 );
 
-
+//---------------------------------------------------------------------
+// Internal signal declarations
+//---------------------------------------------------------------------
 fc_table_state_t table_fsm_current_st, table_fsm_next_st;
 logic first_write_addr, second_write_addr, write_event, trigger_table_check, partition_cmd_axi_addr, all_same_id;
 
@@ -48,7 +50,9 @@ logic [31:0]  req_axi_user_id, latched_data_id0, latched_data_id1, latched_addr_
 logic latch_addr, latch_data_id0, latch_data_id1, latch_addr_id, latch_cmd_id, clear_records;
 logic discard_fuse_write;
 
-
+//---------------------------------------------------------------------
+// Extract AXI user ID from the core write request
+// (Typically comes from the AWUSER channel field)
 assign req_axi_user_id = core_axi_wr_req.awuser;
 // OR-reduce all the individual allowed bits to obtain the overall write allowed signal.
 assign wr_req_allowed = |wr_allowed_vec;
@@ -65,6 +69,7 @@ always_ff @(posedge clk_i or negedge rst_n_i) begin
     end else begin
         table_fsm_current_st <= table_fsm_next_st;
         discard_fuse_write_o <= discard_fuse_write;
+        // If clear_records is asserted, reset all latched registers
         if (clear_records) begin
             latched_fuse_addr <= '0;
             latched_data_id0  <= '0;
@@ -88,7 +93,10 @@ always_ff @(posedge clk_i or negedge rst_n_i) begin
     end
 end
 
-
+//---------------------------------------------------------------------
+// Combinational Block: Generate the allowed vector based on the access control table.
+// For each entry in the table, check if the latched fuse address is within the allowed range
+// and if the AXI user ID matches the allowed ID. Each bit in wr_allowed_vec corresponds to an entry.
 always_comb begin
     wr_allowed_vec = '0;
     for (int i = 0; i < FC_TABLE_NUM_RANGES; i = i + 1) begin : gen_wr_allowed
@@ -113,7 +121,11 @@ always_comb begin
             end else begin
                 table_fsm_next_st = RESET_ST;
             end
-        end       
+        end
+        //-------------------------------------------------------------------------
+        // IDLE_ST: Monitor for a valid write address for either the first or second fuse data.
+        // If a valid address is detected, latch the corresponding data ID and transition to WDATA_ADDR_ST.
+        // Otherwise, clear records and remain in IDLE.
         IDLE_ST: begin            
             latch_addr        = 1'b0;
             latch_addr_id     = 1'b0;
@@ -136,6 +148,9 @@ always_comb begin
                 table_fsm_next_st  = IDLE_ST;
             end
         end     
+        //-------------------------------------------------------------------------
+        // WDATA_ADDR_ST: Wait for a valid write event that carries the data.
+        // Remain in this state until the write event is detected, then move to WDATA_ST.
         WDATA_ADDR_ST: begin
             latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
@@ -150,6 +165,10 @@ always_comb begin
                 table_fsm_next_st = WDATA_ADDR_ST;
             end
         end  
+        //-------------------------------------------------------------------------
+        // WDATA_ST: Process the write data.
+        // If a table check is triggered, latch the address ID and transition to the fuse address phase.
+        // Otherwise, if additional data writes occur due to the granulartiy, latch the corresponding data ID.
         WDATA_ST: begin
             latch_addr        = 1'b0;
             latch_cmd_id      = 1'b0;
@@ -177,6 +196,9 @@ always_comb begin
                 latch_data_id1    = 1'b0;
             end
         end
+        //-------------------------------------------------------------------------
+        // FUSE_ADDR_AXI_ADDR_ST: Process the fuse address write phase.
+        // When a write event is detected, latch the fuse address and transition to FUSE_ADDR_AXI_WR_ST.
         FUSE_ADDR_AXI_ADDR_ST: begin
             latch_data_id0    = 1'b0;
             latch_data_id1    = 1'b0;
@@ -191,7 +213,10 @@ always_comb begin
                 table_fsm_next_st = FUSE_ADDR_AXI_ADDR_ST;
                 latch_addr        = 1'b0;
             end
-        end        
+        end         
+        //-------------------------------------------------------------------------
+        // FUSE_ADDR_AXI_WR_ST: Wait for the command address phase.
+        // If the partition command address is detected, latch the command ID and move to FUSE_CMD_AXI_ADDR_ST.       
         FUSE_ADDR_AXI_WR_ST: begin
             latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
@@ -206,7 +231,11 @@ always_comb begin
                 table_fsm_next_st = FUSE_ADDR_AXI_WR_ST;
                 latch_cmd_id      = 1'b0;
             end
-        end       
+        end
+        //-------------------------------------------------------------------------
+        // FUSE_CMD_AXI_ADDR_ST: Process the fuse command.
+        // Check if the fuse write is allowed (using both the access control table and a consistency check
+        // on all latched AXI IDs). If not allowed, assert discard_fuse_write and move to discard state.   
         FUSE_CMD_AXI_ADDR_ST: begin
             latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
@@ -225,6 +254,9 @@ always_comb begin
                 table_fsm_next_st = FUSE_CMD_AXI_ADDR_ST;
             end
         end
+        //-------------------------------------------------------------------------
+        // DISCARD_FUSE_CMD_AXI_WR_ST: Remain in discard state until the external
+        // signal indicates that the fuse write has been discarded.
         DISCARD_FUSE_CMD_AXI_WR_ST: begin
             latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
@@ -239,6 +271,8 @@ always_comb begin
                 table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
             end
         end     
+        //-------------------------------------------------------------------------
+        // Default case: Ensure safe signal assignments and return to IDLE.
         default: begin
             latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
@@ -251,6 +285,13 @@ always_comb begin
         end
     endcase
 end
+
+//---------------------------------------------------------------------
+// - first_write_addr and second_write_addr identify which data register is targeted.
+// - write_event indicates that a valid write (data channel) is occurring.
+// - trigger_table_check indicates that the address phase is active.
+// - partition_cmd_axi_addr indicates that the command phase is active.
+// - all_same_id verifies that the AXI user ID is consistent across all phases.
 
 always_comb begin
     first_write_addr            = (core_axi_wr_req.awvalid && core_axi_wr_rsp.awready && core_axi_wr_req.awaddr[CoreAw-1:0] == OTP_CTRL_DIRECT_ACCESS_WDATA_0_OFFSET);
