@@ -22,6 +22,7 @@
 module fuse_ctrl_filter
     import axi_struct_pkg::*;
     import otp_ctrl_reg_pkg::*;
+    import otp_ctrl_pkg::*;
 (
     input wire clk_i,
     input wire rst_n_i,
@@ -35,19 +36,6 @@ module fuse_ctrl_filter
     input wire discarded_fuse_write_i,
     output logic discard_fuse_write_o
 );
-
-
-
-typedef enum logic [2:0] {
-    RESET_ST                   = 3'd0,
-    IDLE_ST                    = 3'd1,
-    WDATA_ADDR_ST              = 3'd2,
-    WDATA_ST                   = 3'd3,
-    FUSE_ADDR_AXI_ADDR_ST      = 3'd4,
-    FUSE_ADDR_AXI_WR_ST        = 3'd5,
-    FUSE_CMD_AXI_ADDR_ST       = 3'd6,
-    DISCARD_FUSE_CMD_AXI_WR_ST = 3'd7
-} fc_table_state_t;
 
 
 fc_table_state_t table_fsm_current_st, table_fsm_next_st;

@@ -324,4 +324,17 @@ package otp_ctrl_pkg;
   localparam scrmbl_key_init_t RndCnstScrmblKeyInitDefault =
       256'hcebeb96ffe0eced795f8b2cfe23c1e519e4fa08047a6bcfb811b04f0a479006e;
 
+
+  
+  typedef enum logic [2:0] {
+    RESET_ST                   = 3'd0,
+    IDLE_ST                    = 3'd1,
+    WDATA_ADDR_ST              = 3'd2,
+    WDATA_ST                   = 3'd3,
+    FUSE_ADDR_AXI_ADDR_ST      = 3'd4,
+    FUSE_ADDR_AXI_WR_ST        = 3'd5,
+    FUSE_CMD_AXI_ADDR_ST       = 3'd6,
+    DISCARD_FUSE_CMD_AXI_WR_ST = 3'd7
+  } fc_table_state_t;
+
 endpackage : otp_ctrl_pkg
