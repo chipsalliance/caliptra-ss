@@ -25,6 +25,7 @@ requires:
   - i3c-core
   - fuse_ctrl
   - mci_top
+  - avery_vip
 targets:
   rtl:
     directories: 

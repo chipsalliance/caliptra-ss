@@ -1,6 +1,13 @@
 provides: [avery_vip]
 schema_version: 2.4.0
 targets:
+  rtl:
+    directories:
+      - /cad/tools/mentor/avery/2024.3/avery_sim/src.VCS
+      - /cad/tools/mentor/avery/2024.3/axixactor/src.axi
+    files:
+      - /cad/tools/mentor/avery/2024.3/avery_sim/src.VCS/avery_defines.svh
+      - /cad/tools/mentor/avery/2024.3/axixactor/src.axi/aaxi_pkg.sv
   tb:
     directories:
       - $COMPILE_ROOT/vip
