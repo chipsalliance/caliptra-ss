@@ -695,7 +695,30 @@ module caliptra_ss_top
     //=========================================================================-
     // MCU instance
     //=========================================================================-
+    logic                     sb_axi_awready;
+    logic                     sb_axi_wready;
+    logic                     sb_axi_bvalid;
+    logic [1:0]               sb_axi_bresp;
+    logic [pt.SB_BUS_TAG-1:0] sb_axi_bid;
+    logic                     sb_axi_arready;
+    logic                     sb_axi_rvalid;
+    logic [pt.SB_BUS_TAG-1:0] sb_axi_rid;
+    logic [63:0]              sb_axi_rdata;
+    logic [1:0]               sb_axi_rresp;
+    logic                     sb_axi_rlast;
 
+    assign sb_axi_awready = '0;
+    assign sb_axi_wready = '0;
+    assign sb_axi_bvalid = '0;
+    assign sb_axi_bresp = '0;
+    assign sb_axi_bid = '0;
+    assign sb_axi_arready = '0;
+    assign sb_axi_rvalid = '0;
+    assign sb_axi_rid = '0;
+    assign sb_axi_rdata = '0;
+    assign sb_axi_rresp = '0;
+    assign sb_axi_rlast = '0;
+    
     mcu_top rvtop_wrapper (
         .rst_l                  ( mcu_rst_b ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ), //FIXME same as caliptra?
@@ -800,45 +823,45 @@ module caliptra_ss_top
 
         //-------------------------- SB AXI signals--------------------------
         // AXI Write Channels -- system bus
-        .sb_axi_awvalid         (sb_axi_awvalid),
+        .sb_axi_awvalid         (),
         .sb_axi_awready         (sb_axi_awready),
-        .sb_axi_awid            (sb_axi_awid),
-        .sb_axi_awaddr          (sb_axi_awaddr),
-        .sb_axi_awregion        (sb_axi_awregion),
-        .sb_axi_awlen           (sb_axi_awlen),
-        .sb_axi_awsize          (sb_axi_awsize),
-        .sb_axi_awburst         (sb_axi_awburst),
-        .sb_axi_awlock          (sb_axi_awlock),
-        .sb_axi_awcache         (sb_axi_awcache),
-        .sb_axi_awprot          (sb_axi_awprot),
-        .sb_axi_awqos           (sb_axi_awqos),
+        .sb_axi_awid            (),
+        .sb_axi_awaddr          (),
+        .sb_axi_awregion        (),
+        .sb_axi_awlen           (),
+        .sb_axi_awsize          (),
+        .sb_axi_awburst         (),
+        .sb_axi_awlock          (),
+        .sb_axi_awcache         (),
+        .sb_axi_awprot          (),
+        .sb_axi_awqos           (),
 
-        .sb_axi_wvalid          (sb_axi_wvalid),
+        .sb_axi_wvalid          (),
         .sb_axi_wready          (sb_axi_wready),
-        .sb_axi_wdata           (sb_axi_wdata),
-        .sb_axi_wstrb           (sb_axi_wstrb),
-        .sb_axi_wlast           (sb_axi_wlast),
+        .sb_axi_wdata           (),
+        .sb_axi_wstrb           (),
+        .sb_axi_wlast           (),
 
         .sb_axi_bvalid          (sb_axi_bvalid),
-        .sb_axi_bready          (sb_axi_bready),
+        .sb_axi_bready          (),
         .sb_axi_bresp           (sb_axi_bresp),
         .sb_axi_bid             (sb_axi_bid),
 
-        .sb_axi_arvalid         (sb_axi_arvalid),
+        .sb_axi_arvalid         (),
         .sb_axi_arready         (sb_axi_arready),
-        .sb_axi_arid            (sb_axi_arid),
-        .sb_axi_araddr          (sb_axi_araddr),
-        .sb_axi_arregion        (sb_axi_arregion),
-        .sb_axi_arlen           (sb_axi_arlen),
-        .sb_axi_arsize          (sb_axi_arsize),
-        .sb_axi_arburst         (sb_axi_arburst),
-        .sb_axi_arlock          (sb_axi_arlock),
-        .sb_axi_arcache         (sb_axi_arcache),
-        .sb_axi_arprot          (sb_axi_arprot),
-        .sb_axi_arqos           (sb_axi_arqos),
+        .sb_axi_arid            (),
+        .sb_axi_araddr          (),
+        .sb_axi_arregion        (),
+        .sb_axi_arlen           (),
+        .sb_axi_arsize          (),
+        .sb_axi_arburst         (),
+        .sb_axi_arlock          (),
+        .sb_axi_arcache         (),
+        .sb_axi_arprot          (),
+        .sb_axi_arqos           (),
 
         .sb_axi_rvalid          (sb_axi_rvalid),
-        .sb_axi_rready          (sb_axi_rready),
+        .sb_axi_rready          (),
         .sb_axi_rid             (sb_axi_rid),
         .sb_axi_rdata           (sb_axi_rdata),
         .sb_axi_rresp           (sb_axi_rresp),
