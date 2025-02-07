@@ -169,7 +169,7 @@ module caliptra_ss_top
 
     input  lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_ack_i,
     output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_req_o,
-    input  cptra_ss_lc_ctrl_scan_rst_ni_i,
+    input  logic cptra_ss_lc_ctrl_scan_rst_ni_i,
 
     input logic cptra_ss_lc_esclate_scrap_state0_i,   // NOTE: These two signals are very important. FIXME: Renaming is needed
     input logic cptra_ss_lc_esclate_scrap_state1_i,   // If you assert them, Caliptr-SS will enter SCRAP mode
