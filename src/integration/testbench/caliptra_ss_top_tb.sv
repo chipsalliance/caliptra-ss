@@ -116,6 +116,7 @@ module caliptra_ss_top_tb
     logic                       wb_csr_valid;
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
+    mldsa_mem_if mldsa_memory_export();
 
 `ifdef css_mcu0_RV_BUILD_AXI4
    //-------------------------- LSU AXI signals--------------------------
@@ -1339,6 +1340,7 @@ module caliptra_ss_top_tb
 
         // Caliptra Memory Export Interface
         .el2_mem_export (cptra_ss_cptra_core_el2_mem_export.veer_sram_sink),
+        .mldsa_memory_export (mldsa_memory_export.resp),
 
         //SRAM interface for mbox
         .mbox_sram_cs   (cptra_ss_cptra_core_mbox_sram_cs_o   ),
@@ -1766,6 +1768,7 @@ module caliptra_ss_top_tb
 
     // Caliptra Memory Export Interface
         .cptra_ss_cptra_core_el2_mem_export,
+        .mldsa_memory_export_req(mldsa_memory_export.req),
     
     //SRAM interface for mbox
         .cptra_ss_cptra_core_mbox_sram_cs_o,
