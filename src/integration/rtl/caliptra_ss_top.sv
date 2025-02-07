@@ -538,14 +538,14 @@ module caliptra_ss_top
 
 
      always_comb begin
-        cptra_ss_mcu_lsu_m_axi_if.awuser                                              = 32'hFFFF_FFFF;
-        cptra_ss_mcu_lsu_m_axi_if.aruser                                              = 32'hFFFF_FFFF;
-        cptra_ss_mcu_lsu_m_axi_if.arid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0; //FIXME use non tb params
-        cptra_ss_mcu_lsu_m_axi_if.awid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.LSU_BUS_TAG] = '0; //FIXME use non tb params
-        cptra_ss_mcu_lsu_m_axi_if.aruser[aaxi_pkg::AAXI_ARUSER_WIDTH-1:0]             = '1;
-        cptra_ss_mcu_lsu_m_axi_if.awuser[aaxi_pkg::AAXI_AWUSER_WIDTH-1:0]             = '1;
-        cptra_ss_mcu_ifu_m_axi_if.arid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
-        cptra_ss_mcu_ifu_m_axi_if.awid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
+        cptra_ss_mcu_lsu_m_axi_if.awuser                                             = 32'hFFFF_FFFF;
+        cptra_ss_mcu_lsu_m_axi_if.aruser                                             = 32'hFFFF_FFFF;
+        cptra_ss_mcu_lsu_m_axi_if.arid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
+        cptra_ss_mcu_lsu_m_axi_if.awid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
+        cptra_ss_mcu_lsu_m_axi_if.aruser[CPTRA_SS_MCU_LSU_ARUSER_WIDTH-1:0]          = '1;
+        cptra_ss_mcu_lsu_m_axi_if.awuser[CPTRA_SS_MCU_LSU_AWUSER_WIDTH-1:0]          = '1;
+        cptra_ss_mcu_ifu_m_axi_if.arid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
+        cptra_ss_mcu_ifu_m_axi_if.awid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
         
         // mcu_dma_s_axi_if.rid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
         // mcu_dma_s_axi_if.bid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
@@ -715,7 +715,7 @@ module caliptra_ss_top
         .lsu_axi_awlen          (cptra_ss_mcu_lsu_m_axi_if.awlen),
         .lsu_axi_awsize         (cptra_ss_mcu_lsu_m_axi_if.awsize),
         .lsu_axi_awburst        (cptra_ss_mcu_lsu_m_axi_if.awburst),
-        .lsu_axi_awlock         (),//(cptra_ss_mcu_lsu_m_axi_if.awlock[0]),
+        .lsu_axi_awlock         (),//(cptra_ss_mcu_lsu_m_axi_if.awlock),
         .lsu_axi_awcache        (),//(cptra_ss_mcu_lsu_m_axi_if.awcache),
         .lsu_axi_awprot         (),//(cptra_ss_mcu_lsu_m_axi_if.awprot),
         .lsu_axi_awqos          (),//(cptra_ss_mcu_lsu_m_axi_if.awqos),
@@ -739,7 +739,7 @@ module caliptra_ss_top
         .lsu_axi_arlen          (cptra_ss_mcu_lsu_m_axi_if.arlen),
         .lsu_axi_arsize         (cptra_ss_mcu_lsu_m_axi_if.arsize),
         .lsu_axi_arburst        (cptra_ss_mcu_lsu_m_axi_if.arburst),
-        .lsu_axi_arlock         (),//(cptra_ss_mcu_lsu_m_axi_if.arlock[0]),
+        .lsu_axi_arlock         (),//(cptra_ss_mcu_lsu_m_axi_if.arlock),
         .lsu_axi_arcache        (),//(cptra_ss_mcu_lsu_m_axi_if.arcache),
         .lsu_axi_arprot         (),//(cptra_ss_mcu_lsu_m_axi_if.arprot),
         .lsu_axi_arqos          (),//(cptra_ss_mcu_lsu_m_axi_if.arqos),
@@ -762,7 +762,7 @@ module caliptra_ss_top
         .ifu_axi_awlen          ( cptra_ss_mcu_ifu_m_axi_if.awlen   ),
         .ifu_axi_awsize         ( cptra_ss_mcu_ifu_m_axi_if.awsize  ),
         .ifu_axi_awburst        ( cptra_ss_mcu_ifu_m_axi_if.awburst ),
-        .ifu_axi_awlock         ( cptra_ss_mcu_ifu_m_axi_if.awlock[0]  ),
+        .ifu_axi_awlock         ( cptra_ss_mcu_ifu_m_axi_if.awlock  ),
         .ifu_axi_awcache        (),//( cptra_ss_mcu_ifu_m_axi_if.awcache ),
         .ifu_axi_awprot         (),//( cptra_ss_mcu_ifu_m_axi_if.awprot  ),
         .ifu_axi_awqos          (),//( cptra_ss_mcu_ifu_m_axi_if.awqos   ),
@@ -785,7 +785,7 @@ module caliptra_ss_top
         .ifu_axi_arlen          ( cptra_ss_mcu_ifu_m_axi_if.arlen   ),
         .ifu_axi_arsize         ( cptra_ss_mcu_ifu_m_axi_if.arsize  ),
         .ifu_axi_arburst        ( cptra_ss_mcu_ifu_m_axi_if.arburst ),
-        .ifu_axi_arlock         (),//( cptra_ss_mcu_ifu_m_axi_if.arlock[0]  ),
+        .ifu_axi_arlock         (),//( cptra_ss_mcu_ifu_m_axi_if.arlock  ),
         .ifu_axi_arcache        (),//( cptra_ss_mcu_ifu_m_axi_if.arcache ),
         .ifu_axi_arprot         (),//( cptra_ss_mcu_ifu_m_axi_if.arprot  ),
         .ifu_axi_arqos          (),//( cptra_ss_mcu_ifu_m_axi_if.arqos   ),
@@ -1006,7 +1006,7 @@ module caliptra_ss_top
         .aruser_i   (cptra_ss_i3c_s_axi_if.aruser),
         .arlen_i    (cptra_ss_i3c_s_axi_if.arlen),
         .arburst_i  (cptra_ss_i3c_s_axi_if.arburst),
-        .arlock_i   (cptra_ss_i3c_s_axi_if.arlock[0]),
+        .arlock_i   (cptra_ss_i3c_s_axi_if.arlock),
         .rvalid_o   (cptra_ss_i3c_s_axi_if.rvalid),
         .rready_i   (cptra_ss_i3c_s_axi_if.rready),
         .rid_o      (cptra_ss_i3c_s_axi_if.rid),
@@ -1021,7 +1021,7 @@ module caliptra_ss_top
         .awuser_i   (cptra_ss_i3c_s_axi_if.awuser),
         .awlen_i    (cptra_ss_i3c_s_axi_if.awlen),
         .awburst_i  (cptra_ss_i3c_s_axi_if.awburst),
-        .awlock_i   (cptra_ss_i3c_s_axi_if.awlock[0]),
+        .awlock_i   (cptra_ss_i3c_s_axi_if.awlock),
         .wvalid_i   (cptra_ss_i3c_s_axi_if.wvalid),
         .wready_o   (cptra_ss_i3c_s_axi_if.wready),
         .wdata_i    (cptra_ss_i3c_s_axi_if.wdata),
@@ -1255,8 +1255,16 @@ module caliptra_ss_top
     // 
     //=========================================================================-
     
+    logic tb_driven_value;
+    logic tb_drive_enable;
+    wand otp_ext_voltage_h_io;
+
+    assign tb_drive_enable = 1'b1;
+    assign tb_driven_value = 1'b0;
+    assign otp_ext_voltage_h_io = tb_drive_enable ? tb_driven_value : 1'bz;
+
     assign otp_ctrl_to_mci_otp_ctrl_done = pwrmgr_pkg::pwr_otp_rsp_t'(u_otp_ctrl.pwr_otp_o.otp_done);
-    assign otp_ctrl_init_req.otp_init = mci_to_otp_ctrl_init_req; 
+    assign otp_ctrl_init_req.otp_init = mci_to_otp_ctrl_init_req;
 
     otp_ctrl #(
         .MemInitFile ("otp-img.2048.vmem")
@@ -1311,7 +1319,7 @@ module caliptra_ss_top
         .otbn_otp_key_i             ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .otbn_otp_key_o             (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
-        .otp_ext_voltage_h_io       ('Z),
+        .otp_ext_voltage_h_io       (otp_ext_voltage_h_io),
         .scan_en_i                  ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .scan_rst_ni                (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False),
