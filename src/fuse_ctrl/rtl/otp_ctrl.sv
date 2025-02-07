@@ -1070,9 +1070,23 @@ end
     end
   end
 
+  wire discarded_fuse_write, discard_fuse_write;
+
+  fuse_ctrl_filter u_fuse_ctrl_filter (
+    .clk_i                   (clk_i),
+    .rst_n_i                 (rst_ni),
+    .fc_init_done            (pwr_otp_rsp_d),
+    .core_axi_wr_req         (core_axi_wr_req),
+    .core_axi_wr_rsp         (core_axi_wr_rsp),
+    .discarded_fuse_write_i  (discarded_fuse_write),
+    .discard_fuse_write_o    (discard_fuse_write)
+  );
+
   otp_ctrl_dai u_otp_ctrl_dai (
     .clk_i,
     .rst_ni,
+    .discarded_fuse_write_o(discarded_fuse_write),
+    .discard_fuse_write_i(discard_fuse_write),
     .init_req_i       ( pwr_otp_req_synced                    ),
     .init_done_o      ( pwr_otp_rsp_d                         ),
     .part_init_req_o  ( part_init_req                         ),

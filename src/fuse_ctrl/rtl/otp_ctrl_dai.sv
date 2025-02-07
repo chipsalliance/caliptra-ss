@@ -14,6 +14,9 @@ module otp_ctrl_dai
 (
   input                                  clk_i,
   input                                  rst_ni,
+
+  output logic                           discarded_fuse_write_o,
+  input                                  discard_fuse_write_i,
   // Init reqest from power manager
   input                                  init_req_i,
   output logic                           init_done_o,
@@ -154,6 +157,7 @@ module otp_ctrl_dai
   logic cnt_en, cnt_clr, cnt_err;
   otp_err_e error_d, error_q;
   logic data_en, data_clr;
+  logic discarded_fuse_write_d;
   data_sel_e data_sel;
   addr_sel_e base_sel_d, base_sel_q;
   logic [ScrmblBlockWidth-1:0] data_q;
@@ -216,6 +220,7 @@ module otp_ctrl_dai
     // Temporary data register
     data_en = 1'b0;
     data_clr = 1'b0;
+    discarded_fuse_write_d = 1'b0;
     data_sel = OtpData;
 
     // Error Register
@@ -232,6 +237,7 @@ module otp_ctrl_dai
         init_done_o = 1'b0;
         dai_prog_idle_o = 1'b0;
         data_clr = 1'b1;
+        discarded_fuse_write_d = 1'b0;
         if (init_req_i) begin
           otp_req_o = 1'b1;
           if (otp_gnt_i) begin
@@ -408,7 +414,8 @@ module otp_ctrl_dai
       // permanently write locked and can hence not be written via the DAI.
       WriteSt: begin
         dai_prog_idle_o = 1'b0;
-        if (part_sel_valid && mubi8_test_false_strict(part_access_i[part_idx].write_lock) &&
+        if ( !discard_fuse_write_i && // If there is no access violation.
+            part_sel_valid && mubi8_test_false_strict(part_access_i[part_idx].write_lock) &&
             // If this is a HW digest write to a buffered partition.
             ((PartInfo[part_idx].variant == Buffered && PartInfo[part_idx].hw_digest &&
               base_sel_q == PartOffset && otp_addr_o == digest_addr_lut[part_idx]) ||
@@ -430,6 +437,7 @@ module otp_ctrl_dai
           end
         end else begin
           // Clear working register state.
+          discarded_fuse_write_d = 1'b1;
           data_clr = 1'b1;
           state_d = IdleSt;
           error_d = AccessError; // Signal this error, but do not go into terminal error state.
@@ -823,6 +831,14 @@ module otp_ctrl_dai
           data_q <= otp_rdata_i;
         end
       end
+    end
+  end
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin : access_block
+    if (!rst_ni) begin
+      discarded_fuse_write_o        <= '0;
+    end else begin
+      discarded_fuse_write_o        <= discarded_fuse_write_d;
     end
   end
 
