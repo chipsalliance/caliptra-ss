@@ -414,25 +414,29 @@ void initialize_otp_controller() {
     // Step 2: Set up periodic background checks
     VPRINTF(LOW, "DEBUG: Configuring periodic background checks...\n");
 
+    // Configure CHECK_TIMEOUT
+    // Note that the CHECK_TIMEOUT register needs to be written before
+    // INTEGRITY_CHECK_PERIOD or CONSISTENCY_CHECK_PERIOD or a preemptive
+    // spurious timeout is triggered that that transfers the fuse_ctrl into
+    // an error state.
+    uint32_t check_timeout = 0x10000; // Example value, adjust as needed
+    lsu_write_32(FUSE_CTRL_CHECK_TIMEOUT, check_timeout);
+    VPRINTF(LOW, "INFO: CHECK_TIMEOUT set to 0x%08X\n", check_timeout);
+
     // Configure INTEGRITY_CHECK_PERIOD
-    // uint32_t integrity_check_period = 0x100; // Example value, adjust as needed
-    // lsu_write_32(FUSE_CTRL_INTEGRITY_CHECK_PERIOD, integrity_check_period);
-    // VPRINTF(LOW, "INFO: INTEGRITY_CHECK_PERIOD set to 0x%08X\n", integrity_check_period);
+    uint32_t integrity_check_period = 0x3FFFF; // Example value, adjust as needed
+    lsu_write_32(FUSE_CTRL_INTEGRITY_CHECK_PERIOD, integrity_check_period);
+    VPRINTF(LOW, "INFO: INTEGRITY_CHECK_PERIOD set to 0x%08X\n", integrity_check_period);
 
-    // // Configure CONSISTENCY_CHECK_PERIOD
-    // uint32_t consistency_check_period = 0x100; // Example value, adjust as needed
-    // lsu_write_32(FUSE_CTRL_CONSISTENCY_CHECK_PERIOD, consistency_check_period);
-    // VPRINTF(LOW, "INFO: CONSISTENCY_CHECK_PERIOD set to 0x%08X\n", consistency_check_period);
+    // Configure CONSISTENCY_CHECK_PERIOD
+    uint32_t consistency_check_period = 0x3FFFF; // Example value, adjust as needed
+    lsu_write_32(FUSE_CTRL_CONSISTENCY_CHECK_PERIOD, consistency_check_period);
+    VPRINTF(LOW, "INFO: CONSISTENCY_CHECK_PERIOD set to 0x%08X\n", consistency_check_period);
 
-    // // Configure CHECK_TIMEOUT
-    // uint32_t check_timeout = 0x1000; // Example value, adjust as needed
-    // lsu_write_32(FUSE_CTRL_CHECK_TIMEOUT, check_timeout);
-    // VPRINTF(LOW, "INFO: CHECK_TIMEOUT set to 0x%08X\n", check_timeout);
-
-    // // Step 3: Lock down background check registers
-    // VPRINTF(LOW, "DEBUG: Locking background check registers...\n");
-    // lsu_write_32(FUSE_CTRL_CHECK_REGWEN, 0x0);
-    // VPRINTF(LOW, "INFO: CHECK_REGWEN locked.\n");
+    // Step 3: Lock down background check registers
+    VPRINTF(LOW, "DEBUG: Locking background check registers...\n");
+    lsu_write_32(FUSE_CTRL_CHECK_REGWEN, 0x0);
+    VPRINTF(LOW, "INFO: CHECK_REGWEN locked.\n");
 
     
 }
