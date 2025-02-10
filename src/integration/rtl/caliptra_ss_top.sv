@@ -93,6 +93,7 @@ module caliptra_ss_top
 // Caliptra Memory Export Interface
 // Caliptra Core, ICCM and DCCM interface
     el2_mem_if.veer_sram_src           cptra_ss_cptra_core_el2_mem_export,
+    mldsa_mem_if.req                   mldsa_memory_export_req,
 
 // SRAM interface for mbox
 // Caliptra SS mailbox sram interface
@@ -605,6 +606,7 @@ module caliptra_ss_top
         .m_axi_r_if(cptra_ss_cptra_core_m_axi_if.r_mgr),
 
         .el2_mem_export(cptra_ss_cptra_core_el2_mem_export),
+        .mldsa_memory_export(mldsa_memory_export_req),
 
         .ready_for_fuses(ready_for_fuses),
         .ready_for_mb_processing(ready_for_mb_processing),

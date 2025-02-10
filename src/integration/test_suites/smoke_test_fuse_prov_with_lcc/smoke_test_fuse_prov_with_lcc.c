@@ -627,7 +627,6 @@ void program_secret_X_partition(uint32_t part_base_addr, uint32_t digest_base_ad
 
     // Read back and verify SCRATCH item
 
-    // Write to TEST_UNLOCK_TOKEN item
     if (granularity == 64){
         for (uint32_t i = 0; i < lenght_data; i++) {
             dai_rd(secret_base_addr+i*8, &read_data0, &read_data1, 64);
@@ -652,10 +651,15 @@ void program_secret_X_partition(uint32_t part_base_addr, uint32_t digest_base_ad
 
     dai_rd(digest_address, &read_data0, &read_data1, 64);
     VPRINTF(LOW, "DEBUG: After locking Read these data 0x%08X 0x%08X at Digest address 0x%08X.\n", read_data0, read_data1, digest_address);
-                
-    VPRINTF(LOW, "INFO: Locking VENDOR_TEST_DIGEST item in VENDOR_TEST partition...\n");
 
-    
+    if (granularity == 64){
+        dai_rd(secret_base_addr, &read_data0, &read_data1, 64);
+        VPRINTF(LOW, "DEBUG: After locking Read these data 0x%08X 0x%08X at address 0x%08X.\n", read_data0, read_data1, secret_base_addr);
+    }
+    else{
+        dai_rd(secret_base_addr, &read_data0, &read_data1, 32);
+        VPRINTF(LOW, "DEBUG: After locking Read these data 0x%08X at address 0x%08X.\n", read_data0, secret_base_addr);
+    }
     
 }
 
@@ -705,6 +709,7 @@ void main (void) {
     initialize_otp_controller();
     //program_vendor_test_partition();
     //program_secret0_partition();
+    uint32_t dummy_read = lsu_read_32(0x7000007c); // make axi id 0
     program_secret_X_partition(0x0, 0x40 ,8, 64);
     
 

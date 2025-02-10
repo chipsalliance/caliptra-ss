@@ -49,7 +49,9 @@ module lc_ctrl_fsm
   // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------
   // Token input from OTP (these are all hash post-images).
   input  lc_token_t             test_unlock_token_i,
-  input  lc_token_t             test_exit_token_i,
+  input  lc_token_t             test_exit_dev_token_i,
+  input  lc_token_t             dev_exit_prod_token_i,
+  input  lc_token_t             prod_exit_prodend_token_i,
   input  lc_tx_t                test_tokens_valid_i,
   input  lc_token_t             rma_token_i,
   input  lc_tx_t                rma_token_valid_i,
@@ -664,11 +666,15 @@ module lc_ctrl_fsm
   logic [2**TokenIdxWidth-1:0][LcTokenWidth/2-1:0] hashed_tokens_lower, hashed_tokens_upper;
   // These helper signals are only there to increase readability of the mux code below.
   logic [LcTokenWidth/2-1:0] test_unlock_token_lower, test_unlock_token_upper;
-  logic [LcTokenWidth/2-1:0] test_exit_token_lower, test_exit_token_upper;
+  logic [LcTokenWidth/2-1:0] test_exit_dev_token_lower, test_exit_dev_token_upper;
+  logic [LcTokenWidth/2-1:0] dev_exit_prod_token_lower, dev_exit_prod_token_upper;
+  logic [LcTokenWidth/2-1:0] prod_exit_prodend_token_lower, prod_exit_prodend_token_upper;
   logic [LcTokenWidth/2-1:0] rma_token_lower, rma_token_upper;
-  assign {test_unlock_token_lower, test_unlock_token_upper} = test_unlock_token_i;
-  assign {test_exit_token_lower, test_exit_token_upper}     = test_exit_token_i;
-  assign {rma_token_lower, rma_token_upper}                 = rma_token_i;
+  assign {test_unlock_token_lower, test_unlock_token_upper}                 = test_unlock_token_i;
+  assign {test_exit_dev_token_lower, test_exit_dev_token_upper}             = test_exit_dev_token_i;
+  assign {dev_exit_prod_token_lower, dev_exit_prod_token_upper}             = dev_exit_prod_token_i;
+  assign {prod_exit_prodend_token_lower, prod_exit_prodend_token_upper}     = prod_exit_prodend_token_i;
+  assign {rma_token_lower, rma_token_upper}                                 = rma_token_i;
 
   // SEC_CM: TOKEN.DIGEST
   // This indexes the correct token, based on the transition arc.
@@ -692,10 +698,24 @@ module lc_ctrl_fsm
     end
     // This mux has two separate halves, steered with separately buffered life cycle signals.
     if (lc_tx_test_true_strict(test_tokens_valid[2])) begin
-      hashed_tokens_lower[TestExitTokenIdx] = test_exit_token_lower;
+      hashed_tokens_lower[TestExitDevTokenIdx] = test_exit_dev_token_lower;
     end
     if (lc_tx_test_true_strict(test_tokens_valid[3])) begin
-      hashed_tokens_upper[TestExitTokenIdx] = test_exit_token_upper;
+      hashed_tokens_upper[TestExitDevTokenIdx] = test_exit_dev_token_upper;
+    end
+    // This mux has two separate halves, steered with separately buffered life cycle signals.
+    if (lc_tx_test_true_strict(test_tokens_valid[2])) begin
+      hashed_tokens_lower[DevExitProdTokenIdx] = dev_exit_prod_token_lower;
+    end
+    if (lc_tx_test_true_strict(test_tokens_valid[3])) begin
+      hashed_tokens_upper[DevExitProdTokenIdx] = dev_exit_prod_token_upper;
+    end
+    // This mux has two separate halves, steered with separately buffered life cycle signals.
+    if (lc_tx_test_true_strict(test_tokens_valid[2])) begin
+      hashed_tokens_lower[ProdExitProdEndTokenIdx] = prod_exit_prodend_token_lower;
+    end
+    if (lc_tx_test_true_strict(test_tokens_valid[3])) begin
+      hashed_tokens_upper[ProdExitProdEndTokenIdx] = prod_exit_prodend_token_upper;
     end
     // This mux has two separate halves, steered with separately buffered life cycle signals.
     if (lc_tx_test_true_strict(rma_token_valid[0])) begin
@@ -712,21 +732,25 @@ module lc_ctrl_fsm
   logic [2**TokenIdxWidth-1:0] hashed_tokens_valid0, hashed_tokens_valid1;
   always_comb begin : p_token_valid_assign
     // First mux
-    hashed_tokens_valid0                     = '0;
-    hashed_tokens_valid0[ZeroTokenIdx]       = 1'b1; // always valid
-    hashed_tokens_valid0[RawUnlockTokenIdx]  = 1'b1; // always valid
-    hashed_tokens_valid0[TestUnlockTokenIdx] = lc_tx_test_true_strict(test_tokens_valid[4]);
-    hashed_tokens_valid0[TestExitTokenIdx]   = lc_tx_test_true_strict(test_tokens_valid[5]);
-    hashed_tokens_valid0[RmaTokenIdx]        = lc_tx_test_true_strict(rma_token_valid[2]);
-    hashed_tokens_valid0[InvalidTokenIdx]    = 1'b0; // always invalid
+    hashed_tokens_valid0                          = '0;
+    hashed_tokens_valid0[ZeroTokenIdx]            = 1'b1; // always valid
+    hashed_tokens_valid0[RawUnlockTokenIdx]       = 1'b1; // always valid
+    hashed_tokens_valid0[TestUnlockTokenIdx]      = lc_tx_test_true_strict(test_tokens_valid[4]);
+    hashed_tokens_valid0[TestExitDevTokenIdx]     = lc_tx_test_true_strict(test_tokens_valid[5]);
+    hashed_tokens_valid0[DevExitProdTokenIdx]     = lc_tx_test_true_strict(test_tokens_valid[5]);
+    hashed_tokens_valid0[ProdExitProdEndTokenIdx] = lc_tx_test_true_strict(test_tokens_valid[5]);
+    hashed_tokens_valid0[RmaTokenIdx]             = lc_tx_test_true_strict(rma_token_valid[2]);
+    hashed_tokens_valid0[InvalidTokenIdx]         = 1'b0; // always invalid
     // Second mux
-    hashed_tokens_valid1                     = '0;
-    hashed_tokens_valid1[ZeroTokenIdx]       = 1'b1; // always valid
-    hashed_tokens_valid1[RawUnlockTokenIdx]  = 1'b1; // always valid
-    hashed_tokens_valid1[TestUnlockTokenIdx] = lc_tx_test_true_strict(test_tokens_valid[6]);
-    hashed_tokens_valid1[TestExitTokenIdx]   = lc_tx_test_true_strict(test_tokens_valid[7]);
-    hashed_tokens_valid1[RmaTokenIdx]        = lc_tx_test_true_strict(rma_token_valid[3]);
-    hashed_tokens_valid1[InvalidTokenIdx]    = 1'b0; // always invalid
+    hashed_tokens_valid1                          = '0;
+    hashed_tokens_valid1[ZeroTokenIdx]            = 1'b1; // always valid
+    hashed_tokens_valid1[RawUnlockTokenIdx]       = 1'b1; // always valid
+    hashed_tokens_valid1[TestUnlockTokenIdx]      = lc_tx_test_true_strict(test_tokens_valid[6]);
+    hashed_tokens_valid1[TestExitDevTokenIdx]     = lc_tx_test_true_strict(test_tokens_valid[7]);
+    hashed_tokens_valid1[DevExitProdTokenIdx]     = lc_tx_test_true_strict(test_tokens_valid[7]);
+    hashed_tokens_valid1[ProdExitProdEndTokenIdx] = lc_tx_test_true_strict(test_tokens_valid[7]);
+    hashed_tokens_valid1[RmaTokenIdx]             = lc_tx_test_true_strict(rma_token_valid[3]);
+    hashed_tokens_valid1[InvalidTokenIdx]         = 1'b0; // always invalid
   end
 
   // SEC_CM: STATE.CONFIG.SPARSE

@@ -216,7 +216,7 @@ always_comb begin: state_branch
                 security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
             end
             else begin
-                mci_trans_st_next = TRANSLATOR_MANUF_DEBUG;
+                mci_trans_st_next = TRANSLATOR_PROD_DEBUG;
                 security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b0}; 
             end
         end
