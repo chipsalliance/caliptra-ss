@@ -111,6 +111,8 @@ global:
         - +define+AI3C_TEST_CASE=/home/ws/caliptra/pateln/caliptra_ws_250114/chipsalliance/caliptra-ss/src/integration/test_suites/ai3ct_ext_basic.sv
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
+        #FIXME : remve this warning suppression
+        - '+warn=noTFIPC,noMDVMO,noSV-LCM-PPWI'
       elab:
         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c-core
         - '+warn=noIWNF'
