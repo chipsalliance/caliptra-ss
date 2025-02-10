@@ -24,6 +24,7 @@
 `include "caliptra_macros.svh"
 `include "i3c_defines.svh"
 `include "caliptra_ss_includes.svh"
+`include "el2_mem_if.sv"
 
 module caliptra_ss_top
     import axi_pkg::*;
