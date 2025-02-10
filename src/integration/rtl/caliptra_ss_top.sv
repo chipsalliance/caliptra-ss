@@ -24,7 +24,6 @@
 `include "caliptra_macros.svh"
 `include "i3c_defines.svh"
 `include "caliptra_ss_includes.svh"
-`include "el2_mem_if.sv"
 
 module caliptra_ss_top
     import axi_pkg::*;
@@ -343,50 +342,50 @@ module caliptra_ss_top
 
     //-------------------------- SB AXI signals--------------------------
     // AXI Write Channels
-    wire                        sb_axi_awvalid;
-    wire                        sb_axi_awready;
-    wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_awid;
-    wire [31:0]                 sb_axi_awaddr;
-    wire [3:0]                  sb_axi_awregion;
-    wire [7:0]                  sb_axi_awlen;
-    wire [2:0]                  sb_axi_awsize;
-    wire [1:0]                  sb_axi_awburst;
-    wire                        sb_axi_awlock;
-    wire [3:0]                  sb_axi_awcache;
-    wire [2:0]                  sb_axi_awprot;
-    wire [3:0]                  sb_axi_awqos;
+    // wire                        sb_axi_awvalid;
+    // wire                        sb_axi_awready;
+    // wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_awid;
+    // wire [31:0]                 sb_axi_awaddr;
+    // wire [3:0]                  sb_axi_awregion;
+    // wire [7:0]                  sb_axi_awlen;
+    // wire [2:0]                  sb_axi_awsize;
+    // wire [1:0]                  sb_axi_awburst;
+    // wire                        sb_axi_awlock;
+    // wire [3:0]                  sb_axi_awcache;
+    // wire [2:0]                  sb_axi_awprot;
+    // wire [3:0]                  sb_axi_awqos;
 
-    wire                        sb_axi_wvalid;
-    wire                        sb_axi_wready;
-    wire [63:0]                 sb_axi_wdata;
-    wire [7:0]                  sb_axi_wstrb;
-    wire                        sb_axi_wlast;
+    // wire                        sb_axi_wvalid;
+    // wire                        sb_axi_wready;
+    // wire [63:0]                 sb_axi_wdata;
+    // wire [7:0]                  sb_axi_wstrb;
+    // wire                        sb_axi_wlast;
 
-    wire                        sb_axi_bvalid;
-    wire                        sb_axi_bready;
-    wire [1:0]                  sb_axi_bresp;
-    wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_bid;
+    // wire                        sb_axi_bvalid;
+    // wire                        sb_axi_bready;
+    // wire [1:0]                  sb_axi_bresp;
+    // wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_bid;
 
-    // AXI Read Channels
-    wire                        sb_axi_arvalid;
-    wire                        sb_axi_arready;
-    wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_arid;
-    wire [31:0]                 sb_axi_araddr;
-    wire [3:0]                  sb_axi_arregion;
-    wire [7:0]                  sb_axi_arlen;
-    wire [2:0]                  sb_axi_arsize;
-    wire [1:0]                  sb_axi_arburst;
-    wire                        sb_axi_arlock;
-    wire [3:0]                  sb_axi_arcache;
-    wire [2:0]                  sb_axi_arprot;
-    wire [3:0]                  sb_axi_arqos;
+    // // AXI Read Channels
+    // wire                        sb_axi_arvalid;
+    // wire                        sb_axi_arready;
+    // wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_arid;
+    // wire [31:0]                 sb_axi_araddr;
+    // wire [3:0]                  sb_axi_arregion;
+    // wire [7:0]                  sb_axi_arlen;
+    // wire [2:0]                  sb_axi_arsize;
+    // wire [1:0]                  sb_axi_arburst;
+    // wire                        sb_axi_arlock;
+    // wire [3:0]                  sb_axi_arcache;
+    // wire [2:0]                  sb_axi_arprot;
+    // wire [3:0]                  sb_axi_arqos;
 
-    wire                        sb_axi_rvalid;
-    wire                        sb_axi_rready;
-    wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_rid;
-    wire [63:0]                 sb_axi_rdata;
-    wire [1:0]                  sb_axi_rresp;
-    wire                        sb_axi_rlast;
+    // wire                        sb_axi_rvalid;
+    // wire                        sb_axi_rready;
+    // wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_rid;
+    // wire [63:0]                 sb_axi_rdata;
+    // wire [1:0]                  sb_axi_rresp;
+    // wire                        sb_axi_rlast;
 
    //-------------------------- DMA AXI signals--------------------------
    // AXI Write Channels

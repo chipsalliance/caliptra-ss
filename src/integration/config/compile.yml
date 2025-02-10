@@ -26,7 +26,11 @@ requires:
   - fuse_ctrl
   - mci_top
   - avery_vip
+  - caliptra_top
 targets:
+  rtl_lint:
+    waiver_files:
+      - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
   rtl:
     directories: 
       - $COMPILE_ROOT/rtl
