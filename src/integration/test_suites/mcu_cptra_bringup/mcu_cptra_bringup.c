@@ -40,6 +40,7 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t cptra_boot_go;
     uint32_t sram_data;
+    uint32_t hash_values;
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
@@ -58,6 +59,43 @@ void main (void) {
     //
     // Wait for ready_for_fuses
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
+
+    // Add fuse values
+    // SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_0..11
+    // 53845724676e5e2f649d2c018e25c4fb80c2c28fcb6d6e93fb7cf908930a9953a9c69c3383aea9fd5573cb3db1ae0c3b
+    hash_values = 0x53845724; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_0, hash_values);
+    hash_values = 0x676e5e2f; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_1, hash_values);
+    hash_values = 0x649d2c01; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_2, hash_values);
+    hash_values = 0x8e25c4fb; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_3, hash_values);
+    hash_values = 0x80c2c28f; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_4, hash_values);
+    hash_values = 0xcb6d6e93; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_5, hash_values);
+    hash_values = 0xfb7cf908; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_6, hash_values);
+    hash_values = 0x930a9953; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_7, hash_values);
+    hash_values = 0xa9c69c33; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_8, hash_values);
+    hash_values = 0x83aea9fd; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_9, hash_values);
+    hash_values = 0x5573cb3d; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_10, hash_values);
+    hash_values = 0xb1ae0c3b; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_11, hash_values);
+    // SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_0..11 
+    // Value 421275a87a71acf434b4f1076acdd68377d0a315f9e2a29b26b398913e89ff33006c10dcc4f1bd7467f1e2c41b0a893a
+    hash_values = 0x421275a8; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_0, hash_values);
+    hash_values = 0x7a71acf4; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_1, hash_values);
+    hash_values = 0x34b4f107; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_2, hash_values);
+    hash_values = 0x6acdd683; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_3, hash_values);
+    hash_values = 0x77d0a315; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_4, hash_values);
+    hash_values = 0xf9e2a29b; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_5, hash_values);
+    hash_values = 0x26b39891; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_6, hash_values);
+    hash_values = 0x3e89ff33; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_7, hash_values);
+    hash_values = 0x006c10dc; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_8, hash_values);
+    hash_values = 0xc4f1bd74; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_9, hash_values);
+    hash_values = 0x67f1e2c4; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_10, hash_values);
+    hash_values = 0x1b0a893a; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_11, hash_values);
+    // SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_0..23
+    hash_values = 0x0;        lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_0, hash_values);
+    hash_values = 0xFFFFFFFF; lsu_write_re(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_11, hash_values);
+    hash_values = 0x02020101; lsu_write_re(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_12, hash_values);
+    hash_values = 0x30304040; lsu_write_re(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_13, hash_values);
+    hash_values = 0x05050606; lsu_write_re(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_14, hash_values);
+    hash_values = 0x70708080; lsu_write_re(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_15, hash_values);
 
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
