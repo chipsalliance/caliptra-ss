@@ -3,14 +3,6 @@
 //
 // Use the gen-otp-mmap.py script to update dependent files (like documentation
 // tables the comportable hjson and metadata SV package):
-//
-// $ ./util/design/gen-otp-mmap.py
-//
-// Make sure to regenerate the CSRs after converting the memory map:
-//
-// $ cd ${PROJ_ROOT}
-// $ make -C hw regs
-//
 
 {
     // 256 bit seed to be used for generation of partition item default values.
@@ -29,21 +21,37 @@
         cnst_size: "16",
         keys: [
             {
-                name:  "Secret0Key",
+                name:  "SecretTestUnlockKey",
                 value: "<random>",
-            }
+            },        
             {
-                name:  "Secret1Key",
+                name:  "SecretManufKey",
                 value: "<random>",
-            }
+            },
             {
-                name:  "Secret2Key",
+                name:  "SecretProdKey0",
                 value: "<random>",
-            }
+            },
             {
-                name:  "Secret3Key",
+                name:  "SecretProdKey1",
                 value: "<random>",
-            }
+            },
+            {
+                name:  "SecretProdKey2",
+                value: "<random>",
+            },
+            {
+                name:  "SecretProdKey3",
+                value: "<random>",
+            },
+            {
+                name:  "VendorSecretProdKey",
+                value: "<random>",
+            },
+            {
+                name:  "SecretLifeCycleTransitionKey",
+                value: "<random>",
+            },
         ]
         digests: [
             // This is the consistency digest used by all partitions.
@@ -51,26 +59,7 @@
                 name:       "CnstyDigest",
                 iv_value:   "<random>",
                 cnst_value: "<random>",
-            }
-            /*
-            // The other digest configurations below are used for
-            // key derivation and token hashing.
-            {
-                name:       "FlashDataKey",
-                iv_value:   "<random>",
-                cnst_value: "<random>",
-            }
-            {
-                name:       "FlashAddrKey",
-                iv_value:   "<random>",
-                cnst_value: "<random>",
-            }
-            {
-                name:       "SramDataKey",
-                iv_value:   "<random>",
-                cnst_value: "<random>",
-            }
-            */
+            },
         ]
     }
 
@@ -79,33 +68,155 @@
     // Note that the digest items are added automatically to the address map.
     partitions: [
         {
-            name:       "VENDOR_TEST",
-            variant:    "Unbuffered",
-            size:       "64", // in bytes
-            secret:     false,
-            sw_digest:  true,
-            hw_digest:  false,
-            write_lock: "Digest",        
-            read_lock:  "CSR",
-            key_sel:    "NoKey",
-            integrity:  false, // Do not use integrity (ECC) on this partition.
-            bkout_type: false, // Do not use generate a breakout type for this partition.
+            name:       "SECRET_TEST_UNLOCK_PARTITION",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretTestUnlockKey",
+            integrity:  true,
+            bkout_type: true,
             items: [
                 {
-                    name: "SCRATCH",
-                    size: "56"
-                }
+                    name: "CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN",
+                    size: "16",
+                    desc: '''
+                    Secret value for manufacturing debug unlock authorization.
+                    '''
+                },                
             ],
-            desc: '''Vendor test partition.
-            This is reserved for manufacturing smoke checks. The OTP wrapper
-            control logic inside prim_otp is allowed to read/write to this
-            region. ECC uncorrectable errors seen on the functional prim_otp
-            interface will not lead to an alert for this partition.
-            Instead, such errors will be reported as correctable ECC errors.
+            desc: '''Secret manufacturing partition.
             '''
-        }
+        },
         {
-            name:       "NON_SECRET_FUSES",
+            name:       "SECRET_MANUF_PARTITION",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretManufKey",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "CPTRA_CORE_UDS_SEED",
+                    inv_default: "<random>",
+                    size: "64",
+                    desc: '''
+                    DICE Unique Device Secret Seed.
+                    This seed is unique per device. The seed is scrambled using an obfuscation function.
+                    '''
+                },            
+            ],
+            desc: '''Secret manufacturing partition.
+            '''
+        },
+        {
+            name:       "SECRET_PROD_PARTITION_0",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretProdKey0",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "CPTRA_CORE_FIELD_ENTROPY_0",
+                    inv_default: "<random>",
+                    size: "8",
+                    desc: '''
+                    Field entropy chunk 0.
+                    Field-programmable by the owner, used to hedge against UDS disclosure in the supply chain.
+                    '''
+                },
+            ],
+            desc: '''Secret production partition 0.
+            '''
+        },
+        {
+            name:       "SECRET_PROD_PARTITION_1",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretProdKey1",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "CPTRA_CORE_FIELD_ENTROPY_1",
+                    inv_default: "<random>",
+                    size: "8",
+                    desc: '''
+                    Field entropy chunk 1.
+                    Field-programmable by the owner, used to hedge against UDS disclosure in the supply chain.
+                    '''
+                },
+            ],
+            desc: '''Secret production partition 1.
+            '''
+        },
+        {
+            name:       "SECRET_PROD_PARTITION_2",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretProdKey2",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "CPTRA_CORE_FIELD_ENTROPY_2",
+                    inv_default: "<random>",
+                    size: "8",
+                    desc: '''
+                    Field entropy chunk 2.
+                    Field-programmable by the owner, used to hedge against UDS disclosure in the supply chain.
+                    '''
+                },
+            ],
+            desc: '''Secret production partition 2.
+            '''
+        },
+        {
+            name:       "SECRET_PROD_PARTITION_3",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "SecretProdKey3",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "CPTRA_CORE_FIELD_ENTROPY_3",
+                    inv_default: "<random>",
+                    size: "8",
+                    desc: '''
+                    Field entropy chunk 3.
+                    Field-programmable by the owner, used to hedge against UDS disclosure in the supply chain.
+                    '''
+                },
+            ],
+            desc: '''Secret production partition 3.
+            '''
+        },
+        {
+            name:       "SW_MANUF_PARTITION",
             variant:    "Unbuffered",
             absorb:     true,
             secret:     false,
@@ -114,153 +225,1062 @@
             write_lock: "Digest",
             read_lock:  "CSR",
             key_sel:    "NoKey",
-            integrity:  true,  // Use integrity (ECC) on this partition
-            bkout_type: false, // Do not generate a breakout type for this partition
+            integrity:  true,
+            bkout_type: false,
             items: [
                 {
-                    name:   "FMC_KEY_MANIFEST_SVN",
-                    size:   "4"
-                }
+                    name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
+                    size: "1",
+                    desc: '''
+                    Disables anti-rollback support from Caliptra.
+                    For example, if a Platform RoT is managing FW storage and anti-rollback protection external to the SoC.
+                    '''
+                },
                 {
-                    name:   "RUNTIME_SVN", 
-                    size:   "16"
-                }
+                    name: "CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR",
+                    size: "96",
+                    desc: '''
+                    IDevID Certificate Generation Attributes.
+                    See IDevID certificate section. Caliptra only uses 352 bits. Integrator is not required
+                    to back the remaining 416 bits with physical fuses.
+                    '''
+                },
                 {
-                    name:   "LMS_VERIFY",
-                    size:   "4"
-                }
+                    name: "CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER",
+                    size: "16",
+                    desc: '''
+                    Spare bits for Vendor IDevID provisioner CA identifiers.
+                    Caliptra does not use these bits. Integrator is not required to back these with physical fuses.
+                    '''
+                },
                 {
-                    name:   "LMS_REVOCATION",
-                    size:   "4"
-                }
+                    name: "CPTRA_CORE_SOC_STEPPING_ID",
+                    size: "2",
+                    desc: '''
+                    Identifier assigned by vendor to differentiate silicon steppings.
+                    '''
+                },
                 {
-                    name:   "KEY_MANIFEST_PK_HASH_MASK",
-                    size:   "4"
-                }
-                {
-                    name:   "OWNER_PK_HASH",
-                    size:   "48"
-                }
-                {
-                    name:   "IDEVID_CERT_ATTR",
-                    size:   "96",
-                    // Default value to be output in case partition has not
-                    // initialized or is in error state. If not specified,
-                    // a value of '0 will be used.
-                    inv_default: "<random>",
-                }
-                {
-                    name:   "IDEVID_MANUF_HSM_ID",
-                    size:   "16"
-                }
-                {
-                    name:   "SOC_STEPPING_ID",
-                    size:   "4"
-                }
-            ], 
-            desc: '''Non Secret Fuses partition.
-            This contains data such IDEVID, public key hash mask, owner
-            key hash, SoC Stepping ID etc. 
-            '''  
-        }
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS",
+                    size: "512",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need one 512-bit location for hash of each of public keys.
+                    '''
+                },
+            ],
+            desc: '''Software manufacturing partition.
+            '''
+        },
         {
-            name:       "SECRET0",
+            name:       "SECRET_LC_TRANSITION_PARTITION",
             variant:    "Buffered",
             secret:     true,
             sw_digest:  false,
             hw_digest:  true,
             write_lock: "Digest",
             read_lock:  "Digest",
-            key_sel:    "Secret0Key",
+            key_sel:    "SecretLifeCycleTransitionKey",
             integrity:  true,
             bkout_type: false,
             items: [
                 {
-                    name: "TEST_UNLOCK_TOKEN",
-                    // This will generate a random default to be output in
-                    // case partition has not initialized or is in error state.
-                    // If not specified, a value of '0 will be used.
+                    name: "CPTRA_SS_TEST_UNLOCK_TOKEN_0",
                     inv_default: "<random>",
                     size: "16"
-                }
+                },
                 {
-                    name: "TEST_EXIT_TOKEN",
+                    name: "CPTRA_SS_TEST_UNLOCK_TOKEN_1",
                     inv_default: "<random>",
                     size: "16"
-                }
-            ],
-            desc: '''Secret partition 0.
-            This contains TEST lifecycle unlock tokens.
-            '''
-        }
-        {
-            name:       "SECRET1",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "Secret1Key",
-            integrity:  true,
-            bkout_type: false,
-            items: [
+                },
                 {
-                    name:   "UDS_SEED",
-                    size:   "48"
-                }
-            ],
-            desc:   '''Secret partition 1.
-            This contains Obfuscated UDS seed. 
-            '''
-        }
-        {
-            name:       "SECRET2",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "Secret2Key",
-            integrity:  true,
-            bkout_type: false,
-            items: [
-                {
-                    name:   "FIELD_ENTROPY",
-                    size:   "32"
-                }
-            ],
-            desc: '''Secret partition 2. 
-            This contains obfuscated field entropy. 
-            '''
-        }
-        {
-            name:       "SECRET3",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "Secret3Key",
-            integrity:  true,
-            bkout_type: false,
-            items: [
-                {
-                    name:   "KEY_MANIFEST_PK_HASH",
-                    size:   "48"
-                }
-                { 
-                    name:   "RMA_TOKEN",
+                    name: "CPTRA_SS_TEST_UNLOCK_TOKEN_2",
                     inv_default: "<random>",
-                    size:   "16"
+                    size: "16"
+                },
+                {
+                    name: "CPTRA_SS_TEST_UNLOCK_TOKEN_3",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+                {
+                    name: "CPTRA_SS_TEST_UNLOCK_TOKEN_4",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+                {
+                    name: "CPTRA_SS_TEST_UNLOCK_TOKEN_5",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+                {
+                    name: "CPTRA_SS_TEST_UNLOCK_TOKEN_6",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+                {
+                    name: "CPTRA_SS_TEST_UNLOCK_TOKEN_7",
+                    inv_default: "<random>",
+                    size: "16"
+                },
+                {
+                    name: "CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN",
+                    inv_default: "<random>",
+                    size: "16",
+                    desc: '''
+                    Used to transition the device from TEST_EXIT to MANUF state..
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_MANUF_TO_PROD_TOKEN",
+                    inv_default: "<random>",
+                    size: "16",
+                    desc: '''
+                    Used to transition the device from MANUF to PROD state.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_PROD_TO_PROD_END_TOKEN",
+                    inv_default: "<random>",
+                    size: "16",
+                    desc: '''
+                    Used to transition the device from PROD to PROD_END state.
+                    '''
+                },                                    
+            ],
+            desc: '''Secret life-cycle unlock token partition.
+            '''
+        },
+        {
+            name:       "SVN_PARTITION",
+            variant:    "Unbuffered",
+            absorb:     false,
+            secret:     false,
+            sw_digest:  false,
+            hw_digest:  false,
+            write_lock: "None",
+            read_lock:  "CSR",
+            key_sel:    "NoKey",
+            // This is a strike counter, hence we need to disable ECC integrity for this to work.
+            // Integrity is handled at a higher level by SW as described below.
+            integrity:  false,
+            bkout_type: false,
+            items: [
+                {
+                    name: "CPTRA_CORE_FMC_KEY_MANIFEST_SVN",
+                    size: "4",
+                    desc: '''
+                    FMC security version number.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_RUNTIME_SVN",
+                    size: "16",
+                    desc: '''
+                    Runtime firmware security version number.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_SOC_MANIFEST_SVN",
+                    size: "16",
+                    desc: '''
+                    One-hot encoded value for the SOC authorization manifest minimum supported SVN.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_SOC_MANIFEST_MAX_SVN",
+                    size: "1",
+                    desc: '''
+                    Maximum value for the SOC authorization manifest SVN..
+                    '''
+                },                   
+            ],
+            desc: '''SVN Partition.
+            '''
+        },
+        {
+            name:       "VENDOR_TEST_PARTITION",
+            variant:    "Unbuffered",
+            size:       "64", // in bytes
+            secret:     false,
+            sw_digest:  true,
+            hw_digest:  false,
+            write_lock: "Digest",
+            read_lock:  "CSR",
+            key_sel:    "NoKey",
+            integrity:  false, // Do not use integrity (ECC) on this partition.
+            bkout_type: false, // Do not generate a breakout type for this partition.
+            items: [
+                {
+                    name: "VENDOR_TEST",
+                    size: "32",
+                    desc: '''
+                    This is a partition used to test if FUSE programming is done accordingly.
+                    It has 14 32-bit vendor test write location and one 64-bit for their digest values.
+                    '''
                 }
             ],
-            desc: '''Secret partition 3.
-            This contains public key hash and RMA unlock token. 
+            desc: '''Vendor test partition.
             '''
-        }
+        },
+        {
+            name:       "VENDOR_HASHES_MANUF_PARTITION",
+            variant:    "Unbuffered",
+            secret:     false,
+            sw_digest:  true,
+            hw_digest:  false,
+            write_lock: "Digest",
+            read_lock:  "CSR",
+            key_sel:    "NoKey",
+            integrity:  false, // Do not use integrity (ECC) on this partition.
+            bkout_type: false, // Do not generate a breakout type for this partition.
+            items: [
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_0",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_0",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },                         
+            ],
+            desc: '''Vendor hashes manufacturing partition.
+            '''
+        },
+        {
+            name:       "VENDOR_HASHES_PROD_PARTITION",
+            variant:    "Unbuffered",
+            secret:     false,
+            sw_digest:  true,
+            hw_digest:  false,
+            write_lock: "Digest",
+            read_lock:  "CSR",
+            key_sel:    "NoKey",
+            integrity:  false, // Do not use integrity (ECC) on this partition.
+            bkout_type: false, // Do not generate a breakout type for this partition.
+            items: [    
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_1",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_1",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_2",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_2",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_3",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_3",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_4",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_4",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_5",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_5",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_6",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_6",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_7",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_7",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_8",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_8",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_9",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_9",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_10",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_10",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_11",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_11",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_12",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_12",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_13",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_13",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_14",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_14",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name: "CPTRA_CORE_VENDOR_PK_HASH_15",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_PQC_KEY_TYPE_15",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_VENDOR_PK_HASH_VALID",
+                    size:   "2",
+                    desc: '''
+                    Once a key is marked valid, anything above should not be able to be written (essentially
+                    a volatile lock should be implemented on higher order bits).
+                    '''
+                },                                          
+            ],
+            desc: '''Vendor hashes production partition.
+            '''
+        },
+        {
+            name:       "VENDOR_REVOCATIONS_PROD_PARTITION",
+            variant:    "Unbuffered",
+            secret:     false,
+            sw_digest:  true,
+            hw_digest:  false,
+            write_lock: "Digest",
+            read_lock:  "CSR",
+            key_sel:    "NoKey",
+            integrity:  false, // Do not use integrity (ECC) on this partition.
+            bkout_type: false, // Do not generate a breakout type for this partition.
+            items: [
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_0",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_0",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_0",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_1",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_1",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_1",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_2",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_2",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_2",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_3",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_3",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_3",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_4",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_4",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_4",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_5",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_5",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_5",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_6",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_6",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_6",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_7",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_7",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_7",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_8",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_8",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_8",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_9",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_9",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_9",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_10",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_10",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_10",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_11",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_11",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_11",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_12",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_12",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_12",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_13",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_13",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_13",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_14",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_14",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_14",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_ECC_REVOCATION_15",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_LMS_REVOCATION_15",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    '''
+                },
+                {
+                    name:   "CPTRA_CORE_MLDSA_REVOCATION_15",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    '''
+                },
+            ],
+            desc: '''Vendor revocations production partition.
+            '''
+        },
+        {
+            name:       "VENDOR_SECRET_PROD_PARTITION",
+            variant:    "Buffered",
+            secret:     true,
+            sw_digest:  false,
+            hw_digest:  true,
+            write_lock: "Digest",
+            read_lock:  "Digest",
+            key_sel:    "VendorSecretProdKey",
+            integrity:  true,
+            bkout_type: true,
+            items: [
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_0",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 0.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_1",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 1.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_2",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 2.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_3",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 3.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_4",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 4.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_5",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 5.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_6",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 6.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_7",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 7.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_8",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 8.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_9",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 9.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_10",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 10.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_11",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 11.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_12",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 12.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_13",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 13.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_14",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 14.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_15",
+                    inv_default: "<random>",
+                    size: "32",
+                    desc: '''Vendor-specific secret fuse 15.
+                    '''
+                },
+            ],
+            desc: '''Vendor secret production partition.
+            '''
+        },
+        {
+            name:       "VENDOR_NON_SECRET_PROD_PARTITION",
+            variant:    "Unbuffered",
+            absorb:     true,
+            secret:     false,
+            sw_digest:  true,
+            hw_digest:  false,
+            write_lock: "Digest",
+            read_lock:  "CSR",
+            key_sel:    "NoKey",
+            integrity:  true,
+            bkout_type: false,
+            items: [
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_0",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 0.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_1",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 1.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_2",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 2.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_3",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 3.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_4",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 4.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_5",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 5.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_6",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 6.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_7",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 7.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_8",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 8.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_9",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 9.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_10",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 10.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_11",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 11.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_12",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 12.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_13",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 13.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_14",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 14.
+                    '''
+                },
+               {
+                    name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_15",
+                    size: "32",
+                    desc: '''Vendor-specific non-secret fuse 15.
+                    '''
+                },
+            ],
+            desc: '''Vendor non-secret production partition.
+            '''
+        },
         {
             name:       "LIFE_CYCLE",
             variant:    "LifeCycle",
@@ -305,6 +1325,6 @@
             form, since that encoding is considered a netlist secret. The LC
             controller only exposes a decoded version of this state.
             '''
-        }
+        },
     ]
 }

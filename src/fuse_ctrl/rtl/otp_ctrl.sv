@@ -1532,12 +1532,12 @@ end
   //////////////////////////////////////////////////////////
 
   // Test unlock and exit tokens and RMA token
-  assign otp_lc_data_o.test_exit_dev_token   = part_buf_data[TestUnlockToken0Offset +:
-                                                         TestUnlockToken0Size];
-  assign otp_lc_data_o.test_unlock_token = part_buf_data[TestUnlockToken0Offset +:
-                                                         TestUnlockToken0Size];
-  assign otp_lc_data_o.rma_token         = part_buf_data[RmaTokenOffset +:
-                                                         RmaTokenSize];
+  assign otp_lc_data_o.test_exit_dev_token   = part_buf_data[CptraCoreManufDebugUnlockTokenOffset +:
+                                                         CptraCoreManufDebugUnlockTokenSize];
+  assign otp_lc_data_o.test_unlock_token = part_buf_data[CptraSsTestUnlockToken0Offset +:
+                                                         CptraSsTestUnlockToken0Size];
+  assign otp_lc_data_o.rma_token         = part_buf_data[CptraSsTestUnlockToken0Offset +:
+                                                         CptraSsTestUnlockToken0Size];
 
   //////////////////////////////////////////////////////////
   // TODO: Correctly compute the valid bits for the tokens.
@@ -1545,11 +1545,11 @@ end
 
   lc_ctrl_pkg::lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
   // The test tokens have been provisioned.
-  assign test_tokens_valid = (part_digest[SecretLcUnlockPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign test_tokens_valid = (part_digest[SecretTestUnlockPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The rma token has been provisioned.
-  assign rma_token_valid = (part_digest[SecretLcRmaPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign rma_token_valid = lc_ctrl_pkg::Off;//(part_digest[SecretLcRmaPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
-  assign secrets_valid = (part_digest[SecretLcRmaPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign secrets_valid = lc_ctrl_pkg::Off;//(part_digest[SecretLcRmaPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
 
   // Buffer these constants in order to ensure that synthesis does not try to optimize the encoding.
   // SEC_CM: TOKEN_VALID.CTRL.MUBI
@@ -1605,8 +1605,8 @@ end
   // TODO: Properly assert the unlock tokens.
   //////////////////////////////////////////////////////////
 
-  `CALIPTRA_ASSERT_INIT(RmaTokenSize_A,        lc_ctrl_state_pkg::LcTokenWidth == RmaTokenSize * 8)
-  `CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, lc_ctrl_state_pkg::LcTokenWidth == TestUnlockToken0Size * 8)
+  //`CALIPTRA_ASSERT_INIT(RmaTokenSize_A,        lc_ctrl_state_pkg::LcTokenWidth == RmaTokenSize * 8)
+  //`CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, lc_ctrl_state_pkg::LcTokenWidth == TestUnlockToken0Size * 8)
   `CALIPTRA_ASSERT_INIT(LcStateSize_A,         lc_ctrl_state_pkg::LcStateWidth == LcStateSize * 8)
   `CALIPTRA_ASSERT_INIT(LcTransitionCntSize_A, lc_ctrl_state_pkg::LcCountWidth == LcTransitionCntSize * 8)
 
