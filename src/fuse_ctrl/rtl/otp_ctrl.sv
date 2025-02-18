@@ -1527,17 +1527,24 @@ end
     clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
   )
 
-  //////////////////////////////////////////////////////////
-  // TODO: Correctly output unlock tokens for each LC state.
-  //////////////////////////////////////////////////////////
+  int test_unlock_token_idx;
+  assign test_unlock_token_idx = CptraSsTestUnlockToken0Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStRaw :
+                                 CptraSsTestUnlockToken1Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked0 :
+                                 CptraSsTestUnlockToken2Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked1 :
+                                 CptraSsTestUnlockToken3Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked2 :
+                                 CptraSsTestUnlockToken4Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked3 :
+                                 CptraSsTestUnlockToken5Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked4 :
+                                 CptraSsTestUnlockToken6Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked5 :
+                                 CptraSsTestUnlockToken7Offset;
+
+  assign otp_lc_data_o.test_unlock_token = part_buf_data[test_unlock_token_idx +:
+                                                         CptraSsTestUnlockToken0Size];
 
   // Test unlock and exit tokens and RMA token
-  assign otp_lc_data_o.test_exit_dev_token   = part_buf_data[CptraCoreManufDebugUnlockTokenOffset +:
-                                                         CptraCoreManufDebugUnlockTokenSize];
-  assign otp_lc_data_o.test_unlock_token = part_buf_data[CptraSsTestUnlockToken0Offset +:
-                                                         CptraSsTestUnlockToken0Size];
-  assign otp_lc_data_o.rma_token         = part_buf_data[CptraSsTestUnlockToken0Offset +:
-                                                         CptraSsTestUnlockToken0Size];
+  assign otp_lc_data_o.test_exit_dev_token = part_buf_data[CptraCoreManufDebugUnlockTokenOffset +:
+                                                           CptraCoreManufDebugUnlockTokenSize];
+  assign otp_lc_data_o.rma_token           = part_buf_data[CptraSsTestUnlockToken0Offset +:
+                                                           CptraSsTestUnlockToken0Size];
 
   //////////////////////////////////////////////////////////
   // TODO: Correctly compute the valid bits for the tokens.
