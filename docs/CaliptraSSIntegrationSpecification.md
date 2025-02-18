@@ -214,21 +214,21 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 
 | Facing   | Type      | width | Name                                      | Description                              |
 |----------|-----------|-------|-------------------------------------------|------------------------------------------|
-| External | input     | 1     | `cptra_ss_strap_mcu_lsu_axi_user_i`       | MCU LSU AXI user strap input             |
-| External | input     | 1     | `cptra_ss_strap_mcu_ifu_axi_user_i`       | MCU IFU AXI user strap input             |
-| External | input     | 1     | `cptra_ss_strap_cptra_axi_user_i`           | CLP AXI user strap input                 |
-| External | input     | 1     | `cptra_ss_strap_mcu_reset_vector_i`       | MCU reset vector strap input             |
-| External | input     | 1     | `cptra_ss_strap_caliptra_base_addr_i`     | Caliptra base address strap input        |
-| External | input     | 1     | `cptra_ss_strap_mci_base_addr_i`          | MCI base address strap input             |
-| External | input     | 1     | `cptra_ss_strap_recovery_ifc_base_addr_i` | Recovery interface base address strap input |
-| External | input     | 1     | `cptra_ss_strap_otp_fc_base_addr_i`       | OTP FC base address strap input          |
-| External | input     | 1     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
-| External | input     | 1     | `cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i` | Prod debug unlock auth PK hash reg bank offset input |
-| External | input     | 1     | `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i` | Number of prod debug unlock auth PK hashes input |
-| External | input     | 1     | `cptra_ss_strap_generic_0_i`              | Generic strap input 0                    |
-| External | input     | 1     | `cptra_ss_strap_generic_1_i`              | Generic strap input 1                    |
-| External | input     | 1     | `cptra_ss_strap_generic_2_i`              | Generic strap input 2                    |
-| External | input     | 1     | `cptra_ss_strap_generic_3_i`              | Generic strap input 3                    |
+| External | input     | 32     | `cptra_ss_strap_mcu_lsu_axi_user_i`       | MCU LSU AXI user strap input             |
+| External | input     | 32     | `cptra_ss_strap_mcu_ifu_axi_user_i`       | MCU IFU AXI user strap input             |
+| External | input     | 32     | `cptra_ss_strap_clp_axi_user_i`           | CLP AXI user strap input                 |
+| External | input     | 32     | `cptra_ss_strap_mcu_reset_vector_i`       | MCU reset vector strap input             |
+| External | input     | 32     | `cptra_ss_strap_caliptra_base_addr_i`     | Caliptra base address strap input        |
+| External | input     | 32     | `cptra_ss_strap_mci_base_addr_i`          | MCI base address strap input             |
+| External | input     | 32     | `cptra_ss_strap_recovery_ifc_base_addr_i` | Recovery interface base address strap input |
+| External | input     | 32     | `cptra_ss_strap_otp_fc_base_addr_i`       | OTP FC base address strap input          |
+| External | input     | 32     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
+| External | input     | 32     | `cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i` | Prod debug unlock auth PK hash reg bank offset input |
+| External | input     | 32     | `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i` | Number of prod debug unlock auth PK hashes input |
+| External | input     | 32     | `cptra_ss_strap_generic_0_i`              | Generic strap input 0                    |
+| External | input     | 32     | `cptra_ss_strap_generic_1_i`              | Generic strap input 1                    |
+| External | input     | 32     | `cptra_ss_strap_generic_2_i`              | Generic strap input 2                    |
+| External | input     | 32     | `cptra_ss_strap_generic_3_i`              | Generic strap input 3                    |
 
 ### AXI Interface (axi_if)
 
@@ -611,7 +611,13 @@ See [Fuse Controller Register Map](../src/fuse_ctrl/doc/registers.md).
 ---
 
 ## Programming interface
-The programming interface for the Fuse Controller (FC) is designed to manage lifecycle states, handle fuses with ECC support, and ensure secure interactions with the Fuse Macros. Below are the key operations supported by the programming interface:
+The Fuse Controller (FC) programming interface is designed to manage lifecycle states, handle fuses with ECC support, and ensure secure interactions with the fuse macros. A key component in this architecture is the Fuse Controller Filter RTL. This module intercepts and verifies the fuse programming sequence by checking that all parts of the transaction originate from the same authorized source. In doing so, the filter guarantees that fuse provisioning is performed in an atomic manner.
+
+Atomic fuse provisioning means that only one entity can initiate the programming sequence at a time. The entire sequence—data write, address write, and command write—must complete successfully. If any phase fails or if an inconsistency is detected (for example, if the AXI user ID changes between phases), the operation is aborted, and a cold reset is required before any new programming attempt can be made.
+
+The access control table, which defines allowed fuse address ranges along with the corresponding authorized AXI user IDs, is automatically generated from an HJSON configuration file. A Python script is used for this purpose. See `tools/scripts/fc_access_control_table.py`.
+
+Below are the key operations supported by the programming interface:
 
 1. **Direct Access Interface (DAI)**:
    - **Registers**:

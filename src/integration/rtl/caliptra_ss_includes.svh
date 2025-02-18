@@ -5,4 +5,7 @@
 
 parameter CPTRA_SS_MCU_USER_WIDTH = 32;
 
+parameter CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER   =          32'h0;
+parameter CPTRA_SS_STRAP_MCU_LSU_AXI_USER       =          32'h1;
+
 `endif // CPTRA_SS_INCLUDES_SVH
