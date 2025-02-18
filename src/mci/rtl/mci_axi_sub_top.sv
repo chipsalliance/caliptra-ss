@@ -44,23 +44,26 @@ module mci_axi_sub_top
 
     // Mbox0 SRAM Interface
     cif_if.request  mci_mbox0_req_if,
+    input logic [4:0][s_axi_w_if.UW-1:0] valid_mbox0_users,
 
     // Mbox1 SRAM Interface
     cif_if.request  mci_mbox1_req_if,
+    input logic [4:0][s_axi_w_if.UW-1:0] valid_mbox1_users,
 
 
     // Privileged requests 
+    output logic debug_req,
     output logic mcu_lsu_req,
     output logic mcu_ifu_req,
     output logic mcu_req    ,
-    output logic clp_req    ,
-    output logic soc_req    ,
+    output logic cptra_req    ,
 
     
     // Privileged AXI users
+    input logic [s_axi_w_if.UW-1:0] strap_debug_axi_user,
     input logic [s_axi_w_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_w_if.UW-1:0] strap_mcu_ifu_axi_user,
-    input logic [s_axi_w_if.UW-1:0] strap_clp_axi_user
+    input logic [s_axi_w_if.UW-1:0] strap_cptra_axi_user
 
 
 
@@ -107,15 +110,15 @@ axi_sub #(
     .user  (soc_resp_if.req_data.user    ), 
     .id    (soc_resp_if.req_data.id      ),
     .wdata (soc_resp_if.req_data.wdata   ), // Requires: Component dwidth == AXI dwidth
-    .wstrb (soc_resp_if.req_data.wstrb   ), // FIXME unused today Requires: Component dwidth == AXI dwidth
+    .wstrb (soc_resp_if.req_data.wstrb   ), 
     .rdata (soc_resp_if.rdata   ), // Requires: Component dwidth == AXI dwidth
-    .last  (soc_resp_if.req_data.last), // FIXME unused in code today Asserted with final 'dv' of a burst
+    .last  (soc_resp_if.req_data.last), 
     .hld   (soc_resp_if.hold    ),
     .rd_err(soc_resp_if.error   ),
     .wr_err(soc_resp_if.error   )
 );
 
-assign soc_resp_if.req_data.size = '0; // FIXME unused?
+assign soc_resp_if.req_data.size = '0; 
 
 //AXI Interface
 //This module contains the logic for interfacing with the SoC over the AXI Interface
@@ -136,28 +139,27 @@ mci_axi_sub_decode #(
 
     //MCI Mbox0
     .mci_mbox0_req_if,
+    .valid_mbox0_users,
 
     //MCI Mbox1
     .mci_mbox1_req_if,
+    .valid_mbox1_users,
 
     // Privileged requests 
+    .debug_req,
     .mcu_lsu_req,
     .mcu_ifu_req,
     .mcu_req    ,
-    .clp_req    ,
-    .soc_req    ,
+    .cptra_req    ,
 
     
     // Privileged AXI users
+    .strap_debug_axi_user,
     .strap_mcu_lsu_axi_user,
     .strap_mcu_ifu_axi_user,
-    .strap_clp_axi_user
+    .strap_cptra_axi_user
 
 );
-
-//req from axi is for soc always
-// always_comb soc_req.soc_req = 1'b1; FIXME remove?
-
 
 
 endmodule

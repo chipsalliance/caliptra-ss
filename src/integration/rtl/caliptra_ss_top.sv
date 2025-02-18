@@ -30,6 +30,12 @@ module caliptra_ss_top
     import soc_ifc_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
+    ,parameter MCI_MBOX0_SIZE_KB = 4
+    ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+    ,parameter MCI_MBOX1_SIZE_KB = 4
+    ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
 ) (
     input logic cptra_ss_clk_i,
     input logic cptra_ss_pwrgood_i,
@@ -125,7 +131,7 @@ module caliptra_ss_top
 // Caliptra SS MCU 
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_clp_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_cptra_axi_user_i,
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
@@ -142,8 +148,8 @@ module caliptra_ss_top
     input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
 
     output logic [63:0] cptra_ss_mci_generic_output_wires_o,
-    output logic cptra_ss_mci_error_fatal_o,
-    output logic cptra_ss_mci_error_non_fatal_o,
+    output logic cptra_ss_all_error_fatal_o,
+    output logic cptra_ss_all_error_non_fatal_o,
 
     input logic cptra_ss_mcu_jtag_tck_i,
     input logic cptra_ss_mcu_jtag_tms_i,
@@ -1090,12 +1096,22 @@ module caliptra_ss_top
     mci_top #(
         // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
         .AXI_DATA_WIDTH(32),
-        .MCU_SRAM_SIZE_KB(256)
+        .MCU_SRAM_SIZE_KB(256),
+
+        .MCI_MBOX0_SIZE_KB(MCI_MBOX0_SIZE_KB),
+        .MCI_SET_MBOX0_AXI_USER_INTEG(MCI_SET_MBOX0_AXI_USER_INTEG),  
+        .MCI_MBOX0_VALID_AXI_USER(MCI_MBOX0_VALID_AXI_USER),    
+        .MCI_MBOX1_SIZE_KB(MCI_MBOX1_SIZE_KB),
+        .MCI_SET_MBOX1_AXI_USER_INTEG(MCI_SET_MBOX1_AXI_USER_INTEG),  
+        .MCI_MBOX1_VALID_AXI_USER(MCI_MBOX1_VALID_AXI_USER)    
     ) mci_top_i (
 
         .clk(cptra_ss_clk_i),
         .mci_rst_b(cptra_ss_rst_b_i),
         .mci_pwrgood(cptra_ss_pwrgood_i),
+        
+        // DFT
+        .scan_mode     (cptra_ss_cptra_core_scan_mode_i),
 
         // MCI AXI Interface
         .s_axi_w_if(cptra_ss_mci_s_axi_if.w_sub),
@@ -1107,16 +1123,16 @@ module caliptra_ss_top
         
         .strap_mcu_lsu_axi_user(cptra_ss_strap_mcu_lsu_axi_user_i),
         .strap_mcu_ifu_axi_user(cptra_ss_strap_mcu_ifu_axi_user_i),
-        .strap_clp_axi_user    (cptra_ss_strap_clp_axi_user_i),
+        .strap_cptra_axi_user    (cptra_ss_strap_cptra_axi_user_i),
 
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
         .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_internal[2]),
 
-        .agg_error_fatal(1'b0),
-        .agg_error_non_fatal(1'b0),
+        .agg_error_fatal('0),       // FIXME connect to internal IPs
+        .agg_error_non_fatal('0),   // FIXME connect to internal IPs
 
-        .mci_error_fatal(cptra_ss_mci_error_fatal_o),
-        .mci_error_non_fatal(cptra_ss_mci_error_non_fatal_o),
+        .all_error_fatal(cptra_ss_all_error_fatal_o),
+        .all_error_non_fatal(cptra_ss_all_error_non_fatal_o),
 
         .mci_generic_input_wires(cptra_ss_mci_generic_input_wires_i),
         .mci_generic_output_wires(cptra_ss_mci_generic_output_wires_o),

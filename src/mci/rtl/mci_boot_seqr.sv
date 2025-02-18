@@ -15,11 +15,14 @@
 module mci_boot_seqr
 import mci_pkg::*;
 #(
-    parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Determines 
+    parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Determines the minimum time MCU is in reset 
 )
 (
     input logic clk,
     input logic mci_rst_b,
+
+    // DFT
+    input scan_mode,
 
     // Reset controls
     output logic mcu_rst_b,
@@ -31,6 +34,7 @@ import mci_pkg::*;
     output logic fw_boot_upd_reset,     // First MCU reset request
     output logic fw_hitless_upd_reset,  // Other MCU reset requests
     output logic mcu_reset_once, // Has MCU been reset before?
+    output mci_boot_fsm_state_e boot_fsm,
 
     // SoC signals
     input  logic mci_boot_seq_brkpoint,
@@ -48,7 +52,6 @@ import mci_pkg::*;
     // Caliptra signals
 );
 
-mci_boot_fsm_state_e boot_fsm;
 mci_boot_fsm_state_e boot_fsm_nxt;
 mci_boot_fsm_state_e boot_fsm_prev;
 
@@ -62,6 +65,8 @@ logic mci_boot_seq_brkpoint_sync;
 
 logic mcu_no_rom_config_sync;
 
+logic mcu_rst_b_ff  ;
+logic cptra_rst_b_ff;
 logic mcu_rst_b_nxt;
 logic cptra_rst_b_nxt;
 
@@ -73,6 +78,12 @@ logic [MIN_MCU_RST_COUNTER_WIDTH-1:0] min_mcu_rst_count;
 logic [MIN_MCU_RST_COUNTER_WIDTH-1:0] min_mcu_rst_count_nxt;
 logic min_mcu_rst_count_elapsed;
 logic min_mcu_rst_count_elapsed_nxt;
+        
+/////////////////////////////////////////////////
+// DFT                                 
+/////////////////////////////////////////////////
+assign mcu_rst_b   = scan_mode ? mcu_rst_b   :  mcu_rst_b_ff;
+assign cptra_rst_b = scan_mode ? cptra_rst_b :  cptra_rst_b_ff;
 
 /////////////////////////////////////////////////
 // Sync signals into local clock domain
@@ -118,8 +129,8 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         boot_fsm_prev               <= BOOT_IDLE;
         fc_opt_init                 <= '0;
         lc_init                     <= '0;
-        mcu_rst_b                   <= '0;
-        cptra_rst_b                 <= '0;
+        mcu_rst_b_ff                <= '0;
+        cptra_rst_b_ff              <= '0;
         mcu_reset_once              <= '0;
         fw_boot_upd_reset           <= '0;     
         fw_hitless_upd_reset        <= '0;  
@@ -131,8 +142,8 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         boot_fsm_prev   <= (boot_fsm != boot_fsm_nxt) ? boot_fsm : boot_fsm_prev; // Capture where FSM came from
         fc_opt_init     <= fc_opt_init_nxt;
         lc_init         <= lc_init_nxt;
-        mcu_rst_b       <= mcu_rst_b_nxt;
-        cptra_rst_b     <= cptra_rst_b_nxt;
+        mcu_rst_b_ff    <= mcu_rst_b_nxt;
+        cptra_rst_b_ff  <= cptra_rst_b_nxt;
         mcu_reset_once  <= mcu_reset_once_nxt;
         fw_boot_upd_reset <= fw_boot_upd_reset_nxt;     
         fw_hitless_upd_reset <= fw_hitless_upd_reset_nxt;  
@@ -146,8 +157,8 @@ always_comb begin
     boot_fsm_nxt    = boot_fsm;
     fc_opt_init_nxt = fc_opt_init;
     lc_init_nxt     = lc_init;
-    mcu_rst_b_nxt   = mcu_rst_b;
-    cptra_rst_b_nxt = cptra_rst_b;
+    mcu_rst_b_nxt   = mcu_rst_b_ff;
+    cptra_rst_b_nxt = cptra_rst_b_ff;
     mcu_reset_once_nxt  = mcu_reset_once;
     fw_boot_upd_reset_nxt = fw_boot_upd_reset;     
     fw_hitless_upd_reset_nxt = fw_hitless_upd_reset;  
@@ -180,11 +191,11 @@ always_comb begin
                 boot_fsm_nxt = BOOT_WAIT_MCU_RST_REQ;
             end
             else begin 
-                boot_fsm_nxt = BOOT_WAIT_CLPA_GO;
+                boot_fsm_nxt = BOOT_WAIT_CPTRA_GO;
             end
             mcu_rst_b_nxt = 1'b1;
         end
-        BOOT_WAIT_CLPA_GO: begin
+        BOOT_WAIT_CPTRA_GO: begin
             if(caliptra_boot_go) begin
                 boot_fsm_nxt = BOOT_CPTRA;
             end
