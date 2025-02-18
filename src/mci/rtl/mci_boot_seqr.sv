@@ -137,7 +137,7 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         fw_boot_upd_reset <= fw_boot_upd_reset_nxt;     
         fw_hitless_upd_reset <= fw_hitless_upd_reset_nxt;  
         min_mcu_rst_count_elapsed <= min_mcu_rst_count_elapsed_nxt;
-        min_mcu_rst_count <= min_mcu_rst_count_nxt;
+        min_mcu_rst_count <= min_mcu_rst_count_nxt;       
     end
 end
 

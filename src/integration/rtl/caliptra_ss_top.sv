@@ -140,6 +140,7 @@ module caliptra_ss_top
     input logic cptra_ss_mci_boot_seq_brkpoint_i,
 
     input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
+    input logic cptra_ss_FIPS_ZEROIZATION_PPD_i,
 
     output logic [63:0] cptra_ss_mci_generic_output_wires_o,
     output logic cptra_ss_mci_error_fatal_o,
@@ -467,6 +468,7 @@ module caliptra_ss_top
     // ----------------- MCI Connections FC Connections -----------------------
     logic [otp_ctrl_reg_pkg::NumAlerts-1:0] fc_alerts;
     logic fc_intr_otp_error;
+    logic FIPS_ZEROIZATION_CMD;
 
     // ----------------- MCI OTP Connections -----------------------------------
     logic mci_to_otp_ctrl_init_req;
@@ -1146,6 +1148,8 @@ module caliptra_ss_top
 
         .fc_opt_done(otp_ctrl_to_mci_otp_ctrl_done), //output from otp
         .fc_opt_init(mci_to_otp_ctrl_init_req), //input to otp
+        .FIPS_ZEROIZATION_PPD_i(cptra_ss_FIPS_ZEROIZATION_PPD_i),
+        .FIPS_ZEROIZATION_CMD_o(FIPS_ZEROIZATION_CMD),
         // .fc_intr_otp_error(1'b0),
 
         .mci_mcu_sram_req_if  (cptra_ss_mci_mcu_sram_req_if),
@@ -1265,6 +1269,7 @@ module caliptra_ss_top
     ) u_otp_ctrl (
         .clk_i                      (cptra_ss_clk_i),
         .rst_ni                     (cptra_ss_rst_b_i),
+        .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
         .clk_edn_i                  (1'b0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .rst_edn_ni                 (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .edn_o                      (),     // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
