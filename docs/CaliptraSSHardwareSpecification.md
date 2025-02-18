@@ -78,10 +78,26 @@
     - [Watchdog Timer](#watchdog-timer)
     - [MCU Mailbox](#mcu-mailbox)
     - [MCU SRAM](#mcu-sram-1)
+    - [MCI AXI Subordinate](#mci-axi-subordinate)
     - [Interrupts](#interrupts)
     - [MCI Error handling](#mci-error-handling)
     - [MCI Fuse Storage Support](#mci-fuse-storage-support)
     - [MCU Timer](#mcu-timer)
+    - [MCU Trace Buffer](#mcu-trace-buffer)
+  - [MCI Debug](#mci-debug)
+    - [MCI Debug Access](#mci-debug-access)
+      - [MCI DMI](#mci-dmi)
+        - [MCU DMI Enable Control](#mcu-dmi-enable-control)
+        - [MCI DMI Memory Map](#mci-dmi-memory-map)
+        - [MCI DMI Interface](#mci-dmi-interface)
+        - [DMI MCU SRAM Access](#dmi-mcu-sram-access)
+        - [DMI MCU Trace Buffer Access](#dmi-mcu-trace-buffer-access)
+      - [MCI DEBUG AXI USER](#mci-debug-axi-user)
+        - [Disabling MCI DEBUG AXI USER](#disabling-mci-debug-axi-user)
+    - [MCI Boot FSM Breakpoint](#mci-boot-fsm-breakpoint)
+      - [MCI Boot FSM Breakpoint Flow](#mci-boot-fsm-breakpoint-flow)
+  - [MCI Design for Test (DFT)](#mci-design-for-test-dft)
+    - [Reset Controls](#reset-controls)
 - [Subsystem Memory Map](#subsystem-memory-map)
 - [Subsystem HW Security](#subsystem-hw-security)
 
@@ -770,7 +786,7 @@ MCU is another instance of VeeR EL2 core. The following features are enabled on 
 The Manufacturer Control Interface (MCI) is a critical hardware block designed to supplement the Manufacturer Control Unit (MCU) within a System on Chip (SoC). The primary functions of the MCI include providing an SRAM bank, facilitating restricted communication through a mailbox from external entities, and managing a bank of Control/Status Registers (CSRs). Additionally, the MCI incorporates a Watchdog Timer and a Boot Sequencing Finite State Machine (FSM) to manage timing and control during the SoC boot sequence after power application. This boot sequence encompasses reset deassertion, initialization of the Fuse Controller, initialization of the Lifecycle Controller, and enabling the JTAG block for debugging and manufacturing processes.
 
 The following diagram illustrates the internal components of the MCI.
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-block-diagram.png)
+![](images/MCI-block-diagram.png)
 
 ## Sub-block Descriptions
 ### Control/Status Registers (CSRs)
@@ -815,7 +831,7 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 17. CSS-BootFSM will wait for a confirmation from MCU ROM and assert the reset to MCU and deassert the reset to MCU after 10 cycles.
 18. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/Caliptra-SS-BootFSM.png)
+![](images/Caliptra-SS-BootFSM.png)
 
 ### Watchdog Timer
 The Watchdog Timer within the MCI is a crucial component designed to enhance the reliability and robustness of the SoC. This timer monitors the operation of the system and can trigger a system reset if it detects that the system is not functioning correctly. The Watchdog Timer is configurable through CSRs and provides various timeout periods and control mechanisms to ensure the system operates within defined parameters.
@@ -845,9 +861,9 @@ Each mailbox is paired with an SRAM to store staged data. These SRAMs are **conf
 
 The MCU SRAM provides essential data and instruction memory for the Manufacturer Control Unit. This SRAM bank is utilized by the MCU to load firmware images, store application data structures, and create a runtime stack. The SRAM is accessible via the AXI interface and is mapped into the MCI's memory space for easy access and management. Exposing this SRAM via a restricted API through the SoC AXI interconnect enables seamless and secured Firmware Updates to be managed by Caliptra.
 
-AXI ID filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI_ID that is enabled through the MCU_RUNTIME_LOCK register (either the Caliptra AXI_ID, or the MCU IFU/LSU AXI IDs). Any write attempt by an invalid AXI_ID is discarded and returns an error status. Any read attempt returns 0 data and an error status.
+AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the Caliptra AXI_USER, or the MCU IFU/LSU AXI USERSs). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
 
-The MCU SRAM contains two regions, a Protected Data Region and an Updateable Execution Region, each with a different set of access rules.
+The MCU SRAM contains two regions, a Protected Data Region and an Updatable Execution Region, each with a different set of access rules.
 
 The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing is locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation.
 
@@ -860,7 +876,20 @@ The entire MCU SRAM has ECC protection. Unlike MCI mailboxes, there is no config
 - AXI response to the initiator
 - HW_ERROR_FATAL asserted and sent to SOC
 
+### MCI AXI Subordinate
+
+MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the appropriate submodule within MCI. 
+
+The MCI AXI Sub will respond with an AXI error if one of the following conditions is met:
+
+1. AXI Address miss
+2. Not all AXI STRB set when accessing submodule other than MCU SRAM
+3. Submodule error response
+4. Invalid MBOX AXI User access (MCU and Debug AXI USERs bypasses this check)
+
 ### Interrupts
+
+![](images/MCI-Interrupts.png)
 
 All interrupt status and control registers live in the CSR block. Each interrupt has the following properties:
 - Status: W1C for SW to clear
@@ -874,17 +903,19 @@ There are two different groups of interrupts
 
 Each group of interrupts has its own global status and enable registers that are an aggregate of all interrupts in the group. These status and enable registers have the same properties as the individual interrupt status and enable registers.  
 
-All interrupt groups are ORed and sent out on a signal mci_inter pin. 
+All interrupt groups are ORed and sent out on a signal mci_intr pin. 
 
 SW access to all interrupt registers are restricted to MCU.
 
 ### MCI Error handling
 
-MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any error signals that fuse controller, i3c etc.) and provides subsystem level FATAL and NON FATAL error signals. For all the error information being collected from other subystem modules, MCI also provides masking capability for MCU FW to program/enable based on SOC specific architectures to provide maximux flexibility.
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-error-agg.png)
+MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any error signals that fuse controller, i3c etc.) and provides subsystem level FATAL and NON FATAL error signals. For all the error information being collected from other subystem modules, MCI also provides masking capability for MCU FW to program/enable based on SOC specific architectures to provide maximum flexibility.
+
+![](images/MCI-error-agg.png)
 
 MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
-![](https://github.com/chipsalliance/Caliptra-SS/blob/main/docs/images/MCI-internal-error.png)
+
+![](images/MCI-internal-error.png)
 
 
 ### MCI Fuse Storage Support
@@ -892,6 +923,167 @@ MCI also provides capability to store fuses required for Caliptra subsystem for 
 
 ### MCU Timer
 Standard RISC-V timer interrupts for MCU are implemented using the mtime and mtimecmp registers defined in the RISC-V Privileged Architecture Specification. Both mtime and mtimecmp are included in the MCI register bank, and are accessible by the MCU to facilitate precise timing tasks. Frequency for the timers is configured by the SoC using the dedicated timer configuration register, which satisfies the requirement prescribed in the RISC-V specification for such a mechanism. These timer registers drive the timer_int pin into the MCU.
+
+### MCU Trace Buffer
+
+FIXME 
+
+## MCI Debug
+
+### MCI Debug Access
+
+MCI provides DMI access via MCU TAP and a DEBUG AXI USER address for debug access to MCI. 
+
+#### MCI DMI
+
+
+![](images/MCI-DMI-Interface.png)
+
+
+The DMI port on MCU is a dedicated interface that is controled via the MCU TAP interface. MCI provides two services when it comes to DMI:
+
+1. MCU DMI enable control (uncore and core)
+
+2. DMI interface for debug access to MCI address space
+
+##### MCU DMI Enable Control
+
+The MCU has two different DMI enables:
+
+1. Core
+   - Access to internal MCU registers
+2. Uncore
+   - Access to MCI registers
+
+
+MCI provides the logic for these enables. When the following condition(s) are met the enables are set:
+
+**MCU Core Enable**: Debug Mode
+
+**MCU Uncore Enable**: Debug Mode **OR** LCC Manufacturing Mode **OR** DEBUG_INTENT strap set
+
+*Note: These are the exact same controls Calipitra Core uses for DMI enable* 
+
+##### MCI DMI Memory Map
+
+| Register Name | DMI Address | Access Type | Debug Intent Access | Manufacture Mode Access | Debug Unlock Access |
+| :---- | :---- | :---- | :---- | :---- | :---- |
+| MBOX0\_DLEN | 0x50 | RO | Yes |  |  |
+| MBOX0\_DOUT | 0x51 | RO | Yes |  |  |
+| MBOX0\_STATUS | 0x52 | RO | Yes |  |  |
+| MBOX0\_DIN | 0x53 | WO | Yes |  |  |
+| MBOX1\_DLEN | 0x54 | RO | Yes |  |  |
+| MBOX1\_DOUT | 0x55 | RO | Yes |  |  |
+| MBOX1\_STATUS | 0x56 | RO | Yes |  |  |
+| MBOX1\_DIN | 0x57 | WO | Yes |  |  |
+| MCU\_SRAM\_ADDR | 0x58 | RW |  |  | Yes |
+| MCU\_SRAM\_DATA | 0x59 | RW |  |  | Yes |
+| MCU\_TRACE\_WRAPPED | 0x5A | RO |  |  | Yes |
+| MCU\_TRACE\_RD\_PTR | 0x5B | RO |  |  | Yes |
+| MCU\_TRACE\_ADDR | 0x5C | RW |  |  | Yes |
+| MCU\_TRACE\_DATA | 0x5D | RO |  |  | Yes |
+| HW\_FLOW\_STATUS | 0x5E | RO | Yes |  |  |
+| RESET\_REASON | 0x5F | RO | Yes |  |  |
+| RESET\_STATUS | 0x60 | RO | Yes |  |  |
+| FW\_FLOW\_STATUS | 0x61 | RO | Yes |  |  |
+| HW\_ERROR\_FATAL | 0x62 | RO | Yes |  |  |
+| AGG\_ERROR\_FATAL | 0x63 | RO | Yes |  |  |
+| HW\_ERROR\_NON\_FATAL | 0x64 | RO | Yes |  |  |
+| AGG\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |  |
+| FW\_ERROR\_FATAL | 0x66 | RO | Yes |  |  |
+| FW\_ERROR\_NON\_FATAL | 0x67 | RO | Yes |  |  |
+| HW\_ERROR\_ENC | 0x68 | RO | Yes |  |  |
+| FW\_ERROR\_ENC | 0x6A | RO | Yes |  |  |
+| FW\_EXTENDED\_ERROR\_INFO\_0 | 0x6B | RO | Yes |  |  |
+| FW\_EXTENDED\_ERROR\_INFO\_1 | 0x6C | RO | Yes |  |  |
+| FW\_EXTENDED\_ERROR\_INFO\_2 | 0x6D | RO | Yes |  |  |
+| FW\_EXTENDED\_ERROR\_INFO\_3 | 0x6E | RO | Yes |  |  |
+| FW\_EXTENDED\_ERROR\_INFO\_4 | 0x6F | RO | Yes |  |  |
+| FW\_EXTENDED\_ERROR\_INFO\_5 | 0x70 | RO | Yes |  |  |
+| FW\_EXTENDED\_ERROR\_INFO\_6 | 0x71 | RO | Yes |  |  |
+| FW\_EXTENDED\_ERROR\_INFO\_7 | 0x72 | RO | Yes |  |  |
+| RESET\_REQUEST | 0x73 | RW |  |  | Yes |
+| MCI\_BOOTFSM\_GO | 0x74 | RW | Yes |  |  |
+| FW\_SRAM\_EXEC\_REGION\_SIZE | 0x75 | RW |  |  | Yes |
+| MCU\_RESET\_VECTOR | 0x76 | RW |  |  | Yes |
+| SS\_DEBUG\_INTENT | 0x77 | RW |  |  | Yes |
+| SS\_CONFIG\_DONE | 0x78 | RW |  |  | Yes |
+| MCU\_NMI\_VECTOR | 0x79 | RW |  |  | Yes |
+
+##### MCI DMI Interface
+
+The MCI DMI Interface gives select access to the blocks inside MCI.
+
+Access to MCI's DMI space is split into three different levels of security:
+
+| **Access** 	| **Description** 	| 
+| :--------- 	| :--------- 	| 
+| **Debug Intent**|  Always accessable over DMI as long as uncore DMI Enable is set.| 
+| **Manufacturing Mode**|  Accessable over DMI only if LCC is in Manufacturing mode or Debug Unlocked| 
+| **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked| 
+
+Illegal accesses will result in writes being dropped and reads returning 0.
+
+*NOTE: MCI DMI address space is different than MCI AXI address space.*
+
+
+##### DMI MCU SRAM Access
+
+MCU SRAM is only accessable via DMI while in **Debug Unlock**. While in **Debug Unlock** DMI has RW permission to the entire MCU SRAM.
+
+Due to limited DMI address space the MCU SRAM is accessable via a two register mailbox.
+
+* `MCU_SRAM_ADDR`
+* `MCU_SRAM_DATA`
+
+The first MCU SRAM address is at address 0x0. The address is byte addressable, but all accesses must be DWORD aligned. Failure to align the address will result in undefined behavior. Access to addresses beyond the MCU SRAM size will result in address wrapping. 
+
+To write content to the MCU SRAM the flow is:
+
+1. Write `MCU_SRAM_ADDR`
+2. Write `MCU_SRAM_DATA`
+
+To read content from the MCU SRAM the flow is:
+
+1. Write `MCU_SRAM_ADDR`
+2. Read `MCU_SRAM_DATA`
+
+There is no error response on the DMI port, so any ECC error must be checked via the ECC registers in the MCI Register Bank.  
+
+
+##### DMI MCU Trace Buffer Access
+
+FIXME
+
+#### MCI DEBUG AXI USER
+
+In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This user will be given full access to the entire MCI IP. This means the MCI DEBUG AXI USER can be used read and write to privilaged data like the MCU SRAM or access protected data within the MCI Register Bank. 
+
+*NOTE: This user cannot bypass locks within MCI. It only bypasses AXI filtering*
+
+##### Disabling MCI DEBUG AXI USER
+
+If this feature is not needed by the SOC the integrator shall tie this port to 0. This will indicate to MCI that there are no AXI debug users within the design and no debug access is needed via AXI. 
+
+### MCI Boot FSM Breakpoint
+
+The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At this breakpoint the user can either use one of the [MCI Debug Access](#MCI-Debug-Access) mechanisms to configure MCI before bringing MCU or Caliptra out of reset.
+
+#### MCI Boot FSM Breakpoint Flow
+
+1. Assert mci_boot_seq_brkpoint
+2. Deassert MCI Reset
+3. DEBUG ACCESS TO MCI
+4. Set MCI's BRKPOINT_GO register to 1
+    - Through one of the [MCI Debug Access](#MCI-Debug-Access) methods. 
+5. FSM will continue
+
+## MCI Design for Test (DFT)
+
+### Reset Controls
+
+MCI controls various resets for other IPs like MCU and Caliptra Core. When the `scan_mode` input port is set it these resets are directly controlled by the mcu_rst_b intput intead of the internal MCI logic.
+
 
 # Subsystem Memory Map
 
