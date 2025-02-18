@@ -6,7 +6,7 @@ if {$BOARD eq "VCK190"} {
   set_property board_part xilinx.com:vck190:part0:3.1 [current_project]
 }
 
-# TODO: Find a better way of doing these SS defines
+# TODO: Check these SS defines
 lappend VERILOG_OPTIONS TECH_SPECIFIC_ICG
 lappend VERILOG_OPTIONS USER_ICG=fpga_fake_icg
 lappend VERILOG_OPTIONS RV_FPGA_OPTIMIZE
@@ -58,6 +58,8 @@ add_files [ glob $ssrtlDir/src/riscv_core/veer_el2/tb/icache_macros.svh ]
 add_files [ glob $ssrtlDir/src/riscv_core/veer_el2/rtl/design/*.sv ]
 add_files [ glob $ssrtlDir/src/riscv_core/veer_el2/rtl/design/*/*.sv ]
 add_files [ glob $ssrtlDir/src/riscv_core/veer_el2/rtl/design/*/*.v ]
+# OTP memory
+add_files $ssrtlDir/src/fuse_ctrl/data/otp-img.2048.vmem
 # SS IPs
 add_files [ glob $ssrtlDir/src/*/rtl/*.svh ]
 add_files [ glob $ssrtlDir/src/*/rtl/*.sv ]
@@ -76,9 +78,6 @@ add_files [ glob $i3cDir/src/*/*.sv ]
 add_files [ glob $i3cDir/src/*.sv ]
 # Remove the i3c-core versions of the AXI modules, so that it uses the caliptra-rtl versions instead
 remove_files [ glob $i3cDir/src/libs/axi/*.sv ]
-
-# TODO: The module defined by this file is never used and it gets removed, but somehow also fails because edn_pkg is not declared
-#remove_files [ glob $caliptrartlDir/src/caliptra_prim/rtl/caliptra_prim_edn_req.sv ]
 
 # Remove spi_host files that aren't used yet and are flagged as having syntax errors
 # TODO: Re-include these files when spi_host is used.
@@ -110,14 +109,6 @@ if {$ENABLE_ADB} {
 
 # Mark all Verilog sources as SystemVerilog because some of them have SystemVerilog syntax.
 set_property file_type SystemVerilog [get_files *.v]
-# TODO: checking to see if this removes these warnings that happen after create_bd_design
-# Result: Bad. some vh files were dropped since they weren't referenced and caused synthesis errors
-#CRITICAL WARNING: [HDL 9-1206] Syntax error near 'packed' [/proj/pso/jlmahowa/caliptra_rtl_experiments/caliptra-ss/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_pdef.vh:19]
-#CRITICAL WARNING: [HDL 9-1206] Syntax error near '}' [/proj/pso/jlmahowa/caliptra_rtl_experiments/caliptra-ss/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_pdef.vh:192]
-#CRITICAL WARNING: [HDL 9-1206] Syntax error near ''' [/proj/pso/jlmahowa/caliptra_rtl_experiments/caliptra-ss/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_param.vh:18]
-#CRITICAL WARNING: [HDL 9-1206] Syntax error near 'begin' [/proj/pso/jlmahowa/caliptra_rtl_experiments/caliptra-ss/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/pic_map_auto.
-#set_property file_type SystemVerilog [get_files *.vh]
-#set_property file_type SystemVerilog [get_files $caliptrartlDir/src/riscv_core/veer_el2/rtl/pic_map_auto.h]
 
 # Exception: caliptra_package_top.v needs to be Verilog to be included in a Block Diagram.
 set_property file_type Verilog [get_files  $fpgaDir/src/caliptra_package_top.v]
@@ -142,8 +133,7 @@ if {$APB} {
 }
 save_bd_design
 close_bd_design [get_bd_designs caliptra_package_bd]
-#start_gui
-#exit
+
 # Package IP
 puts "Fileset when packaging: [current_fileset]"
 puts "\n\nVERILOG DEFINES: [get_property verilog_define [current_fileset]]"
@@ -162,7 +152,7 @@ ipx::associate_bus_interfaces -busif M_AXI_MCU_IFU -clock core_clk [ipx::current
 ipx::associate_bus_interfaces -busif M_AXI_MCU_LSU -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif M_AXI_MCI -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif S_AXI_MCI -clock core_clk [ipx::current_core]
-ipx::associate_bus_interfaces -busif S_AXI_MCI_ROM -clock core_clk [ipx::current_core]
+ipx::associate_bus_interfaces -busif S_AXI_MCU_ROM -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif S_AXI_OTP -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif S_AXI_LCC -clock core_clk [ipx::current_core]
 
@@ -178,7 +168,5 @@ ipx::update_checksums [ipx::current_core]
 ipx::check_integrity [ipx::current_core]
 ipx::save_core [ipx::current_core]
 
-## Close temp project
-#close_project
 # Close caliptra_package_project
 close_project

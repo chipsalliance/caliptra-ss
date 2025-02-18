@@ -151,43 +151,43 @@ module caliptra_wrapper_top #(
     input  wire S_AXI_MCI_RREADY,
 
     // MCI ROM S_AXI Interface
-    input  wire [31:0] S_AXI_MCI_ROM_AWADDR,
-    input  wire [1:0] S_AXI_MCI_ROM_AWBURST,
-    input  wire [2:0] S_AXI_MCI_ROM_AWSIZE,
-    input  wire [7:0] S_AXI_MCI_ROM_AWLEN,
-    input  wire [31:0] S_AXI_MCI_ROM_AWUSER,
-    input  wire [15:0] S_AXI_MCI_ROM_AWID,
-    input  wire S_AXI_MCI_ROM_AWLOCK,
-    input  wire S_AXI_MCI_ROM_AWVALID,
-    output wire S_AXI_MCI_ROM_AWREADY,
+    input  wire [31:0] S_AXI_MCU_ROM_AWADDR,
+    input  wire [1:0] S_AXI_MCU_ROM_AWBURST,
+    input  wire [2:0] S_AXI_MCU_ROM_AWSIZE,
+    input  wire [7:0] S_AXI_MCU_ROM_AWLEN,
+    input  wire [31:0] S_AXI_MCU_ROM_AWUSER,
+    input  wire [15:0] S_AXI_MCU_ROM_AWID,
+    input  wire S_AXI_MCU_ROM_AWLOCK,
+    input  wire S_AXI_MCU_ROM_AWVALID,
+    output wire S_AXI_MCU_ROM_AWREADY,
     // W
-    input  wire [31:0] S_AXI_MCI_ROM_WDATA,
-    input  wire [3:0] S_AXI_MCI_ROM_WSTRB,
-    input  wire S_AXI_MCI_ROM_WVALID,
-    output wire S_AXI_MCI_ROM_WREADY,
-    input  wire S_AXI_MCI_ROM_WLAST,
+    input  wire [31:0] S_AXI_MCU_ROM_WDATA,
+    input  wire [3:0] S_AXI_MCU_ROM_WSTRB,
+    input  wire S_AXI_MCU_ROM_WVALID,
+    output wire S_AXI_MCU_ROM_WREADY,
+    input  wire S_AXI_MCU_ROM_WLAST,
     // B
-    output wire [1:0] S_AXI_MCI_ROM_BRESP,
-    output reg  [15:0] S_AXI_MCI_ROM_BID,
-    output wire S_AXI_MCI_ROM_BVALID,
-    input  wire S_AXI_MCI_ROM_BREADY,
+    output wire [1:0] S_AXI_MCU_ROM_BRESP,
+    output reg  [15:0] S_AXI_MCU_ROM_BID,
+    output wire S_AXI_MCU_ROM_BVALID,
+    input  wire S_AXI_MCU_ROM_BREADY,
     // AR
-    input  wire [31:0] S_AXI_MCI_ROM_ARADDR,
-    input  wire [1:0] S_AXI_MCI_ROM_ARBURST,
-    input  wire [2:0] S_AXI_MCI_ROM_ARSIZE,
-    input  wire [7:0] S_AXI_MCI_ROM_ARLEN,
-    input  wire [31:0] S_AXI_MCI_ROM_ARUSER,
-    input  wire [15:0] S_AXI_MCI_ROM_ARID,
-    input  wire S_AXI_MCI_ROM_ARLOCK,
-    input  wire S_AXI_MCI_ROM_ARVALID,
-    output wire S_AXI_MCI_ROM_ARREADY,
+    input  wire [31:0] S_AXI_MCU_ROM_ARADDR,
+    input  wire [1:0] S_AXI_MCU_ROM_ARBURST,
+    input  wire [2:0] S_AXI_MCU_ROM_ARSIZE,
+    input  wire [7:0] S_AXI_MCU_ROM_ARLEN,
+    input  wire [31:0] S_AXI_MCU_ROM_ARUSER,
+    input  wire [15:0] S_AXI_MCU_ROM_ARID,
+    input  wire S_AXI_MCU_ROM_ARLOCK,
+    input  wire S_AXI_MCU_ROM_ARVALID,
+    output wire S_AXI_MCU_ROM_ARREADY,
     // R
-    output wire [31:0] S_AXI_MCI_ROM_RDATA,
-    output wire [1:0] S_AXI_MCI_ROM_RRESP,
-    output reg  [15:0] S_AXI_MCI_ROM_RID,
-    output wire S_AXI_MCI_ROM_RLAST,
-    output wire S_AXI_MCI_ROM_RVALID,
-    input  wire S_AXI_MCI_ROM_RREADY,
+    output wire [31:0] S_AXI_MCU_ROM_RDATA,
+    output wire [1:0] S_AXI_MCU_ROM_RRESP,
+    output reg  [15:0] S_AXI_MCU_ROM_RID,
+    output wire S_AXI_MCU_ROM_RLAST,
+    output wire S_AXI_MCU_ROM_RVALID,
+    input  wire S_AXI_MCU_ROM_RREADY,
 
     // MCI M_AXI Interface
     output  wire [31:0] M_AXI_MCI_AWADDR,
@@ -642,7 +642,8 @@ module caliptra_wrapper_top #(
 
 
 `endif
-    el2_mem_if el2_mem_export ();
+    el2_mem_if el2_mem_export();
+    mldsa_mem_if mldsa_memory_export();
 
     initial begin
         BootFSM_BrkPoint = 1'b1; //Set to 1 even before anything starts
@@ -652,83 +653,15 @@ module caliptra_wrapper_top #(
     logic etrng_req;
     logic [3:0] itrng_data;
     logic itrng_valid;
-/*
-//=========================================================================-
-// DUT instance
-//=========================================================================-
-caliptra_top caliptra_top_dut (
-    .cptra_pwrgood              (hwif_out.interface_regs.control.cptra_pwrgood.value),
-    .cptra_ss_rst_b                (hwif_out.interface_regs.control.cptra_ss_rst_b.value),
-    .clk                        (core_clk),
-
-    .cptra_obf_key              (cptra_ss_cptra_obf_key_i),
-    .cptra_obf_uds_seed_vld     (uds_field_entrpy_valid),
-    .cptra_obf_uds_seed         (cptra_obf_uds_seed), 
-    .cptra_obf_field_entropy_vld(uds_field_entrpy_valid), 
-    .cptra_obf_field_entropy    (cptra_obf_field_entropy), 
-    //.cptra_csr_hmac_key         (cptra_ss_cptra_csr_hmac_key_i), TODO
-
-    .jtag_tck(jtag_tck),
-    .jtag_tdi(jtag_tdi),
-    .jtag_tms(jtag_tms),
-    .jtag_trst_n(jtag_trst_n),
-    .jtag_tdo(jtag_tdo),
-    .jtag_tdoEn(),
-
-    // Subordinate AXI Interface
-    .s_axi_w_if(s_axi.w_sub),
-    .s_axi_r_if(s_axi.r_sub),
-
-    // Manager AXI Interface
-    .m_axi_w_if(m_axi.w_mgr),
-    .m_axi_r_if(m_axi.r_mgr),
-
-    // TODO: New addition
-    .recovery_data_avail(0),
-
-    .el2_mem_export(el2_mem_export.veer_sram_src),
-
-    .ready_for_fuses(hwif_in.interface_regs.status.ready_for_fuses.next),
-    // TODO: These signals have changed for 2.0
-    .ready_for_mb_processing(hwif_in.interface_regs.status.ready_for_fw_push.next),
-    .ready_for_runtime(hwif_in.interface_regs.status.ready_for_runtime.next),
-
-    .mbox_sram_cs(mbox_sram_cs),
-    .mbox_sram_we(mbox_sram_we),
-    .mbox_sram_addr(mbox_sram_addr),
-    .mbox_sram_wdata(mbox_sram_wdata),
-    .mbox_sram_rdata(mbox_sram_rdata),
-
-    .imem_cs(imem_cs),
-    .imem_addr(imem_addr),
-    .imem_rdata(imem_rdata),
-
-    .mailbox_data_avail(hwif_in.interface_regs.status.mailbox_data_avail.next),
-    .mailbox_flow_done(hwif_in.interface_regs.status.mailbox_flow_done.next),
-
-    .BootFSM_BrkPoint(BootFSM_BrkPoint),
-
-    //SoC Interrupts
-    .cptra_error_fatal    (hwif_in.interface_regs.status.cptra_error_fatal.next),
-    .cptra_error_non_fatal(hwif_in.interface_regs.status.cptra_error_non_fatal.next),
-
-    .etrng_req             (etrng_req),
-    .itrng_data            (itrng_data),
-    .itrng_valid           (itrng_valid),
-
-    .ss_generic_fw_exec_ctrl(ss_generic_fw_exec_ctrl),
-
-    .generic_input_wires({hwif_out.interface_regs.generic_input_wires[0].value.value, hwif_out.interface_regs.generic_input_wires[1].value.value}),
-    .generic_output_wires({hwif_in.interface_regs.generic_output_wires[0].value.next, hwif_in.interface_regs.generic_output_wires[1].value.next}),
-
-    .security_state({hwif_out.interface_regs.control.ss_debug_locked.value, hwif_out.interface_regs.control.ss_device_lifecycle.value}),
-    .scan_mode     (scan_mode) //FIXME TIE-OFF
-);
-*/
 
 // EL2 Memory
 caliptra_veer_sram_export veer_sram_export_inst (
     .el2_mem_export(el2_mem_export.veer_sram_sink)
+);
+
+mldsa_mem_top mldsa_mem_top_inst (
+    .clk_i(core_clk),
+    .mldsa_memory_export(mldsa_memory_export.resp)
 );
 
 // Mailbox RAM
@@ -1042,43 +975,43 @@ axi_if #(
 ) cptra_ss_mcu_rom_s_axi_if (.clk(core_clk), .rst_n(hwif_out.interface_regs.control.cptra_ss_rst_b.value));
 
 // AW
-assign cptra_ss_mcu_rom_s_axi_if.awaddr   = S_AXI_MCI_ROM_AWADDR;
-assign cptra_ss_mcu_rom_s_axi_if.awburst  = S_AXI_MCI_ROM_AWBURST;
-assign cptra_ss_mcu_rom_s_axi_if.awsize   = S_AXI_MCI_ROM_AWSIZE;
-assign cptra_ss_mcu_rom_s_axi_if.awlen    = S_AXI_MCI_ROM_AWLEN;
-assign cptra_ss_mcu_rom_s_axi_if.awuser   = hwif_out.interface_regs.pauser.pauser.value; //S_AXI_MCI_ROM_AWUSER;
-assign cptra_ss_mcu_rom_s_axi_if.awid     = S_AXI_MCI_ROM_AWID;
-assign cptra_ss_mcu_rom_s_axi_if.awlock   = S_AXI_MCI_ROM_AWLOCK;
-assign cptra_ss_mcu_rom_s_axi_if.awvalid  = S_AXI_MCI_ROM_AWVALID;
-assign S_AXI_MCI_ROM_AWREADY = cptra_ss_mcu_rom_s_axi_if.awready;
+assign cptra_ss_mcu_rom_s_axi_if.awaddr   = S_AXI_MCU_ROM_AWADDR;
+assign cptra_ss_mcu_rom_s_axi_if.awburst  = S_AXI_MCU_ROM_AWBURST;
+assign cptra_ss_mcu_rom_s_axi_if.awsize   = S_AXI_MCU_ROM_AWSIZE;
+assign cptra_ss_mcu_rom_s_axi_if.awlen    = S_AXI_MCU_ROM_AWLEN;
+assign cptra_ss_mcu_rom_s_axi_if.awuser   = hwif_out.interface_regs.pauser.pauser.value; //S_AXI_MCU_ROM_AWUSER;
+assign cptra_ss_mcu_rom_s_axi_if.awid     = S_AXI_MCU_ROM_AWID;
+assign cptra_ss_mcu_rom_s_axi_if.awlock   = S_AXI_MCU_ROM_AWLOCK;
+assign cptra_ss_mcu_rom_s_axi_if.awvalid  = S_AXI_MCU_ROM_AWVALID;
+assign S_AXI_MCU_ROM_AWREADY = cptra_ss_mcu_rom_s_axi_if.awready;
 // W
-assign cptra_ss_mcu_rom_s_axi_if.wdata    = S_AXI_MCI_ROM_WDATA;
-assign cptra_ss_mcu_rom_s_axi_if.wstrb    = S_AXI_MCI_ROM_WSTRB;
-assign cptra_ss_mcu_rom_s_axi_if.wvalid   = S_AXI_MCI_ROM_WVALID;
-assign S_AXI_MCI_ROM_WREADY = cptra_ss_mcu_rom_s_axi_if.wready;
-assign cptra_ss_mcu_rom_s_axi_if.wlast    = S_AXI_MCI_ROM_WLAST;
+assign cptra_ss_mcu_rom_s_axi_if.wdata    = S_AXI_MCU_ROM_WDATA;
+assign cptra_ss_mcu_rom_s_axi_if.wstrb    = S_AXI_MCU_ROM_WSTRB;
+assign cptra_ss_mcu_rom_s_axi_if.wvalid   = S_AXI_MCU_ROM_WVALID;
+assign S_AXI_MCU_ROM_WREADY = cptra_ss_mcu_rom_s_axi_if.wready;
+assign cptra_ss_mcu_rom_s_axi_if.wlast    = S_AXI_MCU_ROM_WLAST;
 // B
-assign S_AXI_MCI_ROM_BRESP  = cptra_ss_mcu_rom_s_axi_if.bresp;
-assign S_AXI_MCI_ROM_BID    = cptra_ss_mcu_rom_s_axi_if.bid;
-assign S_AXI_MCI_ROM_BVALID = cptra_ss_mcu_rom_s_axi_if.bvalid;
-assign cptra_ss_mcu_rom_s_axi_if.bready  = S_AXI_MCI_ROM_BREADY;
+assign S_AXI_MCU_ROM_BRESP  = cptra_ss_mcu_rom_s_axi_if.bresp;
+assign S_AXI_MCU_ROM_BID    = cptra_ss_mcu_rom_s_axi_if.bid;
+assign S_AXI_MCU_ROM_BVALID = cptra_ss_mcu_rom_s_axi_if.bvalid;
+assign cptra_ss_mcu_rom_s_axi_if.bready  = S_AXI_MCU_ROM_BREADY;
 // AR
-assign cptra_ss_mcu_rom_s_axi_if.araddr  = S_AXI_MCI_ROM_ARADDR;
-assign cptra_ss_mcu_rom_s_axi_if.arburst = S_AXI_MCI_ROM_ARBURST;
-assign cptra_ss_mcu_rom_s_axi_if.arsize  = S_AXI_MCI_ROM_ARSIZE;
-assign cptra_ss_mcu_rom_s_axi_if.arlen   = S_AXI_MCI_ROM_ARLEN;
-assign cptra_ss_mcu_rom_s_axi_if.aruser  = hwif_out.interface_regs.pauser.pauser.value; // S_AXI_MCI_ROM_ARUSER;
-assign cptra_ss_mcu_rom_s_axi_if.arid    = S_AXI_MCI_ROM_ARID;
-assign cptra_ss_mcu_rom_s_axi_if.arlock  = S_AXI_MCI_ROM_ARLOCK;
-assign cptra_ss_mcu_rom_s_axi_if.arvalid = S_AXI_MCI_ROM_ARVALID;
-assign S_AXI_MCI_ROM_ARREADY = cptra_ss_mcu_rom_s_axi_if.arready;
+assign cptra_ss_mcu_rom_s_axi_if.araddr  = S_AXI_MCU_ROM_ARADDR;
+assign cptra_ss_mcu_rom_s_axi_if.arburst = S_AXI_MCU_ROM_ARBURST;
+assign cptra_ss_mcu_rom_s_axi_if.arsize  = S_AXI_MCU_ROM_ARSIZE;
+assign cptra_ss_mcu_rom_s_axi_if.arlen   = S_AXI_MCU_ROM_ARLEN;
+assign cptra_ss_mcu_rom_s_axi_if.aruser  = hwif_out.interface_regs.pauser.pauser.value; // S_AXI_MCU_ROM_ARUSER;
+assign cptra_ss_mcu_rom_s_axi_if.arid    = S_AXI_MCU_ROM_ARID;
+assign cptra_ss_mcu_rom_s_axi_if.arlock  = S_AXI_MCU_ROM_ARLOCK;
+assign cptra_ss_mcu_rom_s_axi_if.arvalid = S_AXI_MCU_ROM_ARVALID;
+assign S_AXI_MCU_ROM_ARREADY = cptra_ss_mcu_rom_s_axi_if.arready;
 // R
-assign S_AXI_MCI_ROM_RDATA  = cptra_ss_mcu_rom_s_axi_if.rdata;
-assign S_AXI_MCI_ROM_RRESP  = cptra_ss_mcu_rom_s_axi_if.rresp;
-assign S_AXI_MCI_ROM_RID    = cptra_ss_mcu_rom_s_axi_if.rid;
-assign S_AXI_MCI_ROM_RLAST  = cptra_ss_mcu_rom_s_axi_if.rlast;
-assign S_AXI_MCI_ROM_RVALID = cptra_ss_mcu_rom_s_axi_if.rvalid;
-assign cptra_ss_mcu_rom_s_axi_if.rready = S_AXI_MCI_ROM_RREADY;
+assign S_AXI_MCU_ROM_RDATA  = cptra_ss_mcu_rom_s_axi_if.rdata;
+assign S_AXI_MCU_ROM_RRESP  = cptra_ss_mcu_rom_s_axi_if.rresp;
+assign S_AXI_MCU_ROM_RID    = cptra_ss_mcu_rom_s_axi_if.rid;
+assign S_AXI_MCU_ROM_RLAST  = cptra_ss_mcu_rom_s_axi_if.rlast;
+assign S_AXI_MCU_ROM_RVALID = cptra_ss_mcu_rom_s_axi_if.rvalid;
+assign cptra_ss_mcu_rom_s_axi_if.rready = S_AXI_MCU_ROM_RREADY;
 
 // MCU ROM
 axi_mem_if #(
@@ -1593,6 +1526,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     // Caliptra Memory Export Interface
     // Caliptra Core, ICCM and DCCM interface
     .cptra_ss_cptra_core_el2_mem_export(el2_mem_export.veer_sram_src),
+    .mldsa_memory_export_req(mldsa_memory_export.req),
 
     // SRAM interface for mbox
     // Caliptra SS mailbox sram interface

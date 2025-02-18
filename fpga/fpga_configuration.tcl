@@ -474,7 +474,7 @@ if {$BOARD eq "ZCU104"} {
 # Add AXI Interconnect
 create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 axi_interconnect_0
 set_property -dict [list \
-  CONFIG.NUM_MI {8} \
+  CONFIG.NUM_MI {9} \
   CONFIG.NUM_SI {5} \
   CONFIG.NUM_CLKS {2} \
 ] [get_bd_cells axi_interconnect_0]
@@ -491,28 +491,34 @@ if {$APB} {
 }
 
 # Add AXI BRAM Controller for backdoor access to IMEM
-create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 axi_bram_ctrl_0
-set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells axi_bram_ctrl_0]
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 cptra_rom_bram_ctrl_0
+set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells cptra_rom_bram_ctrl_0]
 
 # Create reset block
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset_0
 
 save_bd_design
-# TODO: Cleanup
-# Add memory for SS
-##create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 ss_imem_0
-#create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 ss_imem_bram_ctrl_1
-#set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells ss_imem_bram_ctrl_1]
-##connect_bd_intf_net [get_bd_intf_pins ss_imem_bram_ctrl_1/BRAM_PORTA] [get_bd_intf_pins ss_imem_0/BRAM_PORTA]
-#connect_bd_net [get_bd_pins ss_imem_bram_ctrl_1/s_axi_aclk] [get_bd_pins $ps_pl_clk]
-#connect_bd_net [get_bd_pins ss_imem_bram_ctrl_1/s_axi_aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
-#connect_bd_intf_net [get_bd_intf_pins ss_imem_bram_ctrl_1/S_AXI] -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M03_AXI]
+# Add memory for MCU
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 mcu_imem_bram_ctrl_1
+set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells mcu_imem_bram_ctrl_1]
+connect_bd_net [get_bd_pins mcu_imem_bram_ctrl_1/s_axi_aclk] [get_bd_pins $ps_pl_clk]
+connect_bd_net [get_bd_pins mcu_imem_bram_ctrl_1/s_axi_aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
+
+create_bd_cell -type ip -vlnv xilinx.com:ip:emb_mem_gen:1.0 emb_mem_gen_0
+set_property -dict [list \
+  CONFIG.MEMORY_DEPTH {16384} \
+  CONFIG.MEMORY_OPTIMIZATION {no_mem_opt} \
+] [get_bd_cells emb_mem_gen_0]
+connect_bd_intf_net [get_bd_intf_pins mcu_imem_bram_ctrl_1/BRAM_PORTA] [get_bd_intf_pins emb_mem_gen_0/BRAM_PORTA]
+# Set regcea. Default should be 1
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0
+connect_bd_net [get_bd_pins xlconstant_0/dout] [get_bd_pins emb_mem_gen_0/regcea]
 
 # Move blocks around on the block diagram. This step is optional.
 set_property location {1 177 345} [get_bd_cells ps_0]
 set_property location {2 696 373} [get_bd_cells axi_interconnect_0]
 set_property location {2 707 654} [get_bd_cells proc_sys_reset_0]
-set_property location {3 1151 617} [get_bd_cells axi_bram_ctrl_0]
+set_property location {3 1151 617} [get_bd_cells cptra_rom_bram_ctrl_0]
 set_property location {4 1335 456} [get_bd_cells caliptra_package_top_0]
 
 # AXI Managers to AXI Interconnect
@@ -541,14 +547,16 @@ connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M0
 # MCI
 connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M03_AXI] [get_bd_intf_pins caliptra_package_top_0/S_AXI_MCI]
 # MCI ROM
-connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M04_AXI] [get_bd_intf_pins caliptra_package_top_0/S_AXI_MCI_ROM]
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M04_AXI] [get_bd_intf_pins caliptra_package_top_0/S_AXI_MCU_ROM]
 # OTP
 connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M05_AXI] [get_bd_intf_pins caliptra_package_top_0/S_AXI_OTP]
 # Wrapper
-connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/M06_AXI] [get_bd_intf_pins caliptra_package_top_0/S_AXI_WRAPPER]
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M06_AXI] [get_bd_intf_pins caliptra_package_top_0/S_AXI_WRAPPER]
 # Caliptra ROM Backdoor
-connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/M07_AXI] [get_bd_intf_pins axi_bram_ctrl_0/S_AXI]
-connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/axi_bram] [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA]
+connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/M07_AXI] [get_bd_intf_pins cptra_rom_bram_ctrl_0/S_AXI]
+connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/axi_bram] [get_bd_intf_pins cptra_rom_bram_ctrl_0/BRAM_PORTA]
+# MCU RAM
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M08_AXI] [get_bd_intf_pins mcu_imem_bram_ctrl_1/S_AXI]
 
 # Create reset connections
 connect_bd_net [get_bd_pins $ps_pl_resetn] [get_bd_pins proc_sys_reset_0/ext_reset_in]
@@ -557,7 +565,7 @@ connect_bd_net -net proc_sys_reset_0_peripheral_aresetn \
   [get_bd_pins axi_apb_bridge_0/s_axi_aresetn] \
   [get_bd_pins axi_interconnect_0/aresetn] \
   [get_bd_pins caliptra_package_top_0/S_AXI_WRAPPER_ARESETN] \
-  [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn]
+  [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aresetn]
 # Create clock connections
 connect_bd_net \
   [get_bd_pins $ps_pl_clk] \
@@ -566,13 +574,21 @@ connect_bd_net \
   [get_bd_pins axi_apb_bridge_0/s_axi_aclk] \
   [get_bd_pins axi_interconnect_0/aclk] \
   [get_bd_pins caliptra_package_top_0/core_clk] \
-  [get_bd_pins axi_bram_ctrl_0/s_axi_aclk]
+  [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aclk]
 # Create clock connection for I3C
-connect_bd_net \
-  [get_bd_pins ps_0/pl1_ref_clk] \
-  [get_bd_pins axi_interconnect_0/aclk1] \
-  [get_bd_pins caliptra_package_top_0/i3c_clk]
-
+if {0} {
+  # Use faster clock so that I3C bus speed is correct. TODO: Fails to meet timing
+  connect_bd_net \
+    [get_bd_pins ps_0/pl1_ref_clk] \
+    [get_bd_pins axi_interconnect_0/aclk1] \
+    [get_bd_pins caliptra_package_top_0/i3c_clk]
+} else {
+  # Use regular clock for i3c to avoid timing problems
+  connect_bd_net \
+    [get_bd_pins $ps_pl_clk] \
+    [get_bd_pins axi_interconnect_0/aclk1] \
+    [get_bd_pins caliptra_package_top_0/i3c_clk]
+}
 
 # New connections for SS
 #connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M03_AXI] [get_bd_intf_pins caliptra_package_top_0/S_AXI_CALIPTRA]
@@ -612,9 +628,9 @@ if {$BOARD eq "ZCU104"} {
   set managers {ps_0/Data caliptra_package_top_0/M_AXI_MCU_IFU caliptra_package_top_0/M_AXI_MCU_LSU caliptra_package_top_0/M_AXI_CALIPTRA}
   foreach manager $managers {
     # Memories
-    assign_bd_address -offset 0x80000000 -range 0x00020000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs axi_bram_ctrl_0/S_AXI/Mem0] -force
-    assign_bd_address -offset 0x80020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCI_ROM/reg0] -force
-    #assign_bd_address -offset 0x80020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs ss_imem_bram_ctrl_1/S_AXI/Mem0] -force
+    assign_bd_address -offset 0x80000000 -range 0x00020000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs cptra_rom_bram_ctrl_0/S_AXI/Mem0] -force
+    assign_bd_address -offset 0x80020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCU_ROM/reg0] -force
+    #assign_bd_address -offset 0x80020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs mcu_imem_bram_ctrl_1/S_AXI/Mem0] -force
     # Wrapper
     assign_bd_address -offset 0x90010000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_WRAPPER/reg0] -force
     # SS IPs
@@ -657,9 +673,9 @@ if {$BOARD eq "ZCU104"} {
 
   foreach manager $managers {
     # Memories
-    assign_bd_address -offset 0xB0000000 -range 0x00018000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs axi_bram_ctrl_0/S_AXI/Mem0] -force
-    assign_bd_address -offset 0xB0020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCI_ROM/reg0] -force
-    #assign_bd_address -offset 0xB0020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs ss_imem_bram_ctrl_1/S_AXI/Mem0] -force
+    assign_bd_address -offset 0xB0000000 -range 0x00018000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs cptra_rom_bram_ctrl_0/S_AXI/Mem0] -force
+    assign_bd_address -offset 0xB0020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCU_ROM/reg0] -force
+    assign_bd_address -offset 0xB0030000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs mcu_imem_bram_ctrl_1/S_AXI/Mem0] -force
     # Wrapper
     assign_bd_address -offset 0xA4010000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_WRAPPER/reg0] -force
     # SS IPs
@@ -689,7 +705,7 @@ add_files -fileset constrs_1 $outputDir/jtag_constraints.xdc
 #connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/S_AXI_WRAPPER] -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M05_AXI]
 #connect_bd_net [get_bd_pins axi_interconnect_0/M05_ACLK] [get_bd_pins ps_0/pl_clk0]
 #connect_bd_net [get_bd_pins axi_interconnect_0/M05_ARESETN] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
-#connect_bd_intf_net [get_bd_intf_pins ss_imem_bram_ctrl_1/BRAM_PORTA] [get_bd_intf_pins caliptra_package_top_0/ss_axi_bram]
+#connect_bd_intf_net [get_bd_intf_pins mcu_imem_bram_ctrl_1/BRAM_PORTA] [get_bd_intf_pins caliptra_package_top_0/ss_axi_bram]
 
 save_bd_design
 puts "Fileset when setting defines the second time: [current_fileset]"

@@ -1,6 +1,13 @@
 
 set adbDir $fpgaDir/../third_party/caliptra-rtl/submodules/adams-bridge
 
+if { [file exists $adbDir/src/abr_prim/rtl/abr_prim_flop_macros.sv] == 0 } {
+    puts "ERROR: $adbDir/src/abr_prim/rtl/abr_prim_flop_macros.sv not found"
+    puts "Adam's bridge submodule may not be initialized"
+    puts "Try: git submodule update --init --recursive"
+    exit
+}
+
 add_files $adbDir/src/abr_prim/rtl/abr_prim_flop_macros.sv
 
 # From mldsa_top_tb.vf
@@ -130,9 +137,5 @@ add_files $adbDir/src/power2round/rtl/power2round_top.sv
 add_files $adbDir/src/power2round/rtl/power2round_ctrl.sv
 add_files $adbDir/src/power2round/rtl/power2round_core.sv
 add_files $adbDir/src/power2round/rtl/power2round_skencode.sv
-add_files $adbDir/src/mldsa_top/rtl/mldsa_ctrl_pkg.sv
-add_files $adbDir/src/mldsa_top/rtl/mldsa_seq_prim.sv
-add_files $adbDir/src/mldsa_top/rtl/mldsa_seq_sec.sv
-add_files $adbDir/src/mldsa_top/rtl/mldsa_ctrl.sv
-add_files $adbDir/src/mldsa_top/rtl/mldsa_top.sv
-add_files $adbDir/src/mldsa_top/rtl/mldsa_reg.sv
+
+add_files [ glob $adbDir/src/mldsa_top/rtl/*.sv ]
