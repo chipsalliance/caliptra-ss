@@ -95,6 +95,7 @@ logic soc_mci_mbox1_req;
 
 // MISC signals
 logic soc_req_miss;
+logic debug_req_disable;
 
 
 ///////////////////////////////////////////////////////////
@@ -240,8 +241,9 @@ always_comb soc_resp_if.error = (soc_mcu_sram_req  & mcu_sram_req_if.error)  |
 // privileged users
 ///////////////////////////////////////////////
 
+assign debug_req_disable = ~|strap_debug_axi_user;
 
-assign debug_req    = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_debug_axi_user));
+assign debug_req    = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_debug_axi_user)) & ~debug_req_disable;
 
 assign mcu_lsu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_lsu_axi_user));
 assign mcu_ifu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_ifu_axi_user));
