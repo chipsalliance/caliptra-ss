@@ -18,7 +18,13 @@
 
 //parameter int OtpByteAddrWidth = 12;
 
-
+<%!
+ptr = 0x0
+def inc_ptr(x):
+    global ptr
+    ptr += x
+    return ptr
+%>
 
 addrmap caliptra_otp_ctrl {
     reg {
@@ -82,106 +88,48 @@ addrmap caliptra_otp_ctrl {
     } ALERT_TEST @ 0xC;
 
     reg {
+% for i, partition in enumerate(partitions):
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SECRET_TEST_UNLOCK_PARTITION_ERROR[0:0];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SECRET_MANUF_PARTITION_ERROR[1:1];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SECRET_PROD_PARTITION_0_ERROR[2:2];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SECRET_PROD_PARTITION_1_ERROR[3:3];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SECRET_PROD_PARTITION_2_ERROR[4:4];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SECRET_PROD_PARTITION_3_ERROR[5:5];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SW_MANUF_PARTITION_ERROR[6:6];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SECRET_LC_TRANSITION_PARTITION_ERROR[7:7];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SVN_PARTITION_ERROR[8:8];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_TEST_PARTITION_ERROR[9:9];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_HASHES_MANUF_PARTITION_ERROR[10:10];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_HASHES_PROD_PARTITION_ERROR[11:11];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_REVOCATIONS_PROD_PARTITION_ERROR[12:12];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_SECRET_PROD_PARTITION_ERROR[13:13];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_NON_SECRET_PROD_PARTITION_ERROR[14:14];
-        field {
-            sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } LIFE_CYCLE_ERROR[15:15];
+        } ${partition["name"]}_ERROR[${i}:${i}];
+% endfor
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition.\n If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } DAI_ERROR[16:16];
+        } DAI_ERROR[${len(partitions)+0}:${len(partitions)+0}];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition.\n If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } LCI_ERROR[17:17];
+        } LCI_ERROR[${len(partitions)+1}:${len(partitions)+1}];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition.\n If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } TIMEOUT_ERROR[18:18];
+        } TIMEOUT_ERROR[${len(partitions)+2}:${len(partitions)+2}];
         field {
             sw = r;
             desc = "Set to 1 if the LFSR timer FSM has reached an invalid state.\n This raises an fatal_check_error alert and is an unrecoverable error condition.";
-        } LFSR_FSM_ERROR[19:19];
+        } LFSR_FSM_ERROR[${len(partitions)+3}:${len(partitions)+3}];
         field {
             sw = r;
             desc = "Set to 1 if the scrambling datapath FSM has reached an invalid state.\n This raises an fatal_check_error alert and is an unrecoverable error condition.";
-        } SCRAMBLING_FSM_ERROR[20:20];
+        } SCRAMBLING_FSM_ERROR[${len(partitions)+4}:${len(partitions)+4}];
         field {
             sw = r;
             desc = "Set to 1 if the key derivation FSM has reached an invalid state.\n This raises an fatal_check_error alert and is an unrecoverable error condition.";
-        } KEY_DERIV_FSM_ERROR[21:21];
+        } KEY_DERIV_FSM_ERROR[${len(partitions)+5}:${len(partitions)+5}];
         field {
             sw = r;
             desc = "This bit is set to 1 if a fatal bus integrity fault is detected.\n This error triggers a fatal_bus_integ_error alert.";
-        } BUS_INTEG_ERROR[22:22];
+        } BUS_INTEG_ERROR[${len(partitions)+6}:${len(partitions)+6}];
         field {
             sw = r;
             desc = "Set to 1 if the DAI is idle and ready to accept commands.";
-        } DAI_IDLE[23:23];
+        } DAI_IDLE[${len(partitions)+7}:${len(partitions)+7}];
         field {
             sw = r;
             desc = "Set to 1 if an integrity or consistency check triggered by the LFSR timer or via !!CHECK_TRIGGER is pending.";
-        } CHECK_PENDING[24:24];
+        } CHECK_PENDING[${len(partitions)+8}:${len(partitions)+8}];
     } STATUS @ 0x10;
 
     regfile err_code_t {
@@ -226,24 +174,9 @@ addrmap caliptra_otp_ctrl {
         };
 
         /* ----------- Registers ------------*/
-        err_code_reg_t ERR_CODE_0  @0x0;     //
-        err_code_reg_t ERR_CODE_1  @0x4;     //
-        err_code_reg_t ERR_CODE_2  @0x8;     //
-        err_code_reg_t ERR_CODE_3  @0xC;     //
-        err_code_reg_t ERR_CODE_4  @0x10;     //
-        err_code_reg_t ERR_CODE_5  @0x14;     //
-        err_code_reg_t ERR_CODE_6  @0x18;     //
-        err_code_reg_t ERR_CODE_7  @0x1C;     //
-        err_code_reg_t ERR_CODE_8  @0x20;     //
-        err_code_reg_t ERR_CODE_9  @0x24;     //
-        err_code_reg_t ERR_CODE_10  @0x28;     //
-        err_code_reg_t ERR_CODE_11  @0x2C;     //
-        err_code_reg_t ERR_CODE_12  @0x30;     //
-        err_code_reg_t ERR_CODE_13  @0x34;     //
-        err_code_reg_t ERR_CODE_14  @0x38;     //
-        err_code_reg_t ERR_CODE_15  @0x3C;     //
-        err_code_reg_t ERR_CODE_16  @0x40;     //
-        err_code_reg_t ERR_CODE_17  @0x44;     //
+% for i in range(len(partitions)+2):
+        err_code_reg_t ERR_CODE_${i}  @${"0x%X" % (i*4)};     //
+% endfor
         /* ----------------------------------*/
     };
 
@@ -259,7 +192,7 @@ addrmap caliptra_otp_ctrl {
             desc = "This bit contrls whether the DAI registers can be written.\nWrite 0 to it in order to clear the bit.\n\nNote that the hardware also modulates this bit and sets it to 0 temporarily\nduring an OTP operation such that the corresponding address and data registers\ncannot be modified while an operation is pending. The !!DAI_IDLE status bit\nwill also be set to 0 in such a case.";
             reset = 0x1;
         } REGWEN [0:0];
-    } DIRECT_ACCESS_REGWEN @ 0x5C;
+    } DIRECT_ACCESS_REGWEN @ ${"0x%X" % inc_ptr(0x14+((len(partitions)+2)*0x4))};
 
     reg {
         desc = "Command register for direct accesses.";
@@ -278,7 +211,7 @@ addrmap caliptra_otp_ctrl {
         field { 
             desc = "Initiates the digest calculation and locking sequence for the partition specified by\n!!DIRECT_ACCESS_ADDRESS.";
         } DIGEST [2:2];
-    } DIRECT_ACCESS_CMD @ 0x60;
+    } DIRECT_ACCESS_CMD @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         desc = "Address register for direct accesses.";
@@ -289,7 +222,7 @@ addrmap caliptra_otp_ctrl {
         field {
             desc = "This is the address for the OTP word to be read or written thrugh\nthe direct access interface. Note that the address is aligned to the access size\ninternally, hence bits 1:0 are ignored for 32bit accesses, and bits 2:0 are ignored\nfor 64bit accesses.\n\nFor the digest calculation command, set this register to the partition base offset.";
         } ADDRESS [11:0];
-    } DIRECT_ACCESS_ADDRESS @ 0x64;
+    } DIRECT_ACCESS_ADDRESS @ ${"0x%X" % + inc_ptr(0x4)};
 
     regfile dir_acc_wdata_t {
         /* -----------------------------------
@@ -327,7 +260,7 @@ addrmap caliptra_otp_ctrl {
         /* --------------------------------------*/
     };
 
-    dir_acc_wdata_t dai_wdata_rf @ 0x68;
+    dir_acc_wdata_t dai_wdata_rf @ ${"0x%X" % + inc_ptr(0x4)};
 
     regfile dir_acc_rdata_t {
         /* -----------------------------------
@@ -365,7 +298,7 @@ addrmap caliptra_otp_ctrl {
         /* --------------------------------------*/
     };
 
-    dir_acc_rdata_t dai_rdata_rf @ 0x70;
+    dir_acc_rdata_t dai_rdata_rf @ ${"0x%X" % + inc_ptr(0x8)};
 
     reg {
         desc = "Register write enable for !!CHECK_TRIGGER.";
@@ -377,7 +310,7 @@ addrmap caliptra_otp_ctrl {
                     Write 0 to clear this bit.";
             reset = 0x1;
         }  REGWEN [0:0];
-    } CHECK_TRIGGER_REGWEN @ 0x78;
+    } CHECK_TRIGGER_REGWEN @ ${"0x%X" % + inc_ptr(0x8)};
 
     reg {
         desc = "Command register for direct accesses.";
@@ -395,7 +328,7 @@ addrmap caliptra_otp_ctrl {
         field {
             desc = "Writing 1 to this bit triggers a consistency check. SW should monitor !!STATUS.CHECK_PENDING\nand wait until the check has been completed. If there are any errors, those will be flagged\nin the !!STATUS and !!ERR_CODE registers, and via interrupts and alerts.";
         } CONSISTENCY[1:1];
-    } CHECK_TRIGGER @ 0x7C;
+    } CHECK_TRIGGER @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         desc = "Register write enable for !!INTEGRITY_CHECK_PERIOD and !!CONSISTENCY_CHECK_PERIOD.";
@@ -406,7 +339,7 @@ addrmap caliptra_otp_ctrl {
             desc = "When cleared to 0, !!INTEGRITY_CHECK_PERIOD and !!CONSISTENCY_CHECK_PERIOD registers cannot be written anymore.\nWrite 0 to clear this bit.";
             reset = 0x1;
         } REGWEN [0:0];
-    } CHECK_REGWEN @ 0x80;
+    } CHECK_REGWEN @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         desc = "Timeout value for the integrity and consistency checks.";
@@ -423,7 +356,7 @@ addrmap caliptra_otp_ctrl {
                     safe side. A value of zer disables the timeout mechanism (default).";
             reset = 0x0;
         } TIMEOUT [31:0];
-    } CHECK_TIMEOUT @ 0x84;
+    } CHECK_TIMEOUT @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         desc = "This value specifies the maximum period that can be generated pseudo-randomly.\nOnly applies to the HW_CFG* and SECRET* partitions once they are locked.";
@@ -439,7 +372,7 @@ addrmap caliptra_otp_ctrl {
             !!CHECK_TRIGGER.INTEGRITY.";
             reset = 0x0;
         } PERIOD [31:0];
-    } INTEGRITY_CHECK_PERIOD @ 0x88;
+    } INTEGRITY_CHECK_PERIOD @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         desc = "This value specifies the maximum period that can be generated pseudo-randomly.\nThis applies to the LIFE_CYCLE partition and the HW_CFG* and SECRET* partitions once they are locked.";
@@ -450,85 +383,23 @@ addrmap caliptra_otp_ctrl {
             desc = "The pseudo-random period is generated using a 40bit LFSR internally, and this register defines\nthe bit mask to be applied to the LFSR output in order to limit its range. The value of this\nregister is left shifted by 8bits and the lower bits are set to 8'hFF in order to form the 40bit mask.\nA recommended value is 0x3FF_FFFF, corresponding to a maximum period of ~716s at 24MHz.\nA value of zer disables the timer (default). Note that a one-off check can always be triggered via\n!!CHECK_TRIGGER.CONSISTENCY.";
             reset = 0x0;
         } PERIOD [31:0];
-    } CONSISTENCY_CHECK_PERIOD @ 0x8C;
+    } CONSISTENCY_CHECK_PERIOD @ ${"0x%X" % + inc_ptr(0x4)};
 
+% for partition in partitions:
+  % if partition["read_lock"] == "CSR":
     reg {
-    desc = "Runtime read lock for the SW_MANUF_PARTITION partition.";
+    desc = "Runtime read lock for the ${partition["name"]} partition.";
         default sw = rw;
         default onwrite = wzc;
         default hw = r;
         default swwe = DIRECT_ACCESS_REGWEN;
         field {
-            desc = "When cleared to 0, read access to the SW_MANUF_PARTITION partition is locked.\nWrite 0 to clear this bit.";
+            desc = "When cleared to 0, read access to the ${partition["name"]} partition is locked.\nWrite 0 to clear this bit.";
             reset = 0x1;
         } READ_LOCK [0:0];
-    } SW_MANUF_PARTITION_READ_LOCK @0x90;
-    reg {
-    desc = "Runtime read lock for the SVN_PARTITION partition.";
-        default sw = rw;
-        default onwrite = wzc;
-        default hw = r;
-        default swwe = DIRECT_ACCESS_REGWEN;
-        field {
-            desc = "When cleared to 0, read access to the SVN_PARTITION partition is locked.\nWrite 0 to clear this bit.";
-            reset = 0x1;
-        } READ_LOCK [0:0];
-    } SVN_PARTITION_READ_LOCK @0x94;
-    reg {
-    desc = "Runtime read lock for the VENDOR_TEST_PARTITION partition.";
-        default sw = rw;
-        default onwrite = wzc;
-        default hw = r;
-        default swwe = DIRECT_ACCESS_REGWEN;
-        field {
-            desc = "When cleared to 0, read access to the VENDOR_TEST_PARTITION partition is locked.\nWrite 0 to clear this bit.";
-            reset = 0x1;
-        } READ_LOCK [0:0];
-    } VENDOR_TEST_PARTITION_READ_LOCK @0x98;
-    reg {
-    desc = "Runtime read lock for the VENDOR_HASHES_MANUF_PARTITION partition.";
-        default sw = rw;
-        default onwrite = wzc;
-        default hw = r;
-        default swwe = DIRECT_ACCESS_REGWEN;
-        field {
-            desc = "When cleared to 0, read access to the VENDOR_HASHES_MANUF_PARTITION partition is locked.\nWrite 0 to clear this bit.";
-            reset = 0x1;
-        } READ_LOCK [0:0];
-    } VENDOR_HASHES_MANUF_PARTITION_READ_LOCK @0x9C;
-    reg {
-    desc = "Runtime read lock for the VENDOR_HASHES_PROD_PARTITION partition.";
-        default sw = rw;
-        default onwrite = wzc;
-        default hw = r;
-        default swwe = DIRECT_ACCESS_REGWEN;
-        field {
-            desc = "When cleared to 0, read access to the VENDOR_HASHES_PROD_PARTITION partition is locked.\nWrite 0 to clear this bit.";
-            reset = 0x1;
-        } READ_LOCK [0:0];
-    } VENDOR_HASHES_PROD_PARTITION_READ_LOCK @0xA0;
-    reg {
-    desc = "Runtime read lock for the VENDOR_REVOCATIONS_PROD_PARTITION partition.";
-        default sw = rw;
-        default onwrite = wzc;
-        default hw = r;
-        default swwe = DIRECT_ACCESS_REGWEN;
-        field {
-            desc = "When cleared to 0, read access to the VENDOR_REVOCATIONS_PROD_PARTITION partition is locked.\nWrite 0 to clear this bit.";
-            reset = 0x1;
-        } READ_LOCK [0:0];
-    } VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK @0xA4;
-    reg {
-    desc = "Runtime read lock for the VENDOR_NON_SECRET_PROD_PARTITION partition.";
-        default sw = rw;
-        default onwrite = wzc;
-        default hw = r;
-        default swwe = DIRECT_ACCESS_REGWEN;
-        field {
-            desc = "When cleared to 0, read access to the VENDOR_NON_SECRET_PROD_PARTITION partition is locked.\nWrite 0 to clear this bit.";
-            reset = 0x1;
-        } READ_LOCK [0:0];
-    } VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK @0xA8;
+    } ${partition["name"]}_READ_LOCK @${"0x%X" % + inc_ptr(0x4)};
+  % endif
+% endfor
 
     regfile digest_t {
         /* -----------------------------------
@@ -564,20 +435,11 @@ addrmap caliptra_otp_ctrl {
         /* --------------------------------------*/
     };
 
-    digest_t SECRET_TEST_UNLOCK_PARTITION_DIGEST @ 0xAC;
-    digest_t SECRET_MANUF_PARTITION_DIGEST @ 0xB4;
-    digest_t SECRET_PROD_PARTITION_0_DIGEST @ 0xBC;
-    digest_t SECRET_PROD_PARTITION_1_DIGEST @ 0xC4;
-    digest_t SECRET_PROD_PARTITION_2_DIGEST @ 0xCC;
-    digest_t SECRET_PROD_PARTITION_3_DIGEST @ 0xD4;
-    digest_t SW_MANUF_PARTITION_DIGEST @ 0xDC;
-    digest_t SECRET_LC_TRANSITION_PARTITION_DIGEST @ 0xE4;
-    digest_t VENDOR_TEST_PARTITION_DIGEST @ 0xEC;
-    digest_t VENDOR_HASHES_MANUF_PARTITION_DIGEST @ 0xF4;
-    digest_t VENDOR_HASHES_PROD_PARTITION_DIGEST @ 0xFC;
-    digest_t VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST @ 0x104;
-    digest_t VENDOR_SECRET_PROD_PARTITION_DIGEST @ 0x10C;
-    digest_t VENDOR_NON_SECRET_PROD_PARTITION_DIGEST @ 0x114;
+% for i, partition in enumerate(partitions):
+  % if partition["write_lock"] == "Digest":
+    digest_t ${partition["name"]}_DIGEST @ ${"0x%X" % + inc_ptr(0x4 if i == 0 else 0x8)};
+  % endif
+% endfor
 
     reg {
         field {
@@ -605,7 +467,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = r;
         } field4[26:16] = 0x0;
-    } CSR0 @ 0x114;
+    } CSR0 @ ${"0x%X" % + inc_ptr(0x0)};
 
     reg {
         field {
@@ -633,7 +495,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = r;
         } field4[31:16] = 0x0;
-    } CSR1 @ 0x118;
+    } CSR1 @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         field {
@@ -641,7 +503,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = r;
         } field0[0:0] = 0x0;
-    } CSR2 @ 0x11C;
+    } CSR2 @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         field {
@@ -691,7 +553,7 @@ addrmap caliptra_otp_ctrl {
             sw = r;
             hw = rw;
         } field8[22:22] = 0x0;
-    } CSR3 @ 0x120;
+    } CSR3 @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         field {
@@ -714,7 +576,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = r;
         } field3[14:14] = 0x0;
-    } CSR4 @ 0x124;
+    } CSR4 @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         field {
@@ -752,7 +614,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = rw;
         } field6[31:16] = 0x0;
-    } CSR5 @ 0x128;
+    } CSR5 @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         field {
@@ -775,7 +637,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = rw;
         } field3[31:16] = 0x0;
-    } CSR6 @ 0x12C;
+    } CSR6 @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
         field {
@@ -798,5 +660,5 @@ addrmap caliptra_otp_ctrl {
             sw = r;
             hw = rw;
         } field3[15:15] = 0x0;
-    } CSR7 @ 0x130;
+    } CSR7 @ ${"0x%X" % + inc_ptr(0x4)};
 };

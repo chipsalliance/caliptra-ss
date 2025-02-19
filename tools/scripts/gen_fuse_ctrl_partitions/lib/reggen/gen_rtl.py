@@ -110,7 +110,6 @@ def gen_rtl(block: IpBlock, outdir: str) -> int:
     # module(s) and the block itself.
     reg_pkg_path = os.path.join(outdir, block.name.lower() + alias_impl +
                                 "_reg_pkg.sv")
-    print(reg_pkg_path)
     with open(reg_pkg_path, 'w', encoding='UTF-8') as fout:
         try:
             params = {"gen_comment": "// fooobar"}
@@ -134,7 +133,6 @@ def gen_rtl(block: IpBlock, outdir: str) -> int:
 
         mod_name = mod_base + alias_impl + '_reg_top'
         reg_top_path = os.path.join(outdir, mod_name + '.sv')
-        print(reg_top_path, mod_name, reg_top_path)
         with open(reg_top_path, 'w', encoding='UTF-8') as fout:
             try:
                 fout.write(reg_top_tpl.render(block=block,
