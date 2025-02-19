@@ -24,15 +24,7 @@ It has been generated with ./tools/scripts/gen_fuse_ctrl_partitions/gen_fuse_ctr
 
 HEADER_COMMENT_SV = HEADER_COMMENT.replace("\n", "\n// ")
 HEADER_COMMENT_HJSON = HEADER_COMMENT_SV
-HEADER_COMMENT_HTML = "<!--"+HEADER_COMMENT+"\n-->"
-
-# # memory map source
-# MMAP_DEFINITION_FILE = "src/fuse_ctrl/data/otp_ctrl_mmap.hjson"
-# # documentation tables to generate
-# PARTITIONS_TABLE_FILE = Path("otp_ctrl_partitions.md")
-# DIGESTS_TABLE_FILE = Path("otp_ctrl_digests.md")
-# MMAP_TABLE_FILE = Path("otp_ctrl_mmap.md")
-# DESC_TABLE_FILE = Path("otp_ctrl_field_descriptions.md")
+HEADER_COMMENT_HTML = "<!--"+HEADER_COMMENT+"\n-->\n"
 
 ## Output paths
 DATA_OUTPUT_PATH = Path("src") / "fuse_ctrl" / "data"
@@ -51,6 +43,7 @@ TEMPLATES_PATH = Path("src") / "fuse_ctrl" / "templates"
 # Config templates
 MMAP_TEMPLATE  = "otp_ctrl_mmap.hjson.tpl"
 HJSON_TEMPLATE = "otp_ctrl.hjson.tpl"
+RDL_TEMPLATE   = "otp_ctrl.rdl.tpl"
 
 # RTL templates
 PART_PKG_TEMPLATE = "otp_ctrl_part_pkg.sv.tpl"
@@ -140,6 +133,13 @@ def main():
     # Render register files
     ip_block = IpBlock.from_path(str(DATA_OUTPUT_PATH / HJSON_TEMPLATE.replace(".tpl", "")), [])
     gen_rtl.gen_rtl(ip_block, str(RTL_OUTPUT_PATH))
+
+    # Render RDL
+    render_template(
+        template=TEMPLATES_PATH / RDL_TEMPLATE,
+        target_path=DATA_OUTPUT_PATH / RDL_TEMPLATE.replace(".tpl", ""),
+        params={"partitions": otp_mmap.config["partitions"]}
+    )
 
 if __name__ == "__main__":
     main()
