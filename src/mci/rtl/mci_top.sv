@@ -121,6 +121,9 @@ module mci_top
     input  logic fc_opt_done,
     output logic fc_opt_init,
 
+    input  logic  FIPS_ZEROIZATION_PPD_i,
+    output logic  FIPS_ZEROIZATION_CMD_o,
+
 
     // MCU SRAM Interface
     mci_mcu_sram_if.request mci_mcu_sram_req_if,
@@ -761,6 +764,9 @@ mci_lcc_st_trans LCC_state_translator (
     .ss_soc_dft_en_mask_reg0_1(64'h0), // TODO: there should be two registers for this connection
     .ss_soc_dbg_unlock_mask_reg0_1(64'h0), // TODO: there should be two registers for this connection
     .ss_soc_CLTAP_unlock_mask_reg0_1(64'h0), // TODO: there should be two registers for this connection
+    .ss_soc_MCU_ROM_zeroization_mask_reg(32'h0), // TODO: there should be two registers for this connection
+    .FIPS_ZEROIZATION_PPD_i,
+    .FIPS_ZEROIZATION_CMD_o,
     .SOC_DFT_EN(SOC_DFT_EN),
     .SOC_HW_DEBUG_EN(SOC_HW_DEBUG_EN),
     .security_state_o(security_state_o)
