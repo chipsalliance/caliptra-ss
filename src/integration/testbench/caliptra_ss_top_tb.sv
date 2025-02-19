@@ -360,6 +360,7 @@ module caliptra_ss_top_tb
 
     logic pwr_otp_init_i;
     logic cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i;
+    logic cptra_ss_FIPS_ZEROIZATION_PPD_i;
     logic lcc_bfm_reset;
 
 
@@ -1555,7 +1556,12 @@ module caliptra_ss_top_tb
         .lc_clk_byp_ack_i(cptra_ss_lc_clk_byp_ack_i)
     );
 
+    initial begin
+        cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
+    end
+
 `ifdef LCC_FC_BFM_SIM
+    
     always_comb begin
         if (!lcc_bfm_reset) begin
             force caliptra_ss_dut.u_lc_ctrl.rst_ni = 1'b0;
@@ -1577,6 +1583,22 @@ module caliptra_ss_top_tb
             force caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser = 32'h1;
         if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_0084)
             release caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser;
+        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_0098) begin
+            force caliptra_ss_dut.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b1;
+            force caliptra_ss_dut.mci_top_i.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg = 32'hFFFF_FFFF;
+            force caliptra_ss_dut.u_otp_ctrl.lcc_is_in_SCRAP_mode = 1'b0;
+        end
+        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_009C) begin
+            force caliptra_ss_dut.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
+            force caliptra_ss_dut.mci_top_i.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg = 32'h0;
+            force caliptra_ss_dut.u_otp_ctrl.lcc_is_in_SCRAP_mode = 1'b1;
+        end
+        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_00A0) begin
+            release caliptra_ss_dut.cptra_ss_FIPS_ZEROIZATION_PPD_i;
+            release caliptra_ss_dut.mci_top_i.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg;
+            release caliptra_ss_dut.u_otp_ctrl.lcc_is_in_SCRAP_mode;
+        end
+        
     end
 `endif
 
@@ -1818,6 +1840,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_generic_input_wires_i,
         .cptra_ss_strap_mcu_reset_vector_i,
         .cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i,
+        .cptra_ss_FIPS_ZEROIZATION_PPD_i,
 
         .cptra_ss_mci_generic_output_wires_o,
         .cptra_ss_mci_error_fatal_o,
