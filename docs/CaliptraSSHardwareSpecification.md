@@ -37,6 +37,7 @@
   - [Partition-Specific Behaviors](#partition-specific-behaviors)
     - [Life Cycle Partition](#life-cycle-partition)
     - [Vendor Test Partition](#vendor-test-partition)
+  - [Locking the Validated Public Key Partition](#locking-the-validated-public-key-partition)
   - [Hardware Integrity Checker](#hardware-integrity-checker)
     - [Purpose](#purpose)
   - [Notes](#notes)
@@ -271,12 +272,12 @@ Received transfer data can be obtained by the driver via a read from XFER_DATA_P
 
 # Caliptra SS Fuse Controller
 
-FUSE controller is an RTL module that is responsible for programming and reading the FUSEs. This module has an AXI interface that is connected to Caliptra Subsystem’s AXI interconnect. This module provides the device with one-time programming functionality, resulting in non-volatile programming that cannot be reversed. This functionality is delivered via an open-source FUSE Controller and a proprietary FUSE/OTP Macro. This RTL module manages the following FUSE partition mapping, which can be found in the [OTP Controller Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md).
+FUSE controller is an RTL module that is responsible for programming and reading the FUSEs. This module has an AXI interface that is connected to Caliptra Subsystem’s AXI interconnect. This module provides the device with one-time programming functionality, resulting in non-volatile programming that cannot be reversed. This functionality is delivered via an open-source FUSE Controller and a proprietary FUSE/OTP Macro. This RTL module manages the following FUSE partition mapping, which can be found in the [Fuse Controller Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md).
 
 
 ## Partition Details
 
-The Fuse Controller supports a total of **13 partitions**. Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle Controller (LCC) states, such as "MANUF" or "PROD." This naming convention indicates the LCC state required to provision each partition.
+The Fuse Controller supports a total of **13 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)). Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle Controller (LCC) states, such as "MANUF" or "PROD." This naming convention indicates the LCC state required to provision each partition.
 
 ### Key Characteristics of Secret Partitions:
 1. **Programming Access:**  
@@ -297,6 +298,54 @@ The Fuse Controller supports a total of **13 partitions**. Secret FUSE partition
 - Unlike other partitions, ECC uncorrectable errors in this partition do not trigger fatal errors or alerts due to the nature of FUSE smoke checks, which may leave certain FUSE words in inconsistent states.
 
 
+## Locking the Validated Public Key Partition
+<a name="locking-the-validated-public-key-partition"></a>
+
+During firmware authentication, the ROM validates the vendor public keys provided in the firmware payload. These keys, which support ECC, MLDSA, and LMS algorithms, are individually hashed and compared against stored fuse values (e.g., `CPTRA_CORE_VENDOR_PK_HASH_n`). Once a valid key is identified, the ROM locks that specific public key hash and all higher-order public key hash entries until the next cold reset. This ensures that the validated key’s fuse entry remains immutable. Importantly, the locking mechanism is applied only to the public key hashes. The associated revocation bits, which allow for runtime key revocation, remain unlocked. To support this, the fuse controller (FC) implements two distinct partitions:
+
+1. **PK Hash Partition**  
+   - **Purpose:**  
+     - Contains the `CPTRA_CORE_VENDOR_PK_HASH[i]` registers for *i* ranging from 1 to N.
+     - Once a key is validated, the corresponding hash and all higher-order hashes are locked by MCU ROM, making them immutable until a cold reset.
+   - **Layout & Details:**  
+     - **Partition Items:** `CPTRA_CORE_VENDOR_PK_HASH[i]` where *i* ranges from 1 to N.  
+       - **Default N:** 1  
+       - **Maximum N:** 16  
+       - **Size:** N × 384 bits (each hash is 384-bit)  
+       - **Programming:**  
+         - The first key (i=1) is programmed during the manufacturing phase.  
+         - The remaining keys (if any, i.e., N–1) can be programmed during manufacturing or in the field (production).
+     - **Partition Item:**
+       - `CPTRA_CORE_VENDOR_PK_HASH_VALID` is used to indicate which of the N keys is valid. Therefore, the length is N to support N-bit hot-encoding.
+       
+2. **PK Hash Revocation Partition**  
+   - **Purpose:**  
+     This partition stores runtime-updateable revocation bits and PQC type information.
+   - **Layout & Details:**  
+     - For each vendor public key (`VENDOR_PK_HASH[i]`), the partition contains:  
+       - **ECC Revocation Bits:** 4 bits (e.g., `CPTRA_CORE_ECC_REVOCATION[i]`)  
+       - **LMS Revocation Bits:** 32 bits (e.g., `CPTRA_CORE_LMS_REVOCATION[i]`)  
+       - **MLDSA Revocation Bits:** 4 bits (e.g., `CPTRA_CORE_MLDSA_REVOCATION[i]`)  
+       - **PQC Key Type Bits:** 1-bit one-hot encoded selection (e.g., `CPTRA_CORE_PQC_KEY_TYPE[i]`)
+     - **Attributes:**  
+       - This partition is kept separate from the PK hash partition to allow for runtime updates even after the validated public key is locked.
+3. **Volatile Locking Mechanism** 
+  - To ensure that the validated public key remains immutable once selected, the FC uses a volatile lock mechanism implemented via the new register `otp_ctrl.VENDOR_PK_HASH_LOCK`.
+  - Once the ROM determines the valid public key (e.g., the 3rd key is selected), it locks the corresponding fuse entries in the PK hash partition.
+  - The lock is applied by writing a specific value to `otp_ctrl.VENDOR_PK_HASH_LOCK`.
+     - **Example:**
+       ```c
+       // Lock the 3rd vendor public key hash and all higher order key hashes
+       write_register(otp_ctrl.VENDOR_PK_HASH_LOCK, 0xFFF2);
+       // This operation disables any further write updates to the validated public key fuse region.
+       ```
+  -  The ROM polls the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register until the Direct Access Interface (DAI) returns to idle, confirming the completion of the lock operation. If any errors occur, appropriate error recovery measures are initiated.
+  - Once locked, the PK hash partition cannot be modified, ensuring that the validated public key remains unchanged, thereby preserving the secure boot chain.
+  - If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request. Therefore, requires cold-reset.
+  - The PK hash revocation partition remains unlocked. This design allows the chip owner to update revocation bits and PQC type settings at runtime, enabling the dynamic revocation of keys without affecting the locked public key.
+
+---
+
 ## Hardware Integrity Checker
 
 Once partitions are locked, the hardware integrity checker performs two primary integrity checks to ensure the consistency of the volatile buffer registers:
@@ -310,10 +359,47 @@ Once partitions are locked, the hardware integrity checker performs two primary 
 ### Purpose
 These integrity checks verify whether the contents of the buffer registers remain consistent with the calculated digest. They do not verify the consistency between storage flops and the FUSE.
 
+## Zeroization Flow for Secret FUSEs
+
+The secret FUSE partitions are **zeroized** when the Caliptra-SS Life Cycle Controller (LCC) enters the **SCRAP** state. However, due to lifecycle constraints, the zeroization process requires a **transient condition** before the system reaches the **SCRAP** state.
+
+### Conditions for Zeroization
+
+Zeroization occurs under the following conditions:
+
+1. **Persistent Condition:**  
+   - The **Life Cycle Controller (LCC)** must be in the **SCRAP** state.
+   - This transition to SCRAP occurs only **after a cold reset** followed by **SCRAP** state transition request.
+
+2. **Transient Condition (Before Cold Reset):**  
+   - The **`cptra_ss_FIPS_ZEROIZATION_PPD_i`** GPIO pin must be **asserted high**.
+   - The **`ss_soc_MCU_ROM_zeroization_mask_reg`** must also be set.
+
+### Zeroization Process
+
+1. A new input port, `cptra_ss_FIPS_ZEROIZATION_PPD_i`, is introduced in the Caliptra Subsystem.
+2. When this signal is asserted, it triggers preemptive zeroization of secret FUSEs before the SCRAP state transition.
+3. The **MCU ROM** samples `cptra_ss_FIPS_ZEROIZATION_PPD_i` by reading the corresponding register storing its value.
+4. If `cptra_ss_FIPS_ZEROIZATION_PPD_i == HIGH`, the MCU ROM executes the following sequence:
+   1. Writes `32'hFFFF_FFFF` to the `ss_soc_MCU_ROM_zeroization_mask_reg` register of **MCI**.
+   2. Creates a **Life Cycle Controller (LCC) transition request** to switch to the **SCRAP** state.
+
+- **Note:** The LCC state transition to SCRAP is completed **only after a cold reset**.
+- **Note:** The `ss_soc_MCU_ROM_zeroization_mask_reg` register can be set only by MCU ROM that prohibits run-time firmware to update this register.
+
+### Cold Reset and Final Zeroization
+
+- The system remains in a **transient zeroization state** managed by:
+  - `cptra_ss_FIPS_ZEROIZATION_PPD_i`
+  - `ss_soc_MCU_ROM_zeroization_mask_reg`
+- After the **cold reset**, the **LCC enters SCRAP state**.
+- Regardless of MCU ROM actions, **all secret FUSEs are permanently zeroized** as a direct result of the **SCRAP state transition**.
+
+---
 
 ## Notes
 - **Zeroization of Secret Partitions:**  
-  Secret partitions are automatically zeroized when Caliptra-SS enters debug mode to ensure security.  
+  Secret partitions are temporarly zeroized when Caliptra-SS enters debug mode to ensure security.  
 
 - **Locking Requirement:**  
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
