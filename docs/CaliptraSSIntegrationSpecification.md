@@ -324,7 +324,7 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | input     | 64    | `cptra_ss_mci_generic_input_wires_i` | Generic input wires for MCI              |
 | External | input     | 1     | `cptra_ss_mcu_no_rom_config_i`       | No ROM configuration input               |
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
-| External | input     | 1     | `cptra_ss_lc_Allow_RMA_on_PPD_i`     | Allow RMA on PPD input                   |
+| External | input     | 1     | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`     | Allow RMA or SCRAP on PPD input                   |
 | External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI             |
 | External | output    | 1     | `cptra_ss_mci_error_fatal_o`         | MCI error fatal output                   |
 | External | output    | 1     | `cptra_ss_mci_error_non_fatal_o`     | MCI error non-fatal output               |
@@ -691,7 +691,7 @@ Facing      | Type       | width  | Name                  |  External Name in So
 ------------|:-----------|:-------|:----------------------|:------------------------------------|:-------       |
 External    |input       |   1    | `clk_i`               | `cptra_ss_clk_i`                    | clock         |
 External    |input       |   1    | `rst_ni`              | `cptra_ss_rst_b_i`                  | LC controller reset input, active low|
-External    |input       |   1    | `Allow_RMA_on_PPD`    | `cptra_ss_lc_Allow_RMA_on_PPD_i`    | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA.|
+External    |input       |   1    | `Allow_RMA_or_SCRAP_on_PPD`    | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`    | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA or SCRAP.|
 External    |interface   |   1    | `axi_wr_req`          | `cptra_ss_lc_axi_wr_req_i`          | LC controller AXI write request input |
 External    |interface   |   1    | `axi_wr_rsp`          | `cptra_ss_lc_axi_wr_rsp_o`          | LC controller AXI write response output|
 External    |interface   |   1    | `axi_rd_req`          | `cptra_ss_lc_axi_rd_req_i`          | LC controller AXI read request input |
@@ -768,9 +768,9 @@ See LC Controller Register Map**TODO: link will be provided**.
 1. **Connectivity**:
    - Ensure proper routing of all signals to avoid conflicts with other modules.
    - Interfaces like `jtag` and `axi` must adhere to the defined protocol specifications.
-   - Esclation signals (`esc_scrap_state0` and `esc_scrap_state1`) brings LC controller into SCRAP mode and therefore needs to be connected to a dedicated controller.
-   - `Allow_RMA_on_PPD` needs to be tied 0 if it is not being used. Otherwise, it might break LC controller's internal FSM.
-   - Avoid glitches on `Allow_RMA_on_PPD` and escalation inputs (`esc_scrap_state0`, `esc_scrap_state1`) that could cause unintended transitions.
+   - Esclation signals (`esc_scrap_state0` and `esc_scrap_state1`) brings LC controller into temporal SCRAP mode (Escalation state) and therefore needs to be connected to a dedicated controller.
+   - `Allow_RMA_or_SCRAP_on_PPD` needs to be tied 0 if it is not being used. Otherwise, it might break LC controller's internal FSM.
+   - Avoid glitches on `Allow_RMA_or_SCRAP_on_PPD` and escalation inputs (`esc_scrap_state0`, `esc_scrap_state1`) that could cause unintended transitions.
    - Verify that all output signals, including alerts, remain within the expected ranges under normal operation.
 
 ## Programming Interface
@@ -792,8 +792,8 @@ The LC Controller's programming interface facilitates lifecycle state transition
 3. **Token Validation**:
    - For conditional state transitions, provide the transition token before the transition request.
 
-4. **RMA Strap Handling**:
-   - Ensure the `Allow_RMA_on_PPD` GPIO strap is asserted for RMA transitions. Transitions without this strap will fail with an appropriate status in the `LC_CTRL_STATUS_OFFSET` register.
+4. **RMA and SCRAP Strap Handling**:
+   - Ensure the `Allow_RMA_or_SCRAP_on_PPD` GPIO strap is asserted for RMA or SCRAP transitions. Transitions without this strap will fail with an appropriate status in the `LC_CTRL_STATUS_OFFSET` register.
 
 
 ## Sequences: Reset, Boot
@@ -828,7 +828,8 @@ The LC Controller's programming interface facilitates lifecycle state transition
 2. **Error Injection**:
    - Test token errors by providing invalid tokens during a transition request.
    - Simulate OTP errors by corrupting OTP data or configuration.
-   - Test RMA transitions with and without the `Allow_RMA_on_PPD` GPIO strap.
+   - Test RMA transitions with and without the `Allow_RMA_or_SCRAP_on_PPD` GPIO strap.
+   - Test SCRAP transitions with and without the `Allow_RMA_or_SCRAP_on_PPD` GPIO strap.
 
 3. **Boundary Testing**:
    - Verify correct operation under boundary conditions, such as repeated transitions, simultaneous requests, or rapid reset sequences.

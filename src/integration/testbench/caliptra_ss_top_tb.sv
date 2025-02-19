@@ -359,7 +359,7 @@ module caliptra_ss_top_tb
 //------------------------------------------------------------------------
 
     logic pwr_otp_init_i;
-    logic cptra_ss_lc_Allow_RMA_on_PPD_i;
+    logic cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i;
     logic lcc_bfm_reset;
 
 
@@ -1544,7 +1544,7 @@ module caliptra_ss_top_tb
         .lc_axi_rd_req(cptra_ss_lc_axi_rd_req_i),
         .lc_axi_rd_rsp(cptra_ss_lc_axi_rd_rsp_o),
         .fake_reset(lcc_bfm_reset),
-        .Allow_RMA_on_PPD(cptra_ss_lc_Allow_RMA_on_PPD_i),
+        .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
 
         // Escalation State Interface
         .esc_scrap_state0(cptra_ss_lc_esclate_scrap_state0_i),
@@ -1817,7 +1817,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_no_rom_config_i,
         .cptra_ss_mci_generic_input_wires_i,
         .cptra_ss_strap_mcu_reset_vector_i,
-        .cptra_ss_lc_Allow_RMA_on_PPD_i,
+        .cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i,
 
         .cptra_ss_mci_generic_output_wires_o,
         .cptra_ss_mci_error_fatal_o,

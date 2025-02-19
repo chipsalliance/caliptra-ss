@@ -139,7 +139,7 @@ module caliptra_ss_top
     input logic cptra_ss_mcu_no_rom_config_i,
     input logic cptra_ss_mci_boot_seq_brkpoint_i,
 
-    input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
+    input logic cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i,
 
     output logic [63:0] cptra_ss_mci_generic_output_wires_o,
     output logic cptra_ss_mci_error_fatal_o,
@@ -1205,7 +1205,7 @@ module caliptra_ss_top
     lc_ctrl u_lc_ctrl (
             .clk_i(cptra_ss_clk_i),
             .rst_ni(cptra_ss_rst_b_i),
-            .Allow_RMA_on_PPD(cptra_ss_lc_Allow_RMA_on_PPD_i),
+            .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
             .axi_wr_req(cptra_ss_lc_axi_wr_req_i),
             .axi_wr_rsp(cptra_ss_lc_axi_wr_rsp_o),
             .axi_rd_req(cptra_ss_lc_axi_rd_req_i),
