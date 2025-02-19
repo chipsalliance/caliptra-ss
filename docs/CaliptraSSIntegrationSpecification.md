@@ -770,7 +770,7 @@ See LC Controller Register Map**TODO: link will be provided**.
 1. **Connectivity**:
    - Ensure proper routing of all signals to avoid conflicts with other modules.
    - Interfaces like `jtag` and `axi` must adhere to the defined protocol specifications.
-   - Esclation signals (`esc_scrap_state0` and `esc_scrap_state1`) brings LC controller into temporal SCRAP mode (Escalation state) and therefore needs to be connected to a dedicated controller.
+   - Escalation signals (`esc_scrap_state0` and `esc_scrap_state1`) brings LC controller into temporal SCRAP mode (Escalation state) and therefore needs to be connected to a dedicated controller.
    - `Allow_RMA_or_SCRAP_on_PPD` needs to be tied 0 if it is not being used. Otherwise, it might break LC controller's internal FSM.
    - Avoid glitches on `Allow_RMA_or_SCRAP_on_PPD` and escalation inputs (`esc_scrap_state0`, `esc_scrap_state1`) that could cause unintended transitions.
    - Verify that all output signals, including alerts, remain within the expected ranges under normal operation.
