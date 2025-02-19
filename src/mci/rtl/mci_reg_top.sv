@@ -329,7 +329,7 @@ always_comb begin
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.we            =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_RESET_REQUEST));
-    mci_reg_hwif_in.MCI_BOOTFSM_GO.go.we                =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.MCI_BOOTFSM_GO.go.we                =  (mcu_dmi_uncore_locked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO));
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.we    =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_FW_SRAM_EXEC_REGION_SIZE));
@@ -355,6 +355,7 @@ assign mcu_dmi_uncore_enable        = (!security_state_o.debug_locked) || (secur
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;
 
 //Uncore registers only open for debug unlock or manufacturing
+// NOTE - unused in 2.0
 always_comb mcu_dmi_uncore_manuf_unlocked_en = mcu_dmi_uncore_en & 
                                                 (~(security_state_o.debug_locked) | 
                                                  (security_state_o.device_lifecycle == DEVICE_MANUFACTURING));
@@ -371,6 +372,7 @@ always_comb mcu_dmi_uncore_manuf_unlocked_wr_en = (mcu_dmi_uncore_wr_en & mcu_dm
 always_comb mcu_dmi_uncore_locked_wr_en         = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_locked_en);
 
 //DMI unlocked register read mux
+// NOTE - must contain a super set of the uncore_locked_rdata_in
 always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_ADDR              )}}   &  mcu_sram_dmi_uncore_rdata                   )  | 
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_DATA              )}}   &  mcu_sram_dmi_uncore_rdata                   )  | 
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
@@ -407,6 +409,8 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE             )}}   & (mci_reg_hwif_out.SS_CONFIG_DONE            ))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   & (mci_reg_hwif_out.MCU_NMI_VECTOR            ))  ;
 
+
+// Registers accessable while in a locked state
 always_comb mcu_dmi_uncore_locked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  | 
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_STATUS           )}}   &  mbox0_dmi_reg.MBOX_STATUS                   )  |
@@ -443,7 +447,7 @@ always_comb dmi_mbox1_wen = mcu_dmi_uncore_locked_en & mcu_dmi_uncore_wr_en;
     
 
 always_comb mcu_sram_dmi_uncore_en = mcu_dmi_uncore_dbg_unlocked_en;
-always_comb mcu_sram_dmi_uncore_wr_en = mcu_dmi_uncore_locked_wr_en;
+always_comb mcu_sram_dmi_uncore_wr_en = mcu_dmi_uncore_dbg_unlocked_wr_en;
 always_comb mcu_sram_dmi_uncore_addr = mcu_dmi_uncore_addr;
 always_comb mcu_sram_dmi_uncore_wdata = mcu_dmi_uncore_wdata;
 
@@ -459,8 +463,9 @@ always_ff @(posedge clk or negedge mci_pwrgood) begin
       mcu_dmi_uncore_mbox1_din_access_f  <= '0;
     end  
     else begin
-        mcu_dmi_uncore_rdata <= mcu_dmi_uncore_manuf_unlocked_en ? mcu_dmi_uncore_locked_rdata_in : 
-                                mcu_dmi_uncore_dbg_unlocked_en ? mcu_dmi_uncore_dbg_unlocked_rdata_in : mcu_dmi_uncore_rdata;
+        mcu_dmi_uncore_rdata <= mcu_dmi_uncore_dbg_unlocked_en ? mcu_dmi_uncore_dbg_unlocked_rdata_in : 
+                                mcu_dmi_uncore_locked_en       ? mcu_dmi_uncore_locked_rdata_in : 
+                                                                 mcu_dmi_uncore_rdata;
 
         mcu_dmi_uncore_mbox0_dout_access_f <= mcu_dmi_uncore_locked_en & ~mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT);
         mcu_dmi_uncore_mbox0_din_access_f  <= mcu_dmi_uncore_locked_en &  mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DIN);
