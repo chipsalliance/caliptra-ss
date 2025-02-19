@@ -910,10 +910,10 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 | Facing   | Parameter name              | Location | Description                                                                 |
 |:-------- |:----------------------------|:---------|:-------------------------------------------------------------------------- |
-| External    | `MCI_SET_MBOX0_AXI_USER_INTEG`   | mci_top  | Determins if VALID_AXI_USER will be used by MCI                                                                   |
+| External    | `MCI_SET_MBOX0_AXI_USER_INTEG`   | mci_top  | Determines if VALID_AXI_USER will be used by MCI                                                                   |
 | External    | `MCI_MBOX0_VALID_AXI_USER`   | mci_top  | MBOX0 AXI user list enabled by SET_MBOX0_AXI_USER_INTEG                                                                   |
 | External | `MCI_MBOX0_SIZE_KB`         | mci_top | Size of MBOX0 SRAM. If set to 0 the entire MBOX0 is removed from MCI. Min: 0 Max: 2048 (2MB) |
-| External    | `MCI_SET_MBOX1_AXI_USER_INTEG`   | mci_top  | Determins if VALID_AXI_USER will be used by MCI                                                                   |
+| External    | `MCI_SET_MBOX1_AXI_USER_INTEG`   | mci_top  | Determines if VALID_AXI_USER will be used by MCI                                                                   |
 | External    | `MCI_MBOX1_VALID_AXI_USER`   | mci_top  | MBOX1 AXI user list enabled by SET_MBOX0_AXI_USER_INTEG                                                                   |
 | External | `MCI_MBOX1_SIZE_KB`         | external | Size of MBOX1 SRAM. If set to 0 the entire MBOX1 is removed from MCI. Min: 0 Max: 2048 (2MB) |
 
