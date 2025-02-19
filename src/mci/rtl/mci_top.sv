@@ -184,11 +184,11 @@ module mci_top
     logic [MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer2_timeout_period;
 
     // AXI SUB Privileged requests
-    logic debug_req;
-    logic mcu_lsu_req;
-    logic mcu_ifu_req;
-    logic mcu_req    ;
-    logic cptra_req    ;
+    logic axi_debug_req;
+    logic axi_mcu_lsu_req;
+    logic axi_mcu_ifu_req;
+    logic axi_mcu_req    ;
+    logic axi_cptra_req    ;
     logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox0_users;
     logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox1_users;
 
@@ -203,14 +203,6 @@ module mci_top
     logic mbox0_sram_double_ecc_error;
     logic mbox1_sram_single_ecc_error;
     logic mbox1_sram_double_ecc_error;
-    mbox_dmi_reg_t mbox0_dmi_reg;
-    mbox_dmi_reg_t mbox1_dmi_reg;
-    logic dmi_mbox0_inc_rdptr;
-    logic dmi_mbox0_inc_wrptr;
-    logic dmi_mbox1_inc_rdptr;
-    logic dmi_mbox1_inc_wrptr;
-    logic dmi_mbox0_wen;
-    logic dmi_mbox1_wen;
     logic mci_mbox0_data_avail;
     logic mci_mbox1_data_avail;
     logic soc_req_mbox0_lock;
@@ -339,11 +331,11 @@ mci_axi_sub_top #(
     .valid_mbox1_users,
 
     // Privileged requests 
-    .debug_req,
-    .mcu_lsu_req,
-    .mcu_ifu_req,
-    .mcu_req    ,
-    .cptra_req    ,
+    .axi_debug_req,
+    .axi_mcu_lsu_req,
+    .axi_mcu_ifu_req,
+    .axi_mcu_req    ,
+    .axi_cptra_req    ,
 
     
     // Privileged AXI users
@@ -411,10 +403,10 @@ mci_mcu_sram_ctrl #(
     .cif_resp_if (mcu_sram_req_if.response),
 
     // AXI Privileged requests
-    .debug_req,
-    .mcu_lsu_req,
-    .mcu_ifu_req,
-    .cptra_req    ,
+    .axi_debug_req,
+    .axi_mcu_lsu_req,
+    .axi_mcu_ifu_req,
+    .axi_cptra_req    ,
 
     // Access lock interface
     .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),  
@@ -496,9 +488,9 @@ mci_reg_top #(
     .mci_reg_hwif_out,
     
     // AXI Privileged requests
-    .debug_req,
-    .cptra_req,
-    .mcu_req,
+    .axi_debug_req,
+    .axi_cptra_req,
+    .axi_mcu_req,
 
     // WDT specific signals
     .wdt_timer1_timeout_serviced, 
@@ -534,14 +526,6 @@ mci_reg_top #(
     .mcu_dmi_uncore_rdata,
     
     // MBOX
-    .mbox0_dmi_reg,
-    .mbox1_dmi_reg,
-    .dmi_mbox0_inc_rdptr,
-    .dmi_mbox0_inc_wrptr,
-    .dmi_mbox1_inc_rdptr,
-    .dmi_mbox1_inc_wrptr,
-    .dmi_mbox0_wen,
-    .dmi_mbox1_wen,
     .valid_mbox0_users,
     .valid_mbox1_users,
     .mci_mbox0_data_avail,
@@ -631,7 +615,7 @@ mci_mbox0_i (
     .req_data_wdata(mci_mbox0_req_if.req_data.wdata),
     .req_data_user(mci_mbox0_req_if.req_data.user),
     .req_data_write(mci_mbox0_req_if.req_data.write),
-    .req_data_soc_req(~mcu_req),
+    .req_data_soc_req(~axi_mcu_req),
     .rdata(mci_mbox0_req_if.rdata),
     .mbox_error(mci_mbox0_req_if.error),
     .mbox_sram_req_cs(mci_mbox0_sram_req_if.req.cs),
@@ -668,13 +652,13 @@ mci_mbox0_i (
     .dma_sram_rdata   (),
     .dma_sram_hold    (),
     .dma_sram_error   (),
-    //dmi port
-    .dmi_inc_rdptr(dmi_mbox0_inc_rdptr),
-    .dmi_inc_wrptr(dmi_mbox0_inc_wrptr),
-    .dmi_reg_wen(dmi_mbox0_wen),
-    .dmi_reg_addr(mcu_dmi_uncore_addr),
-    .dmi_reg_wdata(mcu_dmi_uncore_wdata),
-    .dmi_reg(mbox0_dmi_reg)
+    //dmi port unused
+    .dmi_inc_rdptr('0),
+    .dmi_inc_wrptr('0),
+    .dmi_reg_wen('0),
+    .dmi_reg_addr('0),
+    .dmi_reg_wdata('0),
+    .dmi_reg()
 );
 end
 endgenerate
@@ -714,7 +698,7 @@ mci_mbox1_i (
     .req_data_wdata(mci_mbox1_req_if.req_data.wdata),
     .req_data_user(mci_mbox1_req_if.req_data.user),
     .req_data_write(mci_mbox1_req_if.req_data.write),
-    .req_data_soc_req(~mcu_req),
+    .req_data_soc_req(~axi_mcu_req),
     .rdata(mci_mbox1_req_if.rdata),
     .mbox_error(mci_mbox1_req_if.error),
     .mbox_sram_req_cs(mci_mbox1_sram_req_if.req.cs),
@@ -742,12 +726,13 @@ mci_mbox1_i (
     .dma_sram_rdata   (),
     .dma_sram_hold    (),
     .dma_sram_error   (),
-    .dmi_inc_rdptr(dmi_mbox1_inc_rdptr),
-    .dmi_inc_wrptr(dmi_mbox1_inc_wrptr),
-    .dmi_reg_wen(dmi_mbox1_wen),
-    .dmi_reg_addr(mcu_dmi_uncore_addr),
-    .dmi_reg_wdata(mcu_dmi_uncore_wdata),
-    .dmi_reg(mbox1_dmi_reg),
+    // DMI unused 
+    .dmi_inc_rdptr('0),
+    .dmi_inc_wrptr('0),
+    .dmi_reg_wen('0),
+    .dmi_reg_addr('0),
+    .dmi_reg_wdata('0),
+    .dmi_reg(),
     //direct request unsupported
     .dir_req_dv(1'b0),
     .dir_rdata(),

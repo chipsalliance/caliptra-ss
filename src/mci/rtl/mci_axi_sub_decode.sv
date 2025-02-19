@@ -62,11 +62,11 @@ module mci_axi_sub_decode
     input logic [4:0][soc_resp_if.USER_WIDTH-1:0] valid_mbox1_users,
 
     // Privileged requests 
-    output logic mcu_lsu_req,
-    output logic mcu_ifu_req,
-    output logic mcu_req    ,
-    output logic debug_req    ,
-    output logic cptra_req    ,
+    output logic axi_mcu_lsu_req,
+    output logic axi_mcu_ifu_req,
+    output logic axi_mcu_req    ,
+    output logic axi_debug_req    ,
+    output logic axi_cptra_req    ,
 
     
     // Privileged AXI users
@@ -96,6 +96,8 @@ logic soc_mci_mbox1_req;
 // MISC signals
 logic soc_req_miss;
 logic debug_req_disable;
+logic debug_req_force_enable;
+logic debug_axi_user_detect;
 
 
 ///////////////////////////////////////////////////////////
@@ -141,8 +143,8 @@ always_comb begin
         mbox0_valid_user |= (soc_resp_if.req_data.user == valid_mbox0_users[i]);
     end
     mbox0_valid_user |= soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0];
-    mbox0_valid_user |= mcu_req;
-    mbox0_valid_user |= debug_req;
+    mbox0_valid_user |= axi_mcu_req;
+    mbox0_valid_user |= axi_debug_req;
 end
 
 // MCI Mbox1
@@ -159,8 +161,8 @@ always_comb begin
         mbox1_valid_user |= (soc_resp_if.req_data.user == valid_mbox1_users[i]);
     end
     mbox1_valid_user |= (soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0]);
-    mbox1_valid_user |= mcu_req;
-    mbox1_valid_user |= debug_req;
+    mbox1_valid_user |= axi_mcu_req;
+    mbox1_valid_user |= axi_debug_req;
 end
 
 
@@ -241,15 +243,23 @@ always_comb soc_resp_if.error = (soc_mcu_sram_req  & mcu_sram_req_if.error)  |
 // privileged users
 ///////////////////////////////////////////////
 
+// All 0s disabled debug_axi user capability. Mutually exclusive with
+// debug_req_force_enable.
 assign debug_req_disable = ~|strap_debug_axi_user;
 
-assign debug_req    = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_debug_axi_user)) & ~debug_req_disable;
+// All 1s every AXI transaction is treated as a debug user. Mutually exclusive
+// with debug_req_disable
+assign debug_req_force_enable = &strap_debug_axi_user;
 
-assign mcu_lsu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_lsu_axi_user));
-assign mcu_ifu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_ifu_axi_user));
-assign mcu_req      = mcu_lsu_req | mcu_ifu_req; 
+assign debug_axi_user_detect = ~(|(soc_resp_if.req_data.user ^ strap_debug_axi_user));
 
-assign cptra_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_cptra_axi_user));
+assign axi_debug_req    = soc_resp_if.dv & ((debug_axi_user_detect & ~debug_req_disable) | debug_req_force_enable);
+
+assign axi_mcu_lsu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_lsu_axi_user));
+assign axi_mcu_ifu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_ifu_axi_user));
+assign axi_mcu_req      = axi_mcu_lsu_req | axi_mcu_ifu_req; 
+
+assign axi_cptra_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_cptra_axi_user));
 
 
 
