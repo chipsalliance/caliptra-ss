@@ -325,7 +325,8 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | input     | 1     | `cptra_ss_mcu_no_rom_config_i`       | No ROM configuration input               |
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
 | External | input     | 1     | `cptra_ss_lc_Allow_RMA_on_PPD_i`     | Allow RMA on PPD input                   |
-| External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI             |
+| External | input     | 1     | `cptra_ss_FIPS_ZEROIZATION_PPD_i`    | Zeroization request with PPD input       |
+| External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI            |
 | External | output    | 1     | `cptra_ss_mci_error_fatal_o`         | MCI error fatal output                   |
 | External | output    | 1     | `cptra_ss_mci_error_non_fatal_o`     | MCI error non-fatal output               |
 | External | input     | 1     | `cptra_ss_mcu_jtag_tck_i`            | MCU JTAG clock input                     |
@@ -564,6 +565,7 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 |------------|------------|-------  |-------------------------------|-----------------------------------|--------------------------------------------------------|
 | External   | Input      | 1       | `clk_i`                       | `cptra_ss_clk_i`                  | Fuse Controller clock input.                          |
 | External   | Input      | 1       | `rst_ni`                      | `cptra_ss_rst_b_i`                | Reset signal input, active low.                       |
+| Internal   | Input      | 1       | `FIPS_ZEROIZATION_CMD_i`      |                                   | Fuse Zeroization signal controlled by MCI             |
 | External   | interface  | 1       | `core_axi_wr_req`             | `cptra_ss_otp_core_axi_wr_req_i`  | AXI write request.                         |
 | External   | interface  | 1       | `core_axi_wr_rsp`             | `cptra_ss_otp_core_axi_wr_rsp_o`  | AXI write response.                          |
 | External   | interface  | 1       | `core_axi_rd_req`             | `cptra_ss_otp_core_axi_rd_req_i`  | AXI read request.                          |
@@ -1033,6 +1035,8 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | External | Output | 1      | `SOC_DFT_EN`                            | clk   | **FIXME**   |
 | External | Output | 1      | `SOC_HW_DEBUG_EN`                       | clk   | **FIXME**   |
 | Internal | Output | Struct | `security_state_o`                      | clk   | **FIXME**   |
+| External | Input  | 1      | `FIPS_ZEROIZATION_PPD_i`                | clk   | **FIXME**   |
+| Internal | Output | 1      | `FIPS_ZEROIZATION_CMD_o`                | clk   | **FIXME**   |
 
 ## Memory Map	/ Address map
 
@@ -1270,6 +1274,13 @@ Below are the connections needed between MCI and LCC for the Gasket functionalit
 | ----- | :---: | ----- | ----- |
 | SOC\_DFT\_EN | \-\> | cptra_ss_soc_dft_en_o | SOC DFT enable see [DFT LC States](CaliptraSSHardwareSpecification.md#dft--dfd-lc-states)|
 | SOC\_HW\_DEBUG\_EN | \-\> | cptra_ss_soc_hw_debug_en_o | SOC HW Debug Enable see: [DFD LC States](CaliptraSSHardwareSpecification.md#dft--dfd-lc-states) |
+
+**Table: Fuse Zeroization Signals - Caliptra SS Port Connections to MCI to FC**
+
+| MCI Port | Direction | SS Port |  FC Port | Description |
+| ----- | :---: | ----- | ----- |----- |
+| FIPS_ZEROIZATION_PPD_i| \<\- | cptra_ss_FIPS_ZEROIZATION_PPD_i | - |Zeroization enable see [Zeroization Process](CaliptraSSHardwareSpecification.md#zeroization-flow-for-secret-fuses)|
+| FIPS_ZEROIZATION_CMD_o|  \-\> | - | FIPS_ZEROIZATION_CMD_i |Zeroization enable see [Zeroization Process](CaliptraSSHardwareSpecification.md#zeroization-flow-for-secret-fuses)|
 
 ### MCU SRAM Sizing Requirements
 

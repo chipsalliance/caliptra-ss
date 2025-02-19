@@ -40,6 +40,7 @@
   - [Locking the Validated Public Key Partition](#locking-the-validated-public-key-partition)
   - [Hardware Integrity Checker](#hardware-integrity-checker)
     - [Purpose](#purpose)
+  - [Zeroization Process](#zeroization-flow-for-secret-fuses)
   - [Notes](#notes)
   - [Programmer's Guide](#programmers-guide)
   - [General Guidance](#general-guidance)
@@ -393,7 +394,7 @@ Zeroization occurs under the following conditions:
   - `cptra_ss_FIPS_ZEROIZATION_PPD_i`
   - `ss_soc_MCU_ROM_zeroization_mask_reg`
 - After the **cold reset**, the **LCC enters SCRAP state**.
-- Regardless of MCU ROM actions, **all secret FUSEs are permanently zeroized** as a direct result of the **SCRAP state transition**.
+- All secret FUSEs are permanently zeroized as a direct result of the **SCRAP state transition**.
 
 ---
 
