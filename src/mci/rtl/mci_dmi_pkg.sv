@@ -37,23 +37,24 @@ package mci_dmi_pkg;
     parameter MCI_DMI_MCU_SRAM_DATA     = 7'h59;
     
     // MCU TRACE DMI 
-    parameter MCI_DMI_MCU_TRACE_WRAPPED = 7'h5A; // RO
-    parameter MCI_DMI_MCU_TRACE_RD_PTR  = 7'h5B; // RO
-    parameter MCI_DMI_MCU_TRACE_ADDR    = 7'h5C; // RW
-    parameter MCI_DMI_MCU_TRACE_DATA    = 7'h5D; // RO
+    parameter MCI_DMI_MCU_TRACE_STATUS = 7'h5A; // RO
+    parameter MCI_DMI_MCU_TRACE_CONFIG = 7'h5B; // RO
+    parameter MCI_DMI_MCU_TRACE_WR_PTR  = 7'h5C; // RO
+    parameter MCI_DMI_MCU_TRACE_RD_PTR  = 7'h5D; // RW
+    parameter MCI_DMI_MCU_TRACE_DATA    = 7'h5E; // RO
     
     // MCI REG DMI RO
-    parameter MCI_DMI_HW_FLOW_STATUS            = 7'h5E;
-    parameter MCI_DMI_RESET_REASON              = 7'h5F;
-    parameter MCI_DMI_RESET_STATUS              = 7'h60;
-    parameter MCI_DMI_FW_FLOW_STATUS            = 7'h61;
-    parameter MCI_DMI_HW_ERROR_FATAL            = 7'h62;
-    parameter MCI_DMI_AGG_ERROR_FATAL           = 7'h63;
-    parameter MCI_DMI_HW_ERROR_NON_FATAL        = 7'h64;
-    parameter MCI_DMI_AGG_ERROR_NON_FATAL       = 7'h65;
-    parameter MCI_DMI_FW_ERROR_FATAL            = 7'h66;
-    parameter MCI_DMI_FW_ERROR_NON_FATAL        = 7'h67;
-    parameter MCI_DMI_HW_ERROR_ENC              = 7'h68;
+    parameter MCI_DMI_HW_FLOW_STATUS            = 7'h5F;
+    parameter MCI_DMI_RESET_REASON              = 7'h60;
+    parameter MCI_DMI_RESET_STATUS              = 7'h61;
+    parameter MCI_DMI_FW_FLOW_STATUS            = 7'h62;
+    parameter MCI_DMI_HW_ERROR_FATAL            = 7'h63;
+    parameter MCI_DMI_AGG_ERROR_FATAL           = 7'h64;
+    parameter MCI_DMI_HW_ERROR_NON_FATAL        = 7'h65;
+    parameter MCI_DMI_AGG_ERROR_NON_FATAL       = 7'h66;
+    parameter MCI_DMI_FW_ERROR_FATAL            = 7'h67;
+    parameter MCI_DMI_FW_ERROR_NON_FATAL        = 7'h68;
+    parameter MCI_DMI_HW_ERROR_ENC              = 7'h69;
     parameter MCI_DMI_FW_ERROR_ENC              = 7'h6A;
     parameter MCI_DMI_FW_EXTENDED_ERROR_INFO_0  = 7'h6B;
     parameter MCI_DMI_FW_EXTENDED_ERROR_INFO_1  = 7'h6C;
