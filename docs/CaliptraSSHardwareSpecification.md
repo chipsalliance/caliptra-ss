@@ -399,8 +399,7 @@ Zeroization occurs under the following conditions:
 
 ## Notes
 - **Zeroization of Secret Partitions:**  
-  Secret partitions are temporarly zeroized when Caliptra-SS enters debug mode to ensure security.  
-
+  Secret partitions are temporarily zeroized when Caliptra-SS enters debug mode to ensure security.
 - **Locking Requirement:**  
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
 - **Further Information:**  
