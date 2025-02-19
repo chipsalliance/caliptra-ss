@@ -928,7 +928,7 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 ![](images/MCI-MCU-Trace-Buffer-Diagram.png)
 
-MCI hosts the MCU trae buffer. It can hold up to 100 traces from the MCU. Access to the trace buffer and enabling it is controled by the LCC state Translator `debug_mode`. If this wire is not set then all traces or access to the trace buffer are rejected. AXI accesses will be rejected with an error, while DMI accesses will be silently rejected (writes dropped and reads will return 0) as there is no error response. 
+MCI hosts the MCU trae buffer. It can hold up to 100 traces from the MCU. Access to the trace buffer and enabling it is controled by the LCC state Translator. If not **Debug Unlock** then all traces or access to the trace buffer are rejected. AXI accesses will be rejected with an error. Illegal access behavior via DMI can be found in [DMI MCU Trace Buffer Access](#dmi-mcu-trace-buffer-access)
 
 The trace buffer is a circular buffer where old data is overwritten by new traces. The first trace is stored at offset 0 and subsequent trace data is written to WRITE_PTR + 1. 
 
@@ -1088,7 +1088,9 @@ There is no error response on the DMI port, so any ECC error must be checked via
 
 ##### DMI MCU Trace Buffer Access
 
-FIXME
+Access to the MCU Trace buffer via DMI is the same SW interface as specified in [MCU Trace Buffer](#mcu-trace-buffer).
+
+Access is limited to **Debug Unlock** mode only. Access to this space while not in **Debug Unlock** will result in writes being dropped and reads return 0x0. 
 
 #### MCI DEBUG AXI USER
 
