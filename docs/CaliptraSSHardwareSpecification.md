@@ -934,6 +934,8 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 MCI hosts the MCU trae buffer. It can hold up to 64 traces from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Access to the trace buffer and enabling it is controled by the LCC state Translator. If not **Debug Unlock** then all traces and access to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while not in Debug Unlock mode.
 
+MCU Risk-V processor can enable/disable tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces other than being debug locked. 
+
 The trace buffer is a circular buffer where old data is overwritten by new traces. The start of the first trace packet is stored at offset 0 and subsequent trace data is written to WRITE_PTR + 1. 
 
 ![](images/MCI-MCU-Trace-Buffer-Circular-Diagram.png)
