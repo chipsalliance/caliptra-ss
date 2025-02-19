@@ -926,7 +926,41 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 ### MCU Trace Buffer
 
-FIXME 
+![](images/MCI-MCU-Trace-Buffer-Diagram.png)
+
+MCI hosts the MCU trae buffer. It can hold up to 100 traces from the MCU. Access to the trace buffer and enabling it is controled by the LCC state Translator `debug_mode`. If this wire is not set then all traces or access to the trace buffer are rejected. AXI accesses will be rejected with an error, while DMI accesses will be silently rejected (writes dropped and reads will return 0) as there is no error response. 
+
+The trace buffer is a circular buffer where old data is overwritten by new traces. The first trace is stored at offset 0 and subsequent trace data is written to WRITE_PTR + 1. 
+
+![](images/MCI-MCU-Trace-Buffer-Circular-Diagram.png)
+
+Below is the SW interface to extrace trace data:
+
+
+| **Register Name** | **Access Type**     | **Description**     | 
+| :---------         | :---------     | :---------| 
+| DATA               | RO        | Trace data at READ_PTR location|
+| READ_PTR           | RW        | Read pointer. NOTE this is not an address so increment by 1 to get the next entry. | 
+| WRITE_PTR          | RO        | Last valid data written into trace buffer              |
+| STATUS.VALID_DATA         | RO        | Indicates at least one entry is valid in the trace buffer.      |
+| STATUS.WRAPPED            | RO        | Indicates the trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid.|
+| CONFIG.TRACE_BUFFER_DEPTH | RO        | Indicates the total number of 32 bit entries are in the trace buffer. TRACE_BUFFER_DEPTH - 1 is the last valid WRITE/READ_PTR entry in the trace buffer.|
+
+Trace data from the MCU is more than 32 bits, so each trace takes up more than one offest. Trace data is stored in the following format:
+
+
+![](images/MCI-MCU-Trace-Buffer-Data.png)
+
+Assuming there is only one trace stored in the trace buffer the WRITE_PTR would read as 0x3. To get the entire trace packet the user would need to read offsets 0x0, 0x1, 0x2, and 0x3. 
+
+Expected transactions to extract data from the trace buffer is:
+
+1. Write READ_PTR
+2. Read DATA
+
+The user should use the combination of WRITE_PTR, VALID_DATA, WRAPPED, and TRACE_BUFFER_DEPTH to know where valid data
+
+If the user sets the READ_PTR > TRACE_BUFFER_DEPTH - 1 and tries to read the DATA register, the behavior is undefined. 
 
 ## MCI Debug
 
@@ -978,21 +1012,22 @@ MCI provides the logic for these enables. When the following condition(s) are me
 | MBOX1\_DIN | 0x57 | WO | Yes |  |  |
 | MCU\_SRAM\_ADDR | 0x58 | RW |  |  | Yes |
 | MCU\_SRAM\_DATA | 0x59 | RW |  |  | Yes |
-| MCU\_TRACE\_WRAPPED | 0x5A | RO |  |  | Yes |
-| MCU\_TRACE\_RD\_PTR | 0x5B | RO |  |  | Yes |
-| MCU\_TRACE\_ADDR | 0x5C | RW |  |  | Yes |
-| MCU\_TRACE\_DATA | 0x5D | RO |  |  | Yes |
-| HW\_FLOW\_STATUS | 0x5E | RO | Yes |  |  |
-| RESET\_REASON | 0x5F | RO | Yes |  |  |
-| RESET\_STATUS | 0x60 | RO | Yes |  |  |
-| FW\_FLOW\_STATUS | 0x61 | RO | Yes |  |  |
-| HW\_ERROR\_FATAL | 0x62 | RO | Yes |  |  |
-| AGG\_ERROR\_FATAL | 0x63 | RO | Yes |  |  |
-| HW\_ERROR\_NON\_FATAL | 0x64 | RO | Yes |  |  |
-| AGG\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |  |
-| FW\_ERROR\_FATAL | 0x66 | RO | Yes |  |  |
-| FW\_ERROR\_NON\_FATAL | 0x67 | RO | Yes |  |  |
-| HW\_ERROR\_ENC | 0x68 | RO | Yes |  |  |
+| MCU\_TRACE\_STATUS | 0x5A | RO |  |  | Yes |
+| MCU\_TRACE\_CONFIG | 0x5B | RO |  |  | Yes |
+| MCU\_TRACE\_WR\_PTR | 0x5C | RO |  |  | Yes |
+| MCU\_TRACE\_RD\_PTR | 0x5D | RW |  |  | Yes |
+| MCU\_TRACE\_DATA | 0x5E | RO |  |  | Yes |
+| HW\_FLOW\_STATUS | 0x5F | RO | Yes |  |  |
+| RESET\_REASON | 0x60 | RO | Yes |  |  |
+| RESET\_STATUS | 0x61 | RO | Yes |  |  |
+| FW\_FLOW\_STATUS | 0x62 | RO | Yes |  |  |
+| HW\_ERROR\_FATAL | 0x63 | RO | Yes |  |  |
+| AGG\_ERROR\_FATAL | 0x64 | RO | Yes |  |  |
+| HW\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |  |
+| AGG\_ERROR\_NON\_FATAL | 0x66 | RO | Yes |  |  |
+| FW\_ERROR\_FATAL | 0x67 | RO | Yes |  |  |
+| FW\_ERROR\_NON\_FATAL | 0x68 | RO | Yes |  |  |
+| HW\_ERROR\_ENC | 0x69 | RO | Yes |  |  |
 | FW\_ERROR\_ENC | 0x6A | RO | Yes |  |  |
 | FW\_EXTENDED\_ERROR\_INFO\_0 | 0x6B | RO | Yes |  |  |
 | FW\_EXTENDED\_ERROR\_INFO\_1 | 0x6C | RO | Yes |  |  |
