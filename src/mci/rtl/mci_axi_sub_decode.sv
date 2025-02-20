@@ -121,7 +121,9 @@ always_comb soc_mci_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr ins
 // Add qualifiers to grant before sending to IPs
 ///////////////////////////////////////////////////////////
 
-always_comb all_strb_set = &soc_resp_if.req_data.wstrb;
+// If write transaction verify all strbs are set. If read transaction strb
+// doesn't care so assert all_strb_set
+always_comb all_strb_set = (&soc_resp_if.req_data.wstrb & soc_resp_if.req_data.write) | ~soc_resp_if.req_data.write ;
 
 // MCU SRAM
 always_comb soc_mcu_sram_req = soc_mcu_sram_gnt;
