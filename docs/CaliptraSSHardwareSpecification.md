@@ -40,7 +40,10 @@
   - [Locking the Validated Public Key Partition](#locking-the-validated-public-key-partition)
   - [Hardware Integrity Checker](#hardware-integrity-checker)
     - [Purpose](#purpose)
-  - [Zeroization Process](#zeroization-flow-for-secret-fuses)
+  - [Zeroization Flow for Secret FUSEs](#zeroization-flow-for-secret-fuses)
+    - [Conditions for Zeroization](#conditions-for-zeroization)
+    - [Zeroization Process](#zeroization-process)
+    - [Cold Reset and Final Zeroization](#cold-reset-and-final-zeroization)
   - [Notes](#notes)
   - [Programmer's Guide](#programmers-guide)
   - [General Guidance](#general-guidance)
@@ -96,6 +99,7 @@
         - [DMI MCU Trace Buffer Access](#dmi-mcu-trace-buffer-access)
       - [MCI DEBUG AXI USER](#mci-debug-axi-user)
         - [Disabling MCI DEBUG AXI USER](#disabling-mci-debug-axi-user)
+        - [Force Enabling MCI DEBUG AXI USER](#force-enabling-mci-debug-axi-user)
     - [MCI Boot FSM Breakpoint](#mci-boot-fsm-breakpoint)
       - [MCI Boot FSM Breakpoint Flow](#mci-boot-fsm-breakpoint-flow)
   - [MCI Design for Test (DFT)](#mci-design-for-test-dft)
@@ -1022,7 +1026,7 @@ MCI provides DMI access via MCU TAP and a DEBUG AXI USER address for debug acces
 
 #### MCI DMI
 
-
+**NOTE: DMI access to MBOX0/1 is not enabled in Caliptra 2.0. This will be enabled in future Caliptra versions**
 ![](images/MCI-DMI-Interface.png)
 
 
@@ -1054,14 +1058,14 @@ MCI provides the logic for these enables. When the following condition(s) are me
 
 | Register Name | DMI Address | Access Type | Debug Intent Access | Manufacture Mode Access | Debug Unlock Access |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| MBOX0\_DLEN | 0x50 | RO | Yes |  |  |
-| MBOX0\_DOUT | 0x51 | RO | Yes |  |  |
-| MBOX0\_STATUS | 0x52 | RO | Yes |  |  |
-| MBOX0\_DIN | 0x53 | WO | Yes |  |  |
-| MBOX1\_DLEN | 0x54 | RO | Yes |  |  |
-| MBOX1\_DOUT | 0x55 | RO | Yes |  |  |
-| MBOX1\_STATUS | 0x56 | RO | Yes |  |  |
-| MBOX1\_DIN | 0x57 | WO | Yes |  |  |
+| **NOT ENABLED IN 2.0** MBOX0\_DLEN | 0x50 | RO | Yes |  |  |
+| **NOT ENABLED IN 2.0** MBOX0\_DOUT | 0x51 | RO | Yes |  |  |
+| **NOT ENABLED IN 2.0** MBOX0\_STATUS | 0x52 | RO | Yes |  |  |
+| **NOT ENABLED IN 2.0** MBOX0\_DIN | 0x53 | WO | Yes |  |  |
+| **NOT ENABLED IN 2.0** MBOX1\_DLEN | 0x54 | RO | Yes |  |  |
+| **NOT ENABLED IN 2.0** MBOX1\_DOUT | 0x55 | RO | Yes |  |  |
+| **NOT ENABLED IN 2.0** MBOX1\_STATUS | 0x56 | RO | Yes |  |  |
+| **NOT ENABLED IN 2.0** MBOX1\_DIN | 0x57 | WO | Yes |  |  |
 | MCU\_SRAM\_ADDR | 0x58 | RW |  |  | Yes |
 | MCU\_SRAM\_DATA | 0x59 | RW |  |  | Yes |
 | MCU\_TRACE\_WRAPPED | 0x5A | RO |  |  | Yes |
@@ -1150,6 +1154,10 @@ In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER st
 ##### Disabling MCI DEBUG AXI USER
 
 If this feature is not needed by the SOC the integrator shall tie this port to 0. This will indicate to MCI that there are no AXI debug users within the design and no debug access is needed via AXI. 
+
+##### Force Enabling MCI DEBUG AXI USER
+
+If the user wants to treat all AXI transactions as a debug user the integrator shall tie this port to all 1s. 
 
 ### MCI Boot FSM Breakpoint
 

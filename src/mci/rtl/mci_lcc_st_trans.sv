@@ -71,8 +71,6 @@ assign CLPTR_PROD_DEBUG_UNLOCK_AND  = |(ss_soc_dbg_unlock_level_i & ss_soc_dbg_u
 assign lcc_valid_SCRAP_req          = (lc_alive_state ==  LcStScrap && lc_otp_prog_req);
 assign MCU_ROM_zeroization_AND      = (&ss_soc_MCU_ROM_zeroization_mask_reg) & FIPS_ZEROIZATION_PPD_i;
 
-
-
 always_ff @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
         mci_trans_st_current            <= TRANSLATOR_RESET;

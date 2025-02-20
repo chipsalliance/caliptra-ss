@@ -31,12 +31,12 @@ package mci_reg_pkg;
     } mci_reg__HW_CONFIG__in_t;
 
     typedef struct packed{
-        logic [4:0] next;
-    } mci_reg__FLOW_STATUS__boot_fsm_ps__in_t;
+        logic [3:0] next;
+    } mci_reg__HW_FLOW_STATUS__boot_fsm__in_t;
 
     typedef struct packed{
-        mci_reg__FLOW_STATUS__boot_fsm_ps__in_t boot_fsm_ps;
-    } mci_reg__FLOW_STATUS__in_t;
+        mci_reg__HW_FLOW_STATUS__boot_fsm__in_t boot_fsm;
+    } mci_reg__HW_FLOW_STATUS__in_t;
 
     typedef struct packed{
         logic next;
@@ -58,12 +58,26 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic next;
+    } mci_reg__RESET_STATUS__cptra_reset_sts__in_t;
+
+    typedef struct packed{
+        logic next;
+    } mci_reg__RESET_STATUS__mcu_reset_sts__in_t;
+
+    typedef struct packed{
+        mci_reg__RESET_STATUS__cptra_reset_sts__in_t cptra_reset_sts;
+        mci_reg__RESET_STATUS__mcu_reset_sts__in_t mcu_reset_sts;
+    } mci_reg__RESET_STATUS__in_t;
+
+    typedef struct packed{
+        logic next;
         logic we;
     } mci_reg__rw_rw_sticky_hw__in_t;
 
     typedef struct packed{
         mci_reg__rw_rw_sticky_hw__in_t mcu_sram_ecc_unc;
         mci_reg__rw_rw_sticky_hw__in_t nmi_pin;
+        mci_reg__rw_rw_sticky_hw__in_t mcu_sram_dmi_axi_collision;
     } mci_reg__HW_ERROR_FATAL__in_t;
 
     typedef struct packed{
@@ -102,7 +116,12 @@ package mci_reg_pkg;
     } mci_reg__AGG_ERROR_FATAL__in_t;
 
     typedef struct packed{
-        mci_reg__rw_rw_sticky_hw__in_t RSVD;
+        mci_reg__rw_rw_sticky_hw__in_t mbox0_prot_no_lock;
+        mci_reg__rw_rw_sticky_hw__in_t mbox1_prot_no_lock;
+        mci_reg__rw_rw_sticky_hw__in_t mbox0_prot_ooo;
+        mci_reg__rw_rw_sticky_hw__in_t mbox1_prot_ooo;
+        mci_reg__rw_rw_sticky_hw__in_t mbox0_ecc_unc;
+        mci_reg__rw_rw_sticky_hw__in_t mbox1_ecc_unc;
     } mci_reg__HW_ERROR_NON_FATAL__in_t;
 
     typedef struct packed{
@@ -183,6 +202,8 @@ package mci_reg_pkg;
     } mci_reg__MCU_RV_MTIME_H__in_t;
 
     typedef struct packed{
+        logic next;
+        logic we;
         logic hwclr;
     } mci_reg__RESET_REQUEST__mcu_req__in_t;
 
@@ -191,12 +212,32 @@ package mci_reg_pkg;
     } mci_reg__RESET_REQUEST__in_t;
 
     typedef struct packed{
-        logic swwe;
+        logic next;
+        logic we;
+    } mci_reg__MCI_BOOTFSM_GO__go__in_t;
+
+    typedef struct packed{
+        mci_reg__MCI_BOOTFSM_GO__go__in_t go;
+    } mci_reg__MCI_BOOTFSM_GO__in_t;
+
+    typedef struct packed{
+        logic [15:0] next;
+        logic we;
+        logic swwel;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__in_t;
 
     typedef struct packed{
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__in_t size;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__in_t;
+
+    typedef struct packed{
+        logic [31:0] next;
+        logic we;
+    } mci_reg__MCU_NMI_VECTOR__vec__in_t;
+
+    typedef struct packed{
+        mci_reg__MCU_NMI_VECTOR__vec__in_t vec;
+    } mci_reg__MCU_NMI_VECTOR__in_t;
 
     typedef struct packed{
         logic [31:0] next;
@@ -208,6 +249,38 @@ package mci_reg_pkg;
     } mci_reg__MCU_RESET_VECTOR__in_t;
 
     typedef struct packed{
+        logic swwel;
+    } mci_reg__MBOX0_VALID_AXI_USER__AXI_USER__in_t;
+
+    typedef struct packed{
+        mci_reg__MBOX0_VALID_AXI_USER__AXI_USER__in_t AXI_USER;
+    } mci_reg__MBOX0_VALID_AXI_USER__in_t;
+
+    typedef struct packed{
+        logic swwel;
+    } mci_reg__MBOX0_AXI_USER_LOCK__LOCK__in_t;
+
+    typedef struct packed{
+        mci_reg__MBOX0_AXI_USER_LOCK__LOCK__in_t LOCK;
+    } mci_reg__MBOX0_AXI_USER_LOCK__in_t;
+
+    typedef struct packed{
+        logic swwel;
+    } mci_reg__MBOX1_VALID_AXI_USER__AXI_USER__in_t;
+
+    typedef struct packed{
+        mci_reg__MBOX1_VALID_AXI_USER__AXI_USER__in_t AXI_USER;
+    } mci_reg__MBOX1_VALID_AXI_USER__in_t;
+
+    typedef struct packed{
+        logic swwel;
+    } mci_reg__MBOX1_AXI_USER_LOCK__LOCK__in_t;
+
+    typedef struct packed{
+        mci_reg__MBOX1_AXI_USER_LOCK__LOCK__in_t LOCK;
+    } mci_reg__MBOX1_AXI_USER_LOCK__in_t;
+
+    typedef struct packed{
         logic [31:0] next;
     } mci_reg__GENERIC_INPUT_WIRES__wires__in_t;
 
@@ -216,16 +289,23 @@ package mci_reg_pkg;
     } mci_reg__GENERIC_INPUT_WIRES__in_t;
 
     typedef struct packed{
-        logic swwe;
-    } mci_reg__FUSE_WR_DONE__done__in_t;
-
-    typedef struct packed{
-        mci_reg__FUSE_WR_DONE__done__in_t done;
-    } mci_reg__FUSE_WR_DONE__in_t;
-
-    typedef struct packed{
-        logic [31:0] next;
+        logic next;
         logic we;
+    } mci_reg__SS_DEBUG_INTENT__strap__in_t;
+
+    typedef struct packed{
+        mci_reg__SS_DEBUG_INTENT__strap__in_t debug_intent;
+    } mci_reg__SS_DEBUG_INTENT__in_t;
+
+    typedef struct packed{
+        logic swwe;
+    } mci_reg__SS_CONFIG_DONE__done__in_t;
+
+    typedef struct packed{
+        mci_reg__SS_CONFIG_DONE__done__in_t done;
+    } mci_reg__SS_CONFIG_DONE__in_t;
+
+    typedef struct packed{
         logic swwel;
     } mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__hash__in_t;
 
@@ -234,81 +314,57 @@ package mci_reg_pkg;
     } mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__in_t;
 
     typedef struct packed{
-        logic swwel;
-    } mci_reg__STICKY_DATA_VAULT_CTRL__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_DATA_VAULT_CTRL__lock_entry__in_t lock_entry;
-    } mci_reg__STICKY_DATA_VAULT_CTRL__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__STICKY_DATA_VAULT_ENTRY__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_DATA_VAULT_ENTRY__lock_entry__in_t lock_entry;
-    } mci_reg__STICKY_DATA_VAULT_ENTRY__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__DATA_VAULT_CTRL__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__DATA_VAULT_CTRL__lock_entry__in_t lock_entry;
-    } mci_reg__DATA_VAULT_CTRL__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__DATA_VAULT_ENTRY__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__DATA_VAULT_ENTRY__lock_entry__in_t lock_entry;
-    } mci_reg__DATA_VAULT_ENTRY__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__lock_entry__in_t lock_entry;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG__data__in_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG__data__in_t data;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__LOCKABLE_SCRATCH_REG_CTRL__lock_entry__in_t;
-
-    typedef struct packed{
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL__lock_entry__in_t lock_entry;
-    } mci_reg__LOCKABLE_SCRATCH_REG_CTRL__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__LOCKABLE_SCRATCH_REG__data__in_t;
-
-    typedef struct packed{
-        mci_reg__LOCKABLE_SCRATCH_REG__data__in_t data;
-    } mci_reg__LOCKABLE_SCRATCH_REG__in_t;
+        logic hwset;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mcu_sram_dmi_axi_collision_sts_enable_a7cbc997_next_507571d9_resetsignal_3e0ae056__in_t;
 
     typedef struct packed{
         logic hwset;
-    } mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer1_timeout_sts_enable_ef66e4ad_next_c23eefc3_resetsignal_3e0ae056__in_t;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_internal_sts_enable_606f0423_next_fc45e87f_resetsignal_3e0ae056__in_t;
 
     typedef struct packed{
         logic hwset;
-    } mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer2_timeout_sts_enable_733204fa_next_d783c274_resetsignal_3e0ae056__in_t;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox0_inv_dev_sts_enable_1de0e6c2_next_ebb10e66_resetsignal_3e0ae056__in_t;
 
     typedef struct packed{
-        mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer1_timeout_sts_enable_ef66e4ad_next_c23eefc3_resetsignal_3e0ae056__in_t error_wdt_timer1_timeout_sts;
-        mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer2_timeout_sts_enable_733204fa_next_d783c274_resetsignal_3e0ae056__in_t error_wdt_timer2_timeout_sts;
-    } mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__in_t;
+        logic hwset;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox1_inv_dev_sts_enable_e4a52a9c_next_e0324e8f_resetsignal_3e0ae056__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox0_cmd_fail_sts_enable_1ba33334_next_51f8a652_resetsignal_3e0ae056__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox1_cmd_fail_sts_enable_a93e8457_next_121187db_resetsignal_3e0ae056__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox0_ecc_unc_sts_enable_a353a0d4_next_175127ca_resetsignal_3e0ae056__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox1_ecc_unc_sts_enable_4db94305_next_2c519d4b_resetsignal_3e0ae056__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer1_timeout_sts_enable_ef66e4ad_next_c23eefc3_resetsignal_3e0ae056__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer2_timeout_sts_enable_733204fa_next_d783c274_resetsignal_3e0ae056__in_t;
+
+    typedef struct packed{
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mcu_sram_dmi_axi_collision_sts_enable_a7cbc997_next_507571d9_resetsignal_3e0ae056__in_t error_mcu_sram_dmi_axi_collision_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_internal_sts_enable_606f0423_next_fc45e87f_resetsignal_3e0ae056__in_t error_internal_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox0_inv_dev_sts_enable_1de0e6c2_next_ebb10e66_resetsignal_3e0ae056__in_t error_mbox0_inv_dev_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox1_inv_dev_sts_enable_e4a52a9c_next_e0324e8f_resetsignal_3e0ae056__in_t error_mbox1_inv_dev_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox0_cmd_fail_sts_enable_1ba33334_next_51f8a652_resetsignal_3e0ae056__in_t error_mbox0_cmd_fail_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox1_cmd_fail_sts_enable_a93e8457_next_121187db_resetsignal_3e0ae056__in_t error_mbox1_cmd_fail_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox0_ecc_unc_sts_enable_a353a0d4_next_175127ca_resetsignal_3e0ae056__in_t error_mbox0_ecc_unc_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mbox1_ecc_unc_sts_enable_4db94305_next_2c519d4b_resetsignal_3e0ae056__in_t error_mbox1_ecc_unc_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer1_timeout_sts_enable_ef66e4ad_next_c23eefc3_resetsignal_3e0ae056__in_t error_wdt_timer1_timeout_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer2_timeout_sts_enable_733204fa_next_d783c274_resetsignal_3e0ae056__in_t error_wdt_timer2_timeout_sts;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__in_t;
 
     typedef struct packed{
         logic hwset;
@@ -475,16 +531,51 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic hwset;
-    } mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mcu_sram_ecc_cor_sts_enable_41a6dde6_next_65a11305__in_t;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mcu_sram_ecc_cor_sts_enable_41a6dde6_next_65a11305__in_t;
 
     typedef struct packed{
         logic hwset;
-    } mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_clpra_mcu_reset_req_sts_enable_481b0426_next_dc14fe8e__in_t;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_cptra_mcu_reset_req_sts_enable_ebc707d5_next_ae58c7e0__in_t;
 
     typedef struct packed{
-        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mcu_sram_ecc_cor_sts_enable_41a6dde6_next_65a11305__in_t notif_mcu_sram_ecc_cor_sts;
-        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_clpra_mcu_reset_req_sts_enable_481b0426_next_dc14fe8e__in_t notif_clpra_mcu_reset_req_sts;
-    } mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb__in_t;
+        logic hwset;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_gen_in_toggle_sts_enable_4c3e5c62_next_1b6a99c0__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox0_cmd_avail_sts_enable_9ddede27_next_b954d8f1__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox1_cmd_avail_sts_enable_68721829_next_90f3881f__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox0_ecc_cor_sts_enable_55859250_next_5f57cf20__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox1_ecc_cor_sts_enable_5078c204_next_dc0a48af__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox0_soc_req_lock_sts_enable_63bf4436_next_f0d457b6__in_t;
+
+    typedef struct packed{
+        logic hwset;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox1_soc_req_lock_sts_enable_7aeeb234_next_1edaa2f5__in_t;
+
+    typedef struct packed{
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mcu_sram_ecc_cor_sts_enable_41a6dde6_next_65a11305__in_t notif_mcu_sram_ecc_cor_sts;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_cptra_mcu_reset_req_sts_enable_ebc707d5_next_ae58c7e0__in_t notif_cptra_mcu_reset_req_sts;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_gen_in_toggle_sts_enable_4c3e5c62_next_1b6a99c0__in_t notif_gen_in_toggle_sts;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox0_cmd_avail_sts_enable_9ddede27_next_b954d8f1__in_t notif_mbox0_cmd_avail_sts;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox1_cmd_avail_sts_enable_68721829_next_90f3881f__in_t notif_mbox1_cmd_avail_sts;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox0_ecc_cor_sts_enable_55859250_next_5f57cf20__in_t notif_mbox0_ecc_cor_sts;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox1_ecc_cor_sts_enable_5078c204_next_dc0a48af__in_t notif_mbox1_ecc_cor_sts;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox0_soc_req_lock_sts_enable_63bf4436_next_f0d457b6__in_t notif_mbox0_soc_req_lock_sts;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__notif_mbox1_soc_req_lock_sts_enable_7aeeb234_next_1edaa2f5__in_t notif_mbox1_soc_req_lock_sts;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__in_t;
 
     typedef struct packed{
         logic hwset;
@@ -650,23 +741,23 @@ package mci_reg_pkg;
     } mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3__in_t;
 
     typedef struct packed{
-        mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__in_t error0_internal_intr_r;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__in_t error0_internal_intr_r;
         mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb__in_t error1_internal_intr_r;
-        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb__in_t notif0_internal_intr_r;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__in_t notif0_internal_intr_r;
         mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3__in_t notif1_internal_intr_r;
     } mci_reg__intr_block_t__in_t;
 
     typedef struct packed{
         logic mci_rst_b;
-        logic mcu_rst_b;
         logic mci_pwrgood;
-        logic cptra_req;
-        logic mcu_req;
+        logic cptra_or_debug_req;
+        logic mcu_or_debug_req;
         mci_reg__CAPABILITIES__in_t CAPABILITIES;
         mci_reg__HW_REV_ID__in_t HW_REV_ID;
         mci_reg__HW_CONFIG__in_t HW_CONFIG;
-        mci_reg__FLOW_STATUS__in_t FLOW_STATUS;
+        mci_reg__HW_FLOW_STATUS__in_t HW_FLOW_STATUS;
         mci_reg__RESET_REASON__in_t RESET_REASON;
+        mci_reg__RESET_STATUS__in_t RESET_STATUS;
         mci_reg__HW_ERROR_FATAL__in_t HW_ERROR_FATAL;
         mci_reg__AGG_ERROR_FATAL__in_t AGG_ERROR_FATAL;
         mci_reg__HW_ERROR_NON_FATAL__in_t HW_ERROR_NON_FATAL;
@@ -677,37 +768,36 @@ package mci_reg_pkg;
         mci_reg__MCU_RV_MTIME_L__in_t MCU_RV_MTIME_L;
         mci_reg__MCU_RV_MTIME_H__in_t MCU_RV_MTIME_H;
         mci_reg__RESET_REQUEST__in_t RESET_REQUEST;
+        mci_reg__MCI_BOOTFSM_GO__in_t MCI_BOOTFSM_GO;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__in_t FW_SRAM_EXEC_REGION_SIZE;
+        mci_reg__MCU_NMI_VECTOR__in_t MCU_NMI_VECTOR;
         mci_reg__MCU_RESET_VECTOR__in_t MCU_RESET_VECTOR;
+        mci_reg__MBOX0_VALID_AXI_USER__in_t [5-1:0]MBOX0_VALID_AXI_USER;
+        mci_reg__MBOX0_AXI_USER_LOCK__in_t [5-1:0]MBOX0_AXI_USER_LOCK;
+        mci_reg__MBOX1_VALID_AXI_USER__in_t [5-1:0]MBOX1_VALID_AXI_USER;
+        mci_reg__MBOX1_AXI_USER_LOCK__in_t [5-1:0]MBOX1_AXI_USER_LOCK;
         mci_reg__GENERIC_INPUT_WIRES__in_t [2-1:0]GENERIC_INPUT_WIRES;
-        mci_reg__FUSE_WR_DONE__in_t FUSE_WR_DONE;
+        mci_reg__SS_DEBUG_INTENT__in_t SS_DEBUG_INTENT;
+        mci_reg__SS_CONFIG_DONE__in_t SS_CONFIG_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__in_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
-        mci_reg__STICKY_DATA_VAULT_CTRL__in_t [10-1:0]STICKY_DATA_VAULT_CTRL;
-        mci_reg__STICKY_DATA_VAULT_ENTRY__in_t [10-1:0][12-1:0]STICKY_DATA_VAULT_ENTRY;
-        mci_reg__DATA_VAULT_CTRL__in_t [10-1:0]DATA_VAULT_CTRL;
-        mci_reg__DATA_VAULT_ENTRY__in_t [10-1:0][12-1:0]DATA_VAULT_ENTRY;
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__in_t [8-1:0]STICKY_LOCKABLE_SCRATCH_REG_CTRL;
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG__in_t [8-1:0]STICKY_LOCKABLE_SCRATCH_REG;
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL__in_t [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
-        mci_reg__LOCKABLE_SCRATCH_REG__in_t [10-1:0]LOCKABLE_SCRATCH_REG;
         mci_reg__intr_block_t__in_t intr_block_rf;
     } mci_reg__in_t;
 
     typedef struct packed{
         logic [31:0] value;
-    } mci_reg__BOOT_STATUS__status__out_t;
+    } mci_reg__FW_FLOW_STATUS__status__out_t;
 
     typedef struct packed{
-        mci_reg__BOOT_STATUS__status__out_t status;
-    } mci_reg__BOOT_STATUS__out_t;
+        mci_reg__FW_FLOW_STATUS__status__out_t status;
+    } mci_reg__FW_FLOW_STATUS__out_t;
 
     typedef struct packed{
-        logic [23:0] value;
-    } mci_reg__FLOW_STATUS__status__out_t;
+        logic [3:0] value;
+    } mci_reg__HW_FLOW_STATUS__boot_fsm__out_t;
 
     typedef struct packed{
-        mci_reg__FLOW_STATUS__status__out_t status;
-    } mci_reg__FLOW_STATUS__out_t;
+        mci_reg__HW_FLOW_STATUS__boot_fsm__out_t boot_fsm;
+    } mci_reg__HW_FLOW_STATUS__out_t;
 
     typedef struct packed{
         logic value;
@@ -728,11 +818,16 @@ package mci_reg_pkg;
     } mci_reg__RESET_REASON__out_t;
 
     typedef struct packed{
-        logic [21:0] value;
-    } mci_reg__RESET_STATUS__status__out_t;
+        logic value;
+    } mci_reg__RESET_STATUS__cptra_reset_sts__out_t;
 
     typedef struct packed{
-        mci_reg__RESET_STATUS__status__out_t status;
+        logic value;
+    } mci_reg__RESET_STATUS__mcu_reset_sts__out_t;
+
+    typedef struct packed{
+        mci_reg__RESET_STATUS__cptra_reset_sts__out_t cptra_reset_sts;
+        mci_reg__RESET_STATUS__mcu_reset_sts__out_t mcu_reset_sts;
     } mci_reg__RESET_STATUS__out_t;
 
     typedef struct packed{
@@ -742,6 +837,7 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__rw_rw_sticky_hw__out_t mcu_sram_ecc_unc;
         mci_reg__rw_rw_sticky_hw__out_t nmi_pin;
+        mci_reg__rw_rw_sticky_hw__out_t mcu_sram_dmi_axi_collision;
     } mci_reg__HW_ERROR_FATAL__out_t;
 
     typedef struct packed{
@@ -780,7 +876,12 @@ package mci_reg_pkg;
     } mci_reg__AGG_ERROR_FATAL__out_t;
 
     typedef struct packed{
-        mci_reg__rw_rw_sticky_hw__out_t RSVD;
+        mci_reg__rw_rw_sticky_hw__out_t mbox0_prot_no_lock;
+        mci_reg__rw_rw_sticky_hw__out_t mbox1_prot_no_lock;
+        mci_reg__rw_rw_sticky_hw__out_t mbox0_prot_ooo;
+        mci_reg__rw_rw_sticky_hw__out_t mbox1_prot_ooo;
+        mci_reg__rw_rw_sticky_hw__out_t mbox0_ecc_unc;
+        mci_reg__rw_rw_sticky_hw__out_t mbox1_ecc_unc;
     } mci_reg__HW_ERROR_NON_FATAL__out_t;
 
     typedef struct packed{
@@ -862,10 +963,16 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__rw_ro_ro_hw__out_t mask_mcu_sram_ecc_unc;
         mci_reg__rw_ro_ro_hw__out_t mask_nmi_pin;
+        mci_reg__rw_ro_ro_hw__out_t mask_mcu_sram_dmi_axi_collision;
     } mci_reg__internal_hw_error_fatal_mask__out_t;
 
     typedef struct packed{
-        mci_reg__rw_ro_ro_hw__out_t FIXME;
+        mci_reg__rw_ro_ro_hw__out_t mask_mbox0_prot_no_lock;
+        mci_reg__rw_ro_ro_hw__out_t mask_mbox1_prot_no_lock;
+        mci_reg__rw_ro_ro_hw__out_t mask_mbox0_prot_ooo;
+        mci_reg__rw_ro_ro_hw__out_t mask_mbox1_prot_ooo;
+        mci_reg__rw_ro_ro_hw__out_t mask_mbox0_ecc_unc;
+        mci_reg__rw_ro_ro_hw__out_t mask_mbox1_ecc_unc;
     } mci_reg__internal_hw_error_non_fatal_mask__out_t;
 
     typedef struct packed{
@@ -1056,11 +1163,11 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
-    } mci_reg__CALIPTRA_BOOT_GO__go__out_t;
+    } mci_reg__MCI_BOOTFSM_GO__go__out_t;
 
     typedef struct packed{
-        mci_reg__CALIPTRA_BOOT_GO__go__out_t go;
-    } mci_reg__CALIPTRA_BOOT_GO__out_t;
+        mci_reg__MCI_BOOTFSM_GO__go__out_t go;
+    } mci_reg__MCI_BOOTFSM_GO__out_t;
 
     typedef struct packed{
         logic [15:0] value;
@@ -1088,6 +1195,46 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic [31:0] value;
+    } mci_reg__MBOX0_VALID_AXI_USER__AXI_USER__out_t;
+
+    typedef struct packed{
+        mci_reg__MBOX0_VALID_AXI_USER__AXI_USER__out_t AXI_USER;
+    } mci_reg__MBOX0_VALID_AXI_USER__out_t;
+
+    typedef struct packed{
+        logic value;
+    } mci_reg__MBOX0_AXI_USER_LOCK__LOCK__out_t;
+
+    typedef struct packed{
+        mci_reg__MBOX0_AXI_USER_LOCK__LOCK__out_t LOCK;
+    } mci_reg__MBOX0_AXI_USER_LOCK__out_t;
+
+    typedef struct packed{
+        logic [31:0] value;
+    } mci_reg__MBOX1_VALID_AXI_USER__AXI_USER__out_t;
+
+    typedef struct packed{
+        mci_reg__MBOX1_VALID_AXI_USER__AXI_USER__out_t AXI_USER;
+    } mci_reg__MBOX1_VALID_AXI_USER__out_t;
+
+    typedef struct packed{
+        logic value;
+    } mci_reg__MBOX1_AXI_USER_LOCK__LOCK__out_t;
+
+    typedef struct packed{
+        mci_reg__MBOX1_AXI_USER_LOCK__LOCK__out_t LOCK;
+    } mci_reg__MBOX1_AXI_USER_LOCK__out_t;
+
+    typedef struct packed{
+        logic [31:0] value;
+    } mci_reg__GENERIC_INPUT_WIRES__wires__out_t;
+
+    typedef struct packed{
+        mci_reg__GENERIC_INPUT_WIRES__wires__out_t wires;
+    } mci_reg__GENERIC_INPUT_WIRES__out_t;
+
+    typedef struct packed{
+        logic [31:0] value;
     } mci_reg__GENERIC_OUTPUT_WIRES__wires__out_t;
 
     typedef struct packed{
@@ -1096,12 +1243,20 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
-        logic swmod;
-    } mci_reg__FUSE_WR_DONE__done__out_t;
+    } mci_reg__SS_DEBUG_INTENT__strap__out_t;
 
     typedef struct packed{
-        mci_reg__FUSE_WR_DONE__done__out_t done;
-    } mci_reg__FUSE_WR_DONE__out_t;
+        mci_reg__SS_DEBUG_INTENT__strap__out_t debug_intent;
+    } mci_reg__SS_DEBUG_INTENT__out_t;
+
+    typedef struct packed{
+        logic value;
+        logic swmod;
+    } mci_reg__SS_CONFIG_DONE__done__out_t;
+
+    typedef struct packed{
+        mci_reg__SS_CONFIG_DONE__done__out_t done;
+    } mci_reg__SS_CONFIG_DONE__out_t;
 
     typedef struct packed{
         logic [31:0] value;
@@ -1110,38 +1265,6 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__hash__out_t hash;
     } mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t;
-
-    typedef struct packed{
-        logic value;
-    } mci_reg__STICKY_DATA_VAULT_CTRL__lock_entry__out_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_DATA_VAULT_CTRL__lock_entry__out_t lock_entry;
-    } mci_reg__STICKY_DATA_VAULT_CTRL__out_t;
-
-    typedef struct packed{
-        logic value;
-    } mci_reg__DATA_VAULT_CTRL__lock_entry__out_t;
-
-    typedef struct packed{
-        mci_reg__DATA_VAULT_CTRL__lock_entry__out_t lock_entry;
-    } mci_reg__DATA_VAULT_CTRL__out_t;
-
-    typedef struct packed{
-        logic value;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__lock_entry__out_t;
-
-    typedef struct packed{
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__lock_entry__out_t lock_entry;
-    } mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__out_t;
-
-    typedef struct packed{
-        logic value;
-    } mci_reg__LOCKABLE_SCRATCH_REG_CTRL__lock_entry__out_t;
-
-    typedef struct packed{
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL__lock_entry__out_t lock_entry;
-    } mci_reg__LOCKABLE_SCRATCH_REG_CTRL__out_t;
 
     typedef struct packed{
         logic intr;
@@ -1153,17 +1276,17 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
-    } mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer1_timeout_sts_enable_ef66e4ad_next_c23eefc3_resetsignal_3e0ae056__out_t;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer1_timeout_sts_enable_ef66e4ad_next_c23eefc3_resetsignal_3e0ae056__out_t;
 
     typedef struct packed{
         logic value;
-    } mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer2_timeout_sts_enable_733204fa_next_d783c274_resetsignal_3e0ae056__out_t;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer2_timeout_sts_enable_733204fa_next_d783c274_resetsignal_3e0ae056__out_t;
 
     typedef struct packed{
-        mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer1_timeout_sts_enable_ef66e4ad_next_c23eefc3_resetsignal_3e0ae056__out_t error_wdt_timer1_timeout_sts;
-        mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer2_timeout_sts_enable_733204fa_next_d783c274_resetsignal_3e0ae056__out_t error_wdt_timer2_timeout_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer1_timeout_sts_enable_ef66e4ad_next_c23eefc3_resetsignal_3e0ae056__out_t error_wdt_timer1_timeout_sts;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_wdt_timer2_timeout_sts_enable_733204fa_next_d783c274_resetsignal_3e0ae056__out_t error_wdt_timer2_timeout_sts;
         logic intr;
-    } mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__out_t;
+    } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__out_t;
 
     typedef struct packed{
         logic intr;
@@ -1171,7 +1294,7 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic intr;
-    } mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb__out_t;
+    } mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__out_t;
 
     typedef struct packed{
         logic intr;
@@ -1180,15 +1303,15 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__intr_block_t__global_intr_t_agg_sts0_9d4fcb80_agg_sts1_dd15d6db__out_t error_global_intr_r;
         mci_reg__intr_block_t__global_intr_t_agg_sts0_fbbcc271_agg_sts1_5df57496__out_t notif_global_intr_r;
-        mci_reg__intr_block_t__error0_intr_t_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__out_t error0_internal_intr_r;
+        mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__out_t error0_internal_intr_r;
         mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb__out_t error1_internal_intr_r;
-        mci_reg__intr_block_t__notif0_intr_t_notif_clpra_mcu_reset_req_sts_aadf4417_notif_mcu_sram_ecc_cor_sts_95e5c2eb__out_t notif0_internal_intr_r;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb__out_t notif0_internal_intr_r;
         mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3__out_t notif1_internal_intr_r;
     } mci_reg__intr_block_t__out_t;
 
     typedef struct packed{
-        mci_reg__BOOT_STATUS__out_t BOOT_STATUS;
-        mci_reg__FLOW_STATUS__out_t FLOW_STATUS;
+        mci_reg__FW_FLOW_STATUS__out_t FW_FLOW_STATUS;
+        mci_reg__HW_FLOW_STATUS__out_t HW_FLOW_STATUS;
         mci_reg__RESET_REASON__out_t RESET_REASON;
         mci_reg__RESET_STATUS__out_t RESET_STATUS;
         mci_reg__HW_ERROR_FATAL__out_t HW_ERROR_FATAL;
@@ -1218,17 +1341,19 @@ package mci_reg_pkg;
         mci_reg__MCU_RV_MTIMECMP_L__out_t MCU_RV_MTIMECMP_L;
         mci_reg__MCU_RV_MTIMECMP_H__out_t MCU_RV_MTIMECMP_H;
         mci_reg__RESET_REQUEST__out_t RESET_REQUEST;
-        mci_reg__CALIPTRA_BOOT_GO__out_t CALIPTRA_BOOT_GO;
+        mci_reg__MCI_BOOTFSM_GO__out_t MCI_BOOTFSM_GO;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__out_t FW_SRAM_EXEC_REGION_SIZE;
         mci_reg__MCU_NMI_VECTOR__out_t MCU_NMI_VECTOR;
         mci_reg__MCU_RESET_VECTOR__out_t MCU_RESET_VECTOR;
+        mci_reg__MBOX0_VALID_AXI_USER__out_t [5-1:0]MBOX0_VALID_AXI_USER;
+        mci_reg__MBOX0_AXI_USER_LOCK__out_t [5-1:0]MBOX0_AXI_USER_LOCK;
+        mci_reg__MBOX1_VALID_AXI_USER__out_t [5-1:0]MBOX1_VALID_AXI_USER;
+        mci_reg__MBOX1_AXI_USER_LOCK__out_t [5-1:0]MBOX1_AXI_USER_LOCK;
+        mci_reg__GENERIC_INPUT_WIRES__out_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__GENERIC_OUTPUT_WIRES__out_t [2-1:0]GENERIC_OUTPUT_WIRES;
-        mci_reg__FUSE_WR_DONE__out_t FUSE_WR_DONE;
+        mci_reg__SS_DEBUG_INTENT__out_t SS_DEBUG_INTENT;
+        mci_reg__SS_CONFIG_DONE__out_t SS_CONFIG_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
-        mci_reg__STICKY_DATA_VAULT_CTRL__out_t [10-1:0]STICKY_DATA_VAULT_CTRL;
-        mci_reg__DATA_VAULT_CTRL__out_t [10-1:0]DATA_VAULT_CTRL;
-        mci_reg__STICKY_LOCKABLE_SCRATCH_REG_CTRL__out_t [8-1:0]STICKY_LOCKABLE_SCRATCH_REG_CTRL;
-        mci_reg__LOCKABLE_SCRATCH_REG_CTRL__out_t [10-1:0]LOCKABLE_SCRATCH_REG_CTRL;
         mci_reg__intr_block_t__out_t intr_block_rf;
     } mci_reg__out_t;
 

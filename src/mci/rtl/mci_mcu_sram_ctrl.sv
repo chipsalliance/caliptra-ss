@@ -36,12 +36,29 @@
 module mci_mcu_sram_ctrl 
     #(
     parameter  MCU_SRAM_SIZE_KB = 1024
+    ,parameter  MCU_SRAM_DMI_ADDR_ADDR = 7'h58
+    ,parameter  MCU_SRAM_DMI_DATA_ADDR = 7'h59
+    ,localparam BITS_IN_BYTE = 8
+    ,localparam KB = 1024 // Bytes in KB
+
+    ,localparam MCU_SRAM_SIZE_BYTES = MCU_SRAM_SIZE_KB * KB
+    ,localparam MCU_SRAM_DATA_W = 32 // ECC not parametrized so can't expose this parameter
+    ,localparam MCU_SRAM_DATA_W_BYTES = MCU_SRAM_DATA_W / BITS_IN_BYTE
+    ,localparam MCU_SRAM_ECC_DATA_W = 7 // ECC not parameterized so can't expose this parameter
+    ,localparam MCU_SRAM_DATA_AND_ECC_W = MCU_SRAM_DATA_W + MCU_SRAM_ECC_DATA_W
+    ,localparam MCU_SRAM_DEPTH = MCU_SRAM_SIZE_BYTES / MCU_SRAM_DATA_W_BYTES
+    ,localparam MCU_SRAM_ADDR_W = $clog2(MCU_SRAM_DEPTH)
+
+    // Number of address bits needed on cif_req_if.addr to address the entire 
+    // SRAM. AKA address scope
+    ,localparam MCU_SRAM_CIF_ADDR_W = $clog2(MCU_SRAM_SIZE_BYTES)
     )
     (
     input logic clk,
 
     // MCI Resets
     input logic rst_b,
+    input logic mci_pwrgood,
 
     // MCU Reset
     input logic mcu_rst_b,
@@ -53,17 +70,26 @@ module mci_mcu_sram_ctrl
     cif_if.response  cif_resp_if,
 
     // AXI Privileged requests
-    input logic mcu_lsu_req,
-    input logic mcu_ifu_req,
-    input logic clp_req ,
+    input logic axi_debug_req,
+    input logic axi_mcu_lsu_req,
+    input logic axi_mcu_ifu_req,
+    input logic axi_cptra_req ,
 
 
     // Access lock interface
     input logic mcu_sram_fw_exec_region_lock,
 
-    // ECC Status
+    // Error Status
     output logic sram_single_ecc_error,
     output logic sram_double_ecc_error,
+    output logic dmi_axi_collision_error,
+
+    // DMI
+    input  logic        dmi_uncore_en,
+    input  logic        dmi_uncore_wr_en,
+    input  logic [ 6:0] dmi_uncore_addr,
+    input  logic [MCU_SRAM_DATA_W-1:0] dmi_uncore_wdata,
+    output logic [MCU_SRAM_DATA_W-1:0] dmi_uncore_rdata,
 
 
     // Interface with SRAM
@@ -71,20 +97,6 @@ module mci_mcu_sram_ctrl
 
 
 );
-localparam BITS_IN_BYTE = 8;
-localparam KB = 1024; // Bytes in KB
-
-localparam MCU_SRAM_SIZE_BYTES = MCU_SRAM_SIZE_KB * KB;
-localparam MCU_SRAM_DATA_W = 32; // ECC not parametrized so can't expose this parameter
-localparam MCU_SRAM_DATA_W_BYTES = MCU_SRAM_DATA_W / BITS_IN_BYTE;
-localparam MCU_SRAM_ECC_DATA_W = 7; // ECC not parameterized so can't expose this parameter
-localparam MCU_SRAM_DATA_AND_ECC_W = MCU_SRAM_DATA_W + MCU_SRAM_ECC_DATA_W;
-localparam MCU_SRAM_DEPTH = MCU_SRAM_SIZE_BYTES / MCU_SRAM_DATA_W_BYTES;
-localparam MCU_SRAM_ADDR_W = $clog2(MCU_SRAM_DEPTH);
-
-// Number of address bits needed on cif_req_if.addr to address the entire 
-// SRAM. AKA address scope
-localparam MCU_SRAM_CIF_ADDR_W = $clog2(MCU_SRAM_SIZE_BYTES);
 
 // Memory protection controls
 logic fw_exec_region_mcu_access;
@@ -135,6 +147,51 @@ logic [MCU_SRAM_DATA_W-1:0] sram_rmw_wdata;
 logic [MCU_SRAM_DATA_W-1:0] sram_rdata_cor;
 logic [MCU_SRAM_ECC_DATA_W-1:0] sram_rdata_ecc;
 
+// DMI           
+logic mcu_sram_dmi_addr_req;
+logic mcu_sram_dmi_data_req;
+logic mcu_sram_dmi_addr_wr_req ;
+logic mcu_sram_dmi_data_wr_req ;
+logic mcu_sram_dmi_addr_rd_req ;
+logic mcu_sram_dmi_data_rd_req ;
+logic [MCU_SRAM_DATA_W-1:0] mcu_sram_dmi_addr_reg;
+
+///////////////////////////////////////////////
+// DMI Register IF
+///////////////////////////////////////////////
+
+// Address decode
+assign mcu_sram_dmi_addr_req = (dmi_uncore_en && (dmi_uncore_addr == MCU_SRAM_DMI_ADDR_ADDR));
+assign mcu_sram_dmi_data_req = (dmi_uncore_en && (dmi_uncore_addr == MCU_SRAM_DMI_DATA_ADDR));
+
+// Write request
+assign mcu_sram_dmi_addr_wr_req = mcu_sram_dmi_addr_req && dmi_uncore_wr_en;
+assign mcu_sram_dmi_data_wr_req = mcu_sram_dmi_data_req && dmi_uncore_wr_en;
+
+// Read request
+assign mcu_sram_dmi_addr_rd_req = mcu_sram_dmi_addr_req ;
+assign mcu_sram_dmi_data_rd_req = mcu_sram_dmi_data_req ;
+
+// DMI ADDR Reg
+always_ff @ (posedge clk or negedge mci_pwrgood) begin
+    if(!mci_pwrgood) begin
+        mcu_sram_dmi_addr_reg <= '0;
+    end
+    else begin
+        if(mcu_sram_dmi_addr_wr_req) begin
+            mcu_sram_dmi_addr_reg <= dmi_uncore_wdata;
+        end
+    end
+end
+
+assign dmi_uncore_rdata = mcu_sram_dmi_addr_rd_req ? mcu_sram_dmi_addr_reg : 
+                          mcu_sram_dmi_data_rd_req ? sram_rdata_cor : 
+                          '0;
+                          
+// Collision only if accessing DMI data since DMI addr doesn't send
+// a request to the SRAM
+assign dmi_axi_collision_error = cif_resp_if.dv & mcu_sram_dmi_data_req;
+
 ///////////////////////////////////////////////
 // Calculate all properties about the SRAM 
 // based on the fw_sram_exec_region_size
@@ -182,7 +239,7 @@ assign prot_region_req = cif_resp_if.dv & !exec_region_match;
 // 2. Reads take 2 clock cycles. But we can use these signals
 //    to detect an illegal access and respond with an error 
 //    on the first clock cycle
-assign prot_region_filter_success = prot_region_req & mcu_lsu_req;
+assign prot_region_filter_success = prot_region_req & (axi_mcu_lsu_req | axi_debug_req);
 assign prot_region_filter_error   = prot_region_req & ~prot_region_filter_success;
 
 
@@ -219,11 +276,11 @@ always_comb begin
     exec_region_filter_error   = '0;
     if (exec_region_req) begin
         if (fw_exec_region_mcu_access) begin
-            exec_region_filter_success = (mcu_lsu_req | mcu_ifu_req);
+            exec_region_filter_success = (axi_mcu_lsu_req | axi_mcu_ifu_req | axi_debug_req);
             exec_region_filter_error   = ~exec_region_filter_success;
         end 
         else begin
-            exec_region_filter_success = clp_req;
+            exec_region_filter_success = axi_cptra_req | axi_debug_req;
             exec_region_filter_error   = ~exec_region_filter_success;
         end
     end
@@ -272,10 +329,10 @@ end
 // At this point we are translating the MCU SRAM requests into actual SRAM requests for the SRAM interface
 // MCU SRAM read and write only have 1 request.
 // MCU SRAM RMW have 2 requests
-assign sram_req = ((mcu_sram_read_req | mcu_sram_write_req) & ~mcu_sram_req_second_cycle)  | (mcu_sram_rmw_req);
+assign sram_req = ((mcu_sram_read_req | mcu_sram_write_req | mcu_sram_dmi_data_wr_req | mcu_sram_dmi_data_rd_req) & ~mcu_sram_req_second_cycle)  | (mcu_sram_rmw_req);
 
-assign sram_write_req = sram_req & (mcu_sram_write_req | mcu_sram_rmw_write_req);
-assign sram_read_req  = sram_req & (mcu_sram_read_req  | mcu_sram_rmw_read_req);
+assign sram_write_req = sram_req & (mcu_sram_write_req | mcu_sram_rmw_write_req | mcu_sram_dmi_data_wr_req);
+assign sram_read_req  = sram_req & (mcu_sram_read_req  | mcu_sram_rmw_read_req  | mcu_sram_dmi_data_rd_req);
 
 
 // Assumption is that in order for there to be a second cycle 

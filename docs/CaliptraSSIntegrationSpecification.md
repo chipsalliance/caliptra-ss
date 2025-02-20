@@ -912,19 +912,18 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 | Facing   | Parameter name              | Location | Description                                                                 |
 |:-------- |:----------------------------|:---------|:-------------------------------------------------------------------------- |
-| FIXME    | `MCI_MBOX0_DMI_DLEN_ADDR`   | mci_top  | FIXME                                                                      |
-| External | `MCI_MBOX0_SIZE_KB`         | external | Size of MBOX0 SRAM. If set to 0 the entire MBOX0 is removed from MCI. Min: 0 Max: 2048 (2MB) |
-| FIXME    | `MCI_MBOX1_DMI_DLEN_ADDR`   | mci_top  | FIXME                                                                      |
+| External    | `MCI_SET_MBOX0_AXI_USER_INTEG`   | mci_top  | Determines if VALID_AXI_USER will be used by MCI                                                                   |
+| External    | `MCI_MBOX0_VALID_AXI_USER`   | mci_top  | MBOX0 AXI user list enabled by SET_MBOX0_AXI_USER_INTEG                                                                   |
+| External | `MCI_MBOX0_SIZE_KB`         | mci_top | Size of MBOX0 SRAM. If set to 0 the entire MBOX0 is removed from MCI. Min: 0 Max: 2048 (2MB) |
+| External    | `MCI_SET_MBOX1_AXI_USER_INTEG`   | mci_top  | Determines if VALID_AXI_USER will be used by MCI                                                                   |
+| External    | `MCI_MBOX1_VALID_AXI_USER`   | mci_top  | MBOX1 AXI user list enabled by SET_MBOX0_AXI_USER_INTEG                                                                   |
 | External | `MCI_MBOX1_SIZE_KB`         | external | Size of MBOX1 SRAM. If set to 0 the entire MBOX1 is removed from MCI. Min: 0 Max: 2048 (2MB) |
 
-**FIXME none right now?**   
 **Table: MCI Integration Definitions**
 
 | Defines | Defines file | Description |
 | :---- | :---- | :---- |
-|  |  |  |
-|  |  |  |
-|  |  |  |
+| NONE DEFINED |  |  |
 
 ## Interface
 
@@ -971,7 +970,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 |:-------- |:------ |:-------------- |:------------------------- |:------ |:------------------------------------------------------------- |
 | External | Input  | `AXI_USER_WIDTH` | `strap_mcu_lsu_axi_user`   | STATIC | AXI USER for MCU’s load/store unit.                           |
 | External | Input  | `AXI_USER_WIDTH` | `strap_mcu_ifu_axi_user`   | STATIC | AXI USER for MCU’s instruction fetch unit.                    |
-| External | Input  | `AXI_USER_WIDTH` | `strap_clp_axi_user`       | STATIC | AXI USER for Caliptra.                                        |
+| External | Input  | `AXI_USER_WIDTH` | `strap_cptra_axi_user`       | STATIC | AXI USER for Caliptra.                                        |
 | External | Input  | 32             | `strap_mcu_reset_vector`  | STATIC | Default reset vector for MCI. Can be overridden via MCI register write. |
 
 **Table: MCI MISC Interface**

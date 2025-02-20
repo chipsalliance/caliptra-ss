@@ -30,6 +30,12 @@ module caliptra_ss_top
     import soc_ifc_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
+    ,parameter MCI_MBOX0_SIZE_KB = 4
+    ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+    ,parameter MCI_MBOX1_SIZE_KB = 4
+    ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
 ) (
     input logic cptra_ss_clk_i,
     input logic cptra_ss_pwrgood_i,
@@ -125,7 +131,8 @@ module caliptra_ss_top
 // Caliptra SS MCU 
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_clp_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_cptra_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_debug_axi_user_i,
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
@@ -143,8 +150,8 @@ module caliptra_ss_top
     input logic cptra_ss_FIPS_ZEROIZATION_PPD_i,
 
     output logic [63:0] cptra_ss_mci_generic_output_wires_o,
-    output logic cptra_ss_mci_error_fatal_o,
-    output logic cptra_ss_mci_error_non_fatal_o,
+    output logic cptra_ss_all_error_fatal_o,
+    output logic cptra_ss_all_error_non_fatal_o,
 
     input logic cptra_ss_mcu_jtag_tck_i,
     input logic cptra_ss_mcu_jtag_tms_i,
@@ -204,7 +211,9 @@ module caliptra_ss_top
     output logic        cptra_error_non_fatal,
     output logic        ready_for_fuses,
     output logic        ready_for_mb_processing,
-    output logic        mailbox_data_avail
+    output logic        mailbox_data_avail,
+    output logic        mci_mbox0_data_avail,
+    output logic        mci_mbox1_data_avail
 
     
 );
@@ -245,6 +254,15 @@ module caliptra_ss_top
     logic                       wb_csr_valid;
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
+
+    logic        mcu_dmi_core_enable;
+    logic        mcu_dmi_uncore_enable;
+    logic        mcu_dmi_uncore_en;
+    logic        mcu_dmi_uncore_wr_en;
+    logic [ 6:0] mcu_dmi_uncore_addr;
+    logic [31:0] mcu_dmi_uncore_wdata;
+    logic [31:0] mcu_dmi_uncore_rdata;
+    logic        mcu_dmi_active; 
 
 `ifdef MCU_RV_BUILD_AXI4
    //-------------------------- LSU AXI signals--------------------------
@@ -978,14 +996,14 @@ module caliptra_ss_top
         .scan_mode              ( 1'b0 ),        // To enable scan mode
         .mbist_mode             ( 1'b0 ),        // to enable mbist
 
-        .dmi_core_enable        (),
-        .dmi_uncore_enable      (),
-        .dmi_uncore_en          (),
-        .dmi_uncore_wr_en       (),
-        .dmi_uncore_addr        (),
-        .dmi_uncore_wdata       (),
-        .dmi_uncore_rdata       (),
-        .dmi_active             ()
+        .dmi_core_enable   (mcu_dmi_core_enable),
+        .dmi_uncore_enable   (mcu_dmi_uncore_enable),
+        .dmi_uncore_en   (mcu_dmi_uncore_en),
+        .dmi_uncore_wr_en   (mcu_dmi_uncore_wr_en),
+        .dmi_uncore_addr   (mcu_dmi_uncore_addr),
+        .dmi_uncore_wdata   (mcu_dmi_uncore_wdata),
+        .dmi_uncore_rdata   (mcu_dmi_uncore_rdata),
+        .dmi_active   (mcu_dmi_active)
 
     );
 
@@ -1092,12 +1110,22 @@ module caliptra_ss_top
     mci_top #(
         // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
         .AXI_DATA_WIDTH(32),
-        .MCU_SRAM_SIZE_KB(256)
+        .MCU_SRAM_SIZE_KB(256),
+
+        .MCI_MBOX0_SIZE_KB(MCI_MBOX0_SIZE_KB),
+        .MCI_SET_MBOX0_AXI_USER_INTEG(MCI_SET_MBOX0_AXI_USER_INTEG),  
+        .MCI_MBOX0_VALID_AXI_USER(MCI_MBOX0_VALID_AXI_USER),    
+        .MCI_MBOX1_SIZE_KB(MCI_MBOX1_SIZE_KB),
+        .MCI_SET_MBOX1_AXI_USER_INTEG(MCI_SET_MBOX1_AXI_USER_INTEG),  
+        .MCI_MBOX1_VALID_AXI_USER(MCI_MBOX1_VALID_AXI_USER)    
     ) mci_top_i (
 
         .clk(cptra_ss_clk_i),
         .mci_rst_b(cptra_ss_rst_b_i),
         .mci_pwrgood(cptra_ss_pwrgood_i),
+        
+        // DFT
+        .scan_mode     (cptra_ss_cptra_core_scan_mode_i),
 
         // MCI AXI Interface
         .s_axi_w_if(cptra_ss_mci_s_axi_if.w_sub),
@@ -1109,16 +1137,18 @@ module caliptra_ss_top
         
         .strap_mcu_lsu_axi_user(cptra_ss_strap_mcu_lsu_axi_user_i),
         .strap_mcu_ifu_axi_user(cptra_ss_strap_mcu_ifu_axi_user_i),
-        .strap_clp_axi_user    (cptra_ss_strap_clp_axi_user_i),
+        .strap_cptra_axi_user    (cptra_ss_strap_cptra_axi_user_i),
+        .strap_debug_axi_user    (cptra_ss_strap_debug_axi_user_i),
+        .ss_debug_intent         ( cptra_ss_debug_intent_i ),
 
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
         .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_internal[2]),
 
-        .agg_error_fatal(1'b0),
-        .agg_error_non_fatal(1'b0),
+        .agg_error_fatal('0),       // FIXME connect to internal IPs
+        .agg_error_non_fatal('0),   // FIXME connect to internal IPs
 
-        .mci_error_fatal(cptra_ss_mci_error_fatal_o),
-        .mci_error_non_fatal(cptra_ss_mci_error_non_fatal_o),
+        .all_error_fatal(cptra_ss_all_error_fatal_o),
+        .all_error_non_fatal(cptra_ss_all_error_non_fatal_o),
 
         .mci_generic_input_wires(cptra_ss_mci_generic_input_wires_i),
         .mci_generic_output_wires(cptra_ss_mci_generic_output_wires_o),
@@ -1138,6 +1168,18 @@ module caliptra_ss_top
         .mcu_rst_b(mcu_rst_b),
         .cptra_rst_b(mcu_cptra_rst_b),
 
+
+        // MCU DMI
+        .mcu_dmi_core_enable,
+        .mcu_dmi_uncore_enable,
+        .mcu_dmi_uncore_en,
+        .mcu_dmi_uncore_wr_en,
+        .mcu_dmi_uncore_addr,
+        .mcu_dmi_uncore_wdata,
+        .mcu_dmi_uncore_rdata,
+        .mcu_dmi_active,
+
+
         .mci_boot_seq_brkpoint(cptra_ss_mci_boot_seq_brkpoint_i),
 
         .lc_done(lcc_to_mci_lc_done), //output from lcc
@@ -1155,6 +1197,9 @@ module caliptra_ss_top
         .mci_mcu_sram_req_if  (cptra_ss_mci_mcu_sram_req_if),
         .mci_mbox0_sram_req_if(cptra_ss_mci_mbox0_sram_req_if),
         .mci_mbox1_sram_req_if(cptra_ss_mci_mbox1_sram_req_if),
+        
+        .mbox0_data_avail(mci_mbox0_data_avail), // FIXME remove?
+        .mbox1_data_avail(mci_mbox1_data_avail), // FIXME remove?
 
         .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
         .lc_dft_en_i(lc_dft_en_i),
