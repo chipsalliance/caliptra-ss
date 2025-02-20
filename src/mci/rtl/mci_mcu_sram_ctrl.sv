@@ -35,7 +35,7 @@
 
 module mci_mcu_sram_ctrl 
     #(
-    parameter  MCU_SRAM_SIZE_KB = 1024
+    parameter  MCU_SRAM_SIZE_KB = 512
     ,parameter  MCU_SRAM_DMI_ADDR_ADDR = 7'h58
     ,parameter  MCU_SRAM_DMI_DATA_ADDR = 7'h59
     ,localparam BITS_IN_BYTE = 8

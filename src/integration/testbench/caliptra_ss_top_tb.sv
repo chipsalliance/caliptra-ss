@@ -52,7 +52,7 @@ module caliptra_ss_top_tb
     // -----------------------------------------------------------
     // Parameters
     // -----------------------------------------------------------
-    localparam MCU_SRAM_SIZE_KB = 1024;
+    localparam MCU_SRAM_SIZE_KB = 512;
     localparam MCU_SRAM_DATA_WIDTH   = 32;
     localparam MCU_SRAM_DATA_WIDTH_BYTES = MCU_SRAM_DATA_WIDTH / 8;
     localparam MCU_SRAM_ECC_WIDTH = 7;

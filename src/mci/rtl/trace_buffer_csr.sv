@@ -171,10 +171,10 @@ module trace_buffer_csr (
         automatic logic load_next_c;
         next_c = field_storage.STATUS.wrapped.value;
         load_next_c = '0;
-        if(hwif_in.STATUS.wrapped.we) begin // HW Write - we
-            next_c = hwif_in.STATUS.wrapped.next;
-            load_next_c = '1;
-        end
+        
+        // HW Write
+        next_c = hwif_in.STATUS.wrapped.next;
+        load_next_c = '1;
         field_combo.STATUS.wrapped.next = next_c;
         field_combo.STATUS.wrapped.load_next = load_next_c;
     end
@@ -192,10 +192,10 @@ module trace_buffer_csr (
         automatic logic load_next_c;
         next_c = field_storage.STATUS.valid_data.value;
         load_next_c = '0;
-        if(hwif_in.STATUS.valid_data.we) begin // HW Write - we
-            next_c = hwif_in.STATUS.valid_data.next;
-            load_next_c = '1;
-        end
+        
+        // HW Write
+        next_c = hwif_in.STATUS.valid_data.next;
+        load_next_c = '1;
         field_combo.STATUS.valid_data.next = next_c;
         field_combo.STATUS.valid_data.load_next = load_next_c;
     end

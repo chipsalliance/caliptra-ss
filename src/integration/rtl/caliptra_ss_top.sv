@@ -36,6 +36,7 @@ module caliptra_ss_top
     ,parameter MCI_MBOX1_SIZE_KB = 4
     ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+    ,parameter MCU_SRAM_SIZE_KB = 512
 ) (
     input logic cptra_ss_clk_i,
     input logic cptra_ss_pwrgood_i,
@@ -1094,9 +1095,8 @@ module caliptra_ss_top
     // The following signal should be also an input coming from LC to MCI
             //lc_hw_rev_t  hw_rev_o;
     mci_top #(
-        // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
         .AXI_DATA_WIDTH(32),
-        .MCU_SRAM_SIZE_KB(256),
+        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
 
         .MCI_MBOX0_SIZE_KB(MCI_MBOX0_SIZE_KB),
         .MCI_SET_MBOX0_AXI_USER_INTEG(MCI_SET_MBOX0_AXI_USER_INTEG),  

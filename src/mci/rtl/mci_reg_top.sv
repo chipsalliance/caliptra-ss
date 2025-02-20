@@ -1171,12 +1171,12 @@ mci_reg i_mci_reg (
         .s_cpuif_addr           (cif_resp_if.req_data.addr[MCI_REG_MIN_ADDR_WIDTH-1:0]),
         .s_cpuif_wr_data        (cif_resp_if.req_data.wdata),
         .s_cpuif_wr_biten       (c_cpuif_wr_biten),
-        .s_cpuif_req_stall_wr   (),     // FIXME why isn't this used?
-        .s_cpuif_req_stall_rd   (),   // FIXME why isn't this connected?
-        .s_cpuif_rd_ack         (),     // FIXME why isn't this used?
+        .s_cpuif_req_stall_wr   (),  
+        .s_cpuif_req_stall_rd   (),  
+        .s_cpuif_rd_ack         (),  
         .s_cpuif_rd_err         (mci_reg_read_error),
-        .s_cpuif_rd_data        (cif_resp_if.rdata),   // FIXME should this be masked for security?
-        .s_cpuif_wr_ack         (),     // FIXME why isn't this used?
+        .s_cpuif_rd_data        (cif_resp_if.rdata),   
+        .s_cpuif_wr_ack         (),    
         .s_cpuif_wr_err         (mci_reg_write_error),
 
         .hwif_in                (mci_reg_hwif_in),

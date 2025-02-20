@@ -24,7 +24,7 @@ module mci_axi_sub_top
     parameter AXI_DATA_WIDTH    = 32,
     parameter AXI_USER_WIDTH    = 32,
     parameter AXI_ID_WIDTH      = 8,
-    parameter MCU_SRAM_SIZE_KB  = 1024
+    parameter MCU_SRAM_SIZE_KB  = 512
     )
     (
     input logic clk,
@@ -41,6 +41,9 @@ module mci_axi_sub_top
 
     // MCU SRAM Interface
     cif_if.request  mcu_sram_req_if,
+    
+    // MCU Trace Buffer Interface
+    cif_if.request  mcu_trace_buffer_req_if,
 
     // Mbox0 SRAM Interface
     cif_if.request  mci_mbox0_req_if,
@@ -136,6 +139,9 @@ mci_axi_sub_decode #(
 
     //MCU SRAM inf
     .mcu_sram_req_if,
+    
+    //MCU Trace Buffer inf
+    .mcu_trace_buffer_req_if,
 
     //MCI Mbox0
     .mci_mbox0_req_if,

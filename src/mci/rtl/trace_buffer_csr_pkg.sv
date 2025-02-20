@@ -8,12 +8,10 @@ package trace_buffer_csr_pkg;
 
     typedef struct packed{
         logic next;
-        logic we;
     } trace_buffer_csr__STATUS__wrapped__in_t;
 
     typedef struct packed{
         logic next;
-        logic we;
     } trace_buffer_csr__STATUS__valid_data__in_t;
 
     typedef struct packed{

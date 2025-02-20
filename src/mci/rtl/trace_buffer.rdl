@@ -29,8 +29,8 @@ addrmap trace_buffer_csr {
     reg {
         name="Trace Status";
         desc="Status bits for the Trace Buffer";
-        field {desc="Indicates trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid.";sw=r; hw=rw; we; } wrapped=0;
-        field {desc="Indicates at least one entry in the trace buffer is valid.";sw=r; hw=rw; we; } valid_data=0;
+        field {desc="Indicates trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid.";sw=r; hw=rw; } wrapped=0;
+        field {desc="Indicates at least one entry in the trace buffer is valid.";sw=r; hw=rw; } valid_data=0;
     } STATUS;
     
     reg {

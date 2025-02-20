@@ -24,14 +24,14 @@ module mci_top
     parameter AXI_USER_WIDTH = 32,
     parameter AXI_ID_WIDTH   = 8,
 
-    parameter MCU_SRAM_SIZE_KB = 1024, // FIXME - write assertion ensuring this size 
+    parameter MCU_SRAM_SIZE_KB = 512, // FIXME - write assertion ensuring this size 
                                       // is compatible with the MCU SRAM IF parameters
 
     parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Size of MCU reset counter that overflows before allowing MCU
                                             // to come out of reset during a FW RT Update
 
     //Mailbox configuration
-    ,parameter MCI_MBOX0_SIZE_KB = 4
+    ,parameter MCI_MBOX0_SIZE_KB = 128
     ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCI_MBOX1_SIZE_KB = 4
@@ -101,6 +101,16 @@ module mci_top
     input  logic [31:0] mcu_dmi_uncore_wdata,
     output logic [31:0] mcu_dmi_uncore_rdata,
     input  logic        mcu_dmi_active, // FIXME: This is not used in the design
+
+    // MCU Trace
+    input logic [31:0] trace_rv_i_insn_ip,
+    input logic [31:0] trace_rv_i_address_ip,
+    input logic        trace_rv_i_valid_ip,
+    input logic        trace_rv_i_exception_ip,
+    input logic [ 4:0] trace_rv_i_ecause_ip,
+    input logic        trace_rv_i_interrupt_ip,
+    input logic [31:0] trace_rv_i_tval_ip,
+
     
     // Reset controls
     output logic mcu_rst_b,
@@ -270,6 +280,18 @@ cif_if #(
     .clk, 
     .rst_b(mci_rst_b));
 
+// Caliptra internal fabric interface for TRACE BUFFER
+// Address width is set to AXI_ADDR_WIDTH and MCI REG
+// will mask out upper bits that are "don't care"
+cif_if #(
+    .ADDR_WIDTH(AXI_ADDR_WIDTH)
+    ,.DATA_WIDTH(AXI_DATA_WIDTH)
+    ,.ID_WIDTH(AXI_ID_WIDTH)
+    ,.USER_WIDTH(AXI_USER_WIDTH)
+) mcu_trace_buffer_req_if(
+    .clk, 
+    .rst_b(mci_rst_b));
+
 caliptra_prim_flop_2sync #(
   .Width(1)
 ) u_prim_flop_2sync_mcu_sram_fw_exec_region_lock (
@@ -330,6 +352,9 @@ mci_axi_sub_top #(
     // MCU SRAM Interface
     .mcu_sram_req_if( mcu_sram_req_if.request ),
 
+    // MCU TRACE BUFFER Interface
+    .mcu_trace_buffer_req_if( mcu_trace_buffer_req_if.request ),
+
     // MCI Mbox0 Interface
     .mci_mbox0_req_if ( mci_mbox0_req_if.request ),
     .valid_mbox0_users,
@@ -386,6 +411,36 @@ mci_boot_seqr #(
     // FC Signals
     .fc_opt_done,
     .fc_opt_init
+);
+
+
+mci_mcu_trace_buffer 
+    i_mci_mcu_trace_buffer 
+    (
+    .clk,
+
+    // MCI Resets
+    .rst_b(mci_rst_b), // FIXME: Need to sync reset
+
+    .debug_en(!security_state_o.debug_locked),
+    
+    .dmi_reg_wen('0),
+    .dmi_reg_wdata('0),
+    .dmi_reg_addr('0),
+    .dmi_reg(),
+
+    // MCU Trace
+    .trace_rv_i_insn_ip,
+    .trace_rv_i_address_ip,
+    .trace_rv_i_valid_ip,
+    .trace_rv_i_exception_ip,
+    .trace_rv_i_ecause_ip,
+    .trace_rv_i_interrupt_ip,
+    .trace_rv_i_tval_ip,
+    
+    // Caliptra internal fabric response interface
+    .cif_resp_if (mcu_trace_buffer_req_if.response)
+
 );
 
 // MCU SRAM
