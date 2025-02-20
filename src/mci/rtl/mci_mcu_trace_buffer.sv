@@ -44,13 +44,13 @@ module mci_mcu_trace_buffer
     output mci_mcu_trace_buffer_dmi_reg_t dmi_reg,
 
     // MCU Trace
-    input logic [31:0] trace_rv_i_insn_ip,
-    input logic [31:0] trace_rv_i_address_ip,
-    input logic        trace_rv_i_valid_ip,
-    input logic        trace_rv_i_exception_ip,
-    input logic [ 4:0] trace_rv_i_ecause_ip,
-    input logic        trace_rv_i_interrupt_ip,
-    input logic [31:0] trace_rv_i_tval_ip
+    input logic [31:0] mcu_trace_rv_i_insn_ip,
+    input logic [31:0] mcu_trace_rv_i_address_ip,
+    input logic        mcu_trace_rv_i_valid_ip,
+    input logic        mcu_trace_rv_i_exception_ip,
+    input logic [ 4:0] mcu_trace_rv_i_ecause_ip,
+    input logic        mcu_trace_rv_i_interrupt_ip,
+    input logic [31:0] mcu_trace_rv_i_tval_ip
 
 );
 trace_buffer_csr__in_t trace_buffer_hwif_in;
@@ -87,15 +87,15 @@ logic trace_buffer_wrapped;
 ////////////////////////
 assign trace_buffer_hwif_in.rst_b = rst_b;
 
-assign write_trace_buffer = debug_en && trace_rv_i_valid_ip;
+assign write_trace_buffer = debug_en && mcu_trace_rv_i_valid_ip;
 
 assign write_trace_data_packet.reserved                  = '0; 
-assign write_trace_data_packet.trace_rv_i_interrupt_ip   = trace_rv_i_interrupt_ip;
-assign write_trace_data_packet.trace_rv_i_ecause_ip      = trace_rv_i_ecause_ip;
-assign write_trace_data_packet.trace_rv_i_exception_ip   = trace_rv_i_exception_ip;
-assign write_trace_data_packet.trace_rv_i_tval_ip        = trace_rv_i_tval_ip;
-assign write_trace_data_packet.trace_rv_i_address_ip     = trace_rv_i_address_ip;
-assign write_trace_data_packet.trace_rv_i_insn_ip        = trace_rv_i_insn_ip;
+assign write_trace_data_packet.trace_rv_i_interrupt_ip   = mcu_trace_rv_i_interrupt_ip;
+assign write_trace_data_packet.trace_rv_i_ecause_ip      = mcu_trace_rv_i_ecause_ip;
+assign write_trace_data_packet.trace_rv_i_exception_ip   = mcu_trace_rv_i_exception_ip;
+assign write_trace_data_packet.trace_rv_i_tval_ip        = mcu_trace_rv_i_tval_ip;
+assign write_trace_data_packet.trace_rv_i_address_ip     = mcu_trace_rv_i_address_ip;
+assign write_trace_data_packet.trace_rv_i_insn_ip        = mcu_trace_rv_i_insn_ip;
 
 assign trace_buffer_hwif_in.CONFIG.trace_buffer_depth.next = TRACE_BUFFER_DWORD_DEPTH;
 

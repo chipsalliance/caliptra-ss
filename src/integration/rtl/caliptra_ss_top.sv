@@ -133,6 +133,7 @@ module caliptra_ss_top
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_cptra_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_debug_axi_user_i,
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
@@ -147,6 +148,7 @@ module caliptra_ss_top
     input logic cptra_ss_mci_boot_seq_brkpoint_i,
 
     input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
+    input logic cptra_ss_FIPS_ZEROIZATION_PPD_i,
 
     output logic [63:0] cptra_ss_mci_generic_output_wires_o,
     output logic cptra_ss_all_error_fatal_o,
@@ -210,7 +212,9 @@ module caliptra_ss_top
     output logic        cptra_error_non_fatal,
     output logic        ready_for_fuses,
     output logic        ready_for_mb_processing,
-    output logic        mailbox_data_avail
+    output logic        mailbox_data_avail,
+    output logic        mci_mbox0_data_avail,
+    output logic        mci_mbox1_data_avail
 
     
 );
@@ -251,6 +255,15 @@ module caliptra_ss_top
     logic                       wb_csr_valid;
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
+
+    logic        mcu_dmi_core_enable;
+    logic        mcu_dmi_uncore_enable;
+    logic        mcu_dmi_uncore_en;
+    logic        mcu_dmi_uncore_wr_en;
+    logic [ 6:0] mcu_dmi_uncore_addr;
+    logic [31:0] mcu_dmi_uncore_wdata;
+    logic [31:0] mcu_dmi_uncore_rdata;
+    logic        mcu_dmi_active; 
 
 `ifdef MCU_RV_BUILD_AXI4
    //-------------------------- LSU AXI signals--------------------------
@@ -456,6 +469,15 @@ module caliptra_ss_top
     wire                        lmem_axi_bready;
 `endif
     
+    // ----------------- MCU Trace within Subsystem -----------------------
+    logic [31:0] mcu_trace_rv_i_insn_ip;
+    logic [31:0] mcu_trace_rv_i_address_ip;
+    logic        mcu_trace_rv_i_valid_ip;
+    logic        mcu_trace_rv_i_exception_ip;
+    logic [ 4:0] mcu_trace_rv_i_ecause_ip;
+    logic        mcu_trace_rv_i_interrupt_ip;
+    logic [31:0] mcu_trace_rv_i_tval_ip;
+    
     // -- caliptra DUT instance
     // -- Will be removed in final release.
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
@@ -474,6 +496,7 @@ module caliptra_ss_top
     // ----------------- MCI Connections FC Connections -----------------------
     logic [otp_ctrl_reg_pkg::NumAlerts-1:0] fc_alerts;
     logic fc_intr_otp_error;
+    logic FIPS_ZEROIZATION_CMD;
 
     // ----------------- MCI OTP Connections -----------------------------------
     logic mci_to_otp_ctrl_init_req;
@@ -900,13 +923,13 @@ module caliptra_ss_top
         .dbg_bus_clk_en         ( 1'b1  ),// Clock ratio b/w cpu core clk & AHB Debug master interface
         .dma_bus_clk_en         ( 1'b1  ),// Clock ratio b/w cpu core clk & AHB slave interface
 
-        .trace_rv_i_insn_ip     (),//FIXME future (trace_rv_i_insn_ip),
-        .trace_rv_i_address_ip  (),//FIXME future (trace_rv_i_address_ip),
-        .trace_rv_i_valid_ip    (),//FIXME future (trace_rv_i_valid_ip),
-        .trace_rv_i_exception_ip(),//FIXME future (trace_rv_i_exception_ip),
-        .trace_rv_i_ecause_ip   (),//FIXME future (trace_rv_i_ecause_ip),
-        .trace_rv_i_interrupt_ip(),//FIXME future (trace_rv_i_interrupt_ip),
-        .trace_rv_i_tval_ip     (),//FIXME future (trace_rv_i_tval_ip),
+        .trace_rv_i_insn_ip     (mcu_trace_rv_i_insn_ip     ),
+        .trace_rv_i_address_ip  (mcu_trace_rv_i_address_ip  ),
+        .trace_rv_i_valid_ip    (mcu_trace_rv_i_valid_ip    ),
+        .trace_rv_i_exception_ip(mcu_trace_rv_i_exception_ip),
+        .trace_rv_i_ecause_ip   (mcu_trace_rv_i_ecause_ip   ),
+        .trace_rv_i_interrupt_ip(mcu_trace_rv_i_interrupt_ip),
+        .trace_rv_i_tval_ip     (mcu_trace_rv_i_tval_ip     ),
 
         // JTAG Interface
         .jtag_tck               ( cptra_ss_mcu_jtag_tck_i ),
@@ -983,14 +1006,14 @@ module caliptra_ss_top
         .scan_mode              ( 1'b0 ),        // To enable scan mode
         .mbist_mode             ( 1'b0 ),        // to enable mbist
 
-        .dmi_core_enable        (),
-        .dmi_uncore_enable      (),
-        .dmi_uncore_en          (),
-        .dmi_uncore_wr_en       (),
-        .dmi_uncore_addr        (),
-        .dmi_uncore_wdata       (),
-        .dmi_uncore_rdata       (),
-        .dmi_active             ()
+        .dmi_core_enable   (mcu_dmi_core_enable),
+        .dmi_uncore_enable   (mcu_dmi_uncore_enable),
+        .dmi_uncore_en   (mcu_dmi_uncore_en),
+        .dmi_uncore_wr_en   (mcu_dmi_uncore_wr_en),
+        .dmi_uncore_addr   (mcu_dmi_uncore_addr),
+        .dmi_uncore_wdata   (mcu_dmi_uncore_wdata),
+        .dmi_uncore_rdata   (mcu_dmi_uncore_rdata),
+        .dmi_active   (mcu_dmi_active)
 
     );
 
@@ -1124,6 +1147,8 @@ module caliptra_ss_top
         .strap_mcu_lsu_axi_user(cptra_ss_strap_mcu_lsu_axi_user_i),
         .strap_mcu_ifu_axi_user(cptra_ss_strap_mcu_ifu_axi_user_i),
         .strap_cptra_axi_user    (cptra_ss_strap_cptra_axi_user_i),
+        .strap_debug_axi_user    (cptra_ss_strap_debug_axi_user_i),
+        .ss_debug_intent         ( cptra_ss_debug_intent_i ),
 
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
         .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_internal[2]),
@@ -1152,6 +1177,27 @@ module caliptra_ss_top
         .mcu_rst_b(mcu_rst_b),
         .cptra_rst_b(mcu_cptra_rst_b),
 
+
+        // MCU DMI
+        .mcu_dmi_core_enable,
+        .mcu_dmi_uncore_enable,
+        .mcu_dmi_uncore_en,
+        .mcu_dmi_uncore_wr_en,
+        .mcu_dmi_uncore_addr,
+        .mcu_dmi_uncore_wdata,
+        .mcu_dmi_uncore_rdata,
+        .mcu_dmi_active,
+        
+        // MCU Trace
+        .mcu_trace_rv_i_insn_ip     ,
+        .mcu_trace_rv_i_address_ip  ,
+        .mcu_trace_rv_i_valid_ip    ,
+        .mcu_trace_rv_i_exception_ip,
+        .mcu_trace_rv_i_ecause_ip   ,
+        .mcu_trace_rv_i_interrupt_ip,
+        .mcu_trace_rv_i_tval_ip     ,
+
+
         .mci_boot_seq_brkpoint(cptra_ss_mci_boot_seq_brkpoint_i),
 
         .lc_done(lcc_to_mci_lc_done), //output from lcc
@@ -1162,11 +1208,16 @@ module caliptra_ss_top
 
         .fc_opt_done(otp_ctrl_to_mci_otp_ctrl_done), //output from otp
         .fc_opt_init(mci_to_otp_ctrl_init_req), //input to otp
+        .FIPS_ZEROIZATION_PPD_i(cptra_ss_FIPS_ZEROIZATION_PPD_i),
+        .FIPS_ZEROIZATION_CMD_o(FIPS_ZEROIZATION_CMD),
         // .fc_intr_otp_error(1'b0),
 
         .mci_mcu_sram_req_if  (cptra_ss_mci_mcu_sram_req_if),
         .mci_mbox0_sram_req_if(cptra_ss_mci_mbox0_sram_req_if),
         .mci_mbox1_sram_req_if(cptra_ss_mci_mbox1_sram_req_if),
+        
+        .mbox0_data_avail(mci_mbox0_data_avail), // FIXME remove?
+        .mbox1_data_avail(mci_mbox1_data_avail), // FIXME remove?
 
         .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
         .lc_dft_en_i(lc_dft_en_i),
@@ -1281,6 +1332,7 @@ module caliptra_ss_top
     ) u_otp_ctrl (
         .clk_i                      (cptra_ss_clk_i),
         .rst_ni                     (cptra_ss_rst_b_i),
+        .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
         .clk_edn_i                  (1'b0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .rst_edn_ni                 (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .edn_o                      (),     // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL

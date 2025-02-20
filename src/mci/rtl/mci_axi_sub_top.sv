@@ -55,11 +55,11 @@ module mci_axi_sub_top
 
 
     // Privileged requests 
-    output logic debug_req,
-    output logic mcu_lsu_req,
-    output logic mcu_ifu_req,
-    output logic mcu_req    ,
-    output logic cptra_req    ,
+    output logic axi_debug_req,
+    output logic axi_mcu_lsu_req,
+    output logic axi_mcu_ifu_req,
+    output logic axi_mcu_req    ,
+    output logic axi_cptra_req    ,
 
     
     // Privileged AXI users
@@ -152,11 +152,11 @@ mci_axi_sub_decode #(
     .valid_mbox1_users,
 
     // Privileged requests 
-    .debug_req,
-    .mcu_lsu_req,
-    .mcu_ifu_req,
-    .mcu_req    ,
-    .cptra_req    ,
+    .axi_debug_req,
+    .axi_mcu_lsu_req,
+    .axi_mcu_ifu_req,
+    .axi_mcu_req    ,
+    .axi_cptra_req    ,
 
     
     // Privileged AXI users

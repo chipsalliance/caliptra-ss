@@ -40,9 +40,9 @@ module mci_reg_top
     output mci_reg__out_t mci_reg_hwif_out,
 
     // AXI Privileged requests
-    input logic debug_req,
-    input logic cptra_req,
-    input logic mcu_req,
+    input logic axi_debug_req,
+    input logic axi_cptra_req,
+    input logic axi_mcu_req,
 
     // WDT specific signals
     output logic wdt_timer1_timeout_serviced,
@@ -70,14 +70,14 @@ module mci_reg_top
     output logic [31:0] mcu_dmi_uncore_rdata,
 
     // MBOX
-    input  mbox_dmi_reg_t mbox0_dmi_reg,
-    input  mbox_dmi_reg_t mbox1_dmi_reg,
-    output logic dmi_mbox0_inc_rdptr,
-    output logic dmi_mbox0_inc_wrptr,
-    output logic dmi_mbox1_inc_rdptr,
-    output logic dmi_mbox1_inc_wrptr,
-    output logic dmi_mbox0_wen,
-    output logic dmi_mbox1_wen,
+    // unused in 2.0 input  mbox_dmi_reg_t mbox0_dmi_reg,
+    // unused in 2.0 input  mbox_dmi_reg_t mbox1_dmi_reg,
+    // unused in 2.0 output logic dmi_mbox0_inc_rdptr,
+    // unused in 2.0 output logic dmi_mbox0_inc_wrptr,
+    // unused in 2.0 output logic dmi_mbox1_inc_rdptr,
+    // unused in 2.0 output logic dmi_mbox1_inc_wrptr,
+    // unused in 2.0 output logic dmi_mbox0_wen,
+    // unused in 2.0 output logic dmi_mbox1_wen,
     input  logic mci_mbox0_data_avail,
     input  logic mci_mbox1_data_avail,
     output logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox0_users,
@@ -156,10 +156,10 @@ logic mcu_dmi_uncore_locked_en;
 logic mcu_dmi_uncore_dbg_unlocked_wr_en;
 logic mcu_dmi_uncore_manuf_unlocked_wr_en;
 logic mcu_dmi_uncore_locked_wr_en  ;
-logic mcu_dmi_uncore_mbox0_dout_access_f;
-logic mcu_dmi_uncore_mbox0_din_access_f;
-logic mcu_dmi_uncore_mbox1_dout_access_f;
-logic mcu_dmi_uncore_mbox1_din_access_f;
+// unused in 2.0 logic mcu_dmi_uncore_mbox0_dout_access_f;
+// unused in 2.0 logic mcu_dmi_uncore_mbox0_din_access_f;
+// unused in 2.0 logic mcu_dmi_uncore_mbox1_dout_access_f;
+// unused in 2.0 logic mcu_dmi_uncore_mbox1_din_access_f;
 
 logic [31:0] mcu_dmi_uncore_dbg_unlocked_rdata_in;
 logic [31:0] mcu_dmi_uncore_locked_rdata_in;
@@ -329,7 +329,7 @@ always_comb begin
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.we            =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_RESET_REQUEST));
-    mci_reg_hwif_in.MCI_BOOTFSM_GO.go.we                =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.MCI_BOOTFSM_GO.go.we                =  (mcu_dmi_uncore_locked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO));
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.we    =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_FW_SRAM_EXEC_REGION_SIZE));
@@ -355,6 +355,7 @@ assign mcu_dmi_uncore_enable        = (!security_state_o.debug_locked) || (secur
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;
 
 //Uncore registers only open for debug unlock or manufacturing
+// NOTE - unused in 2.0
 always_comb mcu_dmi_uncore_manuf_unlocked_en = mcu_dmi_uncore_en & 
                                                 (~(security_state_o.debug_locked) | 
                                                  (security_state_o.device_lifecycle == DEVICE_MANUFACTURING));
@@ -371,14 +372,15 @@ always_comb mcu_dmi_uncore_manuf_unlocked_wr_en = (mcu_dmi_uncore_wr_en & mcu_dm
 always_comb mcu_dmi_uncore_locked_wr_en         = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_locked_en);
 
 //DMI unlocked register read mux
+// NOTE - must contain a super set of the uncore_locked_rdata_in
 always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_ADDR              )}}   &  mcu_sram_dmi_uncore_rdata                   )  | 
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_DATA              )}}   &  mcu_sram_dmi_uncore_rdata                   )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_STATUS           )}}   &  mbox0_dmi_reg.MBOX_STATUS                   )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  | 
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  | 
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_STATUS           )}}   &  mbox0_dmi_reg.MBOX_STATUS                   )  |
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  | 
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  | 
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  | 
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   & (mci_reg_hwif_out.HW_FLOW_STATUS            ))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REASON               )}}   & (mci_reg_hwif_out.RESET_REASON              ))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   & (mci_reg_hwif_out.RESET_STATUS              ))  |
@@ -407,12 +409,14 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE             )}}   & (mci_reg_hwif_out.SS_CONFIG_DONE            ))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   & (mci_reg_hwif_out.MCU_NMI_VECTOR            ))  ;
 
-always_comb mcu_dmi_uncore_locked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  | 
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_STATUS           )}}   &  mbox0_dmi_reg.MBOX_STATUS                   )  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  | 
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  | 
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  | 
+
+// Registers accessable while in a locked state
+always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
+                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  | 
+                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_STATUS           )}}   &  mbox0_dmi_reg.MBOX_STATUS                   )  |
+                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  | 
+                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  | 
+                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  | 
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   & (mci_reg_hwif_out.HW_FLOW_STATUS            ))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REASON               )}}   & (mci_reg_hwif_out.RESET_REASON              ))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   & (mci_reg_hwif_out.RESET_STATUS              ))  |
@@ -434,16 +438,16 @@ always_comb mcu_dmi_uncore_locked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_D
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_6   )}}   & (mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[6] ))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_7   )}}   & (mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[7] ));  
                                            
-always_comb dmi_mbox0_inc_rdptr = mcu_dmi_uncore_mbox0_dout_access_f & ~mcu_dmi_uncore_locked_en;
-always_comb dmi_mbox0_inc_wrptr = mcu_dmi_uncore_mbox0_din_access_f &  ~mcu_dmi_uncore_locked_en;
-always_comb dmi_mbox1_inc_rdptr = mcu_dmi_uncore_mbox1_dout_access_f & ~mcu_dmi_uncore_locked_en;
-always_comb dmi_mbox1_inc_wrptr = mcu_dmi_uncore_mbox1_din_access_f &  ~mcu_dmi_uncore_locked_en;
-always_comb dmi_mbox0_wen = mcu_dmi_uncore_locked_en & mcu_dmi_uncore_wr_en;
-always_comb dmi_mbox1_wen = mcu_dmi_uncore_locked_en & mcu_dmi_uncore_wr_en;
+// unused in 2.0 always_comb dmi_mbox0_inc_rdptr = mcu_dmi_uncore_mbox0_dout_access_f & ~mcu_dmi_uncore_locked_en;
+// unused in 2.0 always_comb dmi_mbox0_inc_wrptr = mcu_dmi_uncore_mbox0_din_access_f &  ~mcu_dmi_uncore_locked_en;
+// unused in 2.0 always_comb dmi_mbox1_inc_rdptr = mcu_dmi_uncore_mbox1_dout_access_f & ~mcu_dmi_uncore_locked_en;
+// unused in 2.0 always_comb dmi_mbox1_inc_wrptr = mcu_dmi_uncore_mbox1_din_access_f &  ~mcu_dmi_uncore_locked_en;
+// unused in 2.0 always_comb dmi_mbox0_wen = mcu_dmi_uncore_locked_en & mcu_dmi_uncore_wr_en;
+// unused in 2.0 always_comb dmi_mbox1_wen = mcu_dmi_uncore_locked_en & mcu_dmi_uncore_wr_en;
     
 
 always_comb mcu_sram_dmi_uncore_en = mcu_dmi_uncore_dbg_unlocked_en;
-always_comb mcu_sram_dmi_uncore_wr_en = mcu_dmi_uncore_locked_wr_en;
+always_comb mcu_sram_dmi_uncore_wr_en = mcu_dmi_uncore_dbg_unlocked_wr_en;
 always_comb mcu_sram_dmi_uncore_addr = mcu_dmi_uncore_addr;
 always_comb mcu_sram_dmi_uncore_wdata = mcu_dmi_uncore_wdata;
 
@@ -453,19 +457,20 @@ always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mcu_sram_
 always_ff @(posedge clk or negedge mci_pwrgood) begin
     if (~mci_pwrgood) begin
       mcu_dmi_uncore_rdata <= '0;
-      mcu_dmi_uncore_mbox0_dout_access_f <= '0;
-      mcu_dmi_uncore_mbox0_din_access_f  <= '0;
-      mcu_dmi_uncore_mbox1_dout_access_f <= '0;
-      mcu_dmi_uncore_mbox1_din_access_f  <= '0;
+      // unused in 2.0 mcu_dmi_uncore_mbox0_dout_access_f <= '0;
+      // unused in 2.0 mcu_dmi_uncore_mbox0_din_access_f  <= '0;
+      // unused in 2.0 mcu_dmi_uncore_mbox1_dout_access_f <= '0;
+      // unused in 2.0 mcu_dmi_uncore_mbox1_din_access_f  <= '0;
     end  
     else begin
-        mcu_dmi_uncore_rdata <= mcu_dmi_uncore_manuf_unlocked_en ? mcu_dmi_uncore_locked_rdata_in : 
-                                mcu_dmi_uncore_dbg_unlocked_en ? mcu_dmi_uncore_dbg_unlocked_rdata_in : mcu_dmi_uncore_rdata;
+        mcu_dmi_uncore_rdata <= mcu_dmi_uncore_dbg_unlocked_en ? mcu_dmi_uncore_dbg_unlocked_rdata_in : 
+                                mcu_dmi_uncore_locked_en       ? mcu_dmi_uncore_locked_rdata_in : 
+                                                                 mcu_dmi_uncore_rdata;
 
-        mcu_dmi_uncore_mbox0_dout_access_f <= mcu_dmi_uncore_locked_en & ~mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT);
-        mcu_dmi_uncore_mbox0_din_access_f  <= mcu_dmi_uncore_locked_en &  mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DIN);
-        mcu_dmi_uncore_mbox1_dout_access_f <= mcu_dmi_uncore_locked_en & ~mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT);
-        mcu_dmi_uncore_mbox1_din_access_f  <= mcu_dmi_uncore_locked_en &  mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DIN);
+        // unused in 2.0 mcu_dmi_uncore_mbox0_dout_access_f <= mcu_dmi_uncore_locked_en & ~mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT);
+        // unused in 2.0 mcu_dmi_uncore_mbox0_din_access_f  <= mcu_dmi_uncore_locked_en &  mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DIN);
+        // unused in 2.0 mcu_dmi_uncore_mbox1_dout_access_f <= mcu_dmi_uncore_locked_en & ~mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT);
+        // unused in 2.0 mcu_dmi_uncore_mbox1_din_access_f  <= mcu_dmi_uncore_locked_en &  mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DIN);
   end  
 end
                                             
@@ -475,8 +480,8 @@ assign mci_reg_hwif_in.mci_rst_b = mci_rst_b;
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
-assign mcu_or_debug_req                     = mcu_req | debug_req;
-assign cptra_or_debug_req                   = cptra_req | debug_req;
+assign mcu_or_debug_req                     = axi_mcu_req | axi_debug_req;
+assign cptra_or_debug_req                   = axi_cptra_req | axi_debug_req;
 assign mci_reg_hwif_in.cptra_or_debug_req   = cptra_or_debug_req; 
 assign mci_reg_hwif_in.mcu_or_debug_req     = mcu_or_debug_req;
 

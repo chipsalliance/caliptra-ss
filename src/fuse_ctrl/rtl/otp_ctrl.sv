@@ -26,6 +26,8 @@ module otp_ctrl
   // OTP clock
   input                                              clk_i,
   input                                              rst_ni,
+  // This is a command to zeroize the secrets in run-time
+  input                                              FIPS_ZEROIZATION_CMD_i,
   // EDN clock and interface
   logic                                              clk_edn_i,
   logic                                              rst_edn_ni,
@@ -1426,11 +1428,13 @@ end
   // Output complete hardware config partition.
   // Actual mapping to other IPs is done via the intersignal topgen feature,
   // selection of fields can be done using the otp_hw_cfg_t struct fields.
-  otp_broadcast_t otp_broadcast;
-  assign otp_broadcast = named_broadcast_assign(part_init_done, part_buf_data);
-
+  otp_broadcast_t otp_broadcast, otp_broadcast_FIPS_checked;
+  logic lcc_is_in_SCRAP_mode;
+  assign lcc_is_in_SCRAP_mode = (lc_ctrl_state_pkg::lc_state_e'(part_buf_data[LcStateOffset +: LcStateSize])
+                            == lc_ctrl_state_pkg::LcStScrap);
   // Make sure the broadcast valid is flopped before sending it out.
   lc_ctrl_pkg::lc_tx_t otp_broadcast_valid_q;
+  assign otp_broadcast = named_broadcast_assign(part_init_done, part_buf_data);
   caliptra_prim_lc_sender u_prim_lc_sender_otp_broadcast_valid (
     .clk_i,
     .rst_ni,
@@ -1438,9 +1442,21 @@ end
     .lc_en_o(otp_broadcast_valid_q)
   );
 
+  always_ff @(posedge clk_i or negedge rst_ni) begin : zeroize_secret
+    if (!rst_ni) begin
+      otp_broadcast_o <= '0;
+    end else begin
+      if (FIPS_ZEROIZATION_CMD_i || lcc_is_in_SCRAP_mode) begin
+        otp_broadcast_o <= '0;
+      end else begin        
+        otp_broadcast_o <= otp_broadcast_FIPS_checked;
+      end
+    end
+  end
+
   always_comb begin : p_otp_broadcast_valid
-    otp_broadcast_o       = otp_broadcast;
-    otp_broadcast_o.valid = otp_broadcast_valid_q;
+    otp_broadcast_FIPS_checked       = otp_broadcast;
+    otp_broadcast_FIPS_checked.valid = otp_broadcast_valid_q;
   end
 
   // Root keys and seeds.
