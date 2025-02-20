@@ -111,7 +111,7 @@ void sw_transition_req(uint32_t next_lc_state,
             break;
         }
         if (TOKEN_ERROR) {
-            VPRINTF(LOW, "Token error detected.\n");
+            VPRINTF(LOW, "Token rror detected.\n");
             break;
         }
         if (OTP_ERROR) {
@@ -302,7 +302,7 @@ void wait_dai_op_idle() {
     do {
         status = lsu_read_32(FUSE_CTRL_STATUS);
         VPRINTF(LOW, "DEBUG: DAI should be idle but is 0x%08X.\n", status);
-        status = (status >> 21) & 0x1; // This extracts 19th bit (DAI_IDLE) from the status
+        status = (status >> 23) & 0x1; // This extracts 19th bit (DAI_IDLE) from the status
     } while (status == 0);
     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
 }
@@ -382,14 +382,6 @@ void calculate_digest(uint32_t partition_base_address) {
     wait_dai_op_idle();
 
     VPRINTF(LOW, "INFO: Digest calculation completed. DAI is idle.\n");
-
-    // Step 5: Check if DIRECT_ACCESS_REGWEN is locked
-    uint32_t regwen = lsu_read_32(FUSE_CTRL_DIRECT_ACCESS_REGWEN);
-    if (regwen == 0x0) {
-        VPRINTF(LOW, "INFO: DIRECT_ACCESS_REGWEN is locked. Write access temporarily disabled.\n");
-    } else {
-        VPRINTF(LOW, "ERROR: DIRECT_ACCESS_REGWEN is not locked as expected. Potential issue.\n");
-    }
 }
 
 
@@ -402,7 +394,7 @@ void initialize_otp_controller() {
     status = lsu_read_32(FUSE_CTRL_STATUS);
 
     // Check for error bits in the status register
-    if (status & 0x1FFFFF != 0 ) { // Mask all bits except DAI_IDLE
+    if (status & 0x3FFFFF != 0 ) { // Mask all bits except DAI_IDLE
         VPRINTF(LOW, "ERROR: OTP controller initialization failed. STATUS: 0x%08X\n", status);
         return;
     }
@@ -413,42 +405,43 @@ void initialize_otp_controller() {
 
     // Step 2: Set up periodic background checks
     VPRINTF(LOW, "DEBUG: Configuring periodic background checks...\n");
+    
+    // Configure CHECK_TIMEOUT
+    uint32_t check_timeout = 0x100000; // Example value, adjust as needed
+    lsu_write_32(FUSE_CTRL_CHECK_TIMEOUT, check_timeout);
+    VPRINTF(LOW, "INFO: CHECK_TIMEOUT set to 0x%08X\n", check_timeout);
 
     // Configure INTEGRITY_CHECK_PERIOD
-    // uint32_t integrity_check_period = 0x100; // Example value, adjust as needed
-    // lsu_write_32(FUSE_CTRL_INTEGRITY_CHECK_PERIOD, integrity_check_period);
-    // VPRINTF(LOW, "INFO: INTEGRITY_CHECK_PERIOD set to 0x%08X\n", integrity_check_period);
+    uint32_t integrity_check_period = 0x3FFFF; // Example value, adjust as needed
+    lsu_write_32(FUSE_CTRL_INTEGRITY_CHECK_PERIOD, integrity_check_period);
+    VPRINTF(LOW, "INFO: INTEGRITY_CHECK_PERIOD set to 0x%08X\n", integrity_check_period);
 
-    // // Configure CONSISTENCY_CHECK_PERIOD
-    // uint32_t consistency_check_period = 0x100; // Example value, adjust as needed
-    // lsu_write_32(FUSE_CTRL_CONSISTENCY_CHECK_PERIOD, consistency_check_period);
-    // VPRINTF(LOW, "INFO: CONSISTENCY_CHECK_PERIOD set to 0x%08X\n", consistency_check_period);
+    // Configure CONSISTENCY_CHECK_PERIOD
+    uint32_t consistency_check_period = 0x3FFFF; // Example value, adjust as needed
+    lsu_write_32(FUSE_CTRL_CONSISTENCY_CHECK_PERIOD, consistency_check_period);
+    VPRINTF(LOW, "INFO: CONSISTENCY_CHECK_PERIOD set to 0x%08X\n", consistency_check_period);
 
-    // // Configure CHECK_TIMEOUT
-    // uint32_t check_timeout = 0x1000; // Example value, adjust as needed
-    // lsu_write_32(FUSE_CTRL_CHECK_TIMEOUT, check_timeout);
-    // VPRINTF(LOW, "INFO: CHECK_TIMEOUT set to 0x%08X\n", check_timeout);
-
-    // // Step 3: Lock down background check registers
-    // VPRINTF(LOW, "DEBUG: Locking background check registers...\n");
-    // lsu_write_32(FUSE_CTRL_CHECK_REGWEN, 0x0);
-    // VPRINTF(LOW, "INFO: CHECK_REGWEN locked.\n");
-
-    
+    // Step 3: Lock down background check registers
+    VPRINTF(LOW, "DEBUG: Locking background check registers...\n");
+    lsu_write_32(FUSE_CTRL_CHECK_REGWEN, 0x0);
+    VPRINTF(LOW, "INFO: CHECK_REGWEN locked.\n");
 }
 
 void program_vendor_test_partition() {
+    uint32_t dummy_read;
+    dummy_read = lsu_read_32(0x70000080);
+
     // Define addresses and sizes
     uint32_t base_address = 0x0;            // Base address for VENDOR_TEST partition
-    uint32_t scratch_address = base_address + 0x000; // Address for SCRATCH item
-    uint32_t digest_address = base_address + 0x038;  // Address for VENDOR_TEST_DIGEST item
+    uint32_t scratch_address = base_address + 0x5D0; // Address for SCRATCH item
+    //uint32_t digest_address = base_address + 0x038;  // Address for VENDOR_TEST_DIGEST item
 
-    uint32_t scratch_data[14];  // 56 bytes for SCRATCH (14 x 32-bit words)
-    uint32_t digest_data[2];    // 8 bytes for DIGEST (2 x 32-bit words)
+    uint32_t scratch_data[8];  // 56 bytes for SCRATCH (14 x 32-bit words)
+    //uint32_t digest_data[2];    // 8 bytes for DIGEST (2 x 32-bit words)
 
     // Initialize test data for SCRATCH and DIGEST
-    for (uint32_t i = 0; i < 14; i++) {
-        scratch_data[i] = 0x1000 + i;  // Example test data
+    for (uint32_t i = 0; i < 8; i++) {
+        scratch_data[i] = 0xAAAA + i;  // Example test data
     }
     VPRINTF(LOW, "INFO: Programming SCRATCH item in VENDOR_TEST partition...\n");
 
@@ -474,95 +467,59 @@ void program_vendor_test_partition() {
         VPRINTF(LOW, "DEBUG: Verified data 0x%08X at address 0x%08X.\n", read_data, address);
     }
 
-    VPRINTF(LOW, "INFO: Locking VENDOR_TEST_DIGEST item in VENDOR_TEST partition...\n");
-
-    calculate_digest(scratch_address);
-    reset_RTL();
-
-    // Write to SCRATCH item with different values
-    for (uint32_t i = 0; i < 1; i++) {
-        uint32_t address = scratch_address + (i * 4);  // Calculate word address
-        dai_wr(address, scratch_data[i]+1, 0, 32);
-        VPRINTF(LOW, "DEBUG: Tried 0x%08X to address 0x%08X.\n", scratch_data[i]+1, address);
-    }
-
-    // Read back and verify SCRATCH item
-    for (uint32_t i = 0; i < 1; i++) {
-        uint32_t address = scratch_address + (i * 4);
-        uint32_t read_data;
-        dai_rd(address, &read_data, NULL, 32);
-        if (read_data != scratch_data[i]) {
-            VPRINTF(LOW, "ERROR: Verification failed at address 0x%08X. Expected 0x%08X, got 0x%08X.\n",
-                    address, scratch_data[i], read_data);
-            return;
-        }
-        VPRINTF(LOW, "DEBUG: Verified data 0x%08X at address 0x%08X.\n", read_data, address);
-    }
-
     VPRINTF(LOW, "INFO: Programming and verification of VENDOR_TEST partition completed successfully.\n");
 }
 
 
 void program_secret0_partition() {
-    // Define addresses and sizes
-    uint32_t base_address = 0x0;            // Base address for VENDOR_TEST partition
-    uint32_t TEST_UNLOCK_TOKEN_addr = base_address + 0x6D0; // Address for TEST_UNLOCK_TOKEN
-    uint32_t TEST_EXIT_TOKEN_addr = base_address + 0x6E0; // Address for TEST_EXIT_TOKEN
-    uint32_t digest_address = base_address + 0x6F0;  // Address for VENDOR_TEST_DIGEST item
+    uint32_t dummy_read;
+    dummy_read = lsu_read_32(0x7000007c);
 
-    uint32_t data0[4];  
-    uint32_t data1[4];  
-    uint32_t digest_data[2]; 
+    uint32_t fuse_address = 0x000;
+    uint32_t digest_address = 0x700000ac;
+
+    uint32_t data[4];   
+    uint32_t digest[2]; 
     uint32_t read_data0, read_data1;
 
     // Initialize test data for SCRATCH and DIGEST
     for (uint32_t i = 0; i < 4; i++) {
-        data0[i] = 0x12340 + i;  // Example test data
-        data1[i] = 0xABCD0 + i;  // Example test data
+        data[i] = 0x12340 + i;  // Example test data
     }
     VPRINTF(LOW, "INFO: Programming TOKENs item in SECRET0 partition...\n");
+    VPRINTF(LOW, "INFO: Programming TOKENs item in SECRET0 partition...\n");
 
-    dai_rd(digest_address, &read_data0, &read_data1, 64);
-    VPRINTF(LOW, "DEBUG: Read these data 0x%08X 0x%08X at Digest address 0x%08X.\n", read_data0, read_data1, digest_address);
+    // Read digest register
+    digest[0] = lsu_read_32(digest_address);
+    digest[1] = lsu_read_32(digest_address+0x4);
+
+    VPRINTF(LOW, "DEBUG: Read these data 0x%08X 0x%08X at Digest address 0x%08X.\n", digest[0], digest[1], digest_address);
 
     // Write to TEST_UNLOCK_TOKEN item
-    dai_wr(TEST_UNLOCK_TOKEN_addr, data0[0], data1[0], 64);
-    VPRINTF(LOW, "DEBUG: TEST_UNLOCK_TOKEN Wrote 0x%08X and 0x%08X to address 0x%08X.\n", data0[0], data1[0], TEST_UNLOCK_TOKEN_addr);
-    dai_wr(TEST_UNLOCK_TOKEN_addr+8, data0[1], data1[1], 64);
-    VPRINTF(LOW, "DEBUG: TEST_UNLOCK_TOKEN Wrote 0x%08X and 0x%08X to address 0x%08X.\n", data0[1], data1[1], TEST_UNLOCK_TOKEN_addr+8);
-    dai_wr(TEST_EXIT_TOKEN_addr, data0[2], data1[2], 64);
-    VPRINTF(LOW, "DEBUG: TEST_EXIT_TOKEN Wrote 0x%08X and 0x%08X to address 0x%08X.\n", data0[2], data1[2], TEST_EXIT_TOKEN_addr);
-    dai_wr(TEST_EXIT_TOKEN_addr+8, data0[3], data1[3], 64);
-    VPRINTF(LOW, "DEBUG: TEST_EXIT_TOKEN Wrote 0x%08X and 0x%08X to address 0x%08X.\n", data0[3], data1[3], TEST_EXIT_TOKEN_addr+8);
+    dai_wr(fuse_address, data[0], data[0], 64);
+    VPRINTF(LOW, "DEBUG: TEST_UNLOCK_TOKEN Wrote 0x%08X and 0x%08X to address 0x%08X.\n", data[0], data[0], fuse_address);
+    dai_wr(fuse_address+8, data[1], data[1], 64);
+    VPRINTF(LOW, "DEBUG: TEST_UNLOCK_TOKEN Wrote 0x%08X and 0x%08X to address 0x%08X.\n", data[1], data[1], fuse_address+8);
 
     VPRINTF(LOW, "INFO: Verifying SECRET0 partition...\n");
 
     // Read back and verify SCRATCH item
-    dai_rd(TEST_UNLOCK_TOKEN_addr, &read_data0, &read_data1, 64);
-    VPRINTF(LOW, "DEBUG: Verified data 0x%08X 0x%08X at address 0x%08X.\n", read_data0, read_data1, TEST_UNLOCK_TOKEN_addr);
-    dai_rd(TEST_UNLOCK_TOKEN_addr+8, &read_data0, &read_data1, 64);
-    VPRINTF(LOW, "DEBUG: Verified data 0x%08X 0x%08X at address 0x%08X.\n", read_data0, read_data1, TEST_UNLOCK_TOKEN_addr+8);
-    dai_rd(TEST_EXIT_TOKEN_addr, &read_data0, &read_data1, 64);
-    VPRINTF(LOW, "DEBUG: Verified data 0x%08X 0x%08X at address 0x%08X.\n", read_data0, read_data1, TEST_EXIT_TOKEN_addr);
-    dai_rd(TEST_EXIT_TOKEN_addr+8, &read_data0, &read_data1, 64);
-    VPRINTF(LOW, "DEBUG: Verified data 0x%08X 0x%08X at address 0x%08X.\n", read_data0, read_data1, TEST_EXIT_TOKEN_addr+8);
+    dai_rd(fuse_address, &read_data0, &read_data1, 64);
+    VPRINTF(LOW, "DEBUG: Verified data 0x%08X 0x%08X at address 0x%08X.\n", read_data0, read_data1, fuse_address);
+    dai_rd(fuse_address+8, &read_data0, &read_data1, 64);
+    VPRINTF(LOW, "DEBUG: Verified data 0x%08X 0x%08X at address 0x%08X.\n", read_data0, read_data1, fuse_address+8);
                 
     VPRINTF(LOW, "INFO: Locking VENDOR_TEST_DIGEST item in VENDOR_TEST partition...\n");
 
-    calculate_digest(TEST_UNLOCK_TOKEN_addr);
+    calculate_digest(fuse_address);
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
     reset_RTL();
 
-
-    dai_rd(digest_address, &read_data0, &read_data1, 64);
-    VPRINTF(LOW, "DEBUG: After locking Read these data 0x%08X 0x%08X at Digest address 0x%08X.\n", read_data0, read_data1, digest_address);
-                
-    VPRINTF(LOW, "INFO: Locking VENDOR_TEST_DIGEST item in VENDOR_TEST partition...\n");
-
-    
-    
+    digest[0] = lsu_read_32(digest_address);
+    digest[1] = lsu_read_32(digest_address+0x4);
+    VPRINTF(LOW, "DEBUG: Read these data 0x%08X 0x%08X at Digest address 0x%08X.\n", digest[0], digest[1], digest_address);
 }
 
 
@@ -686,14 +643,18 @@ void main (void) {
     
     VPRINTF(LOW, "=================\n Fuse Prov TEST \n=================\n\n");
 
-
     lcc_initilization();    
     RAW_to_TESTUNLOCK0();
     initialize_otp_controller();
+
+    uint32_t dummy_read;
+    dummy_read = lsu_read_32(0x7000007c);
+
     //program_vendor_test_partition();
+    program_secret0_partition();
     //program_secret0_partition();
-    uint32_t dummy_read = lsu_read_32(0x7000007c); // make axi id 0
-    program_secret_X_partition(0x0, 0x40 ,8, 64);
+    //uint32_t dummy_read = lsu_read_32(0x7000007c); // make axi id 0
+    //program_secret_X_partition(0x0, 0x40 ,8, 64);
     
 
     for (uint8_t ii = 0; ii < 160; ii++) {
