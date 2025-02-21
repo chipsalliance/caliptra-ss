@@ -108,7 +108,7 @@ module trace_buffer_csr (
         } STATUS;
         struct packed{
             struct packed{
-                logic next;
+                logic [31:0] next;
                 logic load_next;
             } trace_buffer_depth;
         } CONFIG;
@@ -144,7 +144,7 @@ module trace_buffer_csr (
         } STATUS;
         struct packed{
             struct packed{
-                logic value;
+                logic [31:0] value;
             } trace_buffer_depth;
         } CONFIG;
         struct packed{
@@ -209,7 +209,7 @@ module trace_buffer_csr (
     assign hwif_out.STATUS.valid_data.value = field_storage.STATUS.valid_data.value;
     // Field: trace_buffer_csr.CONFIG.trace_buffer_depth
     always_comb begin
-        automatic logic [0:0] next_c;
+        automatic logic [31:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.CONFIG.trace_buffer_depth.value;
         load_next_c = '0;
@@ -222,7 +222,7 @@ module trace_buffer_csr (
     end
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
-            field_storage.CONFIG.trace_buffer_depth.value <= 1'h0;
+            field_storage.CONFIG.trace_buffer_depth.value <= 32'h0;
         end else if(field_combo.CONFIG.trace_buffer_depth.load_next) begin
             field_storage.CONFIG.trace_buffer_depth.value <= field_combo.CONFIG.trace_buffer_depth.next;
         end
@@ -279,6 +279,9 @@ module trace_buffer_csr (
         if(decoded_reg_strb.READ_PTR && decoded_req_is_wr) begin // SW write
             next_c = (field_storage.READ_PTR.ptr.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
+        end else if(hwif_in.READ_PTR.ptr.we) begin // HW Write - we
+            next_c = hwif_in.READ_PTR.ptr.next;
+            load_next_c = '1;
         end
         field_combo.READ_PTR.ptr.next = next_c;
         field_combo.READ_PTR.ptr.load_next = load_next_c;
@@ -312,8 +315,7 @@ module trace_buffer_csr (
     assign readback_array[0][0:0] = (decoded_reg_strb.STATUS && !decoded_req_is_wr) ? field_storage.STATUS.wrapped.value : '0;
     assign readback_array[0][1:1] = (decoded_reg_strb.STATUS && !decoded_req_is_wr) ? field_storage.STATUS.valid_data.value : '0;
     assign readback_array[0][31:2] = '0;
-    assign readback_array[1][0:0] = (decoded_reg_strb.CONFIG && !decoded_req_is_wr) ? field_storage.CONFIG.trace_buffer_depth.value : '0;
-    assign readback_array[1][31:1] = '0;
+    assign readback_array[1][31:0] = (decoded_reg_strb.CONFIG && !decoded_req_is_wr) ? field_storage.CONFIG.trace_buffer_depth.value : '0;
     assign readback_array[2][31:0] = (decoded_reg_strb.DATA && !decoded_req_is_wr) ? field_storage.DATA.data.value : '0;
     assign readback_array[3][31:0] = (decoded_reg_strb.WRITE_PTR && !decoded_req_is_wr) ? field_storage.WRITE_PTR.ptr.value : '0;
     assign readback_array[4][31:0] = (decoded_reg_strb.READ_PTR && !decoded_req_is_wr) ? field_storage.READ_PTR.ptr.value : '0;

@@ -36,7 +36,7 @@ addrmap trace_buffer_csr {
     reg {
         name="Trace Configuration";
         desc="HW configuration of the trace buffer";
-        field {desc="Total number of DWORD entries in the trace buffer. TRACE_BUFFER_DEPTH-1 is the last valide read/write pointer entries in the trace buffer.";sw=r; hw=rw; } trace_buffer_depth=0;
+        field {desc="Total number of DWORD entries in the trace buffer. TRACE_BUFFER_DEPTH-1 is the last valide read/write pointer entries in the trace buffer.";sw=r; hw=rw; } trace_buffer_depth[32]=0;
     } CONFIG;
 
     reg {
@@ -54,7 +54,7 @@ addrmap trace_buffer_csr {
     reg {
         name="Trace Read Pointer";
         desc="Read pointer for extracting data via the DATA register. NOTE: This is not an address, increment by 1 to get the next 32 bit entry.";
-        field {sw=rw; hw=r;} ptr[32]=0;
+        field {sw=rw; hw=rw; we;} ptr[32]=0;
     } READ_PTR;
 
 };

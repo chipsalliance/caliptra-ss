@@ -18,6 +18,7 @@ module mci_top
     import mci_pkg::*;
     import mci_dmi_pkg::*;
     import mbox_pkg::*;
+    import mci_mcu_trace_buffer_pkg::*;
     #(    
     parameter AXI_ADDR_WIDTH = 32,
     parameter AXI_DATA_WIDTH = 32,
@@ -181,6 +182,11 @@ module mci_top
     logic [31:0] mcu_sram_dmi_uncore_wdata;
     logic [31:0] mcu_sram_dmi_uncore_rdata;
 
+    // MCU Trace Buffer signals
+    logic         mcu_trace_buffer_dmi_reg_wen;
+    logic [31:0]  mcu_trace_buffer_dmi_reg_wdata;
+    logic [6:0]   mcu_trace_buffer_dmi_reg_addr;
+    mci_mcu_trace_buffer_dmi_reg_t mcu_trace_buffer_dmi_reg;
 
     // WDT signals
     logic timer1_en;
@@ -409,8 +415,9 @@ mci_boot_seqr #(
 );
 
 
-mci_mcu_trace_buffer 
-    i_mci_mcu_trace_buffer 
+mci_mcu_trace_buffer #(
+    .DMI_REG_TRACE_RD_PTR_ADDR(MCI_DMI_MCU_TRACE_RD_PTR)
+) i_mci_mcu_trace_buffer 
     (
     .clk,
 
@@ -419,10 +426,11 @@ mci_mcu_trace_buffer
 
     .debug_en(!security_state_o.debug_locked),
     
-    .dmi_reg_wen('0),
-    .dmi_reg_wdata('0),
-    .dmi_reg_addr('0),
-    .dmi_reg(),
+    // DMI Access
+    .dmi_reg_wen    (mcu_trace_buffer_dmi_reg_wen  ),
+    .dmi_reg_wdata  (mcu_trace_buffer_dmi_reg_wdata),
+    .dmi_reg_addr   (mcu_trace_buffer_dmi_reg_addr ),
+    .dmi_reg        (mcu_trace_buffer_dmi_reg      ),
 
     // MCU Trace
     .mcu_trace_rv_i_insn_ip,
@@ -582,6 +590,12 @@ mci_reg_top #(
     .mcu_dmi_uncore_addr,
     .mcu_dmi_uncore_wdata,
     .mcu_dmi_uncore_rdata,
+
+    // MCU Trace
+    .mcu_trace_buffer_dmi_reg_wen, 
+    .mcu_trace_buffer_dmi_reg_wdata,
+    .mcu_trace_buffer_dmi_reg_addr,
+    .mcu_trace_buffer_dmi_reg,      
     
     // MBOX
     .valid_mbox0_users,

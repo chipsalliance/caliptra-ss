@@ -45,7 +45,7 @@ package trace_buffer_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        trace_buffer_csr__CONFIG_bit_cg trace_buffer_depth_bit_cg[1];
+        trace_buffer_csr__CONFIG_bit_cg trace_buffer_depth_bit_cg[32];
         trace_buffer_csr__CONFIG_fld_cg fld_cg;
         rand uvm_reg_field trace_buffer_depth;
 
@@ -60,7 +60,7 @@ package trace_buffer_uvm;
 
         virtual function void build();
             this.trace_buffer_depth = new("trace_buffer_depth");
-            this.trace_buffer_depth.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.trace_buffer_depth.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(trace_buffer_depth_bit_cg[bt]) trace_buffer_depth_bit_cg[bt] = new();
             end
@@ -150,7 +150,7 @@ package trace_buffer_uvm;
 
         virtual function void build();
             this.ptr = new("ptr");
-            this.ptr.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.ptr.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(ptr_bit_cg[bt]) ptr_bit_cg[bt] = new();
             end

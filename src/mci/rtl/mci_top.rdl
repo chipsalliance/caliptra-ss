@@ -19,6 +19,8 @@ addrmap mci_top {
 
     mci_reg mci_reg @ 0x0000_0000;
     
+    trace_buffer mcu_trace_buffer @ 0x0001_0000;
+    
     mbox_csr mbox0_csr @ 0x0008_0000;
     
     mbox_csr mbox1_csr @ 0x0009_0000;

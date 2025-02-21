@@ -79,6 +79,7 @@ logic [31:0] c_cpuif_wr_biten; // Byte Enable mapping
 logic cif_illegal_access_error;
 logic trace_buffer_valid_data;
 logic trace_buffer_wrapped;
+logic dmi_wr_en_qual;
 
 
 
@@ -189,9 +190,10 @@ assign dmi_reg_pre_security.TRACE_DATA   = trace_buffer_hwif_out.DATA;
 
 assign dmi_reg = debug_en ? dmi_reg_pre_security : '0; 
 
-//    input logic         dmi_reg_wen,
-//    input logic [31:0]  dmi_reg_wdata,
-//    input logic [6:0]   dmi_reg_addr,
+assign dmi_wr_en_qual = debug_en & dmi_reg_wen;
+
+assign trace_buffer_hwif_in.READ_PTR.ptr.we = dmi_wr_en_qual & (dmi_reg_addr == DMI_REG_TRACE_RD_PTR_ADDR);
+assign trace_buffer_hwif_in.READ_PTR.ptr.next = dmi_reg_wdata;
 
 
 ////////////////////////
