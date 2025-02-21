@@ -1029,8 +1029,7 @@ The trace buffer is a circular buffer where old data is overwritten by new trace
 ![](images/MCI-MCU-Trace-Buffer-Circular-Diagram.png)
 
 #### MCU Trace Buffer SW Interface
-Below is the SW interface to extrace trace data:
-
+Below is the SW interface to extract trace data:
 
 | **Register Name** | **Access Type**     | **Description**     | 
 | :---------         | :---------     | :---------| 
