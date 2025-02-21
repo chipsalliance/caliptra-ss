@@ -674,14 +674,14 @@
 #define MCI_REG_DEBUG_IN                                                                            (0x410)
 #ifndef MCI_REG_DEBUG_IN
 #define MCI_REG_DEBUG_IN                                                                            (0x410)
-#define MCI_REG_DEBUG_IN_FIXME_LOW                                                                  (0)
-#define MCI_REG_DEBUG_IN_FIXME_MASK                                                                 (0x1)
+#define MCI_REG_DEBUG_IN_DATA_LOW                                                                   (0)
+#define MCI_REG_DEBUG_IN_DATA_MASK                                                                  (0x1)
 #endif
 #define MCI_REG_DEBUG_OUT                                                                           (0x414)
 #ifndef MCI_REG_DEBUG_OUT
 #define MCI_REG_DEBUG_OUT                                                                           (0x414)
-#define MCI_REG_DEBUG_OUT_FIXME_LOW                                                                 (0)
-#define MCI_REG_DEBUG_OUT_FIXME_MASK                                                                (0x1)
+#define MCI_REG_DEBUG_OUT_DATA_LOW                                                                  (0)
+#define MCI_REG_DEBUG_OUT_DATA_MASK                                                                 (0x1)
 #endif
 #define MCI_REG_SS_DEBUG_INTENT                                                                     (0x418)
 #ifndef MCI_REG_SS_DEBUG_INTENT

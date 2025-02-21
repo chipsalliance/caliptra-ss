@@ -2135,9 +2135,9 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__DEBUG_IN_bit_cg FIXME_bit_cg[1];
+        mci_reg__DEBUG_IN_bit_cg DATA_bit_cg[1];
         mci_reg__DEBUG_IN_fld_cg fld_cg;
-        rand uvm_reg_field FIXME;
+        rand uvm_reg_field DATA;
 
         function new(string name = "mci_reg__DEBUG_IN");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -2149,10 +2149,10 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.FIXME = new("FIXME");
-            this.FIXME.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.DATA = new("DATA");
+            this.DATA.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(FIXME_bit_cg[bt]) FIXME_bit_cg[bt] = new();
+                foreach(DATA_bit_cg[bt]) DATA_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -2165,9 +2165,9 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__DEBUG_OUT_bit_cg FIXME_bit_cg[1];
+        mci_reg__DEBUG_OUT_bit_cg DATA_bit_cg[1];
         mci_reg__DEBUG_OUT_fld_cg fld_cg;
-        rand uvm_reg_field FIXME;
+        rand uvm_reg_field DATA;
 
         function new(string name = "mci_reg__DEBUG_OUT");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -2179,10 +2179,10 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.FIXME = new("FIXME");
-            this.FIXME.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.DATA = new("DATA");
+            this.DATA.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(FIXME_bit_cg[bt]) FIXME_bit_cg[bt] = new();
+                foreach(DATA_bit_cg[bt]) DATA_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
