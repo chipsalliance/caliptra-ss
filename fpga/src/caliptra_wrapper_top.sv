@@ -150,7 +150,7 @@ module caliptra_wrapper_top #(
     output wire S_AXI_MCI_RVALID,
     input  wire S_AXI_MCI_RREADY,
 
-    // MCI ROM S_AXI Interface
+    // MCU ROM S_AXI Interface
     input  wire [31:0] S_AXI_MCU_ROM_AWADDR,
     input  wire [1:0] S_AXI_MCU_ROM_AWBURST,
     input  wire [2:0] S_AXI_MCU_ROM_AWSIZE,
@@ -453,6 +453,18 @@ module caliptra_wrapper_top #(
     input logic                       jtag_trst_n, // JTAG reset
     output logic                      jtag_tdo,    // JTAG tdo
 
+    input logic                       mcu_jtag_tck_i,
+    input logic                       mcu_jtag_tms_i,
+    input logic                       mcu_jtag_tdi_i,
+    input logic                       mcu_jtag_trst_n_i,
+    output logic                      mcu_jtag_tdo_o,
+    
+    input logic                       lc_jtag_tck_i,
+    input logic                       lc_jtag_tms_i,
+    input logic                       lc_jtag_tdi_i,
+    input logic                       lc_jtag_trst_n_i,
+    output logic                      lc_jtag_tdo_o,
+
     // FPGA Realtime register AXI Interface
     input	wire                      S_AXI_WRAPPER_ARESETN,
     input	wire                      S_AXI_WRAPPER_AWVALID,
@@ -546,6 +558,14 @@ module caliptra_wrapper_top #(
     logic imem_cs;
     logic [`CALIPTRA_IMEM_ADDR_WIDTH-1:0] imem_addr;
     logic [`CALIPTRA_IMEM_DATA_WIDTH-1:0] imem_rdata;
+
+    jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i;
+    assign cptra_ss_lc_ctrl_jtag_i.tck = lc_jtag_tck_i;
+    assign cptra_ss_lc_ctrl_jtag_i.tms = lc_jtag_tms_i;
+    assign cptra_ss_lc_ctrl_jtag_i.trst_n = lc_jtag_tdi_i;
+    assign cptra_ss_lc_ctrl_jtag_i.tdi = lc_jtag_trst_n_i;
+    jtag_pkg::jtag_rsp_t cptra_ss_lc_ctrl_jtag_o;
+    assign lc_jtag_tdo_o = cptra_ss_lc_ctrl_jtag_o.tdo;
 
 `ifndef CALIPTRA_APB
     axi_if #(
@@ -828,6 +848,70 @@ log_fifo_inst (
 );
 
 
+// Debug FIFO
+
+// Valid = !Empty
+logic dbg_fifo_empty;
+//assign hwif_in.fifo_regs.log_fifo_data.char_valid.next = ~log_fifo_empty;
+assign hwif_in.fifo_regs.dbg_fifo_status.dbg_fifo_empty.next = dbg_fifo_empty;
+
+// When rd_swacc is asserted, use the value of "valid" from when it was sampled.
+reg dbg_fifo_valid_f;
+always@(posedge core_clk) begin
+    dbg_fifo_valid_f <= ~dbg_fifo_empty;
+end
+
+xpm_fifo_sync #(
+    .CASCADE_HEIGHT(0),         // DECIMAL
+    .DOUT_RESET_VALUE("0"),     // String
+    .ECC_MODE("no_ecc"),        // String
+    .FIFO_MEMORY_TYPE("block"), // String
+    .FIFO_READ_LATENCY(0),      // DECIMAL
+    .FIFO_WRITE_DEPTH(8192),    // DECIMAL
+    .FULL_RESET_VALUE(0),       // DECIMAL
+    .PROG_EMPTY_THRESH(10),     // DECIMAL
+    .PROG_FULL_THRESH(7168),    // DECIMAL Currently unused
+    .RD_DATA_COUNT_WIDTH(14),   // DECIMAL
+    .READ_DATA_WIDTH(32),       // DECIMAL
+    .READ_MODE("fwft"),         // String
+    .SIM_ASSERT_CHK(0),         // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+    .USE_ADV_FEATURES("0000"),  // String
+    .WAKEUP_TIME(0),            // DECIMAL
+    .WRITE_DATA_WIDTH(32),      // DECIMAL
+    .WR_DATA_COUNT_WIDTH(14)    // DECIMAL
+)
+dbg_fifo_inst (
+    .almost_empty(),
+    .almost_full(),
+    .data_valid(),
+    .dbiterr(),
+    .dout(hwif_in.fifo_regs.dbg_fifo_pop.out_data.next),
+    .empty(dbg_fifo_empty),
+    .full(hwif_in.fifo_regs.dbg_fifo_status.dbg_fifo_full.next),
+    .overflow(),
+    .prog_empty(),
+    .prog_full(),
+    .rd_data_count(),
+    .rd_rst_busy(),
+    .sbiterr(),
+    .underflow(),
+    .wr_ack(),
+    .wr_data_count(),
+    .wr_rst_busy(),
+    .din(hwif_out.fifo_regs.dbg_fifo_push.in_data.value),
+    .injectdbiterr(0),
+    .injectsbiterr(0),
+    .rd_en(dbg_fifo_valid_f & hwif_out.fifo_regs.dbg_fifo_pop.out_data.rd_swacc),
+    .rst(~S_AXI_WRAPPER_ARESETN),
+    .sleep(0),
+    .wr_clk(core_clk),
+    .wr_en(hwif_out.fifo_regs.dbg_fifo_push.in_data.wr_swacc)
+);
+
+
+// End debug FIFO
+
+
 `ifdef CALIPTRA_INTERNAL_TRNG
 // Registers and FIFO for ITRNG entropy
 
@@ -1032,7 +1116,7 @@ xpm_memory_spram #(
    .MEMORY_INIT_PARAM("0"),        // String
    .MEMORY_OPTIMIZATION("false"),  // String
    .MEMORY_PRIMITIVE("auto"),      // String
-   .MEMORY_SIZE(64*1024*8),        // DECIMAL
+   .MEMORY_SIZE(128*1024*8),        // DECIMAL
    .MESSAGE_CONTROL(0),            // DECIMAL
    .READ_DATA_WIDTH_A(64),         // DECIMAL
    .READ_LATENCY_A(1),             // DECIMAL
@@ -1109,65 +1193,184 @@ assign cptra_ss_mci_m_axi_if.rlast =    M_AXI_MCI_RLAST;
 assign cptra_ss_mci_m_axi_if.rvalid =   M_AXI_MCI_RVALID;
 assign M_AXI_MCI_RREADY = cptra_ss_mci_m_axi_if.rready;
 
-// TODO: Connect these?
 mci_mcu_sram_if cptra_ss_mcu_rom_macro_req_if (
     .clk(core_clk),
     .rst_b(rst_l)
 );
 
-//    xpm_memory_spram #(
-//        .ADDR_WIDTH_A(32),              // DECIMAL
-//        .AUTO_SLEEP_TIME(0),            // DECIMAL
-//        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
-//        .CASCADE_HEIGHT(0),             // DECIMAL
-//        .ECC_MODE("no_ecc"),            // String
-//        .MEMORY_INIT_FILE("none"),      // String
-//        .MEMORY_INIT_PARAM("0"),        // String
-//        .MEMORY_OPTIMIZATION("false"),  // String
-//        .MEMORY_PRIMITIVE("auto"),      // String
-//        .MEMORY_SIZE(1024*1024*8),      // DECIMAL
-//        .MESSAGE_CONTROL(0),            // DECIMAL
-//        .READ_DATA_WIDTH_A(32),         // DECIMAL
-//        .READ_LATENCY_A(1),             // DECIMAL
-//        .READ_RESET_VALUE_A("0"),       // String
-//        .RST_MODE_A("SYNC"),            // String
-//        .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
-//        .USE_MEM_INIT(1),               // DECIMAL
-//        .USE_MEM_INIT_MMI(0),           // DECIMAL
-//        .WAKEUP_TIME("disable_sleep"),  // String
-//        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
-//        .WRITE_MODE_A("no_change"),     // String
-//        .WRITE_PROTECT(1)               // DECIMAL
-//    )
-//    mcu_sram (
-//        .dbiterra(),
-//        .douta(ss_axi_bram_dout),
-//        .sbiterra(),
-//        .addra(ss_axi_bram_addr),
-//        .clka(core_clk),
-//        .dina(ss_axi_bram_din),
-//        .ena(ss_axi_bram_en),
-//        .injectdbiterra(0),
-//        .injectsbiterra(0),
-//        .regcea(1),
-//        .rsta(ss_axi_bram_rst),
-//        .sleep(0),
-//        .wea(ss_axi_bram_we)
-//    );
+/*
+I think this is the one that isn't used
+    xpm_memory_spram #(
+        .ADDR_WIDTH_A(32),              // DECIMAL
+        .AUTO_SLEEP_TIME(0),            // DECIMAL
+        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
+        .CASCADE_HEIGHT(0),             // DECIMAL
+        .ECC_MODE("no_ecc"),            // String
+        .MEMORY_INIT_FILE("none"),      // String
+        .MEMORY_INIT_PARAM("0"),        // String
+        .MEMORY_OPTIMIZATION("false"),  // String
+        .MEMORY_PRIMITIVE("auto"),      // String
+        .MEMORY_SIZE(64*1024*8),      // DECIMAL
+        .MESSAGE_CONTROL(0),            // DECIMAL
+        .READ_DATA_WIDTH_A(32),         // DECIMAL
+        .READ_LATENCY_A(1),             // DECIMAL
+        .READ_RESET_VALUE_A("0"),       // String
+        .RST_MODE_A("SYNC"),            // String
+        .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .USE_MEM_INIT(1),               // DECIMAL
+        .USE_MEM_INIT_MMI(0),           // DECIMAL
+        .WAKEUP_TIME("disable_sleep"),  // String
+        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
+        .WRITE_MODE_A("no_change"),     // String
+        .WRITE_PROTECT(1)               // DECIMAL
+    )
+    mcu_rom (
+        .dbiterra(),
+        .douta(cptra_ss_mcu_rom_macro_req_if.resp.rdata),
+        .sbiterra(),
+        .addra({cptra_ss_mcu_rom_macro_req_if.req.addr, 2'b0}),
+        .clka(core_clk),
+        .dina(cptra_ss_mcu_rom_macro_req_if.req.wdata),
+        .ena(cptra_ss_mcu_rom_macro_req_if.req.cs),
+        .injectdbiterra(0),
+        .injectsbiterra(0),
+        .regcea(1),
+        .rsta(ss_axi_bram_rst),
+        .sleep(0),
+        .wea(cptra_ss_mcu_rom_macro_req_if.req.we)
+    );
+    */
 
     mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
+    );
+    xpm_memory_spram #(
+        .ADDR_WIDTH_A(32),              // DECIMAL
+        .AUTO_SLEEP_TIME(0),            // DECIMAL
+        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
+        .CASCADE_HEIGHT(0),             // DECIMAL
+        .ECC_MODE("no_ecc"),            // String
+        .MEMORY_INIT_FILE("none"),      // String
+        .MEMORY_INIT_PARAM("0"),        // String
+        .MEMORY_OPTIMIZATION("false"),  // String
+        .MEMORY_PRIMITIVE("auto"),      // String
+        .MEMORY_SIZE(1024*1024*8),      // DECIMAL
+        .MESSAGE_CONTROL(0),            // DECIMAL
+        .READ_DATA_WIDTH_A(32),         // DECIMAL
+        .READ_LATENCY_A(1),             // DECIMAL
+        .READ_RESET_VALUE_A("0"),       // String
+        .RST_MODE_A("SYNC"),            // String
+        .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .USE_MEM_INIT(1),               // DECIMAL
+        .USE_MEM_INIT_MMI(0),           // DECIMAL
+        .WAKEUP_TIME("disable_sleep"),  // String
+        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
+        .WRITE_MODE_A("no_change"),     // String
+        .WRITE_PROTECT(1)               // DECIMAL
+    )
+    mcu_sram (
+        .dbiterra(),
+        .douta(cptra_ss_mci_mcu_sram_req_if.resp.rdata),
+        .sbiterra(),
+        .addra({cptra_ss_mci_mcu_sram_req_if.req.addr, 2'b0}),
+        .clka(core_clk),
+        .dina(cptra_ss_mci_mcu_sram_req_if.req.wdata),
+        .ena(cptra_ss_mci_mcu_sram_req_if.req.cs),
+        .injectdbiterra(0),
+        .injectsbiterra(0),
+        .regcea(1),
+        .rsta(ss_axi_bram_rst),
+        .sleep(0),
+        .wea(cptra_ss_mci_mcu_sram_req_if.req.we)
     );
 
     mci_mcu_sram_if cptra_ss_mci_mbox0_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
+    xpm_memory_spram #(
+        .ADDR_WIDTH_A(32),              // DECIMAL
+        .AUTO_SLEEP_TIME(0),            // DECIMAL
+        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
+        .CASCADE_HEIGHT(0),             // DECIMAL
+        .ECC_MODE("no_ecc"),            // String
+        .MEMORY_INIT_FILE("none"),      // String
+        .MEMORY_INIT_PARAM("0"),        // String
+        .MEMORY_OPTIMIZATION("false"),  // String
+        .MEMORY_PRIMITIVE("auto"),      // String
+        .MEMORY_SIZE(1024*1024*8),      // DECIMAL
+        .MESSAGE_CONTROL(0),            // DECIMAL
+        .READ_DATA_WIDTH_A(32),         // DECIMAL
+        .READ_LATENCY_A(1),             // DECIMAL
+        .READ_RESET_VALUE_A("0"),       // String
+        .RST_MODE_A("SYNC"),            // String
+        .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .USE_MEM_INIT(1),               // DECIMAL
+        .USE_MEM_INIT_MMI(0),           // DECIMAL
+        .WAKEUP_TIME("disable_sleep"),  // String
+        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
+        .WRITE_MODE_A("no_change"),     // String
+        .WRITE_PROTECT(1)               // DECIMAL
+    )
+    mbox0 (
+        .dbiterra(),
+        .douta(cptra_ss_mci_mbox0_sram_req_if.resp.rdata),
+        .sbiterra(),
+        .addra({cptra_ss_mci_mbox0_sram_req_if.req.addr, 2'b0}),
+        .clka(core_clk),
+        .dina(cptra_ss_mci_mbox0_sram_req_if.req.wdata),
+        .ena(cptra_ss_mci_mbox0_sram_req_if.req.cs),
+        .injectdbiterra(0),
+        .injectsbiterra(0),
+        .regcea(1),
+        .rsta(ss_axi_bram_rst),
+        .sleep(0),
+        .wea(cptra_ss_mci_mbox0_sram_req_if.req.we)
+    );
     
     mci_mcu_sram_if cptra_ss_mci_mbox1_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
+    );
+    xpm_memory_spram #(
+        .ADDR_WIDTH_A(32),              // DECIMAL
+        .AUTO_SLEEP_TIME(0),            // DECIMAL
+        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
+        .CASCADE_HEIGHT(0),             // DECIMAL
+        .ECC_MODE("no_ecc"),            // String
+        .MEMORY_INIT_FILE("none"),      // String
+        .MEMORY_INIT_PARAM("0"),        // String
+        .MEMORY_OPTIMIZATION("false"),  // String
+        .MEMORY_PRIMITIVE("auto"),      // String
+        .MEMORY_SIZE(1024*1024*8),      // DECIMAL
+        .MESSAGE_CONTROL(0),            // DECIMAL
+        .READ_DATA_WIDTH_A(32),         // DECIMAL
+        .READ_LATENCY_A(1),             // DECIMAL
+        .READ_RESET_VALUE_A("0"),       // String
+        .RST_MODE_A("SYNC"),            // String
+        .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .USE_MEM_INIT(1),               // DECIMAL
+        .USE_MEM_INIT_MMI(0),           // DECIMAL
+        .WAKEUP_TIME("disable_sleep"),  // String
+        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
+        .WRITE_MODE_A("no_change"),     // String
+        .WRITE_PROTECT(1)               // DECIMAL
+    )
+    mbox1 (
+        .dbiterra(),
+        .douta(cptra_ss_mci_mbox1_sram_req_if.resp.rdata),
+        .sbiterra(),
+        .addra({cptra_ss_mci_mbox1_sram_req_if.req.addr, 2'b0}),
+        .clka(core_clk),
+        .dina(cptra_ss_mci_mbox1_sram_req_if.req.wdata),
+        .ena(cptra_ss_mci_mbox1_sram_req_if.req.cs),
+        .injectdbiterra(0),
+        .injectsbiterra(0),
+        .regcea(1),
+        .rsta(ss_axi_bram_rst),
+        .sleep(0),
+        .wea(cptra_ss_mci_mbox1_sram_req_if.req.we)
     );
     
     // MCU LSU AXI Manager
@@ -1518,8 +1721,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_cptra_generic_fw_exec_ctrl_o(),
 
     // LC Controller JTAG
-    //input   jtag_pkg::jtag_req_t                       cptra_ss_lc_ctrl_jtag_i,
-    //output  jtag_pkg::jtag_rsp_t                       cptra_ss_lc_ctrl_jtag_o,
+    .cptra_ss_lc_ctrl_jtag_i,
+    .cptra_ss_lc_ctrl_jtag_o,
     .cptra_ss_lc_ctrl_jtag_i(),
     .cptra_ss_lc_ctrl_jtag_o(),
 
@@ -1578,12 +1781,12 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mci_error_non_fatal_o(hwif_in.interface_regs.mci_error.mci_error_non_fatal.next),
     
     // TODO: MCU JTAG
-    .cptra_ss_mcu_jtag_tck_i(),
-    .cptra_ss_mcu_jtag_tms_i(),
-    .cptra_ss_mcu_jtag_tdi_i(),
-    .cptra_ss_mcu_jtag_trst_n_i(),
-    .cptra_ss_mcu_jtag_tdo_o(),
-    .cptra_ss_mcu_jtag_tdoEn_o(),
+    .cptra_ss_mcu_jtag_tck_i(mcu_jtag_tck_i),
+    .cptra_ss_mcu_jtag_tms_i(mcu_jtag_tms_i),
+    .cptra_ss_mcu_jtag_tdi_i(mcu_jtag_tdi_i),
+    .cptra_ss_mcu_jtag_trst_n_i(mcu_jtag_trst_n_i),
+    .cptra_ss_mcu_jtag_tdo_o(mcu_jtag_tdo_o),
+    .cptra_ss_mcu_jtag_tdoEn_o(mcu_jtag_tdoEn_o),
 
     // Address straps
     .cptra_ss_strap_caliptra_base_addr_i     (64'hA4100000),

@@ -158,6 +158,19 @@ regfile fifo_regs {
         field { sw=r; hw=rw; } itrng_fifo_full = 1'b0;
         field { sw=rw; hw=r; } itrng_fifo_reset = 1'b0;
     } itrng_fifo_status;
+    
+    reg {
+        field { sw=r; hw=rw; rd_swacc=true; } out_data[32] = 32'b0;
+    } dbg_fifo_pop;
+
+    reg {
+        field { sw=rw; hw=r; wr_swacc=true; } in_data[32] = 32'b0;
+    } dbg_fifo_push;
+
+    reg {
+        field { sw=r; hw=rw; } dbg_fifo_empty = 1'b0;
+        field { sw=r; hw=rw; } dbg_fifo_full = 1'b0;
+    } dbg_fifo_status;
 };
 
 addrmap caliptra_fpga_realtime_regs {

@@ -233,6 +233,9 @@ module caliptra_fpga_realtime_regs (
             logic log_fifo_status;
             logic itrng_fifo_data;
             logic itrng_fifo_status;
+            logic dbg_fifo_pop;
+            logic dbg_fifo_push;
+            logic dbg_fifo_status;
         } fifo_regs;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
@@ -243,13 +246,13 @@ module caliptra_fpga_realtime_regs (
 
     always_comb begin
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.interface_regs.generic_input_wires[i0] = cpuif_req_masked & (cpuif_addr == 13'h0 + i0*13'h4);
+            decoded_reg_strb.interface_regs.generic_input_wires[i0] = cpuif_req_masked & (cpuif_addr == 13'h0 + (13)'(i0) * 13'h4);
         end
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.interface_regs.generic_output_wires[i0] = cpuif_req_masked & (cpuif_addr == 13'h8 + i0*13'h4);
+            decoded_reg_strb.interface_regs.generic_output_wires[i0] = cpuif_req_masked & (cpuif_addr == 13'h8 + (13)'(i0) * 13'h4);
         end
         for(int i0=0; i0<8; i0++) begin
-            decoded_reg_strb.interface_regs.cptra_obf_key[i0] = cpuif_req_masked & (cpuif_addr == 13'h10 + i0*13'h4);
+            decoded_reg_strb.interface_regs.cptra_obf_key[i0] = cpuif_req_masked & (cpuif_addr == 13'h10 + (13)'(i0) * 13'h4);
         end
         decoded_reg_strb.interface_regs.control = cpuif_req_masked & (cpuif_addr == 13'h30);
         decoded_reg_strb.interface_regs.status = cpuif_req_masked & (cpuif_addr == 13'h34);
@@ -264,15 +267,18 @@ module caliptra_fpga_realtime_regs (
         decoded_reg_strb.interface_regs.mci_error = cpuif_req_masked & (cpuif_addr == 13'h58);
         decoded_reg_strb.interface_regs.mcu_config = cpuif_req_masked & (cpuif_addr == 13'h5c);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.interface_regs.mci_generic_input_wires[i0] = cpuif_req_masked & (cpuif_addr == 13'h60 + i0*13'h4);
+            decoded_reg_strb.interface_regs.mci_generic_input_wires[i0] = cpuif_req_masked & (cpuif_addr == 13'h60 + (13)'(i0) * 13'h4);
         end
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.interface_regs.mci_generic_output_wires[i0] = cpuif_req_masked & (cpuif_addr == 13'h68 + i0*13'h4);
+            decoded_reg_strb.interface_regs.mci_generic_output_wires[i0] = cpuif_req_masked & (cpuif_addr == 13'h68 + (13)'(i0) * 13'h4);
         end
         decoded_reg_strb.fifo_regs.log_fifo_data = cpuif_req_masked & (cpuif_addr == 13'h1000);
         decoded_reg_strb.fifo_regs.log_fifo_status = cpuif_req_masked & (cpuif_addr == 13'h1004);
         decoded_reg_strb.fifo_regs.itrng_fifo_data = cpuif_req_masked & (cpuif_addr == 13'h1008);
         decoded_reg_strb.fifo_regs.itrng_fifo_status = cpuif_req_masked & (cpuif_addr == 13'h100c);
+        decoded_reg_strb.fifo_regs.dbg_fifo_pop = cpuif_req_masked & (cpuif_addr == 13'h1010);
+        decoded_reg_strb.fifo_regs.dbg_fifo_push = cpuif_req_masked & (cpuif_addr == 13'h1014);
+        decoded_reg_strb.fifo_regs.dbg_fifo_status = cpuif_req_masked & (cpuif_addr == 13'h1018);
     end
 
     // Pass down signals to next stage
@@ -486,6 +492,28 @@ module caliptra_fpga_realtime_regs (
                     logic load_next;
                 } itrng_fifo_reset;
             } itrng_fifo_status;
+            struct {
+                struct {
+                    logic [31:0] next;
+                    logic load_next;
+                } out_data;
+            } dbg_fifo_pop;
+            struct {
+                struct {
+                    logic [31:0] next;
+                    logic load_next;
+                } in_data;
+            } dbg_fifo_push;
+            struct {
+                struct {
+                    logic next;
+                    logic load_next;
+                } dbg_fifo_empty;
+                struct {
+                    logic next;
+                    logic load_next;
+                } dbg_fifo_full;
+            } dbg_fifo_status;
         } fifo_regs;
     } field_combo_t;
     field_combo_t field_combo;
@@ -653,6 +681,24 @@ module caliptra_fpga_realtime_regs (
                     logic value;
                 } itrng_fifo_reset;
             } itrng_fifo_status;
+            struct {
+                struct {
+                    logic [31:0] value;
+                } out_data;
+            } dbg_fifo_pop;
+            struct {
+                struct {
+                    logic [31:0] value;
+                } in_data;
+            } dbg_fifo_push;
+            struct {
+                struct {
+                    logic value;
+                } dbg_fifo_empty;
+                struct {
+                    logic value;
+                } dbg_fifo_full;
+            } dbg_fifo_status;
         } fifo_regs;
     } field_storage_t;
     field_storage_t field_storage;
@@ -674,8 +720,10 @@ module caliptra_fpga_realtime_regs (
         always_ff @(posedge clk) begin
             if(rst) begin
                 field_storage.interface_regs.generic_input_wires[i0].value.value <= 32'h0;
-            end else if(field_combo.interface_regs.generic_input_wires[i0].value.load_next) begin
-                field_storage.interface_regs.generic_input_wires[i0].value.value <= field_combo.interface_regs.generic_input_wires[i0].value.next;
+            end else begin
+                if(field_combo.interface_regs.generic_input_wires[i0].value.load_next) begin
+                    field_storage.interface_regs.generic_input_wires[i0].value.value <= field_combo.interface_regs.generic_input_wires[i0].value.next;
+                end
             end
         end
         assign hwif_out.interface_regs.generic_input_wires[i0].value.value = field_storage.interface_regs.generic_input_wires[i0].value.value;
@@ -697,8 +745,10 @@ module caliptra_fpga_realtime_regs (
         always_ff @(posedge clk) begin
             if(rst) begin
                 field_storage.interface_regs.generic_output_wires[i0].value.value <= 32'h0;
-            end else if(field_combo.interface_regs.generic_output_wires[i0].value.load_next) begin
-                field_storage.interface_regs.generic_output_wires[i0].value.value <= field_combo.interface_regs.generic_output_wires[i0].value.next;
+            end else begin
+                if(field_combo.interface_regs.generic_output_wires[i0].value.load_next) begin
+                    field_storage.interface_regs.generic_output_wires[i0].value.value <= field_combo.interface_regs.generic_output_wires[i0].value.next;
+                end
             end
         end
         assign hwif_out.interface_regs.generic_output_wires[i0].value.value = field_storage.interface_regs.generic_output_wires[i0].value.value;
@@ -720,8 +770,10 @@ module caliptra_fpga_realtime_regs (
         always_ff @(posedge clk) begin
             if(rst) begin
                 field_storage.interface_regs.cptra_obf_key[i0].value.value <= 32'h0;
-            end else if(field_combo.interface_regs.cptra_obf_key[i0].value.load_next) begin
-                field_storage.interface_regs.cptra_obf_key[i0].value.value <= field_combo.interface_regs.cptra_obf_key[i0].value.next;
+            end else begin
+                if(field_combo.interface_regs.cptra_obf_key[i0].value.load_next) begin
+                    field_storage.interface_regs.cptra_obf_key[i0].value.value <= field_combo.interface_regs.cptra_obf_key[i0].value.next;
+                end
             end
         end
         assign hwif_out.interface_regs.cptra_obf_key[i0].value.value = field_storage.interface_regs.cptra_obf_key[i0].value.value;
@@ -742,8 +794,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.control.cptra_pwrgood.value <= 1'h0;
-        end else if(field_combo.interface_regs.control.cptra_pwrgood.load_next) begin
-            field_storage.interface_regs.control.cptra_pwrgood.value <= field_combo.interface_regs.control.cptra_pwrgood.next;
+        end else begin
+            if(field_combo.interface_regs.control.cptra_pwrgood.load_next) begin
+                field_storage.interface_regs.control.cptra_pwrgood.value <= field_combo.interface_regs.control.cptra_pwrgood.next;
+            end
         end
     end
     assign hwif_out.interface_regs.control.cptra_pwrgood.value = field_storage.interface_regs.control.cptra_pwrgood.value;
@@ -763,8 +817,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.control.cptra_ss_rst_b.value <= 1'h0;
-        end else if(field_combo.interface_regs.control.cptra_ss_rst_b.load_next) begin
-            field_storage.interface_regs.control.cptra_ss_rst_b.value <= field_combo.interface_regs.control.cptra_ss_rst_b.next;
+        end else begin
+            if(field_combo.interface_regs.control.cptra_ss_rst_b.load_next) begin
+                field_storage.interface_regs.control.cptra_ss_rst_b.value <= field_combo.interface_regs.control.cptra_ss_rst_b.next;
+            end
         end
     end
     assign hwif_out.interface_regs.control.cptra_ss_rst_b.value = field_storage.interface_regs.control.cptra_ss_rst_b.value;
@@ -784,8 +840,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.control.bootfsm_brkpoint.value <= 1'h0;
-        end else if(field_combo.interface_regs.control.bootfsm_brkpoint.load_next) begin
-            field_storage.interface_regs.control.bootfsm_brkpoint.value <= field_combo.interface_regs.control.bootfsm_brkpoint.next;
+        end else begin
+            if(field_combo.interface_regs.control.bootfsm_brkpoint.load_next) begin
+                field_storage.interface_regs.control.bootfsm_brkpoint.value <= field_combo.interface_regs.control.bootfsm_brkpoint.next;
+            end
         end
     end
     assign hwif_out.interface_regs.control.bootfsm_brkpoint.value = field_storage.interface_regs.control.bootfsm_brkpoint.value;
@@ -805,8 +863,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.status.cptra_error_fatal.value <= 1'h0;
-        end else if(field_combo.interface_regs.status.cptra_error_fatal.load_next) begin
-            field_storage.interface_regs.status.cptra_error_fatal.value <= field_combo.interface_regs.status.cptra_error_fatal.next;
+        end else begin
+            if(field_combo.interface_regs.status.cptra_error_fatal.load_next) begin
+                field_storage.interface_regs.status.cptra_error_fatal.value <= field_combo.interface_regs.status.cptra_error_fatal.next;
+            end
         end
     end
     assign hwif_out.interface_regs.status.cptra_error_fatal.value = field_storage.interface_regs.status.cptra_error_fatal.value;
@@ -826,8 +886,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.status.cptra_error_non_fatal.value <= 1'h0;
-        end else if(field_combo.interface_regs.status.cptra_error_non_fatal.load_next) begin
-            field_storage.interface_regs.status.cptra_error_non_fatal.value <= field_combo.interface_regs.status.cptra_error_non_fatal.next;
+        end else begin
+            if(field_combo.interface_regs.status.cptra_error_non_fatal.load_next) begin
+                field_storage.interface_regs.status.cptra_error_non_fatal.value <= field_combo.interface_regs.status.cptra_error_non_fatal.next;
+            end
         end
     end
     assign hwif_out.interface_regs.status.cptra_error_non_fatal.value = field_storage.interface_regs.status.cptra_error_non_fatal.value;
@@ -847,8 +909,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.status.ready_for_fuses.value <= 1'h0;
-        end else if(field_combo.interface_regs.status.ready_for_fuses.load_next) begin
-            field_storage.interface_regs.status.ready_for_fuses.value <= field_combo.interface_regs.status.ready_for_fuses.next;
+        end else begin
+            if(field_combo.interface_regs.status.ready_for_fuses.load_next) begin
+                field_storage.interface_regs.status.ready_for_fuses.value <= field_combo.interface_regs.status.ready_for_fuses.next;
+            end
         end
     end
     assign hwif_out.interface_regs.status.ready_for_fuses.value = field_storage.interface_regs.status.ready_for_fuses.value;
@@ -868,8 +932,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.status.ready_for_fw_push.value <= 1'h0;
-        end else if(field_combo.interface_regs.status.ready_for_fw_push.load_next) begin
-            field_storage.interface_regs.status.ready_for_fw_push.value <= field_combo.interface_regs.status.ready_for_fw_push.next;
+        end else begin
+            if(field_combo.interface_regs.status.ready_for_fw_push.load_next) begin
+                field_storage.interface_regs.status.ready_for_fw_push.value <= field_combo.interface_regs.status.ready_for_fw_push.next;
+            end
         end
     end
     assign hwif_out.interface_regs.status.ready_for_fw_push.value = field_storage.interface_regs.status.ready_for_fw_push.value;
@@ -889,8 +955,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.status.ready_for_runtime.value <= 1'h0;
-        end else if(field_combo.interface_regs.status.ready_for_runtime.load_next) begin
-            field_storage.interface_regs.status.ready_for_runtime.value <= field_combo.interface_regs.status.ready_for_runtime.next;
+        end else begin
+            if(field_combo.interface_regs.status.ready_for_runtime.load_next) begin
+                field_storage.interface_regs.status.ready_for_runtime.value <= field_combo.interface_regs.status.ready_for_runtime.next;
+            end
         end
     end
     assign hwif_out.interface_regs.status.ready_for_runtime.value = field_storage.interface_regs.status.ready_for_runtime.value;
@@ -910,8 +978,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.status.mailbox_data_avail.value <= 1'h0;
-        end else if(field_combo.interface_regs.status.mailbox_data_avail.load_next) begin
-            field_storage.interface_regs.status.mailbox_data_avail.value <= field_combo.interface_regs.status.mailbox_data_avail.next;
+        end else begin
+            if(field_combo.interface_regs.status.mailbox_data_avail.load_next) begin
+                field_storage.interface_regs.status.mailbox_data_avail.value <= field_combo.interface_regs.status.mailbox_data_avail.next;
+            end
         end
     end
     assign hwif_out.interface_regs.status.mailbox_data_avail.value = field_storage.interface_regs.status.mailbox_data_avail.value;
@@ -931,8 +1001,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.status.mailbox_flow_done.value <= 1'h0;
-        end else if(field_combo.interface_regs.status.mailbox_flow_done.load_next) begin
-            field_storage.interface_regs.status.mailbox_flow_done.value <= field_combo.interface_regs.status.mailbox_flow_done.next;
+        end else begin
+            if(field_combo.interface_regs.status.mailbox_flow_done.load_next) begin
+                field_storage.interface_regs.status.mailbox_flow_done.value <= field_combo.interface_regs.status.mailbox_flow_done.next;
+            end
         end
     end
     assign hwif_out.interface_regs.status.mailbox_flow_done.value = field_storage.interface_regs.status.mailbox_flow_done.value;
@@ -952,8 +1024,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.pauser.pauser.value <= 32'h0;
-        end else if(field_combo.interface_regs.pauser.pauser.load_next) begin
-            field_storage.interface_regs.pauser.pauser.value <= field_combo.interface_regs.pauser.pauser.next;
+        end else begin
+            if(field_combo.interface_regs.pauser.pauser.load_next) begin
+                field_storage.interface_regs.pauser.pauser.value <= field_combo.interface_regs.pauser.pauser.next;
+            end
         end
     end
     assign hwif_out.interface_regs.pauser.pauser.value = field_storage.interface_regs.pauser.pauser.value;
@@ -973,8 +1047,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.itrng_divisor.itrng_divisor.value <= 32'h0;
-        end else if(field_combo.interface_regs.itrng_divisor.itrng_divisor.load_next) begin
-            field_storage.interface_regs.itrng_divisor.itrng_divisor.value <= field_combo.interface_regs.itrng_divisor.itrng_divisor.next;
+        end else begin
+            if(field_combo.interface_regs.itrng_divisor.itrng_divisor.load_next) begin
+                field_storage.interface_regs.itrng_divisor.itrng_divisor.value <= field_combo.interface_regs.itrng_divisor.itrng_divisor.next;
+            end
         end
     end
     assign hwif_out.interface_regs.itrng_divisor.itrng_divisor.value = field_storage.interface_regs.itrng_divisor.itrng_divisor.value;
@@ -994,8 +1070,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.cycle_count.cycle_count.value <= 32'h0;
-        end else if(field_combo.interface_regs.cycle_count.cycle_count.load_next) begin
-            field_storage.interface_regs.cycle_count.cycle_count.value <= field_combo.interface_regs.cycle_count.cycle_count.next;
+        end else begin
+            if(field_combo.interface_regs.cycle_count.cycle_count.load_next) begin
+                field_storage.interface_regs.cycle_count.cycle_count.value <= field_combo.interface_regs.cycle_count.cycle_count.next;
+            end
         end
     end
     assign hwif_out.interface_regs.cycle_count.cycle_count.value = field_storage.interface_regs.cycle_count.cycle_count.value;
@@ -1015,8 +1093,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.fpga_version.fpga_version.value <= 32'h0;
-        end else if(field_combo.interface_regs.fpga_version.fpga_version.load_next) begin
-            field_storage.interface_regs.fpga_version.fpga_version.value <= field_combo.interface_regs.fpga_version.fpga_version.next;
+        end else begin
+            if(field_combo.interface_regs.fpga_version.fpga_version.load_next) begin
+                field_storage.interface_regs.fpga_version.fpga_version.value <= field_combo.interface_regs.fpga_version.fpga_version.next;
+            end
         end
     end
     assign hwif_out.interface_regs.fpga_version.fpga_version.value = field_storage.interface_regs.fpga_version.fpga_version.value;
@@ -1036,8 +1116,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.lsu_user.lsu_user.value <= 32'h0;
-        end else if(field_combo.interface_regs.lsu_user.lsu_user.load_next) begin
-            field_storage.interface_regs.lsu_user.lsu_user.value <= field_combo.interface_regs.lsu_user.lsu_user.next;
+        end else begin
+            if(field_combo.interface_regs.lsu_user.lsu_user.load_next) begin
+                field_storage.interface_regs.lsu_user.lsu_user.value <= field_combo.interface_regs.lsu_user.lsu_user.next;
+            end
         end
     end
     assign hwif_out.interface_regs.lsu_user.lsu_user.value = field_storage.interface_regs.lsu_user.lsu_user.value;
@@ -1057,8 +1139,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.ifu_user.ifu_user.value <= 32'h0;
-        end else if(field_combo.interface_regs.ifu_user.ifu_user.load_next) begin
-            field_storage.interface_regs.ifu_user.ifu_user.value <= field_combo.interface_regs.ifu_user.ifu_user.next;
+        end else begin
+            if(field_combo.interface_regs.ifu_user.ifu_user.load_next) begin
+                field_storage.interface_regs.ifu_user.ifu_user.value <= field_combo.interface_regs.ifu_user.ifu_user.next;
+            end
         end
     end
     assign hwif_out.interface_regs.ifu_user.ifu_user.value = field_storage.interface_regs.ifu_user.ifu_user.value;
@@ -1078,8 +1162,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.clp_user.clp_user.value <= 32'h0;
-        end else if(field_combo.interface_regs.clp_user.clp_user.load_next) begin
-            field_storage.interface_regs.clp_user.clp_user.value <= field_combo.interface_regs.clp_user.clp_user.next;
+        end else begin
+            if(field_combo.interface_regs.clp_user.clp_user.load_next) begin
+                field_storage.interface_regs.clp_user.clp_user.value <= field_combo.interface_regs.clp_user.clp_user.next;
+            end
         end
     end
     assign hwif_out.interface_regs.clp_user.clp_user.value = field_storage.interface_regs.clp_user.clp_user.value;
@@ -1099,8 +1185,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.mcu_reset_vector.mcu_reset_vector.value <= 32'h0;
-        end else if(field_combo.interface_regs.mcu_reset_vector.mcu_reset_vector.load_next) begin
-            field_storage.interface_regs.mcu_reset_vector.mcu_reset_vector.value <= field_combo.interface_regs.mcu_reset_vector.mcu_reset_vector.next;
+        end else begin
+            if(field_combo.interface_regs.mcu_reset_vector.mcu_reset_vector.load_next) begin
+                field_storage.interface_regs.mcu_reset_vector.mcu_reset_vector.value <= field_combo.interface_regs.mcu_reset_vector.mcu_reset_vector.next;
+            end
         end
     end
     assign hwif_out.interface_regs.mcu_reset_vector.mcu_reset_vector.value = field_storage.interface_regs.mcu_reset_vector.mcu_reset_vector.value;
@@ -1120,8 +1208,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.mci_error.mci_error_fatal.value <= 1'h0;
-        end else if(field_combo.interface_regs.mci_error.mci_error_fatal.load_next) begin
-            field_storage.interface_regs.mci_error.mci_error_fatal.value <= field_combo.interface_regs.mci_error.mci_error_fatal.next;
+        end else begin
+            if(field_combo.interface_regs.mci_error.mci_error_fatal.load_next) begin
+                field_storage.interface_regs.mci_error.mci_error_fatal.value <= field_combo.interface_regs.mci_error.mci_error_fatal.next;
+            end
         end
     end
     assign hwif_out.interface_regs.mci_error.mci_error_fatal.value = field_storage.interface_regs.mci_error.mci_error_fatal.value;
@@ -1141,8 +1231,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.mci_error.mci_error_non_fatal.value <= 1'h0;
-        end else if(field_combo.interface_regs.mci_error.mci_error_non_fatal.load_next) begin
-            field_storage.interface_regs.mci_error.mci_error_non_fatal.value <= field_combo.interface_regs.mci_error.mci_error_non_fatal.next;
+        end else begin
+            if(field_combo.interface_regs.mci_error.mci_error_non_fatal.load_next) begin
+                field_storage.interface_regs.mci_error.mci_error_non_fatal.value <= field_combo.interface_regs.mci_error.mci_error_non_fatal.next;
+            end
         end
     end
     assign hwif_out.interface_regs.mci_error.mci_error_non_fatal.value = field_storage.interface_regs.mci_error.mci_error_non_fatal.value;
@@ -1162,8 +1254,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.mcu_config.mcu_no_rom_config.value <= 1'h0;
-        end else if(field_combo.interface_regs.mcu_config.mcu_no_rom_config.load_next) begin
-            field_storage.interface_regs.mcu_config.mcu_no_rom_config.value <= field_combo.interface_regs.mcu_config.mcu_no_rom_config.next;
+        end else begin
+            if(field_combo.interface_regs.mcu_config.mcu_no_rom_config.load_next) begin
+                field_storage.interface_regs.mcu_config.mcu_no_rom_config.value <= field_combo.interface_regs.mcu_config.mcu_no_rom_config.next;
+            end
         end
     end
     assign hwif_out.interface_regs.mcu_config.mcu_no_rom_config.value = field_storage.interface_regs.mcu_config.mcu_no_rom_config.value;
@@ -1183,8 +1277,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.value <= 1'h0;
-        end else if(field_combo.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.load_next) begin
-            field_storage.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.next;
+        end else begin
+            if(field_combo.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.load_next) begin
+                field_storage.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.next;
+            end
         end
     end
     assign hwif_out.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.value = field_storage.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.value;
@@ -1204,8 +1300,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.mcu_config.cptra_ss_lc_Allow_RMA_on_PPD_i.value <= 1'h0;
-        end else if(field_combo.interface_regs.mcu_config.cptra_ss_lc_Allow_RMA_on_PPD_i.load_next) begin
-            field_storage.interface_regs.mcu_config.cptra_ss_lc_Allow_RMA_on_PPD_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_lc_Allow_RMA_on_PPD_i.next;
+        end else begin
+            if(field_combo.interface_regs.mcu_config.cptra_ss_lc_Allow_RMA_on_PPD_i.load_next) begin
+                field_storage.interface_regs.mcu_config.cptra_ss_lc_Allow_RMA_on_PPD_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_lc_Allow_RMA_on_PPD_i.next;
+            end
         end
     end
     assign hwif_out.interface_regs.mcu_config.cptra_ss_lc_Allow_RMA_on_PPD_i.value = field_storage.interface_regs.mcu_config.cptra_ss_lc_Allow_RMA_on_PPD_i.value;
@@ -1225,8 +1323,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.mcu_config.cptra_ss_lc_ctrl_scan_rst_ni_i.value <= 1'h0;
-        end else if(field_combo.interface_regs.mcu_config.cptra_ss_lc_ctrl_scan_rst_ni_i.load_next) begin
-            field_storage.interface_regs.mcu_config.cptra_ss_lc_ctrl_scan_rst_ni_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_lc_ctrl_scan_rst_ni_i.next;
+        end else begin
+            if(field_combo.interface_regs.mcu_config.cptra_ss_lc_ctrl_scan_rst_ni_i.load_next) begin
+                field_storage.interface_regs.mcu_config.cptra_ss_lc_ctrl_scan_rst_ni_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_lc_ctrl_scan_rst_ni_i.next;
+            end
         end
     end
     assign hwif_out.interface_regs.mcu_config.cptra_ss_lc_ctrl_scan_rst_ni_i.value = field_storage.interface_regs.mcu_config.cptra_ss_lc_ctrl_scan_rst_ni_i.value;
@@ -1246,8 +1346,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.value <= 1'h0;
-        end else if(field_combo.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.load_next) begin
-            field_storage.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.next;
+        end else begin
+            if(field_combo.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.load_next) begin
+                field_storage.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.next;
+            end
         end
     end
     assign hwif_out.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.value = field_storage.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.value;
@@ -1267,8 +1369,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.value <= 1'h0;
-        end else if(field_combo.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.load_next) begin
-            field_storage.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.next;
+        end else begin
+            if(field_combo.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.load_next) begin
+                field_storage.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.value <= field_combo.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.next;
+            end
         end
     end
     assign hwif_out.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.value = field_storage.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.value;
@@ -1289,8 +1393,10 @@ module caliptra_fpga_realtime_regs (
         always_ff @(posedge clk) begin
             if(rst) begin
                 field_storage.interface_regs.mci_generic_input_wires[i0].value.value <= 32'h0;
-            end else if(field_combo.interface_regs.mci_generic_input_wires[i0].value.load_next) begin
-                field_storage.interface_regs.mci_generic_input_wires[i0].value.value <= field_combo.interface_regs.mci_generic_input_wires[i0].value.next;
+            end else begin
+                if(field_combo.interface_regs.mci_generic_input_wires[i0].value.load_next) begin
+                    field_storage.interface_regs.mci_generic_input_wires[i0].value.value <= field_combo.interface_regs.mci_generic_input_wires[i0].value.next;
+                end
             end
         end
         assign hwif_out.interface_regs.mci_generic_input_wires[i0].value.value = field_storage.interface_regs.mci_generic_input_wires[i0].value.value;
@@ -1312,8 +1418,10 @@ module caliptra_fpga_realtime_regs (
         always_ff @(posedge clk) begin
             if(rst) begin
                 field_storage.interface_regs.mci_generic_output_wires[i0].value.value <= 32'h0;
-            end else if(field_combo.interface_regs.mci_generic_output_wires[i0].value.load_next) begin
-                field_storage.interface_regs.mci_generic_output_wires[i0].value.value <= field_combo.interface_regs.mci_generic_output_wires[i0].value.next;
+            end else begin
+                if(field_combo.interface_regs.mci_generic_output_wires[i0].value.load_next) begin
+                    field_storage.interface_regs.mci_generic_output_wires[i0].value.value <= field_combo.interface_regs.mci_generic_output_wires[i0].value.next;
+                end
             end
         end
         assign hwif_out.interface_regs.mci_generic_output_wires[i0].value.value = field_storage.interface_regs.mci_generic_output_wires[i0].value.value;
@@ -1334,8 +1442,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.fifo_regs.log_fifo_data.next_char.value <= 8'h0;
-        end else if(field_combo.fifo_regs.log_fifo_data.next_char.load_next) begin
-            field_storage.fifo_regs.log_fifo_data.next_char.value <= field_combo.fifo_regs.log_fifo_data.next_char.next;
+        end else begin
+            if(field_combo.fifo_regs.log_fifo_data.next_char.load_next) begin
+                field_storage.fifo_regs.log_fifo_data.next_char.value <= field_combo.fifo_regs.log_fifo_data.next_char.next;
+            end
         end
     end
     assign hwif_out.fifo_regs.log_fifo_data.next_char.value = field_storage.fifo_regs.log_fifo_data.next_char.value;
@@ -1356,8 +1466,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.fifo_regs.log_fifo_data.char_valid.value <= 1'h0;
-        end else if(field_combo.fifo_regs.log_fifo_data.char_valid.load_next) begin
-            field_storage.fifo_regs.log_fifo_data.char_valid.value <= field_combo.fifo_regs.log_fifo_data.char_valid.next;
+        end else begin
+            if(field_combo.fifo_regs.log_fifo_data.char_valid.load_next) begin
+                field_storage.fifo_regs.log_fifo_data.char_valid.value <= field_combo.fifo_regs.log_fifo_data.char_valid.next;
+            end
         end
     end
     assign hwif_out.fifo_regs.log_fifo_data.char_valid.value = field_storage.fifo_regs.log_fifo_data.char_valid.value;
@@ -1377,8 +1489,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.fifo_regs.log_fifo_status.log_fifo_empty.value <= 1'h0;
-        end else if(field_combo.fifo_regs.log_fifo_status.log_fifo_empty.load_next) begin
-            field_storage.fifo_regs.log_fifo_status.log_fifo_empty.value <= field_combo.fifo_regs.log_fifo_status.log_fifo_empty.next;
+        end else begin
+            if(field_combo.fifo_regs.log_fifo_status.log_fifo_empty.load_next) begin
+                field_storage.fifo_regs.log_fifo_status.log_fifo_empty.value <= field_combo.fifo_regs.log_fifo_status.log_fifo_empty.next;
+            end
         end
     end
     assign hwif_out.fifo_regs.log_fifo_status.log_fifo_empty.value = field_storage.fifo_regs.log_fifo_status.log_fifo_empty.value;
@@ -1398,8 +1512,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.fifo_regs.log_fifo_status.log_fifo_full.value <= 1'h0;
-        end else if(field_combo.fifo_regs.log_fifo_status.log_fifo_full.load_next) begin
-            field_storage.fifo_regs.log_fifo_status.log_fifo_full.value <= field_combo.fifo_regs.log_fifo_status.log_fifo_full.next;
+        end else begin
+            if(field_combo.fifo_regs.log_fifo_status.log_fifo_full.load_next) begin
+                field_storage.fifo_regs.log_fifo_status.log_fifo_full.value <= field_combo.fifo_regs.log_fifo_status.log_fifo_full.next;
+            end
         end
     end
     assign hwif_out.fifo_regs.log_fifo_status.log_fifo_full.value = field_storage.fifo_regs.log_fifo_status.log_fifo_full.value;
@@ -1419,8 +1535,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.fifo_regs.itrng_fifo_data.itrng_data.value <= 32'h0;
-        end else if(field_combo.fifo_regs.itrng_fifo_data.itrng_data.load_next) begin
-            field_storage.fifo_regs.itrng_fifo_data.itrng_data.value <= field_combo.fifo_regs.itrng_fifo_data.itrng_data.next;
+        end else begin
+            if(field_combo.fifo_regs.itrng_fifo_data.itrng_data.load_next) begin
+                field_storage.fifo_regs.itrng_fifo_data.itrng_data.value <= field_combo.fifo_regs.itrng_fifo_data.itrng_data.next;
+            end
         end
     end
     assign hwif_out.fifo_regs.itrng_fifo_data.itrng_data.value = field_storage.fifo_regs.itrng_fifo_data.itrng_data.value;
@@ -1441,8 +1559,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_empty.value <= 1'h0;
-        end else if(field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_empty.load_next) begin
-            field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_empty.value <= field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_empty.next;
+        end else begin
+            if(field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_empty.load_next) begin
+                field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_empty.value <= field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_empty.next;
+            end
         end
     end
     assign hwif_out.fifo_regs.itrng_fifo_status.itrng_fifo_empty.value = field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_empty.value;
@@ -1462,8 +1582,10 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_full.value <= 1'h0;
-        end else if(field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_full.load_next) begin
-            field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_full.value <= field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_full.next;
+        end else begin
+            if(field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_full.load_next) begin
+                field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_full.value <= field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_full.next;
+            end
         end
     end
     assign hwif_out.fifo_regs.itrng_fifo_status.itrng_fifo_full.value = field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_full.value;
@@ -1483,11 +1605,107 @@ module caliptra_fpga_realtime_regs (
     always_ff @(posedge clk) begin
         if(rst) begin
             field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_reset.value <= 1'h0;
-        end else if(field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_reset.load_next) begin
-            field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_reset.value <= field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_reset.next;
+        end else begin
+            if(field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_reset.load_next) begin
+                field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_reset.value <= field_combo.fifo_regs.itrng_fifo_status.itrng_fifo_reset.next;
+            end
         end
     end
     assign hwif_out.fifo_regs.itrng_fifo_status.itrng_fifo_reset.value = field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_reset.value;
+    // Field: caliptra_fpga_realtime_regs.fifo_regs.dbg_fifo_pop.out_data
+    always_comb begin
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.fifo_regs.dbg_fifo_pop.out_data.value;
+        load_next_c = '0;
+        
+        // HW Write
+        next_c = hwif_in.fifo_regs.dbg_fifo_pop.out_data.next;
+        load_next_c = '1;
+        field_combo.fifo_regs.dbg_fifo_pop.out_data.next = next_c;
+        field_combo.fifo_regs.dbg_fifo_pop.out_data.load_next = load_next_c;
+    end
+    always_ff @(posedge clk) begin
+        if(rst) begin
+            field_storage.fifo_regs.dbg_fifo_pop.out_data.value <= 32'h0;
+        end else begin
+            if(field_combo.fifo_regs.dbg_fifo_pop.out_data.load_next) begin
+                field_storage.fifo_regs.dbg_fifo_pop.out_data.value <= field_combo.fifo_regs.dbg_fifo_pop.out_data.next;
+            end
+        end
+    end
+    assign hwif_out.fifo_regs.dbg_fifo_pop.out_data.value = field_storage.fifo_regs.dbg_fifo_pop.out_data.value;
+    assign hwif_out.fifo_regs.dbg_fifo_pop.out_data.rd_swacc = decoded_reg_strb.fifo_regs.dbg_fifo_pop && !decoded_req_is_wr;
+    // Field: caliptra_fpga_realtime_regs.fifo_regs.dbg_fifo_push.in_data
+    always_comb begin
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.fifo_regs.dbg_fifo_push.in_data.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.fifo_regs.dbg_fifo_push && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.fifo_regs.dbg_fifo_push.in_data.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end
+        field_combo.fifo_regs.dbg_fifo_push.in_data.next = next_c;
+        field_combo.fifo_regs.dbg_fifo_push.in_data.load_next = load_next_c;
+    end
+    always_ff @(posedge clk) begin
+        if(rst) begin
+            field_storage.fifo_regs.dbg_fifo_push.in_data.value <= 32'h0;
+        end else begin
+            if(field_combo.fifo_regs.dbg_fifo_push.in_data.load_next) begin
+                field_storage.fifo_regs.dbg_fifo_push.in_data.value <= field_combo.fifo_regs.dbg_fifo_push.in_data.next;
+            end
+        end
+    end
+    assign hwif_out.fifo_regs.dbg_fifo_push.in_data.value = field_storage.fifo_regs.dbg_fifo_push.in_data.value;
+    assign hwif_out.fifo_regs.dbg_fifo_push.in_data.wr_swacc = decoded_reg_strb.fifo_regs.dbg_fifo_push && decoded_req_is_wr;
+    // Field: caliptra_fpga_realtime_regs.fifo_regs.dbg_fifo_status.dbg_fifo_empty
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_empty.value;
+        load_next_c = '0;
+        
+        // HW Write
+        next_c = hwif_in.fifo_regs.dbg_fifo_status.dbg_fifo_empty.next;
+        load_next_c = '1;
+        field_combo.fifo_regs.dbg_fifo_status.dbg_fifo_empty.next = next_c;
+        field_combo.fifo_regs.dbg_fifo_status.dbg_fifo_empty.load_next = load_next_c;
+    end
+    always_ff @(posedge clk) begin
+        if(rst) begin
+            field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_empty.value <= 1'h0;
+        end else begin
+            if(field_combo.fifo_regs.dbg_fifo_status.dbg_fifo_empty.load_next) begin
+                field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_empty.value <= field_combo.fifo_regs.dbg_fifo_status.dbg_fifo_empty.next;
+            end
+        end
+    end
+    assign hwif_out.fifo_regs.dbg_fifo_status.dbg_fifo_empty.value = field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_empty.value;
+    // Field: caliptra_fpga_realtime_regs.fifo_regs.dbg_fifo_status.dbg_fifo_full
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_full.value;
+        load_next_c = '0;
+        
+        // HW Write
+        next_c = hwif_in.fifo_regs.dbg_fifo_status.dbg_fifo_full.next;
+        load_next_c = '1;
+        field_combo.fifo_regs.dbg_fifo_status.dbg_fifo_full.next = next_c;
+        field_combo.fifo_regs.dbg_fifo_status.dbg_fifo_full.load_next = load_next_c;
+    end
+    always_ff @(posedge clk) begin
+        if(rst) begin
+            field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_full.value <= 1'h0;
+        end else begin
+            if(field_combo.fifo_regs.dbg_fifo_status.dbg_fifo_full.load_next) begin
+                field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_full.value <= field_combo.fifo_regs.dbg_fifo_status.dbg_fifo_full.next;
+            end
+        end
+    end
+    assign hwif_out.fifo_regs.dbg_fifo_status.dbg_fifo_full.value = field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_full.value;
 
     //--------------------------------------------------------------------------
     // Write response
@@ -1505,15 +1723,15 @@ module caliptra_fpga_realtime_regs (
     logic [31:0] readback_data;
 
     // Assign readback values to a flattened array
-    logic [31:0] readback_array[32];
+    logic [31:0] readback_array[35];
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 0][31:0] = (decoded_reg_strb.interface_regs.generic_input_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.generic_input_wires[i0].value.value : '0;
+        assign readback_array[i0 * 1 + 0][31:0] = (decoded_reg_strb.interface_regs.generic_input_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.generic_input_wires[i0].value.value : '0;
     end
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 2][31:0] = (decoded_reg_strb.interface_regs.generic_output_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.generic_output_wires[i0].value.value : '0;
+        assign readback_array[i0 * 1 + 2][31:0] = (decoded_reg_strb.interface_regs.generic_output_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.generic_output_wires[i0].value.value : '0;
     end
     for(genvar i0=0; i0<8; i0++) begin
-        assign readback_array[i0*1 + 4][31:0] = (decoded_reg_strb.interface_regs.cptra_obf_key[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.cptra_obf_key[i0].value.value : '0;
+        assign readback_array[i0 * 1 + 4][31:0] = (decoded_reg_strb.interface_regs.cptra_obf_key[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.cptra_obf_key[i0].value.value : '0;
     end
     assign readback_array[12][0:0] = (decoded_reg_strb.interface_regs.control && !decoded_req_is_wr) ? field_storage.interface_regs.control.cptra_pwrgood.value : '0;
     assign readback_array[12][1:1] = (decoded_reg_strb.interface_regs.control && !decoded_req_is_wr) ? field_storage.interface_regs.control.cptra_ss_rst_b.value : '0;
@@ -1546,10 +1764,10 @@ module caliptra_fpga_realtime_regs (
     assign readback_array[23][5:5] = (decoded_reg_strb.interface_regs.mcu_config && !decoded_req_is_wr) ? field_storage.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state1_i.value : '0;
     assign readback_array[23][31:6] = '0;
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 24][31:0] = (decoded_reg_strb.interface_regs.mci_generic_input_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.mci_generic_input_wires[i0].value.value : '0;
+        assign readback_array[i0 * 1 + 24][31:0] = (decoded_reg_strb.interface_regs.mci_generic_input_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.mci_generic_input_wires[i0].value.value : '0;
     end
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 26][31:0] = (decoded_reg_strb.interface_regs.mci_generic_output_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.mci_generic_output_wires[i0].value.value : '0;
+        assign readback_array[i0 * 1 + 26][31:0] = (decoded_reg_strb.interface_regs.mci_generic_output_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.mci_generic_output_wires[i0].value.value : '0;
     end
     assign readback_array[28][7:0] = (decoded_reg_strb.fifo_regs.log_fifo_data && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_data.next_char.value : '0;
     assign readback_array[28][8:8] = (decoded_reg_strb.fifo_regs.log_fifo_data && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_data.char_valid.value : '0;
@@ -1562,6 +1780,11 @@ module caliptra_fpga_realtime_regs (
     assign readback_array[31][1:1] = (decoded_reg_strb.fifo_regs.itrng_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_full.value : '0;
     assign readback_array[31][2:2] = (decoded_reg_strb.fifo_regs.itrng_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_reset.value : '0;
     assign readback_array[31][31:3] = '0;
+    assign readback_array[32][31:0] = (decoded_reg_strb.fifo_regs.dbg_fifo_pop && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_pop.out_data.value : '0;
+    assign readback_array[33][31:0] = (decoded_reg_strb.fifo_regs.dbg_fifo_push && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_push.in_data.value : '0;
+    assign readback_array[34][0:0] = (decoded_reg_strb.fifo_regs.dbg_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_empty.value : '0;
+    assign readback_array[34][1:1] = (decoded_reg_strb.fifo_regs.dbg_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_full.value : '0;
+    assign readback_array[34][31:2] = '0;
 
     // Reduce the array
     always_comb begin
@@ -1569,7 +1792,7 @@ module caliptra_fpga_realtime_regs (
         readback_done = decoded_req & ~decoded_req_is_wr;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<32; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<35; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 

@@ -10,7 +10,7 @@ if { [file exists $adbDir/src/abr_prim/rtl/abr_prim_flop_macros.sv] == 0 } {
 
 add_files $adbDir/src/abr_prim/rtl/abr_prim_flop_macros.sv
 
-# From mldsa_top_tb.vf
+# Initial list from mldsa_top_tb.vf
 add_files $adbDir/src/mldsa_top/rtl/mldsa_config_defines.svh
 add_files $adbDir/src/mldsa_top/rtl/mldsa_params_pkg.sv
 add_files $adbDir/src/mldsa_top/rtl/mldsa_reg_pkg.sv
@@ -26,22 +26,10 @@ add_files $adbDir/src/sample_in_ball/rtl/sib_mem.sv
 
 add_files [ glob $adbDir/src/abr_prim/rtl/*.sv ]
 add_files [ glob $adbDir/src/abr_prim/rtl/*.svh ]
-#add_files $adbDir/src/abr_prim/rtl/abr_prim_util_pkg.sv
-#add_files $adbDir/src/abr_prim/rtl/abr_prim_alert_pkg.sv
-#add_files $adbDir/src/abr_prim/rtl/abr_prim_subreg_pkg.sv
-#add_files $adbDir/src/abr_prim/rtl/abr_prim_mubi_pkg.sv
-#add_files $adbDir/src/abr_prim/rtl/abr_prim_cipher_pkg.sv
-#add_files $adbDir/src/abr_prim/rtl/abr_prim_pkg.sv
-#add_files $adbDir/src/abr_prim/rtl/abr_prim_sparse_fsm_pkg.sv
 
 add_files [ glob $adbDir/src/ntt_top/rtl/*.sv ]
-#add_files $adbDir/src/ntt_top/rtl/ntt_defines_pkg.sv
-#add_files $adbDir/src/ntt_top/rtl/ntt_special_adder.sv
 add_files $adbDir/src/ntt_top/tb/ntt_ram_tdp_file.sv
-#add_files $adbDir/src/ntt_top/rtl/ntt_shuffle_buffer.sv
 add_files $adbDir/src/ntt_top/tb/ntt_wrapper.sv
-
-
 add_files $adbDir/src/norm_check/rtl/norm_check_defines_pkg.sv
 add_files $adbDir/src/mldsa_top/tb/mldsa_top_tb.sv
 add_files $adbDir/src/rej_bounded/rtl/rej_bounded_ctrl.sv
@@ -118,7 +106,6 @@ add_files $adbDir/src/sk_decode/rtl/skdecode_t0_unpack.sv
 add_files $adbDir/src/makehint/rtl/makehint_defines_pkg.sv
 add_files $adbDir/src/makehint/rtl/hintgen.sv
 add_files $adbDir/src/makehint/rtl/makehint.sv
-#add_files $adbDir/src/makehint/rtl/makehint_sample_buffer.sv
 add_files $adbDir/src/norm_check/rtl/norm_check.sv
 add_files $adbDir/src/norm_check/rtl/norm_check_ctrl.sv
 add_files $adbDir/src/norm_check/rtl/norm_check_top.sv
