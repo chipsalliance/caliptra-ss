@@ -12,16 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-`ifndef TRACE_BUFFER_DEFINES_HEADER
-`define TRACE_BUFFER_DEFINES_HEADER
+`ifndef TRACE_BUFFER_CSR_FIELD_DEFINES_HEADER
+`define TRACE_BUFFER_CSR_FIELD_DEFINES_HEADER
 
 
-`define TRACE_BUFFER_CSR_BASE_ADDR                                                                  (32'h0)
+`ifndef TRACE_BUFFER_CSR_STATUS
 `define TRACE_BUFFER_CSR_STATUS                                                                     (32'h0)
+`define TRACE_BUFFER_CSR_STATUS_WRAPPED_LOW                                                         (0)
+`define TRACE_BUFFER_CSR_STATUS_WRAPPED_MASK                                                        (32'h1)
+`define TRACE_BUFFER_CSR_STATUS_VALID_DATA_LOW                                                      (1)
+`define TRACE_BUFFER_CSR_STATUS_VALID_DATA_MASK                                                     (32'h2)
+`endif
+`ifndef TRACE_BUFFER_CSR_CONFIG
 `define TRACE_BUFFER_CSR_CONFIG                                                                     (32'h4)
+`endif
+`ifndef TRACE_BUFFER_CSR_DATA
 `define TRACE_BUFFER_CSR_DATA                                                                       (32'h8)
+`endif
+`ifndef TRACE_BUFFER_CSR_WRITE_PTR
 `define TRACE_BUFFER_CSR_WRITE_PTR                                                                  (32'hc)
+`endif
+`ifndef TRACE_BUFFER_CSR_READ_PTR
 `define TRACE_BUFFER_CSR_READ_PTR                                                                   (32'h10)
+`endif
 
 
 `endif

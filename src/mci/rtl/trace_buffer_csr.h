@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#ifndef TRACE_BUFFER_HEADER
-#define TRACE_BUFFER_HEADER
+#ifndef TRACE_BUFFER_CSR_HEADER
+#define TRACE_BUFFER_CSR_HEADER
 
 
 #define TRACE_BUFFER_CSR_BASE_ADDR                                                                  (0x0)
