@@ -1127,7 +1127,7 @@ MCI provides the logic for these enables. When the following condition(s) are me
 | FW\_FLOW\_STATUS | 0x62 | RO | Yes |  |  |
 | HW\_ERROR\_FATAL | 0x63 | RO | Yes |  |  |
 | AGG\_ERROR\_FATAL | 0x64 | RO | Yes |  |  |
-| HW\_ERROR\_NON\_FATAL | 0x65 D RO | Yes |  |  |
+| HW\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |  |
 | AGG\_ERROR\_NON\_FATAL | 0x66 | RO | Yes |  |  |
 | FW\_ERROR\_FATAL | 0x67 | RO | Yes |  |  |
 | FW\_ERROR\_NON\_FATAL | 0x68 | RO | Yes |  |  |
