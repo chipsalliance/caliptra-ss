@@ -1042,8 +1042,7 @@ Below is the SW interface to extract trace data:
 
 #### MCU Trace Buffer Packet
 
-A single MCU trace is more than 32 bits, meaning each trace takes up more than one offest. Trace data is stored in the following format:
-
+A single MCU trace is more than 32 bits, meaning each trace takes up more than one offset. Trace data is stored in the following format:
 ![](images/MCI-MCU-Trace-Buffer-Data.png)
 
 Assuming there is only one trace stored in the trace buffer the WRITE_PTR would read as 0x3. To get the entire trace packet the user would need to read offsets 0x0, 0x1, 0x2, and 0x3. 
