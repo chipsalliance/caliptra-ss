@@ -54,9 +54,6 @@ module mci_top
     axi_if.w_sub s_axi_w_if,
     axi_if.r_sub s_axi_r_if,
     
-    // AXI Manager INF
-    axi_if.w_mgr m_axi_w_if,
-    axi_if.r_mgr m_axi_r_if,
     
     // Straps
     input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
@@ -234,29 +231,6 @@ module mci_top
     // Other
     logic mci_ss_debug_intent;
 
-// AIX MANAGER TIEOFFS - FIXME
-assign m_axi_w_if.wlast = '0; // FIXME
-assign m_axi_w_if.awaddr = '0; // FIXME
-assign m_axi_w_if.awburst = '0; // FIXME
-assign m_axi_w_if.awsize = '0; // FIXME
-assign m_axi_w_if.awlen = '0; // FIXME
-assign m_axi_w_if.awuser = '0; // FIXME
-assign m_axi_w_if.awid = '0; // FIXME
-assign m_axi_w_if.awlock = '0; // FIXME
-assign m_axi_w_if.awvalid = '0; // FIXME
-assign m_axi_w_if.wdata = '0; // FIXME
-assign m_axi_w_if.wstrb = '0; // FIXME
-assign m_axi_w_if.wvalid = '0; // FIXME
-assign m_axi_w_if.bready = '0; // FIXME
-assign m_axi_r_if.araddr = '0; // FIXME
-assign m_axi_r_if.arburst = '0; // FIXME
-assign m_axi_r_if.arsize = '0; // FIXME
-assign m_axi_r_if.arlen = '0; // FIXME
-assign m_axi_r_if.aruser = '0; // FIXME
-assign m_axi_r_if.arid = '0; // FIXME
-assign m_axi_r_if.arlock = '0; // FIXME
-assign m_axi_r_if.arvalid = '0; // FIXME
-assign m_axi_r_if.rready = '0; // FIXME
 // Caliptra internal fabric interface for MCU SRAM 
 // Address width is set to AXI_ADDR_WIDTH and MCU SRAM
 // will mask out upper bits that are "don't care"

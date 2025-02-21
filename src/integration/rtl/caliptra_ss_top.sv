@@ -55,9 +55,6 @@ module caliptra_ss_top
     axi_if cptra_ss_mcu_rom_s_axi_if,
     axi_mem_if.request mcu_rom_mem_export_if,
 
-// Caliptra SS MCI AXI Manager Interface
-    axi_if cptra_ss_mci_m_axi_if,
-
 // Caliptra SS MCU LSU/IFU AXI Manager Interface
     axi_if cptra_ss_mcu_lsu_m_axi_if,
     axi_if cptra_ss_mcu_ifu_m_axi_if,
@@ -1139,10 +1136,6 @@ module caliptra_ss_top
         // MCI AXI Interface
         .s_axi_w_if(cptra_ss_mci_s_axi_if.w_sub),
         .s_axi_r_if(cptra_ss_mci_s_axi_if.r_sub),
-
-        // MCI Master interface
-        .m_axi_w_if(cptra_ss_mci_m_axi_if.w_mgr),
-        .m_axi_r_if(cptra_ss_mci_m_axi_if.r_mgr),
         
         .strap_mcu_lsu_axi_user(cptra_ss_strap_mcu_lsu_axi_user_i),
         .strap_mcu_ifu_axi_user(cptra_ss_strap_mcu_ifu_axi_user_i),

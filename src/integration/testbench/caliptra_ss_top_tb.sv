@@ -623,14 +623,6 @@ module caliptra_ss_top_tb
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_cptra_core_s_axi_if (.clk(core_clk), .rst_n(rst_l));
 
-    // MCI Mgr AXI Interface
-    axi_if #(
-        .AW(32), //-- FIXME : Assign a common paramter
-        .DW(32), //-- FIXME : Assign a common paramter,
-        .IW(`CALIPTRA_AXI_ID_WIDTH),
-        .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_mci_m_axi_if (.clk(core_clk), .rst_n(rst_l));
-
     // MCI Sub AXI Interface
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
@@ -1757,7 +1749,6 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_s_axi_if,
     
     // AXI Manager INF
-        .cptra_ss_mci_m_axi_if,
     
         .cptra_ss_mcu_lsu_m_axi_if,
         .cptra_ss_mcu_ifu_m_axi_if,
