@@ -1723,8 +1723,6 @@ caliptra_ss_top caliptra_ss_top_0 (
     // LC Controller JTAG
     .cptra_ss_lc_ctrl_jtag_i,
     .cptra_ss_lc_ctrl_jtag_o,
-    .cptra_ss_lc_ctrl_jtag_i(),
-    .cptra_ss_lc_ctrl_jtag_o(),
 
     // Caliptra Memory Export Interface
     // Caliptra Core, ICCM and DCCM interface
@@ -1759,7 +1757,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     // Caliptra SS MCU 
     .cptra_ss_strap_mcu_lsu_axi_user_i(hwif_out.interface_regs.lsu_user.lsu_user.value),
     .cptra_ss_strap_mcu_ifu_axi_user_i(hwif_out.interface_regs.ifu_user.ifu_user.value),
-    .cptra_ss_strap_clp_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value),
+    .cptra_ss_strap_cptra_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value),
+    .cptra_ss_strap_debug_axi_user_i(),
 
     // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     .cptra_ss_mci_mcu_sram_req_if,
@@ -1776,9 +1775,10 @@ caliptra_ss_top caliptra_ss_top_0 (
     
     //input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
     .cptra_ss_lc_Allow_RMA_on_PPD_i(1'b0),
+    .cptra_ss_FIPS_ZEROIZATION_PPD_i(1'b0), // TODO: Connect to wrapper?
 
-    .cptra_ss_mci_error_fatal_o(hwif_in.interface_regs.mci_error.mci_error_fatal.next),
-    .cptra_ss_mci_error_non_fatal_o(hwif_in.interface_regs.mci_error.mci_error_non_fatal.next),
+    .cptra_ss_all_error_fatal_o(hwif_in.interface_regs.mci_error.mci_error_fatal.next), // TODO: Update name in wrapper
+    .cptra_ss_all_error_non_fatal_o(hwif_in.interface_regs.mci_error.mci_error_non_fatal.next), // TODO: Update name in wrapper
     
     // TODO: MCU JTAG
     .cptra_ss_mcu_jtag_tck_i(mcu_jtag_tck_i),
