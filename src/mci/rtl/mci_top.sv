@@ -441,6 +441,9 @@ mci_mcu_sram_ctrl #(
 
     // Caliptra internal fabric response interface
     .cif_resp_if (mcu_sram_req_if.response),
+    
+    // Debug Mode
+    .debug_en(!security_state_o.debug_locked),
 
     // AXI Privileged requests
     .axi_debug_req,
