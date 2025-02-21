@@ -21,22 +21,26 @@ module mci_axi_sub_decode
     import mci_pkg::*;
     import mci_reg_pkg::*;
     import mbox_csr_pkg::*;
+    import trace_buffer_csr_pkg::*;
     #(
     // Configurable memory blocks
-    parameter MCU_SRAM_SIZE_KB = 1024,
+    parameter MCU_SRAM_SIZE_KB = 512,
 
     ///////////////////////////////////////////////////////////
     // MCI Memory Map
     ///////////////////////////////////////////////////////////
-    localparam MCI_REG_SIZE_BYTES    = 2 ** MCI_REG_MIN_ADDR_WIDTH, 
-    localparam MCI_REG_START_ADDR    = 32'h0000_0000,
-    localparam MCI_REG_END_ADDR      = MCI_REG_START_ADDR + (MCI_REG_SIZE_BYTES) - 1,
-    localparam MBOX0_START_ADDR      = 32'h0008_0000,
-    localparam MBOX0_END_ADDR        = MBOX0_START_ADDR + ((32'h0000_0001 << MBOX_CSR_ADDR_WIDTH) - 1),
-    localparam MBOX1_START_ADDR      = 32'h0009_0000,
-    localparam MBOX1_END_ADDR        = MBOX1_START_ADDR + ((32'h0000_0001 << MBOX_CSR_ADDR_WIDTH) - 1),
-    localparam MCU_SRAM_START_ADDR   = 32'h0020_0000,
-    localparam MCU_SRAM_END_ADDR     = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1, 
+    localparam MCI_REG_SIZE_BYTES               = 2 ** MCI_REG_MIN_ADDR_WIDTH, 
+    localparam MCI_REG_START_ADDR               = 32'h0000_0000,
+    localparam MCI_REG_END_ADDR                 = MCI_REG_START_ADDR + (MCI_REG_SIZE_BYTES) - 1,
+    localparam MCU_TRACE_BUFFER_SIZE_BYTES      = 2 ** TRACE_BUFFER_CSR_MIN_ADDR_WIDTH, 
+    localparam MCU_TRACE_BUFFER_START_ADDR      = 32'h0001_0000,
+    localparam MCU_TRACE_BUFFER_END_ADDR        = MCU_TRACE_BUFFER_START_ADDR + (MCU_TRACE_BUFFER_SIZE_BYTES) - 1,
+    localparam MBOX0_START_ADDR                 = 32'h0008_0000,
+    localparam MBOX0_END_ADDR                   = MBOX0_START_ADDR + ((32'h0000_0001 << MBOX_CSR_ADDR_WIDTH) - 1),
+    localparam MBOX1_START_ADDR                 = 32'h0009_0000,
+    localparam MBOX1_END_ADDR                   = MBOX1_START_ADDR + ((32'h0000_0001 << MBOX_CSR_ADDR_WIDTH) - 1),
+    localparam MCU_SRAM_START_ADDR              = 32'h0020_0000,
+    localparam MCU_SRAM_END_ADDR                = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1, 
       
     localparam MCI_END_ADDR   = MCU_SRAM_END_ADDR,
     localparam MCI_INTERNAL_ADDR_WIDTH = $clog2(MCI_END_ADDR)
@@ -52,6 +56,9 @@ module mci_axi_sub_decode
 
     //MCU SRAM inf
     cif_if.request  mcu_sram_req_if,
+
+    //MCU Trace Buffer inf
+    cif_if.request  mcu_trace_buffer_req_if,
 
     //MCI Mbox0 inf
     cif_if.request  mci_mbox0_req_if,
@@ -83,12 +90,14 @@ logic all_strb_set;
 
 // GRANT signals
 logic soc_mcu_sram_gnt;
+logic soc_mcu_trace_buffer_gnt;
 logic soc_mci_reg_gnt;
 logic soc_mci_mbox0_gnt;
 logic soc_mci_mbox1_gnt;
 
 // REQ signals
 logic soc_mcu_sram_req;
+logic soc_mcu_trace_buffer_req;
 logic soc_mci_reg_req;
 logic soc_mci_mbox0_req;
 logic soc_mci_mbox1_req;
@@ -105,6 +114,9 @@ logic debug_axi_user_detect;
 ///////////////////////////////////////////////////////////
 //SoC requests to MCU_SRAM
 always_comb soc_mcu_sram_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCU_SRAM_START_ADDR:MCU_SRAM_END_ADDR]}));
+
+// SoC request to MCU Trace Buffer
+always_comb soc_mcu_trace_buffer_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCU_TRACE_BUFFER_START_ADDR:MCU_TRACE_BUFFER_END_ADDR]}));
 
 // SoC request to MCI Reg
 always_comb soc_mci_reg_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCI_REG_START_ADDR:MCI_REG_END_ADDR]}));
@@ -128,8 +140,11 @@ always_comb all_strb_set = (&soc_resp_if.req_data.wstrb & soc_resp_if.req_data.w
 // MCU SRAM
 always_comb soc_mcu_sram_req = soc_mcu_sram_gnt;
 
+// MCU Trace Buffer
+always_comb soc_mcu_trace_buffer_req = soc_mcu_trace_buffer_gnt;
+
 // MCI REG 
-always_comb soc_mci_reg_req   = soc_mci_reg_gnt & all_strb_set;
+always_comb soc_mci_reg_req   = soc_mci_reg_gnt;
 
 // MCI Mbox0
 always_comb soc_mci_mbox0_req = soc_mci_mbox0_gnt & mbox0_valid_user & all_strb_set;
@@ -175,6 +190,9 @@ end
 // MCU SRAM
 always_comb mcu_sram_req_if.dv = soc_mcu_sram_req;
 
+// MCU TRACE BUFFER
+always_comb mcu_trace_buffer_req_if.dv = soc_mcu_trace_buffer_req;
+
 // MCI REG 
 always_comb mci_reg_req_if.dv = soc_mci_reg_req;
 
@@ -192,6 +210,9 @@ always_comb mci_mbox1_req_if.dv = soc_mci_mbox1_req;
 // MCU SRAM
 always_comb mcu_sram_req_if.req_data = soc_resp_if.req_data;
 
+// MCU TRACE BUFFER
+always_comb mcu_trace_buffer_req_if.req_data = soc_resp_if.req_data;
+
 // MCI REG 
 always_comb mci_reg_req_if.req_data = soc_resp_if.req_data;
 
@@ -206,10 +227,11 @@ always_comb mci_mbox1_req_if.req_data = soc_resp_if.req_data;
 // Drive read data back
 ///////////////////////////////////////////////////////////
 
-assign soc_resp_if.rdata =  soc_mcu_sram_req    ? mcu_sram_req_if.rdata : 
-                            soc_mci_reg_req     ? mci_reg_req_if.rdata  :
-                            soc_mci_mbox0_req   ? mci_mbox0_req_if.rdata  :
-                            soc_mci_mbox1_req   ? mci_mbox1_req_if.rdata  :
+assign soc_resp_if.rdata =  soc_mcu_sram_req            ? mcu_sram_req_if.rdata : 
+                            soc_mcu_trace_buffer_req    ? mcu_trace_buffer_req_if.rdata  :
+                            soc_mci_reg_req             ? mci_reg_req_if.rdata  :
+                            soc_mci_mbox0_req           ? mci_mbox0_req_if.rdata  :
+                            soc_mci_mbox1_req           ? mci_mbox1_req_if.rdata  :
                             '0;
 
 
@@ -219,10 +241,11 @@ assign soc_resp_if.rdata =  soc_mcu_sram_req    ? mcu_sram_req_if.rdata :
 // Drive appropriate hold back
 ///////////////////////////////////////////////////////////
 
-always_comb soc_resp_if.hold =  (soc_mcu_sram_req & (~soc_mcu_sram_req | mcu_sram_req_if.hold)) |
-                                (soc_mci_reg_req & (~soc_mci_reg_req | mci_reg_req_if.hold)) |
-                                (soc_mci_mbox0_req & (~soc_mci_mbox0_req | mci_mbox0_req_if.hold)) |
-                                (soc_mci_mbox1_req & (~soc_mci_mbox1_req | mci_mbox1_req_if.hold)) ;
+always_comb soc_resp_if.hold =  (soc_mcu_sram_req           & (~soc_mcu_sram_req | mcu_sram_req_if.hold)) |
+                                (soc_mcu_trace_buffer_req   & (~soc_mcu_trace_buffer_req | mcu_trace_buffer_req_if.hold)) |
+                                (soc_mci_reg_req            & (~soc_mci_reg_req | mci_reg_req_if.hold)) |
+                                (soc_mci_mbox0_req          & (~soc_mci_mbox0_req | mci_mbox0_req_if.hold)) |
+                                (soc_mci_mbox1_req          & (~soc_mci_mbox1_req | mci_mbox1_req_if.hold)) ;
 
 
 
@@ -231,13 +254,14 @@ always_comb soc_resp_if.hold =  (soc_mcu_sram_req & (~soc_mcu_sram_req | mcu_sra
 ///////////////////////////////////////////////////////////
 
 // Missed all destinations 
-always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_req | soc_mci_reg_req | soc_mci_mbox0_req | soc_mci_mbox1_req);
+always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_req | soc_mcu_trace_buffer_req | soc_mci_reg_req | soc_mci_mbox0_req | soc_mci_mbox1_req);
 
 // Error for SOC
-always_comb soc_resp_if.error = (soc_mcu_sram_req  & mcu_sram_req_if.error)  |
-                                (soc_mci_reg_req   & mci_reg_req_if.error)   |
-                                (soc_mci_mbox0_req & mci_mbox0_req_if.error) |
-                                (soc_mci_mbox1_req & mci_mbox1_req_if.error) |
+always_comb soc_resp_if.error = (soc_mcu_sram_req           & mcu_sram_req_if.error)  |
+                                (soc_mcu_trace_buffer_req   & mcu_trace_buffer_req_if.error)   |
+                                (soc_mci_reg_req            & mci_reg_req_if.error)   |
+                                (soc_mci_mbox0_req          & mci_mbox0_req_if.error) |
+                                (soc_mci_mbox1_req          & mci_mbox1_req_if.error) |
                                 soc_req_miss;
 
 ///////////////////////////////////////////////

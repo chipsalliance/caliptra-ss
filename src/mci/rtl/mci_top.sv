@@ -18,20 +18,21 @@ module mci_top
     import mci_pkg::*;
     import mci_dmi_pkg::*;
     import mbox_pkg::*;
+    import mci_mcu_trace_buffer_pkg::*;
     #(    
     parameter AXI_ADDR_WIDTH = 32,
     parameter AXI_DATA_WIDTH = 32,
     parameter AXI_USER_WIDTH = 32,
     parameter AXI_ID_WIDTH   = 8,
 
-    parameter MCU_SRAM_SIZE_KB = 1024, // FIXME - write assertion ensuring this size 
+    parameter MCU_SRAM_SIZE_KB = 512, // FIXME - write assertion ensuring this size 
                                       // is compatible with the MCU SRAM IF parameters
 
     parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Size of MCU reset counter that overflows before allowing MCU
                                             // to come out of reset during a FW RT Update
 
     //Mailbox configuration
-    ,parameter MCI_MBOX0_SIZE_KB = 4
+    ,parameter MCI_MBOX0_SIZE_KB = 128
     ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCI_MBOX1_SIZE_KB = 4
@@ -101,6 +102,16 @@ module mci_top
     input  logic [31:0] mcu_dmi_uncore_wdata,
     output logic [31:0] mcu_dmi_uncore_rdata,
     input  logic        mcu_dmi_active, // FIXME: This is not used in the design
+
+    // MCU Trace
+    input logic [31:0] mcu_trace_rv_i_insn_ip,
+    input logic [31:0] mcu_trace_rv_i_address_ip,
+    input logic        mcu_trace_rv_i_valid_ip,
+    input logic        mcu_trace_rv_i_exception_ip,
+    input logic [ 4:0] mcu_trace_rv_i_ecause_ip,
+    input logic        mcu_trace_rv_i_interrupt_ip,
+    input logic [31:0] mcu_trace_rv_i_tval_ip,
+
     
     // Reset controls
     output logic mcu_rst_b,
@@ -171,6 +182,11 @@ module mci_top
     logic [31:0] mcu_sram_dmi_uncore_wdata;
     logic [31:0] mcu_sram_dmi_uncore_rdata;
 
+    // MCU Trace Buffer signals
+    logic         mcu_trace_buffer_dmi_reg_wen;
+    logic [31:0]  mcu_trace_buffer_dmi_reg_wdata;
+    logic [6:0]   mcu_trace_buffer_dmi_reg_addr;
+    mci_mcu_trace_buffer_dmi_reg_t mcu_trace_buffer_dmi_reg;
 
     // WDT signals
     logic timer1_en;
@@ -265,6 +281,18 @@ cif_if #(
     .clk, 
     .rst_b(mci_rst_b));
 
+// Caliptra internal fabric interface for TRACE BUFFER
+// Address width is set to AXI_ADDR_WIDTH and MCI REG
+// will mask out upper bits that are "don't care"
+cif_if #(
+    .ADDR_WIDTH(AXI_ADDR_WIDTH)
+    ,.DATA_WIDTH(AXI_DATA_WIDTH)
+    ,.ID_WIDTH(AXI_ID_WIDTH)
+    ,.USER_WIDTH(AXI_USER_WIDTH)
+) mcu_trace_buffer_req_if(
+    .clk, 
+    .rst_b(mci_rst_b));
+
 caliptra_prim_flop_2sync #(
   .Width(1)
 ) u_prim_flop_2sync_mcu_sram_fw_exec_region_lock (
@@ -325,6 +353,9 @@ mci_axi_sub_top #(
     // MCU SRAM Interface
     .mcu_sram_req_if( mcu_sram_req_if.request ),
 
+    // MCU TRACE BUFFER Interface
+    .mcu_trace_buffer_req_if( mcu_trace_buffer_req_if.request ),
+
     // MCI Mbox0 Interface
     .mci_mbox0_req_if ( mci_mbox0_req_if.request ),
     .valid_mbox0_users,
@@ -381,6 +412,38 @@ mci_boot_seqr #(
     // FC Signals
     .fc_opt_done,
     .fc_opt_init
+);
+
+
+mci_mcu_trace_buffer #(
+    .DMI_REG_TRACE_RD_PTR_ADDR(MCI_DMI_MCU_TRACE_RD_PTR)
+) i_mci_mcu_trace_buffer 
+    (
+    .clk,
+
+    // MCI Resets
+    .rst_b(mci_rst_b), // FIXME: Need to sync reset
+
+    .debug_en(!security_state_o.debug_locked),
+    
+    // DMI Access
+    .dmi_reg_wen    (mcu_trace_buffer_dmi_reg_wen  ),
+    .dmi_reg_wdata  (mcu_trace_buffer_dmi_reg_wdata),
+    .dmi_reg_addr   (mcu_trace_buffer_dmi_reg_addr ),
+    .dmi_reg        (mcu_trace_buffer_dmi_reg      ),
+
+    // MCU Trace
+    .mcu_trace_rv_i_insn_ip,
+    .mcu_trace_rv_i_address_ip,
+    .mcu_trace_rv_i_valid_ip,
+    .mcu_trace_rv_i_exception_ip,
+    .mcu_trace_rv_i_ecause_ip,
+    .mcu_trace_rv_i_interrupt_ip,
+    .mcu_trace_rv_i_tval_ip,
+    
+    // Caliptra internal fabric response interface
+    .cif_resp_if (mcu_trace_buffer_req_if.response)
+
 );
 
 // MCU SRAM
@@ -527,6 +590,12 @@ mci_reg_top #(
     .mcu_dmi_uncore_addr,
     .mcu_dmi_uncore_wdata,
     .mcu_dmi_uncore_rdata,
+
+    // MCU Trace
+    .mcu_trace_buffer_dmi_reg_wen, 
+    .mcu_trace_buffer_dmi_reg_wdata,
+    .mcu_trace_buffer_dmi_reg_addr,
+    .mcu_trace_buffer_dmi_reg,      
     
     // MBOX
     .valid_mbox0_users,

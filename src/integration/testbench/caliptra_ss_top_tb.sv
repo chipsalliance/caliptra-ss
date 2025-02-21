@@ -52,7 +52,7 @@ module caliptra_ss_top_tb
     // -----------------------------------------------------------
     // Parameters
     // -----------------------------------------------------------
-    localparam MCU_SRAM_SIZE_KB = 1024;
+    localparam MCU_SRAM_SIZE_KB = 512;
     localparam MCU_SRAM_DATA_WIDTH   = 32;
     localparam MCU_SRAM_DATA_WIDTH_BYTES = MCU_SRAM_DATA_WIDTH / 8;
     localparam MCU_SRAM_ECC_WIDTH = 7;
@@ -1689,6 +1689,7 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
     logic [31:0]  cptra_ss_strap_cptra_axi_user_i;
+    logic [31:0]  cptra_ss_strap_debug_axi_user_i;
     logic         cptra_ss_mcu_jtag_tck_i;
     logic         cptra_ss_mcu_jtag_tms_i;
     logic         cptra_ss_mcu_jtag_tdi_i;
@@ -1717,6 +1718,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_mcu_lsu_axi_user_i    = 32'hFFFFFFFF;
     assign cptra_ss_strap_mcu_ifu_axi_user_i    = 32'hFFFFFFFF;
     assign cptra_ss_strap_cptra_axi_user_i        = 32'hFFFFFFFF;
+    assign cptra_ss_strap_debug_axi_user_i        = 32'h00000001; // FIXME set to real value
     assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
@@ -1826,6 +1828,7 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
         .cptra_ss_strap_cptra_axi_user_i,
+        .cptra_ss_strap_debug_axi_user_i,
 
     //MCU ROM
         .cptra_ss_mcu_rom_macro_req_if,

@@ -864,6 +864,8 @@ Manufacturer Control Interface provides the following features for Caliptra SS:
 
 * MCU SRAM
 
+* MCU Trace Buffer
+
 * MCU watchdog timer
 
 * Mailboxes
@@ -891,22 +893,22 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 | Facing | Parameter name | Location | Description |
 | :---- | :---- | :---- | :---- |
-| External | `AXI\_ADDR\_WIDTH` | mci\_top | AXI address width |
-| External | `AXI\_DATA\_WIDTH` | mci\_top | AXI data width |
-| External | `AXI\_USER\_WIDTH` | mci\_top | AXI user width |
-| External | `AXI\_ID\_WIDTH` | mci\_top | AXI ID width |
+| External | `AXI_ADDR_WIDTH` | mci\_top | AXI address width |
+| External | `AXI_DATA_WIDTH` | mci\_top | AXI data width |
+| External | `AXI_USER_WIDTH` | mci\_top | AXI user width |
+| External | `AXI_ID_WIDTH` | mci\_top | AXI ID width |
 
 **Table: MCU SRAM Integration Parameters**
 
 | Facing | Parameter name | Location | Description |
 | :---- | :---- | :---- | :---- |
-| External | `MCU\_SRAM\_SIZE\_KB`  | mci\_top | Size of MCU SRAM in KB. i.e. Min: 4 Max: 2048(2MB) |
+| External | `MCU_SRAM_SIZE_KB`  | mci\_top | Size of MCU SRAM in KB. i.e. Min: 4 Max: 2048(2MB) |
 
 **Table: MCI Boot Sequencer Integration Parameters**
 
 | Facing | Parameter name | Location | Description |
 | :---- | :---- | :---- | :---- |
-| External | MIN\_MCU\_RST\_COUNTER\_WIDTH | mci\_top | Size of MCU reset counter which determines the min reset time for the MCU. When the timer overflows MCU can be brought up. |
+| External | `MIN_MCU_RST_COUNTER_WIDTH` | mci\_top | Size of MCU reset counter which determines the min reset time for the MCU. When the timer overflows MCU can be brought up. |
 
 **Table: MCI MBOX Integration Parameters**
 
@@ -1041,12 +1043,12 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 - Top Level Memory Map
 
-| Internal Block | Address Offset (from base address) |
-| :---- | :---- |
+| Internal Block | Address Offset (from base address) | 
+| :---- | :---- | 
 | CSRs | 0x0 |
+| MCU Trace Buffer | 0x10000 |
 | Mailbox 0 | 0x80000 |
 | Mailbox 1 | 0x90000 |
-| MCI DMA | 0xA0000 FIXME???  |
 | MCU SRAM | 0x200000 |
 
 - MCU SRAM Memory Map

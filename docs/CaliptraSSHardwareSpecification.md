@@ -89,6 +89,10 @@
     - [MCI Fuse Storage Support](#mci-fuse-storage-support)
     - [MCU Timer](#mcu-timer)
     - [MCU Trace Buffer](#mcu-trace-buffer)
+      - [MCU Trace Buffer SW Interface](#mcu-trace-buffer-sw-interface)
+      - [MCU Trace Buffer Packet](#mcu-trace-buffer-packet)
+      - [MCU Trace Buffer Extraction](#mcu-trace-buffer-extraction)
+      - [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling)
   - [MCI Debug](#mci-debug)
     - [MCI Debug Access](#mci-debug-access)
       - [MCI DMI](#mci-dmi)
@@ -1016,7 +1020,51 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 ### MCU Trace Buffer
 
-FIXME 
+![](images/MCI-MCU-Trace-Buffer-Diagram.png)
+
+MCI hosts the MCU trace buffer. It can hold up to 64 traces from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Access to the trace buffer and enabling it is controlled by the LCC state Translator. If not **Debug Unlock** then all traces and access to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while not in Debug Unlock mode.
+MCU RISC-V processor can enable/disable tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces other than being debug locked.
+The trace buffer is a circular buffer where old data is overwritten by new traces. The start of the first trace packet is stored at offset 0 and subsequent trace data is written to WRITE_PTR + 1. 
+
+![](images/MCI-MCU-Trace-Buffer-Circular-Diagram.png)
+
+#### MCU Trace Buffer SW Interface
+Below is the SW interface to extract trace data:
+
+| **Register Name** | **Access Type**     | **Description**     | 
+| :---------         | :---------     | :---------| 
+| DATA               | RO        | Trace data at READ_PTR location|
+| READ_PTR           | RW        | Read pointer. NOTE this is not an address so increment by 1 to get the next entry. | 
+| WRITE_PTR          | RO        | Last valid data written into trace buffer              |
+| STATUS.VALID_DATA         | RO        | Indicates at least one entry is valid in the trace buffer.      |
+| STATUS.WRAPPED            | RO        | Indicates the trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid.|
+| CONFIG.TRACE_BUFFER_DEPTH | RO        | Indicates the total number of 32 bit entries in the trace buffer. TRACE_BUFFER_DEPTH - 1 is the last valid WRITE/READ_PTR entry in the trace buffer. NOTE: This is the trace buffer depth and not the number of [MCU Trace Buffer Packets](#mcu-trace-buffer-packet). |
+
+#### MCU Trace Buffer Packet
+
+A single MCU trace is more than 32 bits, meaning each trace takes up more than one offset. Trace data is stored in the following format:
+![](images/MCI-MCU-Trace-Buffer-Data.png)
+
+Assuming there is only one trace stored in the trace buffer the WRITE_PTR would read as 0x3. To get the entire trace packet the user would need to read offsets 0x0, 0x1, 0x2, and 0x3. 
+
+#### MCU Trace Buffer Extraction
+
+To extrace trace buffer data the user should send the following transaction:
+
+1. Write READ_PTR
+2. Read DATA
+
+Repeat these steps until all data required has been extracted. 
+
+The user should use the combination of WRITE_PTR, VALID_DATA, WRAPPED, and TRACE_BUFFER_DEPTH to know where valid data
+
+#### MCU Trace Buffer Error Handling
+
+AXI access to the MCU Trace Buffer while not in debug mode will result in an AXI error.
+
+DMI access to the MCU Trace Buffer while not in debug mode will result in writes being dropped and reads returning 0. 
+
+If the user sets the READ_PTR > (TRACE_BUFFER_DEPTH - 1) and tries to read the DATA register, the behavior is undefined. 
 
 ## MCI Debug
 
@@ -1068,21 +1116,22 @@ MCI provides the logic for these enables. When the following condition(s) are me
 | **NOT ENABLED IN 2.0** MBOX1\_DIN | 0x57 | WO | Yes |  |  |
 | MCU\_SRAM\_ADDR | 0x58 | RW |  |  | Yes |
 | MCU\_SRAM\_DATA | 0x59 | RW |  |  | Yes |
-| MCU\_TRACE\_WRAPPED | 0x5A | RO |  |  | Yes |
-| MCU\_TRACE\_RD\_PTR | 0x5B | RO |  |  | Yes |
-| MCU\_TRACE\_ADDR | 0x5C | RW |  |  | Yes |
-| MCU\_TRACE\_DATA | 0x5D | RO |  |  | Yes |
-| HW\_FLOW\_STATUS | 0x5E | RO | Yes |  |  |
-| RESET\_REASON | 0x5F | RO | Yes |  |  |
-| RESET\_STATUS | 0x60 | RO | Yes |  |  |
-| FW\_FLOW\_STATUS | 0x61 | RO | Yes |  |  |
-| HW\_ERROR\_FATAL | 0x62 | RO | Yes |  |  |
-| AGG\_ERROR\_FATAL | 0x63 | RO | Yes |  |  |
-| HW\_ERROR\_NON\_FATAL | 0x64 | RO | Yes |  |  |
-| AGG\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |  |
-| FW\_ERROR\_FATAL | 0x66 | RO | Yes |  |  |
-| FW\_ERROR\_NON\_FATAL | 0x67 | RO | Yes |  |  |
-| HW\_ERROR\_ENC | 0x68 | RO | Yes |  |  |
+| MCU\_TRACE\_STATUS | 0x5A | RO |  |  | Yes |
+| MCU\_TRACE\_CONFIG | 0x5B | RO |  |  | Yes |
+| MCU\_TRACE\_WR\_PTR | 0x5C | RO |  |  | Yes |
+| MCU\_TRACE\_RD\_PTR | 0x5D | RW |  |  | Yes |
+| MCU\_TRACE\_DATA | 0x5E | RO |  |  | Yes |
+| HW\_FLOW\_STATUS | 0x5F | RO | Yes |  |  |
+| RESET\_REASON | 0x60 | RO | Yes |  |  |
+| RESET\_STATUS | 0x61 | RO | Yes |  |  |
+| FW\_FLOW\_STATUS | 0x62 | RO | Yes |  |  |
+| HW\_ERROR\_FATAL | 0x63 | RO | Yes |  |  |
+| AGG\_ERROR\_FATAL | 0x64 | RO | Yes |  |  |
+| HW\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |  |
+| AGG\_ERROR\_NON\_FATAL | 0x66 | RO | Yes |  |  |
+| FW\_ERROR\_FATAL | 0x67 | RO | Yes |  |  |
+| FW\_ERROR\_NON\_FATAL | 0x68 | RO | Yes |  |  |
+| HW\_ERROR\_ENC | 0x69 | RO | Yes |  |  |
 | FW\_ERROR\_ENC | 0x6A | RO | Yes |  |  |
 | FW\_EXTENDED\_ERROR\_INFO\_0 | 0x6B | RO | Yes |  |  |
 | FW\_EXTENDED\_ERROR\_INFO\_1 | 0x6C | RO | Yes |  |  |
@@ -1143,7 +1192,9 @@ There is no error response on the DMI port, so any ECC error must be checked via
 
 ##### DMI MCU Trace Buffer Access
 
-FIXME
+Access to the MCU Trace buffer via DMI is the same SW interface as specified in [MCU Trace Buffer](#mcu-trace-buffer).
+
+Access is limited to **Debug Unlock** mode only. Access to this space while not in **Debug Unlock** will result in writes being dropped and reads return 0x0. 
 
 #### MCI DEBUG AXI USER
 

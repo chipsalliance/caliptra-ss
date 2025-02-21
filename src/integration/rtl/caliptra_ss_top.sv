@@ -36,6 +36,7 @@ module caliptra_ss_top
     ,parameter MCI_MBOX1_SIZE_KB = 4
     ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+    ,parameter MCU_SRAM_SIZE_KB = 512
 ) (
     input logic cptra_ss_clk_i,
     input logic cptra_ss_pwrgood_i,
@@ -467,6 +468,15 @@ module caliptra_ss_top
     wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lmem_axi_bid;
     wire                        lmem_axi_bready;
 `endif
+    
+    // ----------------- MCU Trace within Subsystem -----------------------
+    logic [31:0] mcu_trace_rv_i_insn_ip;
+    logic [31:0] mcu_trace_rv_i_address_ip;
+    logic        mcu_trace_rv_i_valid_ip;
+    logic        mcu_trace_rv_i_exception_ip;
+    logic [ 4:0] mcu_trace_rv_i_ecause_ip;
+    logic        mcu_trace_rv_i_interrupt_ip;
+    logic [31:0] mcu_trace_rv_i_tval_ip;
     
     // -- caliptra DUT instance
     // -- Will be removed in final release.
@@ -913,13 +923,13 @@ module caliptra_ss_top
         .dbg_bus_clk_en         ( 1'b1  ),// Clock ratio b/w cpu core clk & AHB Debug master interface
         .dma_bus_clk_en         ( 1'b1  ),// Clock ratio b/w cpu core clk & AHB slave interface
 
-        .trace_rv_i_insn_ip     (),//FIXME future (trace_rv_i_insn_ip),
-        .trace_rv_i_address_ip  (),//FIXME future (trace_rv_i_address_ip),
-        .trace_rv_i_valid_ip    (),//FIXME future (trace_rv_i_valid_ip),
-        .trace_rv_i_exception_ip(),//FIXME future (trace_rv_i_exception_ip),
-        .trace_rv_i_ecause_ip   (),//FIXME future (trace_rv_i_ecause_ip),
-        .trace_rv_i_interrupt_ip(),//FIXME future (trace_rv_i_interrupt_ip),
-        .trace_rv_i_tval_ip     (),//FIXME future (trace_rv_i_tval_ip),
+        .trace_rv_i_insn_ip     (mcu_trace_rv_i_insn_ip     ),
+        .trace_rv_i_address_ip  (mcu_trace_rv_i_address_ip  ),
+        .trace_rv_i_valid_ip    (mcu_trace_rv_i_valid_ip    ),
+        .trace_rv_i_exception_ip(mcu_trace_rv_i_exception_ip),
+        .trace_rv_i_ecause_ip   (mcu_trace_rv_i_ecause_ip   ),
+        .trace_rv_i_interrupt_ip(mcu_trace_rv_i_interrupt_ip),
+        .trace_rv_i_tval_ip     (mcu_trace_rv_i_tval_ip     ),
 
         // JTAG Interface
         .jtag_tck               ( cptra_ss_mcu_jtag_tck_i ),
@@ -1108,9 +1118,8 @@ module caliptra_ss_top
     // The following signal should be also an input coming from LC to MCI
             //lc_hw_rev_t  hw_rev_o;
     mci_top #(
-        // .MCI_BASE_ADDR(`SOC_MCI_REG_BASE_ADDR), //-- FIXME : Assign common paramter
         .AXI_DATA_WIDTH(32),
-        .MCU_SRAM_SIZE_KB(256),
+        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
 
         .MCI_MBOX0_SIZE_KB(MCI_MBOX0_SIZE_KB),
         .MCI_SET_MBOX0_AXI_USER_INTEG(MCI_SET_MBOX0_AXI_USER_INTEG),  
@@ -1178,6 +1187,15 @@ module caliptra_ss_top
         .mcu_dmi_uncore_wdata,
         .mcu_dmi_uncore_rdata,
         .mcu_dmi_active,
+        
+        // MCU Trace
+        .mcu_trace_rv_i_insn_ip     ,
+        .mcu_trace_rv_i_address_ip  ,
+        .mcu_trace_rv_i_valid_ip    ,
+        .mcu_trace_rv_i_exception_ip,
+        .mcu_trace_rv_i_ecause_ip   ,
+        .mcu_trace_rv_i_interrupt_ip,
+        .mcu_trace_rv_i_tval_ip     ,
 
 
         .mci_boot_seq_brkpoint(cptra_ss_mci_boot_seq_brkpoint_i),

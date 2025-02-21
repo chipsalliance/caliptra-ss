@@ -7,12 +7,16 @@ targets:
       - $COMPILE_ROOT/rtl/mci_pkg.sv
       - $COMPILE_ROOT/rtl/mci_reg_pkg.sv
       - $COMPILE_ROOT/rtl/mci_dmi_pkg.sv
+      - $COMPILE_ROOT/rtl/mci_mcu_trace_buffer_pkg.sv
+      - $COMPILE_ROOT/rtl/trace_buffer_csr_pkg.sv
   tb:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/mci_pkg.sv
       - $COMPILE_ROOT/rtl/mci_reg_pkg.sv
       - $COMPILE_ROOT/rtl/mci_dmi_pkg.sv
+      - $COMPILE_ROOT/rtl/mci_mcu_trace_buffer_pkg.sv
+      - $COMPILE_ROOT/rtl/trace_buffer_csr_pkg.sv
 ---
 provides: [mci_top]
 schema_version: 2.4.0
@@ -41,6 +45,8 @@ targets:
       - $COMPILE_ROOT/rtl/mci_reg.sv
       - $COMPILE_ROOT/rtl/mci_boot_seqr.sv
       - $COMPILE_ROOT/rtl/mci_lcc_st_trans.sv
+      - $COMPILE_ROOT/rtl/mci_mcu_trace_buffer.sv
+      - $COMPILE_ROOT/rtl/trace_buffer_csr.sv
     tops: [mci_top]
   rtl_lint:
     directories: [$COMPILE_ROOT/config/design_lint]

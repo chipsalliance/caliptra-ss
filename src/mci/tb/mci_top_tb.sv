@@ -20,7 +20,7 @@ module mci_top_tb
   import axi_pkg::*;
   ();
 
-  parameter MCI_TB_MCU_SRAM_SIZE_KB = 1024;
+  parameter MCI_TB_MCU_SRAM_SIZE_KB = 512;
 
   //Mailbox configuration
   parameter MCI_TB_MBOX0_DMI_DLEN_ADDR = 0; //TODO define

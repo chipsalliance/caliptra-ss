@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+
+addrmap trace_buffer_csr {
+    desc="address maps for Trace Buffer register space";
+    littleendian = true;
+    addressing = regalign; // This is the default if not specified
+    lsb0 = true; // lsb0 property is implicit/default. See docs for
+                 // SystemRDL 2.0 sections 9.1 and 13.4
+    default hw = na;
+    signal {activelow; async; cpuif_reset; field_reset;} rst_b;
+    signal {activelow; async;} pwrgood;
+    default resetsignal=rst_b;
+    
+
+    reg {
+        name="Trace Status";
+        desc="Status bits for the Trace Buffer";
+        field {desc="Indicates trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid.";sw=r; hw=rw; } wrapped=0;
+        field {desc="Indicates at least one entry in the trace buffer is valid.";sw=r; hw=rw; } valid_data=0;
+    } STATUS;
+    
+    reg {
+        name="Trace Configuration";
+        desc="HW configuration of the trace buffer";
+        field {desc="Total number of DWORD entries in the trace buffer. TRACE_BUFFER_DEPTH-1 is the last valide read/write pointer entries in the trace buffer.";sw=r; hw=rw; } trace_buffer_depth[32]=0;
+    } CONFIG;
+
+    reg {
+        name="Trace Data";
+        desc="Trace data in the trace buffer at the read pointer.";
+        field {sw=r; hw=rw;} data[32]=0;
+    } DATA;
+    
+    reg {
+        name="Trace Write Pointer";
+        desc="Last valid data written to trace buffer. Only valid if STATUS.valid_data is set.";
+        field {sw=r; hw=rw;} ptr[32]=0;
+    } WRITE_PTR;
+
+    reg {
+        name="Trace Read Pointer";
+        desc="Read pointer for extracting data via the DATA register. NOTE: This is not an address, increment by 1 to get the next 32 bit entry.";
+        field {sw=rw; hw=rw; we;} ptr[32]=0;
+    } READ_PTR;
+
+};
