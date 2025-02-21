@@ -34,9 +34,9 @@ module lc_ctrl
   // Life cycle controller clock
   input                                              clk_i,
   input                                              rst_ni,
-  input                                              Allow_RMA_on_PPD, // Note: Addded another condition to RMA transition with Physical presence Detect
+  input                                              Allow_RMA_or_SCRAP_on_PPD, // Note: Addded another condition to RMA and SCRAP transition with Physical presence Detect
                                                                        // This is GPIO strap pin. This pin should be high until LC completes its state
-                                                                       // transition to RMA.  
+                                                                       // transition to RMA or SCRAP.  
   // Clock for KMAC interface
   // input                                              clk_kmac_i,
   // input                                              rst_kmac_ni,
@@ -900,7 +900,7 @@ module lc_ctrl
   ) u_lc_ctrl_fsm (
     .clk_i,
     .rst_ni,
-    .Allow_RMA_on_PPD,
+    .Allow_RMA_or_SCRAP_on_PPD,
     .init_req_i             ( lc_init                          ),
     .init_done_o            ( lc_done_d                        ),
     .idle_o                 ( lc_idle_d                        ),
