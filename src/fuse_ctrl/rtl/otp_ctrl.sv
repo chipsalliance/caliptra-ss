@@ -392,6 +392,9 @@ module otp_ctrl
   // Access Defaults and CSRs //
   //////////////////////////////
 
+  dai_cmd_e                     dai_cmd;
+  logic [OtpByteAddrWidth-1:0]  dai_addr;
+
   // SEC_CM: ACCESS.CTRL.MUBI
   part_access_t [NumPart-1:0] part_access_pre, part_access;
   always_comb begin : p_access_control
@@ -418,6 +421,18 @@ module otp_ctrl
       for (int k = 0; k < NumPart; k++) begin
         if (PartInfo[k].iskeymgr_owner) begin
           part_access_pre[k] = {2{caliptra_prim_mubi_pkg::MuBi8True}};
+        end
+      end
+    end
+
+    // Intercept write requests to the `VENDOR_HASHES_PROD` partition and verify
+    // the write is allowed by the volatile lock of the `VENDOR_PK_HASH_VOLATILE LOCK` register.
+    if (NumPart == 16) begin
+      if (dai_cmd == DaiWrite && reg2hw.vendor_pk_hash_volatile_lock != '0 &&
+          dai_addr >= VendorHashesProdPartitionOffset &&
+          dai_addr < VendorHashesProdPartitionDigestOffset) begin
+        if (dai_addr >= (VendorHashesProdPartitionOffset + (reg2hw.vendor_pk_hash_volatile_lock * (CptraCoreVendorPkHash1Size + CptraCorePqcKeyType1Size)))) begin
+          part_access_pre[VendorHashesProdPartitionIdx].write_lock = MuBi8True;
         end
       end
     end
@@ -449,8 +464,8 @@ module otp_ctrl
 
   logic                         dai_idle;
   logic                         dai_req;
-  dai_cmd_e                     dai_cmd;
-  logic [OtpByteAddrWidth-1:0]  dai_addr;
+
+
   logic [NumDaiWords-1:0][31:0] dai_wdata, dai_rdata;
   logic direct_access_regwen_d, direct_access_regwen_q;
 

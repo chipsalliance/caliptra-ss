@@ -168,20 +168,16 @@ addrmap caliptra_otp_ctrl {
         } SCRAMBLING_FSM_ERROR[20:20];
         field {
             sw = r;
-            desc = "Set to 1 if the key derivation FSM has reached an invalid state.\n This raises an fatal_check_error alert and is an unrecoverable error condition.";
-        } KEY_DERIV_FSM_ERROR[21:21];
-        field {
-            sw = r;
             desc = "This bit is set to 1 if a fatal bus integrity fault is detected.\n This error triggers a fatal_bus_integ_error alert.";
-        } BUS_INTEG_ERROR[22:22];
+        } BUS_INTEG_ERROR[21:21];
         field {
             sw = r;
             desc = "Set to 1 if the DAI is idle and ready to accept commands.";
-        } DAI_IDLE[23:23];
+        } DAI_IDLE[22:22];
         field {
             sw = r;
             desc = "Set to 1 if an integrity or consistency check triggered by the LFSR timer or via !!CHECK_TRIGGER is pending.";
-        } CHECK_PENDING[24:24];
+        } CHECK_PENDING[23:23];
     } STATUS @ 0x10;
 
     regfile err_code_t {
@@ -530,6 +526,16 @@ addrmap caliptra_otp_ctrl {
         } READ_LOCK [0:0];
     } VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK @0xA8;
 
+    reg {
+        desc = "Volatile write lock for vendor public key hashes.";
+        default sw = rw;
+        default hw = r;
+        field {
+            desc = "One-hot encoded";
+            reset = 0x0;
+        } PERIOD [31:0];
+    } VENDOR_PK_HASH_VOLATILE_LOCK @ 0xAC;
+
     regfile digest_t {
         /* -----------------------------------
         * Default prperties for Register File
@@ -564,20 +570,20 @@ addrmap caliptra_otp_ctrl {
         /* --------------------------------------*/
     };
 
-    digest_t SECRET_TEST_UNLOCK_PARTITION_DIGEST @ 0xAC;
-    digest_t SECRET_MANUF_PARTITION_DIGEST @ 0xB4;
-    digest_t SECRET_PROD_PARTITION_0_DIGEST @ 0xBC;
-    digest_t SECRET_PROD_PARTITION_1_DIGEST @ 0xC4;
-    digest_t SECRET_PROD_PARTITION_2_DIGEST @ 0xCC;
-    digest_t SECRET_PROD_PARTITION_3_DIGEST @ 0xD4;
-    digest_t SW_MANUF_PARTITION_DIGEST @ 0xDC;
-    digest_t SECRET_LC_TRANSITION_PARTITION_DIGEST @ 0xE4;
-    digest_t VENDOR_TEST_PARTITION_DIGEST @ 0xEC;
-    digest_t VENDOR_HASHES_MANUF_PARTITION_DIGEST @ 0xF4;
-    digest_t VENDOR_HASHES_PROD_PARTITION_DIGEST @ 0xFC;
-    digest_t VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST @ 0x104;
-    digest_t VENDOR_SECRET_PROD_PARTITION_DIGEST @ 0x10C;
-    digest_t VENDOR_NON_SECRET_PROD_PARTITION_DIGEST @ 0x114;
+    digest_t SECRET_TEST_UNLOCK_PARTITION_DIGEST @ 0xB0;
+    digest_t SECRET_MANUF_PARTITION_DIGEST @ 0xB8;
+    digest_t SECRET_PROD_PARTITION_0_DIGEST @ 0xC0;
+    digest_t SECRET_PROD_PARTITION_1_DIGEST @ 0xC8;
+    digest_t SECRET_PROD_PARTITION_2_DIGEST @ 0xD0;
+    digest_t SECRET_PROD_PARTITION_3_DIGEST @ 0xD8;
+    digest_t SW_MANUF_PARTITION_DIGEST @ 0xE0;
+    digest_t SECRET_LC_TRANSITION_PARTITION_DIGEST @ 0xE8;
+    digest_t VENDOR_TEST_PARTITION_DIGEST @ 0xF0;
+    digest_t VENDOR_HASHES_MANUF_PARTITION_DIGEST @ 0xF8;
+    digest_t VENDOR_HASHES_PROD_PARTITION_DIGEST @ 0x100;
+    digest_t VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST @ 0x108;
+    digest_t VENDOR_SECRET_PROD_PARTITION_DIGEST @ 0x110;
+    digest_t VENDOR_NON_SECRET_PROD_PARTITION_DIGEST @ 0x118;
 
     reg {
         field {
@@ -605,7 +611,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = r;
         } field4[26:16] = 0x0;
-    } CSR0 @ 0x114;
+    } CSR0 @ 0x118;
 
     reg {
         field {
@@ -633,7 +639,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = r;
         } field4[31:16] = 0x0;
-    } CSR1 @ 0x118;
+    } CSR1 @ 0x11C;
 
     reg {
         field {
@@ -641,7 +647,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = r;
         } field0[0:0] = 0x0;
-    } CSR2 @ 0x11C;
+    } CSR2 @ 0x120;
 
     reg {
         field {
@@ -691,7 +697,7 @@ addrmap caliptra_otp_ctrl {
             sw = r;
             hw = rw;
         } field8[22:22] = 0x0;
-    } CSR3 @ 0x120;
+    } CSR3 @ 0x124;
 
     reg {
         field {
@@ -714,7 +720,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = r;
         } field3[14:14] = 0x0;
-    } CSR4 @ 0x124;
+    } CSR4 @ 0x128;
 
     reg {
         field {
@@ -752,7 +758,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = rw;
         } field6[31:16] = 0x0;
-    } CSR5 @ 0x128;
+    } CSR5 @ 0x12C;
 
     reg {
         field {
@@ -775,7 +781,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = rw;
         } field3[31:16] = 0x0;
-    } CSR6 @ 0x12C;
+    } CSR6 @ 0x130;
 
     reg {
         field {
@@ -798,5 +804,5 @@ addrmap caliptra_otp_ctrl {
             sw = r;
             hw = rw;
         } field3[15:15] = 0x0;
-    } CSR7 @ 0x130;
+    } CSR7 @ 0x134;
 };
