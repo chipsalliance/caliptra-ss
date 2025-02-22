@@ -772,24 +772,17 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
                   '''
           }
           { bits: "${num_part+5}"
-            name: "KEY_DERIV_FSM_ERROR"
-            desc: '''
-                  Set to 1 if the key derivation FSM has reached an invalid state.
-                  This raises an fatal_check_error alert and is an unrecoverable error condition.
-                  '''
-          }
-          { bits: "${num_part+6}"
             name: "BUS_INTEG_ERROR"
             desc: '''
                   This bit is set to 1 if a fatal bus integrity fault is detected.
                   This error triggers a fatal_bus_integ_error alert.
                   '''
           }
-          { bits: "${num_part+7}"
+          { bits: "${num_part+6}"
             name: "DAI_IDLE"
             desc: "Set to 1 if the DAI is idle and ready to accept commands."
           }
-          { bits: "${num_part+8}"
+          { bits: "${num_part+7}"
             name: "CHECK_PENDING"
             desc: "Set to 1 if an integrity or consistency check triggered by the LFSR timer or via !!CHECK_TRIGGER is pending."
           }
@@ -1179,6 +1172,20 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
       },
     % endif
   % endfor
+
+      { name: "VENDOR_PK_HASH_VOLATILE_LOCK",
+        desc: "Address register for direct accesses.",
+        swaccess: "rw",
+        hwaccess: "hro",
+        resval:   0,
+        fields: [
+          { bits: "31:0",
+            desc: '''
+                  Volatile write lock for vendor public key hashes.
+                  '''
+          }
+        ]
+      }
 
       ///////////////////////
       // Integrity Digests //

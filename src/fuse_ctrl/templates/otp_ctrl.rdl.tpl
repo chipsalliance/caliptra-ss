@@ -116,20 +116,16 @@ addrmap caliptra_otp_ctrl {
         } SCRAMBLING_FSM_ERROR[${len(partitions)+4}:${len(partitions)+4}];
         field {
             sw = r;
-            desc = "Set to 1 if the key derivation FSM has reached an invalid state.\n This raises an fatal_check_error alert and is an unrecoverable error condition.";
-        } KEY_DERIV_FSM_ERROR[${len(partitions)+5}:${len(partitions)+5}];
-        field {
-            sw = r;
             desc = "This bit is set to 1 if a fatal bus integrity fault is detected.\n This error triggers a fatal_bus_integ_error alert.";
-        } BUS_INTEG_ERROR[${len(partitions)+6}:${len(partitions)+6}];
+        } BUS_INTEG_ERROR[${len(partitions)+5}:${len(partitions)+5}];
         field {
             sw = r;
             desc = "Set to 1 if the DAI is idle and ready to accept commands.";
-        } DAI_IDLE[${len(partitions)+7}:${len(partitions)+7}];
+        } DAI_IDLE[${len(partitions)+6}:${len(partitions)+6}];
         field {
             sw = r;
             desc = "Set to 1 if an integrity or consistency check triggered by the LFSR timer or via !!CHECK_TRIGGER is pending.";
-        } CHECK_PENDING[${len(partitions)+8}:${len(partitions)+8}];
+        } CHECK_PENDING[${len(partitions)+7}:${len(partitions)+7}];
     } STATUS @ 0x10;
 
     regfile err_code_t {
@@ -400,6 +396,16 @@ addrmap caliptra_otp_ctrl {
     } ${partition["name"]}_READ_LOCK @${"0x%X" % + inc_ptr(0x4)};
   % endif
 % endfor
+
+    reg {
+        desc = "Volatile write lock for vendor public key hashes.";
+        default sw = rw;
+        default hw = r;
+        field {
+            desc = "One-hot encoded";
+            reset = 0x0;
+        } PERIOD [31:0];
+    } VENDOR_PK_HASH_VOLATILE_LOCK @ ${"0x%X" % + inc_ptr(0x4)};
 
     regfile digest_t {
         /* -----------------------------------

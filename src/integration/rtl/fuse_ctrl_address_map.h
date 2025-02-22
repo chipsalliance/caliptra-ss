@@ -38,7 +38,7 @@
 #define FUSE_CTRL_ERR_CODE_14                           (FUSE_CTRL_BASE_ADDR + 0x4C)
 #define FUSE_CTRL_ERR_CODE_15                           (FUSE_CTRL_BASE_ADDR + 0x50)
 #define FUSE_CTRL_ERR_CODE_16                           (FUSE_CTRL_BASE_ADDR + 0x54)
-#define FUSE_CTRL_ERR_CODE_16                           (FUSE_CTRL_BASE_ADDR + 0x58)
+#define FUSE_CTRL_ERR_CODE_17                           (FUSE_CTRL_BASE_ADDR + 0x58)
 #define FUSE_CTRL_DIRECT_ACCESS_REGWEN                  (FUSE_CTRL_BASE_ADDR + 0x5C)
 #define FUSE_CTRL_DIRECT_ACCESS_CMD                     (FUSE_CTRL_BASE_ADDR + 0x60)
 #define FUSE_CTRL_DIRECT_ACCESS_ADDRESS                 (FUSE_CTRL_BASE_ADDR + 0x64)
