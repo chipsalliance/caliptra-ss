@@ -1,20 +1,20 @@
-/*
-    Example top module for instantiation of Master/Slave BFM and
-    interconnect.
-    Includes 4 AXI Master BFMs and 5 AXI Slave BFMs connected to AXI Interconnect
-    (a default slave built in Interconnect)
 
-		[Memory Map]
-	    MEM					FIFO
-	    (start addr-limit addr)		(addr::depth)
-slave 0	    (64'h9000_0000-64'h9000_1000)	(64'h0000_abcc::4), (64'ha000_0000::4), (64'hb000_0001::4)
-slave 1	    (64'h9100_0000-64'h9100_1000)	(64'h0100_abcc::4), (64'ha100_0000::4), (64'hb100_0001::4)
-slave 2	    (64'h9200_0000-64'h9200_1000)	(64'h0200_abcc::4), (64'ha200_0000::4), (64'hb200_0001::4)
-slave 3	    (64'h9300_0000-64'h9300_1000)	(64'h0300_abcc::4), (64'ha300_0000::4), (64'hb300_0001::4)
-slave 4	    (64'h9400_0000-64'h9400_1000)	(64'h0400_abcc::4), (64'ha400_0000::4), (64'hb400_0001::4)
-
-TODO: slave 5 for I3C at 64'h2000_4000
-*/
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020 Western Digital Corporation or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 
 `timescale 1ps/1ps
 
@@ -359,43 +359,4 @@ initial begin
         test.run();
     endtask
 endmodule
-// `ifdef AAXI_DUMP_VCD
-// initial begin
-//     $dumpfile("aaxi_interconnect.vcd");
-//     $dumpvars(0, aaxi_interconnect);
-// `ifdef AVERY_MS
-//     $dumpvars(0, aaxi_interconnect.ports);
-// `endif
-//     $dumpon;
-//     end
-// `endif
 
-// `ifdef AAXI_DUMP_VPD
-
-// generate 
-//     for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++) begin
-// 	initial begin
-// 	    $vcdpluson(0, aaxi_interconnect.mintf_arr[i]);
-// 	end
-//     end
-//     for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++) begin
-// 	initial begin
-// 	    $vcdpluson(0, aaxi_interconnect.sintf_arr[i]);
-// 	end 
-//     end
-// endgenerate 
-
-// initial begin
-//     $vcdpluson(0, aaxi_interconnect.ports);
-// end
-
-// `endif
-
-// // generate reset
-// initial begin
-//     rst_l = 1;
-//     #20;
-//     rst_l = 0;
-//     #20;
-//     rst_l = 1;
-// end
