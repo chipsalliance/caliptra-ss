@@ -7,28 +7,54 @@ package mci_reg_pkg;
     localparam MCI_REG_MIN_ADDR_WIDTH = 13;
 
     typedef struct packed{
-        logic [3:0] next;
-    } mci_reg__CAPABILITIES__NUM_MBOX__in_t;
+        logic swwel;
+    } mci_reg__HW_CAPABILITIES__cap__in_t;
 
     typedef struct packed{
-        mci_reg__CAPABILITIES__NUM_MBOX__in_t NUM_MBOX;
-    } mci_reg__CAPABILITIES__in_t;
+        mci_reg__HW_CAPABILITIES__cap__in_t cap;
+    } mci_reg__HW_CAPABILITIES__in_t;
 
     typedef struct packed{
-        logic [15:0] next;
-    } mci_reg__HW_REV_ID__SOC_STEPPING_ID__in_t;
+        logic swwel;
+    } mci_reg__FW_CAPABILITIES__cap__in_t;
 
     typedef struct packed{
-        mci_reg__HW_REV_ID__SOC_STEPPING_ID__in_t SOC_STEPPING_ID;
-    } mci_reg__HW_REV_ID__in_t;
+        mci_reg__FW_CAPABILITIES__cap__in_t cap;
+    } mci_reg__FW_CAPABILITIES__in_t;
 
     typedef struct packed{
-        logic next;
-    } mci_reg__HW_CONFIG__RSVD_en__in_t;
+        logic swwel;
+    } mci_reg__CAP_LOCK__lock__in_t;
 
     typedef struct packed{
-        mci_reg__HW_CONFIG__RSVD_en__in_t RSVD_en;
-    } mci_reg__HW_CONFIG__in_t;
+        mci_reg__CAP_LOCK__lock__in_t lock;
+    } mci_reg__CAP_LOCK__in_t;
+
+    typedef struct packed{
+        logic [11:0] next;
+    } mci_reg__HW_CONFIG0__MCI_MBOX1_SRAM_SIZE__in_t;
+
+    typedef struct packed{
+        logic [11:0] next;
+    } mci_reg__HW_CONFIG0__MCI_MBOX0_SRAM_SIZE__in_t;
+
+    typedef struct packed{
+        mci_reg__HW_CONFIG0__MCI_MBOX1_SRAM_SIZE__in_t MCI_MBOX1_SRAM_SIZE;
+        mci_reg__HW_CONFIG0__MCI_MBOX0_SRAM_SIZE__in_t MCI_MBOX0_SRAM_SIZE;
+    } mci_reg__HW_CONFIG0__in_t;
+
+    typedef struct packed{
+        logic [4:0] next;
+    } mci_reg__HW_CONFIG1__MIN_MCU_RST_COUNTER_WIDTH__in_t;
+
+    typedef struct packed{
+        logic [11:0] next;
+    } mci_reg__HW_CONFIG1__MCU_SRAM_SIZE__in_t;
+
+    typedef struct packed{
+        mci_reg__HW_CONFIG1__MIN_MCU_RST_COUNTER_WIDTH__in_t MIN_MCU_RST_COUNTER_WIDTH;
+        mci_reg__HW_CONFIG1__MCU_SRAM_SIZE__in_t MCU_SRAM_SIZE;
+    } mci_reg__HW_CONFIG1__in_t;
 
     typedef struct packed{
         logic [3:0] next;
@@ -752,9 +778,11 @@ package mci_reg_pkg;
         logic mci_pwrgood;
         logic cptra_or_debug_req;
         logic mcu_or_debug_req;
-        mci_reg__CAPABILITIES__in_t CAPABILITIES;
-        mci_reg__HW_REV_ID__in_t HW_REV_ID;
-        mci_reg__HW_CONFIG__in_t HW_CONFIG;
+        mci_reg__HW_CAPABILITIES__in_t HW_CAPABILITIES;
+        mci_reg__FW_CAPABILITIES__in_t FW_CAPABILITIES;
+        mci_reg__CAP_LOCK__in_t CAP_LOCK;
+        mci_reg__HW_CONFIG0__in_t HW_CONFIG0;
+        mci_reg__HW_CONFIG1__in_t HW_CONFIG1;
         mci_reg__HW_FLOW_STATUS__in_t HW_FLOW_STATUS;
         mci_reg__RESET_REASON__in_t RESET_REASON;
         mci_reg__RESET_STATUS__in_t RESET_STATUS;
@@ -782,6 +810,14 @@ package mci_reg_pkg;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__in_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
         mci_reg__intr_block_t__in_t intr_block_rf;
     } mci_reg__in_t;
+
+    typedef struct packed{
+        logic value;
+    } mci_reg__CAP_LOCK__lock__out_t;
+
+    typedef struct packed{
+        mci_reg__CAP_LOCK__lock__out_t lock;
+    } mci_reg__CAP_LOCK__out_t;
 
     typedef struct packed{
         logic [31:0] value;
@@ -1310,6 +1346,7 @@ package mci_reg_pkg;
     } mci_reg__intr_block_t__out_t;
 
     typedef struct packed{
+        mci_reg__CAP_LOCK__out_t CAP_LOCK;
         mci_reg__FW_FLOW_STATUS__out_t FW_FLOW_STATUS;
         mci_reg__HW_FLOW_STATUS__out_t HW_FLOW_STATUS;
         mci_reg__RESET_REASON__out_t RESET_REASON;

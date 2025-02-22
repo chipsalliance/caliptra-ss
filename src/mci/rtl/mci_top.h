@@ -18,33 +18,49 @@
 
 #define MCI_TOP_BASE_ADDR                                                                           (0x0)
 #define MCI_TOP_MCI_REG_BASE_ADDR                                                                   (0x0)
-#define MCI_TOP_MCI_REG_CAPABILITIES                                                                (0x0)
-#ifndef MCI_REG_CAPABILITIES
-#define MCI_REG_CAPABILITIES                                                                        (0x0)
-#define MCI_REG_CAPABILITIES_NUM_MBOX_LOW                                                           (0)
-#define MCI_REG_CAPABILITIES_NUM_MBOX_MASK                                                          (0xf)
+#define MCI_TOP_MCI_REG_HW_CAPABILITIES                                                             (0x0)
+#ifndef MCI_REG_HW_CAPABILITIES
+#define MCI_REG_HW_CAPABILITIES                                                                     (0x0)
 #endif
-#define MCI_TOP_MCI_REG_HW_REV_ID                                                                   (0x4)
+#define MCI_TOP_MCI_REG_FW_CAPABILITIES                                                             (0x4)
+#ifndef MCI_REG_FW_CAPABILITIES
+#define MCI_REG_FW_CAPABILITIES                                                                     (0x4)
+#endif
+#define MCI_TOP_MCI_REG_CAP_LOCK                                                                    (0x8)
+#ifndef MCI_REG_CAP_LOCK
+#define MCI_REG_CAP_LOCK                                                                            (0x8)
+#define MCI_REG_CAP_LOCK_LOCK_LOW                                                                   (0)
+#define MCI_REG_CAP_LOCK_LOCK_MASK                                                                  (0x1)
+#endif
+#define MCI_TOP_MCI_REG_HW_REV_ID                                                                   (0xc)
 #ifndef MCI_REG_HW_REV_ID
-#define MCI_REG_HW_REV_ID                                                                           (0x4)
+#define MCI_REG_HW_REV_ID                                                                           (0xc)
 #define MCI_REG_HW_REV_ID_MC_GENERATION_LOW                                                         (0)
 #define MCI_REG_HW_REV_ID_MC_GENERATION_MASK                                                        (0xffff)
-#define MCI_REG_HW_REV_ID_SOC_STEPPING_ID_LOW                                                       (16)
-#define MCI_REG_HW_REV_ID_SOC_STEPPING_ID_MASK                                                      (0xffff0000)
 #endif
-#define MCI_TOP_MCI_REG_FW_REV_ID_0                                                                 (0x8)
+#define MCI_TOP_MCI_REG_FW_REV_ID_0                                                                 (0x10)
 #ifndef MCI_REG_FW_REV_ID_0
-#define MCI_REG_FW_REV_ID_0                                                                         (0x8)
+#define MCI_REG_FW_REV_ID_0                                                                         (0x10)
 #endif
-#define MCI_TOP_MCI_REG_FW_REV_ID_1                                                                 (0xc)
+#define MCI_TOP_MCI_REG_FW_REV_ID_1                                                                 (0x14)
 #ifndef MCI_REG_FW_REV_ID_1
-#define MCI_REG_FW_REV_ID_1                                                                         (0xc)
+#define MCI_REG_FW_REV_ID_1                                                                         (0x14)
 #endif
-#define MCI_TOP_MCI_REG_HW_CONFIG                                                                   (0x10)
-#ifndef MCI_REG_HW_CONFIG
-#define MCI_REG_HW_CONFIG                                                                           (0x10)
-#define MCI_REG_HW_CONFIG_RSVD_EN_LOW                                                               (0)
-#define MCI_REG_HW_CONFIG_RSVD_EN_MASK                                                              (0x1)
+#define MCI_TOP_MCI_REG_HW_CONFIG0                                                                  (0x18)
+#ifndef MCI_REG_HW_CONFIG0
+#define MCI_REG_HW_CONFIG0                                                                          (0x18)
+#define MCI_REG_HW_CONFIG0_MCI_MBOX1_SRAM_SIZE_LOW                                                  (0)
+#define MCI_REG_HW_CONFIG0_MCI_MBOX1_SRAM_SIZE_MASK                                                 (0xfff)
+#define MCI_REG_HW_CONFIG0_MCI_MBOX0_SRAM_SIZE_LOW                                                  (12)
+#define MCI_REG_HW_CONFIG0_MCI_MBOX0_SRAM_SIZE_MASK                                                 (0xfff000)
+#endif
+#define MCI_TOP_MCI_REG_HW_CONFIG1                                                                  (0x1c)
+#ifndef MCI_REG_HW_CONFIG1
+#define MCI_REG_HW_CONFIG1                                                                          (0x1c)
+#define MCI_REG_HW_CONFIG1_MIN_MCU_RST_COUNTER_WIDTH_LOW                                            (0)
+#define MCI_REG_HW_CONFIG1_MIN_MCU_RST_COUNTER_WIDTH_MASK                                           (0x1f)
+#define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_LOW                                                        (5)
+#define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_MASK                                                       (0x1ffe0)
 #endif
 #define MCI_TOP_MCI_REG_FW_FLOW_STATUS                                                              (0x20)
 #ifndef MCI_REG_FW_FLOW_STATUS

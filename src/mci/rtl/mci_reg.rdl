@@ -44,13 +44,34 @@ addrmap mci_reg {
     // ----------------------------------------
     // ------------ IDENTIFICATION ------------
     reg {
-        name = "Manufacturer Control Interface Capabilities";
-        desc = "Reports configuration and build options for MCI.
+        name = "Manufacturer Control Interface HW Capabilities";
+        desc = "MCU HW Capabilities. Initialized with reset values, rewritable by MCU FW.
                 [br]Caliptra Access: RO
-                [br]MCU Access:      RO
-                [br]SoC Access:      RO";
-        field {desc = "Number of Mailboxes in MCI"; hw=w; sw=r;} NUM_MBOX[4];
-    } CAPABILITIES;
+                [br]MCU Access:      RW
+                [br]SoC Access:      RO
+                [br]Read-only once locked.";
+        field {sw=rw; swwel; resetsignal=mci_rst_b;} cap[32]=32'h0;
+    } HW_CAPABILITIES;
+    reg {
+        name = "Manufacturer Control Interface FW Capabilities";
+        desc = "MCU FW Capabilities. Initialized with reset values. rewrtitable by MCU FW.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SoC Access:      RO
+                [br]Read-only once locked.";
+        field {sw=rw; swwel; resetsignal=mci_rst_b;} cap[32]=32'h0; 
+    } FW_CAPABILITIES;
+    reg {
+        name = "MCI Capabilities Lock";
+        desc = "Lock register to disable further firmware modifications to capabilities registers.
+                [br]Once set, this register may not be cleared until a warm reset. If set, the values in HW_CAPABILITIES and FW_CAPABILITIES may not be modified.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO
+                [br]Read-only once locked.";
+        field {sw=rw; hw=r; swwel; resetsignal=mci_rst_b;} lock = 1'b0;
+    } CAP_LOCK;
+
     reg {
         name = "MCI/MCU HW RevID";
         desc = "HW revision ID for Manufacturer Control components (MCU & MCI) that matches the official
@@ -63,7 +84,6 @@ addrmap mci_reg {
                        [br][lb]11: 8[rb] Minor version
                        [br][lb] 7: 0[rb] Patch version";
                sw=r;} MC_GENERATION[16]=0x1000;
-        field {sw=r; hw=w; resetsignal = mci_rst_b;} SOC_STEPPING_ID[16]=0; // TODO
     } HW_REV_ID;
     reg {
         name = "MCU FW RevID";
@@ -80,8 +100,19 @@ addrmap mci_reg {
                 [br]MCU Access:      RO
                 [br]SOC Access:      RO";
         // No storage, i.e. no resetsignal
-        field {sw=r; hw=w;} RSVD_en;
-    } HW_CONFIG;
+        field {desc = "MCI MBOX1 SRAM SIZE KB. If 0 there is no mailbox"; hw=w; sw=r;} MCI_MBOX1_SRAM_SIZE[12];
+        field {desc = "MCI MBOX0 SRAM SIZE KB. If 0 there is no mailbox"; hw=w; sw=r;} MCI_MBOX0_SRAM_SIZE[12];
+    } HW_CONFIG0;
+    reg {
+        name = "MCU HW Config";
+        desc = "MCU HW Configuration
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO";
+        // No storage, i.e. no resetsignal
+        field {desc = "Size of MCU reset counter"; hw=w; sw=r;} MIN_MCU_RST_COUNTER_WIDTH[5];
+        field {desc = "MCU SRAM Size KB"; hw=w; sw=r;} MCU_SRAM_SIZE[12];
+    } HW_CONFIG1;
 
     // ----------------------------------------
     // ---------------- STATUS ----------------
@@ -719,7 +750,7 @@ addrmap mci_reg {
 
     reg {
         name = "Firmware SRAM Exec Region Size";
-        desc = "Dynamic size assignment for the region of sram that contains executable instructions for MCU.
+        desc = "Dynamic size assignment for the region of sram that contains executable instructions for MCU. Locked when SS_CONFIG_DONE is set
                 [br]TAP Access [in debug mode]: RW";
         field { desc="Size (in multiples of 4KiB)"; sw=rw; hw=rw; swwel=true; we;} size[16] = 16'h0;
     } FW_SRAM_EXEC_REGION_SIZE;

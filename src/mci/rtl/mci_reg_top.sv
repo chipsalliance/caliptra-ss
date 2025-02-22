@@ -23,10 +23,18 @@ module mci_reg_top
     import soc_ifc_pkg::*;
     #(
         parameter AXI_USER_WIDTH = 32
+    
+        //Mailbox configuration
+        ,parameter MCI_MBOX0_SIZE_KB = 128
         ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
         ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+        ,parameter MCI_MBOX1_SIZE_KB = 4
         ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
         ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+        
+        ,parameter MCU_SRAM_SIZE_KB = 512 
+        ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4 
+
     )
     (
     input logic clk,
@@ -292,6 +300,7 @@ always_comb begin
         end
     end
 
+    mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value; 
 end
 
 ///////////////////////////////////////////////
@@ -349,6 +358,18 @@ end
 
 assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value;
 assign mcu_reset_vector     = mci_reg_hwif_out.MCU_RESET_VECTOR.vec.value;
+
+assign mci_reg_hwif_in.HW_CONFIG0.MCI_MBOX0_SRAM_SIZE.next = MCI_MBOX0_SIZE_KB;
+assign mci_reg_hwif_in.HW_CONFIG0.MCI_MBOX1_SRAM_SIZE.next = MCI_MBOX1_SIZE_KB;
+assign mci_reg_hwif_in.HW_CONFIG1.MCU_SRAM_SIZE.next = MCU_SRAM_SIZE_KB;
+assign mci_reg_hwif_in.HW_CONFIG1.MIN_MCU_RST_COUNTER_WIDTH.next = MIN_MCU_RST_COUNTER_WIDTH;
+
+assign mci_reg_hwif_in.HW_CAPABILITIES.cap.swwel = !mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
+assign mci_reg_hwif_in.FW_CAPABILITIES.cap.swwel = !mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
+// CAP_LOCK is a lockable register.
+// "lock" can be written by MCU/DEBUG if it is already NOT '1. SoC can only read this bit. The bit gets reset on warm reset
+assign mci_reg_hwif_in.CAP_LOCK.lock.swwel = !mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
+
 
 
 ///////////////////////////////////////////////
@@ -502,22 +523,17 @@ assign cptra_or_debug_req                   = axi_cptra_req | axi_debug_req;
 assign mci_reg_hwif_in.cptra_or_debug_req   = cptra_or_debug_req; 
 assign mci_reg_hwif_in.mcu_or_debug_req     = mcu_or_debug_req;
 
+
+
+
+
+
+
+
+
 ///////////////////////////////////////////////
-// TEMP CONNECTIONS FIXME
+// MTIME                       
 ///////////////////////////////////////////////
-
-
-
-
-assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.swwel = '0; // FIXME
-assign mci_reg_hwif_in.CAPABILITIES = '0; // FIXME
-assign mci_reg_hwif_in.HW_REV_ID = '0; // FIXME
-assign mci_reg_hwif_in.HW_CONFIG = '0; // FIXME
-
-
-
-
-
 // mtime always increments, but if it's being written by software the write
 // value will update the register. Deasserting incr in this case prevents the
 // SW write from being dropped (due to RDL compiler failing to give SW precedence properly).
@@ -1079,7 +1095,6 @@ end
 ////////////////////////////////////////////////////////
 // AGG MCI Interrupts
 ////////////////////////////////////////////////////////
-// FIXME should these be pluses
 always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal0_sts.hwset  = agg_error_fatal_sync[0];
 always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal1_sts.hwset  = agg_error_fatal_sync[1];
 always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal2_sts.hwset  = agg_error_fatal_sync[2];

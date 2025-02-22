@@ -16,28 +16,41 @@
 `define MCI_TOP_FIELD_DEFINES_HEADER
 
 
-`ifndef MCI_REG_CAPABILITIES
-`define MCI_REG_CAPABILITIES                                                                        (32'h0)
-`define MCI_REG_CAPABILITIES_NUM_MBOX_LOW                                                           (0)
-`define MCI_REG_CAPABILITIES_NUM_MBOX_MASK                                                          (32'hf)
+`ifndef MCI_REG_HW_CAPABILITIES
+`define MCI_REG_HW_CAPABILITIES                                                                     (32'h0)
+`endif
+`ifndef MCI_REG_FW_CAPABILITIES
+`define MCI_REG_FW_CAPABILITIES                                                                     (32'h4)
+`endif
+`ifndef MCI_REG_CAP_LOCK
+`define MCI_REG_CAP_LOCK                                                                            (32'h8)
+`define MCI_REG_CAP_LOCK_LOCK_LOW                                                                   (0)
+`define MCI_REG_CAP_LOCK_LOCK_MASK                                                                  (32'h1)
 `endif
 `ifndef MCI_REG_HW_REV_ID
-`define MCI_REG_HW_REV_ID                                                                           (32'h4)
+`define MCI_REG_HW_REV_ID                                                                           (32'hc)
 `define MCI_REG_HW_REV_ID_MC_GENERATION_LOW                                                         (0)
 `define MCI_REG_HW_REV_ID_MC_GENERATION_MASK                                                        (32'hffff)
-`define MCI_REG_HW_REV_ID_SOC_STEPPING_ID_LOW                                                       (16)
-`define MCI_REG_HW_REV_ID_SOC_STEPPING_ID_MASK                                                      (32'hffff0000)
 `endif
 `ifndef MCI_REG_FW_REV_ID_0
-`define MCI_REG_FW_REV_ID_0                                                                         (32'h8)
+`define MCI_REG_FW_REV_ID_0                                                                         (32'h10)
 `endif
 `ifndef MCI_REG_FW_REV_ID_1
-`define MCI_REG_FW_REV_ID_1                                                                         (32'hc)
+`define MCI_REG_FW_REV_ID_1                                                                         (32'h14)
 `endif
-`ifndef MCI_REG_HW_CONFIG
-`define MCI_REG_HW_CONFIG                                                                           (32'h10)
-`define MCI_REG_HW_CONFIG_RSVD_EN_LOW                                                               (0)
-`define MCI_REG_HW_CONFIG_RSVD_EN_MASK                                                              (32'h1)
+`ifndef MCI_REG_HW_CONFIG0
+`define MCI_REG_HW_CONFIG0                                                                          (32'h18)
+`define MCI_REG_HW_CONFIG0_MCI_MBOX1_SRAM_SIZE_LOW                                                  (0)
+`define MCI_REG_HW_CONFIG0_MCI_MBOX1_SRAM_SIZE_MASK                                                 (32'hfff)
+`define MCI_REG_HW_CONFIG0_MCI_MBOX0_SRAM_SIZE_LOW                                                  (12)
+`define MCI_REG_HW_CONFIG0_MCI_MBOX0_SRAM_SIZE_MASK                                                 (32'hfff000)
+`endif
+`ifndef MCI_REG_HW_CONFIG1
+`define MCI_REG_HW_CONFIG1                                                                          (32'h1c)
+`define MCI_REG_HW_CONFIG1_MIN_MCU_RST_COUNTER_WIDTH_LOW                                            (0)
+`define MCI_REG_HW_CONFIG1_MIN_MCU_RST_COUNTER_WIDTH_MASK                                           (32'h1f)
+`define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_LOW                                                        (5)
+`define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_MASK                                                       (32'h1ffe0)
 `endif
 `ifndef MCI_REG_FW_FLOW_STATUS
 `define MCI_REG_FW_FLOW_STATUS                                                                      (32'h20)

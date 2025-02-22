@@ -4,17 +4,17 @@ package mci_reg_uvm;
     `include "uvm_macros.svh"
     import uvm_pkg::*;
     `include "mci_reg_covergroups.svh"
-    // Reg - mci_reg::CAPABILITIES
-    class mci_reg__CAPABILITIES extends uvm_reg;
+    // Reg - mci_reg::HW_CAPABILITIES
+    class mci_reg__HW_CAPABILITIES extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__CAPABILITIES_bit_cg NUM_MBOX_bit_cg[4];
-        mci_reg__CAPABILITIES_fld_cg fld_cg;
-        rand uvm_reg_field NUM_MBOX;
+        mci_reg__HW_CAPABILITIES_bit_cg cap_bit_cg[32];
+        mci_reg__HW_CAPABILITIES_fld_cg fld_cg;
+        rand uvm_reg_field cap;
 
-        function new(string name = "mci_reg__CAPABILITIES");
+        function new(string name = "mci_reg__HW_CAPABILITIES");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -24,15 +24,75 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.NUM_MBOX = new("NUM_MBOX");
-            this.NUM_MBOX.configure(this, 4, 0, "RO", 1, 'h0, 0, 1, 0);
+            this.cap = new("cap");
+            this.cap.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(NUM_MBOX_bit_cg[bt]) NUM_MBOX_bit_cg[bt] = new();
+                foreach(cap_bit_cg[bt]) cap_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__CAPABILITIES
+    endclass : mci_reg__HW_CAPABILITIES
+
+    // Reg - mci_reg::FW_CAPABILITIES
+    class mci_reg__FW_CAPABILITIES extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__FW_CAPABILITIES_bit_cg cap_bit_cg[32];
+        mci_reg__FW_CAPABILITIES_fld_cg fld_cg;
+        rand uvm_reg_field cap;
+
+        function new(string name = "mci_reg__FW_CAPABILITIES");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.cap = new("cap");
+            this.cap.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(cap_bit_cg[bt]) cap_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__FW_CAPABILITIES
+
+    // Reg - mci_reg::CAP_LOCK
+    class mci_reg__CAP_LOCK extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__CAP_LOCK_bit_cg lock_bit_cg[1];
+        mci_reg__CAP_LOCK_fld_cg fld_cg;
+        rand uvm_reg_field lock;
+
+        function new(string name = "mci_reg__CAP_LOCK");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.lock = new("lock");
+            this.lock.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(lock_bit_cg[bt]) lock_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__CAP_LOCK
 
     // Reg - mci_reg::HW_REV_ID
     class mci_reg__HW_REV_ID extends uvm_reg;
@@ -41,10 +101,8 @@ package mci_reg_uvm;
         protected bit            m_is_read;
 
         mci_reg__HW_REV_ID_bit_cg MC_GENERATION_bit_cg[16];
-        mci_reg__HW_REV_ID_bit_cg SOC_STEPPING_ID_bit_cg[16];
         mci_reg__HW_REV_ID_fld_cg fld_cg;
         rand uvm_reg_field MC_GENERATION;
-        rand uvm_reg_field SOC_STEPPING_ID;
 
         function new(string name = "mci_reg__HW_REV_ID");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -58,11 +116,8 @@ package mci_reg_uvm;
         virtual function void build();
             this.MC_GENERATION = new("MC_GENERATION");
             this.MC_GENERATION.configure(this, 16, 0, "RO", 0, 'h1000, 1, 1, 0);
-            this.SOC_STEPPING_ID = new("SOC_STEPPING_ID");
-            this.SOC_STEPPING_ID.configure(this, 16, 16, "RO", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(MC_GENERATION_bit_cg[bt]) MC_GENERATION_bit_cg[bt] = new();
-                foreach(SOC_STEPPING_ID_bit_cg[bt]) SOC_STEPPING_ID_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -99,17 +154,19 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FW_REV_ID
 
-    // Reg - mci_reg::HW_CONFIG
-    class mci_reg__HW_CONFIG extends uvm_reg;
+    // Reg - mci_reg::HW_CONFIG0
+    class mci_reg__HW_CONFIG0 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__HW_CONFIG_bit_cg RSVD_en_bit_cg[1];
-        mci_reg__HW_CONFIG_fld_cg fld_cg;
-        rand uvm_reg_field RSVD_en;
+        mci_reg__HW_CONFIG0_bit_cg MCI_MBOX1_SRAM_SIZE_bit_cg[12];
+        mci_reg__HW_CONFIG0_bit_cg MCI_MBOX0_SRAM_SIZE_bit_cg[12];
+        mci_reg__HW_CONFIG0_fld_cg fld_cg;
+        rand uvm_reg_field MCI_MBOX1_SRAM_SIZE;
+        rand uvm_reg_field MCI_MBOX0_SRAM_SIZE;
 
-        function new(string name = "mci_reg__HW_CONFIG");
+        function new(string name = "mci_reg__HW_CONFIG0");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -119,15 +176,53 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.RSVD_en = new("RSVD_en");
-            this.RSVD_en.configure(this, 1, 0, "RO", 1, 'h0, 0, 1, 0);
+            this.MCI_MBOX1_SRAM_SIZE = new("MCI_MBOX1_SRAM_SIZE");
+            this.MCI_MBOX1_SRAM_SIZE.configure(this, 12, 0, "RO", 1, 'h0, 0, 1, 0);
+            this.MCI_MBOX0_SRAM_SIZE = new("MCI_MBOX0_SRAM_SIZE");
+            this.MCI_MBOX0_SRAM_SIZE.configure(this, 12, 12, "RO", 1, 'h0, 0, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(RSVD_en_bit_cg[bt]) RSVD_en_bit_cg[bt] = new();
+                foreach(MCI_MBOX1_SRAM_SIZE_bit_cg[bt]) MCI_MBOX1_SRAM_SIZE_bit_cg[bt] = new();
+                foreach(MCI_MBOX0_SRAM_SIZE_bit_cg[bt]) MCI_MBOX0_SRAM_SIZE_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__HW_CONFIG
+    endclass : mci_reg__HW_CONFIG0
+
+    // Reg - mci_reg::HW_CONFIG1
+    class mci_reg__HW_CONFIG1 extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__HW_CONFIG1_bit_cg MIN_MCU_RST_COUNTER_WIDTH_bit_cg[5];
+        mci_reg__HW_CONFIG1_bit_cg MCU_SRAM_SIZE_bit_cg[12];
+        mci_reg__HW_CONFIG1_fld_cg fld_cg;
+        rand uvm_reg_field MIN_MCU_RST_COUNTER_WIDTH;
+        rand uvm_reg_field MCU_SRAM_SIZE;
+
+        function new(string name = "mci_reg__HW_CONFIG1");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.MIN_MCU_RST_COUNTER_WIDTH = new("MIN_MCU_RST_COUNTER_WIDTH");
+            this.MIN_MCU_RST_COUNTER_WIDTH.configure(this, 5, 0, "RO", 1, 'h0, 0, 1, 0);
+            this.MCU_SRAM_SIZE = new("MCU_SRAM_SIZE");
+            this.MCU_SRAM_SIZE.configure(this, 12, 5, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(MIN_MCU_RST_COUNTER_WIDTH_bit_cg[bt]) MIN_MCU_RST_COUNTER_WIDTH_bit_cg[bt] = new();
+                foreach(MCU_SRAM_SIZE_bit_cg[bt]) MCU_SRAM_SIZE_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__HW_CONFIG1
 
     // Reg - mci_reg::FW_FLOW_STATUS
     class mci_reg__FW_FLOW_STATUS extends uvm_reg;
@@ -10009,10 +10104,13 @@ package mci_reg_uvm;
 
     // Addrmap - mci_reg
     class mci_reg extends uvm_reg_block;
-        rand mci_reg__CAPABILITIES CAPABILITIES;
+        rand mci_reg__HW_CAPABILITIES HW_CAPABILITIES;
+        rand mci_reg__FW_CAPABILITIES FW_CAPABILITIES;
+        rand mci_reg__CAP_LOCK CAP_LOCK;
         rand mci_reg__HW_REV_ID HW_REV_ID;
         rand mci_reg__FW_REV_ID FW_REV_ID[2];
-        rand mci_reg__HW_CONFIG HW_CONFIG;
+        rand mci_reg__HW_CONFIG0 HW_CONFIG0;
+        rand mci_reg__HW_CONFIG1 HW_CONFIG1;
         rand mci_reg__FW_FLOW_STATUS FW_FLOW_STATUS;
         rand mci_reg__HW_FLOW_STATUS HW_FLOW_STATUS;
         rand mci_reg__RESET_REASON RESET_REASON;
@@ -10069,28 +10167,43 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.default_map = create_map("reg_map", 0, 4, UVM_LITTLE_ENDIAN);
-            this.CAPABILITIES = new("CAPABILITIES");
-            this.CAPABILITIES.configure(this);
+            this.HW_CAPABILITIES = new("HW_CAPABILITIES");
+            this.HW_CAPABILITIES.configure(this);
 
-            this.CAPABILITIES.build();
-            this.default_map.add_reg(this.CAPABILITIES, 'h0);
+            this.HW_CAPABILITIES.build();
+            this.default_map.add_reg(this.HW_CAPABILITIES, 'h0);
+            this.FW_CAPABILITIES = new("FW_CAPABILITIES");
+            this.FW_CAPABILITIES.configure(this);
+
+            this.FW_CAPABILITIES.build();
+            this.default_map.add_reg(this.FW_CAPABILITIES, 'h4);
+            this.CAP_LOCK = new("CAP_LOCK");
+            this.CAP_LOCK.configure(this);
+
+            this.CAP_LOCK.build();
+            this.default_map.add_reg(this.CAP_LOCK, 'h8);
             this.HW_REV_ID = new("HW_REV_ID");
             this.HW_REV_ID.configure(this);
 
             this.HW_REV_ID.build();
-            this.default_map.add_reg(this.HW_REV_ID, 'h4);
+            this.default_map.add_reg(this.HW_REV_ID, 'hc);
             foreach(this.FW_REV_ID[i0]) begin
                 this.FW_REV_ID[i0] = new($sformatf("FW_REV_ID[%0d]", i0));
                 this.FW_REV_ID[i0].configure(this);
                 
                 this.FW_REV_ID[i0].build();
-                this.default_map.add_reg(this.FW_REV_ID[i0], 'h8 + i0*'h4);
+                this.default_map.add_reg(this.FW_REV_ID[i0], 'h10 + i0*'h4);
             end
-            this.HW_CONFIG = new("HW_CONFIG");
-            this.HW_CONFIG.configure(this);
+            this.HW_CONFIG0 = new("HW_CONFIG0");
+            this.HW_CONFIG0.configure(this);
 
-            this.HW_CONFIG.build();
-            this.default_map.add_reg(this.HW_CONFIG, 'h10);
+            this.HW_CONFIG0.build();
+            this.default_map.add_reg(this.HW_CONFIG0, 'h18);
+            this.HW_CONFIG1 = new("HW_CONFIG1");
+            this.HW_CONFIG1.configure(this);
+
+            this.HW_CONFIG1.build();
+            this.default_map.add_reg(this.HW_CONFIG1, 'h1c);
             this.FW_FLOW_STATUS = new("FW_FLOW_STATUS");
             this.FW_FLOW_STATUS.configure(this);
 
