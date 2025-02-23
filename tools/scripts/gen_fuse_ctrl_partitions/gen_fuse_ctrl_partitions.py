@@ -30,6 +30,7 @@ HEADER_COMMENT_HTML = "<!--"+HEADER_COMMENT+"\n-->\n"
 DATA_OUTPUT_PATH = Path("src") / "fuse_ctrl" / "data"
 DOC_OUTPUT_PATH  = Path("src") / "fuse_ctrl" / "doc"
 RTL_OUTPUT_PATH  = Path("src") / "fuse_ctrl" / "rtl"
+C_OUTPUT_PATH    = Path("src") / "integration" / "rtl"
 
 ## Doc table files
 PARTITIONS_TABLE_FILE = "otp_ctrl_partitions.md"
@@ -49,6 +50,9 @@ RDL_TEMPLATE   = "otp_ctrl.rdl.tpl"
 PART_PKG_TEMPLATE = "otp_ctrl_part_pkg.sv.tpl"
 REG_PKG_TEMPLATE  = "reg_pkg.sv.tpl"
 REG_TOP_TEMPLATE  = "reg_top.sv.tpl"
+
+# C templates
+C_HEADER_TEMPLATE = "fuse_ctrl_address_map.h.tpl"
 
 def render_template(template: str, target_path: Path, params: Dict[str, object]):
     try:
@@ -139,6 +143,13 @@ def main():
         template=TEMPLATES_PATH / RDL_TEMPLATE,
         target_path=DATA_OUTPUT_PATH / RDL_TEMPLATE.replace(".tpl", ""),
         params={"partitions": otp_mmap.config["partitions"]}
+    )
+
+    # Render C header files
+    render_template(
+        template=TEMPLATES_PATH / C_HEADER_TEMPLATE,
+        target_path=C_OUTPUT_PATH / C_HEADER_TEMPLATE.replace(".tpl", ""),
+        params={"rb": ip_block.reg_blocks["core"]}
     )
 
 if __name__ == "__main__":

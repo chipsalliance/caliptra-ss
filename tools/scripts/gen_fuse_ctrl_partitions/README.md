@@ -23,6 +23,8 @@ src/fuse_ctrl/doc
 ├── otp_ctrl_field_descriptions.md
 ├── otp_ctrl_mmap.md
 └── otp_ctrl_partitions.md
+src/integration/rtl
+└── fuse_ctrl_address_map.h
 ```
 
 ### Vendor-Specific Partitions
