@@ -849,6 +849,56 @@ addrmap mci_reg {
          field {sw=rw; hw=r; swwel; resetsignal = mci_rst_b;} LOCK=0;
      } MBOX1_AXI_USER_LOCK[5] @0x1E0;
 
+
+    // ----------------------------------------
+    // ------------ LCC GASKET ----------------
+    
+    reg {
+        name = "SOC DFT Enable Mask";
+         desc = "Masks Caliptra's SS_SOC_DBG_UNLOCK_LEVEL to enable DFT for the SOC. 
+                 [br]If any bit is set to 0, SOC_DFT_EN will not be enabled via SS_SOC_DBG_UNLOCK_LEVEL, it can only be enabled via LCC.
+                 [br]If all bits are set to 1 and SS_SOC_DEBUG_UNLOCK_LEVEL is set, SOC_DFT_EN will be enabled.
+                 [br]MCU Access:      RW
+                 [br]Caliptra Access: RW
+                 [br]SOC Access:      RW";
+         field {sw=rw; hw=r; resetsignal = mci_rst_b;} MASK[32]=0;
+     } SOC_DFT_EN[2] @0x300;
+    
+    reg {
+        name = "SOC HW Debug Enable Mask";
+         desc = "Masks Caliptra's SS_SOC_DBG_UNLOCK_LEVEL to enable HW Debug for the SOC. 
+                 [br]If any bit is set to 0, SOC_HW_DEBUG_EN will not be enabled via SS_SOC_DBG_UNLOCK_LEVEL, it can only be enabled via LCC.
+                 [br]If all bits are set to 1 and SS_SOC_DEBUG_UNLOCK_LEVEL is set, SOC_HW_DEBUG_EN will be enabled.
+                 [br]MCU Access:      RW
+                 [br]Caliptra Access: RW
+                 [br]SOC Access:      RW";
+         field {sw=rw; hw=r; resetsignal = mci_rst_b;} MASK[32]=0;
+     } SOC_HW_DEBUG_EN[2];
+    
+    reg {
+        name = "SOC Poduction Debug State Mask";
+         desc = "Masks Caliptra's SS_SOC_DBG_UNLOCK_LEVEL to enable Production Debug Mode State. 
+                 [br]If any bit is set to 0, Security State will not transition to Production Debug Mode via SS_SOC_DBG_UNLOCK_LEVEL, it can only be enabled via LCC.
+                 [br]If all bits are set to 1 and SS_SOC_DEBUG_UNLOCK_LEVEL is set, Production Debug Mode will be entered from the Production Non-debug state.
+                 [br]MCU Access:      RW
+                 [br]Caliptra Access: RW
+                 [br]SOC Access:      RW";
+         field {sw=rw; hw=r; resetsignal = mci_rst_b;} MASK[32]=0;
+     } SOC_PROD_DEBUG_STATE[2];
+
+
+    reg {
+        name = "Fuse Controller FIPS Zeroization Mask";
+         desc = "Masks SOC's cptra_ss_FIPS_ZEROIZATION_PPD_i to send zeroization request to the Fuse Controller. This bit shall be set by MCU ROM and is locked via SS_CONFIG_DONE.
+                 [br]If any bit is set to 0, FIPS_ZEROIZATION_PPD_i is masked and no command is sent to the Fuse Controller.
+                 [br]If all bits are set to 1 and FPIS_ZEROIZATION_PPD_i is set, FIPS zeriozation command sent to the Fuse Controller.
+                 [br]MCU Access:      RW
+                 [br]Caliptra Access: RO
+                 [br]SOC Access:      RO
+                 [br]ONce SS_CONFIG_DONE is set, this register is read-only.";
+         field {sw=rw; hw=r; swwel; resetsignal = mci_rst_b;} MASK[32]=0;
+     } FC_FIPS_ZERIOZATION;
+
     // ----------------------------------------
     // ------------ DEBUG/GENERIC -------------
     reg { 

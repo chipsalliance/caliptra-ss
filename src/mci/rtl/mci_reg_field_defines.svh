@@ -604,6 +604,27 @@
 `define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_LOW                                                      (0)
 `define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_MASK                                                     (32'h1)
 `endif
+`ifndef MCI_REG_SOC_DFT_EN_0
+`define MCI_REG_SOC_DFT_EN_0                                                                        (32'h300)
+`endif
+`ifndef MCI_REG_SOC_DFT_EN_1
+`define MCI_REG_SOC_DFT_EN_1                                                                        (32'h304)
+`endif
+`ifndef MCI_REG_SOC_HW_DEBUG_EN_0
+`define MCI_REG_SOC_HW_DEBUG_EN_0                                                                   (32'h308)
+`endif
+`ifndef MCI_REG_SOC_HW_DEBUG_EN_1
+`define MCI_REG_SOC_HW_DEBUG_EN_1                                                                   (32'h30c)
+`endif
+`ifndef MCI_REG_SOC_PROD_DEBUG_STATE_0
+`define MCI_REG_SOC_PROD_DEBUG_STATE_0                                                              (32'h310)
+`endif
+`ifndef MCI_REG_SOC_PROD_DEBUG_STATE_1
+`define MCI_REG_SOC_PROD_DEBUG_STATE_1                                                              (32'h314)
+`endif
+`ifndef MCI_REG_FC_FIPS_ZERIOZATION
+`define MCI_REG_FC_FIPS_ZERIOZATION                                                                 (32'h318)
+`endif
 `ifndef MCI_REG_GENERIC_INPUT_WIRES_0
 `define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (32'h400)
 `endif

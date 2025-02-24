@@ -811,10 +811,10 @@ mci_lcc_st_trans LCC_state_translator (
     .from_otp_to_lcc_program_i(from_otp_to_lcc_program_i),
     .ss_dbg_manuf_enable_i(ss_dbg_manuf_enable_i),
     .ss_soc_dbg_unlock_level_i(ss_soc_dbg_unlock_level_i),
-    .ss_soc_dft_en_mask_reg0_1(64'h0), // TODO: there should be two registers for this connection
-    .ss_soc_dbg_unlock_mask_reg0_1(64'h0), // TODO: there should be two registers for this connection
-    .ss_soc_CLTAP_unlock_mask_reg0_1(64'h0), // TODO: there should be two registers for this connection
-    .ss_soc_MCU_ROM_zeroization_mask_reg(32'h0), // TODO: there should be two registers for this connection
+    .ss_soc_dft_en_mask_reg0_1({mci_reg_hwif_out.SOC_DFT_EN[1].MASK.value, mci_reg_hwif_out.SOC_DFT_EN[0].MASK.value}), 
+    .ss_soc_dbg_unlock_mask_reg0_1({mci_reg_hwif_out.SOC_PROD_DEBUG_STATE[1].MASK.value, mci_reg_hwif_out.SOC_PROD_DEBUG_STATE[0].MASK.value}), 
+    .ss_soc_CLTAP_unlock_mask_reg0_1({mci_reg_hwif_out.SOC_HW_DEBUG_EN[1].MASK.value, mci_reg_hwif_out.SOC_HW_DEBUG_EN[0].MASK.value}), 
+    .ss_soc_MCU_ROM_zeroization_mask_reg(mci_reg_hwif_out.FC_FIPS_ZERIOZATION.MASK.value), 
     .FIPS_ZEROIZATION_PPD_i,
     .FIPS_ZEROIZATION_CMD_o,
     .SOC_DFT_EN(SOC_DFT_EN),

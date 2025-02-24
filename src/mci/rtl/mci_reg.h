@@ -681,6 +681,34 @@
 #define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_LOW                                                      (0)
 #define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_MASK                                                     (0x1)
 #endif
+#define MCI_REG_SOC_DFT_EN_0                                                                        (0x300)
+#ifndef MCI_REG_SOC_DFT_EN_0
+#define MCI_REG_SOC_DFT_EN_0                                                                        (0x300)
+#endif
+#define MCI_REG_SOC_DFT_EN_1                                                                        (0x304)
+#ifndef MCI_REG_SOC_DFT_EN_1
+#define MCI_REG_SOC_DFT_EN_1                                                                        (0x304)
+#endif
+#define MCI_REG_SOC_HW_DEBUG_EN_0                                                                   (0x308)
+#ifndef MCI_REG_SOC_HW_DEBUG_EN_0
+#define MCI_REG_SOC_HW_DEBUG_EN_0                                                                   (0x308)
+#endif
+#define MCI_REG_SOC_HW_DEBUG_EN_1                                                                   (0x30c)
+#ifndef MCI_REG_SOC_HW_DEBUG_EN_1
+#define MCI_REG_SOC_HW_DEBUG_EN_1                                                                   (0x30c)
+#endif
+#define MCI_REG_SOC_PROD_DEBUG_STATE_0                                                              (0x310)
+#ifndef MCI_REG_SOC_PROD_DEBUG_STATE_0
+#define MCI_REG_SOC_PROD_DEBUG_STATE_0                                                              (0x310)
+#endif
+#define MCI_REG_SOC_PROD_DEBUG_STATE_1                                                              (0x314)
+#ifndef MCI_REG_SOC_PROD_DEBUG_STATE_1
+#define MCI_REG_SOC_PROD_DEBUG_STATE_1                                                              (0x314)
+#endif
+#define MCI_REG_FC_FIPS_ZERIOZATION                                                                 (0x318)
+#ifndef MCI_REG_FC_FIPS_ZERIOZATION
+#define MCI_REG_FC_FIPS_ZERIOZATION                                                                 (0x318)
+#endif
 #define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (0x400)
 #ifndef MCI_REG_GENERIC_INPUT_WIRES_0
 #define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (0x400)

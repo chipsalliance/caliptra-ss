@@ -2204,6 +2204,126 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MBOX1_AXI_USER_LOCK
 
+    // Reg - mci_reg::SOC_DFT_EN
+    class mci_reg__SOC_DFT_EN extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__SOC_DFT_EN_bit_cg MASK_bit_cg[32];
+        mci_reg__SOC_DFT_EN_fld_cg fld_cg;
+        rand uvm_reg_field MASK;
+
+        function new(string name = "mci_reg__SOC_DFT_EN");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.MASK = new("MASK");
+            this.MASK.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(MASK_bit_cg[bt]) MASK_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__SOC_DFT_EN
+
+    // Reg - mci_reg::SOC_HW_DEBUG_EN
+    class mci_reg__SOC_HW_DEBUG_EN extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__SOC_HW_DEBUG_EN_bit_cg MASK_bit_cg[32];
+        mci_reg__SOC_HW_DEBUG_EN_fld_cg fld_cg;
+        rand uvm_reg_field MASK;
+
+        function new(string name = "mci_reg__SOC_HW_DEBUG_EN");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.MASK = new("MASK");
+            this.MASK.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(MASK_bit_cg[bt]) MASK_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__SOC_HW_DEBUG_EN
+
+    // Reg - mci_reg::SOC_PROD_DEBUG_STATE
+    class mci_reg__SOC_PROD_DEBUG_STATE extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__SOC_PROD_DEBUG_STATE_bit_cg MASK_bit_cg[32];
+        mci_reg__SOC_PROD_DEBUG_STATE_fld_cg fld_cg;
+        rand uvm_reg_field MASK;
+
+        function new(string name = "mci_reg__SOC_PROD_DEBUG_STATE");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.MASK = new("MASK");
+            this.MASK.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(MASK_bit_cg[bt]) MASK_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__SOC_PROD_DEBUG_STATE
+
+    // Reg - mci_reg::FC_FIPS_ZERIOZATION
+    class mci_reg__FC_FIPS_ZERIOZATION extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__FC_FIPS_ZERIOZATION_bit_cg MASK_bit_cg[32];
+        mci_reg__FC_FIPS_ZERIOZATION_fld_cg fld_cg;
+        rand uvm_reg_field MASK;
+
+        function new(string name = "mci_reg__FC_FIPS_ZERIOZATION");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.MASK = new("MASK");
+            this.MASK.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(MASK_bit_cg[bt]) MASK_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__FC_FIPS_ZERIOZATION
+
     // Reg - mci_reg::GENERIC_INPUT_WIRES
     class mci_reg__GENERIC_INPUT_WIRES extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -10367,6 +10487,10 @@ package mci_reg_uvm;
         rand mci_reg__MBOX0_AXI_USER_LOCK MBOX0_AXI_USER_LOCK[5];
         rand mci_reg__MBOX1_VALID_AXI_USER MBOX1_VALID_AXI_USER[5];
         rand mci_reg__MBOX1_AXI_USER_LOCK MBOX1_AXI_USER_LOCK[5];
+        rand mci_reg__SOC_DFT_EN SOC_DFT_EN[2];
+        rand mci_reg__SOC_HW_DEBUG_EN SOC_HW_DEBUG_EN[2];
+        rand mci_reg__SOC_PROD_DEBUG_STATE SOC_PROD_DEBUG_STATE[2];
+        rand mci_reg__FC_FIPS_ZERIOZATION FC_FIPS_ZERIOZATION;
         rand mci_reg__GENERIC_INPUT_WIRES GENERIC_INPUT_WIRES[2];
         rand mci_reg__GENERIC_OUTPUT_WIRES GENERIC_OUTPUT_WIRES[2];
         rand mci_reg__DEBUG_IN DEBUG_IN;
@@ -10645,6 +10769,32 @@ package mci_reg_uvm;
                 this.MBOX1_AXI_USER_LOCK[i0].build();
                 this.default_map.add_reg(this.MBOX1_AXI_USER_LOCK[i0], 'h1e0 + i0*'h4);
             end
+            foreach(this.SOC_DFT_EN[i0]) begin
+                this.SOC_DFT_EN[i0] = new($sformatf("SOC_DFT_EN[%0d]", i0));
+                this.SOC_DFT_EN[i0].configure(this);
+                
+                this.SOC_DFT_EN[i0].build();
+                this.default_map.add_reg(this.SOC_DFT_EN[i0], 'h300 + i0*'h4);
+            end
+            foreach(this.SOC_HW_DEBUG_EN[i0]) begin
+                this.SOC_HW_DEBUG_EN[i0] = new($sformatf("SOC_HW_DEBUG_EN[%0d]", i0));
+                this.SOC_HW_DEBUG_EN[i0].configure(this);
+                
+                this.SOC_HW_DEBUG_EN[i0].build();
+                this.default_map.add_reg(this.SOC_HW_DEBUG_EN[i0], 'h308 + i0*'h4);
+            end
+            foreach(this.SOC_PROD_DEBUG_STATE[i0]) begin
+                this.SOC_PROD_DEBUG_STATE[i0] = new($sformatf("SOC_PROD_DEBUG_STATE[%0d]", i0));
+                this.SOC_PROD_DEBUG_STATE[i0].configure(this);
+                
+                this.SOC_PROD_DEBUG_STATE[i0].build();
+                this.default_map.add_reg(this.SOC_PROD_DEBUG_STATE[i0], 'h310 + i0*'h4);
+            end
+            this.FC_FIPS_ZERIOZATION = new("FC_FIPS_ZERIOZATION");
+            this.FC_FIPS_ZERIOZATION.configure(this);
+
+            this.FC_FIPS_ZERIOZATION.build();
+            this.default_map.add_reg(this.FC_FIPS_ZERIOZATION, 'h318);
             foreach(this.GENERIC_INPUT_WIRES[i0]) begin
                 this.GENERIC_INPUT_WIRES[i0] = new($sformatf("GENERIC_INPUT_WIRES[%0d]", i0));
                 this.GENERIC_INPUT_WIRES[i0].configure(this);

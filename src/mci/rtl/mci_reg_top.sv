@@ -222,8 +222,8 @@ logic strap_we;
 
 // Misc
 logic [1:0] generic_input_toggle;
-logic mcu_or_debug_req;
-logic cptra_or_debug_req;
+logic axi_mcu_or_debug_req;
+logic axi_cptra_or_debug_req;
 
 // MBOX
 logic mci_mbox0_data_avail_d;
@@ -311,6 +311,8 @@ always_comb begin
     end
 
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value; 
+    
+    mci_reg_hwif_in.FC_FIPS_ZERIOZATION.MASK.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value | (~axi_mcu_or_debug_req); 
 end
 
 ///////////////////////////////////////////////
@@ -319,7 +321,7 @@ end
 
 // Fuse write done can be written by MCU if it is already NOT '1.
 // The bit gets reset on cold reset
-always_comb mci_reg_hwif_in.SS_CONFIG_DONE.done.swwe = (mcu_or_debug_req & cif_resp_if.dv) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
+always_comb mci_reg_hwif_in.SS_CONFIG_DONE.done.swwe = (axi_mcu_or_debug_req & cif_resp_if.dv) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
 
 // Subsystem straps capture the initial value from input port on rising edge of cptra_pwrgood
 always_ff @(posedge clk or negedge mci_pwrgood) begin
@@ -374,11 +376,11 @@ assign mci_reg_hwif_in.HW_CONFIG0.MCI_MBOX1_SRAM_SIZE.next = MCI_MBOX1_SIZE_KB;
 assign mci_reg_hwif_in.HW_CONFIG1.MCU_SRAM_SIZE.next = MCU_SRAM_SIZE_KB;
 assign mci_reg_hwif_in.HW_CONFIG1.MIN_MCU_RST_COUNTER_WIDTH.next = MIN_MCU_RST_COUNTER_WIDTH;
 
-assign mci_reg_hwif_in.HW_CAPABILITIES.cap.swwel = !mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
-assign mci_reg_hwif_in.FW_CAPABILITIES.cap.swwel = !mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
+assign mci_reg_hwif_in.HW_CAPABILITIES.cap.swwel = !axi_mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
+assign mci_reg_hwif_in.FW_CAPABILITIES.cap.swwel = !axi_mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
 // CAP_LOCK is a lockable register.
 // "lock" can be written by MCU/DEBUG if it is already NOT '1. SoC can only read this bit. The bit gets reset on warm reset
-assign mci_reg_hwif_in.CAP_LOCK.lock.swwel = !mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
+assign mci_reg_hwif_in.CAP_LOCK.lock.swwel = !axi_mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
 
 ///////////////////////////////////////////////
 // Security Related      
@@ -564,10 +566,10 @@ assign mci_reg_hwif_in.mci_rst_b = mci_rst_b;
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
-assign mcu_or_debug_req                     = axi_mcu_req | axi_debug_req;
-assign cptra_or_debug_req                   = axi_cptra_req | axi_debug_req;
-assign mci_reg_hwif_in.cptra_or_debug_req   = cptra_or_debug_req; 
-assign mci_reg_hwif_in.mcu_or_debug_req     = mcu_or_debug_req;
+assign axi_mcu_or_debug_req                 = axi_mcu_req | axi_debug_req;
+assign axi_cptra_or_debug_req               = axi_cptra_req | axi_debug_req;
+assign mci_reg_hwif_in.cptra_or_debug_req   = axi_cptra_or_debug_req; 
+assign mci_reg_hwif_in.mcu_or_debug_req     = axi_mcu_or_debug_req;
 
 
 

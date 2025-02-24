@@ -76,6 +76,15 @@
 `define MCI_REG_RESET_STATUS_MCU_RESET_STS_LOW                                                      (1)
 `define MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK                                                     (32'h2)
 `endif
+`ifndef MCI_REG_SECURITY_STATE
+`define MCI_REG_SECURITY_STATE                                                                      (32'h30)
+`define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_LOW                                                 (0)
+`define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_MASK                                                (32'h3)
+`define MCI_REG_SECURITY_STATE_DEBUG_LOCKED_LOW                                                     (2)
+`define MCI_REG_SECURITY_STATE_DEBUG_LOCKED_MASK                                                    (32'h4)
+`define MCI_REG_SECURITY_STATE_SCAN_MODE_LOW                                                        (3)
+`define MCI_REG_SECURITY_STATE_SCAN_MODE_MASK                                                       (32'h8)
+`endif
 `ifndef MCI_REG_HW_ERROR_FATAL
 `define MCI_REG_HW_ERROR_FATAL                                                                      (32'h40)
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_LOW                                                 (0)
@@ -595,6 +604,27 @@
 `define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_LOW                                                      (0)
 `define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_MASK                                                     (32'h1)
 `endif
+`ifndef MCI_REG_SOC_DFT_EN_0
+`define MCI_REG_SOC_DFT_EN_0                                                                        (32'h300)
+`endif
+`ifndef MCI_REG_SOC_DFT_EN_1
+`define MCI_REG_SOC_DFT_EN_1                                                                        (32'h304)
+`endif
+`ifndef MCI_REG_SOC_HW_DEBUG_EN_0
+`define MCI_REG_SOC_HW_DEBUG_EN_0                                                                   (32'h308)
+`endif
+`ifndef MCI_REG_SOC_HW_DEBUG_EN_1
+`define MCI_REG_SOC_HW_DEBUG_EN_1                                                                   (32'h30c)
+`endif
+`ifndef MCI_REG_SOC_PROD_DEBUG_STATE_0
+`define MCI_REG_SOC_PROD_DEBUG_STATE_0                                                              (32'h310)
+`endif
+`ifndef MCI_REG_SOC_PROD_DEBUG_STATE_1
+`define MCI_REG_SOC_PROD_DEBUG_STATE_1                                                              (32'h314)
+`endif
+`ifndef MCI_REG_FC_FIPS_ZERIOZATION
+`define MCI_REG_FC_FIPS_ZERIOZATION                                                                 (32'h318)
+`endif
 `ifndef MCI_REG_GENERIC_INPUT_WIRES_0
 `define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (32'h400)
 `endif
@@ -1028,10 +1058,14 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_ECC_COR_EN_MASK                          (32'h20)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_ECC_COR_EN_LOW                           (6)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_ECC_COR_EN_MASK                          (32'h40)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_LOW                      (7)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_MASK                     (32'h80)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_LOW                      (8)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK                     (32'h100)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_DEBUG_LOCKED_EN_LOW                            (7)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_DEBUG_LOCKED_EN_MASK                           (32'h80)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_SCAN_MODE_EN_LOW                               (8)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_SCAN_MODE_EN_MASK                              (32'h100)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_LOW                      (9)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_MASK                     (32'h200)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_LOW                      (10)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK                     (32'h400)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R
 `define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R                                                      (32'h1010)
@@ -1220,10 +1254,14 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_MASK                   (32'h20)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_ECC_COR_STS_LOW                    (6)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_ECC_COR_STS_MASK                   (32'h40)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_LOW               (7)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK              (32'h80)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_LOW               (8)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_MASK              (32'h100)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_LOW                     (7)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_MASK                    (32'h80)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_SCAN_MODE_STS_LOW                        (8)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_SCAN_MODE_STS_MASK                       (32'h100)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_LOW               (9)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK              (32'h200)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_LOW               (10)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_MASK              (32'h400)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R
 `define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R                                                (32'h1028)
@@ -1398,10 +1436,14 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_ECC_COR_TRIG_MASK                      (32'h20)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_ECC_COR_TRIG_LOW                       (6)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_ECC_COR_TRIG_MASK                      (32'h40)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_LOW                  (7)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_MASK                 (32'h80)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_LOW                  (8)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_MASK                 (32'h100)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_DEBUG_LOCKED_TRIG_LOW                        (7)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_DEBUG_LOCKED_TRIG_MASK                       (32'h80)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_SCAN_MODE_TRIG_LOW                           (8)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_SCAN_MODE_TRIG_MASK                          (32'h100)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_LOW                  (9)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_MASK                 (32'h200)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_LOW                  (10)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_MASK                 (32'h400)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R
 `define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R                                                    (32'h1038)
@@ -1713,11 +1755,17 @@
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R                                      (32'h1298)
 `endif
+`ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_R
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_R                                       (32'h129c)
+`endif
+`ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R                                          (32'h12a0)
+`endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R
-`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                                 (32'h129c)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                                 (32'h12a4)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R
-`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (32'h12a0)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (32'h12a8)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R
 `define MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R                                      (32'h1300)
@@ -2124,13 +2172,23 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R_PULSE_MASK                      (32'h1)
 `endif
+`ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R                                  (32'h1444)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R_PULSE_LOW                        (0)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R_PULSE_MASK                       (32'h1)
+`endif
+`ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R                                     (32'h1448)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R_PULSE_LOW                           (0)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R_PULSE_MASK                          (32'h1)
+`endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R
-`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (32'h1444)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (32'h144c)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_MASK                 (32'h1)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R
-`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (32'h1448)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (32'h1450)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_MASK                 (32'h1)
 `endif
