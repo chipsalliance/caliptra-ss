@@ -359,6 +359,46 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__RESET_STATUS
 
+    // Reg - mci_reg::SECURITY_STATE
+    class mci_reg__SECURITY_STATE extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__SECURITY_STATE_bit_cg device_lifecycle_bit_cg[2];
+        mci_reg__SECURITY_STATE_bit_cg debug_locked_bit_cg[1];
+        mci_reg__SECURITY_STATE_bit_cg scan_mode_bit_cg[1];
+        mci_reg__SECURITY_STATE_fld_cg fld_cg;
+        rand uvm_reg_field device_lifecycle;
+        rand uvm_reg_field debug_locked;
+        rand uvm_reg_field scan_mode;
+
+        function new(string name = "mci_reg__SECURITY_STATE");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.device_lifecycle = new("device_lifecycle");
+            this.device_lifecycle.configure(this, 2, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.debug_locked = new("debug_locked");
+            this.debug_locked.configure(this, 1, 2, "RO", 1, 'h0, 1, 1, 0);
+            this.scan_mode = new("scan_mode");
+            this.scan_mode.configure(this, 1, 3, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(device_lifecycle_bit_cg[bt]) device_lifecycle_bit_cg[bt] = new();
+                foreach(debug_locked_bit_cg[bt]) debug_locked_bit_cg[bt] = new();
+                foreach(scan_mode_bit_cg[bt]) scan_mode_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__SECURITY_STATE
+
     // Reg - mci_reg::HW_ERROR_FATAL
     class mci_reg__HW_ERROR_FATAL extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -2682,6 +2722,8 @@ package mci_reg_uvm;
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_mbox1_cmd_avail_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_mbox0_ecc_cor_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_mbox1_ecc_cor_en_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_debug_locked_en_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_scan_mode_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_mbox0_soc_req_lock_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_mbox1_soc_req_lock_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_fld_cg fld_cg;
@@ -2692,6 +2734,8 @@ package mci_reg_uvm;
         rand uvm_reg_field notif_mbox1_cmd_avail_en;
         rand uvm_reg_field notif_mbox0_ecc_cor_en;
         rand uvm_reg_field notif_mbox1_ecc_cor_en;
+        rand uvm_reg_field notif_debug_locked_en;
+        rand uvm_reg_field notif_scan_mode_en;
         rand uvm_reg_field notif_mbox0_soc_req_lock_en;
         rand uvm_reg_field notif_mbox1_soc_req_lock_en;
 
@@ -2719,10 +2763,14 @@ package mci_reg_uvm;
             this.notif_mbox0_ecc_cor_en.configure(this, 1, 5, "RW", 0, 'h0, 1, 1, 0);
             this.notif_mbox1_ecc_cor_en = new("notif_mbox1_ecc_cor_en");
             this.notif_mbox1_ecc_cor_en.configure(this, 1, 6, "RW", 0, 'h0, 1, 1, 0);
+            this.notif_debug_locked_en = new("notif_debug_locked_en");
+            this.notif_debug_locked_en.configure(this, 1, 7, "RW", 0, 'h0, 1, 1, 0);
+            this.notif_scan_mode_en = new("notif_scan_mode_en");
+            this.notif_scan_mode_en.configure(this, 1, 8, "RW", 0, 'h0, 1, 1, 0);
             this.notif_mbox0_soc_req_lock_en = new("notif_mbox0_soc_req_lock_en");
-            this.notif_mbox0_soc_req_lock_en.configure(this, 1, 7, "RW", 0, 'h0, 1, 1, 0);
+            this.notif_mbox0_soc_req_lock_en.configure(this, 1, 9, "RW", 0, 'h0, 1, 1, 0);
             this.notif_mbox1_soc_req_lock_en = new("notif_mbox1_soc_req_lock_en");
-            this.notif_mbox1_soc_req_lock_en.configure(this, 1, 8, "RW", 0, 'h0, 1, 1, 0);
+            this.notif_mbox1_soc_req_lock_en.configure(this, 1, 10, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_en_bit_cg[bt]) notif_mcu_sram_ecc_cor_en_bit_cg[bt] = new();
                 foreach(notif_cptra_mcu_reset_req_en_bit_cg[bt]) notif_cptra_mcu_reset_req_en_bit_cg[bt] = new();
@@ -2731,6 +2779,8 @@ package mci_reg_uvm;
                 foreach(notif_mbox1_cmd_avail_en_bit_cg[bt]) notif_mbox1_cmd_avail_en_bit_cg[bt] = new();
                 foreach(notif_mbox0_ecc_cor_en_bit_cg[bt]) notif_mbox0_ecc_cor_en_bit_cg[bt] = new();
                 foreach(notif_mbox1_ecc_cor_en_bit_cg[bt]) notif_mbox1_ecc_cor_en_bit_cg[bt] = new();
+                foreach(notif_debug_locked_en_bit_cg[bt]) notif_debug_locked_en_bit_cg[bt] = new();
+                foreach(notif_scan_mode_en_bit_cg[bt]) notif_scan_mode_en_bit_cg[bt] = new();
                 foreach(notif_mbox0_soc_req_lock_en_bit_cg[bt]) notif_mbox0_soc_req_lock_en_bit_cg[bt] = new();
                 foreach(notif_mbox1_soc_req_lock_en_bit_cg[bt]) notif_mbox1_soc_req_lock_en_bit_cg[bt] = new();
             end
@@ -3254,22 +3304,24 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb
 
-    // Reg - mci_reg::intr_block_t::notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb
-    class mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb extends uvm_reg;
+    // Reg - mci_reg::intr_block_t::notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188
+    class mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_mcu_sram_ecc_cor_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_cptra_mcu_reset_req_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_gen_in_toggle_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_mbox0_cmd_avail_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_mbox1_cmd_avail_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_mbox0_ecc_cor_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_mbox1_ecc_cor_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_mbox0_soc_req_lock_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_bit_cg notif_mbox1_soc_req_lock_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_fld_cg fld_cg;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mcu_sram_ecc_cor_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_cptra_mcu_reset_req_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_gen_in_toggle_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_cmd_avail_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_cmd_avail_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_ecc_cor_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_ecc_cor_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_debug_locked_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_scan_mode_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_soc_req_lock_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_soc_req_lock_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_fld_cg fld_cg;
         rand uvm_reg_field notif_mcu_sram_ecc_cor_sts;
         rand uvm_reg_field notif_cptra_mcu_reset_req_sts;
         rand uvm_reg_field notif_gen_in_toggle_sts;
@@ -3277,10 +3329,12 @@ package mci_reg_uvm;
         rand uvm_reg_field notif_mbox1_cmd_avail_sts;
         rand uvm_reg_field notif_mbox0_ecc_cor_sts;
         rand uvm_reg_field notif_mbox1_ecc_cor_sts;
+        rand uvm_reg_field notif_debug_locked_sts;
+        rand uvm_reg_field notif_scan_mode_sts;
         rand uvm_reg_field notif_mbox0_soc_req_lock_sts;
         rand uvm_reg_field notif_mbox1_soc_req_lock_sts;
 
-        function new(string name = "mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb");
+        function new(string name = "mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -3304,10 +3358,14 @@ package mci_reg_uvm;
             this.notif_mbox0_ecc_cor_sts.configure(this, 1, 5, "W1C", 1, 'h0, 1, 1, 0);
             this.notif_mbox1_ecc_cor_sts = new("notif_mbox1_ecc_cor_sts");
             this.notif_mbox1_ecc_cor_sts.configure(this, 1, 6, "W1C", 1, 'h0, 1, 1, 0);
+            this.notif_debug_locked_sts = new("notif_debug_locked_sts");
+            this.notif_debug_locked_sts.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
+            this.notif_scan_mode_sts = new("notif_scan_mode_sts");
+            this.notif_scan_mode_sts.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
             this.notif_mbox0_soc_req_lock_sts = new("notif_mbox0_soc_req_lock_sts");
-            this.notif_mbox0_soc_req_lock_sts.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
+            this.notif_mbox0_soc_req_lock_sts.configure(this, 1, 9, "W1C", 1, 'h0, 1, 1, 0);
             this.notif_mbox1_soc_req_lock_sts = new("notif_mbox1_soc_req_lock_sts");
-            this.notif_mbox1_soc_req_lock_sts.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
+            this.notif_mbox1_soc_req_lock_sts.configure(this, 1, 10, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_sts_bit_cg[bt]) notif_mcu_sram_ecc_cor_sts_bit_cg[bt] = new();
                 foreach(notif_cptra_mcu_reset_req_sts_bit_cg[bt]) notif_cptra_mcu_reset_req_sts_bit_cg[bt] = new();
@@ -3316,13 +3374,15 @@ package mci_reg_uvm;
                 foreach(notif_mbox1_cmd_avail_sts_bit_cg[bt]) notif_mbox1_cmd_avail_sts_bit_cg[bt] = new();
                 foreach(notif_mbox0_ecc_cor_sts_bit_cg[bt]) notif_mbox0_ecc_cor_sts_bit_cg[bt] = new();
                 foreach(notif_mbox1_ecc_cor_sts_bit_cg[bt]) notif_mbox1_ecc_cor_sts_bit_cg[bt] = new();
+                foreach(notif_debug_locked_sts_bit_cg[bt]) notif_debug_locked_sts_bit_cg[bt] = new();
+                foreach(notif_scan_mode_sts_bit_cg[bt]) notif_scan_mode_sts_bit_cg[bt] = new();
                 foreach(notif_mbox0_soc_req_lock_sts_bit_cg[bt]) notif_mbox0_soc_req_lock_sts_bit_cg[bt] = new();
                 foreach(notif_mbox1_soc_req_lock_sts_bit_cg[bt]) notif_mbox1_soc_req_lock_sts_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb
+    endclass : mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188
 
     // Reg - mci_reg::intr_block_t::notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3
     class mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3 extends uvm_reg;
@@ -3782,6 +3842,8 @@ package mci_reg_uvm;
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_mbox1_cmd_avail_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_mbox0_ecc_cor_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_mbox1_ecc_cor_trig_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_debug_locked_trig_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_scan_mode_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_mbox0_soc_req_lock_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_mbox1_soc_req_lock_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_fld_cg fld_cg;
@@ -3792,6 +3854,8 @@ package mci_reg_uvm;
         rand uvm_reg_field notif_mbox1_cmd_avail_trig;
         rand uvm_reg_field notif_mbox0_ecc_cor_trig;
         rand uvm_reg_field notif_mbox1_ecc_cor_trig;
+        rand uvm_reg_field notif_debug_locked_trig;
+        rand uvm_reg_field notif_scan_mode_trig;
         rand uvm_reg_field notif_mbox0_soc_req_lock_trig;
         rand uvm_reg_field notif_mbox1_soc_req_lock_trig;
 
@@ -3819,10 +3883,14 @@ package mci_reg_uvm;
             this.notif_mbox0_ecc_cor_trig.configure(this, 1, 5, "W1S", 0, 'h0, 1, 1, 0);
             this.notif_mbox1_ecc_cor_trig = new("notif_mbox1_ecc_cor_trig");
             this.notif_mbox1_ecc_cor_trig.configure(this, 1, 6, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_debug_locked_trig = new("notif_debug_locked_trig");
+            this.notif_debug_locked_trig.configure(this, 1, 7, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_scan_mode_trig = new("notif_scan_mode_trig");
+            this.notif_scan_mode_trig.configure(this, 1, 8, "W1S", 0, 'h0, 1, 1, 0);
             this.notif_mbox0_soc_req_lock_trig = new("notif_mbox0_soc_req_lock_trig");
-            this.notif_mbox0_soc_req_lock_trig.configure(this, 1, 7, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox0_soc_req_lock_trig.configure(this, 1, 9, "W1S", 0, 'h0, 1, 1, 0);
             this.notif_mbox1_soc_req_lock_trig = new("notif_mbox1_soc_req_lock_trig");
-            this.notif_mbox1_soc_req_lock_trig.configure(this, 1, 8, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox1_soc_req_lock_trig.configure(this, 1, 10, "W1S", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_trig_bit_cg[bt]) notif_mcu_sram_ecc_cor_trig_bit_cg[bt] = new();
                 foreach(notif_cptra_mcu_reset_req_trig_bit_cg[bt]) notif_cptra_mcu_reset_req_trig_bit_cg[bt] = new();
@@ -3831,6 +3899,8 @@ package mci_reg_uvm;
                 foreach(notif_mbox1_cmd_avail_trig_bit_cg[bt]) notif_mbox1_cmd_avail_trig_bit_cg[bt] = new();
                 foreach(notif_mbox0_ecc_cor_trig_bit_cg[bt]) notif_mbox0_ecc_cor_trig_bit_cg[bt] = new();
                 foreach(notif_mbox1_ecc_cor_trig_bit_cg[bt]) notif_mbox1_ecc_cor_trig_bit_cg[bt] = new();
+                foreach(notif_debug_locked_trig_bit_cg[bt]) notif_debug_locked_trig_bit_cg[bt] = new();
+                foreach(notif_scan_mode_trig_bit_cg[bt]) notif_scan_mode_trig_bit_cg[bt] = new();
                 foreach(notif_mbox0_soc_req_lock_trig_bit_cg[bt]) notif_mbox0_soc_req_lock_trig_bit_cg[bt] = new();
                 foreach(notif_mbox1_soc_req_lock_trig_bit_cg[bt]) notif_mbox1_soc_req_lock_trig_bit_cg[bt] = new();
             end
@@ -6454,6 +6524,66 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_f1535358
 
+    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_ee53ded8
+    class mci_reg__intr_block_t__intr_count_t_cnt_ee53ded8 extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_t_cnt_ee53ded8_bit_cg cnt_bit_cg[32];
+        mci_reg__intr_block_t__intr_count_t_cnt_ee53ded8_fld_cg fld_cg;
+        rand uvm_reg_field cnt;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_t_cnt_ee53ded8");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.cnt = new("cnt");
+            this.cnt.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(cnt_bit_cg[bt]) cnt_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_t_cnt_ee53ded8
+
+    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_fbf3c714
+    class mci_reg__intr_block_t__intr_count_t_cnt_fbf3c714 extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_t_cnt_fbf3c714_bit_cg cnt_bit_cg[32];
+        mci_reg__intr_block_t__intr_count_t_cnt_fbf3c714_fld_cg fld_cg;
+        rand uvm_reg_field cnt;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_t_cnt_fbf3c714");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.cnt = new("cnt");
+            this.cnt.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(cnt_bit_cg[bt]) cnt_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_t_cnt_fbf3c714
+
     // Reg - mci_reg::intr_block_t::intr_count_t_cnt_c5d79517
     class mci_reg__intr_block_t__intr_count_t_cnt_c5d79517 extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -8944,6 +9074,66 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_b5035b1b
 
+    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_4ff89941
+    class mci_reg__intr_block_t__intr_count_incr_t_pulse_4ff89941 extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_4ff89941_bit_cg pulse_bit_cg[1];
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_4ff89941_fld_cg fld_cg;
+        rand uvm_reg_field pulse;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_incr_t_pulse_4ff89941");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.pulse = new("pulse");
+            this.pulse.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(pulse_bit_cg[bt]) pulse_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_4ff89941
+
+    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_d73ae1bb
+    class mci_reg__intr_block_t__intr_count_incr_t_pulse_d73ae1bb extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_d73ae1bb_bit_cg pulse_bit_cg[1];
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_d73ae1bb_fld_cg fld_cg;
+        rand uvm_reg_field pulse;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_incr_t_pulse_d73ae1bb");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.pulse = new("pulse");
+            this.pulse.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(pulse_bit_cg[bt]) pulse_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_d73ae1bb
+
     // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_c2486cf5
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_c2486cf5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -9015,7 +9205,7 @@ package mci_reg_uvm;
         rand mci_reg__intr_block_t__global_intr_t_agg_sts0_fbbcc271_agg_sts1_5df57496 notif_global_intr_r;
         rand mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2 error0_internal_intr_r;
         rand mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb error1_internal_intr_r;
-        rand mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb notif0_internal_intr_r;
+        rand mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188 notif0_internal_intr_r;
         rand mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3 notif1_internal_intr_r;
         rand mci_reg__intr_block_t__error0_intr_trig_t error0_intr_trig_r;
         rand mci_reg__intr_block_t__error1_intr_trig_t error1_intr_trig_r;
@@ -9102,6 +9292,8 @@ package mci_reg_uvm;
         rand mci_reg__intr_block_t__intr_count_t_cnt_be8f8f87 notif_mbox1_cmd_avail_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_3d1ba519 notif_mbox0_ecc_cor_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_f1535358 notif_mbox1_ecc_cor_intr_count_r;
+        rand mci_reg__intr_block_t__intr_count_t_cnt_ee53ded8 notif_debug_locked_intr_count_r;
+        rand mci_reg__intr_block_t__intr_count_t_cnt_fbf3c714 notif_scan_mode_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_c5d79517 notif_mbox0_soc_req_lock_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_d593a0b7 notif_mbox1_soc_req_lock_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_95b180a4 error_internal_intr_count_incr_r;
@@ -9185,6 +9377,8 @@ package mci_reg_uvm;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_57912bdf notif_mbox1_cmd_avail_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_bf2d7bde notif_mbox0_ecc_cor_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_b5035b1b notif_mbox1_ecc_cor_intr_count_incr_r;
+        rand mci_reg__intr_block_t__intr_count_incr_t_pulse_4ff89941 notif_debug_locked_intr_count_incr_r;
+        rand mci_reg__intr_block_t__intr_count_incr_t_pulse_d73ae1bb notif_scan_mode_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_c2486cf5 notif_mbox0_soc_req_lock_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_01554b96 notif_mbox1_soc_req_lock_intr_count_incr_r;
 
@@ -9674,16 +9868,26 @@ package mci_reg_uvm;
 
             this.notif_mbox1_ecc_cor_intr_count_r.build();
             this.default_map.add_reg(this.notif_mbox1_ecc_cor_intr_count_r, 'h298);
+            this.notif_debug_locked_intr_count_r = new("notif_debug_locked_intr_count_r");
+            this.notif_debug_locked_intr_count_r.configure(this);
+
+            this.notif_debug_locked_intr_count_r.build();
+            this.default_map.add_reg(this.notif_debug_locked_intr_count_r, 'h29c);
+            this.notif_scan_mode_intr_count_r = new("notif_scan_mode_intr_count_r");
+            this.notif_scan_mode_intr_count_r.configure(this);
+
+            this.notif_scan_mode_intr_count_r.build();
+            this.default_map.add_reg(this.notif_scan_mode_intr_count_r, 'h2a0);
             this.notif_mbox0_soc_req_lock_intr_count_r = new("notif_mbox0_soc_req_lock_intr_count_r");
             this.notif_mbox0_soc_req_lock_intr_count_r.configure(this);
 
             this.notif_mbox0_soc_req_lock_intr_count_r.build();
-            this.default_map.add_reg(this.notif_mbox0_soc_req_lock_intr_count_r, 'h29c);
+            this.default_map.add_reg(this.notif_mbox0_soc_req_lock_intr_count_r, 'h2a4);
             this.notif_mbox1_soc_req_lock_intr_count_r = new("notif_mbox1_soc_req_lock_intr_count_r");
             this.notif_mbox1_soc_req_lock_intr_count_r.configure(this);
 
             this.notif_mbox1_soc_req_lock_intr_count_r.build();
-            this.default_map.add_reg(this.notif_mbox1_soc_req_lock_intr_count_r, 'h2a0);
+            this.default_map.add_reg(this.notif_mbox1_soc_req_lock_intr_count_r, 'h2a8);
             this.error_internal_intr_count_incr_r = new("error_internal_intr_count_incr_r");
             this.error_internal_intr_count_incr_r.configure(this);
 
@@ -10089,16 +10293,26 @@ package mci_reg_uvm;
 
             this.notif_mbox1_ecc_cor_intr_count_incr_r.build();
             this.default_map.add_reg(this.notif_mbox1_ecc_cor_intr_count_incr_r, 'h440);
+            this.notif_debug_locked_intr_count_incr_r = new("notif_debug_locked_intr_count_incr_r");
+            this.notif_debug_locked_intr_count_incr_r.configure(this);
+
+            this.notif_debug_locked_intr_count_incr_r.build();
+            this.default_map.add_reg(this.notif_debug_locked_intr_count_incr_r, 'h444);
+            this.notif_scan_mode_intr_count_incr_r = new("notif_scan_mode_intr_count_incr_r");
+            this.notif_scan_mode_intr_count_incr_r.configure(this);
+
+            this.notif_scan_mode_intr_count_incr_r.build();
+            this.default_map.add_reg(this.notif_scan_mode_intr_count_incr_r, 'h448);
             this.notif_mbox0_soc_req_lock_intr_count_incr_r = new("notif_mbox0_soc_req_lock_intr_count_incr_r");
             this.notif_mbox0_soc_req_lock_intr_count_incr_r.configure(this);
 
             this.notif_mbox0_soc_req_lock_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_mbox0_soc_req_lock_intr_count_incr_r, 'h444);
+            this.default_map.add_reg(this.notif_mbox0_soc_req_lock_intr_count_incr_r, 'h44c);
             this.notif_mbox1_soc_req_lock_intr_count_incr_r = new("notif_mbox1_soc_req_lock_intr_count_incr_r");
             this.notif_mbox1_soc_req_lock_intr_count_incr_r.configure(this);
 
             this.notif_mbox1_soc_req_lock_intr_count_incr_r.build();
-            this.default_map.add_reg(this.notif_mbox1_soc_req_lock_intr_count_incr_r, 'h448);
+            this.default_map.add_reg(this.notif_mbox1_soc_req_lock_intr_count_incr_r, 'h450);
         endfunction : build
     endclass : mci_reg__intr_block_t
 
@@ -10115,6 +10329,7 @@ package mci_reg_uvm;
         rand mci_reg__HW_FLOW_STATUS HW_FLOW_STATUS;
         rand mci_reg__RESET_REASON RESET_REASON;
         rand mci_reg__RESET_STATUS RESET_STATUS;
+        rand mci_reg__SECURITY_STATE SECURITY_STATE;
         rand mci_reg__HW_ERROR_FATAL HW_ERROR_FATAL;
         rand mci_reg__AGG_ERROR_FATAL AGG_ERROR_FATAL;
         rand mci_reg__HW_ERROR_NON_FATAL HW_ERROR_NON_FATAL;
@@ -10224,6 +10439,11 @@ package mci_reg_uvm;
 
             this.RESET_STATUS.build();
             this.default_map.add_reg(this.RESET_STATUS, 'h2c);
+            this.SECURITY_STATE = new("SECURITY_STATE");
+            this.SECURITY_STATE.configure(this);
+
+            this.SECURITY_STATE.build();
+            this.default_map.add_reg(this.SECURITY_STATE, 'h30);
             this.HW_ERROR_FATAL = new("HW_ERROR_FATAL");
             this.HW_ERROR_FATAL.configure(this);
 

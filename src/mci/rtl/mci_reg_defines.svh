@@ -29,6 +29,7 @@
 `define MCI_REG_HW_FLOW_STATUS                                                                      (32'h24)
 `define MCI_REG_RESET_REASON                                                                        (32'h28)
 `define MCI_REG_RESET_STATUS                                                                        (32'h2c)
+`define MCI_REG_SECURITY_STATE                                                                      (32'h30)
 `define MCI_REG_HW_ERROR_FATAL                                                                      (32'h40)
 `define MCI_REG_AGG_ERROR_FATAL                                                                     (32'h44)
 `define MCI_REG_HW_ERROR_NON_FATAL                                                                  (32'h48)
@@ -293,8 +294,10 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_R                                    (32'h1290)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R                                      (32'h1294)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R                                      (32'h1298)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                                 (32'h129c)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (32'h12a0)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_R                                       (32'h129c)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R                                          (32'h12a0)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                                 (32'h12a4)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (32'h12a8)
 `define MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R                                      (32'h1300)
 `define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_INV_DEV_INTR_COUNT_INCR_R                                 (32'h1304)
 `define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_INV_DEV_INTR_COUNT_INCR_R                                 (32'h1308)
@@ -376,8 +379,10 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_INCR_R                               (32'h1438)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R                                 (32'h143c)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R                                 (32'h1440)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (32'h1444)
-`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (32'h1448)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R                                  (32'h1444)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R                                     (32'h1448)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (32'h144c)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (32'h1450)
 
 
 `endif

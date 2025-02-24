@@ -45,6 +45,9 @@ module mci_reg_top
     input logic cptra_rst_b,
     input logic mci_pwrgood,
 
+    // DFT
+    input logic scan_mode,
+
     // REG HWIF signals
     output mci_reg__out_t mci_reg_hwif_out,
 
@@ -68,6 +71,7 @@ module mci_reg_top
     // SS error signals
     input logic [31:0] agg_error_fatal,
     input logic [31:0] agg_error_non_fatal,
+
     
     // DMI
     output logic        mcu_dmi_core_enable,
@@ -163,6 +167,12 @@ logic Warm_Reset_Capture_Flag;
 // Interrupts 
 logic mci_error_intr;
 logic mci_notif_intr;
+    
+// Security
+logic security_state_debug_locked_d;
+logic security_state_debug_locked_edge;
+logic scan_mode_f;
+logic scan_mode_p;
 
 // DMI
 logic mcu_dmi_uncore_dbg_unlocked_en;
@@ -369,6 +379,42 @@ assign mci_reg_hwif_in.FW_CAPABILITIES.cap.swwel = !mcu_or_debug_req || mci_reg_
 // CAP_LOCK is a lockable register.
 // "lock" can be written by MCU/DEBUG if it is already NOT '1. SoC can only read this bit. The bit gets reset on warm reset
 assign mci_reg_hwif_in.CAP_LOCK.lock.swwel = !mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
+
+///////////////////////////////////////////////
+// Security Related      
+///////////////////////////////////////////////
+assign mci_reg_hwif_in.SECURITY_STATE.device_lifecycle.next = security_state_o.device_lifecycle;
+assign mci_reg_hwif_in.SECURITY_STATE.debug_locked.next     = security_state_o.debug_locked;
+assign mci_reg_hwif_in.SECURITY_STATE.scan_mode.next        = scan_mode;
+
+
+// Generate a pulse to set the interrupt bit
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        security_state_debug_locked_d <= '0;
+    end
+    else begin
+        security_state_debug_locked_d <= security_state_o.debug_locked;
+    end
+end
+
+always_comb security_state_debug_locked_edge = security_state_o.debug_locked ^ security_state_debug_locked_d;
+
+// Generate a pulse to set the interrupt bit
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        scan_mode_f <= '0;
+    end
+    else begin
+        scan_mode_f <= scan_mode;
+    end
+end
+
+always_comb scan_mode_p = scan_mode & ~scan_mode_f;
+
+assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_scan_mode_sts.hwset = scan_mode_p;
+assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_sts = security_state_debug_locked_edge;
+
 
 
 

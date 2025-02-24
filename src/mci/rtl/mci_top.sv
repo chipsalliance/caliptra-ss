@@ -149,6 +149,7 @@ module mci_top
     input  otp_ctrl_pkg::lc_otp_program_req_t           from_lcc_to_otp_program_i,
     input lc_ctrl_pkg::lc_tx_t                          lc_dft_en_i,
     input lc_ctrl_pkg::lc_tx_t                          lc_hw_debug_en_i,
+    input                                               lc_fatal_state_error_i,
     // Inputs from OTP_Ctrl
     input  otp_ctrl_pkg::otp_lc_data_t                  from_otp_to_lcc_program_i,
     // Inputs from Caliptra_Core
@@ -530,6 +531,9 @@ mci_reg_top #(
     // REG HWIF signals
     .mci_reg_hwif_out,
     
+    // DFT
+    .scan_mode,
+    
     // AXI Privileged requests
     .axi_debug_req,
     .axi_cptra_req,
@@ -800,7 +804,7 @@ endgenerate
 mci_lcc_st_trans LCC_state_translator (
     .clk(clk),
     .rst_n(mci_rst_b),
-    .state_error(1'b0),  // TODO: This needs to be added to put caliptra into debug locked position
+    .state_error(lc_fatal_state_error_i),  
     .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
     .lc_dft_en_i(lc_dft_en_i),
     .lc_hw_debug_en_i(lc_hw_debug_en_i),
