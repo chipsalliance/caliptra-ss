@@ -210,8 +210,6 @@ module caliptra_ss_top
     output logic        ready_for_fuses,
     output logic        ready_for_mb_processing,
     output logic        mailbox_data_avail,
-    output logic        mci_mbox0_data_avail,
-    output logic        mci_mbox1_data_avail
 
     
 );
@@ -1158,6 +1156,8 @@ module caliptra_ss_top
         .mcu_timer_int(mci_mcu_timer_int),
         .mci_intr(mci_intr),
 
+        .cptra_mbox_data_avail(mailbox_data_avail),
+
         .strap_mcu_reset_vector(cptra_ss_strap_mcu_reset_vector_i),
         
         .mcu_reset_vector(),
@@ -1209,8 +1209,6 @@ module caliptra_ss_top
         .mci_mbox0_sram_req_if(cptra_ss_mci_mbox0_sram_req_if),
         .mci_mbox1_sram_req_if(cptra_ss_mci_mbox1_sram_req_if),
         
-        .mbox0_data_avail(mci_mbox0_data_avail), // FIXME remove?
-        .mbox1_data_avail(mci_mbox1_data_avail), // FIXME remove?
 
         .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
         .lc_dft_en_i(lc_dft_en_i),

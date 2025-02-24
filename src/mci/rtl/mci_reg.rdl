@@ -856,8 +856,8 @@ addrmap mci_reg {
     reg {
         name = "SOC DFT Enable Mask";
          desc = "Masks Caliptra's SS_SOC_DBG_UNLOCK_LEVEL to enable DFT for the SOC. 
-                 [br]If any bit is set to 0, SOC_DFT_EN will not be enabled via SS_SOC_DBG_UNLOCK_LEVEL, it can only be enabled via LCC.
-                 [br]If all bits are set to 1 and SS_SOC_DEBUG_UNLOCK_LEVEL is set, SOC_DFT_EN will be enabled.
+                 [br]If a MASK bit is set along with a corresponding bit in SS_DOC_DBG_UNLOCK, SOC_DFT_EN will be enabled.
+                 [br]Otherwise SOC_DFT_EN can only be via LCC.
                  [br]MCU Access:      RW
                  [br]Caliptra Access: RW
                  [br]SOC Access:      RW";
@@ -867,8 +867,8 @@ addrmap mci_reg {
     reg {
         name = "SOC HW Debug Enable Mask";
          desc = "Masks Caliptra's SS_SOC_DBG_UNLOCK_LEVEL to enable HW Debug for the SOC. 
-                 [br]If any bit is set to 0, SOC_HW_DEBUG_EN will not be enabled via SS_SOC_DBG_UNLOCK_LEVEL, it can only be enabled via LCC.
-                 [br]If all bits are set to 1 and SS_SOC_DEBUG_UNLOCK_LEVEL is set, SOC_HW_DEBUG_EN will be enabled.
+                 [br]If a MASK bit is set along with a corresponding bit in SS_DOC_DBG_UNLOCK, SOC_HW_DEBUG_EN will be enabled.
+                 [br]Otherwise SOC_HW_DEBUG_EN can only be via LCC.
                  [br]MCU Access:      RW
                  [br]Caliptra Access: RW
                  [br]SOC Access:      RW";
@@ -878,8 +878,8 @@ addrmap mci_reg {
     reg {
         name = "SOC Poduction Debug State Mask";
          desc = "Masks Caliptra's SS_SOC_DBG_UNLOCK_LEVEL to enable Production Debug Mode State. 
-                 [br]If any bit is set to 0, Security State will not transition to Production Debug Mode via SS_SOC_DBG_UNLOCK_LEVEL, it can only be enabled via LCC.
-                 [br]If all bits are set to 1 and SS_SOC_DEBUG_UNLOCK_LEVEL is set, Production Debug Mode will be entered from the Production Non-debug state.
+                 [br]If a MASK bit is set along with a corresponding bit in SS_DOC_DBG_UNLOCK, Security State will transition to Production Debug Mode from Production Non-Debug state.
+                 [br]Otherwise Production Debug Mode can only be entered via LCC.
                  [br]MCU Access:      RW
                  [br]Caliptra Access: RW
                  [br]SOC Access:      RW";
@@ -895,7 +895,7 @@ addrmap mci_reg {
                  [br]MCU Access:      RW
                  [br]Caliptra Access: RO
                  [br]SOC Access:      RO
-                 [br]ONce SS_CONFIG_DONE is set, this register is read-only.";
+                 [br]Once SS_CONFIG_DONE is set, this register is read-only.";
          field {sw=rw; hw=r; swwel; resetsignal = mci_rst_b;} MASK[32]=0;
      } FC_FIPS_ZERIOZATION;
 
@@ -1172,6 +1172,7 @@ regfile intr_block_t {
         field {desc = "Enable bit for Generic Input Wires Toggle";                      } notif_gen_in_toggle_en = 1'b0;
         field {desc = "Enable bit for MBOX0 Command Available";                         } notif_mbox0_cmd_avail_en = 1'b0;
         field {desc = "Enable bit for MBOX1 Command Available";                         } notif_mbox1_cmd_avail_en = 1'b0;
+        field {desc = "Enable bit for Caliptra MBOX Command Available";                 } notif_cptra_mbox_cmd_avail_en = 1'b0;
         field {desc = "Enable bit for Mailbox ECC Single-bit Error (correctable)";      } notif_mbox0_ecc_cor_en = 1'b0;
         field {desc = "Enable bit for Mailbox ECC Single-bit Error (correctable)";      } notif_mbox1_ecc_cor_en = 1'b0;
         field {desc = "Enable bit for Security State, Debug Locked transition";         } notif_debug_locked_en = 1'b0;
@@ -1309,6 +1310,7 @@ regfile intr_block_t {
         field {desc = "Generic Input Wires Toggle status bit";                 } notif_gen_in_toggle_sts = 1'b0;
         field {desc = "MBOX0 Command Available status bit";                    } notif_mbox0_cmd_avail_sts = 1'b0;
         field {desc = "MBOX1 Command Available status bit";                    } notif_mbox1_cmd_avail_sts = 1'b0;
+        field {desc = "Caliptra MBOX Command Available status bit";            } notif_cptra_mbox_cmd_avail_sts = 1'b0;
         field {desc = "Mailbox ECC Single-bit Error (correctable) status bit"; } notif_mbox0_ecc_cor_sts = 1'b0;
         field {desc = "Mailbox ECC Single-bit Error (correctable) status bit"; } notif_mbox1_ecc_cor_sts = 1'b0;
         field {desc = "Security State, Debug Locked transition status bit";    } notif_debug_locked_sts = 1'b0;
@@ -1477,6 +1479,7 @@ regfile intr_block_t {
         field {desc = "Generic Input Wires Toggle trigger bit";                 } notif_gen_in_toggle_trig = 1'b0;
         field {desc = "MBOX0 Command Available trigger bit";                    } notif_mbox0_cmd_avail_trig = 1'b0;
         field {desc = "MBOX1 Command Available trigger bit";                    } notif_mbox1_cmd_avail_trig = 1'b0;
+        field {desc = "Caliptra MBOX Command Available trigger bit";            } notif_cptra_mbox_cmd_avail_trig = 1'b0;
         field {desc = "Mailbox ECC Single-bit Error (correctable) trigger bit"; } notif_mbox0_ecc_cor_trig = 1'b0;
         field {desc = "Mailbox ECC Single-bit Error (correctable) trigger bit"; } notif_mbox1_ecc_cor_trig = 1'b0;
         field {desc = "Security State, Debug Locked transition trigger bit";    } notif_debug_locked_trig = 1'b0;
@@ -1668,6 +1671,7 @@ regfile intr_block_t {
     intr_count_t      notif_agg_error_non_fatal31_intr_count_r;   /* Per notification  */                              //
     intr_count_t      notif_mbox0_cmd_avail_intr_count_r; /* Per notification */                                    //
     intr_count_t      notif_mbox1_cmd_avail_intr_count_r; /* Per notification */                                    //
+    intr_count_t      notif_cptra_mbox_cmd_avail_intr_count_r; /* Per notification */                                    //
     intr_count_t      notif_mbox0_ecc_cor_intr_count_r;     /* Per notification */                                    //
     intr_count_t      notif_mbox1_ecc_cor_intr_count_r;     /* Per notification */                                    //
     intr_count_t      notif_debug_locked_intr_count_r;     /* Per notification */                                    //
@@ -1759,6 +1763,7 @@ regfile intr_block_t {
     intr_count_incr_t notif_agg_error_non_fatal31_intr_count_incr_r;   /* Per notification count incrementor pulse  */                              //
     intr_count_incr_t notif_mbox0_cmd_avail_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_mbox1_cmd_avail_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_cptra_mbox_cmd_avail_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_mbox0_ecc_cor_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_mbox1_ecc_cor_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_debug_locked_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
@@ -1902,6 +1907,7 @@ regfile intr_block_t {
     notif0_internal_intr_r.notif_gen_in_toggle_sts -> enable = notif0_intr_en_r.notif_gen_in_toggle_en;
     notif0_internal_intr_r.notif_mbox0_cmd_avail_sts     -> enable = notif0_intr_en_r.notif_mbox0_cmd_avail_en;
     notif0_internal_intr_r.notif_mbox1_cmd_avail_sts     -> enable = notif0_intr_en_r.notif_mbox1_cmd_avail_en;
+    notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts     -> enable = notif0_intr_en_r.notif_cptra_mbox_cmd_avail_en;
     notif1_internal_intr_r.notif_agg_error_non_fatal0_sts  -> enable = notif1_intr_en_r.notif_agg_error_non_fatal0_en;
     notif1_internal_intr_r.notif_agg_error_non_fatal1_sts  -> enable = notif1_intr_en_r.notif_agg_error_non_fatal1_en;
     notif1_internal_intr_r.notif_agg_error_non_fatal2_sts  -> enable = notif1_intr_en_r.notif_agg_error_non_fatal2_en;
@@ -1988,6 +1994,7 @@ regfile intr_block_t {
     notif0_internal_intr_r.notif_gen_in_toggle_sts -> next   = notif0_intr_trig_r.notif_gen_in_toggle_trig;
     notif0_internal_intr_r.notif_mbox0_cmd_avail_sts     -> next   = notif0_intr_trig_r.notif_mbox0_cmd_avail_trig;
     notif0_internal_intr_r.notif_mbox1_cmd_avail_sts     -> next   = notif0_intr_trig_r.notif_mbox1_cmd_avail_trig;
+    notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts     -> next   = notif0_intr_trig_r.notif_cptra_mbox_cmd_avail_trig;
     notif1_internal_intr_r.notif_agg_error_non_fatal0_sts  -> next = notif1_intr_trig_r.notif_agg_error_non_fatal0_trig;
     notif1_internal_intr_r.notif_agg_error_non_fatal1_sts  -> next = notif1_intr_trig_r.notif_agg_error_non_fatal1_trig;
     notif1_internal_intr_r.notif_agg_error_non_fatal2_sts  -> next = notif1_intr_trig_r.notif_agg_error_non_fatal2_trig;
@@ -2522,6 +2529,12 @@ regfile intr_block_t {
     notif_mbox1_cmd_avail_intr_count_incr_r.pulse -> we       = notif0_internal_intr_r.notif_mbox1_cmd_avail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
     notif_mbox1_cmd_avail_intr_count_incr_r.pulse -> decr     = notif_mbox1_cmd_avail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     notif_mbox1_cmd_avail_intr_count_r.cnt        -> incr     = notif_mbox1_cmd_avail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    
+    notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse -> hwset    = notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse -> next     = notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse -> we       = notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse -> decr     = notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_cptra_mbox_cmd_avail_intr_count_r.cnt        -> incr     = notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
     notif_mbox0_ecc_cor_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_mbox0_ecc_cor_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
     notif_mbox0_ecc_cor_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_mbox0_ecc_cor_sts -> next;  // /      as a pulse to increment the intr_count_r register

@@ -99,6 +99,7 @@ module mci_reg_top
     // unused in 2.0 output logic dmi_mbox1_wen,
     input  logic mci_mbox0_data_avail,
     input  logic mci_mbox1_data_avail,
+    input  logic cptra_mbox_data_avail,
     output logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox0_users,
     output logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox1_users,
     input  logic soc_req_mbox0_lock,
@@ -230,6 +231,8 @@ logic mci_mbox0_data_avail_d;
 logic mci_mbox0_cmd_avail_p;
 logic mci_mbox1_data_avail_d;
 logic mci_mbox1_cmd_avail_p;
+logic cptra_mbox_data_avail_d;
+logic cptra_mbox_cmd_avail_p;
 
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
@@ -777,6 +780,18 @@ always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox0_ecc
 always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mbox1_ecc_unc_sts.hwset  = mbox1_sram_double_ecc_error;
 always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox1_ecc_cor_sts.hwset  = mbox1_sram_single_ecc_error;
 
+
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        cptra_mbox_data_avail_d <= '0;
+    end  
+    else begin
+        cptra_mbox_data_avail_d <= cptra_mbox_data_avail;
+    end  
+end
+
+always_comb cptra_mbox_cmd_avail_p = cptra_mbox_data_avail & !cptra_mbox_data_avail_d;
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts.hwset          = cptra_mbox_cmd_avail_p;
 
 ///////////////////////////////////////////////
 // NMI Vector   

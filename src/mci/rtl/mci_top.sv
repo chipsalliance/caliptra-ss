@@ -109,6 +109,9 @@ module mci_top
     input logic        mcu_trace_rv_i_interrupt_ip,
     input logic [31:0] mcu_trace_rv_i_tval_ip,
 
+    // Caliptra MBOX
+    input logic cptra_mbox_data_avail,
+
     
     // Reset controls
     output logic mcu_rst_b,
@@ -120,10 +123,6 @@ module mci_top
     // LCC Signals
     input  logic lc_done,
     output logic lc_init,
-
-    // MBOX
-    output logic mbox0_data_avail,
-    output logic mbox1_data_avail,
 
     // FC Signals
     input  logic fc_opt_done,
@@ -583,6 +582,7 @@ mci_reg_top #(
     .valid_mbox1_users,
     .mci_mbox0_data_avail,
     .mci_mbox1_data_avail,
+    .cptra_mbox_data_avail,
     .soc_req_mbox0_lock,
     .soc_req_mbox1_lock,
     .mbox0_protocol_error, 
