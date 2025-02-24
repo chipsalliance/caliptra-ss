@@ -1196,7 +1196,7 @@ module caliptra_ss_top
         .lc_done(lcc_to_mci_lc_done), //output from lcc
         .lc_init(mci_to_lcc_init_req), //input to lcc
         // .lc_bus_integ_error_fatal(1'b0),
-        // .lc_state_error_fatal(1'b0),
+        .lc_fatal_state_error_i(lc_alerts_o[1]),
         // .lc_prog_error_fatal(1'b0),
 
         .fc_opt_done(otp_ctrl_to_mci_otp_ctrl_done), //output from otp
