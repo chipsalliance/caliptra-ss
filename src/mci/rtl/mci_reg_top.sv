@@ -413,7 +413,7 @@ end
 always_comb scan_mode_p = scan_mode & ~scan_mode_f;
 
 assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_scan_mode_sts.hwset = scan_mode_p;
-assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_sts = security_state_debug_locked_edge;
+assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_sts.hwset = security_state_debug_locked_edge;
 
 
 
