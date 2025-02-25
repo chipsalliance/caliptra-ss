@@ -706,9 +706,9 @@
 #ifndef MCI_REG_SOC_PROD_DEBUG_STATE_1
 #define MCI_REG_SOC_PROD_DEBUG_STATE_1                                                              (0x314)
 #endif
-#define MCI_TOP_MCI_REG_FC_FIPS_ZERIOZATION                                                         (0x318)
-#ifndef MCI_REG_FC_FIPS_ZERIOZATION
-#define MCI_REG_FC_FIPS_ZERIOZATION                                                                 (0x318)
+#define MCI_TOP_MCI_REG_FC_FIPS_ZEROZATION                                                          (0x318)
+#ifndef MCI_REG_FC_FIPS_ZEROZATION
+#define MCI_REG_FC_FIPS_ZEROZATION                                                                  (0x318)
 #endif
 #define MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0                                                       (0x400)
 #ifndef MCI_REG_GENERIC_INPUT_WIRES_0

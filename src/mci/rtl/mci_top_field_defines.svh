@@ -622,8 +622,8 @@
 `ifndef MCI_REG_SOC_PROD_DEBUG_STATE_1
 `define MCI_REG_SOC_PROD_DEBUG_STATE_1                                                              (32'h314)
 `endif
-`ifndef MCI_REG_FC_FIPS_ZERIOZATION
-`define MCI_REG_FC_FIPS_ZERIOZATION                                                                 (32'h318)
+`ifndef MCI_REG_FC_FIPS_ZEROZATION
+`define MCI_REG_FC_FIPS_ZEROZATION                                                                  (32'h318)
 `endif
 `ifndef MCI_REG_GENERIC_INPUT_WIRES_0
 `define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (32'h400)

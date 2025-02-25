@@ -2294,17 +2294,17 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SOC_PROD_DEBUG_STATE
 
-    // Reg - mci_reg::FC_FIPS_ZERIOZATION
-    class mci_reg__FC_FIPS_ZERIOZATION extends uvm_reg;
+    // Reg - mci_reg::FC_FIPS_ZEROZATION
+    class mci_reg__FC_FIPS_ZEROZATION extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__FC_FIPS_ZERIOZATION_bit_cg MASK_bit_cg[32];
-        mci_reg__FC_FIPS_ZERIOZATION_fld_cg fld_cg;
+        mci_reg__FC_FIPS_ZEROZATION_bit_cg MASK_bit_cg[32];
+        mci_reg__FC_FIPS_ZEROZATION_fld_cg fld_cg;
         rand uvm_reg_field MASK;
 
-        function new(string name = "mci_reg__FC_FIPS_ZERIOZATION");
+        function new(string name = "mci_reg__FC_FIPS_ZEROZATION");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -2322,7 +2322,7 @@ package mci_reg_uvm;
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__FC_FIPS_ZERIOZATION
+    endclass : mci_reg__FC_FIPS_ZEROZATION
 
     // Reg - mci_reg::GENERIC_INPUT_WIRES
     class mci_reg__GENERIC_INPUT_WIRES extends uvm_reg;
@@ -10577,7 +10577,7 @@ package mci_reg_uvm;
         rand mci_reg__SOC_DFT_EN SOC_DFT_EN[2];
         rand mci_reg__SOC_HW_DEBUG_EN SOC_HW_DEBUG_EN[2];
         rand mci_reg__SOC_PROD_DEBUG_STATE SOC_PROD_DEBUG_STATE[2];
-        rand mci_reg__FC_FIPS_ZERIOZATION FC_FIPS_ZERIOZATION;
+        rand mci_reg__FC_FIPS_ZEROZATION FC_FIPS_ZEROZATION;
         rand mci_reg__GENERIC_INPUT_WIRES GENERIC_INPUT_WIRES[2];
         rand mci_reg__GENERIC_OUTPUT_WIRES GENERIC_OUTPUT_WIRES[2];
         rand mci_reg__DEBUG_IN DEBUG_IN;
@@ -10877,11 +10877,11 @@ package mci_reg_uvm;
                 this.SOC_PROD_DEBUG_STATE[i0].build();
                 this.default_map.add_reg(this.SOC_PROD_DEBUG_STATE[i0], 'h310 + i0*'h4);
             end
-            this.FC_FIPS_ZERIOZATION = new("FC_FIPS_ZERIOZATION");
-            this.FC_FIPS_ZERIOZATION.configure(this);
+            this.FC_FIPS_ZEROZATION = new("FC_FIPS_ZEROZATION");
+            this.FC_FIPS_ZEROZATION.configure(this);
 
-            this.FC_FIPS_ZERIOZATION.build();
-            this.default_map.add_reg(this.FC_FIPS_ZERIOZATION, 'h318);
+            this.FC_FIPS_ZEROZATION.build();
+            this.default_map.add_reg(this.FC_FIPS_ZEROZATION, 'h318);
             foreach(this.GENERIC_INPUT_WIRES[i0]) begin
                 this.GENERIC_INPUT_WIRES[i0] = new($sformatf("GENERIC_INPUT_WIRES[%0d]", i0));
                 this.GENERIC_INPUT_WIRES[i0].configure(this);

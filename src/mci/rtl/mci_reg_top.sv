@@ -315,7 +315,7 @@ always_comb begin
 
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value; 
     
-    mci_reg_hwif_in.FC_FIPS_ZERIOZATION.MASK.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value | (~axi_mcu_or_debug_req); 
+    mci_reg_hwif_in.FC_FIPS_ZEROZATION.MASK.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value | (~axi_mcu_or_debug_req); 
 end
 
 ///////////////////////////////////////////////

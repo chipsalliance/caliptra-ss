@@ -326,11 +326,11 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic swwel;
-    } mci_reg__FC_FIPS_ZERIOZATION__MASK__in_t;
+    } mci_reg__FC_FIPS_ZEROZATION__MASK__in_t;
 
     typedef struct packed{
-        mci_reg__FC_FIPS_ZERIOZATION__MASK__in_t MASK;
-    } mci_reg__FC_FIPS_ZERIOZATION__in_t;
+        mci_reg__FC_FIPS_ZEROZATION__MASK__in_t MASK;
+    } mci_reg__FC_FIPS_ZEROZATION__in_t;
 
     typedef struct packed{
         logic [31:0] next;
@@ -846,7 +846,7 @@ package mci_reg_pkg;
         mci_reg__MBOX0_AXI_USER_LOCK__in_t [5-1:0]MBOX0_AXI_USER_LOCK;
         mci_reg__MBOX1_VALID_AXI_USER__in_t [5-1:0]MBOX1_VALID_AXI_USER;
         mci_reg__MBOX1_AXI_USER_LOCK__in_t [5-1:0]MBOX1_AXI_USER_LOCK;
-        mci_reg__FC_FIPS_ZERIOZATION__in_t FC_FIPS_ZERIOZATION;
+        mci_reg__FC_FIPS_ZEROZATION__in_t FC_FIPS_ZEROZATION;
         mci_reg__GENERIC_INPUT_WIRES__in_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__SS_DEBUG_INTENT__in_t SS_DEBUG_INTENT;
         mci_reg__SS_CONFIG_DONE__in_t SS_CONFIG_DONE;
@@ -1330,11 +1330,11 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic [31:0] value;
-    } mci_reg__FC_FIPS_ZERIOZATION__MASK__out_t;
+    } mci_reg__FC_FIPS_ZEROZATION__MASK__out_t;
 
     typedef struct packed{
-        mci_reg__FC_FIPS_ZERIOZATION__MASK__out_t MASK;
-    } mci_reg__FC_FIPS_ZERIOZATION__out_t;
+        mci_reg__FC_FIPS_ZEROZATION__MASK__out_t MASK;
+    } mci_reg__FC_FIPS_ZEROZATION__out_t;
 
     typedef struct packed{
         logic [31:0] value;
@@ -1464,7 +1464,7 @@ package mci_reg_pkg;
         mci_reg__SOC_DFT_EN__out_t [2-1:0]SOC_DFT_EN;
         mci_reg__SOC_HW_DEBUG_EN__out_t [2-1:0]SOC_HW_DEBUG_EN;
         mci_reg__SOC_PROD_DEBUG_STATE__out_t [2-1:0]SOC_PROD_DEBUG_STATE;
-        mci_reg__FC_FIPS_ZERIOZATION__out_t FC_FIPS_ZERIOZATION;
+        mci_reg__FC_FIPS_ZEROZATION__out_t FC_FIPS_ZEROZATION;
         mci_reg__GENERIC_INPUT_WIRES__out_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__GENERIC_OUTPUT_WIRES__out_t [2-1:0]GENERIC_OUTPUT_WIRES;
         mci_reg__SS_DEBUG_INTENT__out_t SS_DEBUG_INTENT;

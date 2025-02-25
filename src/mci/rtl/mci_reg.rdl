@@ -897,7 +897,7 @@ addrmap mci_reg {
                  [br]SOC Access:      RO
                  [br]Once SS_CONFIG_DONE is set, this register is read-only.";
          field {sw=rw; hw=r; swwel; resetsignal = mci_rst_b;} MASK[32]=0;
-     } FC_FIPS_ZERIOZATION;
+     } FC_FIPS_ZEROZATION;
 
     // ----------------------------------------
     // ------------ DEBUG/GENERIC -------------

@@ -489,7 +489,7 @@
 `define SOC_MCI_REG_SOC_HW_DEBUG_EN_1                                                               (32'h2100030c)
 `define SOC_MCI_REG_SOC_PROD_DEBUG_STATE_0                                                          (32'h21000310)
 `define SOC_MCI_REG_SOC_PROD_DEBUG_STATE_1                                                          (32'h21000314)
-`define SOC_MCI_REG_FC_FIPS_ZERIOZATION                                                             (32'h21000318)
+`define SOC_MCI_REG_FC_FIPS_ZEROZATION                                                              (32'h21000318)
 `define SOC_MCI_REG_GENERIC_INPUT_WIRES_0                                                           (32'h21000400)
 `define SOC_MCI_REG_GENERIC_INPUT_WIRES_1                                                           (32'h21000404)
 `define SOC_MCI_REG_GENERIC_OUTPUT_WIRES_0                                                          (32'h21000408)

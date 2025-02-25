@@ -118,7 +118,7 @@ module mci_reg (
         logic [2-1:0]SOC_DFT_EN;
         logic [2-1:0]SOC_HW_DEBUG_EN;
         logic [2-1:0]SOC_PROD_DEBUG_STATE;
-        logic FC_FIPS_ZERIOZATION;
+        logic FC_FIPS_ZEROZATION;
         logic [2-1:0]GENERIC_INPUT_WIRES;
         logic [2-1:0]GENERIC_OUTPUT_WIRES;
         logic DEBUG_IN;
@@ -399,7 +399,7 @@ module mci_reg (
         for(int i0=0; i0<2; i0++) begin
             decoded_reg_strb.SOC_PROD_DEBUG_STATE[i0] = cpuif_req_masked & (cpuif_addr == 13'h310 + i0*13'h4);
         end
-        decoded_reg_strb.FC_FIPS_ZERIOZATION = cpuif_req_masked & (cpuif_addr == 13'h318);
+        decoded_reg_strb.FC_FIPS_ZEROZATION = cpuif_req_masked & (cpuif_addr == 13'h318);
         for(int i0=0; i0<2; i0++) begin
             decoded_reg_strb.GENERIC_INPUT_WIRES[i0] = cpuif_req_masked & (cpuif_addr == 13'h400 + i0*13'h4);
         end
@@ -1479,7 +1479,7 @@ module mci_reg (
                 logic [31:0] next;
                 logic load_next;
             } MASK;
-        } FC_FIPS_ZERIOZATION;
+        } FC_FIPS_ZEROZATION;
         struct packed{
             struct packed{
                 logic [31:0] next;
@@ -4660,7 +4660,7 @@ module mci_reg (
             struct packed{
                 logic [31:0] value;
             } MASK;
-        } FC_FIPS_ZERIOZATION;
+        } FC_FIPS_ZEROZATION;
         struct packed{
             struct packed{
                 logic [31:0] value;
@@ -10667,27 +10667,27 @@ module mci_reg (
         end
         assign hwif_out.SOC_PROD_DEBUG_STATE[i0].MASK.value = field_storage.SOC_PROD_DEBUG_STATE[i0].MASK.value;
     end
-    // Field: mci_reg.FC_FIPS_ZERIOZATION.MASK
+    // Field: mci_reg.FC_FIPS_ZEROZATION.MASK
     always_comb begin
         automatic logic [31:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.FC_FIPS_ZERIOZATION.MASK.value;
+        next_c = field_storage.FC_FIPS_ZEROZATION.MASK.value;
         load_next_c = '0;
-        if(decoded_reg_strb.FC_FIPS_ZERIOZATION && decoded_req_is_wr && !(hwif_in.FC_FIPS_ZERIOZATION.MASK.swwel)) begin // SW write
-            next_c = (field_storage.FC_FIPS_ZERIOZATION.MASK.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+        if(decoded_reg_strb.FC_FIPS_ZEROZATION && decoded_req_is_wr && !(hwif_in.FC_FIPS_ZEROZATION.MASK.swwel)) begin // SW write
+            next_c = (field_storage.FC_FIPS_ZEROZATION.MASK.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
-        field_combo.FC_FIPS_ZERIOZATION.MASK.next = next_c;
-        field_combo.FC_FIPS_ZERIOZATION.MASK.load_next = load_next_c;
+        field_combo.FC_FIPS_ZEROZATION.MASK.next = next_c;
+        field_combo.FC_FIPS_ZEROZATION.MASK.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.FC_FIPS_ZERIOZATION.MASK.value <= 32'h0;
-        end else if(field_combo.FC_FIPS_ZERIOZATION.MASK.load_next) begin
-            field_storage.FC_FIPS_ZERIOZATION.MASK.value <= field_combo.FC_FIPS_ZERIOZATION.MASK.next;
+            field_storage.FC_FIPS_ZEROZATION.MASK.value <= 32'h0;
+        end else if(field_combo.FC_FIPS_ZEROZATION.MASK.load_next) begin
+            field_storage.FC_FIPS_ZEROZATION.MASK.value <= field_combo.FC_FIPS_ZEROZATION.MASK.next;
         end
     end
-    assign hwif_out.FC_FIPS_ZERIOZATION.MASK.value = field_storage.FC_FIPS_ZERIOZATION.MASK.value;
+    assign hwif_out.FC_FIPS_ZEROZATION.MASK.value = field_storage.FC_FIPS_ZEROZATION.MASK.value;
     for(genvar i0=0; i0<2; i0++) begin
         // Field: mci_reg.GENERIC_INPUT_WIRES[].wires
         always_comb begin
@@ -22846,7 +22846,7 @@ module mci_reg (
     for(genvar i0=0; i0<2; i0++) begin
         assign readback_array[i0*1 + 80][31:0] = (decoded_reg_strb.SOC_PROD_DEBUG_STATE[i0] && !decoded_req_is_wr) ? field_storage.SOC_PROD_DEBUG_STATE[i0].MASK.value : '0;
     end
-    assign readback_array[82][31:0] = (decoded_reg_strb.FC_FIPS_ZERIOZATION && !decoded_req_is_wr) ? field_storage.FC_FIPS_ZERIOZATION.MASK.value : '0;
+    assign readback_array[82][31:0] = (decoded_reg_strb.FC_FIPS_ZEROZATION && !decoded_req_is_wr) ? field_storage.FC_FIPS_ZEROZATION.MASK.value : '0;
     for(genvar i0=0; i0<2; i0++) begin
         assign readback_array[i0*1 + 83][31:0] = (decoded_reg_strb.GENERIC_INPUT_WIRES[i0] && !decoded_req_is_wr) ? field_storage.GENERIC_INPUT_WIRES[i0].wires.value : '0;
     end
