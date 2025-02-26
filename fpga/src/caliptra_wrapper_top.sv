@@ -161,7 +161,7 @@ module caliptra_wrapper_top #(
     input  wire S_AXI_MCU_ROM_AWVALID,
     output wire S_AXI_MCU_ROM_AWREADY,
     // W
-    input  wire [31:0] S_AXI_MCU_ROM_WDATA,
+    input  wire [63:0] S_AXI_MCU_ROM_WDATA,
     input  wire [3:0] S_AXI_MCU_ROM_WSTRB,
     input  wire S_AXI_MCU_ROM_WVALID,
     output wire S_AXI_MCU_ROM_WREADY,
@@ -182,7 +182,7 @@ module caliptra_wrapper_top #(
     input  wire S_AXI_MCU_ROM_ARVALID,
     output wire S_AXI_MCU_ROM_ARREADY,
     // R
-    output wire [31:0] S_AXI_MCU_ROM_RDATA,
+    output wire [63:0] S_AXI_MCU_ROM_RDATA,
     output wire [1:0] S_AXI_MCU_ROM_RRESP,
     output reg  [15:0] S_AXI_MCU_ROM_RID,
     output wire S_AXI_MCU_ROM_RLAST,
@@ -438,13 +438,22 @@ module caliptra_wrapper_top #(
     output wire [18:0] S_AXI_OTP_BID,
 
     // ROM AXI Interface
-    input  logic axi_bram_clk,
-    input  logic axi_bram_en,
-    input  logic [3:0] axi_bram_we,
-    input  logic [14:0] axi_bram_addr,
-    input  logic [31:0] axi_bram_wrdata,
-    output logic [31:0] axi_bram_rddata,
-    input  logic axi_bram_rst,
+    input  logic rom_backdoor_clk,
+    input  logic rom_backdoor_en,
+    input  logic [3:0] rom_backdoor_we,
+    input  logic [14:0] rom_backdoor_addr,
+    input  logic [31:0] rom_backdoor_wrdata,
+    output logic [31:0] rom_backdoor_rddata,
+    input  logic rom_backdoor_rst,
+    
+    // MCU ROM Backdoor Interface
+    input  logic        mcu_rom_backdoor_clk,
+    input  logic        mcu_rom_backdoor_en,
+    input  logic [3:0]  mcu_rom_backdoor_we,
+    input  logic [31:0] mcu_rom_backdoor_addr,
+    input  logic [31:0] mcu_rom_backdoor_din,
+    output logic [31:0] mcu_rom_backdoor_dout,
+    input  logic        mcu_rom_backdoor_rst,
 
     // JTAG Interface
     input logic                       jtag_tck,    // JTAG clk
@@ -720,7 +729,7 @@ mbox_ram1 (
     .injectdbiterra(0),
     .injectsbiterra(0),
     .regcea(1'b1),
-    .rsta(axi_bram_rst),
+    .rsta(rom_backdoor_rst),
     .sleep(0),
     .wea(mbox_sram_we)
 
@@ -765,28 +774,28 @@ imem_inst1 (
     .dbiterra(),
     .dbiterrb(),
     .douta(imem_rdata),
-    .doutb(axi_bram_rddata),
+    .doutb(rom_backdoor_rddata),
     .sbiterra(),
     .sbiterrb(),
     .addra(imem_addr),
-    .addrb(axi_bram_addr),
+    .addrb(rom_backdoor_addr),
     .clka(core_clk),
     .clkb(core_clk),
     .dina(0),
-    .dinb(axi_bram_wrdata),
+    .dinb(rom_backdoor_wrdata),
     .ena(imem_cs),
-    .enb(axi_bram_en),
+    .enb(rom_backdoor_en),
     .injectdbiterra(0),
     .injectdbiterrb(0),
     .injectsbiterra(0),
     .injectsbiterrb(0),
     .regcea(1),
     .regceb(1),
-    .rsta(axi_bram_rst),
-    .rstb(axi_bram_rst),
+    .rsta(rom_backdoor_rst),
+    .rstb(rom_backdoor_rst),
     .sleep(0),
     .wea(8'h0),
-    .web(axi_bram_we)
+    .web(rom_backdoor_we)
 );
 
 // Valid = !Empty
@@ -1053,8 +1062,8 @@ assign cptra_ss_mci_s_axi.rready = S_AXI_MCI_RREADY;
 // MCU ROM AXI Subordinate
 axi_if #(
     .AW(32),
-    .DW(`CALIPTRA_AXI_DATA_WIDTH),
-    .IW(`CALIPTRA_AXI_ID_WIDTH),
+    .DW(64),
+    .IW(8),
     .UW(`CALIPTRA_AXI_USER_WIDTH)
 ) cptra_ss_mcu_rom_s_axi_if (.clk(core_clk), .rst_n(hwif_out.interface_regs.control.cptra_ss_rst_b.value));
 
@@ -1106,44 +1115,67 @@ axi_mem_if #(
    .rst_b(hwif_out.interface_regs.control.cptra_ss_rst_b.value)
 );
 
-xpm_memory_spram #(
+// Dual port memory for MCU ROM. A is to SS, B is backdoor
+xpm_memory_tdpram #(
    .ADDR_WIDTH_A(32),              // DECIMAL
+   .ADDR_WIDTH_B(32),              // DECIMAL
    .AUTO_SLEEP_TIME(0),            // DECIMAL
    .BYTE_WRITE_WIDTH_A(64),        // DECIMAL
+   .BYTE_WRITE_WIDTH_B(8),         // DECIMAL
    .CASCADE_HEIGHT(0),             // DECIMAL
+   .CLOCKING_MODE("common_clock"), // String
    .ECC_MODE("no_ecc"),            // String
    .MEMORY_INIT_FILE("none"),      // String
    .MEMORY_INIT_PARAM("0"),        // String
    .MEMORY_OPTIMIZATION("false"),  // String
    .MEMORY_PRIMITIVE("auto"),      // String
-   .MEMORY_SIZE(128*1024*8),        // DECIMAL
+   .MEMORY_SIZE(128*1024*8),       // DECIMAL
    .MESSAGE_CONTROL(0),            // DECIMAL
    .READ_DATA_WIDTH_A(64),         // DECIMAL
+   .READ_DATA_WIDTH_B(32),         // DECIMAL
    .READ_LATENCY_A(1),             // DECIMAL
+   .READ_LATENCY_B(1),             // DECIMAL
    .READ_RESET_VALUE_A("0"),       // String
+   .READ_RESET_VALUE_B("0"),       // String
    .RST_MODE_A("SYNC"),            // String
+   .RST_MODE_B("SYNC"),            // String
    .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+   .USE_EMBEDDED_CONSTRAINT(0),    // DECIMAL
    .USE_MEM_INIT(1),               // DECIMAL
    .USE_MEM_INIT_MMI(0),           // DECIMAL
    .WAKEUP_TIME("disable_sleep"),  // String
    .WRITE_DATA_WIDTH_A(64),        // DECIMAL
+   .WRITE_DATA_WIDTH_B(32),        // DECIMAL
    .WRITE_MODE_A("no_change"),     // String
+   .WRITE_MODE_B("no_change"),     // String
    .WRITE_PROTECT(1)               // DECIMAL
 )
 mcu_rom (
    .dbiterra(),
+   .dbiterrb(),
    .douta(mcu_rom_mem_export_if.resp.rdata),
+   .doutb(mcu_rom_backdoor_dout),
    .sbiterra(),
+   .sbiterrb(),
    .addra(mcu_rom_mem_export_if.req.addr),
+   .addrb(mcu_rom_backdoor_addr),
    .clka(core_clk),
+   .clkb(mcu_rom_backdoor_clk),
    .dina(mcu_rom_mem_export_if.req.wdata),
+   .dinb(mcu_rom_backdoor_din),
    .ena(mcu_rom_mem_export_if.req.cs),
+   .enb(mcu_rom_backdoor_en),
    .injectdbiterra(0),
+   .injectdbiterrb(0),
    .injectsbiterra(0),
+   .injectsbiterrb(0),
    .regcea(1),
-   .rsta(ss_axi_bram_rst),
+   .regceb(1),
+   .rsta(mcu_rom_backdoor_rst),
+   .rstb(mcu_rom_backdoor_rst),
    .sleep(0),
-   .wea(mcu_rom_mem_export_if.req.we)
+   .wea(mcu_rom_mem_export_if.req.we),
+   .web(mcu_rom_backdoor_we)
 );
 
 // MCI AXI Manager
@@ -1235,7 +1267,7 @@ I think this is the one that isn't used
         .injectdbiterra(0),
         .injectsbiterra(0),
         .regcea(1),
-        .rsta(ss_axi_bram_rst),
+        .rsta(rom_backdoor_rst),
         .sleep(0),
         .wea(cptra_ss_mcu_rom_macro_req_if.req.we)
     );
@@ -1280,7 +1312,7 @@ I think this is the one that isn't used
         .injectdbiterra(0),
         .injectsbiterra(0),
         .regcea(1),
-        .rsta(ss_axi_bram_rst),
+        .rsta(rom_backdoor_rst),
         .sleep(0),
         .wea(cptra_ss_mci_mcu_sram_req_if.req.we)
     );
@@ -1299,7 +1331,7 @@ I think this is the one that isn't used
         .MEMORY_INIT_PARAM("0"),        // String
         .MEMORY_OPTIMIZATION("false"),  // String
         .MEMORY_PRIMITIVE("auto"),      // String
-        .MEMORY_SIZE(1024*1024*8),      // DECIMAL
+        .MEMORY_SIZE(4*1024*8),      // DECIMAL
         .MESSAGE_CONTROL(0),            // DECIMAL
         .READ_DATA_WIDTH_A(32),         // DECIMAL
         .READ_LATENCY_A(1),             // DECIMAL
@@ -1324,7 +1356,7 @@ I think this is the one that isn't used
         .injectdbiterra(0),
         .injectsbiterra(0),
         .regcea(1),
-        .rsta(ss_axi_bram_rst),
+        .rsta(rom_backdoor_rst),
         .sleep(0),
         .wea(cptra_ss_mci_mbox0_sram_req_if.req.we)
     );
@@ -1343,7 +1375,7 @@ I think this is the one that isn't used
         .MEMORY_INIT_PARAM("0"),        // String
         .MEMORY_OPTIMIZATION("false"),  // String
         .MEMORY_PRIMITIVE("auto"),      // String
-        .MEMORY_SIZE(1024*1024*8),      // DECIMAL
+        .MEMORY_SIZE(4*1024*8),      // DECIMAL
         .MESSAGE_CONTROL(0),            // DECIMAL
         .READ_DATA_WIDTH_A(32),         // DECIMAL
         .READ_LATENCY_A(1),             // DECIMAL
@@ -1368,7 +1400,7 @@ I think this is the one that isn't used
         .injectdbiterra(0),
         .injectsbiterra(0),
         .regcea(1),
-        .rsta(ss_axi_bram_rst),
+        .rsta(rom_backdoor_rst),
         .sleep(0),
         .wea(cptra_ss_mci_mbox1_sram_req_if.req.we)
     );

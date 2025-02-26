@@ -10,6 +10,7 @@ set BOARD VCK190
 set DISABLE_ECC FALSE
 set ENABLE_ADB TRUE
 set ITRNG TRUE
+set FAST_I3C FALSE
 
 set I3C_OUTSIDE FALSE
 set APB FALSE
@@ -122,7 +123,7 @@ close $xdc_fd
 # Add AXI Interconnect
 create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 axi_interconnect_0
 set_property -dict [list \
-  CONFIG.NUM_MI {9} \
+  CONFIG.NUM_MI {10} \
   CONFIG.NUM_SI {5} \
   CONFIG.NUM_CLKS {2} \
 ] [get_bd_cells axi_interconnect_0]
@@ -137,9 +138,13 @@ if {$APB} {
   set_property location {3 1041 439} [get_bd_cells axi_apb_bridge_0]
 }
 
-# Add AXI BRAM Controller for backdoor access to IMEM
+# Add AXI BRAM Controller for backdoor access to Caliptra ROM
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 cptra_rom_bram_ctrl_0
 set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells cptra_rom_bram_ctrl_0]
+
+# Add AXI BRAM Controller for backdoor access to MCU ROM
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 cptra_rom_bram_ctrl_1
+set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells cptra_rom_bram_ctrl_1]
 
 # Create reset block
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset_0
@@ -201,9 +206,12 @@ connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M0
 connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M06_AXI] [get_bd_intf_pins caliptra_package_top_0/S_AXI_WRAPPER]
 # Caliptra ROM Backdoor
 connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/M07_AXI] [get_bd_intf_pins cptra_rom_bram_ctrl_0/S_AXI]
-connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/axi_bram] [get_bd_intf_pins cptra_rom_bram_ctrl_0/BRAM_PORTA]
+connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/rom_backdoor] [get_bd_intf_pins cptra_rom_bram_ctrl_0/BRAM_PORTA]
+# MCU ROM Backdoor
+connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/M08_AXI] [get_bd_intf_pins cptra_rom_bram_ctrl_1/S_AXI]
+connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/mcu_rom_backdoor] [get_bd_intf_pins cptra_rom_bram_ctrl_1/BRAM_PORTA]
 # MCU RAM
-connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M08_AXI] [get_bd_intf_pins mcu_imem_bram_ctrl_1/S_AXI]
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M09_AXI] [get_bd_intf_pins mcu_imem_bram_ctrl_1/S_AXI]
 
 # Create reset connections
 connect_bd_net [get_bd_pins $ps_pl_resetn] [get_bd_pins proc_sys_reset_0/ext_reset_in]
@@ -212,7 +220,8 @@ connect_bd_net -net proc_sys_reset_0_peripheral_aresetn \
   [get_bd_pins axi_apb_bridge_0/s_axi_aresetn] \
   [get_bd_pins axi_interconnect_0/aresetn] \
   [get_bd_pins caliptra_package_top_0/S_AXI_WRAPPER_ARESETN] \
-  [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aresetn]
+  [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aresetn] \
+  [get_bd_pins cptra_rom_bram_ctrl_1/s_axi_aresetn]
 # Create clock connections
 connect_bd_net \
   [get_bd_pins $ps_pl_clk] \
@@ -221,9 +230,10 @@ connect_bd_net \
   [get_bd_pins axi_apb_bridge_0/s_axi_aclk] \
   [get_bd_pins axi_interconnect_0/aclk] \
   [get_bd_pins caliptra_package_top_0/core_clk] \
-  [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aclk]
+  [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aclk] \
+  [get_bd_pins cptra_rom_bram_ctrl_1/s_axi_aclk]
 # Create clock connection for I3C
-if {0} {
+if {$FAST_I3C} {
   # Use faster clock so that I3C bus speed is correct. TODO: Fails to meet timing
   connect_bd_net \
     [get_bd_pins ps_0/pl1_ref_clk] \
@@ -262,14 +272,14 @@ set managers {ps_0/M_AXI_FPD caliptra_package_top_0/M_AXI_MCU_IFU caliptra_packa
 foreach manager $managers {
   # Memories
   assign_bd_address -offset 0xB0000000 -range 0x00018000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs cptra_rom_bram_ctrl_0/S_AXI/Mem0] -force
-  assign_bd_address -offset 0xB0020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCU_ROM/reg0] -force
+  assign_bd_address -offset 0xB0020000 -range 0x00020000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs cptra_rom_bram_ctrl_1/S_AXI/Mem0] -force
+  assign_bd_address -offset 0xB0040000 -range 0x00020000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCU_ROM/reg0] -force
   assign_bd_address -offset 0xB0080000 -range 0x00080000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs mcu_imem_bram_ctrl_1/S_AXI/Mem0] -force
   # Wrapper
   assign_bd_address -offset 0xA4010000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_WRAPPER/reg0] -force
   # SS IPs
   assign_bd_address -offset 0xA4030000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_I3C/reg0] -force
   assign_bd_address -offset 0xA4040000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_LCC/reg0] -force
-  assign_bd_address -offset 0xA4050000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCI/reg0] -force
   assign_bd_address -offset 0xA4060000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_OTP/reg0] -force
   # Caliptra Core
   if {$APB} {
@@ -277,6 +287,9 @@ foreach manager $managers {
   } else {
     assign_bd_address -offset 0xA4100000 -range 0x00100000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_CALIPTRA/reg0] -force
   }
+  # MCI needs 0x200000. TODO: What is a reasonable size for this? MCU SRAM starts at 0x200000 so assume this needs extra.
+  # TODO: integration spec has this take 0x0100_0000
+  assign_bd_address -offset 0xA8000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCI/reg0] -force
 }
 
 # Connect JTAG signals to PS GPIO pins

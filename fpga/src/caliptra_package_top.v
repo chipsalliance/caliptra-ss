@@ -433,13 +433,22 @@ module caliptra_package_axi_top (
     output wire [18:0] S_AXI_OTP_BID,
 
     // ROM AXI Interface
-    input  wire                       axi_bram_clk,
-    input  wire                       axi_bram_en,
-    input  wire [3:0]                 axi_bram_we,
-    input  wire [16:0]                axi_bram_addr,
-    input  wire [31:0]                axi_bram_din,
-    output wire [31:0]                axi_bram_dout,
-    input  wire                       axi_bram_rst,
+    input  wire                       rom_backdoor_clk,
+    input  wire                       rom_backdoor_en,
+    input  wire [3:0]                 rom_backdoor_we,
+    input  wire [16:0]                rom_backdoor_addr,
+    input  wire [31:0]                rom_backdoor_din,
+    output wire [31:0]                rom_backdoor_dout,
+    input  wire                       rom_backdoor_rst,
+
+    // MCU ROM Backdoor Interface
+    input  wire        mcu_rom_backdoor_clk,
+    input  wire        mcu_rom_backdoor_en,
+    input  wire [3:0]  mcu_rom_backdoor_we,
+    input  wire [31:0] mcu_rom_backdoor_addr,
+    input  wire [31:0] mcu_rom_backdoor_din,
+    output wire [31:0] mcu_rom_backdoor_dout,
+    input  wire        mcu_rom_backdoor_rst,
 
     // JTAG Interface
     input wire [14:0]                  jtag_in,     // JTAG input signals concatenated
@@ -874,13 +883,22 @@ caliptra_wrapper_top cptra_wrapper (
     .S_AXI_OTP_BID(S_AXI_OTP_BID),
 
     // SOC access to program ROM
-    .axi_bram_clk(axi_bram_clk),
-    .axi_bram_en(axi_bram_en),
-    .axi_bram_we(axi_bram_we),
-    .axi_bram_addr(axi_bram_addr[16:2]),
-    .axi_bram_wrdata(axi_bram_din),
-    .axi_bram_rddata(axi_bram_dout),
-    .axi_bram_rst(axi_bram_rst),
+    .rom_backdoor_clk(rom_backdoor_clk),
+    .rom_backdoor_en(rom_backdoor_en),
+    .rom_backdoor_we(rom_backdoor_we),
+    .rom_backdoor_addr(rom_backdoor_addr[16:2]),
+    .rom_backdoor_wrdata(rom_backdoor_din),
+    .rom_backdoor_rddata(rom_backdoor_dout),
+    .rom_backdoor_rst(rom_backdoor_rst),
+
+    // SOC access to program MCU ROM
+    .mcu_rom_backdoor_clk(mcu_rom_backdoor_clk),
+    .mcu_rom_backdoor_en(mcu_rom_backdoor_en),
+    .mcu_rom_backdoor_we(mcu_rom_backdoor_we),
+    .mcu_rom_backdoor_addr(mcu_rom_backdoor_addr[31:2]),
+    .mcu_rom_backdoor_din(mcu_rom_backdoor_din),
+    .mcu_rom_backdoor_dout(mcu_rom_backdoor_dout),
+    .mcu_rom_backdoor_rst(mcu_rom_backdoor_rst),
 
     // EL2 JTAG interface
     .jtag_tck(jtag_in[0]),
