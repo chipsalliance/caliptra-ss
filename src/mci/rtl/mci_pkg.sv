@@ -23,6 +23,7 @@ package mci_pkg;
 
     localparam MCI_MBOX_DATA_W = 32; //not configurable
     localparam MCI_MBOX_ECC_DATA_W = 7; //not configurable
+    localparam MCI_DEF_MBOX_VALID_AXI_USER = 32'hFFFF_FFFF;
 
     // Assert reset for 10 cycles then deassert
     // to facilitate the hitless update
@@ -37,7 +38,7 @@ package mci_pkg;
         BOOT_LCC                = 4'h2,
         BOOT_BREAKPOINT         = 4'h3,
         BOOT_MCU                = 4'h4,
-        BOOT_WAIT_CLPA_GO       = 4'h5,
+        BOOT_WAIT_CPTRA_GO       = 4'h5,
         BOOT_CPTRA              = 4'h6,
         BOOT_WAIT_MCU_RST_REQ   = 4'h7,
         BOOT_RST_MCU            = 4'h8,

@@ -35,6 +35,11 @@ module mci_lcc_st_trans
     input logic [63:0]                                  ss_soc_dbg_unlock_mask_reg0_1, // Check FSM's TRANSLATOR_PROD_NON_DEBUG state
     input logic [63:0]                                  ss_soc_CLTAP_unlock_mask_reg0_1,
 
+    // Fuse controller Zeroization Ports
+    input logic [31:0]                                  ss_soc_MCU_ROM_zeroization_mask_reg,
+    input  logic                                        FIPS_ZEROIZATION_PPD_i,
+    output logic                                        FIPS_ZEROIZATION_CMD_o,
+
     // Converted Signals from LCC 
     output  logic                                       SOC_DFT_EN,
     output 	logic                                       SOC_HW_DEBUG_EN,
@@ -54,6 +59,7 @@ logic                                        lcc_valid_SCRAP_req;
 logic                                        SOC_DFT_EN_AND;
 logic                                        SOC_HW_DEBUG_EN_AND;
 logic                                        CLPTR_PROD_DEBUG_UNLOCK_AND;
+logic                                        MCU_ROM_zeroization_AND;
 
 
 assign otp_data_valid               = from_otp_to_lcc_program_i.valid;
@@ -63,8 +69,7 @@ assign SOC_DFT_EN_AND               = |(ss_soc_dbg_unlock_level_i & ss_soc_dft_e
 assign SOC_HW_DEBUG_EN_AND          = |(ss_soc_dbg_unlock_level_i & ss_soc_CLTAP_unlock_mask_reg0_1);
 assign CLPTR_PROD_DEBUG_UNLOCK_AND  = |(ss_soc_dbg_unlock_level_i & ss_soc_dbg_unlock_mask_reg0_1);
 assign lcc_valid_SCRAP_req          = (lc_alive_state ==  LcStScrap && lc_otp_prog_req);
-
-
+assign MCU_ROM_zeroization_AND      = (&ss_soc_MCU_ROM_zeroization_mask_reg) & FIPS_ZEROIZATION_PPD_i;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
@@ -73,8 +78,10 @@ always_ff @(posedge clk or negedge rst_n) begin
         otp_static_state                <=  LcStRaw; // This is all zeros
         SOC_DFT_EN                      <= 1'b0;
         SOC_HW_DEBUG_EN                 <= 1'b0;
+        FIPS_ZEROIZATION_CMD_o          <= '0;
     end
     else begin
+        FIPS_ZEROIZATION_CMD_o          <= MCU_ROM_zeroization_AND;
         if (otp_data_valid) begin
             mci_trans_st_current            <= mci_trans_st_next;
             security_state_o                <= security_state_comb;  // Default case

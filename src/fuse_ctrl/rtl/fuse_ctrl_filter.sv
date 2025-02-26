@@ -102,7 +102,7 @@ always_comb begin
     for (int i = 0; i < FC_TABLE_NUM_RANGES; i = i + 1) begin : gen_wr_allowed
         wr_allowed_vec[i] = ((latched_fuse_addr >= access_control_table[i].lower_addr) &&
                                     (latched_fuse_addr <= access_control_table[i].upper_addr) &&
-                                    (req_axi_user_id == access_control_table[i].axi_user_id));
+                                    (latched_data_id0 == access_control_table[i].axi_user_id));
     end
 end
 

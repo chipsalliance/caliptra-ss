@@ -55,7 +55,7 @@ module caliptra_ss_top_tb
     // -----------------------------------------------------------
     // Parameters
     // -----------------------------------------------------------
-    localparam MCU_SRAM_SIZE_KB = 1024;
+    localparam MCU_SRAM_SIZE_KB = 512;
     localparam MCU_SRAM_DATA_WIDTH   = 32;
     localparam MCU_SRAM_DATA_WIDTH_BYTES = MCU_SRAM_DATA_WIDTH / 8;
     localparam MCU_SRAM_ECC_WIDTH = 7;
@@ -362,7 +362,8 @@ module caliptra_ss_top_tb
 //------------------------------------------------------------------------
 
     logic pwr_otp_init_i;
-    logic cptra_ss_lc_Allow_RMA_on_PPD_i;
+    logic cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i;
+    logic cptra_ss_FIPS_ZEROIZATION_PPD_i;
     logic lcc_bfm_reset;
     time i3c_run_time;
 
@@ -1550,7 +1551,7 @@ module caliptra_ss_top_tb
         .lc_axi_rd_req(cptra_ss_lc_axi_rd_req_i),
         .lc_axi_rd_rsp(cptra_ss_lc_axi_rd_rsp_o),
         .fake_reset(lcc_bfm_reset),
-        .Allow_RMA_on_PPD(cptra_ss_lc_Allow_RMA_on_PPD_i),
+        .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
 
         // Escalation State Interface
         .esc_scrap_state0(cptra_ss_lc_esclate_scrap_state0_i),
@@ -1561,7 +1562,12 @@ module caliptra_ss_top_tb
         .lc_clk_byp_ack_i(cptra_ss_lc_clk_byp_ack_i)
     );
 
+    initial begin
+        cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
+    end
+
 `ifdef LCC_FC_BFM_SIM
+    
     always_comb begin
         if (!lcc_bfm_reset) begin
             force caliptra_ss_dut.u_lc_ctrl.rst_ni = 1'b0;
@@ -1583,6 +1589,22 @@ module caliptra_ss_top_tb
             force caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser = 32'h1;
         if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_0084)
             release caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser;
+        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_0098) begin
+            force caliptra_ss_dut.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b1;
+            force caliptra_ss_dut.mci_top_i.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg = 32'hFFFF_FFFF;
+            force caliptra_ss_dut.u_otp_ctrl.lcc_is_in_SCRAP_mode = 1'b0;
+        end
+        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_009C) begin
+            force caliptra_ss_dut.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
+            force caliptra_ss_dut.mci_top_i.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg = 32'h0;
+            force caliptra_ss_dut.u_otp_ctrl.lcc_is_in_SCRAP_mode = 1'b1;
+        end
+        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_00A0) begin
+            release caliptra_ss_dut.cptra_ss_FIPS_ZEROIZATION_PPD_i;
+            release caliptra_ss_dut.mci_top_i.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg;
+            release caliptra_ss_dut.u_otp_ctrl.lcc_is_in_SCRAP_mode;
+        end
+        
     end
 `endif
 
@@ -1668,11 +1690,12 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;
     logic [63:0]  cptra_ss_mci_generic_input_wires_i; 
     logic [63:0]  cptra_ss_mci_generic_output_wires_o;
-    logic         cptra_ss_mci_error_fatal_o;
-    logic         cptra_ss_mci_error_non_fatal_o;
+    logic         cptra_ss_all_error_fatal_o;
+    logic         cptra_ss_all_error_non_fatal_o;
     logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
-    logic [31:0]  cptra_ss_strap_clp_axi_user_i;
+    logic [31:0]  cptra_ss_strap_cptra_axi_user_i;
+    logic [31:0]  cptra_ss_strap_debug_axi_user_i;
     logic         cptra_ss_mcu_jtag_tck_i;
     logic         cptra_ss_mcu_jtag_tms_i;
     logic         cptra_ss_mcu_jtag_tdi_i;
@@ -1701,7 +1724,8 @@ module caliptra_ss_top_tb
     assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
     assign cptra_ss_strap_mcu_lsu_axi_user_i    = 32'hFFFFFFFF;
     assign cptra_ss_strap_mcu_ifu_axi_user_i    = 32'hFFFFFFFF;
-    assign cptra_ss_strap_clp_axi_user_i        = 32'hFFFFFFFF;
+    assign cptra_ss_strap_cptra_axi_user_i        = 32'hFFFFFFFF;
+    assign cptra_ss_strap_debug_axi_user_i        = 32'h00000001; // FIXME set to real value
     assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
@@ -1811,7 +1835,8 @@ module caliptra_ss_top_tb
     //MCU
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
-        .cptra_ss_strap_clp_axi_user_i,
+        .cptra_ss_strap_cptra_axi_user_i,
+        .cptra_ss_strap_debug_axi_user_i,
 
     //MCU ROM
         .cptra_ss_mcu_rom_macro_req_if,
@@ -1825,11 +1850,12 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_no_rom_config_i,
         .cptra_ss_mci_generic_input_wires_i,
         .cptra_ss_strap_mcu_reset_vector_i,
-        .cptra_ss_lc_Allow_RMA_on_PPD_i,
+        .cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i,
+        .cptra_ss_FIPS_ZEROIZATION_PPD_i,
 
         .cptra_ss_mci_generic_output_wires_o,
-        .cptra_ss_mci_error_fatal_o,
-        .cptra_ss_mci_error_non_fatal_o,
+        .cptra_ss_all_error_fatal_o,
+        .cptra_ss_all_error_non_fatal_o,
 
         .cptra_ss_mcu_jtag_tck_i,
         .cptra_ss_mcu_jtag_tms_i,

@@ -23,7 +23,7 @@ module lc_ctrl_fsm
   // need the clock and reset for the assertions.
   input                         clk_i,
   input                         rst_ni,
-  input                         Allow_RMA_on_PPD,
+  input                         Allow_RMA_or_SCRAP_on_PPD,
   // Initialization request from power manager.
   input                         init_req_i,
   output logic                  init_done_o,
@@ -398,7 +398,12 @@ module lc_ctrl_fsm
       // This increments the life cycle counter state.
       CntIncrSt: begin
         // If the counter has reached the maximum, bail out.
-        if (trans_cnt_oflw_error_o) begin
+        if ((trans_target_i == {DecLcStateNumRep{DecLcStScrap}} &&
+            !Allow_RMA_or_SCRAP_on_PPD)) begin // Note: Addded physical presence pin condition to SCRAP transition
+              fsm_state_d = PostTransSt;
+              state_invalid_error_o = 1'b1;
+        end
+        else if (trans_cnt_oflw_error_o) begin
           fsm_state_d = PostTransSt;
         end else begin
           fsm_state_d = CntProgSt;
@@ -466,7 +471,7 @@ module lc_ctrl_fsm
       // Flash RMA state. Note that we check the flash response again
       // two times later below.
       FlashRmaSt: begin
-        if (trans_target_i == {DecLcStateNumRep{DecLcStRma}} && Allow_RMA_on_PPD) begin // Note: Addded another condition to RMA transition 
+        if (trans_target_i == {DecLcStateNumRep{DecLcStRma}} && Allow_RMA_or_SCRAP_on_PPD) begin // Note: Addded another condition to RMA transition 
           lc_flash_rma_req = On;
           if (lc_tx_test_true_strict(lc_flash_rma_ack_buf[0])) begin
             fsm_state_d = TokenCheck0St;
@@ -487,13 +492,22 @@ module lc_ctrl_fsm
         end else begin
           // If any of these RMA are conditions are true,
           // all of them must be true at the same time.
-          if ((trans_target_i != {DecLcStateNumRep{DecLcStRma}} &&
+          if ((trans_target_i == {DecLcStateNumRep{DecLcStScrap}} &&
+              Allow_RMA_or_SCRAP_on_PPD)) begin // Note: Addded physical presence pin condition to SCRAP transition
+                fsm_state_d = TransProgSt;
+          end
+          else if ((trans_target_i == {DecLcStateNumRep{DecLcStScrap}} &&
+              !Allow_RMA_or_SCRAP_on_PPD)) begin // Note: Addded physical presence pin condition to SCRAP transition
+                fsm_state_d = PostTransSt;
+                state_invalid_error_o = 1'b1;
+          end
+          else if ((trans_target_i != {DecLcStateNumRep{DecLcStRma}} &&
                lc_tx_test_false_strict(lc_flash_rma_req_o) &&
                lc_tx_test_false_strict(lc_flash_rma_ack_buf[1])) ||
               (trans_target_i == {DecLcStateNumRep{DecLcStRma}} &&
                lc_tx_test_true_strict(lc_flash_rma_req_o) &&
                lc_tx_test_true_strict(lc_flash_rma_ack_buf[1])
-               && Allow_RMA_on_PPD)) begin // Note: Addded another condition to RMA transition 
+               && Allow_RMA_or_SCRAP_on_PPD)) begin // Note: Addded another condition to RMA transition 
             if (hashed_token_i == hashed_token_mux &&
                 !token_hash_err_i &&
                 &hashed_token_valid_mux) begin
@@ -534,7 +548,7 @@ module lc_ctrl_fsm
                       (lc_flash_rma_req_o != Off || lc_flash_rma_ack_buf[2] != Off)) ||
                      (trans_target_i == {DecLcStateNumRep{DecLcStRma}} &&
                       (lc_flash_rma_req_o != On || lc_flash_rma_ack_buf[2] != On)
-                      && Allow_RMA_on_PPD)) begin // Note: Addded another condition to RMA transition 
+                      && Allow_RMA_or_SCRAP_on_PPD)) begin // Note: Addded another condition to RMA transition 
           fsm_state_d = PostTransSt;
           flash_rma_error_o = 1'b1;
         end else if (otp_prog_ack_i) begin
