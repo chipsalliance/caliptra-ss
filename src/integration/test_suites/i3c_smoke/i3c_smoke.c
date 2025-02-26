@@ -136,9 +136,9 @@ void boot_mcu(){
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
     uint32_t cptra_boot_go;
-    uint32_t hash_values;
+    uint32_t reg_data_32;
     
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
@@ -148,7 +148,7 @@ void boot_mcu(){
     cptra_boot_go = lsu_read_32(SOC_MCI_REG_CALIPTRA_BOOT_GO);
     VPRINTF(LOW, "MCU: Reading SOC_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
 
-    VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n");
 
     ////////////////////////////////////
     // Fuse and Boot Bringup
@@ -157,41 +157,60 @@ void boot_mcu(){
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
 
     // Add fuse values
-    // SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_0..11
-    // 53845724676e5e2f649d2c018e25c4fb80c2c28fcb6d6e93fb7cf908930a9953a9c69c3383aea9fd5573cb3db1ae0c3b
-    hash_values = 0x53845724; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_0, hash_values);
-    hash_values = 0x676e5e2f; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_1, hash_values);
-    hash_values = 0x649d2c01; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_2, hash_values);
-    hash_values = 0x8e25c4fb; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_3, hash_values);
-    hash_values = 0x80c2c28f; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_4, hash_values);
-    hash_values = 0xcb6d6e93; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_5, hash_values);
-    hash_values = 0xfb7cf908; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_6, hash_values);
-    hash_values = 0x930a9953; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_7, hash_values);
-    hash_values = 0xa9c69c33; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_8, hash_values);
-    hash_values = 0x83aea9fd; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_9, hash_values);
-    hash_values = 0x5573cb3d; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_10, hash_values);
-    hash_values = 0xb1ae0c3b; lsu_write_32(SOC_SOC_IFC_REG_FUSE_KEY_MANIFEST_PK_HASH_11, hash_values);
+    // SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_0..11
+    // Old : 53845724676e5e2f649d2c018e25c4fb80c2c28fcb6d6e93fb7cf908930a9953a9c69c3383aea9fd5573cb3db1ae0c3b
+    // ROM7 : 9edb99809108c53f602883fe691943210445970d3d3d7eda4d320cc94113df3ab9d8a9741f7231851b866a64f75108e8
+    // ROM11 : 8af1e8fbb74c19b9d6b234fe4dfc403a378cb4d5dd5cf4f375fb4ecc1d03f40071a3c8471c27f02db1b296f2cb3fb923
+    reg_data_32 = 0x8af1e8fb; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_0, reg_data_32);
+    reg_data_32 = 0xb74c19b9; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_1, reg_data_32);
+    reg_data_32 = 0xd6b234fe; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_2, reg_data_32);
+    reg_data_32 = 0x4dfc403a; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_3, reg_data_32);
+    reg_data_32 = 0x378cb4d5; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_4, reg_data_32);
+    reg_data_32 = 0xdd5cf4f3; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_5, reg_data_32);
+    reg_data_32 = 0x75fb4ecc; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_6, reg_data_32);
+    reg_data_32 = 0x1d03f400; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_7, reg_data_32);
+    reg_data_32 = 0x71a3c847; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_8, reg_data_32);
+    reg_data_32 = 0x1c27f02d; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_9, reg_data_32);
+    reg_data_32 = 0xb1b296f2; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_10, reg_data_32);
+    reg_data_32 = 0xcb3fb923; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_11, reg_data_32);
+
     // SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_0..11 
-    // Value 421275a87a71acf434b4f1076acdd68377d0a315f9e2a29b26b398913e89ff33006c10dcc4f1bd7467f1e2c41b0a893a
-    hash_values = 0x421275a8; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_0, hash_values);
-    hash_values = 0x7a71acf4; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_1, hash_values);
-    hash_values = 0x34b4f107; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_2, hash_values);
-    hash_values = 0x6acdd683; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_3, hash_values);
-    hash_values = 0x77d0a315; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_4, hash_values);
-    hash_values = 0xf9e2a29b; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_5, hash_values);
-    hash_values = 0x26b39891; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_6, hash_values);
-    hash_values = 0x3e89ff33; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_7, hash_values);
-    hash_values = 0x006c10dc; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_8, hash_values);
-    hash_values = 0xc4f1bd74; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_9, hash_values);
-    hash_values = 0x67f1e2c4; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_10, hash_values);
-    hash_values = 0x1b0a893a; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_11, hash_values);
+    // Old : 421275a87a71acf434b4f1076acdd68377d0a315f9e2a29b26b398913e89ff33006c10dcc4f1bd7467f1e2c41b0a893a
+    // ROM7 : 879d4deca00dbddc5755ebc2ba1f40fa2626c033f5b2a02ac8ac032074baebc8adcbbc0c96d9d14061ea01aaa4902e75
+    // ROM11 : 18211dda96dc39ae5782ef97408cad8da81915087739d3eeda8581a4d4a72c16df1e4144cbf6423e1bb98990153def5b
+    reg_data_32 = 0x18211dda; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_0, reg_data_32);
+    reg_data_32 = 0x96dc39ae; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_1, reg_data_32);
+    reg_data_32 = 0x5782ef97; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_2, reg_data_32);
+    reg_data_32 = 0x408cad8d; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_3, reg_data_32);
+    reg_data_32 = 0xa8191508; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_4, reg_data_32);
+    reg_data_32 = 0x7739d3ee; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_5, reg_data_32);
+    reg_data_32 = 0xda8581a4; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_6, reg_data_32);
+    reg_data_32 = 0xd4a72c16; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_7, reg_data_32);
+    reg_data_32 = 0xdf1e4144; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_8, reg_data_32);
+    reg_data_32 = 0xcbf6423e; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_9, reg_data_32);
+    reg_data_32 = 0x1bb98990; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_10, reg_data_32);
+    reg_data_32 = 0x153def5b; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_11, reg_data_32);
+
     // SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_0..23
-    hash_values = 0x0;        lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_0, hash_values);
-    hash_values = 0xFFFFFFFF; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_11, hash_values);
-    hash_values = 0x02020101; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_12, hash_values);
-    hash_values = 0x30304040; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_13, hash_values);
-    hash_values = 0x05050606; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_14, hash_values);
-    hash_values = 0x70708080; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_15, hash_values);
+    reg_data_32 = 0x0;        lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_0,      reg_data_32);
+    reg_data_32 = 0xFFFFFFFF; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_11,     reg_data_32);
+    reg_data_32 = 0x02020101; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_12,     reg_data_32);
+    reg_data_32 = 0x30304040; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_13,     reg_data_32);
+    reg_data_32 = 0x05050606; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_14,     reg_data_32);
+    reg_data_32 = 0x70708080; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_15,     reg_data_32);
+
+    // -- Updating REVOCATIONS for MLDSA, LMS, ECC
+    reg_data_32 = 0x0;        lsu_write_32(SOC_SOC_IFC_REG_FUSE_MLDSA_REVOCATION,        reg_data_32);
+    reg_data_32 = 0x0;        lsu_write_32(SOC_SOC_IFC_REG_FUSE_LMS_REVOCATION,          reg_data_32);
+    reg_data_32 = 0x0;        lsu_write_32(SOC_SOC_IFC_REG_FUSE_ECC_REVOCATION,          reg_data_32);
+
+    // SOC_IFC_REG_FUSE_PQC_KEY_TYPE
+    reg_data_32 = 0x1;        lsu_write_32(SOC_SOC_IFC_REG_FUSE_PQC_KEY_TYPE,        reg_data_32);
+
+    // programming WDT 
+    reg_data_32 = 1000;       lsu_write_32(SOC_SOC_IFC_REG_CPTRA_TIMER_CONFIG, reg_data_32);
+    reg_data_32 = 250;        lsu_write_32(SOC_SOC_IFC_REG_CPTRA_WDT_CFG_1,reg_data_32);
+    reg_data_32 = 1;          lsu_write_32(SOC_SOC_IFC_REG_CPTRA_WDT_CFG_0,reg_data_32);
 
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
@@ -235,41 +254,55 @@ void boot_mcu(){
     //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3_LOCK_MASK);
     VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
 
+    VPRINTF(LOW, "MCU: trying to acquire .. Mbox lock acquired\n");
+    for (uint8_t ii = 0; ii < 16; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }   
     // MBOX: Acquire lock
     while((lsu_read_32(SOC_MBOX_CSR_MBOX_LOCK) & MBOX_CSR_MBOX_LOCK_LOCK_MASK));
     VPRINTF(LOW, "MCU: Mbox lock acquired\n");
 
     // MBOX: Write CMD
-    lsu_write_32(SOC_MBOX_CSR_MBOX_CMD, 0xFADECAFE | MBOX_CMD_FIELD_RESP_MASK); // Resp required
+    lsu_write_32(SOC_MBOX_CSR_MBOX_CMD, 0x52494644 | MBOX_CMD_FIELD_RESP_MASK); // Resp required
 
     // MBOX: Write DLEN
-    lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 64);
+    lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 0);
 
-    // MBOX: Write datain
-    for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        lsu_write_32(SOC_MBOX_CSR_MBOX_DATAIN, mbox_data[ii]);
-    }
+    // MBOX: SOC_MBOX_CSR_MBOX_USER
+    // Writing MBOX user anything but 0xffff_ffff
+    // DPE considers all ffff_ffff as invalid user
+    // suggested based on Caliptra 1.x requirements.
+    lsu_write_32(SOC_MBOX_CSR_MBOX_USER, 0x1);
+
+    // // MBOX: Write datain
+    // for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
+    //     lsu_write_32(SOC_MBOX_CSR_MBOX_DATAIN, mbox_data[ii]);
+    // }
 
     // MBOX: Execute
     lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
     VPRINTF(LOW, "MCU: Mbox execute\n");
 
     // MBOX: Poll status
-    while(((lsu_read_32(SOC_MBOX_CSR_MBOX_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK) >> MBOX_CSR_MBOX_STATUS_STATUS_LOW) != DATA_READY) {
+    while(((lsu_read_32(SOC_MBOX_CSR_MBOX_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK) >> MBOX_CSR_MBOX_STATUS_STATUS_LOW) != CMD_COMPLETE) {
         for (uint8_t ii = 0; ii < 16; ii++) {
             __asm__ volatile ("nop"); // Sleep loop as "nop"
         }
     }
     VPRINTF(LOW, "MCU: Mbox response ready\n");
 
-    // MBOX: Read response data length
-    mbox_resp_dlen = lsu_read_32(SOC_MBOX_CSR_MBOX_DLEN);
+    // // MBOX: Read response data length
+    // mbox_resp_dlen = lsu_read_32(SOC_MBOX_CSR_MBOX_DLEN);
 
-    // MBOX: Read dataout
-    for (uint32_t ii = 0; ii < (mbox_resp_dlen/4 + (mbox_resp_dlen%4 ? 1 : 0)); ii++) {
-        mbox_resp_data = lsu_read_32(SOC_MBOX_CSR_MBOX_DATAOUT);
+    // // MBOX: Read dataout
+    // for (uint32_t ii = 0; ii < (mbox_resp_dlen/4 + (mbox_resp_dlen%4 ? 1 : 0)); ii++) {
+    //     mbox_resp_data = lsu_read_32(SOC_MBOX_CSR_MBOX_DATAOUT);
+    // }
+    // VPRINTF(LOW, "MCU: Mbox response received\n");
+
+    for (uint8_t ii = 0; ii < 16; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
-    VPRINTF(LOW, "MCU: Mbox response received\n");
 
     // MBOX: Clear Execute
     lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0);
@@ -296,59 +329,59 @@ void main (void) {
     i3c_reg_data = 1  << 15 | i3c_reg_data;   
     lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
 
-    //  Enabling I3C Recovery Mode
-    enable_i3c_recovery_mode();   
+    // //  Enabling I3C Recovery Mode
+    // enable_i3c_recovery_mode();   
 
-    for(uint8_t ii=0; ii<1; ii++) {
+    // for(uint8_t ii=0; ii<1; ii++) {
 
-        VPRINTF(LOW, "MCU: Recovery Data Read.. %0d/04\n", ii);
-        //setting device address to 0x5A
-        for (uint16_t slp = 0; slp < 100; slp++) {
+    //     VPRINTF(LOW, "MCU: Recovery Data Read.. %0d/04\n", ii);
+    //     //setting device address to 0x5A
+    //     for (uint16_t slp = 0; slp < 100; slp++) {
 
-            //--nop
-            for (uint8_t ii = 0; ii < 10; ii++) {
-                __asm__ volatile ("nop");
-            }
-            VPRINTF(LOW, "MCU: Waiting for Recovery Data.. %0d\n", slp);
-            i3c_reg_data = 0x00000000;
-            i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0);
-            VPRINTF(LOW, "INDIRECT_FIFO_STATUS: %x\n", i3c_reg_data);
-            if (i3c_reg_data == 0) {
-                VPRINTF(LOW, "MCU: Recovery Data available\n");
-                for (uint8_t ii = 0; ii < 16; ii++) {
-                    __asm__ volatile ("nop");
-                }
-                break;
-            }
+    //         //--nop
+    //         for (uint8_t ii = 0; ii < 10; ii++) {
+    //             __asm__ volatile ("nop");
+    //         }
+    //         VPRINTF(LOW, "MCU: Waiting for Recovery Data.. %0d\n", slp);
+    //         i3c_reg_data = 0x00000000;
+    //         i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0);
+    //         VPRINTF(LOW, "INDIRECT_FIFO_STATUS: %x\n", i3c_reg_data);
+    //         if (i3c_reg_data == 0) {
+    //             VPRINTF(LOW, "MCU: Recovery Data available\n");
+    //             for (uint8_t ii = 0; ii < 16; ii++) {
+    //                 __asm__ volatile ("nop");
+    //             }
+    //             break;
+    //         }
 
-        }
-        // -- if recovery data is not available, 
-        // -- return with error 0x1
-        if (i3c_reg_data == 1) {
-            VPRINTF(LOW, "MCU: Recovery Data not available\n");
-            SEND_STDOUT_CTRL(0x01);
-            return;
-        }
+    //     }
+    //     // -- if recovery data is not available, 
+    //     // -- return with error 0x1
+    //     if (i3c_reg_data == 1) {
+    //         VPRINTF(LOW, "MCU: Recovery Data not available\n");
+    //         SEND_STDOUT_CTRL(0x01);
+    //         return;
+    //     }
 
-        // -- 4 DWORDS of data read from FIFO
-        for(uint8_t ii=0; ii<4; ii++) {
-            i3c_reg_data = 0x00000000;
-            i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA);
-            VPRINTF(LOW, "INDIRECT_FIFO_DATA: %x\n", i3c_reg_data);
-        }
+    //     // -- 4 DWORDS of data read from FIFO
+    //     for(uint8_t ii=0; ii<4; ii++) {
+    //         i3c_reg_data = 0x00000000;
+    //         i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA);
+    //         VPRINTF(LOW, "INDIRECT_FIFO_DATA: %x\n", i3c_reg_data);
+    //     }
 
-    }
+    // }
 
-    i3c_reg_data = 0x00000000;
-    i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0);
-    VPRINTF(LOW, "INDIRECT_FIFO_status: %x\n", i3c_reg_data);
+    // i3c_reg_data = 0x00000000;
+    // i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0);
+    // VPRINTF(LOW, "INDIRECT_FIFO_status: %x\n", i3c_reg_data);
 
-    // update recovery status register byte 0 with 0x03
-    i3c_reg_data = 0x00000000;
-    i3c_reg_data = 0x03 | i3c_reg_data;
-    lsu_write_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS, i3c_reg_data);
+    // // update recovery status register byte 0 with 0x03
+    // i3c_reg_data = 0x00000000;
+    // i3c_reg_data = 0x03 | i3c_reg_data;
+    // lsu_write_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS, i3c_reg_data);
 
-    for(uint8_t ii=0; ii<100; ii++) {
+    for(uint8_t ii=0; ii<10000; ii++) {
         for (uint8_t ii = 0; ii < 16; ii++) {
             __asm__ volatile ("nop");
         }    

@@ -103,7 +103,7 @@ global:
         - +define+DIGITAL_IO_I3C=1
         # - +define+AI3C_SKIP_DAA=1
         - +define+AVERY_SV_TEST_CASE=1
-        - +define+AI3C_TEST_CASE=/home/ws/caliptra/pateln/caliptra_ws_250114/chipsalliance/caliptra-ss/src/integration/test_suites/ai3ct_ext_basic.sv
+        - +define+AI3C_TEST_CASE=$COMPILE_ROOT/test_suites/ai3ct_ext_basic.sv
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
       elab:
@@ -119,4 +119,8 @@ global:
         #- +aaxi_dbg_name=all
         #- '+ai3c_dbg_name=master'
         - '+vpi -lpthread'
+        - '+CLP_BUS_LOGS=1'
+        # cmdline_img_sz in bytes in hex
+        # - '+cmdline_img_sz=10'
         # - +AVY_TEST=ai3ct_ext_basic
+        # - '+i3c_run_time=500us'
