@@ -1806,7 +1806,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mci_boot_seq_brkpoint_i(hwif_out.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.value),
     
     //input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
-    .cptra_ss_lc_Allow_RMA_on_PPD_i(1'b0),
+    .cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i(1'b0),
     .cptra_ss_FIPS_ZEROIZATION_PPD_i(1'b0), // TODO: Connect to wrapper?
 
     .cptra_ss_all_error_fatal_o(hwif_in.interface_regs.mci_error.mci_error_fatal.next), // TODO: Update name in wrapper
