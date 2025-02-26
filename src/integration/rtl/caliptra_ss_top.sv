@@ -1059,7 +1059,7 @@ xpm_cdc_single #(
    .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
    .SRC_INPUT_REG(1)   // DECIMAL; 0=do not register input, 1=register input
 )
-xpm_cdc_single_inst (
+xpm_cdc_single_payload_available_inst (
    .dest_out(payload_available_o), // 1-bit output: src_in synchronized to the destination clock domain. This output is
                         // registered.
 
@@ -1075,7 +1075,7 @@ xpm_cdc_single #(
    .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
    .SRC_INPUT_REG(1)   // DECIMAL; 0=do not register input, 1=register input
 )
-xpm_cdc_single_inst (
+xpm_cdc_single_image_activated_inst (
    .dest_out(image_activated_o), // 1-bit output: src_in synchronized to the destination clock domain. This output is
                         // registered.
 
