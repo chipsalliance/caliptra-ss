@@ -95,9 +95,9 @@ def get_reg_tx_type(block: IpBlock, reg: RegBase, hw2reg: bool) -> str:
 def gen_rtl(block: IpBlock, outdir: str) -> int:
     # Read Register templates
     reg_top_tpl = Template(
-        filename=str(Path("src") / "fuse_ctrl" / "templates" / 'reg_top.sv.tpl'))
+        filename=str(Path("src") / "fuse_ctrl" / "templates" / 'otp_ctrl_reg_top.sv.tpl'))
     reg_pkg_tpl = Template(
-        filename=str(Path("src") / "fuse_ctrl" / "templates" / 'reg_pkg.sv.tpl'))
+        filename=str(Path("src") / "fuse_ctrl" / "templates" / 'otp_ctrl_reg_pkg.sv.tpl'))
 
     # In case the generated package contains alias definitions, we add
     # the alias implementation identifier to the package name so that it

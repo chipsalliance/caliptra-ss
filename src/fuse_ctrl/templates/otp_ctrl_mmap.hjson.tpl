@@ -44,7 +44,7 @@
                 name:  "SecretProdKey3",
                 value: "<random>",
             },
-% if num_vendor_fuses > 0:
+% if num_vendor_secret_fuses > 0:
             {
                 name:  "VendorSecretProdKey",
                 value: "<random>",
@@ -429,7 +429,7 @@
 #############################################################
 ## Start vendor-specific fuses
 #############################################################
-% if num_vendor_fuses > 0:
+% if num_vendor_pk_fuses > 0:
         {
             name:       "VENDOR_HASHES_MANUF_PARTITION",
             variant:    "Unbuffered",
@@ -472,7 +472,7 @@
             integrity:  false, // Do not use integrity (ECC) on this partition.
             bkout_type: false, // Do not generate a breakout type for this partition.
             items: [    
-    % for i in range(1, num_vendor_fuses):               
+    % for i in range(1, num_vendor_pk_fuses):               
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_${i}",
                     size: "48",
@@ -512,7 +512,7 @@
             integrity:  false, // Do not use integrity (ECC) on this partition.
             bkout_type: false, // Do not generate a breakout type for this partition.
             items: [
-    % for i in range(num_vendor_fuses):  
+    % for i in range(num_vendor_pk_fuses):  
                 {
                     name:   "CPTRA_CORE_ECC_REVOCATION_${i}",
                     size:   "1",
@@ -539,6 +539,8 @@
             desc: '''Vendor revocations production partition.
             '''
         },
+% endif
+% if num_vendor_secret_fuses > 0:
         {
             name:       "VENDOR_SECRET_PROD_PARTITION",
             variant:    "Buffered",
@@ -551,7 +553,7 @@
             integrity:  true,
             bkout_type: true,
             items: [
-    % for i in range(num_vendor_fuses):
+    % for i in range(num_vendor_secret_fuses):
                 {
                     name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_${i}",
                     inv_default: "<random>",
@@ -564,6 +566,8 @@
             desc: '''Vendor secret production partition.
             '''
         },
+% endif
+% if num_vendor_non_secret_fuses > 0:
         {
             name:       "VENDOR_NON_SECRET_PROD_PARTITION",
             variant:    "Unbuffered",
@@ -577,7 +581,7 @@
             integrity:  true,
             bkout_type: false,
             items: [
-    % for i in range(num_vendor_fuses):
+    % for i in range(num_vendor_non_secret_fuses):
                {
                     name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_${i}",
                     size: "32",
