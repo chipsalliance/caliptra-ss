@@ -8,6 +8,7 @@ map definition file (hjson).
 import argparse
 import logging as log
 import sys
+import yaml
 from pathlib import Path
 from typing import Dict
 
@@ -77,21 +78,28 @@ def render_template(template: str, target_path: Path, params: Dict[str, object])
 def main():
     parser = argparse.ArgumentParser(prog="gen_fuse_ctrl_partitions")
 
-    parser.add_argument('--num_vendor_fuses',
-                        type=int,
-                        default=16,
-                        help='Number of vendor-specific fuses')
+    parser.add_argument('-f',
+                        type=str,
+                        default="./tools/scripts/gen_fuse_ctrl_partitions/gen_fuse_ctrl_partitions.yml",
+                        help='Vendor-specific fuses configuration file')
     args = parser.parse_args()
 
-    mmap_path = Path("src") / "fuse_ctrl" / "data"
-    mmap_out = Path("src")
-    params = {"num_vendor_fuses": 16}
+    with open(args.f) as f:
+        try:
+            vendor = yaml.safe_load(f)
+        except yaml.YAMLERROR as err:
+            log.error("failed to parse yaml file: %s" % err)
+            exit(1)
 
     # Render mmap HJSON
     render_template(
         template=TEMPLATES_PATH / MMAP_TEMPLATE,
         target_path=DATA_OUTPUT_PATH / MMAP_TEMPLATE.replace(".tpl", ""),
-        params={"num_vendor_fuses": args.num_vendor_fuses}
+        params={
+            "num_vendor_pk_fuses": vendor["num_vendor_pk_fuses"],
+            "num_vendor_secret_fuses": vendor["num_vendor_secret_fuses"],
+            "num_vendor_non_secret_fuses": vendor["num_vendor_non_secret_fuses"]
+        }
     )
 
     # Parse rendered mmap file
