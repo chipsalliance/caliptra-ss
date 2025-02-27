@@ -25,7 +25,6 @@ requires:
   - i3c-core
   - fuse_ctrl
   - mci_top
-  - avery_vip
   - caliptra_top
 targets:
   rtl_lint:
@@ -38,6 +37,15 @@ targets:
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_top.sv
     tops: [caliptra_ss_top]
+---
+provides: [caliptra_ss_top_w_stub]
+schema_version: 2.4.0
+requires: [caliptra_ss_top]
+targets:
+  rtl:
+    files:
+      - $COMPILE_ROOT/rtl/caliptra_ss_top_w_stub.sv
+    tops: [caliptra_ss_top_w_stub]
 --- 
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0

@@ -547,10 +547,7 @@ module caliptra_ss_top
         cptra_ss_mcu_lsu_m_axi_if.awuser[CPTRA_SS_MCU_LSU_AWUSER_WIDTH-1:0]          = '1;
         cptra_ss_mcu_ifu_m_axi_if.arid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
         cptra_ss_mcu_ifu_m_axi_if.awid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
-        
-        // mcu_dma_s_axi_if.rid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
-        // mcu_dma_s_axi_if.bid[aaxi_pkg::AAXI_INTC_ID_WIDTH-1:pt.DMA_BUS_TAG]  = '0;
-        
+      
         mcu_dma_s_axi_if.awvalid = '0;
         mcu_dma_s_axi_if.wvalid  = '0;
         mcu_dma_s_axi_if.bready  = '0;
