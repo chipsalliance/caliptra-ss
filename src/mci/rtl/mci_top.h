@@ -19,34 +19,45 @@
 #define MCI_TOP_BASE_ADDR                                                                           (0x0)
 #define MCI_TOP_MCI_REG_BASE_ADDR                                                                   (0x0)
 #define MCI_TOP_MCI_REG_CAPABILITIES                                                                (0x0)
+#ifndef MCI_REG_CAPABILITIES
 #define MCI_REG_CAPABILITIES                                                                        (0x0)
 #define MCI_REG_CAPABILITIES_NUM_MBOX_LOW                                                           (0)
 #define MCI_REG_CAPABILITIES_NUM_MBOX_MASK                                                          (0xf)
+#endif
 #define MCI_TOP_MCI_REG_HW_REV_ID                                                                   (0x4)
+#ifndef MCI_REG_HW_REV_ID
 #define MCI_REG_HW_REV_ID                                                                           (0x4)
 #define MCI_REG_HW_REV_ID_MC_GENERATION_LOW                                                         (0)
 #define MCI_REG_HW_REV_ID_MC_GENERATION_MASK                                                        (0xffff)
 #define MCI_REG_HW_REV_ID_SOC_STEPPING_ID_LOW                                                       (16)
 #define MCI_REG_HW_REV_ID_SOC_STEPPING_ID_MASK                                                      (0xffff0000)
+#endif
 #define MCI_TOP_MCI_REG_FW_REV_ID_0                                                                 (0x8)
+#ifndef MCI_REG_FW_REV_ID_0
 #define MCI_REG_FW_REV_ID_0                                                                         (0x8)
+#endif
 #define MCI_TOP_MCI_REG_FW_REV_ID_1                                                                 (0xc)
+#ifndef MCI_REG_FW_REV_ID_1
 #define MCI_REG_FW_REV_ID_1                                                                         (0xc)
+#endif
 #define MCI_TOP_MCI_REG_HW_CONFIG                                                                   (0x10)
+#ifndef MCI_REG_HW_CONFIG
 #define MCI_REG_HW_CONFIG                                                                           (0x10)
 #define MCI_REG_HW_CONFIG_RSVD_EN_LOW                                                               (0)
 #define MCI_REG_HW_CONFIG_RSVD_EN_MASK                                                              (0x1)
-#define MCI_TOP_MCI_REG_BOOT_STATUS                                                                 (0x20)
-#define MCI_REG_BOOT_STATUS                                                                         (0x20)
-#define MCI_TOP_MCI_REG_FLOW_STATUS                                                                 (0x24)
-#define MCI_REG_FLOW_STATUS                                                                         (0x24)
-#define MCI_REG_FLOW_STATUS_STATUS_LOW                                                              (0)
-#define MCI_REG_FLOW_STATUS_STATUS_MASK                                                             (0xffffff)
-#define MCI_REG_FLOW_STATUS_RSVD_LOW                                                                (24)
-#define MCI_REG_FLOW_STATUS_RSVD_MASK                                                               (0x7000000)
-#define MCI_REG_FLOW_STATUS_BOOT_FSM_PS_LOW                                                         (27)
-#define MCI_REG_FLOW_STATUS_BOOT_FSM_PS_MASK                                                        (0xf8000000)
+#endif
+#define MCI_TOP_MCI_REG_FW_FLOW_STATUS                                                              (0x20)
+#ifndef MCI_REG_FW_FLOW_STATUS
+#define MCI_REG_FW_FLOW_STATUS                                                                      (0x20)
+#endif
+#define MCI_TOP_MCI_REG_HW_FLOW_STATUS                                                              (0x24)
+#ifndef MCI_REG_HW_FLOW_STATUS
+#define MCI_REG_HW_FLOW_STATUS                                                                      (0x24)
+#define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW                                                         (0)
+#define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK                                                        (0xf)
+#endif
 #define MCI_TOP_MCI_REG_RESET_REASON                                                                (0x28)
+#ifndef MCI_REG_RESET_REASON
 #define MCI_REG_RESET_REASON                                                                        (0x28)
 #define MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_LOW                                               (0)
 #define MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_MASK                                              (0x1)
@@ -54,19 +65,27 @@
 #define MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK                                                 (0x2)
 #define MCI_REG_RESET_REASON_WARM_RESET_LOW                                                         (2)
 #define MCI_REG_RESET_REASON_WARM_RESET_MASK                                                        (0x4)
+#endif
 #define MCI_TOP_MCI_REG_RESET_STATUS                                                                (0x2c)
+#ifndef MCI_REG_RESET_STATUS
 #define MCI_REG_RESET_STATUS                                                                        (0x2c)
-#define MCI_REG_RESET_STATUS_STATUS_LOW                                                             (0)
-#define MCI_REG_RESET_STATUS_STATUS_MASK                                                            (0x3fffff)
-#define MCI_REG_RESET_STATUS_RSVD_LOW                                                               (22)
-#define MCI_REG_RESET_STATUS_RSVD_MASK                                                              (0x1c00000)
+#define MCI_REG_RESET_STATUS_CPTRA_RESET_STS_LOW                                                    (0)
+#define MCI_REG_RESET_STATUS_CPTRA_RESET_STS_MASK                                                   (0x1)
+#define MCI_REG_RESET_STATUS_MCU_RESET_STS_LOW                                                      (1)
+#define MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK                                                     (0x2)
+#endif
 #define MCI_TOP_MCI_REG_HW_ERROR_FATAL                                                              (0x40)
+#ifndef MCI_REG_HW_ERROR_FATAL
 #define MCI_REG_HW_ERROR_FATAL                                                                      (0x40)
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_LOW                                                 (0)
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_MASK                                                (0x1)
 #define MCI_REG_HW_ERROR_FATAL_NMI_PIN_LOW                                                          (1)
 #define MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK                                                         (0x2)
+#define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_LOW                                       (2)
+#define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (0x4)
+#endif
 #define MCI_TOP_MCI_REG_AGG_ERROR_FATAL                                                             (0x44)
+#ifndef MCI_REG_AGG_ERROR_FATAL
 #define MCI_REG_AGG_ERROR_FATAL                                                                     (0x44)
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_LOW                                               (0)
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_MASK                                              (0x1)
@@ -132,11 +151,25 @@
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL1_MASK                                               (0x40000000)
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL0_LOW                                                (31)
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL0_MASK                                               (0x80000000)
+#endif
 #define MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL                                                          (0x48)
+#ifndef MCI_REG_HW_ERROR_NON_FATAL
 #define MCI_REG_HW_ERROR_NON_FATAL                                                                  (0x48)
-#define MCI_REG_HW_ERROR_NON_FATAL_RSVD_LOW                                                         (0)
-#define MCI_REG_HW_ERROR_NON_FATAL_RSVD_MASK                                                        (0x1)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_PROT_NO_LOCK_LOW                                           (0)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_PROT_NO_LOCK_MASK                                          (0x1)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_PROT_NO_LOCK_LOW                                           (1)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_PROT_NO_LOCK_MASK                                          (0x2)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_PROT_OOO_LOW                                               (2)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_PROT_OOO_MASK                                              (0x4)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_PROT_OOO_LOW                                               (3)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_PROT_OOO_MASK                                              (0x8)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_LOW                                                (4)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_MASK                                               (0x10)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_ECC_UNC_LOW                                                (5)
+#define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_ECC_UNC_MASK                                               (0x20)
+#endif
 #define MCI_TOP_MCI_REG_AGG_ERROR_NON_FATAL                                                         (0x4c)
+#ifndef MCI_REG_AGG_ERROR_NON_FATAL
 #define MCI_REG_AGG_ERROR_NON_FATAL                                                                 (0x4c)
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_LOW                                       (0)
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_MASK                                      (0x1)
@@ -202,41 +235,83 @@
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL1_MASK                                       (0x40000000)
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL0_LOW                                        (31)
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL0_MASK                                       (0x80000000)
+#endif
 #define MCI_TOP_MCI_REG_FW_ERROR_FATAL                                                              (0x50)
+#ifndef MCI_REG_FW_ERROR_FATAL
 #define MCI_REG_FW_ERROR_FATAL                                                                      (0x50)
+#endif
 #define MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL                                                          (0x54)
+#ifndef MCI_REG_FW_ERROR_NON_FATAL
 #define MCI_REG_FW_ERROR_NON_FATAL                                                                  (0x54)
+#endif
 #define MCI_TOP_MCI_REG_HW_ERROR_ENC                                                                (0x58)
+#ifndef MCI_REG_HW_ERROR_ENC
 #define MCI_REG_HW_ERROR_ENC                                                                        (0x58)
+#endif
 #define MCI_TOP_MCI_REG_FW_ERROR_ENC                                                                (0x5c)
+#ifndef MCI_REG_FW_ERROR_ENC
 #define MCI_REG_FW_ERROR_ENC                                                                        (0x5c)
+#endif
 #define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                    (0x60)
+#ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_0
 #define MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                            (0x60)
+#endif
 #define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                    (0x64)
+#ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_1
 #define MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                            (0x64)
+#endif
 #define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                    (0x68)
+#ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_2
 #define MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                            (0x68)
+#endif
 #define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                    (0x6c)
+#ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_3
 #define MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                            (0x6c)
+#endif
 #define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                    (0x70)
+#ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_4
 #define MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                            (0x70)
+#endif
 #define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                    (0x74)
+#ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_5
 #define MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                            (0x74)
+#endif
 #define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                    (0x78)
+#ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_6
 #define MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                            (0x78)
+#endif
 #define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                    (0x7c)
+#ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_7
 #define MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                            (0x7c)
+#endif
 #define MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                (0x80)
+#ifndef MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                        (0x80)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_ECC_UNC_LOW                              (0)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_ECC_UNC_MASK                             (0x1)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_NMI_PIN_LOW                                       (1)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_NMI_PIN_MASK                                      (0x2)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_LOW                    (2)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (0x4)
+#endif
 #define MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                            (0x84)
+#ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK
 #define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (0x84)
-#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_FIXME_LOW                                          (0)
-#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_FIXME_MASK                                         (0x1)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_PROT_NO_LOCK_LOW                        (0)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_PROT_NO_LOCK_MASK                       (0x1)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_PROT_NO_LOCK_LOW                        (1)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_PROT_NO_LOCK_MASK                       (0x2)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_PROT_OOO_LOW                            (2)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_PROT_OOO_MASK                           (0x4)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_PROT_OOO_LOW                            (3)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_PROT_OOO_MASK                           (0x8)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_ECC_UNC_LOW                             (4)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_ECC_UNC_MASK                            (0x10)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_ECC_UNC_LOW                             (5)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_ECC_UNC_MASK                            (0x20)
+#endif
 #define MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                               (0x88)
+#ifndef MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                                       (0x88)
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL31_LOW                            (0)
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL31_MASK                           (0x1)
@@ -302,7 +377,9 @@
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL1_MASK                            (0x40000000)
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL0_LOW                             (31)
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL0_MASK                            (0x80000000)
+#endif
 #define MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                           (0x8c)
+#ifndef MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                                   (0x8c)
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL31_LOW                    (0)
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL31_MASK                   (0x1)
@@ -368,1520 +445,676 @@
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL1_MASK                    (0x40000000)
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL0_LOW                     (31)
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL0_MASK                    (0x80000000)
+#endif
 #define MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                (0x90)
+#ifndef MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK
 #define MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                        (0x90)
+#endif
 #define MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                            (0x94)
+#ifndef MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK
 #define MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                                    (0x94)
+#endif
 #define MCI_TOP_MCI_REG_WDT_TIMER1_EN                                                               (0xa0)
+#ifndef MCI_REG_WDT_TIMER1_EN
 #define MCI_REG_WDT_TIMER1_EN                                                                       (0xa0)
 #define MCI_REG_WDT_TIMER1_EN_TIMER1_EN_LOW                                                         (0)
 #define MCI_REG_WDT_TIMER1_EN_TIMER1_EN_MASK                                                        (0x1)
+#endif
 #define MCI_TOP_MCI_REG_WDT_TIMER1_CTRL                                                             (0xa4)
+#ifndef MCI_REG_WDT_TIMER1_CTRL
 #define MCI_REG_WDT_TIMER1_CTRL                                                                     (0xa4)
 #define MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_LOW                                                  (0)
 #define MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_MASK                                                 (0x1)
+#endif
 #define MCI_TOP_MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                 (0xa8)
+#ifndef MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0
 #define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                         (0xa8)
+#endif
 #define MCI_TOP_MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                 (0xac)
+#ifndef MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1
 #define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                         (0xac)
+#endif
 #define MCI_TOP_MCI_REG_WDT_TIMER2_EN                                                               (0xb0)
+#ifndef MCI_REG_WDT_TIMER2_EN
 #define MCI_REG_WDT_TIMER2_EN                                                                       (0xb0)
 #define MCI_REG_WDT_TIMER2_EN_TIMER2_EN_LOW                                                         (0)
 #define MCI_REG_WDT_TIMER2_EN_TIMER2_EN_MASK                                                        (0x1)
+#endif
 #define MCI_TOP_MCI_REG_WDT_TIMER2_CTRL                                                             (0xb4)
+#ifndef MCI_REG_WDT_TIMER2_CTRL
 #define MCI_REG_WDT_TIMER2_CTRL                                                                     (0xb4)
 #define MCI_REG_WDT_TIMER2_CTRL_TIMER2_RESTART_LOW                                                  (0)
 #define MCI_REG_WDT_TIMER2_CTRL_TIMER2_RESTART_MASK                                                 (0x1)
+#endif
 #define MCI_TOP_MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                 (0xb8)
+#ifndef MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0
 #define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                         (0xb8)
+#endif
 #define MCI_TOP_MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                 (0xbc)
+#ifndef MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1
 #define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                         (0xbc)
+#endif
 #define MCI_TOP_MCI_REG_WDT_STATUS                                                                  (0xc0)
+#ifndef MCI_REG_WDT_STATUS
 #define MCI_REG_WDT_STATUS                                                                          (0xc0)
 #define MCI_REG_WDT_STATUS_T1_TIMEOUT_LOW                                                           (0)
 #define MCI_REG_WDT_STATUS_T1_TIMEOUT_MASK                                                          (0x1)
 #define MCI_REG_WDT_STATUS_T2_TIMEOUT_LOW                                                           (1)
 #define MCI_REG_WDT_STATUS_T2_TIMEOUT_MASK                                                          (0x2)
+#endif
 #define MCI_TOP_MCI_REG_WDT_CFG_0                                                                   (0xd0)
+#ifndef MCI_REG_WDT_CFG_0
 #define MCI_REG_WDT_CFG_0                                                                           (0xd0)
+#endif
 #define MCI_TOP_MCI_REG_WDT_CFG_1                                                                   (0xd4)
+#ifndef MCI_REG_WDT_CFG_1
 #define MCI_REG_WDT_CFG_1                                                                           (0xd4)
+#endif
 #define MCI_TOP_MCI_REG_MCU_TIMER_CONFIG                                                            (0xe0)
+#ifndef MCI_REG_MCU_TIMER_CONFIG
 #define MCI_REG_MCU_TIMER_CONFIG                                                                    (0xe0)
+#endif
 #define MCI_TOP_MCI_REG_MCU_RV_MTIME_L                                                              (0xe4)
+#ifndef MCI_REG_MCU_RV_MTIME_L
 #define MCI_REG_MCU_RV_MTIME_L                                                                      (0xe4)
+#endif
 #define MCI_TOP_MCI_REG_MCU_RV_MTIME_H                                                              (0xe8)
+#ifndef MCI_REG_MCU_RV_MTIME_H
 #define MCI_REG_MCU_RV_MTIME_H                                                                      (0xe8)
+#endif
 #define MCI_TOP_MCI_REG_MCU_RV_MTIMECMP_L                                                           (0xec)
+#ifndef MCI_REG_MCU_RV_MTIMECMP_L
 #define MCI_REG_MCU_RV_MTIMECMP_L                                                                   (0xec)
+#endif
 #define MCI_TOP_MCI_REG_MCU_RV_MTIMECMP_H                                                           (0xf0)
+#ifndef MCI_REG_MCU_RV_MTIMECMP_H
 #define MCI_REG_MCU_RV_MTIMECMP_H                                                                   (0xf0)
+#endif
 #define MCI_TOP_MCI_REG_RESET_REQUEST                                                               (0x100)
+#ifndef MCI_REG_RESET_REQUEST
 #define MCI_REG_RESET_REQUEST                                                                       (0x100)
 #define MCI_REG_RESET_REQUEST_MCU_REQ_LOW                                                           (0)
 #define MCI_REG_RESET_REQUEST_MCU_REQ_MASK                                                          (0x1)
-#define MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO                                                            (0x104)
-#define MCI_REG_CALIPTRA_BOOT_GO                                                                    (0x104)
-#define MCI_REG_CALIPTRA_BOOT_GO_GO_LOW                                                             (0)
-#define MCI_REG_CALIPTRA_BOOT_GO_GO_MASK                                                            (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MCI_BOOTFSM_GO                                                              (0x104)
+#ifndef MCI_REG_MCI_BOOTFSM_GO
+#define MCI_REG_MCI_BOOTFSM_GO                                                                      (0x104)
+#define MCI_REG_MCI_BOOTFSM_GO_GO_LOW                                                               (0)
+#define MCI_REG_MCI_BOOTFSM_GO_GO_MASK                                                              (0x1)
+#endif
 #define MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                    (0x108)
+#ifndef MCI_REG_FW_SRAM_EXEC_REGION_SIZE
 #define MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                            (0x108)
 #define MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_LOW                                                   (0)
 #define MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_MASK                                                  (0xffff)
+#endif
 #define MCI_TOP_MCI_REG_MCU_NMI_VECTOR                                                              (0x10c)
+#ifndef MCI_REG_MCU_NMI_VECTOR
 #define MCI_REG_MCU_NMI_VECTOR                                                                      (0x10c)
+#endif
 #define MCI_TOP_MCI_REG_MCU_RESET_VECTOR                                                            (0x110)
+#ifndef MCI_REG_MCU_RESET_VECTOR
 #define MCI_REG_MCU_RESET_VECTOR                                                                    (0x110)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_0                                                        (0x180)
-#define MCI_REG_MBOX0_VALID_AXI_ID_0                                                                (0x180)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_1                                                        (0x184)
-#define MCI_REG_MBOX0_VALID_AXI_ID_1                                                                (0x184)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_2                                                        (0x188)
-#define MCI_REG_MBOX0_VALID_AXI_ID_2                                                                (0x188)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_3                                                        (0x18c)
-#define MCI_REG_MBOX0_VALID_AXI_ID_3                                                                (0x18c)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_4                                                        (0x190)
-#define MCI_REG_MBOX0_VALID_AXI_ID_4                                                                (0x190)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_LOCK_0                                                   (0x1a0)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_0                                                           (0x1a0)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_0_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_0_LOCK_MASK                                                 (0x1)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_LOCK_1                                                   (0x1a4)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_1                                                           (0x1a4)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_1_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_1_LOCK_MASK                                                 (0x1)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_LOCK_2                                                   (0x1a8)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_2                                                           (0x1a8)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_2_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_2_LOCK_MASK                                                 (0x1)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_LOCK_3                                                   (0x1ac)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_3                                                           (0x1ac)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_3_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_3_LOCK_MASK                                                 (0x1)
-#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_ID_LOCK_4                                                   (0x1b0)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_4                                                           (0x1b0)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_4_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX0_VALID_AXI_ID_LOCK_4_LOCK_MASK                                                 (0x1)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_0                                                        (0x1c0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_0                                                                (0x1c0)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_1                                                        (0x1c4)
-#define MCI_REG_MBOX1_VALID_AXI_ID_1                                                                (0x1c4)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_2                                                        (0x1c8)
-#define MCI_REG_MBOX1_VALID_AXI_ID_2                                                                (0x1c8)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_3                                                        (0x1cc)
-#define MCI_REG_MBOX1_VALID_AXI_ID_3                                                                (0x1cc)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_4                                                        (0x1d0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_4                                                                (0x1d0)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_LOCK_0                                                   (0x1e0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_0                                                           (0x1e0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_0_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_0_LOCK_MASK                                                 (0x1)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_LOCK_1                                                   (0x1e4)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_1                                                           (0x1e4)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_1_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_1_LOCK_MASK                                                 (0x1)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_LOCK_2                                                   (0x1e8)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_2                                                           (0x1e8)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_2_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_2_LOCK_MASK                                                 (0x1)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_LOCK_3                                                   (0x1ec)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_3                                                           (0x1ec)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_3_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_3_LOCK_MASK                                                 (0x1)
-#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_ID_LOCK_4                                                   (0x1f0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_4                                                           (0x1f0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_4_LOCK_LOW                                                  (0)
-#define MCI_REG_MBOX1_VALID_AXI_ID_LOCK_4_LOCK_MASK                                                 (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0                                                      (0x180)
+#ifndef MCI_REG_MBOX0_VALID_AXI_USER_0
+#define MCI_REG_MBOX0_VALID_AXI_USER_0                                                              (0x180)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1                                                      (0x184)
+#ifndef MCI_REG_MBOX0_VALID_AXI_USER_1
+#define MCI_REG_MBOX0_VALID_AXI_USER_1                                                              (0x184)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_2                                                      (0x188)
+#ifndef MCI_REG_MBOX0_VALID_AXI_USER_2
+#define MCI_REG_MBOX0_VALID_AXI_USER_2                                                              (0x188)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_3                                                      (0x18c)
+#ifndef MCI_REG_MBOX0_VALID_AXI_USER_3
+#define MCI_REG_MBOX0_VALID_AXI_USER_3                                                              (0x18c)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_4                                                      (0x190)
+#ifndef MCI_REG_MBOX0_VALID_AXI_USER_4
+#define MCI_REG_MBOX0_VALID_AXI_USER_4                                                              (0x190)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0                                                       (0x1a0)
+#ifndef MCI_REG_MBOX0_AXI_USER_LOCK_0
+#define MCI_REG_MBOX0_AXI_USER_LOCK_0                                                               (0x1a0)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_0_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_0_LOCK_MASK                                                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_1                                                       (0x1a4)
+#ifndef MCI_REG_MBOX0_AXI_USER_LOCK_1
+#define MCI_REG_MBOX0_AXI_USER_LOCK_1                                                               (0x1a4)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_1_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_1_LOCK_MASK                                                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_2                                                       (0x1a8)
+#ifndef MCI_REG_MBOX0_AXI_USER_LOCK_2
+#define MCI_REG_MBOX0_AXI_USER_LOCK_2                                                               (0x1a8)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_2_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_2_LOCK_MASK                                                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_3                                                       (0x1ac)
+#ifndef MCI_REG_MBOX0_AXI_USER_LOCK_3
+#define MCI_REG_MBOX0_AXI_USER_LOCK_3                                                               (0x1ac)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_3_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_3_LOCK_MASK                                                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_4                                                       (0x1b0)
+#ifndef MCI_REG_MBOX0_AXI_USER_LOCK_4
+#define MCI_REG_MBOX0_AXI_USER_LOCK_4                                                               (0x1b0)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_4_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX0_AXI_USER_LOCK_4_LOCK_MASK                                                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_0                                                      (0x1c0)
+#ifndef MCI_REG_MBOX1_VALID_AXI_USER_0
+#define MCI_REG_MBOX1_VALID_AXI_USER_0                                                              (0x1c0)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_1                                                      (0x1c4)
+#ifndef MCI_REG_MBOX1_VALID_AXI_USER_1
+#define MCI_REG_MBOX1_VALID_AXI_USER_1                                                              (0x1c4)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_2                                                      (0x1c8)
+#ifndef MCI_REG_MBOX1_VALID_AXI_USER_2
+#define MCI_REG_MBOX1_VALID_AXI_USER_2                                                              (0x1c8)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_3                                                      (0x1cc)
+#ifndef MCI_REG_MBOX1_VALID_AXI_USER_3
+#define MCI_REG_MBOX1_VALID_AXI_USER_3                                                              (0x1cc)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_4                                                      (0x1d0)
+#ifndef MCI_REG_MBOX1_VALID_AXI_USER_4
+#define MCI_REG_MBOX1_VALID_AXI_USER_4                                                              (0x1d0)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0                                                       (0x1e0)
+#ifndef MCI_REG_MBOX1_AXI_USER_LOCK_0
+#define MCI_REG_MBOX1_AXI_USER_LOCK_0                                                               (0x1e0)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_0_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_0_LOCK_MASK                                                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_1                                                       (0x1e4)
+#ifndef MCI_REG_MBOX1_AXI_USER_LOCK_1
+#define MCI_REG_MBOX1_AXI_USER_LOCK_1                                                               (0x1e4)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_1_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_1_LOCK_MASK                                                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_2                                                       (0x1e8)
+#ifndef MCI_REG_MBOX1_AXI_USER_LOCK_2
+#define MCI_REG_MBOX1_AXI_USER_LOCK_2                                                               (0x1e8)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_2_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_2_LOCK_MASK                                                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_3                                                       (0x1ec)
+#ifndef MCI_REG_MBOX1_AXI_USER_LOCK_3
+#define MCI_REG_MBOX1_AXI_USER_LOCK_3                                                               (0x1ec)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_3_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_3_LOCK_MASK                                                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_4                                                       (0x1f0)
+#ifndef MCI_REG_MBOX1_AXI_USER_LOCK_4
+#define MCI_REG_MBOX1_AXI_USER_LOCK_4                                                               (0x1f0)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_LOW                                                      (0)
+#define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_MASK                                                     (0x1)
+#endif
 #define MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0                                                       (0x400)
+#ifndef MCI_REG_GENERIC_INPUT_WIRES_0
 #define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (0x400)
+#endif
 #define MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1                                                       (0x404)
+#ifndef MCI_REG_GENERIC_INPUT_WIRES_1
 #define MCI_REG_GENERIC_INPUT_WIRES_1                                                               (0x404)
+#endif
 #define MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0                                                      (0x408)
+#ifndef MCI_REG_GENERIC_OUTPUT_WIRES_0
 #define MCI_REG_GENERIC_OUTPUT_WIRES_0                                                              (0x408)
+#endif
 #define MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1                                                      (0x40c)
+#ifndef MCI_REG_GENERIC_OUTPUT_WIRES_1
 #define MCI_REG_GENERIC_OUTPUT_WIRES_1                                                              (0x40c)
+#endif
 #define MCI_TOP_MCI_REG_DEBUG_IN                                                                    (0x410)
+#ifndef MCI_REG_DEBUG_IN
 #define MCI_REG_DEBUG_IN                                                                            (0x410)
 #define MCI_REG_DEBUG_IN_FIXME_LOW                                                                  (0)
 #define MCI_REG_DEBUG_IN_FIXME_MASK                                                                 (0x1)
+#endif
 #define MCI_TOP_MCI_REG_DEBUG_OUT                                                                   (0x414)
+#ifndef MCI_REG_DEBUG_OUT
 #define MCI_REG_DEBUG_OUT                                                                           (0x414)
 #define MCI_REG_DEBUG_OUT_FIXME_LOW                                                                 (0)
 #define MCI_REG_DEBUG_OUT_FIXME_MASK                                                                (0x1)
-#define MCI_TOP_MCI_REG_FUSE_WR_DONE                                                                (0x440)
-#define MCI_REG_FUSE_WR_DONE                                                                        (0x440)
-#define MCI_REG_FUSE_WR_DONE_DONE_LOW                                                               (0)
-#define MCI_REG_FUSE_WR_DONE_DONE_MASK                                                              (0x1)
+#endif
+#define MCI_TOP_MCI_REG_SS_DEBUG_INTENT                                                             (0x418)
+#ifndef MCI_REG_SS_DEBUG_INTENT
+#define MCI_REG_SS_DEBUG_INTENT                                                                     (0x418)
+#define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_LOW                                                    (0)
+#define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_MASK                                                   (0x1)
+#endif
+#define MCI_TOP_MCI_REG_SS_CONFIG_DONE                                                              (0x440)
+#ifndef MCI_REG_SS_CONFIG_DONE
+#define MCI_REG_SS_CONFIG_DONE                                                                      (0x440)
+#define MCI_REG_SS_CONFIG_DONE_DONE_LOW                                                             (0)
+#define MCI_REG_SS_CONFIG_DONE_DONE_MASK                                                            (0x1)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_0                                           (0x480)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_0
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_0                                                   (0x480)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_1                                           (0x484)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_1
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_1                                                   (0x484)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_2                                           (0x488)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_2
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_2                                                   (0x488)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_3                                           (0x48c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_3
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_3                                                   (0x48c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_4                                           (0x490)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_4
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_4                                                   (0x490)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_5                                           (0x494)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_5
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_5                                                   (0x494)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_6                                           (0x498)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_6
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_6                                                   (0x498)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_7                                           (0x49c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_7
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_7                                                   (0x49c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_8                                           (0x4a0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_8
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_8                                                   (0x4a0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_9                                           (0x4a4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_9
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_9                                                   (0x4a4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_10                                          (0x4a8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_10
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_10                                                  (0x4a8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_11                                          (0x4ac)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_11
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_11                                                  (0x4ac)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_0                                           (0x4b0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_0
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_0                                                   (0x4b0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_1                                           (0x4b4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_1
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_1                                                   (0x4b4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_2                                           (0x4b8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_2
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_2                                                   (0x4b8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_3                                           (0x4bc)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_3
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_3                                                   (0x4bc)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_4                                           (0x4c0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_4
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_4                                                   (0x4c0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_5                                           (0x4c4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_5
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_5                                                   (0x4c4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_6                                           (0x4c8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_6
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_6                                                   (0x4c8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_7                                           (0x4cc)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_7
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_7                                                   (0x4cc)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_8                                           (0x4d0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_8
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_8                                                   (0x4d0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_9                                           (0x4d4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_9
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_9                                                   (0x4d4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_10                                          (0x4d8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_10
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_10                                                  (0x4d8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_11                                          (0x4dc)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_11
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_11                                                  (0x4dc)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_0                                           (0x4e0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_0
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_0                                                   (0x4e0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_1                                           (0x4e4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_1
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_1                                                   (0x4e4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_2                                           (0x4e8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_2
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_2                                                   (0x4e8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_3                                           (0x4ec)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_3
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_3                                                   (0x4ec)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_4                                           (0x4f0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_4
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_4                                                   (0x4f0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_5                                           (0x4f4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_5
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_5                                                   (0x4f4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_6                                           (0x4f8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_6
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_6                                                   (0x4f8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_7                                           (0x4fc)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_7
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_7                                                   (0x4fc)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_8                                           (0x500)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_8
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_8                                                   (0x500)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_9                                           (0x504)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_9
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_9                                                   (0x504)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_10                                          (0x508)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_10
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_10                                                  (0x508)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_11                                          (0x50c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_11
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_11                                                  (0x50c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_0                                           (0x510)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_0
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_0                                                   (0x510)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_1                                           (0x514)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_1
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_1                                                   (0x514)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_2                                           (0x518)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_2
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_2                                                   (0x518)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_3                                           (0x51c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_3
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_3                                                   (0x51c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_4                                           (0x520)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_4
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_4                                                   (0x520)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_5                                           (0x524)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_5
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_5                                                   (0x524)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_6                                           (0x528)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_6
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_6                                                   (0x528)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_7                                           (0x52c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_7
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_7                                                   (0x52c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_8                                           (0x530)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_8
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_8                                                   (0x530)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_9                                           (0x534)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_9
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_9                                                   (0x534)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_10                                          (0x538)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_10
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_10                                                  (0x538)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_11                                          (0x53c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_11
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_11                                                  (0x53c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_0                                           (0x540)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_0
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_0                                                   (0x540)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_1                                           (0x544)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_1
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_1                                                   (0x544)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_2                                           (0x548)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_2
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_2                                                   (0x548)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_3                                           (0x54c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_3
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_3                                                   (0x54c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_4                                           (0x550)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_4
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_4                                                   (0x550)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_5                                           (0x554)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_5
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_5                                                   (0x554)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_6                                           (0x558)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_6
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_6                                                   (0x558)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_7                                           (0x55c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_7
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_7                                                   (0x55c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_8                                           (0x560)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_8
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_8                                                   (0x560)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_9                                           (0x564)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_9
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_9                                                   (0x564)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_10                                          (0x568)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_10
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_10                                                  (0x568)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_11                                          (0x56c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_11
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_11                                                  (0x56c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_0                                           (0x570)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_0
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_0                                                   (0x570)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_1                                           (0x574)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_1
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_1                                                   (0x574)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_2                                           (0x578)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_2
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_2                                                   (0x578)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_3                                           (0x57c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_3
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_3                                                   (0x57c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_4                                           (0x580)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_4
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_4                                                   (0x580)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_5                                           (0x584)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_5
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_5                                                   (0x584)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_6                                           (0x588)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_6
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_6                                                   (0x588)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_7                                           (0x58c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_7
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_7                                                   (0x58c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_8                                           (0x590)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_8
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_8                                                   (0x590)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_9                                           (0x594)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_9
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_9                                                   (0x594)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_10                                          (0x598)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_10
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_10                                                  (0x598)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_11                                          (0x59c)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_11
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_11                                                  (0x59c)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_0                                           (0x5a0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_0
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_0                                                   (0x5a0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_1                                           (0x5a4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_1
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_1                                                   (0x5a4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_2                                           (0x5a8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_2
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_2                                                   (0x5a8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_3                                           (0x5ac)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_3
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_3                                                   (0x5ac)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_4                                           (0x5b0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_4
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_4                                                   (0x5b0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_5                                           (0x5b4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_5
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_5                                                   (0x5b4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_6                                           (0x5b8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_6
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_6                                                   (0x5b8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_7                                           (0x5bc)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_7
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_7                                                   (0x5bc)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_8                                           (0x5c0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_8
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_8                                                   (0x5c0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_9                                           (0x5c4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_9
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_9                                                   (0x5c4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_10                                          (0x5c8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_10
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_10                                                  (0x5c8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_11                                          (0x5cc)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_11
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_11                                                  (0x5cc)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_0                                           (0x5d0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_0
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_0                                                   (0x5d0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_1                                           (0x5d4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_1
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_1                                                   (0x5d4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_2                                           (0x5d8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_2
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_2                                                   (0x5d8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_3                                           (0x5dc)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_3
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_3                                                   (0x5dc)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_4                                           (0x5e0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_4
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_4                                                   (0x5e0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_5                                           (0x5e4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_5
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_5                                                   (0x5e4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_6                                           (0x5e8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_6
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_6                                                   (0x5e8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_7                                           (0x5ec)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_7
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_7                                                   (0x5ec)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_8                                           (0x5f0)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_8
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_8                                                   (0x5f0)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_9                                           (0x5f4)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_9
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_9                                                   (0x5f4)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_10                                          (0x5f8)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_10
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_10                                                  (0x5f8)
+#endif
 #define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_11                                          (0x5fc)
+#ifndef MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_11
 #define MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_11                                                  (0x5fc)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_0                                                    (0x800)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_0                                                            (0x800)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_0_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_0_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_1                                                    (0x804)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_1                                                            (0x804)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_1_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_1_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_2                                                    (0x808)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_2                                                            (0x808)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_2_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_2_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_3                                                    (0x80c)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_3                                                            (0x80c)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_3_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_3_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_4                                                    (0x810)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_4                                                            (0x810)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_4_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_4_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_5                                                    (0x814)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_5                                                            (0x814)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_5_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_5_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_6                                                    (0x818)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_6                                                            (0x818)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_6_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_6_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_7                                                    (0x81c)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_7                                                            (0x81c)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_7_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_7_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_8                                                    (0x820)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_8                                                            (0x820)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_8_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_8_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_CTRL_9                                                    (0x824)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_9                                                            (0x824)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_9_LOCK_ENTRY_LOW                                             (0)
-#define MCI_REG_STICKY_DATA_VAULT_CTRL_9_LOCK_ENTRY_MASK                                            (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_0                                                 (0x828)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_0                                                         (0x828)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_1                                                 (0x82c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_1                                                         (0x82c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_2                                                 (0x830)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_2                                                         (0x830)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_3                                                 (0x834)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_3                                                         (0x834)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_4                                                 (0x838)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_4                                                         (0x838)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_5                                                 (0x83c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_5                                                         (0x83c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_6                                                 (0x840)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_6                                                         (0x840)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_7                                                 (0x844)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_7                                                         (0x844)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_8                                                 (0x848)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_8                                                         (0x848)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_9                                                 (0x84c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_9                                                         (0x84c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_10                                                (0x850)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_10                                                        (0x850)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_0_11                                                (0x854)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_11                                                        (0x854)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_0_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_0                                                 (0x858)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_0                                                         (0x858)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_1                                                 (0x85c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_1                                                         (0x85c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_2                                                 (0x860)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_2                                                         (0x860)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_3                                                 (0x864)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_3                                                         (0x864)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_4                                                 (0x868)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_4                                                         (0x868)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_5                                                 (0x86c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_5                                                         (0x86c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_6                                                 (0x870)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_6                                                         (0x870)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_7                                                 (0x874)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_7                                                         (0x874)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_8                                                 (0x878)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_8                                                         (0x878)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_9                                                 (0x87c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_9                                                         (0x87c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_10                                                (0x880)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_10                                                        (0x880)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_1_11                                                (0x884)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_11                                                        (0x884)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_1_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_0                                                 (0x888)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_0                                                         (0x888)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_1                                                 (0x88c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_1                                                         (0x88c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_2                                                 (0x890)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_2                                                         (0x890)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_3                                                 (0x894)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_3                                                         (0x894)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_4                                                 (0x898)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_4                                                         (0x898)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_5                                                 (0x89c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_5                                                         (0x89c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_6                                                 (0x8a0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_6                                                         (0x8a0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_7                                                 (0x8a4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_7                                                         (0x8a4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_8                                                 (0x8a8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_8                                                         (0x8a8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_9                                                 (0x8ac)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_9                                                         (0x8ac)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_10                                                (0x8b0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_10                                                        (0x8b0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_2_11                                                (0x8b4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_11                                                        (0x8b4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_2_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_0                                                 (0x8b8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_0                                                         (0x8b8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_1                                                 (0x8bc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_1                                                         (0x8bc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_2                                                 (0x8c0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_2                                                         (0x8c0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_3                                                 (0x8c4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_3                                                         (0x8c4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_4                                                 (0x8c8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_4                                                         (0x8c8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_5                                                 (0x8cc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_5                                                         (0x8cc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_6                                                 (0x8d0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_6                                                         (0x8d0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_7                                                 (0x8d4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_7                                                         (0x8d4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_8                                                 (0x8d8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_8                                                         (0x8d8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_9                                                 (0x8dc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_9                                                         (0x8dc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_10                                                (0x8e0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_10                                                        (0x8e0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_3_11                                                (0x8e4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_11                                                        (0x8e4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_3_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_0                                                 (0x8e8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_0                                                         (0x8e8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_1                                                 (0x8ec)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_1                                                         (0x8ec)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_2                                                 (0x8f0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_2                                                         (0x8f0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_3                                                 (0x8f4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_3                                                         (0x8f4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_4                                                 (0x8f8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_4                                                         (0x8f8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_5                                                 (0x8fc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_5                                                         (0x8fc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_6                                                 (0x900)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_6                                                         (0x900)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_7                                                 (0x904)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_7                                                         (0x904)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_8                                                 (0x908)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_8                                                         (0x908)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_9                                                 (0x90c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_9                                                         (0x90c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_10                                                (0x910)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_10                                                        (0x910)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_4_11                                                (0x914)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_11                                                        (0x914)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_4_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_0                                                 (0x918)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_0                                                         (0x918)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_1                                                 (0x91c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_1                                                         (0x91c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_2                                                 (0x920)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_2                                                         (0x920)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_3                                                 (0x924)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_3                                                         (0x924)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_4                                                 (0x928)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_4                                                         (0x928)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_5                                                 (0x92c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_5                                                         (0x92c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_6                                                 (0x930)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_6                                                         (0x930)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_7                                                 (0x934)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_7                                                         (0x934)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_8                                                 (0x938)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_8                                                         (0x938)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_9                                                 (0x93c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_9                                                         (0x93c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_10                                                (0x940)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_10                                                        (0x940)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_5_11                                                (0x944)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_11                                                        (0x944)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_5_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_0                                                 (0x948)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_0                                                         (0x948)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_1                                                 (0x94c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_1                                                         (0x94c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_2                                                 (0x950)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_2                                                         (0x950)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_3                                                 (0x954)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_3                                                         (0x954)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_4                                                 (0x958)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_4                                                         (0x958)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_5                                                 (0x95c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_5                                                         (0x95c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_6                                                 (0x960)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_6                                                         (0x960)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_7                                                 (0x964)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_7                                                         (0x964)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_8                                                 (0x968)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_8                                                         (0x968)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_9                                                 (0x96c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_9                                                         (0x96c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_10                                                (0x970)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_10                                                        (0x970)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_6_11                                                (0x974)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_11                                                        (0x974)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_6_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_0                                                 (0x978)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_0                                                         (0x978)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_1                                                 (0x97c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_1                                                         (0x97c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_2                                                 (0x980)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_2                                                         (0x980)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_3                                                 (0x984)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_3                                                         (0x984)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_4                                                 (0x988)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_4                                                         (0x988)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_5                                                 (0x98c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_5                                                         (0x98c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_6                                                 (0x990)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_6                                                         (0x990)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_7                                                 (0x994)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_7                                                         (0x994)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_8                                                 (0x998)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_8                                                         (0x998)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_9                                                 (0x99c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_9                                                         (0x99c)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_10                                                (0x9a0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_10                                                        (0x9a0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_7_11                                                (0x9a4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_11                                                        (0x9a4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_7_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_0                                                 (0x9a8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_0                                                         (0x9a8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_1                                                 (0x9ac)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_1                                                         (0x9ac)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_2                                                 (0x9b0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_2                                                         (0x9b0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_3                                                 (0x9b4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_3                                                         (0x9b4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_4                                                 (0x9b8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_4                                                         (0x9b8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_5                                                 (0x9bc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_5                                                         (0x9bc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_6                                                 (0x9c0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_6                                                         (0x9c0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_7                                                 (0x9c4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_7                                                         (0x9c4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_8                                                 (0x9c8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_8                                                         (0x9c8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_9                                                 (0x9cc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_9                                                         (0x9cc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_10                                                (0x9d0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_10                                                        (0x9d0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_8_11                                                (0x9d4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_11                                                        (0x9d4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_8_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_0                                                 (0x9d8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_0                                                         (0x9d8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_1                                                 (0x9dc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_1                                                         (0x9dc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_2                                                 (0x9e0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_2                                                         (0x9e0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_3                                                 (0x9e4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_3                                                         (0x9e4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_4                                                 (0x9e8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_4                                                         (0x9e8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_5                                                 (0x9ec)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_5                                                         (0x9ec)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_6                                                 (0x9f0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_6                                                         (0x9f0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_7                                                 (0x9f4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_7                                                         (0x9f4)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_8                                                 (0x9f8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_8                                                         (0x9f8)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_9                                                 (0x9fc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_9                                                         (0x9fc)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_10                                                (0xa00)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_10                                                        (0xa00)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_10_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_10_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_STICKY_DATA_VAULT_ENTRY_9_11                                                (0xa04)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_11                                                        (0xa04)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_11_LOCK_ENTRY_LOW                                         (0)
-#define MCI_REG_STICKY_DATA_VAULT_ENTRY_9_11_LOCK_ENTRY_MASK                                        (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_0                                                           (0xa08)
-#define MCI_REG_DATA_VAULT_CTRL_0                                                                   (0xa08)
-#define MCI_REG_DATA_VAULT_CTRL_0_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_0_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_1                                                           (0xa0c)
-#define MCI_REG_DATA_VAULT_CTRL_1                                                                   (0xa0c)
-#define MCI_REG_DATA_VAULT_CTRL_1_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_1_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_2                                                           (0xa10)
-#define MCI_REG_DATA_VAULT_CTRL_2                                                                   (0xa10)
-#define MCI_REG_DATA_VAULT_CTRL_2_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_2_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_3                                                           (0xa14)
-#define MCI_REG_DATA_VAULT_CTRL_3                                                                   (0xa14)
-#define MCI_REG_DATA_VAULT_CTRL_3_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_3_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_4                                                           (0xa18)
-#define MCI_REG_DATA_VAULT_CTRL_4                                                                   (0xa18)
-#define MCI_REG_DATA_VAULT_CTRL_4_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_4_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_5                                                           (0xa1c)
-#define MCI_REG_DATA_VAULT_CTRL_5                                                                   (0xa1c)
-#define MCI_REG_DATA_VAULT_CTRL_5_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_5_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_6                                                           (0xa20)
-#define MCI_REG_DATA_VAULT_CTRL_6                                                                   (0xa20)
-#define MCI_REG_DATA_VAULT_CTRL_6_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_6_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_7                                                           (0xa24)
-#define MCI_REG_DATA_VAULT_CTRL_7                                                                   (0xa24)
-#define MCI_REG_DATA_VAULT_CTRL_7_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_7_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_8                                                           (0xa28)
-#define MCI_REG_DATA_VAULT_CTRL_8                                                                   (0xa28)
-#define MCI_REG_DATA_VAULT_CTRL_8_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_8_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_CTRL_9                                                           (0xa2c)
-#define MCI_REG_DATA_VAULT_CTRL_9                                                                   (0xa2c)
-#define MCI_REG_DATA_VAULT_CTRL_9_LOCK_ENTRY_LOW                                                    (0)
-#define MCI_REG_DATA_VAULT_CTRL_9_LOCK_ENTRY_MASK                                                   (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_0                                                        (0xa30)
-#define MCI_REG_DATA_VAULT_ENTRY_0_0                                                                (0xa30)
-#define MCI_REG_DATA_VAULT_ENTRY_0_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_1                                                        (0xa34)
-#define MCI_REG_DATA_VAULT_ENTRY_0_1                                                                (0xa34)
-#define MCI_REG_DATA_VAULT_ENTRY_0_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_2                                                        (0xa38)
-#define MCI_REG_DATA_VAULT_ENTRY_0_2                                                                (0xa38)
-#define MCI_REG_DATA_VAULT_ENTRY_0_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_3                                                        (0xa3c)
-#define MCI_REG_DATA_VAULT_ENTRY_0_3                                                                (0xa3c)
-#define MCI_REG_DATA_VAULT_ENTRY_0_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_4                                                        (0xa40)
-#define MCI_REG_DATA_VAULT_ENTRY_0_4                                                                (0xa40)
-#define MCI_REG_DATA_VAULT_ENTRY_0_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_5                                                        (0xa44)
-#define MCI_REG_DATA_VAULT_ENTRY_0_5                                                                (0xa44)
-#define MCI_REG_DATA_VAULT_ENTRY_0_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_6                                                        (0xa48)
-#define MCI_REG_DATA_VAULT_ENTRY_0_6                                                                (0xa48)
-#define MCI_REG_DATA_VAULT_ENTRY_0_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_7                                                        (0xa4c)
-#define MCI_REG_DATA_VAULT_ENTRY_0_7                                                                (0xa4c)
-#define MCI_REG_DATA_VAULT_ENTRY_0_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_8                                                        (0xa50)
-#define MCI_REG_DATA_VAULT_ENTRY_0_8                                                                (0xa50)
-#define MCI_REG_DATA_VAULT_ENTRY_0_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_9                                                        (0xa54)
-#define MCI_REG_DATA_VAULT_ENTRY_0_9                                                                (0xa54)
-#define MCI_REG_DATA_VAULT_ENTRY_0_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_10                                                       (0xa58)
-#define MCI_REG_DATA_VAULT_ENTRY_0_10                                                               (0xa58)
-#define MCI_REG_DATA_VAULT_ENTRY_0_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_0_11                                                       (0xa5c)
-#define MCI_REG_DATA_VAULT_ENTRY_0_11                                                               (0xa5c)
-#define MCI_REG_DATA_VAULT_ENTRY_0_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_0_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_0                                                        (0xa60)
-#define MCI_REG_DATA_VAULT_ENTRY_1_0                                                                (0xa60)
-#define MCI_REG_DATA_VAULT_ENTRY_1_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_1                                                        (0xa64)
-#define MCI_REG_DATA_VAULT_ENTRY_1_1                                                                (0xa64)
-#define MCI_REG_DATA_VAULT_ENTRY_1_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_2                                                        (0xa68)
-#define MCI_REG_DATA_VAULT_ENTRY_1_2                                                                (0xa68)
-#define MCI_REG_DATA_VAULT_ENTRY_1_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_3                                                        (0xa6c)
-#define MCI_REG_DATA_VAULT_ENTRY_1_3                                                                (0xa6c)
-#define MCI_REG_DATA_VAULT_ENTRY_1_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_4                                                        (0xa70)
-#define MCI_REG_DATA_VAULT_ENTRY_1_4                                                                (0xa70)
-#define MCI_REG_DATA_VAULT_ENTRY_1_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_5                                                        (0xa74)
-#define MCI_REG_DATA_VAULT_ENTRY_1_5                                                                (0xa74)
-#define MCI_REG_DATA_VAULT_ENTRY_1_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_6                                                        (0xa78)
-#define MCI_REG_DATA_VAULT_ENTRY_1_6                                                                (0xa78)
-#define MCI_REG_DATA_VAULT_ENTRY_1_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_7                                                        (0xa7c)
-#define MCI_REG_DATA_VAULT_ENTRY_1_7                                                                (0xa7c)
-#define MCI_REG_DATA_VAULT_ENTRY_1_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_8                                                        (0xa80)
-#define MCI_REG_DATA_VAULT_ENTRY_1_8                                                                (0xa80)
-#define MCI_REG_DATA_VAULT_ENTRY_1_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_9                                                        (0xa84)
-#define MCI_REG_DATA_VAULT_ENTRY_1_9                                                                (0xa84)
-#define MCI_REG_DATA_VAULT_ENTRY_1_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_10                                                       (0xa88)
-#define MCI_REG_DATA_VAULT_ENTRY_1_10                                                               (0xa88)
-#define MCI_REG_DATA_VAULT_ENTRY_1_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_1_11                                                       (0xa8c)
-#define MCI_REG_DATA_VAULT_ENTRY_1_11                                                               (0xa8c)
-#define MCI_REG_DATA_VAULT_ENTRY_1_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_1_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_0                                                        (0xa90)
-#define MCI_REG_DATA_VAULT_ENTRY_2_0                                                                (0xa90)
-#define MCI_REG_DATA_VAULT_ENTRY_2_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_1                                                        (0xa94)
-#define MCI_REG_DATA_VAULT_ENTRY_2_1                                                                (0xa94)
-#define MCI_REG_DATA_VAULT_ENTRY_2_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_2                                                        (0xa98)
-#define MCI_REG_DATA_VAULT_ENTRY_2_2                                                                (0xa98)
-#define MCI_REG_DATA_VAULT_ENTRY_2_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_3                                                        (0xa9c)
-#define MCI_REG_DATA_VAULT_ENTRY_2_3                                                                (0xa9c)
-#define MCI_REG_DATA_VAULT_ENTRY_2_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_4                                                        (0xaa0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_4                                                                (0xaa0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_5                                                        (0xaa4)
-#define MCI_REG_DATA_VAULT_ENTRY_2_5                                                                (0xaa4)
-#define MCI_REG_DATA_VAULT_ENTRY_2_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_6                                                        (0xaa8)
-#define MCI_REG_DATA_VAULT_ENTRY_2_6                                                                (0xaa8)
-#define MCI_REG_DATA_VAULT_ENTRY_2_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_7                                                        (0xaac)
-#define MCI_REG_DATA_VAULT_ENTRY_2_7                                                                (0xaac)
-#define MCI_REG_DATA_VAULT_ENTRY_2_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_8                                                        (0xab0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_8                                                                (0xab0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_9                                                        (0xab4)
-#define MCI_REG_DATA_VAULT_ENTRY_2_9                                                                (0xab4)
-#define MCI_REG_DATA_VAULT_ENTRY_2_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_10                                                       (0xab8)
-#define MCI_REG_DATA_VAULT_ENTRY_2_10                                                               (0xab8)
-#define MCI_REG_DATA_VAULT_ENTRY_2_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_2_11                                                       (0xabc)
-#define MCI_REG_DATA_VAULT_ENTRY_2_11                                                               (0xabc)
-#define MCI_REG_DATA_VAULT_ENTRY_2_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_2_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_0                                                        (0xac0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_0                                                                (0xac0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_1                                                        (0xac4)
-#define MCI_REG_DATA_VAULT_ENTRY_3_1                                                                (0xac4)
-#define MCI_REG_DATA_VAULT_ENTRY_3_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_2                                                        (0xac8)
-#define MCI_REG_DATA_VAULT_ENTRY_3_2                                                                (0xac8)
-#define MCI_REG_DATA_VAULT_ENTRY_3_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_3                                                        (0xacc)
-#define MCI_REG_DATA_VAULT_ENTRY_3_3                                                                (0xacc)
-#define MCI_REG_DATA_VAULT_ENTRY_3_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_4                                                        (0xad0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_4                                                                (0xad0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_5                                                        (0xad4)
-#define MCI_REG_DATA_VAULT_ENTRY_3_5                                                                (0xad4)
-#define MCI_REG_DATA_VAULT_ENTRY_3_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_6                                                        (0xad8)
-#define MCI_REG_DATA_VAULT_ENTRY_3_6                                                                (0xad8)
-#define MCI_REG_DATA_VAULT_ENTRY_3_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_7                                                        (0xadc)
-#define MCI_REG_DATA_VAULT_ENTRY_3_7                                                                (0xadc)
-#define MCI_REG_DATA_VAULT_ENTRY_3_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_8                                                        (0xae0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_8                                                                (0xae0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_9                                                        (0xae4)
-#define MCI_REG_DATA_VAULT_ENTRY_3_9                                                                (0xae4)
-#define MCI_REG_DATA_VAULT_ENTRY_3_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_10                                                       (0xae8)
-#define MCI_REG_DATA_VAULT_ENTRY_3_10                                                               (0xae8)
-#define MCI_REG_DATA_VAULT_ENTRY_3_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_3_11                                                       (0xaec)
-#define MCI_REG_DATA_VAULT_ENTRY_3_11                                                               (0xaec)
-#define MCI_REG_DATA_VAULT_ENTRY_3_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_3_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_0                                                        (0xaf0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_0                                                                (0xaf0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_1                                                        (0xaf4)
-#define MCI_REG_DATA_VAULT_ENTRY_4_1                                                                (0xaf4)
-#define MCI_REG_DATA_VAULT_ENTRY_4_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_2                                                        (0xaf8)
-#define MCI_REG_DATA_VAULT_ENTRY_4_2                                                                (0xaf8)
-#define MCI_REG_DATA_VAULT_ENTRY_4_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_3                                                        (0xafc)
-#define MCI_REG_DATA_VAULT_ENTRY_4_3                                                                (0xafc)
-#define MCI_REG_DATA_VAULT_ENTRY_4_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_4                                                        (0xb00)
-#define MCI_REG_DATA_VAULT_ENTRY_4_4                                                                (0xb00)
-#define MCI_REG_DATA_VAULT_ENTRY_4_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_5                                                        (0xb04)
-#define MCI_REG_DATA_VAULT_ENTRY_4_5                                                                (0xb04)
-#define MCI_REG_DATA_VAULT_ENTRY_4_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_6                                                        (0xb08)
-#define MCI_REG_DATA_VAULT_ENTRY_4_6                                                                (0xb08)
-#define MCI_REG_DATA_VAULT_ENTRY_4_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_7                                                        (0xb0c)
-#define MCI_REG_DATA_VAULT_ENTRY_4_7                                                                (0xb0c)
-#define MCI_REG_DATA_VAULT_ENTRY_4_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_8                                                        (0xb10)
-#define MCI_REG_DATA_VAULT_ENTRY_4_8                                                                (0xb10)
-#define MCI_REG_DATA_VAULT_ENTRY_4_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_9                                                        (0xb14)
-#define MCI_REG_DATA_VAULT_ENTRY_4_9                                                                (0xb14)
-#define MCI_REG_DATA_VAULT_ENTRY_4_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_10                                                       (0xb18)
-#define MCI_REG_DATA_VAULT_ENTRY_4_10                                                               (0xb18)
-#define MCI_REG_DATA_VAULT_ENTRY_4_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_4_11                                                       (0xb1c)
-#define MCI_REG_DATA_VAULT_ENTRY_4_11                                                               (0xb1c)
-#define MCI_REG_DATA_VAULT_ENTRY_4_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_4_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_0                                                        (0xb20)
-#define MCI_REG_DATA_VAULT_ENTRY_5_0                                                                (0xb20)
-#define MCI_REG_DATA_VAULT_ENTRY_5_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_1                                                        (0xb24)
-#define MCI_REG_DATA_VAULT_ENTRY_5_1                                                                (0xb24)
-#define MCI_REG_DATA_VAULT_ENTRY_5_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_2                                                        (0xb28)
-#define MCI_REG_DATA_VAULT_ENTRY_5_2                                                                (0xb28)
-#define MCI_REG_DATA_VAULT_ENTRY_5_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_3                                                        (0xb2c)
-#define MCI_REG_DATA_VAULT_ENTRY_5_3                                                                (0xb2c)
-#define MCI_REG_DATA_VAULT_ENTRY_5_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_4                                                        (0xb30)
-#define MCI_REG_DATA_VAULT_ENTRY_5_4                                                                (0xb30)
-#define MCI_REG_DATA_VAULT_ENTRY_5_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_5                                                        (0xb34)
-#define MCI_REG_DATA_VAULT_ENTRY_5_5                                                                (0xb34)
-#define MCI_REG_DATA_VAULT_ENTRY_5_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_6                                                        (0xb38)
-#define MCI_REG_DATA_VAULT_ENTRY_5_6                                                                (0xb38)
-#define MCI_REG_DATA_VAULT_ENTRY_5_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_7                                                        (0xb3c)
-#define MCI_REG_DATA_VAULT_ENTRY_5_7                                                                (0xb3c)
-#define MCI_REG_DATA_VAULT_ENTRY_5_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_8                                                        (0xb40)
-#define MCI_REG_DATA_VAULT_ENTRY_5_8                                                                (0xb40)
-#define MCI_REG_DATA_VAULT_ENTRY_5_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_9                                                        (0xb44)
-#define MCI_REG_DATA_VAULT_ENTRY_5_9                                                                (0xb44)
-#define MCI_REG_DATA_VAULT_ENTRY_5_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_10                                                       (0xb48)
-#define MCI_REG_DATA_VAULT_ENTRY_5_10                                                               (0xb48)
-#define MCI_REG_DATA_VAULT_ENTRY_5_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_5_11                                                       (0xb4c)
-#define MCI_REG_DATA_VAULT_ENTRY_5_11                                                               (0xb4c)
-#define MCI_REG_DATA_VAULT_ENTRY_5_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_5_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_0                                                        (0xb50)
-#define MCI_REG_DATA_VAULT_ENTRY_6_0                                                                (0xb50)
-#define MCI_REG_DATA_VAULT_ENTRY_6_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_1                                                        (0xb54)
-#define MCI_REG_DATA_VAULT_ENTRY_6_1                                                                (0xb54)
-#define MCI_REG_DATA_VAULT_ENTRY_6_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_2                                                        (0xb58)
-#define MCI_REG_DATA_VAULT_ENTRY_6_2                                                                (0xb58)
-#define MCI_REG_DATA_VAULT_ENTRY_6_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_3                                                        (0xb5c)
-#define MCI_REG_DATA_VAULT_ENTRY_6_3                                                                (0xb5c)
-#define MCI_REG_DATA_VAULT_ENTRY_6_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_4                                                        (0xb60)
-#define MCI_REG_DATA_VAULT_ENTRY_6_4                                                                (0xb60)
-#define MCI_REG_DATA_VAULT_ENTRY_6_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_5                                                        (0xb64)
-#define MCI_REG_DATA_VAULT_ENTRY_6_5                                                                (0xb64)
-#define MCI_REG_DATA_VAULT_ENTRY_6_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_6                                                        (0xb68)
-#define MCI_REG_DATA_VAULT_ENTRY_6_6                                                                (0xb68)
-#define MCI_REG_DATA_VAULT_ENTRY_6_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_7                                                        (0xb6c)
-#define MCI_REG_DATA_VAULT_ENTRY_6_7                                                                (0xb6c)
-#define MCI_REG_DATA_VAULT_ENTRY_6_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_8                                                        (0xb70)
-#define MCI_REG_DATA_VAULT_ENTRY_6_8                                                                (0xb70)
-#define MCI_REG_DATA_VAULT_ENTRY_6_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_9                                                        (0xb74)
-#define MCI_REG_DATA_VAULT_ENTRY_6_9                                                                (0xb74)
-#define MCI_REG_DATA_VAULT_ENTRY_6_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_10                                                       (0xb78)
-#define MCI_REG_DATA_VAULT_ENTRY_6_10                                                               (0xb78)
-#define MCI_REG_DATA_VAULT_ENTRY_6_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_6_11                                                       (0xb7c)
-#define MCI_REG_DATA_VAULT_ENTRY_6_11                                                               (0xb7c)
-#define MCI_REG_DATA_VAULT_ENTRY_6_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_6_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_0                                                        (0xb80)
-#define MCI_REG_DATA_VAULT_ENTRY_7_0                                                                (0xb80)
-#define MCI_REG_DATA_VAULT_ENTRY_7_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_1                                                        (0xb84)
-#define MCI_REG_DATA_VAULT_ENTRY_7_1                                                                (0xb84)
-#define MCI_REG_DATA_VAULT_ENTRY_7_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_2                                                        (0xb88)
-#define MCI_REG_DATA_VAULT_ENTRY_7_2                                                                (0xb88)
-#define MCI_REG_DATA_VAULT_ENTRY_7_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_3                                                        (0xb8c)
-#define MCI_REG_DATA_VAULT_ENTRY_7_3                                                                (0xb8c)
-#define MCI_REG_DATA_VAULT_ENTRY_7_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_4                                                        (0xb90)
-#define MCI_REG_DATA_VAULT_ENTRY_7_4                                                                (0xb90)
-#define MCI_REG_DATA_VAULT_ENTRY_7_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_5                                                        (0xb94)
-#define MCI_REG_DATA_VAULT_ENTRY_7_5                                                                (0xb94)
-#define MCI_REG_DATA_VAULT_ENTRY_7_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_6                                                        (0xb98)
-#define MCI_REG_DATA_VAULT_ENTRY_7_6                                                                (0xb98)
-#define MCI_REG_DATA_VAULT_ENTRY_7_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_7                                                        (0xb9c)
-#define MCI_REG_DATA_VAULT_ENTRY_7_7                                                                (0xb9c)
-#define MCI_REG_DATA_VAULT_ENTRY_7_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_8                                                        (0xba0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_8                                                                (0xba0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_9                                                        (0xba4)
-#define MCI_REG_DATA_VAULT_ENTRY_7_9                                                                (0xba4)
-#define MCI_REG_DATA_VAULT_ENTRY_7_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_10                                                       (0xba8)
-#define MCI_REG_DATA_VAULT_ENTRY_7_10                                                               (0xba8)
-#define MCI_REG_DATA_VAULT_ENTRY_7_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_7_11                                                       (0xbac)
-#define MCI_REG_DATA_VAULT_ENTRY_7_11                                                               (0xbac)
-#define MCI_REG_DATA_VAULT_ENTRY_7_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_7_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_0                                                        (0xbb0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_0                                                                (0xbb0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_1                                                        (0xbb4)
-#define MCI_REG_DATA_VAULT_ENTRY_8_1                                                                (0xbb4)
-#define MCI_REG_DATA_VAULT_ENTRY_8_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_2                                                        (0xbb8)
-#define MCI_REG_DATA_VAULT_ENTRY_8_2                                                                (0xbb8)
-#define MCI_REG_DATA_VAULT_ENTRY_8_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_3                                                        (0xbbc)
-#define MCI_REG_DATA_VAULT_ENTRY_8_3                                                                (0xbbc)
-#define MCI_REG_DATA_VAULT_ENTRY_8_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_4                                                        (0xbc0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_4                                                                (0xbc0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_5                                                        (0xbc4)
-#define MCI_REG_DATA_VAULT_ENTRY_8_5                                                                (0xbc4)
-#define MCI_REG_DATA_VAULT_ENTRY_8_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_6                                                        (0xbc8)
-#define MCI_REG_DATA_VAULT_ENTRY_8_6                                                                (0xbc8)
-#define MCI_REG_DATA_VAULT_ENTRY_8_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_7                                                        (0xbcc)
-#define MCI_REG_DATA_VAULT_ENTRY_8_7                                                                (0xbcc)
-#define MCI_REG_DATA_VAULT_ENTRY_8_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_8                                                        (0xbd0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_8                                                                (0xbd0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_9                                                        (0xbd4)
-#define MCI_REG_DATA_VAULT_ENTRY_8_9                                                                (0xbd4)
-#define MCI_REG_DATA_VAULT_ENTRY_8_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_10                                                       (0xbd8)
-#define MCI_REG_DATA_VAULT_ENTRY_8_10                                                               (0xbd8)
-#define MCI_REG_DATA_VAULT_ENTRY_8_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_8_11                                                       (0xbdc)
-#define MCI_REG_DATA_VAULT_ENTRY_8_11                                                               (0xbdc)
-#define MCI_REG_DATA_VAULT_ENTRY_8_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_8_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_0                                                        (0xbe0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_0                                                                (0xbe0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_0_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_0_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_1                                                        (0xbe4)
-#define MCI_REG_DATA_VAULT_ENTRY_9_1                                                                (0xbe4)
-#define MCI_REG_DATA_VAULT_ENTRY_9_1_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_1_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_2                                                        (0xbe8)
-#define MCI_REG_DATA_VAULT_ENTRY_9_2                                                                (0xbe8)
-#define MCI_REG_DATA_VAULT_ENTRY_9_2_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_2_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_3                                                        (0xbec)
-#define MCI_REG_DATA_VAULT_ENTRY_9_3                                                                (0xbec)
-#define MCI_REG_DATA_VAULT_ENTRY_9_3_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_3_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_4                                                        (0xbf0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_4                                                                (0xbf0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_4_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_4_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_5                                                        (0xbf4)
-#define MCI_REG_DATA_VAULT_ENTRY_9_5                                                                (0xbf4)
-#define MCI_REG_DATA_VAULT_ENTRY_9_5_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_5_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_6                                                        (0xbf8)
-#define MCI_REG_DATA_VAULT_ENTRY_9_6                                                                (0xbf8)
-#define MCI_REG_DATA_VAULT_ENTRY_9_6_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_6_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_7                                                        (0xbfc)
-#define MCI_REG_DATA_VAULT_ENTRY_9_7                                                                (0xbfc)
-#define MCI_REG_DATA_VAULT_ENTRY_9_7_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_7_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_8                                                        (0xc00)
-#define MCI_REG_DATA_VAULT_ENTRY_9_8                                                                (0xc00)
-#define MCI_REG_DATA_VAULT_ENTRY_9_8_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_8_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_9                                                        (0xc04)
-#define MCI_REG_DATA_VAULT_ENTRY_9_9                                                                (0xc04)
-#define MCI_REG_DATA_VAULT_ENTRY_9_9_LOCK_ENTRY_LOW                                                 (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_9_LOCK_ENTRY_MASK                                                (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_10                                                       (0xc08)
-#define MCI_REG_DATA_VAULT_ENTRY_9_10                                                               (0xc08)
-#define MCI_REG_DATA_VAULT_ENTRY_9_10_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_10_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_DATA_VAULT_ENTRY_9_11                                                       (0xc0c)
-#define MCI_REG_DATA_VAULT_ENTRY_9_11                                                               (0xc0c)
-#define MCI_REG_DATA_VAULT_ENTRY_9_11_LOCK_ENTRY_LOW                                                (0)
-#define MCI_REG_DATA_VAULT_ENTRY_9_11_LOCK_ENTRY_MASK                                               (0x1)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_0                                          (0xc10)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_0                                                  (0xc10)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_0_LOCK_ENTRY_LOW                                   (0)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_0_LOCK_ENTRY_MASK                                  (0x1)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_1                                          (0xc14)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_1                                                  (0xc14)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_1_LOCK_ENTRY_LOW                                   (0)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_1_LOCK_ENTRY_MASK                                  (0x1)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_2                                          (0xc18)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_2                                                  (0xc18)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_2_LOCK_ENTRY_LOW                                   (0)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_2_LOCK_ENTRY_MASK                                  (0x1)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_3                                          (0xc1c)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_3                                                  (0xc1c)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_3_LOCK_ENTRY_LOW                                   (0)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_3_LOCK_ENTRY_MASK                                  (0x1)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_4                                          (0xc20)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_4                                                  (0xc20)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_4_LOCK_ENTRY_LOW                                   (0)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_4_LOCK_ENTRY_MASK                                  (0x1)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_5                                          (0xc24)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_5                                                  (0xc24)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_5_LOCK_ENTRY_LOW                                   (0)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_5_LOCK_ENTRY_MASK                                  (0x1)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_6                                          (0xc28)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_6                                                  (0xc28)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_6_LOCK_ENTRY_LOW                                   (0)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_6_LOCK_ENTRY_MASK                                  (0x1)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_7                                          (0xc2c)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_7                                                  (0xc2c)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_7_LOCK_ENTRY_LOW                                   (0)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_CTRL_7_LOCK_ENTRY_MASK                                  (0x1)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_0                                               (0xc30)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_0                                                       (0xc30)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_1                                               (0xc34)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_1                                                       (0xc34)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_2                                               (0xc38)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_2                                                       (0xc38)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_3                                               (0xc3c)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_3                                                       (0xc3c)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_4                                               (0xc40)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_4                                                       (0xc40)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_5                                               (0xc44)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_5                                                       (0xc44)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_6                                               (0xc48)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_6                                                       (0xc48)
-#define MCI_TOP_MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_7                                               (0xc4c)
-#define MCI_REG_STICKY_LOCKABLE_SCRATCH_REG_7                                                       (0xc4c)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_0                                                 (0xc50)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_0                                                         (0xc50)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_0_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_0_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_1                                                 (0xc54)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_1                                                         (0xc54)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_1_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_1_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_2                                                 (0xc58)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_2                                                         (0xc58)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_2_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_2_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_3                                                 (0xc5c)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_3                                                         (0xc5c)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_3_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_3_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_4                                                 (0xc60)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_4                                                         (0xc60)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_4_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_4_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_5                                                 (0xc64)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_5                                                         (0xc64)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_5_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_5_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_6                                                 (0xc68)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_6                                                         (0xc68)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_6_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_6_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_7                                                 (0xc6c)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_7                                                         (0xc6c)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_7_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_7_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_8                                                 (0xc70)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_8                                                         (0xc70)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_8_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_8_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_9                                                 (0xc74)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_9                                                         (0xc74)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_9_LOCK_ENTRY_LOW                                          (0)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_CTRL_9_LOCK_ENTRY_MASK                                         (0x1)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_0                                                      (0xc78)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_0                                                              (0xc78)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_1                                                      (0xc7c)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_1                                                              (0xc7c)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_2                                                      (0xc80)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_2                                                              (0xc80)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_3                                                      (0xc84)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_3                                                              (0xc84)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_4                                                      (0xc88)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_4                                                              (0xc88)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_5                                                      (0xc8c)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_5                                                              (0xc8c)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_6                                                      (0xc90)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_6                                                              (0xc90)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_7                                                      (0xc94)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_7                                                              (0xc94)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_8                                                      (0xc98)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_8                                                              (0xc98)
-#define MCI_TOP_MCI_REG_LOCKABLE_SCRATCH_REG_9                                                      (0xc9c)
-#define MCI_REG_LOCKABLE_SCRATCH_REG_9                                                              (0xc9c)
-#define MCI_TOP_MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_0                                            (0xca0)
-#define MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_0                                                    (0xca0)
-#define MCI_TOP_MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_1                                            (0xca4)
-#define MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_1                                                    (0xca4)
-#define MCI_TOP_MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_2                                            (0xca8)
-#define MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_2                                                    (0xca8)
-#define MCI_TOP_MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_3                                            (0xcac)
-#define MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_3                                                    (0xcac)
-#define MCI_TOP_MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_4                                            (0xcb0)
-#define MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_4                                                    (0xcb0)
-#define MCI_TOP_MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_5                                            (0xcb4)
-#define MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_5                                                    (0xcb4)
-#define MCI_TOP_MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_6                                            (0xcb8)
-#define MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_6                                                    (0xcb8)
-#define MCI_TOP_MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_7                                            (0xcbc)
-#define MCI_REG_NON_STICKY_GENERIC_SCRATCH_REG_7                                                    (0xcbc)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_START                                                         (0x1000)
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R                                              (0x1000)
+#ifndef MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R
 #define MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R                                                      (0x1000)
 #define MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_LOW                                         (0)
 #define MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK                                        (0x1)
 #define MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_LOW                                         (1)
 #define MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK                                        (0x2)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R                                              (0x1004)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R
 #define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R                                                      (0x1004)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER1_TIMEOUT_EN_LOW                      (0)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER1_TIMEOUT_EN_MASK                     (0x1)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER2_TIMEOUT_EN_LOW                      (1)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER2_TIMEOUT_EN_MASK                     (0x2)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_EN_LOW              (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_EN_MASK             (0x1)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_INTERNAL_EN_LOW                                (1)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_INTERNAL_EN_MASK                               (0x2)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_INV_DEV_EN_LOW                           (2)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_INV_DEV_EN_MASK                          (0x4)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_INV_DEV_EN_LOW                           (3)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_INV_DEV_EN_MASK                          (0x8)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_CMD_FAIL_EN_LOW                          (4)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_CMD_FAIL_EN_MASK                         (0x10)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_CMD_FAIL_EN_LOW                          (5)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_CMD_FAIL_EN_MASK                         (0x20)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_ECC_UNC_EN_LOW                           (6)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_ECC_UNC_EN_MASK                          (0x40)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_ECC_UNC_EN_LOW                           (7)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_ECC_UNC_EN_MASK                          (0x80)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER1_TIMEOUT_EN_LOW                      (8)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER1_TIMEOUT_EN_MASK                     (0x100)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER2_TIMEOUT_EN_LOW                      (9)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER2_TIMEOUT_EN_MASK                     (0x200)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R                                              (0x1008)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R                                                      (0x1008)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL31_EN_LOW                       (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL31_EN_MASK                      (0x1)
@@ -1947,13 +1180,31 @@
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL1_EN_MASK                       (0x40000000)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL0_EN_LOW                        (31)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL0_EN_MASK                       (0x80000000)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R                                              (0x100c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R                                                      (0x100c)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MCU_SRAM_ECC_COR_EN_LOW                        (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MCU_SRAM_ECC_COR_EN_MASK                       (0x1)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_CLPRA_MCU_RESET_REQ_EN_LOW                     (1)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_CLPRA_MCU_RESET_REQ_EN_MASK                    (0x2)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_CPTRA_MCU_RESET_REQ_EN_LOW                     (1)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_CPTRA_MCU_RESET_REQ_EN_MASK                    (0x2)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_GEN_IN_TOGGLE_EN_LOW                           (2)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_GEN_IN_TOGGLE_EN_MASK                          (0x4)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_CMD_AVAIL_EN_LOW                         (3)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_CMD_AVAIL_EN_MASK                        (0x8)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_CMD_AVAIL_EN_LOW                         (4)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_CMD_AVAIL_EN_MASK                        (0x10)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_ECC_COR_EN_LOW                           (5)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_ECC_COR_EN_MASK                          (0x20)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_ECC_COR_EN_LOW                           (6)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_ECC_COR_EN_MASK                          (0x40)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_LOW                      (7)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_MASK                     (0x80)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_LOW                      (8)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK                     (0x100)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R                                              (0x1010)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R                                                      (0x1010)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL31_EN_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL31_EN_MASK                  (0x1)
@@ -2019,25 +1270,49 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL1_EN_MASK                   (0x40000000)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL0_EN_LOW                    (31)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL0_EN_MASK                   (0x80000000)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R                                           (0x1014)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R
 #define MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R                                                   (0x1014)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS0_LOW                                      (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS0_MASK                                     (0x1)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS1_LOW                                      (1)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS1_MASK                                     (0x2)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R                                           (0x1018)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R                                                   (0x1018)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS0_LOW                                      (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS0_MASK                                     (0x1)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS1_LOW                                      (1)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS1_MASK                                     (0x2)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R                                        (0x101c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R
 #define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R                                                (0x101c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER1_TIMEOUT_STS_LOW               (0)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER1_TIMEOUT_STS_MASK              (0x1)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER2_TIMEOUT_STS_LOW               (1)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER2_TIMEOUT_STS_MASK              (0x2)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_STS_LOW       (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_STS_MASK      (0x1)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_INTERNAL_STS_LOW                         (1)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_INTERNAL_STS_MASK                        (0x2)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_INV_DEV_STS_LOW                    (2)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_INV_DEV_STS_MASK                   (0x4)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_INV_DEV_STS_LOW                    (3)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_INV_DEV_STS_MASK                   (0x8)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_CMD_FAIL_STS_LOW                   (4)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_CMD_FAIL_STS_MASK                  (0x10)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_CMD_FAIL_STS_LOW                   (5)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_CMD_FAIL_STS_MASK                  (0x20)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_LOW                    (6)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK                   (0x40)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_ECC_UNC_STS_LOW                    (7)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_ECC_UNC_STS_MASK                   (0x80)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER1_TIMEOUT_STS_LOW               (8)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER1_TIMEOUT_STS_MASK              (0x100)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER2_TIMEOUT_STS_LOW               (9)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER2_TIMEOUT_STS_MASK              (0x200)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R                                        (0x1020)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R                                                (0x1020)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL31_STS_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL31_STS_MASK               (0x1)
@@ -2103,13 +1378,31 @@
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL1_STS_MASK                (0x40000000)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL0_STS_LOW                 (31)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL0_STS_MASK                (0x80000000)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R                                        (0x1024)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R                                                (0x1024)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MCU_SRAM_ECC_COR_STS_LOW                 (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MCU_SRAM_ECC_COR_STS_MASK                (0x1)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CLPRA_MCU_RESET_REQ_STS_LOW              (1)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CLPRA_MCU_RESET_REQ_STS_MASK             (0x2)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_LOW              (1)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_MASK             (0x2)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_GEN_IN_TOGGLE_STS_LOW                    (2)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_GEN_IN_TOGGLE_STS_MASK                   (0x4)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_LOW                  (3)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK                 (0x8)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_CMD_AVAIL_STS_LOW                  (4)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_CMD_AVAIL_STS_MASK                 (0x10)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_LOW                    (5)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_MASK                   (0x20)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_ECC_COR_STS_LOW                    (6)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_ECC_COR_STS_MASK                   (0x40)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_LOW               (7)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK              (0x80)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_LOW               (8)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_MASK              (0x100)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R                                        (0x1028)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R                                                (0x1028)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL31_STS_LOW            (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL31_STS_MASK           (0x1)
@@ -2175,13 +1468,33 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL1_STS_MASK            (0x40000000)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL0_STS_LOW             (31)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL0_STS_MASK            (0x80000000)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R                                            (0x102c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R
 #define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R                                                    (0x102c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER1_TIMEOUT_TRIG_LOW                  (0)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER1_TIMEOUT_TRIG_MASK                 (0x1)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER2_TIMEOUT_TRIG_LOW                  (1)
-#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER2_TIMEOUT_TRIG_MASK                 (0x2)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_TRIG_LOW          (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_TRIG_MASK         (0x1)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_INTERNAL_TRIG_LOW                            (1)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_INTERNAL_TRIG_MASK                           (0x2)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX0_INV_DEV_TRIG_LOW                       (2)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX0_INV_DEV_TRIG_MASK                      (0x4)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX1_INV_DEV_TRIG_LOW                       (3)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX1_INV_DEV_TRIG_MASK                      (0x8)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX0_CMD_FAIL_TRIG_LOW                      (4)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX0_CMD_FAIL_TRIG_MASK                     (0x10)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX1_CMD_FAIL_TRIG_LOW                      (5)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX1_CMD_FAIL_TRIG_MASK                     (0x20)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX0_ECC_UNC_TRIG_LOW                       (6)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX0_ECC_UNC_TRIG_MASK                      (0x40)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX1_ECC_UNC_TRIG_LOW                       (7)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX1_ECC_UNC_TRIG_MASK                      (0x80)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER1_TIMEOUT_TRIG_LOW                  (8)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER1_TIMEOUT_TRIG_MASK                 (0x100)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER2_TIMEOUT_TRIG_LOW                  (9)
+#define MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER2_TIMEOUT_TRIG_MASK                 (0x200)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R                                            (0x1030)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R                                                    (0x1030)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL31_TRIG_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL31_TRIG_MASK                  (0x1)
@@ -2247,13 +1560,31 @@
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL1_TRIG_MASK                   (0x40000000)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL0_TRIG_LOW                    (31)
 #define MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL0_TRIG_MASK                   (0x80000000)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R                                            (0x1034)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R                                                    (0x1034)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MCU_SRAM_ECC_COR_TRIG_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MCU_SRAM_ECC_COR_TRIG_MASK                   (0x1)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_CLPRA_MCU_RESET_REQ_TRIG_LOW                 (1)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_CLPRA_MCU_RESET_REQ_TRIG_MASK                (0x2)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_CPTRA_MCU_RESET_REQ_TRIG_LOW                 (1)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_CPTRA_MCU_RESET_REQ_TRIG_MASK                (0x2)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_GEN_IN_TOGGLE_TRIG_LOW                       (2)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_GEN_IN_TOGGLE_TRIG_MASK                      (0x4)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_CMD_AVAIL_TRIG_LOW                     (3)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_CMD_AVAIL_TRIG_MASK                    (0x8)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_CMD_AVAIL_TRIG_LOW                     (4)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_CMD_AVAIL_TRIG_MASK                    (0x10)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_ECC_COR_TRIG_LOW                       (5)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_ECC_COR_TRIG_MASK                      (0x20)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_ECC_COR_TRIG_LOW                       (6)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_ECC_COR_TRIG_MASK                      (0x40)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_LOW                  (7)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_MASK                 (0x80)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_LOW                  (8)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_MASK                 (0x100)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R                                            (0x1038)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R                                                    (0x1038)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R_NOTIF_AGG_ERROR_NON_FATAL31_TRIG_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R_NOTIF_AGG_ERROR_NON_FATAL31_TRIG_MASK              (0x1)
@@ -2319,434 +1650,897 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R_NOTIF_AGG_ERROR_NON_FATAL1_TRIG_MASK               (0x40000000)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R_NOTIF_AGG_ERROR_NON_FATAL0_TRIG_LOW                (31)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R_NOTIF_AGG_ERROR_NON_FATAL0_TRIG_MASK               (0x80000000)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_R                         (0x1100)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_R                                 (0x1100)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_R                         (0x1104)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_R                                 (0x1104)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_R                           (0x1108)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_R                                   (0x1108)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_R                           (0x110c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_R                                   (0x110c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_R                           (0x1110)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_R                                   (0x1110)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_R                           (0x1114)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_R                                   (0x1114)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_R                           (0x1118)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_R                                   (0x1118)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_R                           (0x111c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_R                                   (0x111c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_R                           (0x1120)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_R                                   (0x1120)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_R                           (0x1124)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_R                                   (0x1124)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_R                           (0x1128)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_R                                   (0x1128)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_R                           (0x112c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_R                                   (0x112c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_R                          (0x1130)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_R                                  (0x1130)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_R                          (0x1134)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_R                                  (0x1134)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_R                          (0x1138)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_R                                  (0x1138)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_R                          (0x113c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_R                                  (0x113c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_R                          (0x1140)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_R                                  (0x1140)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_R                          (0x1144)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_R                                  (0x1144)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_R                          (0x1148)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_R                                  (0x1148)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_R                          (0x114c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_R                                  (0x114c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_R                          (0x1150)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_R                                  (0x1150)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_R                          (0x1154)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_R                                  (0x1154)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_R                          (0x1158)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_R                                  (0x1158)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_R                          (0x115c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_R                                  (0x115c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_R                          (0x1160)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_R                                  (0x1160)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_R                          (0x1164)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_R                                  (0x1164)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_R                          (0x1168)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_R                                  (0x1168)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_R                          (0x116c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_R                                  (0x116c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_R                          (0x1170)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_R                                  (0x1170)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_R                          (0x1174)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_R                                  (0x1174)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_R                          (0x1178)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_R                                  (0x1178)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_R                          (0x117c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_R                                  (0x117c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_R                          (0x1180)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_R                                  (0x1180)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_R                          (0x1184)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_R                                  (0x1184)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_R                                   (0x1100)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_R                                           (0x1100)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_INV_DEV_INTR_COUNT_R                              (0x1104)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_INV_DEV_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_INV_DEV_INTR_COUNT_R                                      (0x1104)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_INV_DEV_INTR_COUNT_R                              (0x1108)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_INV_DEV_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_INV_DEV_INTR_COUNT_R                                      (0x1108)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_CMD_FAIL_INTR_COUNT_R                             (0x110c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_CMD_FAIL_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_CMD_FAIL_INTR_COUNT_R                                     (0x110c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_CMD_FAIL_INTR_COUNT_R                             (0x1110)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_CMD_FAIL_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_CMD_FAIL_INTR_COUNT_R                                     (0x1110)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_R                              (0x1114)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_R                                      (0x1114)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_ECC_UNC_INTR_COUNT_R                              (0x1118)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_ECC_UNC_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_ECC_UNC_INTR_COUNT_R                                      (0x1118)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MCU_SRAM_DMI_AXI_COLLISION_INTR_COUNT_R                 (0x111c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MCU_SRAM_DMI_AXI_COLLISION_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MCU_SRAM_DMI_AXI_COLLISION_INTR_COUNT_R                         (0x111c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_R                         (0x1120)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_R                                 (0x1120)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_R                         (0x1124)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_R                                 (0x1124)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_R                           (0x1128)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_R                                   (0x1128)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_R                           (0x112c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_R                                   (0x112c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_R                           (0x1130)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_R                                   (0x1130)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_R                           (0x1134)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_R                                   (0x1134)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_R                           (0x1138)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_R                                   (0x1138)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_R                           (0x113c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_R                                   (0x113c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_R                           (0x1140)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_R                                   (0x1140)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_R                           (0x1144)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_R                                   (0x1144)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_R                           (0x1148)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_R                                   (0x1148)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_R                           (0x114c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_R                                   (0x114c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_R                          (0x1150)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_R                                  (0x1150)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_R                          (0x1154)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_R                                  (0x1154)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_R                          (0x1158)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_R                                  (0x1158)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_R                          (0x115c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_R                                  (0x115c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_R                          (0x1160)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_R                                  (0x1160)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_R                          (0x1164)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_R                                  (0x1164)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_R                          (0x1168)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_R                                  (0x1168)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_R                          (0x116c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_R                                  (0x116c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_R                          (0x1170)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_R                                  (0x1170)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_R                          (0x1174)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_R                                  (0x1174)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_R                          (0x1178)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_R                                  (0x1178)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_R                          (0x117c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_R                                  (0x117c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_R                          (0x1180)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_R                                  (0x1180)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_R                          (0x1184)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_R                                  (0x1184)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_R                          (0x1188)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_R                                  (0x1188)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_R                          (0x118c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_R                                  (0x118c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_R                          (0x1190)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_R                                  (0x1190)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_R                          (0x1194)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_R                                  (0x1194)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_R                          (0x1198)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_R                                  (0x1198)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_R                          (0x119c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_R                                  (0x119c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_R                          (0x11a0)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_R                                  (0x11a0)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_R                          (0x11a4)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_R                                  (0x11a4)
+#endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_R                           (0x1200)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_R                                   (0x1200)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_CLPRA_MCU_RESET_REQ_INTR_COUNT_R                        (0x1204)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_CLPRA_MCU_RESET_REQ_INTR_COUNT_R                                (0x1204)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_R                       (0x1208)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_R                               (0x1208)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_R                       (0x120c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_R                               (0x120c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_R                       (0x1210)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_R                               (0x1210)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_R                       (0x1214)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_R                               (0x1214)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_R                       (0x1218)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_R                               (0x1218)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_R                       (0x121c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_R                               (0x121c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_R                       (0x1220)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_R                               (0x1220)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_R                       (0x1224)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_R                               (0x1224)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_R                       (0x1228)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_R                               (0x1228)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_R                       (0x122c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_R                               (0x122c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_R                      (0x1230)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_R                              (0x1230)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_R                      (0x1234)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_R                              (0x1234)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_R                      (0x1238)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_R                              (0x1238)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_R                      (0x123c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_R                              (0x123c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_R                      (0x1240)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_R                              (0x1240)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_R                      (0x1244)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_R                              (0x1244)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_R                      (0x1248)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_R                              (0x1248)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_R                      (0x124c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_R                              (0x124c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_R                      (0x1250)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_R                              (0x1250)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_R                      (0x1254)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_R                              (0x1254)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_R                      (0x1258)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_R                              (0x1258)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_R                      (0x125c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_R                              (0x125c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_R                      (0x1260)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_R                              (0x1260)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_R                      (0x1264)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_R                              (0x1264)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_R                      (0x1268)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_R                              (0x1268)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_R                      (0x126c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_R                              (0x126c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_R                      (0x1270)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_R                              (0x1270)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_R                      (0x1274)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_R                              (0x1274)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_R                      (0x1278)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_R                              (0x1278)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_R                      (0x127c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_R                              (0x127c)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_R                      (0x1280)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_R                              (0x1280)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_R                      (0x1284)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_R                              (0x1284)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_INCR_R                    (0x1300)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_INCR_R                            (0x1300)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MCU_RESET_REQ_INTR_COUNT_R                        (0x1204)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MCU_RESET_REQ_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MCU_RESET_REQ_INTR_COUNT_R                                (0x1204)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_GEN_IN_TOGGLE_INTR_COUNT_R                              (0x1208)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_GEN_IN_TOGGLE_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_GEN_IN_TOGGLE_INTR_COUNT_R                                      (0x1208)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_R                       (0x120c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_R                               (0x120c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_R                       (0x1210)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_R                               (0x1210)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_R                       (0x1214)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_R                               (0x1214)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_R                       (0x1218)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_R                               (0x1218)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_R                       (0x121c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_R                               (0x121c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_R                       (0x1220)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_R                               (0x1220)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_R                       (0x1224)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_R                               (0x1224)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_R                       (0x1228)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_R                               (0x1228)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_R                       (0x122c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_R                               (0x122c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_R                       (0x1230)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_R                               (0x1230)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_R                      (0x1234)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_R                              (0x1234)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_R                      (0x1238)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_R                              (0x1238)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_R                      (0x123c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_R                              (0x123c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_R                      (0x1240)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_R                              (0x1240)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_R                      (0x1244)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_R                              (0x1244)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_R                      (0x1248)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_R                              (0x1248)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_R                      (0x124c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_R                              (0x124c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_R                      (0x1250)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_R                              (0x1250)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_R                      (0x1254)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_R                              (0x1254)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_R                      (0x1258)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_R                              (0x1258)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_R                      (0x125c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_R                              (0x125c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_R                      (0x1260)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_R                              (0x1260)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_R                      (0x1264)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_R                              (0x1264)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_R                      (0x1268)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_R                              (0x1268)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_R                      (0x126c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_R                              (0x126c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_R                      (0x1270)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_R                              (0x1270)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_R                      (0x1274)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_R                              (0x1274)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_R                      (0x1278)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_R                              (0x1278)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_R                      (0x127c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_R                              (0x127c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_R                      (0x1280)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_R                              (0x1280)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_R                      (0x1284)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_R                              (0x1284)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_R                      (0x1288)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_R                              (0x1288)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_CMD_AVAIL_INTR_COUNT_R                            (0x128c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_CMD_AVAIL_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_CMD_AVAIL_INTR_COUNT_R                                    (0x128c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_R                            (0x1290)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_R                                    (0x1290)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R                              (0x1294)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R                                      (0x1294)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R                              (0x1298)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R                                      (0x1298)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                         (0x129c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x129c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                         (0x12a0)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x12a0)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R                              (0x1300)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R                                      (0x1300)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R_PULSE_LOW                            (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R_PULSE_MASK                           (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_INV_DEV_INTR_COUNT_INCR_R                         (0x1304)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_INV_DEV_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_INV_DEV_INTR_COUNT_INCR_R                                 (0x1304)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_INV_DEV_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_INV_DEV_INTR_COUNT_INCR_R_PULSE_MASK                      (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_INV_DEV_INTR_COUNT_INCR_R                         (0x1308)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_INV_DEV_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_INV_DEV_INTR_COUNT_INCR_R                                 (0x1308)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_INV_DEV_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_INV_DEV_INTR_COUNT_INCR_R_PULSE_MASK                      (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_CMD_FAIL_INTR_COUNT_INCR_R                        (0x130c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_CMD_FAIL_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_CMD_FAIL_INTR_COUNT_INCR_R                                (0x130c)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_CMD_FAIL_INTR_COUNT_INCR_R_PULSE_LOW                      (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_CMD_FAIL_INTR_COUNT_INCR_R_PULSE_MASK                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_CMD_FAIL_INTR_COUNT_INCR_R                        (0x1310)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_CMD_FAIL_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_CMD_FAIL_INTR_COUNT_INCR_R                                (0x1310)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_CMD_FAIL_INTR_COUNT_INCR_R_PULSE_LOW                      (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_CMD_FAIL_INTR_COUNT_INCR_R_PULSE_MASK                     (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_INCR_R                         (0x1314)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_INCR_R                                 (0x1314)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_INCR_R_PULSE_MASK                      (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_ECC_UNC_INTR_COUNT_INCR_R                         (0x1318)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_ECC_UNC_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_ECC_UNC_INTR_COUNT_INCR_R                                 (0x1318)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_ECC_UNC_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MBOX1_ECC_UNC_INTR_COUNT_INCR_R_PULSE_MASK                      (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_INCR_R                    (0x131c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_INCR_R                            (0x131c)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER1_TIMEOUT_INTR_COUNT_INCR_R_PULSE_MASK                 (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_INCR_R                    (0x1304)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_INCR_R                            (0x1304)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_INCR_R                    (0x1320)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_INCR_R                            (0x1320)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_WDT_TIMER2_TIMEOUT_INTR_COUNT_INCR_R_PULSE_MASK                 (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_INCR_R                      (0x1308)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_INCR_R                              (0x1308)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MCU_SRAM_DMI_AXI_COLLISION_INTR_COUNT_INCR_R            (0x1324)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_MCU_SRAM_DMI_AXI_COLLISION_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MCU_SRAM_DMI_AXI_COLLISION_INTR_COUNT_INCR_R                    (0x1324)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MCU_SRAM_DMI_AXI_COLLISION_INTR_COUNT_INCR_R_PULSE_LOW          (0)
+#define MCI_REG_INTR_BLOCK_RF_ERROR_MCU_SRAM_DMI_AXI_COLLISION_INTR_COUNT_INCR_R_PULSE_MASK         (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_INCR_R                      (0x1328)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_INCR_R                              (0x1328)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_INCR_R                      (0x130c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_INCR_R                              (0x130c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_INCR_R                      (0x132c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_INCR_R                              (0x132c)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_INCR_R                      (0x1310)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_INCR_R                              (0x1310)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_INCR_R                      (0x1330)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_INCR_R                              (0x1330)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_INCR_R                      (0x1314)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_INCR_R                              (0x1314)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_INCR_R                      (0x1334)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_INCR_R                              (0x1334)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_INCR_R                      (0x1318)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_INCR_R                              (0x1318)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_INCR_R                      (0x1338)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_INCR_R                              (0x1338)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_INCR_R                      (0x131c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_INCR_R                              (0x131c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_INCR_R                      (0x133c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_INCR_R                              (0x133c)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_INCR_R                      (0x1320)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_INCR_R                              (0x1320)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_INCR_R                      (0x1340)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_INCR_R                              (0x1340)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_INCR_R                      (0x1324)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_INCR_R                              (0x1324)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_INCR_R                      (0x1344)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_INCR_R                              (0x1344)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_INCR_R                      (0x1328)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_INCR_R                              (0x1328)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_INCR_R                      (0x1348)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_INCR_R                              (0x1348)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_INCR_R                      (0x132c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_INCR_R                              (0x132c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_INCR_R                      (0x134c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_INCR_R                              (0x134c)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_INCR_R                     (0x1330)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_INCR_R                             (0x1330)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_INCR_R                     (0x1350)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_INCR_R                             (0x1350)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_INCR_R                     (0x1334)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_INCR_R                             (0x1334)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_INCR_R                     (0x1354)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_INCR_R                             (0x1354)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_INCR_R                     (0x1338)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_INCR_R                             (0x1338)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_INCR_R                     (0x1358)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_INCR_R                             (0x1358)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_INCR_R                     (0x133c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_INCR_R                             (0x133c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_INCR_R                     (0x135c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_INCR_R                             (0x135c)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_INCR_R                     (0x1340)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_INCR_R                             (0x1340)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_INCR_R                     (0x1360)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_INCR_R                             (0x1360)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_INCR_R                     (0x1344)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_INCR_R                             (0x1344)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_INCR_R                     (0x1364)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_INCR_R                             (0x1364)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_INCR_R                     (0x1348)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_INCR_R                             (0x1348)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_INCR_R                     (0x1368)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_INCR_R                             (0x1368)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_INCR_R                     (0x134c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_INCR_R                             (0x134c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_INCR_R                     (0x136c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_INCR_R                             (0x136c)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_INCR_R                     (0x1350)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_INCR_R                             (0x1350)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_INCR_R                     (0x1370)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_INCR_R                             (0x1370)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_INCR_R                     (0x1354)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_INCR_R                             (0x1354)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_INCR_R                     (0x1374)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_INCR_R                             (0x1374)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_INCR_R                     (0x1358)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_INCR_R                             (0x1358)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_INCR_R                     (0x1378)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_INCR_R                             (0x1378)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_INCR_R                     (0x135c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_INCR_R                             (0x135c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_INCR_R                     (0x137c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_INCR_R                             (0x137c)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_INCR_R                     (0x1360)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_INCR_R                             (0x1360)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_INCR_R                     (0x1380)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_INCR_R                             (0x1380)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_INCR_R                     (0x1364)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_INCR_R                             (0x1364)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_INCR_R                     (0x1384)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_INCR_R                             (0x1384)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_INCR_R                     (0x1368)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_INCR_R                             (0x1368)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_INCR_R                     (0x1388)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_INCR_R                             (0x1388)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_INCR_R                     (0x136c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_INCR_R                             (0x136c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_INCR_R                     (0x138c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_INCR_R                             (0x138c)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_INCR_R                     (0x1370)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_INCR_R                             (0x1370)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_INCR_R                     (0x1390)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_INCR_R                             (0x1390)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_INCR_R                     (0x1374)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_INCR_R                             (0x1374)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_INCR_R                     (0x1394)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_INCR_R                             (0x1394)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_INCR_R                     (0x1378)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_INCR_R                             (0x1378)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_INCR_R                     (0x1398)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_INCR_R                             (0x1398)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_INCR_R                     (0x137c)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_INCR_R                             (0x137c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_INCR_R                     (0x139c)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_INCR_R                             (0x139c)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_INCR_R                     (0x1380)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_INCR_R                             (0x1380)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_INCR_R                     (0x13a0)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_INCR_R                             (0x13a0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_INCR_R                     (0x1384)
-#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_INCR_R                             (0x1384)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_INCR_R                     (0x13a4)
+#ifndef MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_INCR_R                             (0x13a4)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_INCR_R_PULSE_LOW                   (0)
 #define MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_INCR_R_PULSE_MASK                  (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_INCR_R                      (0x1388)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_INCR_R                              (0x1388)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_INCR_R                      (0x13a8)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_INCR_R                              (0x13a8)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_INCR_R_PULSE_LOW                    (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_INCR_R_PULSE_MASK                   (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_CLPRA_MCU_RESET_REQ_INTR_COUNT_INCR_R                   (0x138c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_CLPRA_MCU_RESET_REQ_INTR_COUNT_INCR_R                           (0x138c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_CLPRA_MCU_RESET_REQ_INTR_COUNT_INCR_R_PULSE_LOW                 (0)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_CLPRA_MCU_RESET_REQ_INTR_COUNT_INCR_R_PULSE_MASK                (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_INCR_R                  (0x1390)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_INCR_R                          (0x1390)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MCU_RESET_REQ_INTR_COUNT_INCR_R                   (0x13ac)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MCU_RESET_REQ_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MCU_RESET_REQ_INTR_COUNT_INCR_R                           (0x13ac)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MCU_RESET_REQ_INTR_COUNT_INCR_R_PULSE_LOW                 (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MCU_RESET_REQ_INTR_COUNT_INCR_R_PULSE_MASK                (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_GEN_IN_TOGGLE_INTR_COUNT_INCR_R                         (0x13b0)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_GEN_IN_TOGGLE_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_GEN_IN_TOGGLE_INTR_COUNT_INCR_R                                 (0x13b0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_GEN_IN_TOGGLE_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_GEN_IN_TOGGLE_INTR_COUNT_INCR_R_PULSE_MASK                      (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_INCR_R                  (0x13b4)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_INCR_R                          (0x13b4)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_INCR_R                  (0x1394)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_INCR_R                          (0x1394)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_INCR_R                  (0x13b8)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_INCR_R                          (0x13b8)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_INCR_R                  (0x1398)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_INCR_R                          (0x1398)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_INCR_R                  (0x13bc)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_INCR_R                          (0x13bc)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_INCR_R                  (0x139c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_INCR_R                          (0x139c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_INCR_R                  (0x13c0)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_INCR_R                          (0x13c0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_INCR_R                  (0x13a0)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_INCR_R                          (0x13a0)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_INCR_R                  (0x13c4)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_INCR_R                          (0x13c4)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_INCR_R                  (0x13a4)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_INCR_R                          (0x13a4)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_INCR_R                  (0x13c8)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_INCR_R                          (0x13c8)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_INCR_R                  (0x13a8)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_INCR_R                          (0x13a8)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_INCR_R                  (0x13cc)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_INCR_R                          (0x13cc)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_INCR_R                  (0x13ac)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_INCR_R                          (0x13ac)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_INCR_R                  (0x13d0)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_INCR_R                          (0x13d0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_INCR_R                  (0x13b0)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_INCR_R                          (0x13b0)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_INCR_R                  (0x13d4)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_INCR_R                          (0x13d4)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_INCR_R                  (0x13b4)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_INCR_R                          (0x13b4)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_INCR_R                  (0x13d8)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_INCR_R                          (0x13d8)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_INCR_R_PULSE_LOW                (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_INCR_R                 (0x13b8)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_INCR_R                         (0x13b8)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_INCR_R                 (0x13dc)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_INCR_R                         (0x13dc)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_INCR_R                 (0x13bc)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_INCR_R                         (0x13bc)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_INCR_R                 (0x13e0)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_INCR_R                         (0x13e0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_INCR_R                 (0x13c0)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_INCR_R                         (0x13c0)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_INCR_R                 (0x13e4)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_INCR_R                         (0x13e4)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_INCR_R                 (0x13c4)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_INCR_R                         (0x13c4)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_INCR_R                 (0x13e8)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_INCR_R                         (0x13e8)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_INCR_R                 (0x13c8)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_INCR_R                         (0x13c8)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_INCR_R                 (0x13ec)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_INCR_R                         (0x13ec)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_INCR_R                 (0x13cc)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_INCR_R                         (0x13cc)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_INCR_R                 (0x13f0)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_INCR_R                         (0x13f0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_INCR_R                 (0x13d0)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_INCR_R                         (0x13d0)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_INCR_R                 (0x13f4)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_INCR_R                         (0x13f4)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_INCR_R                 (0x13d4)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_INCR_R                         (0x13d4)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_INCR_R                 (0x13f8)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_INCR_R                         (0x13f8)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_INCR_R                 (0x13d8)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_INCR_R                         (0x13d8)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_INCR_R                 (0x13fc)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_INCR_R                         (0x13fc)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_INCR_R                 (0x13dc)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_INCR_R                         (0x13dc)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_INCR_R                 (0x1400)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_INCR_R                         (0x1400)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_INCR_R                 (0x13e0)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_INCR_R                         (0x13e0)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_INCR_R                 (0x1404)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_INCR_R                         (0x1404)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_INCR_R                 (0x13e4)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_INCR_R                         (0x13e4)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_INCR_R                 (0x1408)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_INCR_R                         (0x1408)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_INCR_R                 (0x13e8)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_INCR_R                         (0x13e8)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_INCR_R                 (0x140c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_INCR_R                         (0x140c)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_INCR_R                 (0x13ec)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_INCR_R                         (0x13ec)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_INCR_R                 (0x1410)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_INCR_R                         (0x1410)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_INCR_R                 (0x13f0)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_INCR_R                         (0x13f0)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_INCR_R                 (0x1414)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_INCR_R                         (0x1414)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_INCR_R                 (0x13f4)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_INCR_R                         (0x13f4)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_INCR_R                 (0x1418)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_INCR_R                         (0x1418)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_INCR_R                 (0x13f8)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_INCR_R                         (0x13f8)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_INCR_R                 (0x141c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_INCR_R                         (0x141c)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_INCR_R                 (0x13fc)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_INCR_R                         (0x13fc)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_INCR_R                 (0x1420)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_INCR_R                         (0x1420)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_INCR_R                 (0x1400)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_INCR_R                         (0x1400)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_INCR_R                 (0x1424)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_INCR_R                         (0x1424)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_INCR_R                 (0x1404)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_INCR_R                         (0x1404)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_INCR_R                 (0x1428)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_INCR_R                         (0x1428)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_INCR_R                 (0x1408)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_INCR_R                         (0x1408)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_INCR_R                 (0x142c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_INCR_R                         (0x142c)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
-#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_INCR_R                 (0x140c)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_INCR_R                         (0x140c)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_INCR_R                 (0x1430)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_INCR_R                         (0x1430)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_INCR_R_PULSE_LOW               (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_INCR_R_PULSE_MASK              (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_CMD_AVAIL_INTR_COUNT_INCR_R                       (0x1434)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_CMD_AVAIL_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_CMD_AVAIL_INTR_COUNT_INCR_R                               (0x1434)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_CMD_AVAIL_INTR_COUNT_INCR_R_PULSE_LOW                     (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_CMD_AVAIL_INTR_COUNT_INCR_R_PULSE_MASK                    (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_INCR_R                       (0x1438)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_INCR_R                               (0x1438)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_INCR_R_PULSE_LOW                     (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_INCR_R_PULSE_MASK                    (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R                         (0x143c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R                                 (0x143c)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R_PULSE_MASK                      (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R                         (0x1440)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R                                 (0x1440)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R_PULSE_MASK                      (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                    (0x1444)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1444)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_MASK                 (0x1)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                    (0x1448)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1448)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_MASK                 (0x1)
+#endif
+#define MCI_TOP_MCU_TRACE_BUFFER_CSR_BASE_ADDR                                                      (0x10000)
+#define MCI_TOP_MCU_TRACE_BUFFER_CSR_STATUS                                                         (0x10000)
+#ifndef MCU_TRACE_BUFFER_CSR_STATUS
+#define MCU_TRACE_BUFFER_CSR_STATUS                                                                 (0x0)
+#define MCU_TRACE_BUFFER_CSR_STATUS_WRAPPED_LOW                                                     (0)
+#define MCU_TRACE_BUFFER_CSR_STATUS_WRAPPED_MASK                                                    (0x1)
+#define MCU_TRACE_BUFFER_CSR_STATUS_VALID_DATA_LOW                                                  (1)
+#define MCU_TRACE_BUFFER_CSR_STATUS_VALID_DATA_MASK                                                 (0x2)
+#endif
+#define MCI_TOP_MCU_TRACE_BUFFER_CSR_CONFIG                                                         (0x10004)
+#ifndef MCU_TRACE_BUFFER_CSR_CONFIG
+#define MCU_TRACE_BUFFER_CSR_CONFIG                                                                 (0x4)
+#endif
+#define MCI_TOP_MCU_TRACE_BUFFER_CSR_DATA                                                           (0x10008)
+#ifndef MCU_TRACE_BUFFER_CSR_DATA
+#define MCU_TRACE_BUFFER_CSR_DATA                                                                   (0x8)
+#endif
+#define MCI_TOP_MCU_TRACE_BUFFER_CSR_WRITE_PTR                                                      (0x1000c)
+#ifndef MCU_TRACE_BUFFER_CSR_WRITE_PTR
+#define MCU_TRACE_BUFFER_CSR_WRITE_PTR                                                              (0xc)
+#endif
+#define MCI_TOP_MCU_TRACE_BUFFER_CSR_READ_PTR                                                       (0x10010)
+#ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
+#define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (0x10)
+#endif
 #define MCI_TOP_MBOX0_CSR_BASE_ADDR                                                                 (0x80000)
 #define MCI_TOP_MBOX0_CSR_MBOX_LOCK                                                                 (0x80000)
+#ifndef MBOX0_CSR_MBOX_LOCK
 #define MBOX0_CSR_MBOX_LOCK                                                                         (0x0)
 #define MBOX0_CSR_MBOX_LOCK_LOCK_LOW                                                                (0)
 #define MBOX0_CSR_MBOX_LOCK_LOCK_MASK                                                               (0x1)
+#endif
 #define MCI_TOP_MBOX0_CSR_MBOX_USER                                                                 (0x80004)
+#ifndef MBOX0_CSR_MBOX_USER
 #define MBOX0_CSR_MBOX_USER                                                                         (0x4)
+#endif
 #define MCI_TOP_MBOX0_CSR_MBOX_CMD                                                                  (0x80008)
+#ifndef MBOX0_CSR_MBOX_CMD
 #define MBOX0_CSR_MBOX_CMD                                                                          (0x8)
+#endif
 #define MCI_TOP_MBOX0_CSR_MBOX_DLEN                                                                 (0x8000c)
+#ifndef MBOX0_CSR_MBOX_DLEN
 #define MBOX0_CSR_MBOX_DLEN                                                                         (0xc)
+#endif
 #define MCI_TOP_MBOX0_CSR_MBOX_DATAIN                                                               (0x80010)
+#ifndef MBOX0_CSR_MBOX_DATAIN
 #define MBOX0_CSR_MBOX_DATAIN                                                                       (0x10)
+#endif
 #define MCI_TOP_MBOX0_CSR_MBOX_DATAOUT                                                              (0x80014)
+#ifndef MBOX0_CSR_MBOX_DATAOUT
 #define MBOX0_CSR_MBOX_DATAOUT                                                                      (0x14)
+#endif
 #define MCI_TOP_MBOX0_CSR_MBOX_EXECUTE                                                              (0x80018)
+#ifndef MBOX0_CSR_MBOX_EXECUTE
 #define MBOX0_CSR_MBOX_EXECUTE                                                                      (0x18)
 #define MBOX0_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                          (0)
 #define MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                         (0x1)
+#endif
 #define MCI_TOP_MBOX0_CSR_MBOX_STATUS                                                               (0x8001c)
+#ifndef MBOX0_CSR_MBOX_STATUS
 #define MBOX0_CSR_MBOX_STATUS                                                                       (0x1c)
 #define MBOX0_CSR_MBOX_STATUS_STATUS_LOW                                                            (0)
 #define MBOX0_CSR_MBOX_STATUS_STATUS_MASK                                                           (0xf)
@@ -2759,35 +2553,55 @@
 #define MBOX0_CSR_MBOX_STATUS_SOC_HAS_LOCK_LOW                                                      (9)
 #define MBOX0_CSR_MBOX_STATUS_SOC_HAS_LOCK_MASK                                                     (0x200)
 #define MBOX0_CSR_MBOX_STATUS_MBOX_RDPTR_LOW                                                        (10)
-#define MBOX0_CSR_MBOX_STATUS_MBOX_RDPTR_MASK                                                       (0x1fffc00)
+#define MBOX0_CSR_MBOX_STATUS_MBOX_RDPTR_MASK                                                       (0x3fffc00)
+#endif
 #define MCI_TOP_MBOX0_CSR_MBOX_UNLOCK                                                               (0x80020)
+#ifndef MBOX0_CSR_MBOX_UNLOCK
 #define MBOX0_CSR_MBOX_UNLOCK                                                                       (0x20)
 #define MBOX0_CSR_MBOX_UNLOCK_UNLOCK_LOW                                                            (0)
 #define MBOX0_CSR_MBOX_UNLOCK_UNLOCK_MASK                                                           (0x1)
+#endif
 #define MCI_TOP_MBOX0_CSR_TAP_MODE                                                                  (0x80024)
+#ifndef MBOX0_CSR_TAP_MODE
 #define MBOX0_CSR_TAP_MODE                                                                          (0x24)
 #define MBOX0_CSR_TAP_MODE_ENABLED_LOW                                                              (0)
 #define MBOX0_CSR_TAP_MODE_ENABLED_MASK                                                             (0x1)
+#endif
 #define MCI_TOP_MBOX1_CSR_BASE_ADDR                                                                 (0x90000)
 #define MCI_TOP_MBOX1_CSR_MBOX_LOCK                                                                 (0x90000)
+#ifndef MBOX1_CSR_MBOX_LOCK
 #define MBOX1_CSR_MBOX_LOCK                                                                         (0x0)
 #define MBOX1_CSR_MBOX_LOCK_LOCK_LOW                                                                (0)
 #define MBOX1_CSR_MBOX_LOCK_LOCK_MASK                                                               (0x1)
+#endif
 #define MCI_TOP_MBOX1_CSR_MBOX_USER                                                                 (0x90004)
+#ifndef MBOX1_CSR_MBOX_USER
 #define MBOX1_CSR_MBOX_USER                                                                         (0x4)
+#endif
 #define MCI_TOP_MBOX1_CSR_MBOX_CMD                                                                  (0x90008)
+#ifndef MBOX1_CSR_MBOX_CMD
 #define MBOX1_CSR_MBOX_CMD                                                                          (0x8)
+#endif
 #define MCI_TOP_MBOX1_CSR_MBOX_DLEN                                                                 (0x9000c)
+#ifndef MBOX1_CSR_MBOX_DLEN
 #define MBOX1_CSR_MBOX_DLEN                                                                         (0xc)
+#endif
 #define MCI_TOP_MBOX1_CSR_MBOX_DATAIN                                                               (0x90010)
+#ifndef MBOX1_CSR_MBOX_DATAIN
 #define MBOX1_CSR_MBOX_DATAIN                                                                       (0x10)
+#endif
 #define MCI_TOP_MBOX1_CSR_MBOX_DATAOUT                                                              (0x90014)
+#ifndef MBOX1_CSR_MBOX_DATAOUT
 #define MBOX1_CSR_MBOX_DATAOUT                                                                      (0x14)
+#endif
 #define MCI_TOP_MBOX1_CSR_MBOX_EXECUTE                                                              (0x90018)
+#ifndef MBOX1_CSR_MBOX_EXECUTE
 #define MBOX1_CSR_MBOX_EXECUTE                                                                      (0x18)
 #define MBOX1_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                          (0)
 #define MBOX1_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                         (0x1)
+#endif
 #define MCI_TOP_MBOX1_CSR_MBOX_STATUS                                                               (0x9001c)
+#ifndef MBOX1_CSR_MBOX_STATUS
 #define MBOX1_CSR_MBOX_STATUS                                                                       (0x1c)
 #define MBOX1_CSR_MBOX_STATUS_STATUS_LOW                                                            (0)
 #define MBOX1_CSR_MBOX_STATUS_STATUS_MASK                                                           (0xf)
@@ -2800,15 +2614,20 @@
 #define MBOX1_CSR_MBOX_STATUS_SOC_HAS_LOCK_LOW                                                      (9)
 #define MBOX1_CSR_MBOX_STATUS_SOC_HAS_LOCK_MASK                                                     (0x200)
 #define MBOX1_CSR_MBOX_STATUS_MBOX_RDPTR_LOW                                                        (10)
-#define MBOX1_CSR_MBOX_STATUS_MBOX_RDPTR_MASK                                                       (0x1fffc00)
+#define MBOX1_CSR_MBOX_STATUS_MBOX_RDPTR_MASK                                                       (0x3fffc00)
+#endif
 #define MCI_TOP_MBOX1_CSR_MBOX_UNLOCK                                                               (0x90020)
+#ifndef MBOX1_CSR_MBOX_UNLOCK
 #define MBOX1_CSR_MBOX_UNLOCK                                                                       (0x20)
 #define MBOX1_CSR_MBOX_UNLOCK_UNLOCK_LOW                                                            (0)
 #define MBOX1_CSR_MBOX_UNLOCK_UNLOCK_MASK                                                           (0x1)
+#endif
 #define MCI_TOP_MBOX1_CSR_TAP_MODE                                                                  (0x90024)
+#ifndef MBOX1_CSR_TAP_MODE
 #define MBOX1_CSR_TAP_MODE                                                                          (0x24)
 #define MBOX1_CSR_TAP_MODE_ENABLED_LOW                                                              (0)
 #define MBOX1_CSR_TAP_MODE_ENABLED_MASK                                                             (0x1)
+#endif
 #define MCI_TOP_MCU_SRAM_BASE_ADDR                                                                  (0x200000)
 #define MCI_TOP_MCU_SRAM_END_ADDR                                                                   (0x3fffff)
 

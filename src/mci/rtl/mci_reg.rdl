@@ -27,15 +27,14 @@ addrmap mci_reg {
 
     default hw = na;
     signal {activelow; async; cpuif_reset; field_reset;} mci_rst_b;
-    signal {activelow; async;} mcu_rst_b; // uC reset only
     signal {activelow; async;} mci_pwrgood;
 
     //signal to indicate request origin
-    signal {} cptra_req;
-    signal {} mcu_req;
+    signal {} cptra_or_debug_req;
+    signal {} mcu_or_debug_req;
 
     //defined fields by access type
-    field rw_ro_ro_hw {swwe = mcu_req; hw = r;}; //writes enabled only for MCU, hw readable
+    field rw_ro_ro_hw {swwe = mcu_or_debug_req; hw = r;}; //writes enabled only for MCU, hw readable
     field rw_rw_sticky_hw { sw=rw; hw=rw; we=true; woclr = true; resetsignal = mci_pwrgood;}; //W1C            - used by HW ERROR regs
     field rw_rw_sticky    { sw=rw; hw=rw; we=true; swmod = true; resetsignal = mci_pwrgood;}; //writes enabled - used by FW ERROR regs
 
@@ -72,7 +71,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {sw=rw; swwe = mcu_req; resetsignal = mci_rst_b;} REV_ID[32]=0;
+        field {sw=rw; swwe = mcu_or_debug_req; resetsignal = mci_rst_b;} REV_ID[32]=0;
     } FW_REV_ID[2];
     reg {
         name = "MCU HW Config";
@@ -87,24 +86,26 @@ addrmap mci_reg {
     // ----------------------------------------
     // ---------------- STATUS ----------------
     reg {
-        name = "Boot Status";
-        desc = "Reports the boot status.
+        name = "FW Flow Status";
+        desc = "Reports the status of the firmware flows.
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO
                 [br]TAP Access [in debug/manuf mode]: RO";
-        field {swwe = mcu_req; hw=r; resetsignal = mci_rst_b;} status[32]=0;
-    } BOOT_STATUS @0x20;
+        field {swwe = mcu_or_debug_req; hw=r; resetsignal = mci_rst_b;} status[32]=0;
+    } FW_FLOW_STATUS @0x20;
     reg {
         name = "Flow Status";
-        desc = "Reports the status of the firmware flows.
+        desc = "Reports the status of HW FSMs and other flows.
                 [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="Generic Status";                                            sw=rw; swwe = mcu_req; hw=r ; resetsignal = mci_rst_b;} status[24]=0;
-        field {desc="DEV ID CSR ready";                                          sw=r;                         /* no storage, no reset */} rsvd[3]=0;
-        field {desc="Boot FSM State";                                            sw=r;                  hw=w ; /* no storage, no reset */} boot_fsm_ps[5];
-    } FLOW_STATUS;
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug/manuf mode]: RO";
+        field {desc="MCI Boot FSM State";                                            sw=r;                  hw=rw ; /* no storage, no reset */} boot_fsm[4];
+    } HW_FLOW_STATUS;
+
+
+
     reg {
         name = "Reset Reason";
         desc = "Indicates to ROM the originating cause for the PC to be reset to 0.
@@ -117,14 +118,15 @@ addrmap mci_reg {
         field {desc = "FW update reset has been executed first time since MCI reset"; sw=r; hw=rw; resetsignal = mci_rst_b;  } FW_BOOT_UPD_RESET=0;
         field {desc = "Warm reset has been executed";      sw=r; hw=rw;          resetsignal = mci_pwrgood;} WARM_RESET=0;
     } RESET_REASON;
+
     reg {
-        name = "Flow Status";
-        desc = "Reports the status of the firmware flows.
+        name = "Reset Status";
+        desc = "Reports the status of the rests controlled by MCI.
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RO
                 [br]SOC Access:      RO";
-        field {desc="caliptra reset status";                                            sw=rw; swwe = mcu_req; hw=r ; resetsignal = mci_rst_b;} status[22]=0;
-        field {desc="MCU reset status";                                          sw=r;                         /* no storage, no reset */} rsvd[3]=0;
+        field {desc="caliptra reset status. 1: Reset asserted. 0: Reset deasserted";    sw=r;  hw=rw ;} cptra_reset_sts=0;
+        field {desc="MCU reset status. 1: Reset asserted. 0: Reset deasserted";         sw=r;  hw=rw ;} mcu_reset_sts=0;
     } RESET_STATUS;
 
     // ----------------------------------------
@@ -139,9 +141,11 @@ addrmap mci_reg {
                 Only an MCI reset will clear the fatal error interrupt.
                 [br]Caliptra Access: RW1C
                 [br]MCU Access:      RW1C
-                [br]SOC Access:      RW1C";
+                [br]SOC Access:      RW1C
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky_hw mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
         rw_rw_sticky_hw nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
+        rw_rw_sticky_hw mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
     } HW_ERROR_FATAL @0x40;
     reg {
         name = "Aggregate Error Fatal";
@@ -153,7 +157,8 @@ addrmap mci_reg {
                 Only an MCI reset will clear the fatal error interrupt.
                 [br]Caliptra Access: RW1C
                 [br]MCU Access:      RW1C
-                [br]SOC Access:      RW1C";
+                [br]SOC Access:      RW1C
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky_hw agg_error_fatal31 = 1'b0;
         rw_rw_sticky_hw agg_error_fatal30 = 1'b0;
         rw_rw_sticky_hw agg_error_fatal29 = 1'b0;
@@ -208,8 +213,15 @@ addrmap mci_reg {
                 [/list]
                 [br]Caliptra Access: RW1C
                 [br]MCU Access:      RW1C
-                [br]SOC Access:      RW1C";
-        rw_rw_sticky_hw RSVD=1'b0;
+                [br]SOC Access:      RW1C
+                [br]TAP Access [in debug mode]: RO";
+        rw_rw_sticky_hw mbox0_prot_no_lock=0; /* SOC access while not locked */
+        rw_rw_sticky_hw mbox1_prot_no_lock=0; /* SOC access while not locked */
+        rw_rw_sticky_hw mbox0_prot_ooo=0;     /* Register access out-of-order */
+        rw_rw_sticky_hw mbox1_prot_ooo=0;     /* Register access out-of-order */
+        rw_rw_sticky_hw mbox0_ecc_unc=0;      /* Uncorrectable double-bit error in MBOX0 */
+        rw_rw_sticky_hw mbox1_ecc_unc=0;      /* Uncorrectable double-bit error in MBOX1 */
+
     } HW_ERROR_NON_FATAL;
     reg {
         name = "Aggregate Error Non-Fatal";
@@ -232,7 +244,8 @@ addrmap mci_reg {
                 [/list]
                 [br]Caliptra Access: RW1C
                 [br]MCU Access:      RW1C
-                [br]SOC Access:      RW1C";
+                [br]SOC Access:      RW1C
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky_hw agg_error_non_fatal31 = 1'b0;
         rw_rw_sticky_hw agg_error_non_fatal30 = 1'b0;
         rw_rw_sticky_hw agg_error_non_fatal29 = 1'b0;
@@ -276,7 +289,8 @@ addrmap mci_reg {
                 Only an MCI reset will clear the fatal error interrupt.
                 [br]Caliptra Access: RW
                 [br]MCU Access:      RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky error_code[32]=0; 
     } FW_ERROR_FATAL;
     reg {
@@ -300,28 +314,32 @@ addrmap mci_reg {
                 [/list]
                 [br]Caliptra Access: RW
                 [br]MCU Access:      RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
         rw_rw_sticky error_code[32]=0; 
     } FW_ERROR_NON_FATAL;
     reg {
         name = "Hardware Error Encoding";
         desc = "Encoded error value for hardware errors.
                 [br]Caliptra Access: RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
          field {resetsignal = mci_pwrgood; hw=r;}error_code[32]=0; 
     } HW_ERROR_ENC;
     reg {
         name = "Firmware Error Encoding";
         desc = "Encoded error value for firmware errors.
                 [br]Caliptra Access: RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
         field {resetsignal = mci_pwrgood; hw=r;} error_code[32]=0; 
     } FW_ERROR_ENC;
     reg {
         name = "Firmware Extended Error Information";
         desc = "Firmware Extended Error information for firmware errors.
                 [br]Caliptra Access: RW
-                [br]SOC Access:      RW";
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RO";
         field {resetsignal = mci_pwrgood; hw=r;} error_info[32]=0; 
     } FW_EXTENDED_ERROR_INFO[8];
 
@@ -345,6 +363,7 @@ addrmap mci_reg {
                 [br]SOC Access:      RO";
         rw_ro_ro_hw mask_mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
         rw_ro_ro_hw mask_nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
+        rw_ro_ro_hw mask_mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
     } internal_hw_error_fatal_mask;
     reg {
         name = "Hardware Error Non-Fatal Mask";
@@ -374,10 +393,12 @@ addrmap mci_reg {
                 [br]MCU Access: RW
                 [br]Caliptra Access: RO
                 [br]SOC Access:      RO";
-        rw_ro_ro_hw FIXME=0; 
-        // FIXME add back ?? rw_ro_ro_hw mask_mbox_prot_no_lock=0; /* SOC access while not locked */
-        // FIXME add back ?? rw_ro_ro_hw mask_mbox_prot_ooo=0;     /* Register access out-of-order */
-        // FIXME add back ?? rw_ro_ro_hw mask_mbox_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
+        rw_ro_ro_hw mask_mbox0_prot_no_lock=0; /* SOC access while not locked */
+        rw_ro_ro_hw mask_mbox1_prot_no_lock=0; /* SOC access while not locked */
+        rw_ro_ro_hw mask_mbox0_prot_ooo=0;     /* Register access out-of-order */
+        rw_ro_ro_hw mask_mbox1_prot_ooo=0;     /* Register access out-of-order */
+        rw_ro_ro_hw mask_mbox0_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
+        rw_ro_ro_hw mask_mbox1_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
     } internal_hw_error_non_fatal_mask;
     reg {
         name = "Aggregate Error Fatal Mask";
@@ -551,7 +572,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SoC Access:      RO";
-        field {desc = "WDT timer1 enable"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer1_en = 1'b0;
+        field {desc = "WDT timer1 enable"; hw = r; sw = rw; swwe = mcu_or_debug_req; resetsignal = mci_rst_b;} timer1_en = 1'b0;
     } WDT_TIMER1_EN @0xA0;
 
     reg {
@@ -560,7 +581,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc = "WDT timer1 restart"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b; singlepulse;} timer1_restart = 1'b0;
+        field {desc = "WDT timer1 restart"; hw = r; sw = rw; swwe = mcu_or_debug_req; resetsignal = mci_rst_b; singlepulse;} timer1_restart = 1'b0;
     } WDT_TIMER1_CTRL;
 
     reg {
@@ -569,8 +590,8 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc = "WDT timer1 timeout period"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer1_timeout_period[32] = 32'hFFFFFFFF;
-    } WDT_TIMER1_TIMEOUT_PERIOD[2]; // This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in FIXME _pkg
+        field {desc = "WDT timer1 timeout period"; hw = r; sw = rw; swwe = mcu_or_debug_req; resetsignal = mci_rst_b;} timer1_timeout_period[32] = 32'hFFFFFFFF;
+    } WDT_TIMER1_TIMEOUT_PERIOD[2]; // This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in mci_pkg.sv
 
     //Timer2
     reg {
@@ -579,7 +600,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO ";
-        field {desc = "WDT timer2 enable"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer2_en = 1'b0;
+        field {desc = "WDT timer2 enable"; hw = r; sw = rw; swwe = mcu_or_debug_req; resetsignal = mci_rst_b;} timer2_en = 1'b0;
     } WDT_TIMER2_EN;
 
     reg {
@@ -588,7 +609,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc = "WDT timer2 restart"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b; singlepulse;} timer2_restart = 1'b0;
+        field {desc = "WDT timer2 restart"; hw = r; sw = rw; swwe = mcu_or_debug_req; resetsignal = mci_rst_b; singlepulse;} timer2_restart = 1'b0;
     } WDT_TIMER2_CTRL;
 
     reg {
@@ -597,8 +618,8 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc = "WDT timer2 timeout period"; hw = r; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} timer2_timeout_period[32] = 32'hFFFFFFFF;
-    } WDT_TIMER2_TIMEOUT_PERIOD[2]; //This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in FIXME _pkg
+        field {desc = "WDT timer2 timeout period"; hw = r; sw = rw; swwe = mcu_or_debug_req; resetsignal = mci_rst_b;} timer2_timeout_period[32] = 32'hFFFFFFFF;
+    } WDT_TIMER2_TIMEOUT_PERIOD[2]; //This reflects WDT_TIMEOUT_PERIOD_NUM_DWORDS in mci_pkg.sv
 
     //Status
     reg {
@@ -607,8 +628,8 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc = "Timer1 timed out, timer2 enabled"; hw = rw; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} t1_timeout = 1'b0;
-        field {desc = "Timer2 timed out"; hw = rw; sw = rw; swwe = mcu_req; resetsignal = mci_rst_b;} t2_timeout = 1'b0;
+        field {desc = "Timer1 timed out, timer2 enabled"; hw = rw; sw = rw; swwe = mcu_or_debug_req; resetsignal = mci_rst_b;} t1_timeout = 1'b0;
+        field {desc = "Timer2 timed out"; hw = rw; sw = rw; swwe = mcu_or_debug_req; resetsignal = mci_rst_b;} t2_timeout = 1'b0;
     } WDT_STATUS;
 
     // Req
@@ -638,7 +659,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc = "Counter Low" ; sw = rw; precedence = sw; swmod = true; hw = r; swwe = mcu_req; counter = true; incrvalue = 1; overflow = true; resetsignal = mci_pwrgood;} count_l[32] = 32'h0;
+        field {desc = "Counter Low" ; sw = rw; precedence = sw; swmod = true; hw = r; swwe = mcu_or_debug_req; counter = true; incrvalue = 1; overflow = true; resetsignal = mci_pwrgood;} count_l[32] = 32'h0;
     } MCU_RV_MTIME_L;
 
     reg {
@@ -648,7 +669,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc = "Counter High"; sw = rw; precedence = sw; swmod = true; hw = r; swwe = mcu_req; counter = true; incrvalue = 1;                  resetsignal = mci_pwrgood;} count_h[32] = 32'h0;
+        field {desc = "Counter High"; sw = rw; precedence = sw; swmod = true; hw = r; swwe = mcu_or_debug_req; counter = true; incrvalue = 1;                  resetsignal = mci_pwrgood;} count_h[32] = 32'h0;
     } MCU_RV_MTIME_H;
 
     reg {
@@ -657,7 +678,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc = "Count Compare Low" ; sw = rw; hw = r; swwe = mcu_req; resetsignal = mci_pwrgood;} compare_l[32] = 32'h0;
+        field {desc = "Count Compare Low" ; sw = rw; hw = r; swwe = mcu_or_debug_req; resetsignal = mci_pwrgood;} compare_l[32] = 32'h0;
     } MCU_RV_MTIMECMP_L;
 
     reg {
@@ -666,7 +687,7 @@ addrmap mci_reg {
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {desc = "Count Compare High"; sw = rw; hw = r; swwe = mcu_req; resetsignal = mci_pwrgood;} compare_h[32] = 32'h0;
+        field {desc = "Count Compare High"; sw = rw; hw = r; swwe = mcu_or_debug_req; resetsignal = mci_pwrgood;} compare_h[32] = 32'h0;
     } MCU_RV_MTIMECMP_H;
 
 
@@ -679,29 +700,39 @@ addrmap mci_reg {
                 the MCU before the MCU is reset and executes updated firmware.
                 [br]Caliptra Access: R0
                 [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field { desc = "Request. Writable by MCU. Causes MCU reset to be asserted by MCI."; sw=rw; hw=r; hwclr=true; swwe=mcu_req; resetsignal=mci_rst_b; } mcu_req=1'b0;
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug mode]: RW";
+        field { desc = "Request. Writable by MCU. Causes MCU reset to be asserted by MCI. Cleared when reset is asserted."; sw=rw; hw=rw; hwclr=true; swwe=mcu_or_debug_req; resetsignal=mci_rst_b; we;} mcu_req=1'b0;
         // FIXME mcu_or_no_rom_config we need to privide a strap for allowed AXI users other than MCU that can access this bit.
     } RESET_REQUEST @0x100;
-// TODO finish desc for these
+
+
     reg {
-        field { desc="fixme"; swwe = mcu_req; hw = r;} go=1'b0;
-    } CALIPTRA_BOOT_GO;
+        name = "MCI BOOT FSM GO";
+        desc = "Indicates that the MCI BootFSM can continue to execute to bring MCU and Caliptra out of reset.
+                [br]Caliptra Access: RW
+                [br]MCU Access:      RW
+                [br]SOC Access:      RW
+                [br]TAP Access [in debug mode]: RW";
+        field { sw=rw; hw = rw; we;} go=1'b0;
+    } MCI_BOOTFSM_GO;
+
     reg {
         name = "Firmware SRAM Exec Region Size";
-        desc = "Dynamic size assignment for the region of sram that contains executable instructions for MCU.";
-        field { desc="Size (in multiples of 4KiB)"; sw=rw; hw=r; swwe=true; } size[16] = 16'h0;
+        desc = "Dynamic size assignment for the region of sram that contains executable instructions for MCU.
+                [br]TAP Access [in debug mode]: RW";
+        field { desc="Size (in multiples of 4KiB)"; sw=rw; hw=rw; swwel=true; we;} size[16] = 16'h0;
     } FW_SRAM_EXEC_REGION_SIZE;
     reg {
         name = "MCU NMI Vector";
         desc = "32-bit register providing the jump vector for RISC-V to transition for NMI handling code.
                 Default is the base address of ROM, but may be updated for enhanced handling by runtime images.
                 Bit [0] is ignored to enforce half-word alignment of address.
-                [br]Caliptra Access: R)
+                [br]Caliptra Access: RO
                 [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-
-        field {desc = "NMI Vector"; hw = r; sw = rw; swwe = mcu_req;} vec[32] = 32'h0;
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug mode]: RW";
+        field {desc = "NMI Vector"; hw = rw; we; sw = rw; swwe = mcu_or_debug_req;} vec[32] = 32'h0;
     } MCU_NMI_VECTOR;
 
     reg {
@@ -709,139 +740,206 @@ addrmap mci_reg {
         desc = "32-bit register providing the reset vector for RISC-V do the initial fetch.
                 Default is determined by a HW strap strap_mcu_reset_vector, but may be modified by SW while in debug mode.
                 Bit [0] is ignored to enforce half-word alignment of address.
-                [br]Caliptra Access: R)
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-
-        field {desc = "NMI Vector"; hw = rw; we; sw = rw; swwe = cptra_req;} vec[32] = 32'h0; // FIXME : is this the right access?
+                [br]Caliptra Access: RW
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug mode]: RW";
+        field {desc = "NMI Vector"; hw = rw; we; sw = rw; swwe = cptra_or_debug_req;} vec[32] = 32'h0; // FIXME : is this the right access?
     } MCU_RESET_VECTOR;
 
     // ----------------------------------------
     // ------------ AxUSER CONFIG -------------
-    reg { field {sw=rw;/*TODO*/ } id[32]=0;} MBOX0_VALID_AXI_ID [5] @0x180;
-    reg { field {sw=rw;/*TODO*/ } lock=0;  } MBOX0_VALID_AXI_ID_LOCK [5] @0x1A0;
-    reg { field {sw=rw;/*TODO*/ } id[32]=0;} MBOX1_VALID_AXI_ID [5] @0x1C0;
-    reg { field {sw=rw;/*TODO*/ } lock=0;  } MBOX1_VALID_AXI_ID_LOCK [5] @0x1E0;
+    reg {
+        name = "Valid USER Registers";
+         desc = "Valid AXI USER attributes for requests from SoC AXI Interface. Only valid once LOCK is set.
+                 [br]MCU Access:      RW
+                 [br]Caliptra Access: RW
+                 [br]SOC Access:      RW
+                 Read-Only once locked by AXI_USER_LOCK.";
+         field {sw=rw; hw=r; swwel;resetsignal = mci_rst_b;} AXI_USER[32]=0xFFFF_FFFF;
+     } MBOX0_VALID_AXI_USER[5] @0x180;
+    
+    reg {
+        name = "Valid USER Register Lock";
+         desc = "Valid AXI_USER attributes for requests from SoC AXI Interface.
+                 [br]Each bit corresponds to locking the associated MBO0X_VALID_AXI_USER register.
+                 [br]Associated MBOX0_VALID_AXI_USER register is only valid once locked by this bit.
+                 [br]MCU Access:      RW1-S
+                 [br]Caliptra Access: RW1-S
+                 [br]SOC Access:      RW1-S
+                 [br]Read-Only once locked.";
+         field {sw=rw; hw=r; swwel; resetsignal = mci_rst_b;} LOCK=0;
+     } MBOX0_AXI_USER_LOCK[5] @0x1A0;
+
+    reg {
+        name = "Valid USER Registers";
+         desc = "Valid AXI USER attributes for requests from SoC AXI Interface. Only valid once LOCK is set.
+                 [br]MCU Access:      RW
+                 [br]Caliptra Access: RW
+                 [br]SOC Access:      RW
+                 Read-Only once locked by AXI_USER_LOCK.";
+         field {sw=rw; hw=r; swwel;resetsignal = mci_rst_b;} AXI_USER[32]=0xFFFF_FFFF;
+     } MBOX1_VALID_AXI_USER[5] @0x1C0;
+    
+    reg {
+        name = "Valid USER Register Lock";
+         desc = "Valid AXI_USER attributes for requests from SoC AXI Interface.
+                 [br]Each bit corresponds to locking the associated MBO0X_VALID_AXI_USER register.
+                 [br]Associated MBOX0_VALID_AXI_USER register is only valid once locked by this bit.
+                 [br]MCU Access:      RW1-S
+                 [br]Caliptra Access: RW1-S
+                 [br]SOC Access:      RW1-S
+                 [br]Read-Only once locked.";
+         field {sw=rw; hw=r; swwel; resetsignal = mci_rst_b;} LOCK=0;
+     } MBOX1_AXI_USER_LOCK[5] @0x1E0;
 
     // ----------------------------------------
     // ------------ DEBUG/GENERIC -------------
-    reg { field {/*TODO*/sw=r;  hw=w;} wires[32]=32'b0; } GENERIC_INPUT_WIRES[2] @0x400;
-    reg { field {/*TODO*/sw=rw; hw=r;} wires[32]=32'b0; } GENERIC_OUTPUT_WIRES[2];
+    reg { 
+        desc = "Generic input wires connected to SoC interface.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RO
+                [br]SOC Access:      RO";
+        field {sw=r;  hw=rw;} wires[32]=32'b0; 
+    } GENERIC_INPUT_WIRES[2] @0x400;
+    
+    reg {
+        name = "Generic Output Wires";
+        desc = "Generic output wires connected to SoC interface.
+                [br]Caliptra Access: RO
+                [br]MCU Access:      RW
+                [br]SOC Access:      RO";
+        field {sw=rw; hw=r; swwe = mcu_or_debug_req;} wires[32]=32'b0; 
+    } GENERIC_OUTPUT_WIRES[2];
+    
     reg { 
         field {sw=rw; hw=na; resetsignal = mci_rst_b;} FIXME=0;
     } DEBUG_IN; // i.e. stdin
     reg { 
         field {sw=rw; hw=na; resetsignal = mci_rst_b;} FIXME=0;
     } DEBUG_OUT; // i.e. stdout
+    
+    reg {
+        name = "DEBUG INTENT";
+        desc = "Strap from SoC in Subsystem configuration that indicates if this boot cycle will be used for debug. In passive mode this register always reflects a value of 0.
+                [br]MCU      Access: RO
+                [br]Caliptra Access: RO
+                [br]SOC Access:      RO
+                [br]TAP Access [in debug/manuf mode]: RW";
+        field strap {sw = r; hw = rw; we; resetsignal = mci_pwrgood;} debug_intent=1'b0;
+    } SS_DEBUG_INTENT;
+
 
     reg {
-        name = "FUSE Write Done";
-        desc = "Set to indicate that all fuse registers have been populated in MCI.
-                Locks fuse registers from further modification.
+        name = "Subsystem Config Done";
+        desc = "Set to indicate that all configuration registers have been populated in MCI.
+                Locks configuration registers from further modification.
                 Sticky until cold reset once set.
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {sw = rw; hw=r; swwe; swmod=true; resetsignal = mci_pwrgood;} done=1'h0; // TODO
-    } FUSE_WR_DONE @0x440;
+        field {sw = rw; hw=r; swwe; swmod=true; resetsignal = mci_pwrgood;} done=1'h0; 
+    } SS_CONFIG_DONE @0x440;
 
     reg {
         name = "Production Debug Unlock PK HASH";
-        desc = "Production Debug Unlock PK HASH. Initialized from strap inputs, overwritable by MCU until FUSE_WR_DONE is set.
+        desc = "Production Debug Unlock PK HASH. Initialized from strap inputs, overwritable by MCU until SS_CONFIG_DONE is set.
                 Once FUSE_WR_DONE is set value persists until cold reset.
                 [br]Caliptra Access: RO
                 [br]MCU Access:      RW
                 [br]SOC Access:      RO";
-        field {sw = rw; hw = rw; we; swwel; resetsignal = mci_pwrgood;} hash[32]=32'h0; // TODO
+        field {sw = rw; hw = r; swwel; resetsignal = mci_pwrgood;} hash[32]=32'h0; // TODO
     } PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12] @0x480;
 
     // ----------------------------------------
     // ----- DATA_VAULT/SCRATCH/RESERVED ------
-     reg {
-         name = "STICKY DATA VAULT CTRL";
-         desc = "Controls for the Sticky Data Vault Entries (cleared on cold reset)
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
-                sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0; //TODO Shoud reflect STICKY_DV_NUM_ENTRIES from dv_defines_pkg.sv
-     } STICKY_DATA_VAULT_CTRL[10] @0x800;
+    
+    // TODO: Add datavalue and lockable scratch registers in the future
+    // reg {
+    //     name = "STICKY DATA VAULT CTRL";
+    //     desc = "Controls for the Sticky Data Vault Entries (cleared on cold reset)
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
+    //            sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0; //TODO Shoud reflect STICKY_DV_NUM_ENTRIES from dv_defines_pkg.sv
+    // } STICKY_DATA_VAULT_CTRL[10] @0x800;
 
-     reg {
-         name = "STICKY DATA VAULT ENTRY";
-         desc = "Sticky Data Vault Entry (cleared on cold reset). Lockable.
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
-     } STICKY_DATA_VAULT_ENTRY[10][12];//TODO Shoud reflect STICKY_DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    // reg {
+    //     name = "STICKY DATA VAULT ENTRY";
+    //     desc = "Sticky Data Vault Entry (cleared on cold reset). Lockable.
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
+    // } STICKY_DATA_VAULT_ENTRY[10][12];//TODO Shoud reflect STICKY_DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
 
-     reg {
-         name = "DATA VAULT CTRL";
-         desc = "Controls for the Data Vault Entries (cleared on warm reset)
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
-                sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0; // TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
-     } DATA_VAULT_CTRL[10];// CAREFUL with the address extensions
+    // reg {
+    //     name = "DATA VAULT CTRL";
+    //     desc = "Controls for the Data Vault Entries (cleared on warm reset)
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="Lock writes to this entry. Writes will be suppressed when locked.";
+    //            sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0; // TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    // } DATA_VAULT_CTRL[10];// CAREFUL with the address extensions
 
-     reg {
-         name = "DATA VAULT ENTRY";
-         desc = "Data Vault Entry (cleared on cold reset). Lockable.
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
-     } DATA_VAULT_ENTRY[10][12];// TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
+    // reg {
+    //     name = "DATA VAULT ENTRY";
+    //     desc = "Data Vault Entry (cleared on cold reset). Lockable.
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="DataVault Entry (cleared on cold reset)"; sw=rw; hw=na; swwel=true; resetsignal = mci_pwrgood;} lock_entry=0;
+    // } DATA_VAULT_ENTRY[10][12];// TODO Shoud reflect DV_NUM_ENTRIES and DV_NUM_DWORDS from dv_defines_pkg.sv
 
-     reg {
-         name = "STICKY LOCKABLE SCRATCH REG CTRL";
-         desc = "Sticky Scratch Register Controls (cleared on cold reset)
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
-                sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0;
-     } STICKY_LOCKABLE_SCRATCH_REG_CTRL[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
+    // reg {
+    //     name = "STICKY LOCKABLE SCRATCH REG CTRL";
+    //     desc = "Sticky Scratch Register Controls (cleared on cold reset)
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
+    //            sw=rw; swwel=true; hw=r; resetsignal=mci_pwrgood;} lock_entry=0;
+    // } STICKY_LOCKABLE_SCRATCH_REG_CTRL[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
 
 
-    reg {
-        name = "STICKY LOCKABLE SCRATCH REG";
-        desc = "Sticky Scratch Register Entries (cleared on cold reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
-    } STICKY_LOCKABLE_SCRATCH_REG[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
+    //reg {
+    //    name = "STICKY LOCKABLE SCRATCH REG";
+    //    desc = "Sticky Scratch Register Entries (cleared on cold reset)
+    //            [br]Caliptra Access: RO
+    //            [br]MCU Access:      RW
+    //            [br]SOC Access:      RO";
+    //    field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
+    //} STICKY_LOCKABLE_SCRATCH_REG[8]; // TODO should reflect STICKY_LOCKQ_SCRATCH_NUM_ENTRIES
 
-    reg {
-        name = "LOCKABLE SCRATCH REG CTRL";
-        desc = "Scratch Register Controls (cleared on warm reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
-               sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0;
-    } LOCKABLE_SCRATCH_REG_CTRL[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
+    //reg {
+    //    name = "LOCKABLE SCRATCH REG CTRL";
+    //    desc = "Scratch Register Controls (cleared on warm reset)
+    //            [br]Caliptra Access: RO
+    //            [br]MCU Access:      RW
+    //            [br]SOC Access:      RO";
+    //    field {desc="Lock writes to the Scratch registers. Writes will be suppressed when locked.";
+    //           sw=rw; swwel=true; hw=r; resetsignal=mcu_rst_b;} lock_entry=0;
+    //} LOCKABLE_SCRATCH_REG_CTRL[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
 
-    reg {
-        name = "LOCKABLE SCRATCH REG";
-        desc = "Scratch Register Entry (cleared on cold reset)
-                [br]Caliptra Access: RO
-                [br]MCU Access:      RW
-                [br]SOC Access:      RO";
-        field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
-    } LOCKABLE_SCRATCH_REG[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv
+    //reg {
+    //    name = "LOCKABLE SCRATCH REG";
+    //    desc = "Scratch Register Entry (cleared on cold reset)
+    //            [br]Caliptra Access: RO
+    //            [br]MCU Access:      RW
+    //            [br]SOC Access:      RO";
+    //    field {sw=rw; swwel=true; hw=na; resetsignal=mci_pwrgood;} data[32]=0;
+    //} LOCKABLE_SCRATCH_REG[10]; // TODO Shoud reflect LOCK_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv
 
-     reg {
-         name = "NON STICKY GENERIC SCRATCH REG";
-         desc = "
-                 [br]Caliptra Access: RO
-                 [br]MCU Access:      RW
-                 [br]SOC Access:      RO";
-         field {sw=rw; hw=na; resetsignal=mci_rst_b;} data[32]=0; // FIXME mcu_rst_b instead?
-     } NON_STICKY_GENERIC_SCRATCH_REG[8]; // TODO Shoud reflect NONSTICKY_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
+    // reg {
+    //     name = "NON STICKY GENERIC SCRATCH REG";
+    //     desc = "
+    //             [br]Caliptra Access: RO
+    //             [br]MCU Access:      RW
+    //             [br]SOC Access:      RO";
+    //     field {sw=rw; hw=na; resetsignal=mci_rst_b;} data[32]=0; 
+    // } NON_STICKY_GENERIC_SCRATCH_REG[8]; // TODO Shoud reflect NONSTICKY_SCRATCH_NUM_ENTRIES from dv_defines_pkg.sv & CAREFUL with the address extensions
 
 ////////////////////////////////////////////////////////////////
 // Interrupts
@@ -870,7 +968,7 @@ regfile intr_block_t {
     default regwidth = 32; // reg property
     default accesswidth = 32; // reg property
     default hw = na; // field property
-    default swwe = mcu_req; // MCU should be the only entity that can control the interrupt registers
+    default swwe = mcu_or_debug_req; // MCU should be the only entity that can control the interrupt registers
 
 
     /* -----------------------
@@ -900,12 +998,14 @@ regfile intr_block_t {
 
         // Specific enables for the events defined in this
         // event type in the instantiating peripheral.
-        // FIXME add back ? field {desc = "Enable bit for Internal Errors";                                                            } error_internal_en = 1'b0;
-        // FIXME add back ? field {desc = "Enable bit for Invalid Device in Pauser field";                                             } error_inv_dev_en  = 1'b0;
-        // FIXME add back ? field {desc = "Enable bit for Failed Commands (invalid protocol or FW Fail Status)";                       } error_cmd_fail_en = 1'b0;
-        // FIXME add back ? field {desc = "Enable bit for Bad Fuse received from SoC";                                                 } error_bad_fuse_en = 1'b0;
-        // FIXME add back ? field {desc = "Enable bit for ICCM access blocked by lock";                                                } error_iccm_blocked_en = 1'b0;
-        // FIXME add back ? field {desc = "Enable bit for Mailbox ECC Double-bit Error (uncorrectable)";                               } error_mbox_ecc_unc_en = 1'b0;
+        field {desc = "Enable bit for Collision between AXI and DMI port in MCU SRAM.";                            } error_mcu_sram_dmi_axi_collision_en = 1'b0;
+        field {desc = "Enable bit for Internal Errors";                                                            } error_internal_en = 1'b0;
+        field {desc = "Enable bit for Invalid Device in Pauser field";                                             } error_mbox0_inv_dev_en  = 1'b0;
+        field {desc = "Enable bit for Invalid Device in Pauser field";                                             } error_mbox1_inv_dev_en  = 1'b0;
+        field {desc = "Enable bit for Failed Commands (invalid protocol or FW Fail Status)";                       } error_mbox0_cmd_fail_en = 1'b0;
+        field {desc = "Enable bit for Failed Commands (invalid protocol or FW Fail Status)";                       } error_mbox1_cmd_fail_en = 1'b0;
+        field {desc = "Enable bit for Mailbox ECC Double-bit Error (uncorrectable)";                               } error_mbox0_ecc_unc_en = 1'b0;
+        field {desc = "Enable bit for Mailbox ECC Double-bit Error (uncorrectable)";                               } error_mbox1_ecc_unc_en = 1'b0;
         field {desc = "Enable bit for WDT Timer1 timeout";                                                         } error_wdt_timer1_timeout_en = 1'b0;
         field {desc = "Enable bit for WDT Timer2 timeout, applicable if timer2 is enabled as an independent timer";} error_wdt_timer2_timeout_en = 1'b0;
     };
@@ -962,13 +1062,16 @@ regfile intr_block_t {
         // Specific enables for the events defined in this
         // event type in the instantiating peripheral.
         field {desc = "Enable bit for MCUS SRAM ECC Single-bit Error (corretable)";      } notif_mcu_sram_ecc_cor_en = 1'b0;
-        field {desc = "Enable bit for Caliptra requests MCU to reset itself";      } notif_clpra_mcu_reset_req_en = 1'b0;
-        // FIXME add back? field {desc = "Enable bit for Command Available";                         } notif_cmd_avail_en = 1'b0;
-        // FIXME add back? field {desc = "Enable bit for Mailbox ECC Single-bit Error (correctable)";} notif_mbox_ecc_cor_en = 1'b0;
+        field {desc = "Enable bit for Caliptra requests MCU to reset itself";      } notif_cptra_mcu_reset_req_en = 1'b0;
+        field {desc = "Enable bit for Generic Input Wires Toggle";                } notif_gen_in_toggle_en = 1'b0;
+        field {desc = "Enable bit for MBOX0 Command Available";                         } notif_mbox0_cmd_avail_en = 1'b0;
+        field {desc = "Enable bit for MBOX1 Command Available";                         } notif_mbox1_cmd_avail_en = 1'b0;
+        field {desc = "Enable bit for Mailbox ECC Single-bit Error (correctable)";} notif_mbox0_ecc_cor_en = 1'b0;
+        field {desc = "Enable bit for Mailbox ECC Single-bit Error (correctable)";} notif_mbox1_ecc_cor_en = 1'b0;
         // FIXME add back? field {desc = "Enable bit for Security State, Debug Locked transition";   } notif_debug_locked_en = 1'b0;
         // FIXME add back? field {desc = "Enable bit for Scan mode";                                 } notif_scan_mode_en = 1'b0;
-        // FIXME add back? field {desc = "Enable bit for SoC requested the mailbox while locked";    } notif_soc_req_lock_en = 1'b0;
-        // FIXME add back? field {desc = "Enable bit for Generic Input Wires Toggle";                } notif_gen_in_toggle_en = 1'b0;
+        field {desc = "Enable bit for SoC requested the mailbox while locked";    } notif_mbox0_soc_req_lock_en = 1'b0;
+        field {desc = "Enable bit for SoC requested the mailbox while locked";    } notif_mbox1_soc_req_lock_en = 1'b0;
     };
     reg notif1_intr_en_t {
         name = "Per-Event Interrupt Enable Register";
@@ -1025,12 +1128,14 @@ regfile intr_block_t {
         default woclr = true;
         default level intr;
 
-        // FIXME add back ? field {desc = "Internal Errors status bit";                                      } error_internal_sts = 1'b0;
-        // FIXME add back ? field {desc = "Invalid Device in Pauser field status bit";                       } error_inv_dev_sts = 1'b0;
-        // FIXME add back ? field {desc = "Failed Commands status bit (invalid protocol or FW Fail Status)"; } error_cmd_fail_sts = 1'b0;
-        // FIXME add back ? field {desc = "Bad Fuse received from SoC status bit";                           } error_bad_fuse_sts = 1'b0;
-        // FIXME add back ? field {desc = "ICCM access blocked by lock status bit";                          } error_iccm_blocked_sts = 1'b0;
-        // FIXME add back ? field {desc = "Mailbox ECC Double-bit Error (uncorrectable) status bit";         } error_mbox_ecc_unc_sts = 1'b0;
+        field {desc = "Collision between AXI and DMI port in MCU SRAM.";                 } error_mcu_sram_dmi_axi_collision_sts = 1'b0;
+        field {desc = "Internal Errors status bit";                                      } error_internal_sts = 1'b0;
+        field {desc = "Invalid Device in Pauser field status bit";                       } error_mbox0_inv_dev_sts = 1'b0;
+        field {desc = "Invalid Device in Pauser field status bit";                       } error_mbox1_inv_dev_sts = 1'b0;
+        field {desc = "Failed Commands status bit (invalid protocol or FW Fail Status)"; } error_mbox0_cmd_fail_sts = 1'b0;
+        field {desc = "Failed Commands status bit (invalid protocol or FW Fail Status)"; } error_mbox1_cmd_fail_sts = 1'b0;
+        field {desc = "Mailbox ECC Double-bit Error (uncorrectable) status bit";         } error_mbox0_ecc_unc_sts = 1'b0;
+        field {desc = "Mailbox ECC Double-bit Error (uncorrectable) status bit";         } error_mbox1_ecc_unc_sts = 1'b0;
         field {hw = rw; desc = "WDT Timer1 timeout status bit";                                   } error_wdt_timer1_timeout_sts = 1'b0;
         field {hw = rw; desc = "WDT Timer2 timeout status bit";                                   } error_wdt_timer2_timeout_sts = 1'b0;
     };
@@ -1094,13 +1199,16 @@ regfile intr_block_t {
         default level intr;
 
         field {desc = "MCU SRAM ECC Single-bit Error (correctable) status bit";} notif_mcu_sram_ecc_cor_sts = 1'b0;
-        field {desc = "Caliptra requests MCU to reset itself status bit";      } notif_clpra_mcu_reset_req_sts = 1'b0;
-        // FIXME add back? field {desc = "Command Available status bit";                         } notif_cmd_avail_sts = 1'b0;
-        // FIXME add back? field {desc = "Mailbox ECC Single-bit Error (correctable) status bit";} notif_mbox_ecc_cor_sts = 1'b0;
+        field {desc = "Caliptra requests MCU to reset itself status bit";      } notif_cptra_mcu_reset_req_sts = 1'b0;
+        field {desc = "Generic Input Wires Toggle status bit";                } notif_gen_in_toggle_sts = 1'b0;
+        field {desc = "MBOX0 Command Available status bit";                         } notif_mbox0_cmd_avail_sts = 1'b0;
+        field {desc = "MBOX1 Command Available status bit";                         } notif_mbox1_cmd_avail_sts = 1'b0;
+        field {desc = "Mailbox ECC Single-bit Error (correctable) status bit";} notif_mbox0_ecc_cor_sts = 1'b0;
+        field {desc = "Mailbox ECC Single-bit Error (correctable) status bit";} notif_mbox1_ecc_cor_sts = 1'b0;
         // FIXME add back? field {desc = "Security State, Debug Locked transition status bit";   } notif_debug_locked_sts = 1'b0;
         // FIXME add back? field {desc = "Scan mode status bit";                                 } notif_scan_mode_sts = 1'b0;
-        // FIXME add back? field {desc = "SoC requested the mailbox while locked status bit";    } notif_soc_req_lock_sts = 1'b0;
-        // FIXME add back? field {desc = "Generic Input Wires Toggle status bit";                } notif_gen_in_toggle_sts = 1'b0;
+        field {desc = "SoC requested the mailbox while locked status bit";    } notif_mbox0_soc_req_lock_sts = 1'b0;
+        field {desc = "SoC requested the mailbox while locked status bit";    } notif_mbox1_soc_req_lock_sts = 1'b0;
     };
     reg notif1_intr_t {
         name = "Interrupt Status Register type definition";
@@ -1184,14 +1292,16 @@ regfile intr_block_t {
         default singlepulse = true;
 
         // Instantiate triggers bit-by-bit.
-        // FIXME add back? field {desc = "Internal Errors trigger bit";                             } error_internal_trig = 1'b0;
-        // FIXME add back? field {desc = "Invalid Device in Pauser field trigger bit";              } error_inv_dev_trig  = 1'b0;
-        // FIXME add back? field {desc = "Failed Commands trigger bit";                             } error_cmd_fail_trig = 1'b0;
-        // FIXME add back? field {desc = "Bad Fuse received from SoC trigger bit";                  } error_bad_fuse_trig = 1'b0;
-        // FIXME add back? field {desc = "ICCM access blocked by lock trigger bit";                 } error_iccm_blocked_trig = 1'b0;
-        // FIXME add back? field {desc = "Mailbox ECC Double-bit Error (uncorrectable) trigger bit";} error_mbox_ecc_unc_trig = 1'b0;
-        field {desc = "WDT Timer1 timeout trigger bit";                          } error_wdt_timer1_timeout_trig = 1'b0;
-        field {desc = "WDT Timer2 timeout trigger bit";                          } error_wdt_timer2_timeout_trig = 1'b0;
+        field {desc = "Collision between AXI and DMI port in MCU SRAM trigger bit";     } error_mcu_sram_dmi_axi_collision_trig = 1'b0;
+        field {desc = "Internal Errors trigger bit";                                    } error_internal_trig = 1'b0;
+        field {desc = "Invalid Device in Pauser field trigger bit";                     } error_mbox0_inv_dev_trig  = 1'b0;
+        field {desc = "Invalid Device in Pauser field trigger bit";                     } error_mbox1_inv_dev_trig  = 1'b0;
+        field {desc = "Failed Commands trigger bit";                                    } error_mbox0_cmd_fail_trig = 1'b0;
+        field {desc = "Failed Commands trigger bit";                                    } error_mbox1_cmd_fail_trig = 1'b0;
+        field {desc = "Mailbox ECC Double-bit Error (uncorrectable) trigger bit";       } error_mbox0_ecc_unc_trig = 1'b0;
+        field {desc = "Mailbox ECC Double-bit Error (uncorrectable) trigger bit";       } error_mbox1_ecc_unc_trig = 1'b0;
+        field {desc = "WDT Timer1 timeout trigger bit";                                 } error_wdt_timer1_timeout_trig = 1'b0;
+        field {desc = "WDT Timer2 timeout trigger bit";                                 } error_wdt_timer2_timeout_trig = 1'b0;
     };
     reg error1_intr_trig_t {
         name = "Interrupt Trigger Register type definition";
@@ -1257,13 +1367,16 @@ regfile intr_block_t {
 
         // Instantiate triggers bit-by-bit.
         field {desc = "MCU SRAM ECC Single-bit Error (correctable) trigger bit";} notif_mcu_sram_ecc_cor_trig = 1'b0;
-        field {desc = "Caliptra requests MCU to reset itself trigger bit";      } notif_clpra_mcu_reset_req_trig = 1'b0;
-        // FIXME add back ? field {desc = "Command Available trigger bit";                         } notif_cmd_avail_trig = 1'b0;
-        // FIXME add back ? field {desc = "Mailbox ECC Single-bit Error (correctable) trigger bit";} notif_mbox_ecc_cor_trig = 1'b0;
+        field {desc = "Caliptra requests MCU to reset itself trigger bit";      } notif_cptra_mcu_reset_req_trig = 1'b0;
+        field {desc = "Generic Input Wires Toggle trigger bit";                } notif_gen_in_toggle_trig = 1'b0;
+        field {desc = "MBOX0 Command Available trigger bit";                         } notif_mbox0_cmd_avail_trig = 1'b0;
+        field {desc = "MBOX1 Command Available trigger bit";                         } notif_mbox1_cmd_avail_trig = 1'b0;
+        field {desc = "Mailbox ECC Single-bit Error (correctable) trigger bit";} notif_mbox0_ecc_cor_trig = 1'b0;
+        field {desc = "Mailbox ECC Single-bit Error (correctable) trigger bit";} notif_mbox1_ecc_cor_trig = 1'b0;
         // FIXME add back ? field {desc = "Security State, Debug Locked transition trigger bit";   } notif_debug_locked_trig = 1'b0;
         // FIXME add back ? field {desc = "Scan mode trigger bit";                                 } notif_scan_mode_trig = 1'b0;
-        // FIXME add back ? field {desc = "SoC requested the mailbox while locked trigger bit";    } notif_soc_req_lock_trig = 1'b0;
-        // FIXME add back ? field {desc = "Generic Input Wires Toggle trigger bit";                } notif_gen_in_toggle_trig = 1'b0;
+        field {desc = "SoC requested the mailbox while locked trigger bit";    } notif_mbox0_soc_req_lock_trig = 1'b0;
+        field {desc = "SoC requested the mailbox while locked trigger bit";    } notif_mbox1_soc_req_lock_trig = 1'b0;
     };
 
     reg notif1_intr_trig_t {
@@ -1370,13 +1483,15 @@ regfile intr_block_t {
     notif1_intr_trig_t notif1_intr_trig_r;     /* SW sets notification bit for interrupt testing */                    //
                                                                                                                      //
     // Align this set of registers; number of counters is based on peripheral event requirements                     //
-    // FIXME add back? intr_count_t      error_internal_intr_count_r @0x100;  /* Per error */                                           //
-    // FIXME add back? intr_count_t      error_inv_dev_intr_count_r;          /* Per error */                                           //
-    // FIXME add back? intr_count_t      error_cmd_fail_intr_count_r;         /* Per error */                                           //
-    // FIXME add back? intr_count_t      error_bad_fuse_intr_count_r;         /* Per error */                                           //
-    // FIXME add back? intr_count_t      error_iccm_blocked_intr_count_r;     /* Per error */                                           //
-    // FIXME add back? intr_count_t      error_mbox_ecc_unc_intr_count_r;     /* Per error */                                           //
-    intr_count_t      error_wdt_timer1_timeout_intr_count_r @0x100; // FIXME remove 0x100 if not first count register/* Per error */                                         //
+    intr_count_t      error_internal_intr_count_r @0x100;  /* Per error */                                           //
+    intr_count_t      error_mbox0_inv_dev_intr_count_r;          /* Per error */                                           //
+    intr_count_t      error_mbox1_inv_dev_intr_count_r;          /* Per error */                                           //
+    intr_count_t      error_mbox0_cmd_fail_intr_count_r;         /* Per error */                                           //
+    intr_count_t      error_mbox1_cmd_fail_intr_count_r;         /* Per error */                                           //
+    intr_count_t      error_mbox0_ecc_unc_intr_count_r;     /* Per error */                                           //
+    intr_count_t      error_mbox1_ecc_unc_intr_count_r;     /* Per error */                                           //
+    intr_count_t      error_mcu_sram_dmi_axi_collision_intr_count_r;     /* Per error */                                           //
+    intr_count_t      error_wdt_timer1_timeout_intr_count_r;  /* Per error */                                         //
     intr_count_t      error_wdt_timer2_timeout_intr_count_r; /* Per error */                                         //
     intr_count_t      error_agg_error_fatal0_intr_count_r;    /* Per error  */                              //
     intr_count_t      error_agg_error_fatal1_intr_count_r;    /* Per error  */                              //
@@ -1411,7 +1526,8 @@ regfile intr_block_t {
     intr_count_t      error_agg_error_fatal30_intr_count_r;   /* Per error  */                              //
     intr_count_t      error_agg_error_fatal31_intr_count_r;   /* Per error  */                              //
     intr_count_t      notif_mcu_sram_ecc_cor_intr_count_r @0x200;     /* Per notification */                                    //
-    intr_count_t      notif_clpra_mcu_reset_req_intr_count_r;     /* Per notification */                                    //
+    intr_count_t      notif_cptra_mcu_reset_req_intr_count_r;     /* Per notification */                                    //
+    intr_count_t      notif_gen_in_toggle_intr_count_r;    /* Per notification */                                    //
     intr_count_t      notif_agg_error_non_fatal0_intr_count_r;    /* Per notification  */                              //
     intr_count_t      notif_agg_error_non_fatal1_intr_count_r;    /* Per notification  */                              //
     intr_count_t      notif_agg_error_non_fatal2_intr_count_r;    /* Per notification  */                              //
@@ -1444,26 +1560,30 @@ regfile intr_block_t {
     intr_count_t      notif_agg_error_non_fatal29_intr_count_r;   /* Per notification  */                              //
     intr_count_t      notif_agg_error_non_fatal30_intr_count_r;   /* Per notification  */                              //
     intr_count_t      notif_agg_error_non_fatal31_intr_count_r;   /* Per notification  */                              //
-    // FIXME add back? intr_count_t      notif_cmd_avail_intr_count_r @0x180; /* Per notification */                                    //
-    // FIXME add back? intr_count_t      notif_mbox_ecc_cor_intr_count_r;     /* Per notification */                                    //
+    intr_count_t      notif_mbox0_cmd_avail_intr_count_r; /* Per notification */                                    //
+    intr_count_t      notif_mbox1_cmd_avail_intr_count_r; /* Per notification */                                    //
+    intr_count_t      notif_mbox0_ecc_cor_intr_count_r;     /* Per notification */                                    //
+    intr_count_t      notif_mbox1_ecc_cor_intr_count_r;     /* Per notification */                                    //
     // FIXME add back? intr_count_t      notif_debug_locked_intr_count_r;     /* Per notification */                                    //
     // FIXME add back? intr_count_t      notif_scan_mode_intr_count_r;        /* Per notification */                                    //
-    // FIXME add back? intr_count_t      notif_soc_req_lock_intr_count_r;     /* Per notification */                                    //
-    // FIXME add back? intr_count_t      notif_gen_in_toggle_intr_count_r;    /* Per notification */                                    //
+    intr_count_t      notif_mbox0_soc_req_lock_intr_count_r;     /* Per notification */                                    //
+    intr_count_t      notif_mbox1_soc_req_lock_intr_count_r;     /* Per notification */                                    //
                                                                                                                      //
     // These registers should be treated by SW as reserved, and ignored.                                             //
     // Offset at 0x200 gives enough space for 32 Errors and 32 Notifications                                         //
     // to be implemented (requiring 2*32 32-bit registers starting at                                                //
     // offset 0x100), and still allowing the entire regfile to fit                                                   //
     // inside a 1024-byte space.                                                                                     //
-    // FIXME add back ? intr_count_incr_t error_internal_intr_count_incr_r @0x200; /* Per error count incrementor pulse */               //
-    // FIXME add back ? intr_count_incr_t error_inv_dev_intr_count_incr_r;         /* Per error count incrementor pulse */               //
-    // FIXME add back ? intr_count_incr_t error_cmd_fail_intr_count_incr_r;        /* Per error count incrementor pulse */               //
-    // FIXME add back ? intr_count_incr_t error_bad_fuse_intr_count_incr_r;        /* Per error count incrementor pulse */               //
-    // FIXME add back ? intr_count_incr_t error_iccm_blocked_intr_count_incr_r;    /* Per error count incrementor pulse */               //
-    // FIXME add back ? intr_count_incr_t error_mbox_ecc_unc_intr_count_incr_r;    /* Per error count incrementor pulse */               //
-    intr_count_incr_t error_wdt_timer1_timeout_intr_count_incr_r @0x300; // FIXME remove 0x200 if not first register /* Per error count incrementor pulse */            //
+    intr_count_incr_t error_internal_intr_count_incr_r @0x300; /* Per error count incrementor pulse */               //
+    intr_count_incr_t error_mbox0_inv_dev_intr_count_incr_r;         /* Per error count incrementor pulse */               //
+    intr_count_incr_t error_mbox1_inv_dev_intr_count_incr_r;         /* Per error count incrementor pulse */               //
+    intr_count_incr_t error_mbox0_cmd_fail_intr_count_incr_r;        /* Per error count incrementor pulse */               //
+    intr_count_incr_t error_mbox1_cmd_fail_intr_count_incr_r;        /* Per error count incrementor pulse */               //
+    intr_count_incr_t error_mbox0_ecc_unc_intr_count_incr_r;    /* Per error count incrementor pulse */               //
+    intr_count_incr_t error_mbox1_ecc_unc_intr_count_incr_r;    /* Per error count incrementor pulse */               //
+    intr_count_incr_t error_wdt_timer1_timeout_intr_count_incr_r;  /* Per error count incrementor pulse */            //
     intr_count_incr_t error_wdt_timer2_timeout_intr_count_incr_r; /* Per error count incrementor pulse */            //
+    intr_count_incr_t error_mcu_sram_dmi_axi_collision_intr_count_incr_r;     /* Per error count incrementor pulse */                                           //
     intr_count_incr_t error_agg_error_fatal0_intr_count_incr_r;    /* Per error count incrementor pulse */                              //
     intr_count_incr_t error_agg_error_fatal1_intr_count_incr_r;    /* Per error count incrementor pulse */                              //
     intr_count_incr_t error_agg_error_fatal2_intr_count_incr_r;    /* Per error count incrementor pulse */                              //
@@ -1497,7 +1617,8 @@ regfile intr_block_t {
     intr_count_incr_t error_agg_error_fatal30_intr_count_incr_r;   /* Per error count incrementor pulse */                              //
     intr_count_incr_t error_agg_error_fatal31_intr_count_incr_r;   /* Per error count incrementor pulse */                              //
     intr_count_incr_t notif_mcu_sram_ecc_cor_intr_count_incr_r;                    /* Per notification count incrementor pulse */        //
-    intr_count_incr_t notif_clpra_mcu_reset_req_intr_count_incr_r;                 /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_cptra_mcu_reset_req_intr_count_incr_r;                 /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_gen_in_toggle_intr_count_incr_r;   /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_agg_error_non_fatal0_intr_count_incr_r;    /* Per notification count incrementor pulse  */                              //
     intr_count_incr_t notif_agg_error_non_fatal1_intr_count_incr_r;    /* Per notification count incrementor pulse  */                              //
     intr_count_incr_t notif_agg_error_non_fatal2_intr_count_incr_r;    /* Per notification count incrementor pulse  */                              //
@@ -1530,23 +1651,27 @@ regfile intr_block_t {
     intr_count_incr_t notif_agg_error_non_fatal29_intr_count_incr_r;   /* Per notification count incrementor pulse  */                              //
     intr_count_incr_t notif_agg_error_non_fatal30_intr_count_incr_r;   /* Per notification count incrementor pulse  */                              //
     intr_count_incr_t notif_agg_error_non_fatal31_intr_count_incr_r;   /* Per notification count incrementor pulse  */                              //
-    // FIXME add back ? intr_count_incr_t notif_cmd_avail_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
-    // FIXME add back ? intr_count_incr_t notif_mbox_ecc_cor_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_mbox0_cmd_avail_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_mbox1_cmd_avail_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_mbox0_ecc_cor_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_mbox1_ecc_cor_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
     // FIXME add back ? intr_count_incr_t notif_debug_locked_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
     // FIXME add back ? intr_count_incr_t notif_scan_mode_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
-    // FIXME add back ? intr_count_incr_t notif_soc_req_lock_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
-    // FIXME add back ? intr_count_incr_t notif_gen_in_toggle_intr_count_incr_r;   /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_mbox0_soc_req_lock_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_mbox1_soc_req_lock_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
     /* ------------------------------------------------------------------------------------------------------------- */
 
     /* ---- Reset assignment for Error Events ---- */
-    // FIXME add back ? error0_internal_intr_r.error_internal_sts     -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error0_internal_intr_r.error_inv_dev_sts      -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error0_internal_intr_r.error_cmd_fail_sts     -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error0_internal_intr_r.error_bad_fuse_sts     -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error0_internal_intr_r.error_iccm_blocked_sts -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error0_internal_intr_r.error_mbox_ecc_unc_sts -> resetsignal = mci_pwrgood;
+    error0_internal_intr_r.error_internal_sts     -> resetsignal = mci_pwrgood;
+    error0_internal_intr_r.error_mbox0_inv_dev_sts      -> resetsignal = mci_pwrgood;
+    error0_internal_intr_r.error_mbox1_inv_dev_sts      -> resetsignal = mci_pwrgood;
+    error0_internal_intr_r.error_mbox0_cmd_fail_sts     -> resetsignal = mci_pwrgood;
+    error0_internal_intr_r.error_mbox1_cmd_fail_sts     -> resetsignal = mci_pwrgood;
+    error0_internal_intr_r.error_mbox0_ecc_unc_sts -> resetsignal = mci_pwrgood;
+    error0_internal_intr_r.error_mbox1_ecc_unc_sts -> resetsignal = mci_pwrgood;
     error0_internal_intr_r.error_wdt_timer1_timeout_sts -> resetsignal = mci_pwrgood;
     error0_internal_intr_r.error_wdt_timer2_timeout_sts -> resetsignal = mci_pwrgood;
+    error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> resetsignal = mci_pwrgood;
     error1_internal_intr_r.error_agg_error_fatal0_sts -> resetsignal = mci_pwrgood;
     error1_internal_intr_r.error_agg_error_fatal1_sts -> resetsignal = mci_pwrgood;
     error1_internal_intr_r.error_agg_error_fatal2_sts -> resetsignal = mci_pwrgood;
@@ -1579,14 +1704,16 @@ regfile intr_block_t {
     error1_internal_intr_r.error_agg_error_fatal29_sts -> resetsignal = mci_pwrgood;
     error1_internal_intr_r.error_agg_error_fatal30_sts -> resetsignal = mci_pwrgood;
     error1_internal_intr_r.error_agg_error_fatal31_sts -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error_internal_intr_count_r.cnt          -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error_inv_dev_intr_count_r.cnt           -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error_cmd_fail_intr_count_r.cnt          -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error_bad_fuse_intr_count_r.cnt          -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error_iccm_blocked_intr_count_r.cnt      -> resetsignal = mci_pwrgood;
-    // FIXME add back ? error_mbox_ecc_unc_intr_count_r.cnt      -> resetsignal = mci_pwrgood;
+    error_internal_intr_count_r.cnt          -> resetsignal = mci_pwrgood;
+    error_mbox0_inv_dev_intr_count_r.cnt           -> resetsignal = mci_pwrgood;
+    error_mbox1_inv_dev_intr_count_r.cnt           -> resetsignal = mci_pwrgood;
+    error_mbox0_cmd_fail_intr_count_r.cnt          -> resetsignal = mci_pwrgood;
+    error_mbox1_cmd_fail_intr_count_r.cnt          -> resetsignal = mci_pwrgood;
+    error_mbox0_ecc_unc_intr_count_r.cnt      -> resetsignal = mci_pwrgood;
+    error_mbox1_ecc_unc_intr_count_r.cnt      -> resetsignal = mci_pwrgood;
     error_wdt_timer1_timeout_intr_count_r.cnt -> resetsignal = mci_pwrgood;
     error_wdt_timer2_timeout_intr_count_r.cnt -> resetsignal = mci_pwrgood;
+    error_mcu_sram_dmi_axi_collision_intr_count_r.cnt -> resetsignal = mci_pwrgood;
     error_agg_error_fatal0_intr_count_r.cnt -> resetsignal = mci_pwrgood;
     error_agg_error_fatal1_intr_count_r.cnt -> resetsignal = mci_pwrgood;
     error_agg_error_fatal2_intr_count_r.cnt -> resetsignal = mci_pwrgood;
@@ -1622,14 +1749,16 @@ regfile intr_block_t {
     // TODO: Use this same reset for the error incrementor pulse too?
 
     /* ---- Interrupt Event Dynamic Assignments ---- */
-    // FIXME add back? error0_internal_intr_r.error_internal_sts     -> enable = error0_intr_en_r.error_internal_en;
-    // FIXME add back? error0_internal_intr_r.error_inv_dev_sts      -> enable = error0_intr_en_r.error_inv_dev_en;
-    // FIXME add back? error0_internal_intr_r.error_cmd_fail_sts     -> enable = error0_intr_en_r.error_cmd_fail_en;
-    // FIXME add back? error0_internal_intr_r.error_bad_fuse_sts     -> enable = error0_intr_en_r.error_bad_fuse_en;
-    // FIXME add back? error0_internal_intr_r.error_iccm_blocked_sts -> enable = error0_intr_en_r.error_iccm_blocked_en;
-    // FIXME add back? error0_internal_intr_r.error_mbox_ecc_unc_sts -> enable = error0_intr_en_r.error_mbox_ecc_unc_en;
+    error0_internal_intr_r.error_internal_sts     -> enable = error0_intr_en_r.error_internal_en;
+    error0_internal_intr_r.error_mbox0_inv_dev_sts      -> enable = error0_intr_en_r.error_mbox0_inv_dev_en;
+    error0_internal_intr_r.error_mbox1_inv_dev_sts      -> enable = error0_intr_en_r.error_mbox1_inv_dev_en;
+    error0_internal_intr_r.error_mbox0_cmd_fail_sts     -> enable = error0_intr_en_r.error_mbox0_cmd_fail_en;
+    error0_internal_intr_r.error_mbox1_cmd_fail_sts     -> enable = error0_intr_en_r.error_mbox1_cmd_fail_en;
+    error0_internal_intr_r.error_mbox0_ecc_unc_sts -> enable = error0_intr_en_r.error_mbox0_ecc_unc_en;
+    error0_internal_intr_r.error_mbox1_ecc_unc_sts -> enable = error0_intr_en_r.error_mbox1_ecc_unc_en;
     error0_internal_intr_r.error_wdt_timer1_timeout_sts -> enable = error0_intr_en_r.error_wdt_timer1_timeout_en;
     error0_internal_intr_r.error_wdt_timer2_timeout_sts -> enable = error0_intr_en_r.error_wdt_timer2_timeout_en;
+    error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> enable = error0_intr_en_r.error_mcu_sram_dmi_axi_collision_en;
     error1_internal_intr_r.error_agg_error_fatal0_sts -> enable = error1_intr_en_r.error_agg_error_fatal0_en;
     error1_internal_intr_r.error_agg_error_fatal1_sts -> enable = error1_intr_en_r.error_agg_error_fatal1_en;
     error1_internal_intr_r.error_agg_error_fatal2_sts -> enable = error1_intr_en_r.error_agg_error_fatal2_en;
@@ -1663,7 +1792,10 @@ regfile intr_block_t {
     error1_internal_intr_r.error_agg_error_fatal30_sts -> enable = error1_intr_en_r.error_agg_error_fatal30_en;
     error1_internal_intr_r.error_agg_error_fatal31_sts -> enable = error1_intr_en_r.error_agg_error_fatal31_en;
     notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts     -> enable = notif0_intr_en_r.notif_mcu_sram_ecc_cor_en;
-    notif0_internal_intr_r.notif_clpra_mcu_reset_req_sts     -> enable = notif0_intr_en_r.notif_clpra_mcu_reset_req_en;
+    notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts     -> enable = notif0_intr_en_r.notif_cptra_mcu_reset_req_en;
+    notif0_internal_intr_r.notif_gen_in_toggle_sts -> enable = notif0_intr_en_r.notif_gen_in_toggle_en;
+    notif0_internal_intr_r.notif_mbox0_cmd_avail_sts     -> enable = notif0_intr_en_r.notif_mbox0_cmd_avail_en;
+    notif0_internal_intr_r.notif_mbox1_cmd_avail_sts     -> enable = notif0_intr_en_r.notif_mbox1_cmd_avail_en;
     notif1_internal_intr_r.notif_agg_error_non_fatal0_sts  -> enable = notif1_intr_en_r.notif_agg_error_non_fatal0_en;
     notif1_internal_intr_r.notif_agg_error_non_fatal1_sts  -> enable = notif1_intr_en_r.notif_agg_error_non_fatal1_en;
     notif1_internal_intr_r.notif_agg_error_non_fatal2_sts  -> enable = notif1_intr_en_r.notif_agg_error_non_fatal2_en;
@@ -1696,21 +1828,23 @@ regfile intr_block_t {
     notif1_internal_intr_r.notif_agg_error_non_fatal29_sts -> enable = notif1_intr_en_r.notif_agg_error_non_fatal29_en;
     notif1_internal_intr_r.notif_agg_error_non_fatal30_sts -> enable = notif1_intr_en_r.notif_agg_error_non_fatal30_en;
     notif1_internal_intr_r.notif_agg_error_non_fatal31_sts -> enable = notif1_intr_en_r.notif_agg_error_non_fatal31_en;
-    // FIXME add back? notif0_internal_intr_r.notif_cmd_avail_sts     -> enable = notif0_intr_en_r.notif_cmd_avail_en;
-    // FIXME add back? notif0_internal_intr_r.notif_mbox_ecc_cor_sts  -> enable = notif0_intr_en_r.notif_mbox_ecc_cor_en;
+    notif0_internal_intr_r.notif_mbox0_ecc_cor_sts  -> enable = notif0_intr_en_r.notif_mbox0_ecc_cor_en;
+    notif0_internal_intr_r.notif_mbox1_ecc_cor_sts  -> enable = notif0_intr_en_r.notif_mbox1_ecc_cor_en;
     // FIXME add back? notif0_internal_intr_r.notif_debug_locked_sts  -> enable = notif0_intr_en_r.notif_debug_locked_en;
     // FIXME add back? notif0_internal_intr_r.notif_scan_mode_sts     -> enable = notif0_intr_en_r.notif_scan_mode_en;
-    // FIXME add back? notif0_internal_intr_r.notif_soc_req_lock_sts  -> enable = notif0_intr_en_r.notif_soc_req_lock_en;
-    // FIXME add back? notif0_internal_intr_r.notif_gen_in_toggle_sts -> enable = notif0_intr_en_r.notif_gen_in_toggle_en;
+    notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts  -> enable = notif0_intr_en_r.notif_mbox0_soc_req_lock_en;
+    notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts  -> enable = notif0_intr_en_r.notif_mbox1_soc_req_lock_en;
 
-    // FIXME add back? error0_internal_intr_r.error_internal_sts     -> next   = error0_intr_trig_r.error_internal_trig;
-    // FIXME add back? error0_internal_intr_r.error_inv_dev_sts      -> next   = error0_intr_trig_r.error_inv_dev_trig;
-    // FIXME add back? error0_internal_intr_r.error_cmd_fail_sts     -> next   = error0_intr_trig_r.error_cmd_fail_trig;
-    // FIXME add back? error0_internal_intr_r.error_bad_fuse_sts     -> next   = error0_intr_trig_r.error_bad_fuse_trig;
-    // FIXME add back? error0_internal_intr_r.error_iccm_blocked_sts -> next   = error0_intr_trig_r.error_iccm_blocked_trig;
-    // FIXME add back? error0_internal_intr_r.error_mbox_ecc_unc_sts -> next   = error0_intr_trig_r.error_mbox_ecc_unc_trig;
+    error0_internal_intr_r.error_internal_sts     -> next   = error0_intr_trig_r.error_internal_trig;
+    error0_internal_intr_r.error_mbox0_inv_dev_sts      -> next   = error0_intr_trig_r.error_mbox0_inv_dev_trig;
+    error0_internal_intr_r.error_mbox1_inv_dev_sts      -> next   = error0_intr_trig_r.error_mbox1_inv_dev_trig;
+    error0_internal_intr_r.error_mbox0_cmd_fail_sts     -> next   = error0_intr_trig_r.error_mbox0_cmd_fail_trig;
+    error0_internal_intr_r.error_mbox1_cmd_fail_sts     -> next   = error0_intr_trig_r.error_mbox1_cmd_fail_trig;
+    error0_internal_intr_r.error_mbox0_ecc_unc_sts -> next   = error0_intr_trig_r.error_mbox0_ecc_unc_trig;
+    error0_internal_intr_r.error_mbox1_ecc_unc_sts -> next   = error0_intr_trig_r.error_mbox1_ecc_unc_trig;
     error0_internal_intr_r.error_wdt_timer1_timeout_sts -> next   = error0_intr_trig_r.error_wdt_timer1_timeout_trig;
     error0_internal_intr_r.error_wdt_timer2_timeout_sts -> next   = error0_intr_trig_r.error_wdt_timer2_timeout_trig;
+    error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> next   = error0_intr_trig_r.error_mcu_sram_dmi_axi_collision_trig;
     error1_internal_intr_r.error_agg_error_fatal0_sts  -> next = error1_intr_trig_r.error_agg_error_fatal0_trig;
     error1_internal_intr_r.error_agg_error_fatal1_sts  -> next = error1_intr_trig_r.error_agg_error_fatal1_trig;
     error1_internal_intr_r.error_agg_error_fatal2_sts  -> next = error1_intr_trig_r.error_agg_error_fatal2_trig;
@@ -1744,7 +1878,10 @@ regfile intr_block_t {
     error1_internal_intr_r.error_agg_error_fatal30_sts -> next = error1_intr_trig_r.error_agg_error_fatal30_trig;
     error1_internal_intr_r.error_agg_error_fatal31_sts -> next = error1_intr_trig_r.error_agg_error_fatal31_trig;
     notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts     -> next   = notif0_intr_trig_r.notif_mcu_sram_ecc_cor_trig;
-    notif0_internal_intr_r.notif_clpra_mcu_reset_req_sts     -> next   = notif0_intr_trig_r.notif_clpra_mcu_reset_req_trig;
+    notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts     -> next   = notif0_intr_trig_r.notif_cptra_mcu_reset_req_trig;
+    notif0_internal_intr_r.notif_gen_in_toggle_sts -> next   = notif0_intr_trig_r.notif_gen_in_toggle_trig;
+    notif0_internal_intr_r.notif_mbox0_cmd_avail_sts     -> next   = notif0_intr_trig_r.notif_mbox0_cmd_avail_trig;
+    notif0_internal_intr_r.notif_mbox1_cmd_avail_sts     -> next   = notif0_intr_trig_r.notif_mbox1_cmd_avail_trig;
     notif1_internal_intr_r.notif_agg_error_non_fatal0_sts  -> next = notif1_intr_trig_r.notif_agg_error_non_fatal0_trig;
     notif1_internal_intr_r.notif_agg_error_non_fatal1_sts  -> next = notif1_intr_trig_r.notif_agg_error_non_fatal1_trig;
     notif1_internal_intr_r.notif_agg_error_non_fatal2_sts  -> next = notif1_intr_trig_r.notif_agg_error_non_fatal2_trig;
@@ -1777,12 +1914,12 @@ regfile intr_block_t {
     notif1_internal_intr_r.notif_agg_error_non_fatal29_sts -> next = notif1_intr_trig_r.notif_agg_error_non_fatal29_trig;
     notif1_internal_intr_r.notif_agg_error_non_fatal30_sts -> next = notif1_intr_trig_r.notif_agg_error_non_fatal30_trig;
     notif1_internal_intr_r.notif_agg_error_non_fatal31_sts -> next = notif1_intr_trig_r.notif_agg_error_non_fatal31_trig;
-    // FIXME add back? notif0_internal_intr_r.notif_cmd_avail_sts     -> next   = notif0_intr_trig_r.notif_cmd_avail_trig;
-    // FIXME add back? notif0_internal_intr_r.notif_mbox_ecc_cor_sts  -> next   = notif0_intr_trig_r.notif_mbox_ecc_cor_trig;
+    notif0_internal_intr_r.notif_mbox0_ecc_cor_sts  -> next   = notif0_intr_trig_r.notif_mbox0_ecc_cor_trig;
+    notif0_internal_intr_r.notif_mbox1_ecc_cor_sts  -> next   = notif0_intr_trig_r.notif_mbox1_ecc_cor_trig;
     // FIXME add back? notif0_internal_intr_r.notif_debug_locked_sts  -> next   = notif0_intr_trig_r.notif_debug_locked_trig;
     // FIXME add back? notif0_internal_intr_r.notif_scan_mode_sts     -> next   = notif0_intr_trig_r.notif_scan_mode_trig;
-    // FIXME add back? notif0_internal_intr_r.notif_soc_req_lock_sts  -> next   = notif0_intr_trig_r.notif_soc_req_lock_trig;
-    // FIXME add back? notif0_internal_intr_r.notif_gen_in_toggle_sts -> next   = notif0_intr_trig_r.notif_gen_in_toggle_trig;
+    notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts  -> next   = notif0_intr_trig_r.notif_mbox0_soc_req_lock_trig;
+    notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts  -> next   = notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig;
 
     // NOTE: hwset for events is implicitly defined as module input
 
@@ -1803,41 +1940,47 @@ regfile intr_block_t {
     //       self-clearing, which results in a pulse. Must be configured
     //       to be sensitive to the interrupt trigger events for each event.
     //       The output pulse is then used to increment the ACTUAL counter
-    // FIXME Add back ?? error_internal_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_internal_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back ?? error_internal_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_internal_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back ?? error_internal_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_internal_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back ?? error_internal_intr_count_incr_r.pulse -> decr     = error_internal_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back ?? error_internal_intr_count_r.cnt        -> incr     = error_internal_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    error_internal_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_internal_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    error_internal_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_internal_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    error_internal_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_internal_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    error_internal_intr_count_incr_r.pulse -> decr     = error_internal_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    error_internal_intr_count_r.cnt        -> incr     = error_internal_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
-    // FIXME Add back ?? error_inv_dev_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_inv_dev_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back ?? error_inv_dev_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_inv_dev_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back ?? error_inv_dev_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_inv_dev_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back ?? error_inv_dev_intr_count_incr_r.pulse -> decr     = error_inv_dev_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back ?? error_inv_dev_intr_count_r.cnt        -> incr     = error_inv_dev_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    error_mbox0_inv_dev_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox0_inv_dev_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    error_mbox0_inv_dev_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox0_inv_dev_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    error_mbox0_inv_dev_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox0_inv_dev_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    error_mbox0_inv_dev_intr_count_incr_r.pulse -> decr     = error_mbox0_inv_dev_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    error_mbox0_inv_dev_intr_count_r.cnt        -> incr     = error_mbox0_inv_dev_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
-    // FIXME Add back ?? error_cmd_fail_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_cmd_fail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back ?? error_cmd_fail_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_cmd_fail_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back ?? error_cmd_fail_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_cmd_fail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back ?? error_cmd_fail_intr_count_incr_r.pulse -> decr     = error_cmd_fail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back ?? error_cmd_fail_intr_count_r.cnt        -> incr     = error_cmd_fail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    error_mbox1_inv_dev_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox1_inv_dev_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    error_mbox1_inv_dev_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox1_inv_dev_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    error_mbox1_inv_dev_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox1_inv_dev_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    error_mbox1_inv_dev_intr_count_incr_r.pulse -> decr     = error_mbox1_inv_dev_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    error_mbox1_inv_dev_intr_count_r.cnt        -> incr     = error_mbox1_inv_dev_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
-    // FIXME Add back ?? error_bad_fuse_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_bad_fuse_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back ?? error_bad_fuse_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_bad_fuse_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back ?? error_bad_fuse_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_bad_fuse_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back ?? error_bad_fuse_intr_count_incr_r.pulse -> decr     = error_bad_fuse_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back ?? error_bad_fuse_intr_count_r.cnt        -> incr     = error_bad_fuse_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    error_mbox0_cmd_fail_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox0_cmd_fail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    error_mbox0_cmd_fail_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox0_cmd_fail_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    error_mbox0_cmd_fail_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox0_cmd_fail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    error_mbox0_cmd_fail_intr_count_incr_r.pulse -> decr     = error_mbox0_cmd_fail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    error_mbox0_cmd_fail_intr_count_r.cnt        -> incr     = error_mbox0_cmd_fail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
-    // FIXME Add back ?? error_iccm_blocked_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_iccm_blocked_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back ?? error_iccm_blocked_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_iccm_blocked_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back ?? error_iccm_blocked_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_iccm_blocked_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back ?? error_iccm_blocked_intr_count_incr_r.pulse -> decr     = error_iccm_blocked_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back ?? error_iccm_blocked_intr_count_r.cnt        -> incr     = error_iccm_blocked_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    error_mbox1_cmd_fail_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox1_cmd_fail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    error_mbox1_cmd_fail_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox1_cmd_fail_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    error_mbox1_cmd_fail_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox1_cmd_fail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    error_mbox1_cmd_fail_intr_count_incr_r.pulse -> decr     = error_mbox1_cmd_fail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    error_mbox1_cmd_fail_intr_count_r.cnt        -> incr     = error_mbox1_cmd_fail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
-    // FIXME Add back ?? error_mbox_ecc_unc_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox_ecc_unc_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back ?? error_mbox_ecc_unc_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox_ecc_unc_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back ?? error_mbox_ecc_unc_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox_ecc_unc_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back ?? error_mbox_ecc_unc_intr_count_incr_r.pulse -> decr     = error_mbox_ecc_unc_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back ?? error_mbox_ecc_unc_intr_count_r.cnt        -> incr     = error_mbox_ecc_unc_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    error_mbox0_ecc_unc_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox0_ecc_unc_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    error_mbox0_ecc_unc_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox0_ecc_unc_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    error_mbox0_ecc_unc_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox0_ecc_unc_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    error_mbox0_ecc_unc_intr_count_incr_r.pulse -> decr     = error_mbox0_ecc_unc_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    error_mbox0_ecc_unc_intr_count_r.cnt        -> incr     = error_mbox0_ecc_unc_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+
+    error_mbox1_ecc_unc_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox1_ecc_unc_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    error_mbox1_ecc_unc_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox1_ecc_unc_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    error_mbox1_ecc_unc_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox1_ecc_unc_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    error_mbox1_ecc_unc_intr_count_incr_r.pulse -> decr     = error_mbox1_ecc_unc_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    error_mbox1_ecc_unc_intr_count_r.cnt        -> incr     = error_mbox1_ecc_unc_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
     error_wdt_timer1_timeout_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_wdt_timer1_timeout_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
     error_wdt_timer1_timeout_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_wdt_timer1_timeout_sts -> next;  // /      as a pulse to increment the intr_count_r register
@@ -1850,6 +1993,13 @@ regfile intr_block_t {
     error_wdt_timer2_timeout_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_wdt_timer2_timeout_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
     error_wdt_timer2_timeout_intr_count_incr_r.pulse -> decr     = error_wdt_timer2_timeout_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     error_wdt_timer2_timeout_intr_count_r.cnt        -> incr     = error_wdt_timer2_timeout_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    
+    error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse -> decr     = error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    error_mcu_sram_dmi_axi_collision_intr_count_r.cnt        -> incr     = error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+
 
     error_agg_error_fatal0_intr_count_incr_r.pulse -> hwset    = error1_internal_intr_r.error_agg_error_fatal0_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
     error_agg_error_fatal0_intr_count_incr_r.pulse -> next     = error1_internal_intr_r.error_agg_error_fatal0_sts -> next;  // /      as a pulse to increment the intr_count_r register
@@ -2049,11 +2199,19 @@ regfile intr_block_t {
     notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse -> decr     = notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     notif_mcu_sram_ecc_cor_intr_count_r.cnt        -> incr     = notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
     
-    notif_clpra_mcu_reset_req_intr_count_incr_r.pulse -> hwset    = notif0_internal_intr_r.notif_clpra_mcu_reset_req_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    notif_clpra_mcu_reset_req_intr_count_incr_r.pulse -> next     = notif0_internal_intr_r.notif_clpra_mcu_reset_req_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    notif_clpra_mcu_reset_req_intr_count_incr_r.pulse -> we       = notif0_internal_intr_r.notif_clpra_mcu_reset_req_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    notif_clpra_mcu_reset_req_intr_count_incr_r.pulse -> decr     = notif_clpra_mcu_reset_req_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    notif_clpra_mcu_reset_req_intr_count_r.cnt        -> incr     = notif_clpra_mcu_reset_req_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    notif_cptra_mcu_reset_req_intr_count_incr_r.pulse -> hwset    = notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_cptra_mcu_reset_req_intr_count_incr_r.pulse -> next     = notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_cptra_mcu_reset_req_intr_count_incr_r.pulse -> we       = notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_cptra_mcu_reset_req_intr_count_incr_r.pulse -> decr     = notif_cptra_mcu_reset_req_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_cptra_mcu_reset_req_intr_count_r.cnt        -> incr     = notif_cptra_mcu_reset_req_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+
+    notif_gen_in_toggle_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_gen_in_toggle_sts -> hwset; // \_____ Capture both         firmware and hardware triggered events
+    notif_gen_in_toggle_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_gen_in_toggle_sts -> next;  // /      as a pulse to        increment the intr_count_r register
+    notif_gen_in_toggle_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_gen_in_toggle_sts -> next;  // Generate a pulse from SW    trigger, if set, or default to use the hwset input
+    notif_gen_in_toggle_intr_count_incr_r.pulse -> decr  = notif_gen_in_toggle_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_gen_in_toggle_intr_count_r.cnt        -> incr  = notif_gen_in_toggle_intr_count_incr_r.pulse; // Increment coincides with rising edge   of interrupt sts bit
+
+
 
     notif_agg_error_non_fatal0_intr_count_incr_r.pulse -> hwset    = notif1_internal_intr_r.notif_agg_error_non_fatal0_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
     notif_agg_error_non_fatal0_intr_count_incr_r.pulse -> next     = notif1_internal_intr_r.notif_agg_error_non_fatal0_sts -> next;  // /      as a pulse to increment the intr_count_r register
@@ -2247,17 +2405,29 @@ regfile intr_block_t {
     notif_agg_error_non_fatal31_intr_count_incr_r.pulse -> decr     = notif_agg_error_non_fatal31_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     notif_agg_error_non_fatal31_intr_count_r.cnt        -> incr     = notif_agg_error_non_fatal31_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
-    // FIXME Add back??? notif_cmd_avail_intr_count_incr_r.pulse -> hwset    = notif0_internal_intr_r.notif_cmd_avail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back??? notif_cmd_avail_intr_count_incr_r.pulse -> next     = notif0_internal_intr_r.notif_cmd_avail_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back??? notif_cmd_avail_intr_count_incr_r.pulse -> we       = notif0_internal_intr_r.notif_cmd_avail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back??? notif_cmd_avail_intr_count_incr_r.pulse -> decr     = notif_cmd_avail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back??? notif_cmd_avail_intr_count_r.cnt        -> incr     = notif_cmd_avail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    notif_mbox0_cmd_avail_intr_count_incr_r.pulse -> hwset    = notif0_internal_intr_r.notif_mbox0_cmd_avail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_mbox0_cmd_avail_intr_count_incr_r.pulse -> next     = notif0_internal_intr_r.notif_mbox0_cmd_avail_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_mbox0_cmd_avail_intr_count_incr_r.pulse -> we       = notif0_internal_intr_r.notif_mbox0_cmd_avail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_mbox0_cmd_avail_intr_count_incr_r.pulse -> decr     = notif_mbox0_cmd_avail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_mbox0_cmd_avail_intr_count_r.cnt        -> incr     = notif_mbox0_cmd_avail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
-    // FIXME Add back??? notif_mbox_ecc_cor_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_mbox_ecc_cor_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back??? notif_mbox_ecc_cor_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_mbox_ecc_cor_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back??? notif_mbox_ecc_cor_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_mbox_ecc_cor_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back??? notif_mbox_ecc_cor_intr_count_incr_r.pulse -> decr  = notif_mbox_ecc_cor_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back??? notif_mbox_ecc_cor_intr_count_r.cnt        -> incr  = notif_mbox_ecc_cor_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    notif_mbox1_cmd_avail_intr_count_incr_r.pulse -> hwset    = notif0_internal_intr_r.notif_mbox1_cmd_avail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_mbox1_cmd_avail_intr_count_incr_r.pulse -> next     = notif0_internal_intr_r.notif_mbox1_cmd_avail_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_mbox1_cmd_avail_intr_count_incr_r.pulse -> we       = notif0_internal_intr_r.notif_mbox1_cmd_avail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_mbox1_cmd_avail_intr_count_incr_r.pulse -> decr     = notif_mbox1_cmd_avail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_mbox1_cmd_avail_intr_count_r.cnt        -> incr     = notif_mbox1_cmd_avail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+
+    notif_mbox0_ecc_cor_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_mbox0_ecc_cor_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_mbox0_ecc_cor_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_mbox0_ecc_cor_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_mbox0_ecc_cor_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_mbox0_ecc_cor_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_mbox0_ecc_cor_intr_count_incr_r.pulse -> decr  = notif_mbox0_ecc_cor_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_mbox0_ecc_cor_intr_count_r.cnt        -> incr  = notif_mbox0_ecc_cor_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+
+    notif_mbox1_ecc_cor_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_mbox1_ecc_cor_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_mbox1_ecc_cor_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_mbox1_ecc_cor_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_mbox1_ecc_cor_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_mbox1_ecc_cor_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_mbox1_ecc_cor_intr_count_incr_r.pulse -> decr  = notif_mbox1_ecc_cor_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_mbox1_ecc_cor_intr_count_r.cnt        -> incr  = notif_mbox1_ecc_cor_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
     // FIXME Add back??? notif_debug_locked_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_debug_locked_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
     // FIXME Add back??? notif_debug_locked_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_debug_locked_sts -> next;  // /      as a pulse to increment the intr_count_r register
@@ -2271,17 +2441,17 @@ regfile intr_block_t {
     // FIXME Add back??? notif_scan_mode_intr_count_incr_r.pulse -> decr  = notif_scan_mode_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     // FIXME Add back??? notif_scan_mode_intr_count_r.cnt        -> incr  = notif_scan_mode_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
-    // FIXME Add back??? notif_soc_req_lock_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_soc_req_lock_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back??? notif_soc_req_lock_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_soc_req_lock_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back??? notif_soc_req_lock_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_soc_req_lock_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back??? notif_soc_req_lock_intr_count_incr_r.pulse -> decr  = notif_soc_req_lock_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back??? notif_soc_req_lock_intr_count_r.cnt        -> incr  = notif_soc_req_lock_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    notif_mbox0_soc_req_lock_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_mbox0_soc_req_lock_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_mbox0_soc_req_lock_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_mbox0_soc_req_lock_intr_count_incr_r.pulse -> decr  = notif_mbox0_soc_req_lock_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_mbox0_soc_req_lock_intr_count_r.cnt        -> incr  = notif_mbox0_soc_req_lock_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
-    // FIXME Add back??? notif_gen_in_toggle_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_gen_in_toggle_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    // FIXME Add back??? notif_gen_in_toggle_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_gen_in_toggle_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    // FIXME Add back??? notif_gen_in_toggle_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_gen_in_toggle_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    // FIXME Add back??? notif_gen_in_toggle_intr_count_incr_r.pulse -> decr  = notif_gen_in_toggle_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    // FIXME Add back??? notif_gen_in_toggle_intr_count_r.cnt        -> incr  = notif_gen_in_toggle_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    notif_mbox1_soc_req_lock_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_mbox1_soc_req_lock_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_mbox1_soc_req_lock_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_mbox1_soc_req_lock_intr_count_incr_r.pulse -> decr  = notif_mbox1_soc_req_lock_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_mbox1_soc_req_lock_intr_count_r.cnt        -> incr  = notif_mbox1_soc_req_lock_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
 
 };

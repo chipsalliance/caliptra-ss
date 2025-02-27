@@ -20,7 +20,7 @@ module mci_top_tb
   import axi_pkg::*;
   ();
 
-  parameter MCI_TB_MCU_SRAM_SIZE_KB = 1024;
+  parameter MCI_TB_MCU_SRAM_SIZE_KB = 512;
 
   //Mailbox configuration
   parameter MCI_TB_MBOX0_DMI_DLEN_ADDR = 0; //TODO define
@@ -56,9 +56,7 @@ module mci_top_tb
     .MCU_SRAM_SIZE_KB(MCI_TB_MCU_SRAM_SIZE_KB), 
 
     //Mailbox configuration
-    .MCI_MBOX0_DMI_DLEN_ADDR(MCI_TB_MBOX0_DMI_DLEN_ADDR),
     .MCI_MBOX0_SIZE_KB(MCI_TB_MBOX0_SIZE_KB),
-    .MCI_MBOX1_DMI_DLEN_ADDR(MCI_TB_MBOX1_DMI_DLEN_ADDR),
     .MCI_MBOX1_SIZE_KB(MCI_TB_MBOX1_SIZE_KB)
   )
   mci_top_inst
@@ -69,6 +67,8 @@ module mci_top_tb
     // MCI Resets
     .mci_rst_b('0),
     .mci_pwrgood('0),
+    
+    .scan_mode('0),
 
     // MCI AXI Interface
     .s_axi_w_if,
@@ -81,8 +81,8 @@ module mci_top_tb
     // Straps
     .strap_mcu_lsu_axi_user('0),
     .strap_mcu_ifu_axi_user('0),
-    .strap_clp_axi_user('0),
-    .strap_prod_debug_unlock_pk_hash('0),
+    .strap_cptra_axi_user('0),
+    .ss_debug_intent('0),
 
     // SRAM ADHOC connections
     .mcu_sram_fw_exec_region_lock('0),
@@ -92,8 +92,8 @@ module mci_top_tb
     .agg_error_non_fatal('0),
 
     // SOC Interrupts
-    .mci_error_fatal(),
-    .mci_error_non_fatal(),
+    .all_error_fatal(),
+    .all_error_non_fatal(),
     
     // Generic in/out
     .mci_generic_input_wires('0),

@@ -27,7 +27,7 @@ module lc_ctrl_bfm
     input axi_struct_pkg::axi_rd_req_t lc_axi_rd_req,
     input axi_struct_pkg::axi_rd_rsp_t lc_axi_rd_rsp,
     output logic fake_reset,
-    output logic Allow_RMA_on_PPD,
+    output logic Allow_RMA_or_SCRAP_on_PPD,
 
     // Escalation State Interface
     output  esc_scrap_state0,
@@ -57,13 +57,13 @@ module lc_ctrl_bfm
     assign esc_scrap_state1 =  1'b0;
 
 
-    // TODO: This is used for keeping RMA strap to a desired value
+    // TODO: This is used for keeping RMA or SCRAP strap to a desired value
     //-------------------------------------------------------------------
     always@(posedge clk or negedge reset_n) begin
         if (!reset_n)
-            Allow_RMA_on_PPD <= 0;
+            Allow_RMA_or_SCRAP_on_PPD <= 0;
         else if (lc_axi_rd_req.arvalid && lc_axi_rd_rsp.arready && lc_axi_rd_req.araddr == 32'h7000_0448 && !power_and_reset_indication)
-            Allow_RMA_on_PPD <= ~Allow_RMA_on_PPD;
+            Allow_RMA_or_SCRAP_on_PPD <= ~Allow_RMA_or_SCRAP_on_PPD;
     end
     //-------------------------------------------------------------------
 
