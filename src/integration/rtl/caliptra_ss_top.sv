@@ -507,8 +507,6 @@ module caliptra_ss_top
     lc_ctrl_pkg::lc_tx_t lc_hw_debug_en_i;
     // Inputs from OTP_Ctrl
     otp_ctrl_pkg::otp_lc_data_t from_otp_to_lcc_data_i;
-    // Inputs from Caliptra_Core
-    logic ss_dbg_manuf_enable;
 
 
     soc_ifc_pkg::security_state_t mci_cptra_security_state;
@@ -1218,7 +1216,7 @@ module caliptra_ss_top
         .from_otp_to_lcc_program_i(from_otp_to_lcc_data_i),
 
         // Inputs from Caliptra_Core
-        .ss_dbg_manuf_enable_i(ss_dbg_manuf_enable),
+        .ss_dbg_manuf_enable_i(cptra_ss_dbg_manuf_enable_o),
         .ss_soc_dbg_unlock_level_i(cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o),
 
         // Converted Signals from LCC to SoC
