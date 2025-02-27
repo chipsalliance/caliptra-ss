@@ -98,11 +98,12 @@ jobs:
                                           -o -name "*.py" \
                                           -o -name "pr_timestamp" \
                                           ! -path "*.git/*" | LC_COLLATE=C sort -o $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
-            sed -i "s,^$GITHUB_WORKSPACE/,," $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
             echo "Found $(wc -l $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt) source code files to hash"
             echo -e "First five files:\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-            head -5 $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
+            cat $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
             echo -e ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+# sed -i "s,^$GITHUB_WORKSPACE/,," $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
+
 
       - name: Check Timestamp
         run: |
@@ -157,7 +158,7 @@ jobs:
                 exit 1
             fi
             echo "Submitted hash [${hash_orig}] matches the calculated hash: [${hash}]"
-            rm $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
+  # rm $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
 
   # Check License Headers
   # Check for microsoft employee or that all compile.yml/.vf are untouched
