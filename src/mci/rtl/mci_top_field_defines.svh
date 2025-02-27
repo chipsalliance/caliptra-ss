@@ -513,16 +513,21 @@
 `define MCI_REG_MCI_BOOTFSM_GO_GO_LOW                                                               (0)
 `define MCI_REG_MCI_BOOTFSM_GO_GO_MASK                                                              (32'h1)
 `endif
+`ifndef MCI_REG_CPTRA_BOOT_GO
+`define MCI_REG_CPTRA_BOOT_GO                                                                       (32'h108)
+`define MCI_REG_CPTRA_BOOT_GO_GO_LOW                                                                (0)
+`define MCI_REG_CPTRA_BOOT_GO_GO_MASK                                                               (32'h1)
+`endif
 `ifndef MCI_REG_FW_SRAM_EXEC_REGION_SIZE
-`define MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                            (32'h108)
+`define MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                            (32'h10c)
 `define MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_LOW                                                   (0)
 `define MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_MASK                                                  (32'hffff)
 `endif
 `ifndef MCI_REG_MCU_NMI_VECTOR
-`define MCI_REG_MCU_NMI_VECTOR                                                                      (32'h10c)
+`define MCI_REG_MCU_NMI_VECTOR                                                                      (32'h110)
 `endif
 `ifndef MCI_REG_MCU_RESET_VECTOR
-`define MCI_REG_MCU_RESET_VECTOR                                                                    (32'h110)
+`define MCI_REG_MCU_RESET_VECTOR                                                                    (32'h114)
 `endif
 `ifndef MCI_REG_MBOX0_VALID_AXI_USER_0
 `define MCI_REG_MBOX0_VALID_AXI_USER_0                                                              (32'h180)

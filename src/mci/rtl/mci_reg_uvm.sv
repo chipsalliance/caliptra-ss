@@ -1994,6 +1994,36 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCI_BOOTFSM_GO
 
+    // Reg - mci_reg::CPTRA_BOOT_GO
+    class mci_reg__CPTRA_BOOT_GO extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__CPTRA_BOOT_GO_bit_cg go_bit_cg[1];
+        mci_reg__CPTRA_BOOT_GO_fld_cg fld_cg;
+        rand uvm_reg_field go;
+
+        function new(string name = "mci_reg__CPTRA_BOOT_GO");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.go = new("go");
+            this.go.configure(this, 1, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(go_bit_cg[bt]) go_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__CPTRA_BOOT_GO
+
     // Reg - mci_reg::FW_SRAM_EXEC_REGION_SIZE
     class mci_reg__FW_SRAM_EXEC_REGION_SIZE extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -10597,6 +10627,7 @@ package mci_reg_uvm;
         rand mci_reg__MCU_RV_MTIMECMP_H MCU_RV_MTIMECMP_H;
         rand mci_reg__RESET_REQUEST RESET_REQUEST;
         rand mci_reg__MCI_BOOTFSM_GO MCI_BOOTFSM_GO;
+        rand mci_reg__CPTRA_BOOT_GO CPTRA_BOOT_GO;
         rand mci_reg__FW_SRAM_EXEC_REGION_SIZE FW_SRAM_EXEC_REGION_SIZE;
         rand mci_reg__MCU_NMI_VECTOR MCU_NMI_VECTOR;
         rand mci_reg__MCU_RESET_VECTOR MCU_RESET_VECTOR;
@@ -10844,21 +10875,26 @@ package mci_reg_uvm;
 
             this.MCI_BOOTFSM_GO.build();
             this.default_map.add_reg(this.MCI_BOOTFSM_GO, 'h104);
+            this.CPTRA_BOOT_GO = new("CPTRA_BOOT_GO");
+            this.CPTRA_BOOT_GO.configure(this);
+
+            this.CPTRA_BOOT_GO.build();
+            this.default_map.add_reg(this.CPTRA_BOOT_GO, 'h108);
             this.FW_SRAM_EXEC_REGION_SIZE = new("FW_SRAM_EXEC_REGION_SIZE");
             this.FW_SRAM_EXEC_REGION_SIZE.configure(this);
 
             this.FW_SRAM_EXEC_REGION_SIZE.build();
-            this.default_map.add_reg(this.FW_SRAM_EXEC_REGION_SIZE, 'h108);
+            this.default_map.add_reg(this.FW_SRAM_EXEC_REGION_SIZE, 'h10c);
             this.MCU_NMI_VECTOR = new("MCU_NMI_VECTOR");
             this.MCU_NMI_VECTOR.configure(this);
 
             this.MCU_NMI_VECTOR.build();
-            this.default_map.add_reg(this.MCU_NMI_VECTOR, 'h10c);
+            this.default_map.add_reg(this.MCU_NMI_VECTOR, 'h110);
             this.MCU_RESET_VECTOR = new("MCU_RESET_VECTOR");
             this.MCU_RESET_VECTOR.configure(this);
 
             this.MCU_RESET_VECTOR.build();
-            this.default_map.add_reg(this.MCU_RESET_VECTOR, 'h110);
+            this.default_map.add_reg(this.MCU_RESET_VECTOR, 'h114);
             foreach(this.MBOX0_VALID_AXI_USER[i0]) begin
                 this.MBOX0_VALID_AXI_USER[i0] = new($sformatf("MBOX0_VALID_AXI_USER[%0d]", i0));
                 this.MBOX0_VALID_AXI_USER[i0].configure(this);

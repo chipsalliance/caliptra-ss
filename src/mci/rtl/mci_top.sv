@@ -370,7 +370,8 @@ mci_boot_seqr #(
     .cptra_rst_b,
 
     // Internal signals
-    .caliptra_boot_go(mci_reg_hwif_out.MCI_BOOTFSM_GO.go),
+    .caliptra_boot_go(mci_reg_hwif_out.CPTRA_BOOT_GO.go),
+    .mci_bootfsm_go(mci_reg_hwif_out.MCI_BOOTFSM_GO.go),
     .mcu_rst_req(mci_reg_hwif_out.RESET_REQUEST.mcu_req),
     .fw_boot_upd_reset,     // First MCU reset request
     .fw_hitless_upd_reset,  // Other MCU reset requests

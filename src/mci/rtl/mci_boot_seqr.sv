@@ -33,6 +33,7 @@ import mci_pkg::*;
 
     // Internal signals
     input  logic caliptra_boot_go,
+    input  logic mci_bootfsm_go,
     input  logic mcu_rst_req,
     output logic fw_boot_upd_reset,     // First MCU reset request
     output logic fw_hitless_upd_reset,  // Other MCU reset requests
@@ -184,9 +185,25 @@ always_comb begin
                 boot_fsm_nxt = BOOT_BREAKPOINT;
             end
         end
-        BOOT_BREAKPOINT: begin
-            if(!mci_boot_seq_brkpoint_sync) begin 
+        BOOT_BREAKPOINT_CHECK: begin
+            if(mci_boot_seq_brkpoint_sync) begin 
+                boot_fsm_nxt = BOOT_BREAKPOINT;
+            end
+            else if (mcu_no_rom_config_sync) begin
+                boot_fsm_nxt = BOOT_WAIT_CPTRA_GO;
+            end
+            else begin
                 boot_fsm_nxt = BOOT_MCU;
+            end
+        end
+        BOOT_BREAKPOINT: begin
+            if (mci_bootfsm_go) begin
+                if (mcu_no_rom_config_sync) begin
+                    boot_fsm_nxt = BOOT_WAIT_CPTRA_GO;
+                end
+                else begin
+                    boot_fsm_nxt = BOOT_MCU;
+                end
             end
         end
         BOOT_MCU: begin

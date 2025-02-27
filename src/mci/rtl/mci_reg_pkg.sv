@@ -241,6 +241,15 @@ package mci_reg_pkg;
     } mci_reg__MCI_BOOTFSM_GO__in_t;
 
     typedef struct packed{
+        logic next;
+        logic we;
+    } mci_reg__CPTRA_BOOT_GO__go__in_t;
+
+    typedef struct packed{
+        mci_reg__CPTRA_BOOT_GO__go__in_t go;
+    } mci_reg__CPTRA_BOOT_GO__in_t;
+
+    typedef struct packed{
         logic [15:0] next;
         logic we;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__in_t;
@@ -792,6 +801,7 @@ package mci_reg_pkg;
         mci_reg__MCU_RV_MTIME_H__in_t MCU_RV_MTIME_H;
         mci_reg__RESET_REQUEST__in_t RESET_REQUEST;
         mci_reg__MCI_BOOTFSM_GO__in_t MCI_BOOTFSM_GO;
+        mci_reg__CPTRA_BOOT_GO__in_t CPTRA_BOOT_GO;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__in_t FW_SRAM_EXEC_REGION_SIZE;
         mci_reg__MCU_NMI_VECTOR__in_t MCU_NMI_VECTOR;
         mci_reg__MCU_RESET_VECTOR__in_t MCU_RESET_VECTOR;
@@ -1199,6 +1209,14 @@ package mci_reg_pkg;
     } mci_reg__MCI_BOOTFSM_GO__out_t;
 
     typedef struct packed{
+        logic value;
+    } mci_reg__CPTRA_BOOT_GO__go__out_t;
+
+    typedef struct packed{
+        mci_reg__CPTRA_BOOT_GO__go__out_t go;
+    } mci_reg__CPTRA_BOOT_GO__out_t;
+
+    typedef struct packed{
         logic [15:0] value;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__out_t;
 
@@ -1413,6 +1431,7 @@ package mci_reg_pkg;
         mci_reg__MCU_RV_MTIMECMP_H__out_t MCU_RV_MTIMECMP_H;
         mci_reg__RESET_REQUEST__out_t RESET_REQUEST;
         mci_reg__MCI_BOOTFSM_GO__out_t MCI_BOOTFSM_GO;
+        mci_reg__CPTRA_BOOT_GO__out_t CPTRA_BOOT_GO;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__out_t FW_SRAM_EXEC_REGION_SIZE;
         mci_reg__MCU_NMI_VECTOR__out_t MCU_NMI_VECTOR;
         mci_reg__MCU_RESET_VECTOR__out_t MCU_RESET_VECTOR;

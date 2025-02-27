@@ -7021,19 +7021,25 @@
 #define MCI_REG_MCI_BOOTFSM_GO_GO_LOW                                                               (0)
 #define MCI_REG_MCI_BOOTFSM_GO_GO_MASK                                                              (0x1)
 #endif
-#define SOC_MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                        (0x21000108)
+#define SOC_MCI_REG_CPTRA_BOOT_GO                                                                   (0x21000108)
+#ifndef MCI_REG_CPTRA_BOOT_GO
+#define MCI_REG_CPTRA_BOOT_GO                                                                       (0x108)
+#define MCI_REG_CPTRA_BOOT_GO_GO_LOW                                                                (0)
+#define MCI_REG_CPTRA_BOOT_GO_GO_MASK                                                               (0x1)
+#endif
+#define SOC_MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                        (0x2100010c)
 #ifndef MCI_REG_FW_SRAM_EXEC_REGION_SIZE
-#define MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                            (0x108)
+#define MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                            (0x10c)
 #define MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_LOW                                                   (0)
 #define MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_MASK                                                  (0xffff)
 #endif
-#define SOC_MCI_REG_MCU_NMI_VECTOR                                                                  (0x2100010c)
+#define SOC_MCI_REG_MCU_NMI_VECTOR                                                                  (0x21000110)
 #ifndef MCI_REG_MCU_NMI_VECTOR
-#define MCI_REG_MCU_NMI_VECTOR                                                                      (0x10c)
+#define MCI_REG_MCU_NMI_VECTOR                                                                      (0x110)
 #endif
-#define SOC_MCI_REG_MCU_RESET_VECTOR                                                                (0x21000110)
+#define SOC_MCI_REG_MCU_RESET_VECTOR                                                                (0x21000114)
 #ifndef MCI_REG_MCU_RESET_VECTOR
-#define MCI_REG_MCU_RESET_VECTOR                                                                    (0x110)
+#define MCI_REG_MCU_RESET_VECTOR                                                                    (0x114)
 #endif
 #define SOC_MCI_REG_MBOX0_VALID_AXI_USER_0                                                          (0x21000180)
 #ifndef MCI_REG_MBOX0_VALID_AXI_USER_0

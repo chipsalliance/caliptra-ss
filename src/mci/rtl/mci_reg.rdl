@@ -677,9 +677,16 @@ addrmap mci_reg {
     reg {
         name = "MCI BOOT FSM GO";
         desc = "Request MCI BootFSM to continue past the breakpoint allowing MCU and Caliptra to be brought out of reset. 
-                [br]TAP Access [in debug mode]: RW";
+                [br]TAP Access [with debug intent set]: RW";
         field { sw=rw; hw = rw; we;} go=1'b0;
     } MCI_BOOTFSM_GO;
+
+    reg {
+        name = "Caliptra Boot Go";
+        desc = "Request Caliptra Reset to be deasserted by the MCI Boot FSM. 
+                [br]TAP Access [in debug mode]: RW";
+        field { sw=rw; hw = rw; we;} go=1'b0;
+    } CPTRA_BOOT_GO;
 
     reg {
         name = "Firmware SRAM Exec Region Size";

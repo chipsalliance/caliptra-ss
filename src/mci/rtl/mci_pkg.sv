@@ -36,13 +36,14 @@ package mci_pkg;
         BOOT_IDLE               = 4'h0,
         BOOT_OTP_FC             = 4'h1,
         BOOT_LCC                = 4'h2,
-        BOOT_BREAKPOINT         = 4'h3,
-        BOOT_MCU                = 4'h4,
-        BOOT_WAIT_CPTRA_GO       = 4'h5,
-        BOOT_CPTRA              = 4'h6,
-        BOOT_WAIT_MCU_RST_REQ   = 4'h7,
-        BOOT_RST_MCU            = 4'h8,
-        BOOT_UNKNOWN             = 'x
+        BOOT_BREAKPOINT_CHECK   = 4'h3,
+        BOOT_BREAKPOINT         = 4'h4,
+        BOOT_MCU                = 4'h5,
+        BOOT_WAIT_CPTRA_GO      = 4'h6,
+        BOOT_CPTRA              = 4'h7,
+        BOOT_WAIT_MCU_RST_REQ   = 4'h8,
+        BOOT_RST_MCU            = 4'h9,
+        BOOT_UNKNOWN            = 'x
     } mci_boot_fsm_state_e;
 
     typedef enum logic [2:0] {
