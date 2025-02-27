@@ -41,10 +41,11 @@ find "$CALIPTRA_SS_ROOT" -type f -name "*.sv" \
                            -o -name "*.py" \
                            -o -name "pr_timestamp" \
                            ! -path "*.git/*" | LC_COLLATE=C sort -o $CALIPTRA_SS_ROOT/.github/workflow_metadata/file_list.txt
+sed -i "/third_party/d" $CALIPTRA_SS_ROOT/.github/workflow_metadata/file_list.txt
 sed -i "s,^$CALIPTRA_SS_ROOT/,," $CALIPTRA_SS_ROOT/.github/workflow_metadata/file_list.txt
 echo "Found $(wc -l $CALIPTRA_SS_ROOT/.github/workflow_metadata/file_list.txt) source code files to hash"
 echo -e "First five files:\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-head -5 $CALIPTRA_SS_ROOT/.github/workflow_metadata/file_list.txt
+cat -n $CALIPTRA_SS_ROOT/.github/workflow_metadata/file_list.txt
 echo -e ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 
 # Create timestamp
