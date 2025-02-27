@@ -126,9 +126,6 @@ module caliptra_ss_top
     input  logic             cptra_ss_cptra_core_itrng_valid_i,
 `endif
 
-// Caliptra SS MCU ROM Macro Interface
-    mci_mcu_sram_if.request cptra_ss_mcu_rom_macro_req_if, // MCU ROM interface
-
 // Caliptra SS MCU 
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
@@ -1102,12 +1099,6 @@ module caliptra_ss_top
 
       .s_mem_req_if(mcu_rom_mem_export_if)
     );
-
-    always_comb begin
-       cptra_ss_mcu_rom_macro_req_if.req = '0;
-       cptra_ss_mcu_rom_mbox0_sram_req_if.req = '0;
-       cptra_ss_mcu_rom_mbox1_sram_req_if.req = '0;
-    end
 
     //=========================================================================
     // MCI Instance
