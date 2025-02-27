@@ -7,30 +7,6 @@ package mci_reg_pkg;
     localparam MCI_REG_MIN_ADDR_WIDTH = 13;
 
     typedef struct packed{
-        logic swwel;
-    } mci_reg__HW_CAPABILITIES__cap__in_t;
-
-    typedef struct packed{
-        mci_reg__HW_CAPABILITIES__cap__in_t cap;
-    } mci_reg__HW_CAPABILITIES__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__FW_CAPABILITIES__cap__in_t;
-
-    typedef struct packed{
-        mci_reg__FW_CAPABILITIES__cap__in_t cap;
-    } mci_reg__FW_CAPABILITIES__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__CAP_LOCK__lock__in_t;
-
-    typedef struct packed{
-        mci_reg__CAP_LOCK__lock__in_t lock;
-    } mci_reg__CAP_LOCK__in_t;
-
-    typedef struct packed{
         logic [11:0] next;
     } mci_reg__HW_CONFIG0__MCI_MBOX1_SRAM_SIZE__in_t;
 
@@ -267,7 +243,6 @@ package mci_reg_pkg;
     typedef struct packed{
         logic [15:0] next;
         logic we;
-        logic swwel;
     } mci_reg__FW_SRAM_EXEC_REGION_SIZE__size__in_t;
 
     typedef struct packed{
@@ -325,14 +300,6 @@ package mci_reg_pkg;
     } mci_reg__MBOX1_AXI_USER_LOCK__in_t;
 
     typedef struct packed{
-        logic swwel;
-    } mci_reg__FC_FIPS_ZEROZATION__MASK__in_t;
-
-    typedef struct packed{
-        mci_reg__FC_FIPS_ZEROZATION__MASK__in_t MASK;
-    } mci_reg__FC_FIPS_ZEROZATION__in_t;
-
-    typedef struct packed{
         logic [31:0] next;
     } mci_reg__GENERIC_INPUT_WIRES__wires__in_t;
 
@@ -348,22 +315,6 @@ package mci_reg_pkg;
     typedef struct packed{
         mci_reg__SS_DEBUG_INTENT__strap__in_t debug_intent;
     } mci_reg__SS_DEBUG_INTENT__in_t;
-
-    typedef struct packed{
-        logic swwe;
-    } mci_reg__SS_CONFIG_DONE__done__in_t;
-
-    typedef struct packed{
-        mci_reg__SS_CONFIG_DONE__done__in_t done;
-    } mci_reg__SS_CONFIG_DONE__in_t;
-
-    typedef struct packed{
-        logic swwel;
-    } mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__hash__in_t;
-
-    typedef struct packed{
-        mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__hash__in_t hash;
-    } mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__in_t;
 
     typedef struct packed{
         logic hwset;
@@ -817,11 +768,13 @@ package mci_reg_pkg;
     typedef struct packed{
         logic mci_rst_b;
         logic mci_pwrgood;
-        logic cptra_or_debug_req;
-        logic mcu_or_debug_req;
-        mci_reg__HW_CAPABILITIES__in_t HW_CAPABILITIES;
-        mci_reg__FW_CAPABILITIES__in_t FW_CAPABILITIES;
-        mci_reg__CAP_LOCK__in_t CAP_LOCK;
+        logic axi_mcu_req;
+        logic ss_config_unlock;
+        logic ss_config_unlock_sticky;
+        logic axi_mcu_req_or_mci_soc_config_req__cap_unlock;
+        logic axi_mcu_or_mci_soc_config_req;
+        logic axi_mcu_or_mci_soc_config_req__ss_config_unlock;
+        logic axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky;
         mci_reg__HW_CONFIG0__in_t HW_CONFIG0;
         mci_reg__HW_CONFIG1__in_t HW_CONFIG1;
         mci_reg__HW_FLOW_STATUS__in_t HW_FLOW_STATUS;
@@ -846,11 +799,8 @@ package mci_reg_pkg;
         mci_reg__MBOX0_AXI_USER_LOCK__in_t [5-1:0]MBOX0_AXI_USER_LOCK;
         mci_reg__MBOX1_VALID_AXI_USER__in_t [5-1:0]MBOX1_VALID_AXI_USER;
         mci_reg__MBOX1_AXI_USER_LOCK__in_t [5-1:0]MBOX1_AXI_USER_LOCK;
-        mci_reg__FC_FIPS_ZEROZATION__in_t FC_FIPS_ZEROZATION;
         mci_reg__GENERIC_INPUT_WIRES__in_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__SS_DEBUG_INTENT__in_t SS_DEBUG_INTENT;
-        mci_reg__SS_CONFIG_DONE__in_t SS_CONFIG_DONE;
-        mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__in_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
         mci_reg__intr_block_t__in_t intr_block_rf;
     } mci_reg__in_t;
 
@@ -1363,6 +1313,15 @@ package mci_reg_pkg;
     typedef struct packed{
         logic value;
         logic swmod;
+    } mci_reg__SS_CONFIG_DONE_STICKY__done__out_t;
+
+    typedef struct packed{
+        mci_reg__SS_CONFIG_DONE_STICKY__done__out_t done;
+    } mci_reg__SS_CONFIG_DONE_STICKY__out_t;
+
+    typedef struct packed{
+        logic value;
+        logic swmod;
     } mci_reg__SS_CONFIG_DONE__done__out_t;
 
     typedef struct packed{
@@ -1468,6 +1427,7 @@ package mci_reg_pkg;
         mci_reg__GENERIC_INPUT_WIRES__out_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__GENERIC_OUTPUT_WIRES__out_t [2-1:0]GENERIC_OUTPUT_WIRES;
         mci_reg__SS_DEBUG_INTENT__out_t SS_DEBUG_INTENT;
+        mci_reg__SS_CONFIG_DONE_STICKY__out_t SS_CONFIG_DONE_STICKY;
         mci_reg__SS_CONFIG_DONE__out_t SS_CONFIG_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
         mci_reg__intr_block_t__out_t intr_block_rf;

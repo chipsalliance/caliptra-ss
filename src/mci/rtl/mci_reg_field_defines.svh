@@ -652,8 +652,13 @@
 `define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_LOW                                                    (0)
 `define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_MASK                                                   (32'h1)
 `endif
+`ifndef MCI_REG_SS_CONFIG_DONE_STICKY
+`define MCI_REG_SS_CONFIG_DONE_STICKY                                                               (32'h440)
+`define MCI_REG_SS_CONFIG_DONE_STICKY_DONE_LOW                                                      (0)
+`define MCI_REG_SS_CONFIG_DONE_STICKY_DONE_MASK                                                     (32'h1)
+`endif
 `ifndef MCI_REG_SS_CONFIG_DONE
-`define MCI_REG_SS_CONFIG_DONE                                                                      (32'h440)
+`define MCI_REG_SS_CONFIG_DONE                                                                      (32'h444)
 `define MCI_REG_SS_CONFIG_DONE_DONE_LOW                                                             (0)
 `define MCI_REG_SS_CONFIG_DONE_DONE_MASK                                                            (32'h1)
 `endif

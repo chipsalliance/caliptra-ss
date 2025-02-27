@@ -1742,9 +1742,9 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.t1_timeout = new("t1_timeout");
-            this.t1_timeout.configure(this, 1, 0, "RW", 1, 'h0, 1, 1, 0);
+            this.t1_timeout.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
             this.t2_timeout = new("t2_timeout");
-            this.t2_timeout.configure(this, 1, 1, "RW", 1, 'h0, 1, 1, 0);
+            this.t2_timeout.configure(this, 1, 1, "RO", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(t1_timeout_bit_cg[bt]) t1_timeout_bit_cg[bt] = new();
                 foreach(t2_timeout_bit_cg[bt]) t2_timeout_bit_cg[bt] = new();
@@ -2473,6 +2473,36 @@ package mci_reg_uvm;
                 fld_cg = new();
         endfunction : build
     endclass : mci_reg__SS_DEBUG_INTENT
+
+    // Reg - mci_reg::SS_CONFIG_DONE_STICKY
+    class mci_reg__SS_CONFIG_DONE_STICKY extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__SS_CONFIG_DONE_STICKY_bit_cg done_bit_cg[1];
+        mci_reg__SS_CONFIG_DONE_STICKY_fld_cg fld_cg;
+        rand uvm_reg_field done;
+
+        function new(string name = "mci_reg__SS_CONFIG_DONE_STICKY");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.done = new("done");
+            this.done.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(done_bit_cg[bt]) done_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__SS_CONFIG_DONE_STICKY
 
     // Reg - mci_reg::SS_CONFIG_DONE
     class mci_reg__SS_CONFIG_DONE extends uvm_reg;
@@ -10583,6 +10613,7 @@ package mci_reg_uvm;
         rand mci_reg__DEBUG_IN DEBUG_IN;
         rand mci_reg__DEBUG_OUT DEBUG_OUT;
         rand mci_reg__SS_DEBUG_INTENT SS_DEBUG_INTENT;
+        rand mci_reg__SS_CONFIG_DONE_STICKY SS_CONFIG_DONE_STICKY;
         rand mci_reg__SS_CONFIG_DONE SS_CONFIG_DONE;
         rand mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12];
         rand mci_reg__intr_block_t intr_block_rf;
@@ -10911,11 +10942,16 @@ package mci_reg_uvm;
 
             this.SS_DEBUG_INTENT.build();
             this.default_map.add_reg(this.SS_DEBUG_INTENT, 'h418);
+            this.SS_CONFIG_DONE_STICKY = new("SS_CONFIG_DONE_STICKY");
+            this.SS_CONFIG_DONE_STICKY.configure(this);
+
+            this.SS_CONFIG_DONE_STICKY.build();
+            this.default_map.add_reg(this.SS_CONFIG_DONE_STICKY, 'h440);
             this.SS_CONFIG_DONE = new("SS_CONFIG_DONE");
             this.SS_CONFIG_DONE.configure(this);
 
             this.SS_CONFIG_DONE.build();
-            this.default_map.add_reg(this.SS_CONFIG_DONE, 'h440);
+            this.default_map.add_reg(this.SS_CONFIG_DONE, 'h444);
             foreach(this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0, i1]) begin
                 this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] = new($sformatf("PROD_DEBUG_UNLOCK_PK_HASH_REG[%0d][%0d]", i0, i1));
                 this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].configure(this);

@@ -130,7 +130,8 @@ module caliptra_ss_top
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_cptra_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_debug_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mci_soc_config_axi_user_i,
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
@@ -209,7 +210,7 @@ module caliptra_ss_top
     output logic        cptra_error_non_fatal,
     output logic        ready_for_fuses,
     output logic        ready_for_mb_processing,
-    output logic        mailbox_data_avail,
+    output logic        mailbox_data_avail
 
     
 );
@@ -508,7 +509,6 @@ module caliptra_ss_top
     otp_ctrl_pkg::otp_lc_data_t from_otp_to_lcc_data_i;
     // Inputs from Caliptra_Core
     logic ss_dbg_manuf_enable;
-    logic [63:0] ss_soc_dbg_unlock_level;
 
 
     soc_ifc_pkg::security_state_t mci_cptra_security_state;
@@ -1137,8 +1137,8 @@ module caliptra_ss_top
         
         .strap_mcu_lsu_axi_user(cptra_ss_strap_mcu_lsu_axi_user_i),
         .strap_mcu_ifu_axi_user(cptra_ss_strap_mcu_ifu_axi_user_i),
-        .strap_cptra_axi_user    (cptra_ss_strap_cptra_axi_user_i),
-        .strap_debug_axi_user    (cptra_ss_strap_debug_axi_user_i),
+        .strap_mcu_sram_config_axi_user    (cptra_ss_strap_mcu_sram_config_axi_user_i),
+        .strap_mci_soc_config_axi_user    (cptra_ss_strap_mci_soc_config_axi_user_i),
         .ss_debug_intent         ( cptra_ss_debug_intent_i ),
 
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
@@ -1219,7 +1219,7 @@ module caliptra_ss_top
 
         // Inputs from Caliptra_Core
         .ss_dbg_manuf_enable_i(ss_dbg_manuf_enable),
-        .ss_soc_dbg_unlock_level_i(ss_soc_dbg_unlock_level),
+        .ss_soc_dbg_unlock_level_i(cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o),
 
         // Converted Signals from LCC to SoC
         .SOC_DFT_EN(cptra_ss_soc_dft_en_o),

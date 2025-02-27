@@ -75,8 +75,6 @@ module mci_top_tb
     // Straps
     .strap_mcu_lsu_axi_user('0),
     .strap_mcu_ifu_axi_user('0),
-    .strap_cptra_axi_user('0),
-    .ss_debug_intent('0),
 
     // SRAM ADHOC connections
     .mcu_sram_fw_exec_region_lock('0),

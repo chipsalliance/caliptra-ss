@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+`include "caliptra_prim_assert.sv"
+`include "caliptra_sva.svh"
+
 
 module mci_top 
     import mci_reg_pkg::*;
@@ -25,8 +28,8 @@ module mci_top
     parameter AXI_USER_WIDTH = 32,
     parameter AXI_ID_WIDTH   = 8,
 
-    parameter MCU_SRAM_SIZE_KB = 512, // FIXME - write assertion ensuring this size 
-                                      // is compatible with the MCU SRAM IF parameters
+    parameter MCU_SRAM_SIZE_KB = 512, 
+                                      
 
     parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Size of MCU reset counter that overflows before allowing MCU
                                             // to come out of reset during a FW RT Update
@@ -58,8 +61,8 @@ module mci_top
     // Straps
     input logic [s_axi_r_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_r_if.UW-1:0] strap_mcu_ifu_axi_user,
-    input logic [s_axi_r_if.UW-1:0] strap_cptra_axi_user,
-    input logic [s_axi_r_if.UW-1:0] strap_debug_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_mcu_sram_config_axi_user,
+    input logic [s_axi_r_if.UW-1:0] strap_mci_soc_config_axi_user,
     input logic ss_debug_intent,
 
     // SRAM ADHOC connections
@@ -200,11 +203,11 @@ module mci_top
     logic [MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS-1:0][31:0] timer2_timeout_period;
 
     // AXI SUB Privileged requests
-    logic axi_debug_req;
+    logic axi_mci_soc_config_req;
     logic axi_mcu_lsu_req;
     logic axi_mcu_ifu_req;
     logic axi_mcu_req    ;
-    logic axi_cptra_req    ;
+    logic axi_mcu_sram_config_req    ;
     logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox0_users;
     logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox1_users;
 
@@ -339,18 +342,18 @@ mci_axi_sub_top #(
     .valid_mbox1_users,
 
     // Privileged requests 
-    .axi_debug_req,
+    .axi_mci_soc_config_req,
     .axi_mcu_lsu_req,
     .axi_mcu_ifu_req,
     .axi_mcu_req    ,
-    .axi_cptra_req    ,
+    .axi_mcu_sram_config_req    ,
 
     
     // Privileged AXI users
-    .strap_debug_axi_user,
+    .strap_mci_soc_config_axi_user,
     .strap_mcu_lsu_axi_user,
     .strap_mcu_ifu_axi_user,
-    .strap_cptra_axi_user
+    .strap_mcu_sram_config_axi_user
 );
 
 mci_boot_seqr #(
@@ -446,10 +449,9 @@ mci_mcu_sram_ctrl #(
     .debug_en(!security_state_o.debug_locked),
 
     // AXI Privileged requests
-    .axi_debug_req,
     .axi_mcu_lsu_req,
     .axi_mcu_ifu_req,
-    .axi_cptra_req    ,
+    .axi_mcu_sram_config_req    ,
 
     // Access lock interface
     .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),  
@@ -534,8 +536,7 @@ mci_reg_top #(
     .scan_mode,
     
     // AXI Privileged requests
-    .axi_debug_req,
-    .axi_cptra_req,
+    .axi_mci_soc_config_req,
     .axi_mcu_req,
 
     // WDT specific signals
@@ -697,7 +698,7 @@ mci_mbox0_i (
     .sha_sram_resp_ecc(),
     .sha_sram_resp_data(),
     .sha_sram_hold(),
-    //FIXME dma
+    //dma unused
     .dma_sram_req_dv  ('0),
     .dma_sram_req_write('0),
     .dma_sram_req_addr('0),
@@ -771,7 +772,7 @@ mci_mbox1_i (
     .soc_req_mbox_lock(soc_req_mbox1_lock), 
     .mbox_protocol_error(mbox1_protocol_error), 
     .mbox_inv_axi_user_axs(mbox1_inv_user_p), 
-    //dma FIXME
+    //dma unused
     .dma_sram_req_dv  ('0),
     .dma_sram_req_write('0),
     .dma_sram_req_addr('0),
@@ -821,5 +822,45 @@ mci_lcc_st_trans LCC_state_translator (
     .SOC_HW_DEBUG_EN(SOC_HW_DEBUG_EN),
     .security_state_o(security_state_o)
 );
+
+///////////////////////////////////////
+// Assertions
+///////////////////////////////////////
+
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_gnt, soc_mcu_trace_buffer_gnt, soc_mci_reg_gnt, soc_mci_mbox0_gnt, soc_mci_mbox1_gnt}, clk, !reset_n)
+
+// Today we don't support anything other than 32 bits
+`CALIPTRA_ASSERT_INIT(ERR_AXI_DATA_WIDTH, AXI_DATA_WIDTH == 32)
+
+// Verify min size of MCU SRAM
+`CALIPTRA_ASSERT_INIT(ERR_MCU_SRAM_MIN_SIZE, MCU_SRAM_SIZE_KB >= 4)
+// Verify max size of MCU SRAM
+`CALIPTRA_ASSERT_INIT(ERR_MCU_SRAM_MAX_SIZE, MCU_SRAM_SIZE_KB <= 2048)
+// Verify min size of MBOX0 
+`CALIPTRA_ASSERT_INIT(ERR_MCI_MBOX0_MIN_SIZE, MCI_MBOX0_SIZE_KB >= 0)
+// Verify max size of MBOX0
+`CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX0_MAX_SIZE, MCI_MBOX0_SIZE_KB <= 2048)
+// Verify min size of MBOX1 
+`CALIPTRA_ASSERT_INIT(ERR_MCI_MBOX1_MIN_SIZE, MCI_MBOX1_SIZE_KB >= 0)
+// Verify max size of MBOX1
+`CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX1_MAX_SIZE, MCI_MBOX1_SIZE_KB <= 2048)
+
+// AXI SUB W - Verify AXI addr width matches
+`CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_W_ADDR_SIZE_MATCH,  AXI_ADDR_WIDTH == s_axi_w_if.AW)
+// AXI SUB W - Veirfy AXI data width matches
+`CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_W_DATA_SIZE_MATCH,  AXI_DATA_WIDTH == s_axi_w_if.DW)
+// AXI SUB W - Verify USER ID width matches
+`CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_W_USER_SIZE_MATCH,  AXI_USER_WIDTH == s_axi_w_if.UW)
+// AXI SUB W - Verify ID width matches
+`CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_W_ID_SIZE_MATCH,  AXI_ID_WIDTH == s_axi_w_if.IW)
+
+// AXI SUB R - Verify AXI addr width matches
+`CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_R_ADDR_SIZE_MATCH,  AXI_ADDR_WIDTH == s_axi_r_if.AW)
+// AXI SUB R - Veirfy AXI data width matches
+`CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_R_DATA_SIZE_MATCH,  AXI_DATA_WIDTH == s_axi_r_if.DW)
+// AXI SUB R - Verify USER ID width matches
+`CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_R_USER_SIZE_MATCH,  AXI_USER_WIDTH == s_axi_r_if.UW)
+// AXI SUB R - Verify ID width matches
+`CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_R_ID_SIZE_MATCH,  AXI_ID_WIDTH == s_axi_r_if.IW)
 
 endmodule

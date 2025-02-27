@@ -73,10 +73,9 @@ module mci_mcu_sram_ctrl
     input debug_en,
 
     // AXI Privileged requests
-    input logic axi_debug_req,
     input logic axi_mcu_lsu_req,
     input logic axi_mcu_ifu_req,
-    input logic axi_cptra_req ,
+    input logic axi_mcu_sram_config_req ,
 
 
     // Access lock interface
@@ -239,8 +238,8 @@ assign prot_region_req = cif_resp_if.dv & !exec_region_match;
 // Protected data region access protection  
 ///////////////////////////////////////////////
 
-// Only allow debug AXI user when we are in a known debug state
-assign axi_debug_req_qual = axi_debug_req & debug_en;
+// When debug enabled allow full access to the SRAM
+assign axi_debug_req_qual = cif_resp_if.dv & debug_en;
 
 // This logic will help in 2 areas:
 // 1. We can use these signals to block read or a write
@@ -289,7 +288,7 @@ always_comb begin
             exec_region_filter_error   = ~exec_region_filter_success;
         end 
         else begin
-            exec_region_filter_success = axi_cptra_req | axi_debug_req_qual;
+            exec_region_filter_success = axi_mcu_sram_config_req | axi_debug_req_qual;
             exec_region_filter_error   = ~exec_region_filter_success;
         end
     end

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`include "mci_reg_defines.svh"
 
 module mci_reg_top 
     import mci_reg_pkg::*;
@@ -52,8 +51,7 @@ module mci_reg_top
     output mci_reg__out_t mci_reg_hwif_out,
 
     // AXI Privileged requests
-    input logic axi_debug_req,
-    input logic axi_cptra_req,
+    input logic axi_mci_soc_config_req,
     input logic axi_mcu_req,
 
     // WDT specific signals
@@ -301,34 +299,13 @@ assign cif_resp_if.error = mci_reg_read_error | mci_reg_write_error;
 assign cif_resp_if.hold = '0;
     
 
-
-///////////////////////////////////////////////
-// Registers locked by SS_CONFIG_DONE
-///////////////////////////////////////////////
-// Locking
-always_comb begin
-    for (int i=0; i<8; i++) begin
-        for (int j=0; j<12; j++) begin
-            mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value ;
-        end
-    end
-
-    mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value; 
-    
-    mci_reg_hwif_in.FC_FIPS_ZEROZATION.MASK.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value | (~axi_mcu_or_debug_req); 
-end
-
 ///////////////////////////////////////////////
 // STRAPS / TAP ACCESS 
 ///////////////////////////////////////////////
 
-// Fuse write done can be written by MCU if it is already NOT '1.
-// The bit gets reset on cold reset
-always_comb mci_reg_hwif_in.SS_CONFIG_DONE.done.swwe = (axi_mcu_or_debug_req & cif_resp_if.dv) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
-
 // Subsystem straps capture the initial value from input port on rising edge of cptra_pwrgood
-always_ff @(posedge clk or negedge mci_pwrgood) begin
-     if(~mci_pwrgood) begin
+always_ff @(posedge clk or negedge mci_rst_b) begin
+     if(~mci_rst_b) begin
         strap_we <= 1'b1;
     end
     else begin
@@ -378,12 +355,6 @@ assign mci_reg_hwif_in.HW_CONFIG0.MCI_MBOX0_SRAM_SIZE.next = MCI_MBOX0_SIZE_KB;
 assign mci_reg_hwif_in.HW_CONFIG0.MCI_MBOX1_SRAM_SIZE.next = MCI_MBOX1_SIZE_KB;
 assign mci_reg_hwif_in.HW_CONFIG1.MCU_SRAM_SIZE.next = MCU_SRAM_SIZE_KB;
 assign mci_reg_hwif_in.HW_CONFIG1.MIN_MCU_RST_COUNTER_WIDTH.next = MIN_MCU_RST_COUNTER_WIDTH;
-
-assign mci_reg_hwif_in.HW_CAPABILITIES.cap.swwel = !axi_mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
-assign mci_reg_hwif_in.FW_CAPABILITIES.cap.swwel = !axi_mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
-// CAP_LOCK is a lockable register.
-// "lock" can be written by MCU/DEBUG if it is already NOT '1. SoC can only read this bit. The bit gets reset on warm reset
-assign mci_reg_hwif_in.CAP_LOCK.lock.swwel = !axi_mcu_or_debug_req || mci_reg_hwif_out.CAP_LOCK.lock.value;
 
 ///////////////////////////////////////////////
 // Security Related      
@@ -569,17 +540,13 @@ assign mci_reg_hwif_in.mci_rst_b = mci_rst_b;
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
-assign axi_mcu_or_debug_req                 = axi_mcu_req | axi_debug_req;
-assign axi_cptra_or_debug_req               = axi_cptra_req | axi_debug_req;
-assign mci_reg_hwif_in.cptra_or_debug_req   = axi_cptra_or_debug_req; 
-assign mci_reg_hwif_in.mcu_or_debug_req     = axi_mcu_or_debug_req;
-
-
-
-
-
-
-
+assign mci_reg_hwif_in.axi_mcu_req = axi_mcu_req;
+assign mci_reg_hwif_in.ss_config_unlock = axi_mcu_req;
+assign mci_reg_hwif_in.ss_config_unlock_sticky = axi_mcu_req;
+assign mci_reg_hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.CAP_LOCK.lock.value;
+assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req = axi_mcu_req | axi_mci_soc_config_req;
+assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
+assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky = axi_mcu_req | axi_mci_soc_config_req & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value;
 
 
 ///////////////////////////////////////////////

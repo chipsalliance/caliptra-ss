@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+`include "caliptra_prim_assert.sv"
+`include "caliptra_sva.svh"
+
 module mci_boot_seqr
 import mci_pkg::*;
 #(
@@ -247,5 +250,16 @@ always_comb begin
         min_mcu_rst_count_elapsed_nxt = 1'b1;
     end
 end
+
+
+//////////////////////////////////////
+// ASSERTIONS
+//////////////////////////////////////
+
+// Counter must be a valid width. Meaning greater than 0
+`CALIPTRA_ASSERT_INIT(ERR_MIN_MCU_RST_COUNTER_WIDTH,  MIN_MCU_RST_COUNTER_WIDTH > 0)
+
+// If falling into default state the boot_fsm will value will be X
+`CALIPTRA_ASSERT_KNOWN(ERR_MCI_BOOT_SEQR_VALID_STATE, boot_fsm, clk, !mci_rst_b)
 
 endmodule
