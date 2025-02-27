@@ -1676,7 +1676,7 @@ module caliptra_ss_top_tb
 
         // run test for i3C
         if($test$plusargs("AVY_TEST")) begin
-            $display("Waiting for 100us before Running I3C test..");
+            $display("Waiting for 150us before Running I3C test..");
             #150us;  // system boot delay
             master0.set("start_bfm");
             ai3c_run_test("ai3ct_ext_basic", i3c_env0); 
