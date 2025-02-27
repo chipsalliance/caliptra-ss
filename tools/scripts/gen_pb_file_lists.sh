@@ -28,9 +28,9 @@ function gen_pb_file_list {
     # lists aren't useful to external integrators
     if [[ $cpt_lib = *"coverage" ]]; then return; fi
     echo "Generating File List for lib [${cpt_lib}] in [${cpt_vf_file}]";
-    pb fe file_list --tb integration_lib::${cpt_lib} +def-target 'tb' --flat --dir-fmt=+incdir+{directory} --file ${cpt_vf_file};
-    # Replace leading portion of Caliptra source paths with ${CALIPTRA_ROOT}
-    sed 's,/home.*caliptra-rtl/src,\${CALIPTRA_ROOT}/src,' -i ${cpt_vf_file}
+    pb fe file_list --tb caliptra_ss_lib::caliptra_ss_top_tb +def-target 'tb' --flat --dir-fmt=+incdir+{directory} --file ${cpt_vf_file};
+    # Replace leading portion of Caliptra source paths with ${CALIPTRA_SS_ROOT}
+    sed 's,/home.*caliptra-rtl/src,\${CALIPTRA_SS_ROOT}/src,' -i ${cpt_vf_file}
     # Replace leading portion of UVM/installed library paths with appropriate ENV VAR
     sed 's,/home/cad/tools/mentor/questa/[0-9\._]*/questasim/verilog_src/uvm-[^/]\+,\${UVM_HOME},' -i ${cpt_vf_file}
     sed 's,/home/cad/tools/mentor/uvmf/UVMF_[0-9\.]*,\${UVMF_HOME},' -i ${cpt_vf_file}
@@ -43,11 +43,11 @@ if [[ $(command -v pb) = "" ]]; then
     echo "Enter Caliptra workspace (to make Playbook available) and try again"
     exit 1
 fi
-if [[ -z ${CALIPTRA_ROOT:+"empty"} ]]; then
+if [[ -z ${CALIPTRA_SS_ROOT:+"empty"} ]]; then
     echo "Must run script from within Caliptra Playbook context"
     exit 1
 fi
-cpt_ymls=$(grep '^\s*\- ../chipsalliance/caliptra-rtl/src' ${MSFT_REPO_ROOT}/config/compilespecs.yml | sed 's/^\s*- \(..\/chipsalliance\/caliptra-rtl\/src.*\)/\1/')
+cpt_ymls=$(grep '^\s*\- ../third_party/caliptra-rtl/src' ${MSFT_REPO_ROOT}/config/compilespecs.yml | sed 's/^\s*- \(..\/third_party\/caliptra-rtl\/src.*\)/\1/')
 declare -A procs;
 for i in ${cpt_ymls}; do
     cpt_dir=$(realpath $(sed 's,\(..\/chipsalliance\/caliptra-rtl\/src/.\+/config\)/.*,\1,' <<< ${i}))
