@@ -1170,11 +1170,6 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[1].RLAST   = cptra_ss_i3c_s_axi_if.rlast;
     assign cptra_ss_i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[1].RREADY;
 
-    mci_mcu_sram_if cptra_ss_mcu_rom_macro_req_if (
-        .clk(core_clk),
-        .rst_b(rst_l)
-    );
-
     mci_mcu_sram_if #(
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
     ) cptra_ss_mci_mcu_sram_req_if (
@@ -1465,23 +1460,6 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[2].RLAST         = cptra_ss_mcu_rom_s_axi_if.rlast;
     assign cptra_ss_mcu_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[2].RREADY;
 
-
-//   mci_sram #(
-//       .DEPTH     (18'h0_7FFF), // 64KB -- FIXME (need to update this value)
-//       .DATA_WIDTH(39),
-//       .ADDR_WIDTH(32)
-//  ) imem (
-//      .clk_i   (core_clk),
-//  
-//      .cs_i    (cptra_ss_mcu_rom_macro_req_if.req.cs),
-//      .we_i    (cptra_ss_mcu_rom_macro_req_if.req.we),
-//      .addr_i  ({14'h0, cptra_ss_mcu_rom_macro_req_if.req.addr, 2'b0}),
-//      .wdata_i (cptra_ss_mcu_rom_macro_req_if.req.wdata),
-//      .rdata_o (cptra_ss_mcu_rom_macro_req_if.resp.rdata)
-//  );
-    always_comb begin
-        cptra_ss_mcu_rom_macro_req_if.resp.rdata = '0;
-    end
 
     rom #(
         .DEPTH     (16'h7FFF), // 64KB
@@ -1829,9 +1807,6 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mcu_ifu_axi_user_i,
         .cptra_ss_strap_cptra_axi_user_i,
         .cptra_ss_strap_debug_axi_user_i,
-
-    //MCU ROM
-        .cptra_ss_mcu_rom_macro_req_if,
 
     //MCI
         .cptra_ss_mci_mcu_sram_req_if,
