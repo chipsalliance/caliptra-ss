@@ -1212,8 +1212,7 @@ Access is limited to **Debug Unlock** mode only. Access to this space while not 
 
 #### MCI DEBUG AXI USER
 
-In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This is a privilated user that has access to registers typically only accessable to MCU and Caliptra. It has full access to the MCI IP address space with the following restrictions: 
-
+In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This is a privileged user that has access to registers typically only accessible to MCU and Caliptra. It has full access to the MCI IP address space with the following restrictions:
 1. This user cannot bypass locks within MCI. i.e. Registers locked by SS_CONFIG_DONE cannot be modified by this user once SS_CONFIG_DONE is set.
 2. It can only access MCU SRAM once the system is unlocked to debug mode via LCC.
 3. **MBOX FIXME TBD**
