@@ -268,8 +268,8 @@ addrmap caliptra_otp_ctrl {
                     Hardware automatically determines the access granule (32bit or 64bit) based on which 
                     partition is being written to.";
 
-            default sw = r; // field prperty
-            default hw = w; // field prperty
+            default sw = w; // field prperty
+            default hw = r; // field prperty
 
             field { desc = "wdata.";} WDATA [31:0];
         };
