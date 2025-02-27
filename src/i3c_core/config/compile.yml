@@ -1,4 +1,4 @@
-provides: [i3c-core]
+provides: [i3c_core]
 schema_version: 2.4.0
 requires:
   - axi_sub

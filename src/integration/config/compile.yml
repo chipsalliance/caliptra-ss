@@ -22,7 +22,7 @@ requires:
   - lc_ctrl
   - axi_mem_pkg
   - mcu_top
-  - i3c-core
+  - i3c_core
   - fuse_ctrl
   - mci_top
   - caliptra_top
@@ -123,13 +123,13 @@ global:
         - '-suppress=SV-LCM-PPWI'
       elab:
         #FIXME : remve this warning suppression
-        #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c-core
+        #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
         - '+warn=noIWNF'
         - '+warn=noPCWM-W'
         - '+warn=noTFIPC,noMDVMO'
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
-        #FIXME unique case violations in i3c-core
+        #FIXME unique case violations in i3c_core
         - '-ignore unique_checks'
       sim:
         # Uncomment for debug prints

@@ -1,6 +1,7 @@
 +incdir+${CALIPTRA_ROOT}/src/integration/rtl
 +incdir+${CALIPTRA_ROOT}/src/libs/rtl
 +incdir+${CALIPTRA_ROOT}/src/caliptra_prim/rtl
++incdir+${CALIPTRA_ROOT}/src/lc_ctrl/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl
 ${CALIPTRA_ROOT}/src/integration/rtl/config_defines.svh
 ${CALIPTRA_ROOT}/src/integration/rtl/caliptra_reg_defines.svh
@@ -28,8 +29,12 @@ ${CALIPTRA_ROOT}/src/caliptra_prim/rtl/caliptra_prim_ram_1p_pkg.sv
 ${CALIPTRA_ROOT}/src/caliptra_prim/rtl/caliptra_prim_esc_pkg.sv
 ${CALIPTRA_ROOT}/src/caliptra_prim/rtl/caliptra_prim_count_pkg.sv
 ${CALIPTRA_ROOT}/src/caliptra_prim/rtl/keymgr_pkg.sv
-${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/jtag_pkg.sv
-${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/top_pkg.sv
-${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/alert_handler_reg_pkg.sv
+${CALIPTRA_ROOT}/src/lc_ctrl/rtl/lc_ctrl_reg_pkg.sv
+${CALIPTRA_ROOT}/src/lc_ctrl/rtl/lc_ctrl_state_pkg.sv
+${CALIPTRA_ROOT}/src/lc_ctrl/rtl/lc_ctrl_pkg.sv
+${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/lc_ctrl_keymgr_pkg.sv
+${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_reg_pkg.sv
+${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/caliptra_ss_sha3_pkg.sv
+${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_pkg.sv
 ${CALIPTRA_ROOT}/src/libs/rtl/ahb_to_reg_adapter.sv
-${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/alert_handler_reg_pkg.sv
+${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_pkg.sv
