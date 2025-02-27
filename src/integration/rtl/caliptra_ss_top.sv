@@ -123,9 +123,6 @@ module caliptra_ss_top
     input  logic             cptra_ss_cptra_core_itrng_valid_i,
 `endif
 
-// Caliptra SS MCU ROM Macro Interface
-    mci_mcu_sram_if.request cptra_ss_mcu_rom_macro_req_if, // MCU ROM interface
-
 // Caliptra SS MCU 
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
@@ -166,6 +163,7 @@ module caliptra_ss_top
     input logic [63:0]  cptra_ss_strap_uds_seed_base_addr_i,
     input logic [31:0]  cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i,
     input logic [31:0]  cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i,
+    input logic [31:0]  cptra_ss_strap_caliptra_dma_axi_user_i,
     input logic [31:0]  cptra_ss_strap_generic_0_i,
     input logic [31:0]  cptra_ss_strap_generic_1_i,
     input logic [31:0]  cptra_ss_strap_generic_2_i,
@@ -673,6 +671,7 @@ module caliptra_ss_top
         .strap_ss_uds_seed_base_addr                            ( cptra_ss_strap_uds_seed_base_addr_i ),
         .strap_ss_prod_debug_unlock_auth_pk_hash_reg_bank_offset( cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i ),
         .strap_ss_num_of_prod_debug_unlock_auth_pk_hashes       ( cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i ),
+        .strap_ss_caliptra_dma_axi_user                         ( cptra_ss_strap_caliptra_dma_axi_user_i),
         .strap_ss_strap_generic_0                               ( cptra_ss_strap_generic_0_i ),
         .strap_ss_strap_generic_1                               ( cptra_ss_strap_generic_1_i ),
         .strap_ss_strap_generic_2                               ( cptra_ss_strap_generic_2_i ),
@@ -1093,12 +1092,6 @@ module caliptra_ss_top
 
       .s_mem_req_if(mcu_rom_mem_export_if)
     );
-
-    always_comb begin
-       cptra_ss_mcu_rom_macro_req_if.req = '0;
-       cptra_ss_mcu_rom_mbox0_sram_req_if.req = '0;
-       cptra_ss_mcu_rom_mbox1_sram_req_if.req = '0;
-    end
 
     //=========================================================================
     // MCI Instance

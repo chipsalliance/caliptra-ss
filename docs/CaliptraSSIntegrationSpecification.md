@@ -316,7 +316,6 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | output    | 1     | `cptra_ss_cptra_core_etrng_req_o`    | External TRNG request output             |
 | External | input     | 4     | `cptra_ss_cptra_core_itrng_data_i`   | Internal TRNG data input                 |
 | External | input     | 1     | `cptra_ss_cptra_core_itrng_valid_i`  | Internal TRNG valid input                |
-| External | interface | na    | `cptra_ss_mcu_rom_macro_req_if`      | MCU ROM macro request interface          |
 | External | interface | na    | `cptra_ss_mci_mcu_sram_req_if`       | MCI MCU SRAM request interface           |
 | External | interface | na    | `cptra_ss_mci_mbox0_sram_req_if`     | MCI mailbox 0 SRAM request interface     |
 | External | interface | na    | `cptra_ss_mci_mbox1_sram_req_if`     | MCI mailbox 1 SRAM request interface     |
