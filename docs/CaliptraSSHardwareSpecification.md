@@ -922,7 +922,7 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
    
    b. **Note:** MCI will allow "MCI SOC CONFIG" AXI User to configure MCI registers MCU typically configures. 
    
-   b. **Note:** MCI will allow any AXI Usert to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
+   b. **Note:** MCI will allow any AXI User to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
 8. Caliptra reset (cptra_rst_b) is deasserted.
 9. Caliptra BootFSM will go through its own boot flow as documented in Caliptra spec, reads secret fuses and sets “ready_for_fuses” to MCI.
 
