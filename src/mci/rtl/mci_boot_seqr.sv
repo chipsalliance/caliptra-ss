@@ -182,7 +182,7 @@ always_comb begin
         BOOT_LCC: begin
             lc_init_nxt = 1'b1;
             if(lc_done_sync) begin
-                boot_fsm_nxt = BOOT_BREAKPOINT;
+                boot_fsm_nxt = BOOT_BREAKPOINT_CHECK;
             end
         end
         BOOT_BREAKPOINT_CHECK: begin
