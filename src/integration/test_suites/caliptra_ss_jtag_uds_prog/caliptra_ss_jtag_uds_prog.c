@@ -66,7 +66,7 @@ void main (void) {
 
 
     
-    VPRINTF(LOW, "=================\n UDS Prov TEST with ROM \n=================\n\n");
+    VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG UDS Prov TEST with ROM \n=================\n\n");
     
 
     for (uint32_t ii = 0; ii < 5000; ii++) {
