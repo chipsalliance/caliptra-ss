@@ -84,7 +84,7 @@ def generate_sv(entries):
         "typedef struct packed {\n"
         "  logic [31:0] lower_addr;  // Lower bound of the address range\n"
         "  logic [31:0] upper_addr;  // Upper bound of the address range\n"
-        "  logic [3:0]  axi_user_id; // AXI user ID allowed to write\n"
+        "  logic [31:0]  axi_user_id; // AXI user ID allowed to write\n"
         "} access_control_entry_t;\n\n"
         "localparam int FC_TABLE_NUM_RANGES = %d;\n\n" % num_entries +
         "localparam access_control_entry_t access_control_table [FC_TABLE_NUM_RANGES] = '{\n"
