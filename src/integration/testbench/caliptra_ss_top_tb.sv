@@ -1538,13 +1538,11 @@ module caliptra_ss_top_tb
 
     `include "caliptra_ss_includes.svh"
     logic [$bits(lc_ctrl_state_pkg::lc_state_t)-1:0] MANUF_state;
+    logic [$bits(lc_ctrl_state_pkg::lc_state_t)-1:0] PROD_state;
     assign MANUF_state = lc_ctrl_state_pkg::lc_state_t'(lc_ctrl_state_pkg::LcStDev);
+    assign PROD_state = lc_ctrl_state_pkg::lc_state_t'(lc_ctrl_state_pkg::LcStProd);
     initial begin
-        if ($test$plusargs("CALIPTRA_SS_UDS_PROG")) begin
-            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = MANUF_state;
-            force cptra_ss_cptra_core_m_axi_if.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
-            force cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
-            force caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
+        if ($test$plusargs("CALIPTRA_SS_UDS_PROG") || $test$plusargs("CALIPTRA_SS_MANUF_DBG") || $test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
             $monitor("CALIPTRA_SS_UDS_PROG: UDS_REQ is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_REQ.UDS_PROGRAM_REQ.value);
             $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP IN PROGRESS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_IN_PROGRESS);
             $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_FAIL is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_FAIL);
@@ -1552,6 +1550,20 @@ module caliptra_ss_top_tb
             $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_GO is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_BOOTFSM_GO);
             $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_BrkPoint_Latched is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.BootFSM_BrkPoint_Latched);
             $monitor("CALIPTRA_SS_UDS_PROG: CPTRA_FLOW_STATUS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_FLOW_STATUS);
+            force cptra_ss_cptra_core_m_axi_if.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
+            force cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
+            force caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
+        end
+        if ($test$plusargs("CALIPTRA_SS_UDS_PROG")) begin
+            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = MANUF_state;
+        end
+        if ($test$plusargs("CALIPTRA_SS_MANUF_DBG")) begin
+            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = MANUF_state;
+            force cptra_ss_debug_intent_i = 1'b1;
+        end 
+        if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
+            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = PROD_state;
+            force cptra_ss_debug_intent_i = 1'b1;
         end 
     end
 
