@@ -69,11 +69,13 @@ module mci_mcu_sram_ctrl
     // Caliptra internal fabric response interface
     cif_if.response  cif_resp_if,
 
+    // Debug mode
+    input debug_en,
+
     // AXI Privileged requests
-    input logic axi_debug_req,
     input logic axi_mcu_lsu_req,
     input logic axi_mcu_ifu_req,
-    input logic axi_cptra_req ,
+    input logic axi_mcu_sram_config_req ,
 
 
     // Access lock interface
@@ -156,6 +158,9 @@ logic mcu_sram_dmi_addr_rd_req ;
 logic mcu_sram_dmi_data_rd_req ;
 logic [MCU_SRAM_DATA_W-1:0] mcu_sram_dmi_addr_reg;
 
+// MISC
+logic axi_debug_req_qual;
+
 ///////////////////////////////////////////////
 // DMI Register IF
 ///////////////////////////////////////////////
@@ -233,13 +238,16 @@ assign prot_region_req = cif_resp_if.dv & !exec_region_match;
 // Protected data region access protection  
 ///////////////////////////////////////////////
 
+// When debug enabled allow full access to the SRAM
+assign axi_debug_req_qual = cif_resp_if.dv & debug_en;
+
 // This logic will help in 2 areas:
 // 1. We can use these signals to block read or a write
 //    ever reaching the SRAM.
 // 2. Reads take 2 clock cycles. But we can use these signals
 //    to detect an illegal access and respond with an error 
 //    on the first clock cycle
-assign prot_region_filter_success = prot_region_req & (axi_mcu_lsu_req | axi_debug_req);
+assign prot_region_filter_success = prot_region_req & (axi_mcu_lsu_req | axi_debug_req_qual);
 assign prot_region_filter_error   = prot_region_req & ~prot_region_filter_success;
 
 
@@ -276,11 +284,11 @@ always_comb begin
     exec_region_filter_error   = '0;
     if (exec_region_req) begin
         if (fw_exec_region_mcu_access) begin
-            exec_region_filter_success = (axi_mcu_lsu_req | axi_mcu_ifu_req | axi_debug_req);
+            exec_region_filter_success = (axi_mcu_lsu_req | axi_mcu_ifu_req | axi_debug_req_qual);
             exec_region_filter_error   = ~exec_region_filter_success;
         end 
         else begin
-            exec_region_filter_success = axi_cptra_req | axi_debug_req;
+            exec_region_filter_success = axi_mcu_sram_config_req | axi_debug_req_qual;
             exec_region_filter_error   = ~exec_region_filter_success;
         end
     end

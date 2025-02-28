@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+`include "caliptra_prim_assert.sv"
+`include "caliptra_sva.svh"
+
 module mci_boot_seqr
 import mci_pkg::*;
 #(
@@ -30,6 +33,7 @@ import mci_pkg::*;
 
     // Internal signals
     input  logic caliptra_boot_go,
+    input  logic mci_bootfsm_go,
     input  logic mcu_rst_req,
     output logic fw_boot_upd_reset,     // First MCU reset request
     output logic fw_hitless_upd_reset,  // Other MCU reset requests
@@ -181,9 +185,25 @@ always_comb begin
                 boot_fsm_nxt = BOOT_BREAKPOINT;
             end
         end
-        BOOT_BREAKPOINT: begin
-            if(!mci_boot_seq_brkpoint_sync) begin 
+        BOOT_BREAKPOINT_CHECK: begin
+            if(mci_boot_seq_brkpoint_sync) begin 
+                boot_fsm_nxt = BOOT_BREAKPOINT;
+            end
+            else if (mcu_no_rom_config_sync) begin
+                boot_fsm_nxt = BOOT_WAIT_CPTRA_GO;
+            end
+            else begin
                 boot_fsm_nxt = BOOT_MCU;
+            end
+        end
+        BOOT_BREAKPOINT: begin
+            if (mci_bootfsm_go) begin
+                if (mcu_no_rom_config_sync) begin
+                    boot_fsm_nxt = BOOT_WAIT_CPTRA_GO;
+                end
+                else begin
+                    boot_fsm_nxt = BOOT_MCU;
+                end
             end
         end
         BOOT_MCU: begin
@@ -247,5 +267,16 @@ always_comb begin
         min_mcu_rst_count_elapsed_nxt = 1'b1;
     end
 end
+
+
+//////////////////////////////////////
+// ASSERTIONS
+//////////////////////////////////////
+
+// Counter must be a valid width. Meaning greater than 0
+`CALIPTRA_ASSERT_INIT(ERR_MIN_MCU_RST_COUNTER_WIDTH,  MIN_MCU_RST_COUNTER_WIDTH > 0)
+
+// If falling into default state the boot_fsm will value will be X
+`CALIPTRA_ASSERT_KNOWN(ERR_MCI_BOOT_SEQR_VALID_STATE, boot_fsm, clk, !mci_rst_b)
 
 endmodule

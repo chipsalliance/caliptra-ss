@@ -17,33 +17,49 @@
 
 
 #define MCI_REG_BASE_ADDR                                                                           (0x0)
-#define MCI_REG_CAPABILITIES                                                                        (0x0)
-#ifndef MCI_REG_CAPABILITIES
-#define MCI_REG_CAPABILITIES                                                                        (0x0)
-#define MCI_REG_CAPABILITIES_NUM_MBOX_LOW                                                           (0)
-#define MCI_REG_CAPABILITIES_NUM_MBOX_MASK                                                          (0xf)
+#define MCI_REG_HW_CAPABILITIES                                                                     (0x0)
+#ifndef MCI_REG_HW_CAPABILITIES
+#define MCI_REG_HW_CAPABILITIES                                                                     (0x0)
 #endif
-#define MCI_REG_HW_REV_ID                                                                           (0x4)
+#define MCI_REG_FW_CAPABILITIES                                                                     (0x4)
+#ifndef MCI_REG_FW_CAPABILITIES
+#define MCI_REG_FW_CAPABILITIES                                                                     (0x4)
+#endif
+#define MCI_REG_CAP_LOCK                                                                            (0x8)
+#ifndef MCI_REG_CAP_LOCK
+#define MCI_REG_CAP_LOCK                                                                            (0x8)
+#define MCI_REG_CAP_LOCK_LOCK_LOW                                                                   (0)
+#define MCI_REG_CAP_LOCK_LOCK_MASK                                                                  (0x1)
+#endif
+#define MCI_REG_HW_REV_ID                                                                           (0xc)
 #ifndef MCI_REG_HW_REV_ID
-#define MCI_REG_HW_REV_ID                                                                           (0x4)
+#define MCI_REG_HW_REV_ID                                                                           (0xc)
 #define MCI_REG_HW_REV_ID_MC_GENERATION_LOW                                                         (0)
 #define MCI_REG_HW_REV_ID_MC_GENERATION_MASK                                                        (0xffff)
-#define MCI_REG_HW_REV_ID_SOC_STEPPING_ID_LOW                                                       (16)
-#define MCI_REG_HW_REV_ID_SOC_STEPPING_ID_MASK                                                      (0xffff0000)
 #endif
-#define MCI_REG_FW_REV_ID_0                                                                         (0x8)
+#define MCI_REG_FW_REV_ID_0                                                                         (0x10)
 #ifndef MCI_REG_FW_REV_ID_0
-#define MCI_REG_FW_REV_ID_0                                                                         (0x8)
+#define MCI_REG_FW_REV_ID_0                                                                         (0x10)
 #endif
-#define MCI_REG_FW_REV_ID_1                                                                         (0xc)
+#define MCI_REG_FW_REV_ID_1                                                                         (0x14)
 #ifndef MCI_REG_FW_REV_ID_1
-#define MCI_REG_FW_REV_ID_1                                                                         (0xc)
+#define MCI_REG_FW_REV_ID_1                                                                         (0x14)
 #endif
-#define MCI_REG_HW_CONFIG                                                                           (0x10)
-#ifndef MCI_REG_HW_CONFIG
-#define MCI_REG_HW_CONFIG                                                                           (0x10)
-#define MCI_REG_HW_CONFIG_RSVD_EN_LOW                                                               (0)
-#define MCI_REG_HW_CONFIG_RSVD_EN_MASK                                                              (0x1)
+#define MCI_REG_HW_CONFIG0                                                                          (0x18)
+#ifndef MCI_REG_HW_CONFIG0
+#define MCI_REG_HW_CONFIG0                                                                          (0x18)
+#define MCI_REG_HW_CONFIG0_MCI_MBOX1_SRAM_SIZE_LOW                                                  (0)
+#define MCI_REG_HW_CONFIG0_MCI_MBOX1_SRAM_SIZE_MASK                                                 (0xfff)
+#define MCI_REG_HW_CONFIG0_MCI_MBOX0_SRAM_SIZE_LOW                                                  (12)
+#define MCI_REG_HW_CONFIG0_MCI_MBOX0_SRAM_SIZE_MASK                                                 (0xfff000)
+#endif
+#define MCI_REG_HW_CONFIG1                                                                          (0x1c)
+#ifndef MCI_REG_HW_CONFIG1
+#define MCI_REG_HW_CONFIG1                                                                          (0x1c)
+#define MCI_REG_HW_CONFIG1_MIN_MCU_RST_COUNTER_WIDTH_LOW                                            (0)
+#define MCI_REG_HW_CONFIG1_MIN_MCU_RST_COUNTER_WIDTH_MASK                                           (0x1f)
+#define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_LOW                                                        (5)
+#define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_MASK                                                       (0x1ffe0)
 #endif
 #define MCI_REG_FW_FLOW_STATUS                                                                      (0x20)
 #ifndef MCI_REG_FW_FLOW_STATUS
@@ -72,6 +88,16 @@
 #define MCI_REG_RESET_STATUS_CPTRA_RESET_STS_MASK                                                   (0x1)
 #define MCI_REG_RESET_STATUS_MCU_RESET_STS_LOW                                                      (1)
 #define MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK                                                     (0x2)
+#endif
+#define MCI_REG_SECURITY_STATE                                                                      (0x30)
+#ifndef MCI_REG_SECURITY_STATE
+#define MCI_REG_SECURITY_STATE                                                                      (0x30)
+#define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_LOW                                                 (0)
+#define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_MASK                                                (0x3)
+#define MCI_REG_SECURITY_STATE_DEBUG_LOCKED_LOW                                                     (2)
+#define MCI_REG_SECURITY_STATE_DEBUG_LOCKED_MASK                                                    (0x4)
+#define MCI_REG_SECURITY_STATE_SCAN_MODE_LOW                                                        (3)
+#define MCI_REG_SECURITY_STATE_SCAN_MODE_MASK                                                       (0x8)
 #endif
 #define MCI_REG_HW_ERROR_FATAL                                                                      (0x40)
 #ifndef MCI_REG_HW_ERROR_FATAL
@@ -541,19 +567,25 @@
 #define MCI_REG_MCI_BOOTFSM_GO_GO_LOW                                                               (0)
 #define MCI_REG_MCI_BOOTFSM_GO_GO_MASK                                                              (0x1)
 #endif
-#define MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                            (0x108)
+#define MCI_REG_CPTRA_BOOT_GO                                                                       (0x108)
+#ifndef MCI_REG_CPTRA_BOOT_GO
+#define MCI_REG_CPTRA_BOOT_GO                                                                       (0x108)
+#define MCI_REG_CPTRA_BOOT_GO_GO_LOW                                                                (0)
+#define MCI_REG_CPTRA_BOOT_GO_GO_MASK                                                               (0x1)
+#endif
+#define MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                            (0x10c)
 #ifndef MCI_REG_FW_SRAM_EXEC_REGION_SIZE
-#define MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                            (0x108)
+#define MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                            (0x10c)
 #define MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_LOW                                                   (0)
 #define MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_MASK                                                  (0xffff)
 #endif
-#define MCI_REG_MCU_NMI_VECTOR                                                                      (0x10c)
+#define MCI_REG_MCU_NMI_VECTOR                                                                      (0x110)
 #ifndef MCI_REG_MCU_NMI_VECTOR
-#define MCI_REG_MCU_NMI_VECTOR                                                                      (0x10c)
+#define MCI_REG_MCU_NMI_VECTOR                                                                      (0x110)
 #endif
-#define MCI_REG_MCU_RESET_VECTOR                                                                    (0x110)
+#define MCI_REG_MCU_RESET_VECTOR                                                                    (0x114)
 #ifndef MCI_REG_MCU_RESET_VECTOR
-#define MCI_REG_MCU_RESET_VECTOR                                                                    (0x110)
+#define MCI_REG_MCU_RESET_VECTOR                                                                    (0x114)
 #endif
 #define MCI_REG_MBOX0_VALID_AXI_USER_0                                                              (0x180)
 #ifndef MCI_REG_MBOX0_VALID_AXI_USER_0
@@ -655,6 +687,34 @@
 #define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_LOW                                                      (0)
 #define MCI_REG_MBOX1_AXI_USER_LOCK_4_LOCK_MASK                                                     (0x1)
 #endif
+#define MCI_REG_SOC_DFT_EN_0                                                                        (0x300)
+#ifndef MCI_REG_SOC_DFT_EN_0
+#define MCI_REG_SOC_DFT_EN_0                                                                        (0x300)
+#endif
+#define MCI_REG_SOC_DFT_EN_1                                                                        (0x304)
+#ifndef MCI_REG_SOC_DFT_EN_1
+#define MCI_REG_SOC_DFT_EN_1                                                                        (0x304)
+#endif
+#define MCI_REG_SOC_HW_DEBUG_EN_0                                                                   (0x308)
+#ifndef MCI_REG_SOC_HW_DEBUG_EN_0
+#define MCI_REG_SOC_HW_DEBUG_EN_0                                                                   (0x308)
+#endif
+#define MCI_REG_SOC_HW_DEBUG_EN_1                                                                   (0x30c)
+#ifndef MCI_REG_SOC_HW_DEBUG_EN_1
+#define MCI_REG_SOC_HW_DEBUG_EN_1                                                                   (0x30c)
+#endif
+#define MCI_REG_SOC_PROD_DEBUG_STATE_0                                                              (0x310)
+#ifndef MCI_REG_SOC_PROD_DEBUG_STATE_0
+#define MCI_REG_SOC_PROD_DEBUG_STATE_0                                                              (0x310)
+#endif
+#define MCI_REG_SOC_PROD_DEBUG_STATE_1                                                              (0x314)
+#ifndef MCI_REG_SOC_PROD_DEBUG_STATE_1
+#define MCI_REG_SOC_PROD_DEBUG_STATE_1                                                              (0x314)
+#endif
+#define MCI_REG_FC_FIPS_ZEROZATION                                                                  (0x318)
+#ifndef MCI_REG_FC_FIPS_ZEROZATION
+#define MCI_REG_FC_FIPS_ZEROZATION                                                                  (0x318)
+#endif
 #define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (0x400)
 #ifndef MCI_REG_GENERIC_INPUT_WIRES_0
 #define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (0x400)
@@ -674,14 +734,14 @@
 #define MCI_REG_DEBUG_IN                                                                            (0x410)
 #ifndef MCI_REG_DEBUG_IN
 #define MCI_REG_DEBUG_IN                                                                            (0x410)
-#define MCI_REG_DEBUG_IN_FIXME_LOW                                                                  (0)
-#define MCI_REG_DEBUG_IN_FIXME_MASK                                                                 (0x1)
+#define MCI_REG_DEBUG_IN_DATA_LOW                                                                   (0)
+#define MCI_REG_DEBUG_IN_DATA_MASK                                                                  (0x1)
 #endif
 #define MCI_REG_DEBUG_OUT                                                                           (0x414)
 #ifndef MCI_REG_DEBUG_OUT
 #define MCI_REG_DEBUG_OUT                                                                           (0x414)
-#define MCI_REG_DEBUG_OUT_FIXME_LOW                                                                 (0)
-#define MCI_REG_DEBUG_OUT_FIXME_MASK                                                                (0x1)
+#define MCI_REG_DEBUG_OUT_DATA_LOW                                                                  (0)
+#define MCI_REG_DEBUG_OUT_DATA_MASK                                                                 (0x1)
 #endif
 #define MCI_REG_SS_DEBUG_INTENT                                                                     (0x418)
 #ifndef MCI_REG_SS_DEBUG_INTENT
@@ -689,9 +749,15 @@
 #define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_LOW                                                    (0)
 #define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_MASK                                                   (0x1)
 #endif
-#define MCI_REG_SS_CONFIG_DONE                                                                      (0x440)
+#define MCI_REG_SS_CONFIG_DONE_STICKY                                                               (0x440)
+#ifndef MCI_REG_SS_CONFIG_DONE_STICKY
+#define MCI_REG_SS_CONFIG_DONE_STICKY                                                               (0x440)
+#define MCI_REG_SS_CONFIG_DONE_STICKY_DONE_LOW                                                      (0)
+#define MCI_REG_SS_CONFIG_DONE_STICKY_DONE_MASK                                                     (0x1)
+#endif
+#define MCI_REG_SS_CONFIG_DONE                                                                      (0x444)
 #ifndef MCI_REG_SS_CONFIG_DONE
-#define MCI_REG_SS_CONFIG_DONE                                                                      (0x440)
+#define MCI_REG_SS_CONFIG_DONE                                                                      (0x444)
 #define MCI_REG_SS_CONFIG_DONE_DONE_LOW                                                             (0)
 #define MCI_REG_SS_CONFIG_DONE_DONE_MASK                                                            (0x1)
 #endif
@@ -1193,14 +1259,20 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_CMD_AVAIL_EN_MASK                        (0x8)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_CMD_AVAIL_EN_LOW                         (4)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_CMD_AVAIL_EN_MASK                        (0x10)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_ECC_COR_EN_LOW                           (5)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_ECC_COR_EN_MASK                          (0x20)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_ECC_COR_EN_LOW                           (6)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_ECC_COR_EN_MASK                          (0x40)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_LOW                      (7)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_MASK                     (0x80)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_LOW                      (8)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK                     (0x100)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_CPTRA_MBOX_CMD_AVAIL_EN_LOW                    (5)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_CPTRA_MBOX_CMD_AVAIL_EN_MASK                   (0x20)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_ECC_COR_EN_LOW                           (6)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_ECC_COR_EN_MASK                          (0x40)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_ECC_COR_EN_LOW                           (7)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_ECC_COR_EN_MASK                          (0x80)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_DEBUG_LOCKED_EN_LOW                            (8)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_DEBUG_LOCKED_EN_MASK                           (0x100)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_SCAN_MODE_EN_LOW                               (9)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_SCAN_MODE_EN_MASK                              (0x200)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_LOW                      (10)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_MASK                     (0x400)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_LOW                      (11)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK                     (0x800)
 #endif
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R                                                      (0x1010)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R
@@ -1391,14 +1463,20 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK                 (0x8)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_CMD_AVAIL_STS_LOW                  (4)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_CMD_AVAIL_STS_MASK                 (0x10)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_LOW                    (5)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_MASK                   (0x20)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_ECC_COR_STS_LOW                    (6)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_ECC_COR_STS_MASK                   (0x40)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_LOW               (7)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK              (0x80)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_LOW               (8)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_MASK              (0x100)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MBOX_CMD_AVAIL_STS_LOW             (5)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MBOX_CMD_AVAIL_STS_MASK            (0x20)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_LOW                    (6)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_MASK                   (0x40)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_ECC_COR_STS_LOW                    (7)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_ECC_COR_STS_MASK                   (0x80)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_LOW                     (8)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_MASK                    (0x100)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_SCAN_MODE_STS_LOW                        (9)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_SCAN_MODE_STS_MASK                       (0x200)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_LOW               (10)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK              (0x400)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_LOW               (11)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_MASK              (0x800)
 #endif
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R                                                (0x1028)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R
@@ -1573,14 +1651,20 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_CMD_AVAIL_TRIG_MASK                    (0x8)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_CMD_AVAIL_TRIG_LOW                     (4)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_CMD_AVAIL_TRIG_MASK                    (0x10)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_ECC_COR_TRIG_LOW                       (5)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_ECC_COR_TRIG_MASK                      (0x20)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_ECC_COR_TRIG_LOW                       (6)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_ECC_COR_TRIG_MASK                      (0x40)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_LOW                  (7)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_MASK                 (0x80)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_LOW                  (8)
-#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_MASK                 (0x100)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_CPTRA_MBOX_CMD_AVAIL_TRIG_LOW                (5)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_CPTRA_MBOX_CMD_AVAIL_TRIG_MASK               (0x20)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_ECC_COR_TRIG_LOW                       (6)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_ECC_COR_TRIG_MASK                      (0x40)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_ECC_COR_TRIG_LOW                       (7)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_ECC_COR_TRIG_MASK                      (0x80)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_DEBUG_LOCKED_TRIG_LOW                        (8)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_DEBUG_LOCKED_TRIG_MASK                       (0x100)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_SCAN_MODE_TRIG_LOW                           (9)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_SCAN_MODE_TRIG_MASK                          (0x200)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_LOW                  (10)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_MASK                 (0x400)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_LOW                  (11)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_MASK                 (0x800)
 #endif
 #define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R                                                    (0x1038)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R
@@ -1966,21 +2050,33 @@
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_R                                    (0x1290)
 #endif
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R                                      (0x1294)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MBOX_CMD_AVAIL_INTR_COUNT_R                               (0x1294)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MBOX_CMD_AVAIL_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MBOX_CMD_AVAIL_INTR_COUNT_R                               (0x1294)
+#endif
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R                                      (0x1298)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R                                      (0x1294)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R                                      (0x1298)
 #endif
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R                                      (0x1298)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R                                      (0x129c)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R                                      (0x1298)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R                                      (0x129c)
 #endif
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x129c)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_R                                       (0x12a0)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_R                                       (0x12a0)
+#endif
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R                                          (0x12a4)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R                                          (0x12a4)
+#endif
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x12a8)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x129c)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x12a8)
 #endif
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x12a0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x12ac)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x12a0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x12ac)
 #endif
 #define MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R                                      (0x1300)
 #ifndef MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R
@@ -2456,27 +2552,45 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_INCR_R_PULSE_LOW                     (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_INCR_R_PULSE_MASK                    (0x1)
 #endif
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R                                 (0x143c)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MBOX_CMD_AVAIL_INTR_COUNT_INCR_R                          (0x143c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MBOX_CMD_AVAIL_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MBOX_CMD_AVAIL_INTR_COUNT_INCR_R                          (0x143c)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MBOX_CMD_AVAIL_INTR_COUNT_INCR_R_PULSE_LOW                (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MBOX_CMD_AVAIL_INTR_COUNT_INCR_R_PULSE_MASK               (0x1)
+#endif
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R                                 (0x1440)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R                                 (0x143c)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R                                 (0x1440)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_INCR_R_PULSE_MASK                      (0x1)
 #endif
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R                                 (0x1440)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R                                 (0x1444)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R                                 (0x1440)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R                                 (0x1444)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R_PULSE_LOW                       (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_INCR_R_PULSE_MASK                      (0x1)
 #endif
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1444)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R                                  (0x1448)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R                                  (0x1448)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R_PULSE_LOW                        (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_INCR_R_PULSE_MASK                       (0x1)
+#endif
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R                                     (0x144c)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R                                     (0x144c)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R_PULSE_LOW                           (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_INCR_R_PULSE_MASK                          (0x1)
+#endif
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1450)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1444)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1450)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_MASK                 (0x1)
 #endif
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1448)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1454)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R
-#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1448)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (0x1454)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_MASK                 (0x1)
 #endif
