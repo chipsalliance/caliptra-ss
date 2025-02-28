@@ -22,7 +22,7 @@ def tab(name):
 #define FUSE_CTRL_BASE_ADDR (0x70000000)
 
 % for i, r in enumerate(rb.flat_regs):
-#define FUSE_CTRL_${r.name.upper()}_OFFSET${tab(r.name)}(FUSE_CTRL_BASE_ADDR + ${"0x%03X" % (4*i)})
+#define FUSE_CTRL_${r.name.upper()}${tab(r.name)}(FUSE_CTRL_BASE_ADDR + ${"0x%03X" % (4*i)})
 % endfor
 
 % for r in rb.flat_regs:
