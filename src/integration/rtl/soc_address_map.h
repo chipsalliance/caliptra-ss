@@ -423,14 +423,30 @@
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2                                                (0x2000410c)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2                                                    (0xc)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2_REC_PROT_VERSION_LOW                               (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2_REC_PROT_VERSION_MASK                              (0xffff)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2_AGENT_CAPS_LOW                                     (16)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2_AGENT_CAPS_MASK                                    (0xffff0000)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3                                                (0x20004110)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3                                                    (0x10)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3_NUM_OF_CMS_REGIONS_LOW                             (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3_NUM_OF_CMS_REGIONS_MASK                            (0xff)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3_MAX_RESP_TIME_LOW                                  (8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3_MAX_RESP_TIME_MASK                                 (0xff00)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3_HEARTBEAT_PERIOD_LOW                               (16)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3_HEARTBEAT_PERIOD_MASK                              (0xff0000)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0                                               (0x20004114)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0                                                   (0x14)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0_DESC_TYPE_LOW                                     (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0_DESC_TYPE_MASK                                    (0xff)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_LOW                    (8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_MASK                   (0xff00)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0_DATA_LOW                                          (16)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0_DATA_MASK                                         (0xffff0000)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_1                                               (0x20004118)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_1
@@ -452,41 +468,93 @@
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_5
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_5                                                   (0x28)
 #endif
-#define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_6                                               (0x2000412c)
-#ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_6
-#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_6                                                   (0x2c)
+#define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_RESERVED                                        (0x2000412c)
+#ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_RESERVED
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_RESERVED                                            (0x2c)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0                                           (0x20004130)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0                                               (0x30)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0_DEV_STATUS_LOW                                (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0_DEV_STATUS_MASK                               (0xff)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0_PROT_ERROR_LOW                                (8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0_PROT_ERROR_MASK                               (0xff00)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0_REC_REASON_CODE_LOW                           (16)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0_REC_REASON_CODE_MASK                          (0xffff0000)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1                                           (0x20004134)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1                                               (0x34)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1_HEARTBEAT_LOW                                 (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1_HEARTBEAT_MASK                                (0xffff)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_LOW                      (16)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_MASK                     (0x1ff0000)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1_VENDOR_STATUS_LOW                             (25)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1_VENDOR_STATUS_MASK                            (0xfe000000)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_RESET                                              (0x20004138)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_RESET
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_RESET                                                  (0x38)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_RESET_RESET_CTRL_LOW                                   (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_RESET_RESET_CTRL_MASK                                  (0xff)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_RESET_FORCED_RECOVERY_LOW                              (8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_RESET_FORCED_RECOVERY_MASK                             (0xff00)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_RESET_IF_CTRL_LOW                                      (16)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_RESET_IF_CTRL_MASK                                     (0xff0000)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL                                             (0x2000413c)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL                                                 (0x3c)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL_CMS_LOW                                         (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL_CMS_MASK                                        (0xff)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL_REC_IMG_SEL_LOW                                 (8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL_REC_IMG_SEL_MASK                                (0xff00)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL_ACTIVATE_REC_IMG_LOW                            (16)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL_ACTIVATE_REC_IMG_MASK                           (0xff0000)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS                                           (0x20004140)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS                                               (0x40)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS_DEV_REC_STATUS_LOW                            (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS_DEV_REC_STATUS_MASK                           (0xf)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS_REC_IMG_INDEX_LOW                             (4)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS_REC_IMG_INDEX_MASK                            (0xf0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_LOW                    (8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_MASK                   (0xff00)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS                                                 (0x20004144)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS                                                     (0x44)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_TEMP_CRITICAL_LOW                                   (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_TEMP_CRITICAL_MASK                                  (0x1)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_SOFT_ERR_LOW                                        (1)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_SOFT_ERR_MASK                                       (0x2)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_FATAL_ERR_LOW                                       (2)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_FATAL_ERR_MASK                                      (0x4)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_RESERVED_7_3_LOW                                    (3)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_RESERVED_7_3_MASK                                   (0xf8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_VENDOR_HW_STATUS_LOW                                (8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_VENDOR_HW_STATUS_MASK                               (0xff00)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_CTEMP_LOW                                           (16)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_CTEMP_MASK                                          (0xff0000)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_VENDOR_HW_STATUS_LEN_LOW                            (24)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS_VENDOR_HW_STATUS_LEN_MASK                           (0xff000000)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0                                      (0x20004148)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0                                          (0x48)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0_CMS_LOW                                  (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0_CMS_MASK                                 (0xff)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0_RESET_LOW                                (8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0_RESET_MASK                               (0xff00)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_MSB_LOW                       (16)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_MSB_MASK                      (0xffff0000)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1                                      (0x2000414c)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1                                          (0x4c)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_LSB_LOW                       (0)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_LSB_MASK                      (0xffff)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0                                    (0x20004150)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0
@@ -495,8 +563,8 @@
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0_EMPTY_MASK                             (0x1)
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0_FULL_LOW                               (1)
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0_FULL_MASK                              (0x2)
-#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0_REGION_LOW                             (8)
-#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0_REGION_MASK                            (0x700)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0_REGION_TYPE_LOW                        (8)
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0_REGION_TYPE_MASK                       (0x700)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_1                                    (0x20004154)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_1
@@ -514,9 +582,9 @@
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_4
 #define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_4                                        (0x60)
 #endif
-#define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_5                                    (0x20004164)
-#ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_5
-#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_5                                        (0x64)
+#define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_RESERVED                                    (0x20004164)
+#ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_RESERVED
+#define I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_RESERVED                                        (0x64)
 #endif
 #define SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA                                        (0x20004168)
 #ifndef I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA
@@ -9655,8 +9723,8 @@
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_RSVD_EN_MASK                                                    (0xe)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_LMS_ACC_EN_LOW                                                  (4)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_LMS_ACC_EN_MASK                                                 (0x10)
-#define SOC_IFC_REG_CPTRA_HW_CONFIG_ACTIVE_MODE_EN_LOW                                              (5)
-#define SOC_IFC_REG_CPTRA_HW_CONFIG_ACTIVE_MODE_EN_MASK                                             (0x20)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_SUBSYSTEM_MODE_EN_LOW                                           (5)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_SUBSYSTEM_MODE_EN_MASK                                          (0x20)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_WDT_TIMER1_EN                                                         (0x300300e4)
 #ifndef SOC_IFC_REG_CPTRA_WDT_TIMER1_EN

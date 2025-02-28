@@ -167,10 +167,8 @@ module trace_buffer_csr (
 
     // Field: trace_buffer_csr.STATUS.wrapped
     always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.STATUS.wrapped.value;
-        load_next_c = '0;
+        automatic logic [0:0] next_c = field_storage.STATUS.wrapped.value;
+        automatic logic load_next_c = '0;
         
         // HW Write
         next_c = hwif_in.STATUS.wrapped.next;
@@ -188,10 +186,8 @@ module trace_buffer_csr (
     assign hwif_out.STATUS.wrapped.value = field_storage.STATUS.wrapped.value;
     // Field: trace_buffer_csr.STATUS.valid_data
     always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.STATUS.valid_data.value;
-        load_next_c = '0;
+        automatic logic [0:0] next_c = field_storage.STATUS.valid_data.value;
+        automatic logic load_next_c = '0;
         
         // HW Write
         next_c = hwif_in.STATUS.valid_data.next;
@@ -209,10 +205,8 @@ module trace_buffer_csr (
     assign hwif_out.STATUS.valid_data.value = field_storage.STATUS.valid_data.value;
     // Field: trace_buffer_csr.CONFIG.trace_buffer_depth
     always_comb begin
-        automatic logic [31:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.CONFIG.trace_buffer_depth.value;
-        load_next_c = '0;
+        automatic logic [31:0] next_c = field_storage.CONFIG.trace_buffer_depth.value;
+        automatic logic load_next_c = '0;
         
         // HW Write
         next_c = hwif_in.CONFIG.trace_buffer_depth.next;
@@ -230,10 +224,8 @@ module trace_buffer_csr (
     assign hwif_out.CONFIG.trace_buffer_depth.value = field_storage.CONFIG.trace_buffer_depth.value;
     // Field: trace_buffer_csr.DATA.data
     always_comb begin
-        automatic logic [31:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.DATA.data.value;
-        load_next_c = '0;
+        automatic logic [31:0] next_c = field_storage.DATA.data.value;
+        automatic logic load_next_c = '0;
         
         // HW Write
         next_c = hwif_in.DATA.data.next;
@@ -251,10 +243,8 @@ module trace_buffer_csr (
     assign hwif_out.DATA.data.value = field_storage.DATA.data.value;
     // Field: trace_buffer_csr.WRITE_PTR.ptr
     always_comb begin
-        automatic logic [31:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.WRITE_PTR.ptr.value;
-        load_next_c = '0;
+        automatic logic [31:0] next_c = field_storage.WRITE_PTR.ptr.value;
+        automatic logic load_next_c = '0;
         
         // HW Write
         next_c = hwif_in.WRITE_PTR.ptr.next;
@@ -272,10 +262,8 @@ module trace_buffer_csr (
     assign hwif_out.WRITE_PTR.ptr.value = field_storage.WRITE_PTR.ptr.value;
     // Field: trace_buffer_csr.READ_PTR.ptr
     always_comb begin
-        automatic logic [31:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.READ_PTR.ptr.value;
-        load_next_c = '0;
+        automatic logic [31:0] next_c = field_storage.READ_PTR.ptr.value;
+        automatic logic load_next_c = '0;
         if(decoded_reg_strb.READ_PTR && decoded_req_is_wr) begin // SW write
             next_c = (field_storage.READ_PTR.ptr.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
@@ -309,7 +297,7 @@ module trace_buffer_csr (
     logic readback_err;
     logic readback_done;
     logic [31:0] readback_data;
-
+    
     // Assign readback values to a flattened array
     logic [5-1:0][31:0] readback_array;
     assign readback_array[0][0:0] = (decoded_reg_strb.STATUS && !decoded_req_is_wr) ? field_storage.STATUS.wrapped.value : '0;

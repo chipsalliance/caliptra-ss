@@ -303,7 +303,7 @@ assign cif_resp_if.hold = '0;
 // STRAPS / TAP ACCESS 
 ///////////////////////////////////////////////
 
-// Subsystem straps capture the initial value from input port on rising edge of cptra_pwrgood
+// Subsystem straps capture the initial value on mci_rst_b deassertion.
 always_ff @(posedge clk or negedge mci_rst_b) begin
      if(~mci_rst_b) begin
         strap_we <= 1'b1;
@@ -313,16 +313,20 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     end
 end
 
+assign strap_we_sticky = strap_we & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value;
+
 // Value
 always_comb begin
     // STRAP with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = strap_we ? ss_debug_intent : mcu_dmi_uncore_wdata[0];
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we_sticky ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
 
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.next          = mcu_dmi_uncore_wdata[0] ; 
     mci_reg_hwif_in.MCI_BOOTFSM_GO.go.next              = mcu_dmi_uncore_wdata[0] ; 
-    mci_reg_hwif_in.CPTRA_BOOT_GO.go.next              = mcu_dmi_uncore_wdata[0] ; 
+    mci_reg_hwif_in.CPTRA_BOOT_GO.go.next               = mcu_dmi_uncore_wdata[0] ; 
+    mci_reg_hwif_in.SS_CONFIG_DONE.done.next            = mcu_dmi_uncore_wdata[0] ; 
+    mci_reg_hwif_in.SS_CONFIG_DONE_STICKY.done.next     = mcu_dmi_uncore_wdata[0] ; 
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.next  = mcu_dmi_uncore_wdata[15:0] ; 
     mci_reg_hwif_in.MCU_NMI_VECTOR.vec.next             = mcu_dmi_uncore_wdata ; 
 end
@@ -332,7 +336,7 @@ always_comb begin
     // STRAPS with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
     
     // REGISTERS WITH TAP ACCESS
@@ -342,6 +346,10 @@ always_comb begin
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO));
     mci_reg_hwif_in.CPTRA_BOOT_GO.go.we                 =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_CPTRA_BOOT_GO));
+    mci_reg_hwif_in.SS_CONFIG_DONE.done.we              =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+                                                            (mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE));
+    mci_reg_hwif_in.SS_CONFIG_DONE_STICKY.done.we       =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+                                                            (mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE_STICKY));
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.we    =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_FW_SRAM_EXEC_REGION_SIZE));
     mci_reg_hwif_in.MCU_NMI_VECTOR.vec.we               =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
@@ -466,6 +474,7 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR           )}}   &  mci_reg_hwif_out.MCU_RESET_VECTOR           )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT            )}}   &  mci_reg_hwif_out.SS_DEBUG_INTENT            )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE             )}}   &  mci_reg_hwif_out.SS_CONFIG_DONE             )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE_STICKY      )}}   &  mci_reg_hwif_out.SS_CONFIG_DONE_STICKY      )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  mci_reg_hwif_out.MCU_NMI_VECTOR             )  ;
 
 
