@@ -629,14 +629,6 @@ module caliptra_ss_top_tb
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_cptra_core_s_axi_if (.clk(core_clk), .rst_n(rst_l));
 
-    // MCI Mgr AXI Interface
-    axi_if #(
-        .AW(32), //-- FIXME : Assign a common paramter
-        .DW(32), //-- FIXME : Assign a common paramter,
-        .IW(`CALIPTRA_AXI_ID_WIDTH),
-        .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_mci_m_axi_if (.clk(core_clk), .rst_n(rst_l));
-
     // MCI Sub AXI Interface
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
@@ -1673,7 +1665,8 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
     logic [31:0]  cptra_ss_strap_cptra_axi_user_i;
-    logic [31:0]  cptra_ss_strap_debug_axi_user_i;
+    logic [31:0]  cptra_ss_strap_mcu_sram_config_axi_user_i;
+    logic [31:0]  cptra_ss_strap_mci_soc_config_axi_user_i;
     logic         cptra_ss_mcu_jtag_tck_i;
     logic         cptra_ss_mcu_jtag_tms_i;
     logic         cptra_ss_mcu_jtag_tdi_i;
@@ -1703,7 +1696,8 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_mcu_lsu_axi_user_i    = 32'hFFFFFFFF;
     assign cptra_ss_strap_mcu_ifu_axi_user_i    = 32'hFFFFFFFF;
     assign cptra_ss_strap_cptra_axi_user_i        = 32'hFFFFFFFF;
-    assign cptra_ss_strap_debug_axi_user_i        = 32'h00000001; // FIXME set to real value
+    assign cptra_ss_strap_mcu_sram_config_axi_user_i        = cptra_ss_strap_cptra_axi_user_i; // FIXME set to real value
+    assign cptra_ss_strap_mci_soc_config_axi_user_i        = 32'h1; // FIXME set to real value
     assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
@@ -1743,7 +1737,6 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_s_axi_if,
     
     // AXI Manager INF
-        .cptra_ss_mci_m_axi_if,
     
         .cptra_ss_mcu_lsu_m_axi_if,
         .cptra_ss_mcu_ifu_m_axi_if,
@@ -1814,7 +1807,8 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
         .cptra_ss_strap_cptra_axi_user_i,
-        .cptra_ss_strap_debug_axi_user_i,
+        .cptra_ss_strap_mcu_sram_config_axi_user_i,
+        .cptra_ss_strap_mci_soc_config_axi_user_i,
 
     //MCI
         .cptra_ss_mci_mcu_sram_req_if,

@@ -16,6 +16,8 @@
 // Description:
 //      Decodes the SOC request and sends to appropriate target.
 //
+`include "caliptra_prim_assert.sv"
+`include "caliptra_sva.svh"
 
 module mci_axi_sub_decode 
     import mci_pkg::*;
@@ -29,6 +31,7 @@ module mci_axi_sub_decode
     ///////////////////////////////////////////////////////////
     // MCI Memory Map
     ///////////////////////////////////////////////////////////
+    // NOTE: Update parameters if adding/removing IPs to the address space.
     localparam MCI_REG_SIZE_BYTES               = 2 ** MCI_REG_MIN_ADDR_WIDTH, 
     localparam MCI_REG_START_ADDR               = 32'h0000_0000,
     localparam MCI_REG_END_ADDR                 = MCI_REG_START_ADDR + (MCI_REG_SIZE_BYTES) - 1,
@@ -47,6 +50,8 @@ module mci_axi_sub_decode
         
     )
     (
+    input clk,
+    input rst_b,
 
     //SOC inf
     cif_if.response  soc_resp_if,
@@ -72,15 +77,15 @@ module mci_axi_sub_decode
     output logic axi_mcu_lsu_req,
     output logic axi_mcu_ifu_req,
     output logic axi_mcu_req    ,
-    output logic axi_debug_req    ,
-    output logic axi_cptra_req    ,
+    output logic axi_mci_soc_config_req    ,
+    output logic axi_mcu_sram_config_req    ,
 
     
     // Privileged AXI users
     input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_lsu_axi_user,
     input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_ifu_axi_user,
-    input logic [soc_resp_if.USER_WIDTH-1:0] strap_cptra_axi_user,
-    input logic [soc_resp_if.USER_WIDTH-1:0] strap_debug_axi_user
+    input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_sram_config_axi_user,
+    input logic [soc_resp_if.USER_WIDTH-1:0] strap_mci_soc_config_axi_user
 );
 
 // Valid signals
@@ -104,9 +109,9 @@ logic soc_mci_mbox1_req;
 
 // MISC signals
 logic soc_req_miss;
-logic debug_req_disable;
-logic debug_req_force_enable;
-logic debug_axi_user_detect;
+logic mci_soc_config_req_disable;
+logic mci_soc_config_req_force_enable;
+logic mci_soc_config_axi_user_detect;
 
 
 ///////////////////////////////////////////////////////////
@@ -153,7 +158,6 @@ always_comb soc_mci_mbox0_req = soc_mci_mbox0_gnt & mbox0_valid_user & all_strb_
 //There are 5 valid user registers, check if user attribute matches any of them
 //Check if user matches Default Valid user parameter - this user value is always valid
 //Check if request is coming from MCU (privilaged access)
-//Check if request is coming from Debug (privilaged access)
 always_comb begin
     mbox0_valid_user = '0;
     for (int i=0; i < 5; i++) begin
@@ -161,7 +165,6 @@ always_comb begin
     end
     mbox0_valid_user |= soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0];
     mbox0_valid_user |= axi_mcu_req;
-    mbox0_valid_user |= axi_debug_req;
 end
 
 // MCI Mbox1
@@ -171,7 +174,6 @@ always_comb soc_mci_mbox1_req = soc_mci_mbox1_gnt & mbox1_valid_user & all_strb_
 //There are 5 valid user registers, check if user attribute matches any of them
 //Check if user matches Default Valid user parameter - this user value is always valid
 //Check if request is coming from MCU (privilaged access)
-//Check if request is coming from Debug (privilaged access)
 always_comb begin
     mbox1_valid_user = '0;
     for (int i=0; i < 5; i++) begin
@@ -179,7 +181,6 @@ always_comb begin
     end
     mbox1_valid_user |= (soc_resp_if.req_data.user == MCI_DEF_MBOX_VALID_AXI_USER[soc_resp_if.USER_WIDTH-1:0]);
     mbox1_valid_user |= axi_mcu_req;
-    mbox1_valid_user |= axi_debug_req;
 end
 
 
@@ -269,24 +270,34 @@ always_comb soc_resp_if.error = (soc_mcu_sram_req           & mcu_sram_req_if.er
 // privileged users
 ///////////////////////////////////////////////
 
-// All 0s disabled debug_axi user capability. Mutually exclusive with
+// All 0s disabled mci_soc_config_axi user capability. Mutually exclusive with
 // debug_req_force_enable.
-assign debug_req_disable = ~|strap_debug_axi_user;
+assign mci_soc_config_req_disable = ~|strap_mci_soc_config_axi_user;
 
 // All 1s every AXI transaction is treated as a debug user. Mutually exclusive
 // with debug_req_disable
-assign debug_req_force_enable = &strap_debug_axi_user;
+assign mci_soc_config_req_force_enable = &strap_mci_soc_config_axi_user;
 
-assign debug_axi_user_detect = ~(|(soc_resp_if.req_data.user ^ strap_debug_axi_user));
+assign mci_soc_config_axi_user_detect = ~(|(soc_resp_if.req_data.user ^ strap_mci_soc_config_axi_user));
 
-assign axi_debug_req    = soc_resp_if.dv & ((debug_axi_user_detect & ~debug_req_disable) | debug_req_force_enable);
+assign axi_mci_soc_config_req    = soc_resp_if.dv & ((mci_soc_config_axi_user_detect & ~mci_soc_config_req_disable) | mci_soc_config_req_force_enable);
 
 assign axi_mcu_lsu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_lsu_axi_user));
 assign axi_mcu_ifu_req  = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_ifu_axi_user));
 assign axi_mcu_req      = axi_mcu_lsu_req | axi_mcu_ifu_req; 
 
-assign axi_cptra_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_cptra_axi_user));
+assign axi_mcu_sram_config_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.user ^ strap_mcu_sram_config_axi_user));
 
+///////////////////////////////////////////////
+// Assertions 
+///////////////////////////////////////////////
+// One target per transaction
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_gnt, soc_mcu_trace_buffer_gnt, soc_mci_reg_gnt, soc_mci_mbox0_gnt, soc_mci_mbox1_gnt}, clk, !reset_n)
 
+// Verify no overlapping address spaces. Only checking abutting address paces.
+`CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCI_REG, MCI_REG_END_ADDR < MCU_TRACE_BUFFER_START_ADDR)
+`CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCI_MCU_TRACE_BUFFER, MCU_TRACE_BUFFER_END_ADDR < MBOX0_START_ADDR)
+`CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCI_MBOX0, MBOX0_END_ADDR < MBOX1_START_ADDR)
+`CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCI_MBOX1, MBOX1_END_ADDR < MCU_SRAM_START_ADDR)
 
 endmodule

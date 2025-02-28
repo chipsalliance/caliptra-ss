@@ -39,8 +39,6 @@ module mci_top_tb
   axi_if s_axi_w_if(.clk('0), .rst_n('0));
   axi_if s_axi_r_if(.clk('0), .rst_n('0));
   
-  axi_if m_axi_w_if(.clk('0), .rst_n('0));
-  axi_if m_axi_r_if(.clk('0), .rst_n('0));
 
   // MCU SRAM Interface
   mci_mcu_sram_if mci_mcu_sram_req_if(.clk('0), .rst_b('0));
@@ -74,15 +72,9 @@ module mci_top_tb
     .s_axi_w_if,
     .s_axi_r_if,
     
-    // AXI Manager INF
-    .m_axi_w_if,
-    .m_axi_r_if,
-    
     // Straps
     .strap_mcu_lsu_axi_user('0),
     .strap_mcu_ifu_axi_user('0),
-    .strap_cptra_axi_user('0),
-    .ss_debug_intent('0),
 
     // SRAM ADHOC connections
     .mcu_sram_fw_exec_region_lock('0),
