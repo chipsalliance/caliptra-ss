@@ -24,7 +24,7 @@
 typedef struct packed {
   logic [31:0] lower_addr;  // Lower bound of the address range
   logic [31:0] upper_addr;  // Upper bound of the address range
-  logic [3:0]  axi_user_id; // AXI user ID allowed to write
+  logic [31:0]  axi_user_id; // AXI user ID allowed to write
 } access_control_entry_t;
 
 localparam int FC_TABLE_NUM_RANGES = 2;

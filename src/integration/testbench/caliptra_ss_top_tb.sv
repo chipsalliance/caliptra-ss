@@ -1560,6 +1560,25 @@ module caliptra_ss_top_tb
         cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
     end
 
+    `include "caliptra_ss_includes.svh"
+    logic [$bits(lc_ctrl_state_pkg::lc_state_t)-1:0] MANUF_state;
+    assign MANUF_state = lc_ctrl_state_pkg::lc_state_t'(lc_ctrl_state_pkg::LcStDev);
+    initial begin
+        if ($test$plusargs("CALIPTRA_SS_UDS_PROG")) begin
+            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = MANUF_state;
+            force cptra_ss_cptra_core_m_axi_if.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
+            force cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_REQ is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_REQ.UDS_PROGRAM_REQ.value);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP IN PROGRESS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_IN_PROGRESS);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_FAIL is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_FAIL);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_SUCCESS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_SUCCESS);
+            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_GO is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_BOOTFSM_GO);
+            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_BrkPoint_Latched is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.BootFSM_BrkPoint_Latched);
+            $monitor("CALIPTRA_SS_UDS_PROG: CPTRA_FLOW_STATUS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_FLOW_STATUS);
+        end 
+    end
+
+
 `ifdef LCC_FC_BFM_SIM
     
     always_comb begin
@@ -1726,8 +1745,8 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'hba5e_ba11;
     assign cptra_ss_strap_mci_base_addr_i       = 64'h0;
     assign cptra_ss_strap_recovery_ifc_base_addr_i = 64'h0;
-    assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0;
-    assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0;
+    assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
+    assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0000;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
     assign cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i        = 32'h0;
     assign cptra_ss_strap_generic_0_i           = 32'h0;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`include "mci_reg_defines.svh"
+// `include "mci_reg_defines.svh"
 
 module mci_reg_top 
     import mci_reg_pkg::*;
