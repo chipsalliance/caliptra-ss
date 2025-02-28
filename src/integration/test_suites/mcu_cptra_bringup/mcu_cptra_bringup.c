@@ -57,16 +57,12 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;
+
     VPRINTF(LOW, "=================\nMCU Boot FSM Go\n=================\n\n")
     
-    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
-    // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_REG_MCI_BOOTFSM_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_REG_MCI_BOOTFSM_GO\n");
-
-    mci_boot_fsm_go = lsu_read_32(SOC_MCI_REG_MCI_BOOTFSM_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_REG_MCI_BOOTFSM_GO %x\n", mci_boot_fsm_go);
-
+    // writing SOC_MCI_REG_CPTRA_BOOT_GO register of MCI for CPTRA Boot FSM to bring Caliptra out of reset
+    lsu_write_32(SOC_MCI_REG_CPTRA_BOOT_GO, 1);
+    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_REG_CPTRA_BOOT_GO\n");
 
     VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n")
 
