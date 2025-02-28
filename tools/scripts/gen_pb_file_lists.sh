@@ -31,11 +31,10 @@ function gen_pb_file_list {
     pb fe file_list --tb caliptra_ss_lib::${cpt_ss_lib} +def-target 'tb' --flat --dir-fmt=+incdir+{directory} --file ${cpt_ss_vf_file};
     # Replace leading portion of Caliptra source paths with ${CALIPTRA_SS_ROOT}
     sed 's,/home.*caliptra-ss/src,\${CALIPTRA_SS_ROOT}/src,' -i ${cpt_ss_vf_file}
-    sed 's,/home.*third_party/caliptra-rtl/src,\${CALIPTRA_ROOT}/src,' -i ${cpt_ss_vf_file}
-    sed 's,/home.*third_party/caliptra-rtl/submodules,\${CALIPTRA_ROOT}/submodules,' -i ${cpt_ss_vf_file}
+    sed 's,/home.*caliptra-ss/third_party,\${CALIPTRA_SS_ROOT}/third_party,' -i ${cpt_ss_vf_file}
 
     # Replace leading portion of UVM/installed library paths with appropriate ENV VAR
-    src 's,/cad.*avery/, \${AVERY_HOME},' -i ${cpt_ss_vf_file}
+    sed 's,/cad.*avery/,\${AVERY_HOME}/,' -i ${cpt_ss_vf_file}
 
     # Remove duplicate entries and empty lines from the file
     perl -i -ne 'print if ! $a{$_}++ and /\S/' ${cpt_ss_vf_file}
@@ -54,7 +53,7 @@ cal_ymls=$(grep '^\s*\- src' ${CALIPTRA_SS_ROOT}/config/compilespecs.yml | sed '
 declare -A procs;
 for i in ${cal_ymls}; do
     cal_ss_dir=$(realpath ${CALIPTRA_SS_ROOT}/$(sed 's,\(src/.\+/config\)/.*,\1,' <<< ${i}))
-    cal_ss_libs=$(grep '^\s*provides' ${cal_ss_dir}/compile.yml | sed 's/.*\[\(\w\+\)\].*/\1/')
+    cal_ss_libs=$(grep '^\s*provides' ${cal_ss_dir}/compile.yml | sed 's/.*\[\([-_A-Za-z0-9]\+\)\].*/\1/')
     for j in ${cal_ss_libs}; do
         gen_pb_file_list ${cal_ss_dir} ${j} &
         procs["$i_$j"]=$!
