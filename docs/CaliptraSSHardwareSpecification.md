@@ -922,7 +922,7 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
    
    b. **Note:** MCI will allow "MCI SOC CONFIG" AXI User to configure MCI registers MCU typically configures. 
    
-   b. **Note:** MCI will allow any AXI Usert to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
+   b. **Note:** MCI will allow any AXI User to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
 8. Caliptra reset (cptra_rst_b) is deasserted.
 9. Caliptra BootFSM will go through its own boot flow as documented in Caliptra spec, reads secret fuses and sets “ready_for_fuses” to MCI.
 
@@ -1212,8 +1212,7 @@ Access is limited to **Debug Unlock** mode only. Access to this space while not 
 
 #### MCI DEBUG AXI USER
 
-In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This is a privilated user that has access to registers typically only accessable to MCU and Caliptra. It has full access to the MCI IP address space with the following restrictions: 
-
+In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This is a privileged user that has access to registers typically only accessible to MCU and Caliptra. It has full access to the MCI IP address space with the following restrictions:
 1. This user cannot bypass locks within MCI. i.e. Registers locked by SS_CONFIG_DONE cannot be modified by this user once SS_CONFIG_DONE is set.
 2. It can only access MCU SRAM once the system is unlocked to debug mode via LCC.
 3. **MBOX FIXME TBD**
