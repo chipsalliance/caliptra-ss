@@ -1,0 +1,3 @@
++incdir+${CALIPTRA_SS_ROOT}/src/integration/rtl
+${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map_defines.svh
+${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map_defines.svh
