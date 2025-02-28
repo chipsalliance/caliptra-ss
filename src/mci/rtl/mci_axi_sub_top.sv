@@ -55,18 +55,18 @@ module mci_axi_sub_top
 
 
     // Privileged requests 
-    output logic axi_debug_req,
+    output logic axi_mci_soc_config_req,
     output logic axi_mcu_lsu_req,
     output logic axi_mcu_ifu_req,
     output logic axi_mcu_req    ,
-    output logic axi_cptra_req    ,
+    output logic axi_mcu_sram_config_req    ,
 
     
     // Privileged AXI users
-    input logic [s_axi_w_if.UW-1:0] strap_debug_axi_user,
+    input logic [s_axi_w_if.UW-1:0] strap_mci_soc_config_axi_user,
     input logic [s_axi_w_if.UW-1:0] strap_mcu_lsu_axi_user,
     input logic [s_axi_w_if.UW-1:0] strap_mcu_ifu_axi_user,
-    input logic [s_axi_w_if.UW-1:0] strap_cptra_axi_user
+    input logic [s_axi_w_if.UW-1:0] strap_mcu_sram_config_axi_user
 
 
 
@@ -131,6 +131,9 @@ assign soc_resp_if.req_data.size = '0;
 mci_axi_sub_decode #(
     .MCU_SRAM_SIZE_KB   (MCU_SRAM_SIZE_KB)
 ) i_mci_axi_sub_decode (
+    .clk,
+    .rst_b,
+
     //SOC inf
     .soc_resp_if        (soc_resp_if.response),
 
@@ -152,18 +155,18 @@ mci_axi_sub_decode #(
     .valid_mbox1_users,
 
     // Privileged requests 
-    .axi_debug_req,
+    .axi_mci_soc_config_req,
     .axi_mcu_lsu_req,
     .axi_mcu_ifu_req,
     .axi_mcu_req    ,
-    .axi_cptra_req    ,
+    .axi_mcu_sram_config_req    ,
 
     
     // Privileged AXI users
-    .strap_debug_axi_user,
+    .strap_mci_soc_config_axi_user,
     .strap_mcu_lsu_axi_user,
     .strap_mcu_ifu_axi_user,
-    .strap_cptra_axi_user
+    .strap_mcu_sram_config_axi_user
 
 );
 

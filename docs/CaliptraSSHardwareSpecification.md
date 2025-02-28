@@ -880,7 +880,7 @@ MCU is another instance of VeeR EL2 core. The following features are enabled on 
 The Manufacturer Control Interface (MCI) is a critical hardware block designed to supplement the Manufacturer Control Unit (MCU) within a System on Chip (SoC). The primary functions of the MCI include providing an SRAM bank, facilitating restricted communication through a mailbox from external entities, and managing a bank of Control/Status Registers (CSRs). Additionally, the MCI incorporates a Watchdog Timer and a Boot Sequencing Finite State Machine (FSM) to manage timing and control during the SoC boot sequence after power application. This boot sequence encompasses reset deassertion, initialization of the Fuse Controller, initialization of the Lifecycle Controller, and enabling the JTAG block for debugging and manufacturing processes.
 
 The following diagram illustrates the internal components of the MCI.
-![](images/MCI-block-diagram.png)
+![](images/MCI-Integ-Block-Diagram.png)
 
 ## Sub-block Descriptions
 ### Control/Status Registers (CSRs)
@@ -890,26 +890,39 @@ The Control/Status Registers (CSRs) within the MCI are designed to provide criti
 
 ### Subsystem Boot Finite State Machine (CSS-BootFSM)
 
-The Boot Sequencer FSM is responsible for the orderly and controlled boot process of the Caliptra Subsystem. This state machine ensures that all necessary initialization steps are completed in the correct sequence after power application. The boot sequence includes Reset deassertions, Fuse Controller Initialization, Lifecycle Controller Initialization and MCU bring up
+The Boot Sequencer FSM is responsible for the orderly and controlled boot process of the Caliptra Subsystem. This state machine ensures that all necessary initialization steps are completed in the correct sequence after power application. The boot sequence includes MCU and Caliptra Reset deassertions, Fuse Controller Initialization, and Lifecycle Controller Initialization.
 
 The following boot flow explains the Caliptra subsystem bootFSM sequence.
 
 **Note:** SOC may have other HW FSM steps that were done before Caliptra (CSS) is brought out of reset such as locking a PLL or calibrating a CRO, setting up GPIOs, test logic bring up etc. using SOC HW FSM.
 
 1. SOC asserts Caliptra SS powergood and desserts Caliptra SS reset to MCI
+   
    a. SOC may choose to connect the same signals to the AXI fabric or bring it out of reset using a different signals. But the requirement is that before MCU is out of reset, fabric should be operational.
-2. CSS-BootFSM will sample straps on the MCI and will drive its outputs to reset defaults.
+
+2. CSS-BootFSM will sample straps in MCI and will drive its outputs to reset defaults.
+   
+   c. **Note:** In allowed LCC states, MCU TAP will be available when MCI is brought out of reset. Uncore registers in MCI will be available, but Core registers within MCU will only be available when MCU reset is deasserted.
+
 3. CSS-BootFSM will go through Caliptra Subsystem Fuse controller (CSS FC) Init Sequence Init Sequence/handshakes
 4. CSS-BootFSM will go through Caliptra Subsystem Life Cycle Controller (CSS LCC) Init Sequence/handshakes
+   
    a. **SOC Note:** Note that LCC shall start on an SOC generated internal clock to prevent clock stretch attacks
+   
    b. **SOC Note:** If the life cycle state is in RAW, TEST* or RMA, and if TRANSITION_CTRL.EXT_CLOCK_EN is set to one, the CLK_BYP_REQ signal is asserted in order to switch the main system clock to an external clock signal. This functionality is needed in certain life cycle states where the SOC internal clock source may not be fully calibrated yet, since the FUSE macro requires a stable clock frequency in order to reliably program the fuse array. Note that the TRANSITION_CTRL.EXT_CLOCK_EN register can only be set to one if the transition interface has been claimed via the CLAIM_TRANSITION_IF mutex. This function is not available in production life cycle states.
+
 5. If MCU-No-ROM-Config strap is not set, then CSS-BootFSM will bring MCU out of reset and MCU ROM will start executing.
+   
    a. **Note:** MCU ROM may be used by some SOCs for doing additional SOC specific initializations.An example of such a SoC construction is MCI, MCU, CSS Fabric are running on external clock initially. MCU brings up PLL, some GPIO peripherals, does I3C init sequence etc and then performs clock switch to internal PLL clock domain so that the fabric is running on the internal clock domain before secrets are read on it from the fuse controller.
-   c. **Note:** In allowed LCC states, MCU TAP will be open to use as soon as MCU is out of reset.
-6. If MCU-No-ROM-Config is not set, MCU ROM will bring Caliptra out of reset by writing a MCI register
+   
+6. If MCU-No-ROM-Config is not set, MCU ROM will bring Caliptra out of reset by writing a MCI register (CPTRA_BOOT_GO)
 7. If MCU-No-ROM-Config is set, CSS-BootFSM waits for a Caliptra GO write from SOC to bring Caliptra out of reset.
+   
    a. **Note:** MCU Reset Vector will be strapped to the MCU SRAM executable location at integration time.
-   b. **Note:** MCI will allow a “TEST AXI ID” to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
+   
+   b. **Note:** MCI will allow "MCI SOC CONFIG" AXI User to configure MCI registers MCU typically configures. 
+   
+   b. **Note:** MCI will allow any AXI User to write into SRAM if the LCC & debug state allows. SOC will have flexibility to implement desired logic to write to MCU SRAM to skip MCU ROM and a register bit to bring MCU out of reset. MCU will start executing from the reset vector that was strapped which enables the first fetch vector to access MCI SRAM
 8. Caliptra reset (cptra_rst_b) is deasserted.
 9. Caliptra BootFSM will go through its own boot flow as documented in Caliptra spec, reads secret fuses and sets “ready_for_fuses” to MCI.
 
@@ -920,10 +933,10 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
     a. Note: All fuses will be zero if FC is not programmed
 12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here)
 13. MCU ROM will do a fuse_write_done write to Caliptra
-15. Caliptra ROM starts to execute from here on.
-16. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
-17. CSS-BootFSM will wait for a confirmation from MCU ROM and assert the reset to MCU and deassert the reset to MCU after 10 cycles.
-18. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
+14. Caliptra ROM starts to execute from here on.
+15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
+16. CSS-BootFSM will wait for a confirmation from MCU ROM and assert the reset to MCU and deassert the reset to MCU after 10 cycles.
+17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
 ![](images/Caliptra-SS-BootFSM.png)
 
@@ -1143,11 +1156,12 @@ MCI provides the logic for these enables. When the following condition(s) are me
 | FW\_EXTENDED\_ERROR\_INFO\_7 | 0x72 | RO | Yes |  |  |
 | RESET\_REQUEST | 0x73 | RW |  |  | Yes |
 | MCI\_BOOTFSM\_GO | 0x74 | RW | Yes |  |  |
-| FW\_SRAM\_EXEC\_REGION\_SIZE | 0x75 | RW |  |  | Yes |
-| MCU\_RESET\_VECTOR | 0x76 | RW |  |  | Yes |
-| SS\_DEBUG\_INTENT | 0x77 | RW |  |  | Yes |
-| SS\_CONFIG\_DONE | 0x78 | RW |  |  | Yes |
-| MCU\_NMI\_VECTOR | 0x79 | RW |  |  | Yes |
+| CPTRA\_BOOT\_GO | 0x75 | RW |  |  | Yes |
+| FW\_SRAM\_EXEC\_REGION\_SIZE | 0x76 | RW |  |  | Yes |
+| MCU\_RESET\_VECTOR | 0x77 | RW |  |  | Yes |
+| SS\_DEBUG\_INTENT | 0x78 | RW |  |  | Yes |
+| SS\_CONFIG\_DONE | 0x79 | RW |  |  | Yes |
+| MCU\_NMI\_VECTOR | 0x7A | RW |  |  | Yes |
 
 ##### MCI DMI Interface
 
@@ -1198,9 +1212,10 @@ Access is limited to **Debug Unlock** mode only. Access to this space while not 
 
 #### MCI DEBUG AXI USER
 
-In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This user will be given full access to the entire MCI IP. This means the MCI DEBUG AXI USER can be used read and write to privilaged data like the MCU SRAM or access protected data within the MCI Register Bank. 
-
-*NOTE: This user cannot bypass locks within MCI. It only bypasses AXI filtering*
+In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This is a privileged user that has access to registers typically only accessible to MCU and Caliptra. It has full access to the MCI IP address space with the following restrictions:
+1. This user cannot bypass locks within MCI. i.e. Registers locked by SS_CONFIG_DONE cannot be modified by this user once SS_CONFIG_DONE is set.
+2. It can only access MCU SRAM once the system is unlocked to debug mode via LCC.
+3. **MBOX FIXME TBD**
 
 ##### Disabling MCI DEBUG AXI USER
 

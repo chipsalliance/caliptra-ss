@@ -1,4 +1,4 @@
-provides: [i3c-core]
+provides: [i3c_core]
 schema_version: 2.4.0
 requires:
   - axi_sub
@@ -46,6 +46,7 @@ targets:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/recovery/recovery_handler.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/bus_timers.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/bus_monitor.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/i3c_bus_monitor.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/ccc.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/bus_rx_flow.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/bus_tx.sv

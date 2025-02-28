@@ -15,45 +15,47 @@
 # limitations under the License.
 #
 function gen_pb_file_list {
-    local cpt_vf_file;
-    local cpt_dir;
-    local cpt_lib;
+    local cpt_ss_vf_file;
+    local cpt_ss_dir;
+    local cpt_ss_lib;
 
-    cpt_dir=$1;
-    cpt_lib=$2;
-    cpt_vf_file=${cpt_dir}/${cpt_lib}.vf
+    cpt_ss_dir=$1;
+    cpt_ss_lib=$2;
+    cpt_ss_vf_file=${cpt_ss_dir}/${cpt_ss_lib}.vf
 
     # Skip UVM file lists, which reference installed libraries external to Caliptra repo
     # UPDATE: UVM file lists are now generated, but skip coverage files since these file
     # lists aren't useful to external integrators
-    if [[ $cpt_lib = *"coverage" ]]; then return; fi
-    echo "Generating File List for lib [${cpt_lib}] in [${cpt_vf_file}]";
-    pb fe file_list --tb integration_lib::${cpt_lib} +def-target 'tb' --flat --dir-fmt=+incdir+{directory} --file ${cpt_vf_file};
-    # Replace leading portion of Caliptra source paths with ${CALIPTRA_ROOT}
-    sed 's,/home.*caliptra-rtl/src,\${CALIPTRA_ROOT}/src,' -i ${cpt_vf_file}
+    if [[ $cpt_ss_lib = *"coverage" ]]; then return; fi
+    echo "Generating File List for lib [${cpt_ss_lib}] in [${cpt_ss_vf_file}]";
+    pb fe file_list --tb caliptra_ss_lib::${cpt_ss_lib} +def-target 'tb' --flat --dir-fmt=+incdir+{directory} --file ${cpt_ss_vf_file};
+    # Replace leading portion of Caliptra source paths with ${CALIPTRA_SS_ROOT}
+    sed 's,/home.*caliptra-ss/src,\${CALIPTRA_SS_ROOT}/src,' -i ${cpt_ss_vf_file}
+    sed 's,/home.*caliptra-ss/third_party,\${CALIPTRA_SS_ROOT}/third_party,' -i ${cpt_ss_vf_file}
+
     # Replace leading portion of UVM/installed library paths with appropriate ENV VAR
-    sed 's,/home/cad/tools/mentor/questa/[0-9\._]*/questasim/verilog_src/uvm-[^/]\+,\${UVM_HOME},' -i ${cpt_vf_file}
-    sed 's,/home/cad/tools/mentor/uvmf/UVMF_[0-9\.]*,\${UVMF_HOME},' -i ${cpt_vf_file}
-    sed 's,/home/cad/tools/mentor/questa_vip/[0-9\.]*,\${QUESTA_MVC_HOME},' -i ${cpt_vf_file}
+    sed 's,/cad.*avery/,\${AVERY_HOME}/,' -i ${cpt_ss_vf_file}
+
     # Remove duplicate entries and empty lines from the file
-    perl -i -ne 'print if ! $a{$_}++ and /\S/' ${cpt_vf_file}
+    perl -i -ne 'print if ! $a{$_}++ and /\S/' ${cpt_ss_vf_file}
 }
 
 if [[ $(command -v pb) = "" ]]; then
     echo "Enter Caliptra workspace (to make Playbook available) and try again"
     exit 1
 fi
-if [[ -z ${CALIPTRA_ROOT:+"empty"} ]]; then
+if [[ -z ${CALIPTRA_SS_ROOT:+"empty"} ]]; then
     echo "Must run script from within Caliptra Playbook context"
     exit 1
 fi
-cpt_ymls=$(grep '^\s*\- ../chipsalliance/caliptra-rtl/src' ${MSFT_REPO_ROOT}/config/compilespecs.yml | sed 's/^\s*- \(..\/chipsalliance\/caliptra-rtl\/src.*\)/\1/')
+# Get all of the compile.yml from caliptra COMODULE, ignoring the submodule flavors
+cal_ymls=$(grep '^\s*\- src' ${CALIPTRA_SS_ROOT}/config/compilespecs.yml | sed 's/^\s*- \(src.*\)/\1/')
 declare -A procs;
-for i in ${cpt_ymls}; do
-    cpt_dir=$(realpath $(sed 's,\(..\/chipsalliance\/caliptra-rtl\/src/.\+/config\)/.*,\1,' <<< ${i}))
-    cpt_libs=$(grep '^\s*provides' ${i} | sed 's/.*\[\(\w\+\)\].*/\1/')
-    for j in ${cpt_libs}; do
-        gen_pb_file_list ${cpt_dir} ${j} &
+for i in ${cal_ymls}; do
+    cal_ss_dir=$(realpath ${CALIPTRA_SS_ROOT}/$(sed 's,\(src/.\+/config\)/.*,\1,' <<< ${i}))
+    cal_ss_libs=$(grep '^\s*provides' ${cal_ss_dir}/compile.yml | sed 's/.*\[\([-_A-Za-z0-9]\+\)\].*/\1/')
+    for j in ${cal_ss_libs}; do
+        gen_pb_file_list ${cal_ss_dir} ${j} &
         procs["$i_$j"]=$!
     done
 done

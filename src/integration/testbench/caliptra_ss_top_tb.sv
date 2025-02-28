@@ -24,6 +24,9 @@
 `include "caliptra_macros.svh"
 `include "i3c_defines.svh"
 `include "soc_address_map_defines.svh"
+`include "caliptra_ss_includes.svh"
+
+
 
 module caliptra_ss_top_tb
 #(
@@ -362,9 +365,7 @@ module caliptra_ss_top_tb
     logic cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i;
     logic cptra_ss_FIPS_ZEROIZATION_PPD_i;
     logic lcc_bfm_reset;
-
-
-
+    time i3c_run_time;
 
     //-- 
     logic                                 cptra_ss_soc_dft_en_o;
@@ -470,8 +471,13 @@ module caliptra_ss_top_tb
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
                 if($test$plusargs("AVY_TEST")) begin
-                    $display("Waiting 500us for I3C tests to finish..\n");
-                    #500us;
+                    if($value$plusargs("i3c_run_time=%0t", i3c_run_time)) begin
+                        $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
+                        #i3c_run_time;
+                    end else begin
+                        $display("Waiting 500us for I3C tests to finish..\n", 1000);
+                        #500us;
+                    end
                 end
                 $finish;
             end
@@ -559,7 +565,7 @@ module caliptra_ss_top_tb
 
         $readmemh("mcu_program.hex",  imem.ram);
 
-        tp = $fopen("trace_port.csv","w");
+        tp = $fopen("mcu_trace_port.csv","w");
         el = $fopen("mcu_exec.log","w");
         $fwrite (el, "//   Cycle : #inst    0    pc    opcode    reg=value    csr=value     ; mnemonic\n");
         fd = $fopen("mcu_console.log","w");
@@ -622,14 +628,6 @@ module caliptra_ss_top_tb
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_cptra_core_s_axi_if (.clk(core_clk), .rst_n(rst_l));
-
-    // MCI Mgr AXI Interface
-    axi_if #(
-        .AW(32), //-- FIXME : Assign a common paramter
-        .DW(32), //-- FIXME : Assign a common paramter,
-        .IW(`CALIPTRA_AXI_ID_WIDTH),
-        .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_mci_m_axi_if (.clk(core_clk), .rst_n(rst_l));
 
     // MCI Sub AXI Interface
     axi_if #(
@@ -1170,11 +1168,6 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[1].RLAST   = cptra_ss_i3c_s_axi_if.rlast;
     assign cptra_ss_i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[1].RREADY;
 
-    mci_mcu_sram_if cptra_ss_mcu_rom_macro_req_if (
-        .clk(core_clk),
-        .rst_b(rst_l)
-    );
-
     mci_mcu_sram_if #(
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
     ) cptra_ss_mci_mcu_sram_req_if (
@@ -1466,23 +1459,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[2].RREADY;
 
 
-//   mci_sram #(
-//       .DEPTH     (18'h0_7FFF), // 64KB -- FIXME (need to update this value)
-//       .DATA_WIDTH(39),
-//       .ADDR_WIDTH(32)
-//  ) imem (
-//      .clk_i   (core_clk),
-//  
-//      .cs_i    (cptra_ss_mcu_rom_macro_req_if.req.cs),
-//      .we_i    (cptra_ss_mcu_rom_macro_req_if.req.we),
-//      .addr_i  ({14'h0, cptra_ss_mcu_rom_macro_req_if.req.addr, 2'b0}),
-//      .wdata_i (cptra_ss_mcu_rom_macro_req_if.req.wdata),
-//      .rdata_o (cptra_ss_mcu_rom_macro_req_if.resp.rdata)
-//  );
-    always_comb begin
-        cptra_ss_mcu_rom_macro_req_if.resp.rdata = '0;
-    end
-
     rom #(
         .DEPTH     (16'h7FFF), // 64KB
         .DATA_WIDTH(64),
@@ -1689,8 +1665,8 @@ module caliptra_ss_top_tb
 
         // run test for i3C
         if($test$plusargs("AVY_TEST")) begin
-            $display("Waiting for 100us before Running I3C test..");
-            #100us;  // system boot delay
+            $display("Waiting for 150us before Running I3C test..");
+            #150us;  // system boot delay
             master0.set("start_bfm");
             ai3c_run_test("ai3ct_ext_basic", i3c_env0); 
         end
@@ -1708,7 +1684,8 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
     logic [31:0]  cptra_ss_strap_cptra_axi_user_i;
-    logic [31:0]  cptra_ss_strap_debug_axi_user_i;
+    logic [31:0]  cptra_ss_strap_mcu_sram_config_axi_user_i;
+    logic [31:0]  cptra_ss_strap_mci_soc_config_axi_user_i;
     logic         cptra_ss_mcu_jtag_tck_i;
     logic         cptra_ss_mcu_jtag_tms_i;
     logic         cptra_ss_mcu_jtag_tdi_i;
@@ -1722,6 +1699,7 @@ module caliptra_ss_top_tb
     logic [63:0]  cptra_ss_strap_uds_seed_base_addr_i;
     logic [31:0]  cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i;
     logic [31:0]  cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i;
+    logic [31:0]  cptra_ss_strap_caliptra_dma_axi_user_i;
     logic [31:0]  cptra_ss_strap_generic_0_i;
     logic [31:0]  cptra_ss_strap_generic_1_i;
     logic [31:0]  cptra_ss_strap_generic_2_i;
@@ -1737,18 +1715,20 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_mcu_lsu_axi_user_i    = 32'hFFFFFFFF;
     assign cptra_ss_strap_mcu_ifu_axi_user_i    = 32'hFFFFFFFF;
     assign cptra_ss_strap_cptra_axi_user_i        = 32'hFFFFFFFF;
-    assign cptra_ss_strap_debug_axi_user_i        = 32'h00000001; // FIXME set to real value
+    assign cptra_ss_strap_mcu_sram_config_axi_user_i        = cptra_ss_strap_cptra_axi_user_i; // FIXME set to real value
+    assign cptra_ss_strap_mci_soc_config_axi_user_i        = 32'h1; // FIXME set to real value
     assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
     assign cptra_ss_mcu_jtag_trst_n_i           = 1'b0;
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'hba5e_ba11;
     assign cptra_ss_strap_mci_base_addr_i       = 64'h0;
-    assign cptra_ss_strap_recovery_ifc_base_addr_i = 64'h0;
+    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0000;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
     assign cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i        = 32'h0;
+    assign cptra_ss_strap_caliptra_dma_axi_user_i = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
     assign cptra_ss_strap_generic_0_i           = 32'h0;
     assign cptra_ss_strap_generic_1_i           = 32'h0;
     assign cptra_ss_strap_generic_2_i           = 32'h0;
@@ -1776,7 +1756,6 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_s_axi_if,
     
     // AXI Manager INF
-        .cptra_ss_mci_m_axi_if,
     
         .cptra_ss_mcu_lsu_m_axi_if,
         .cptra_ss_mcu_ifu_m_axi_if,
@@ -1847,10 +1826,8 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
         .cptra_ss_strap_cptra_axi_user_i,
-        .cptra_ss_strap_debug_axi_user_i,
-
-    //MCU ROM
-        .cptra_ss_mcu_rom_macro_req_if,
+        .cptra_ss_strap_mcu_sram_config_axi_user_i,
+        .cptra_ss_strap_mci_soc_config_axi_user_i,
 
     //MCI
         .cptra_ss_mci_mcu_sram_req_if,
@@ -1883,6 +1860,7 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_uds_seed_base_addr_i,
         .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i,
         .cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i,
+        .cptra_ss_strap_caliptra_dma_axi_user_i,
         .cptra_ss_strap_generic_0_i,
         .cptra_ss_strap_generic_1_i,
         .cptra_ss_strap_generic_2_i,

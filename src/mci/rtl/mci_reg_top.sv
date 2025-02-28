@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// `include "mci_reg_defines.svh"
 
 module mci_reg_top 
     import mci_reg_pkg::*;
@@ -23,10 +22,18 @@ module mci_reg_top
     import soc_ifc_pkg::*;
     #(
         parameter AXI_USER_WIDTH = 32
+    
+        //Mailbox configuration
+        ,parameter MCI_MBOX0_SIZE_KB = 128
         ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
         ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+        ,parameter MCI_MBOX1_SIZE_KB = 4
         ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
         ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+        
+        ,parameter MCU_SRAM_SIZE_KB = 512 
+        ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4 
+
     )
     (
     input logic clk,
@@ -37,12 +44,14 @@ module mci_reg_top
     input logic cptra_rst_b,
     input logic mci_pwrgood,
 
+    // DFT
+    input logic scan_mode,
+
     // REG HWIF signals
     output mci_reg__out_t mci_reg_hwif_out,
 
     // AXI Privileged requests
-    input logic axi_debug_req,
-    input logic axi_cptra_req,
+    input logic axi_mci_soc_config_req,
     input logic axi_mcu_req,
 
     // WDT specific signals
@@ -60,6 +69,7 @@ module mci_reg_top
     // SS error signals
     input logic [31:0] agg_error_fatal,
     input logic [31:0] agg_error_non_fatal,
+
     
     // DMI
     output logic        mcu_dmi_core_enable,
@@ -87,6 +97,7 @@ module mci_reg_top
     // unused in 2.0 output logic dmi_mbox1_wen,
     input  logic mci_mbox0_data_avail,
     input  logic mci_mbox1_data_avail,
+    input  logic cptra_mbox_data_avail,
     output logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox0_users,
     output logic [4:0][AXI_USER_WIDTH-1:0] valid_mbox1_users,
     input  logic soc_req_mbox0_lock,
@@ -155,6 +166,12 @@ logic Warm_Reset_Capture_Flag;
 // Interrupts 
 logic mci_error_intr;
 logic mci_notif_intr;
+    
+// Security
+logic security_state_debug_locked_d;
+logic security_state_debug_locked_edge;
+logic scan_mode_f;
+logic scan_mode_p;
 
 // DMI
 logic mcu_dmi_uncore_dbg_unlocked_en;
@@ -204,14 +221,16 @@ logic strap_we;
 
 // Misc
 logic [1:0] generic_input_toggle;
-logic mcu_or_debug_req;
-logic cptra_or_debug_req;
+logic axi_mcu_or_debug_req;
+logic axi_cptra_or_debug_req;
 
 // MBOX
 logic mci_mbox0_data_avail_d;
 logic mci_mbox0_cmd_avail_p;
 logic mci_mbox1_data_avail_d;
 logic mci_mbox1_cmd_avail_p;
+logic cptra_mbox_data_avail_d;
+logic cptra_mbox_cmd_avail_p;
 
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
@@ -280,31 +299,13 @@ assign cif_resp_if.error = mci_reg_read_error | mci_reg_write_error;
 assign cif_resp_if.hold = '0;
     
 
-
-///////////////////////////////////////////////
-// Registers locked by SS_CONFIG_DONE
-///////////////////////////////////////////////
-// Locking
-always_comb begin
-    for (int i=0; i<8; i++) begin
-        for (int j=0; j<12; j++) begin
-            mci_reg_hwif_in.PROD_DEBUG_UNLOCK_PK_HASH_REG[i][j].hash.swwel = mci_reg_hwif_out.SS_CONFIG_DONE.done.value ;
-        end
-    end
-
-end
-
 ///////////////////////////////////////////////
 // STRAPS / TAP ACCESS 
 ///////////////////////////////////////////////
 
-// Fuse write done can be written by MCU if it is already NOT '1.
-// The bit gets reset on cold reset
-always_comb mci_reg_hwif_in.SS_CONFIG_DONE.done.swwe = (mcu_or_debug_req & cif_resp_if.dv) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
-
 // Subsystem straps capture the initial value from input port on rising edge of cptra_pwrgood
-always_ff @(posedge clk or negedge mci_pwrgood) begin
-     if(~mci_pwrgood) begin
+always_ff @(posedge clk or negedge mci_rst_b) begin
+     if(~mci_rst_b) begin
         strap_we <= 1'b1;
     end
     else begin
@@ -321,6 +322,7 @@ always_comb begin
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.next          = mcu_dmi_uncore_wdata[0] ; 
     mci_reg_hwif_in.MCI_BOOTFSM_GO.go.next              = mcu_dmi_uncore_wdata[0] ; 
+    mci_reg_hwif_in.CPTRA_BOOT_GO.go.next              = mcu_dmi_uncore_wdata[0] ; 
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.next  = mcu_dmi_uncore_wdata[15:0] ; 
     mci_reg_hwif_in.MCU_NMI_VECTOR.vec.next             = mcu_dmi_uncore_wdata ; 
 end
@@ -338,6 +340,8 @@ always_comb begin
                                                             (mcu_dmi_uncore_addr == MCI_DMI_RESET_REQUEST));
     mci_reg_hwif_in.MCI_BOOTFSM_GO.go.we                =  (mcu_dmi_uncore_locked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO));
+    mci_reg_hwif_in.CPTRA_BOOT_GO.go.we                 =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+                                                            (mcu_dmi_uncore_addr == MCI_DMI_CPTRA_BOOT_GO));
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.we    =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_FW_SRAM_EXEC_REGION_SIZE));
     mci_reg_hwif_in.MCU_NMI_VECTOR.vec.we               =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
@@ -349,6 +353,48 @@ end
 
 assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value;
 assign mcu_reset_vector     = mci_reg_hwif_out.MCU_RESET_VECTOR.vec.value;
+
+assign mci_reg_hwif_in.HW_CONFIG0.MCI_MBOX0_SRAM_SIZE.next = MCI_MBOX0_SIZE_KB;
+assign mci_reg_hwif_in.HW_CONFIG0.MCI_MBOX1_SRAM_SIZE.next = MCI_MBOX1_SIZE_KB;
+assign mci_reg_hwif_in.HW_CONFIG1.MCU_SRAM_SIZE.next = MCU_SRAM_SIZE_KB;
+assign mci_reg_hwif_in.HW_CONFIG1.MIN_MCU_RST_COUNTER_WIDTH.next = MIN_MCU_RST_COUNTER_WIDTH;
+
+///////////////////////////////////////////////
+// Security Related      
+///////////////////////////////////////////////
+assign mci_reg_hwif_in.SECURITY_STATE.device_lifecycle.next = security_state_o.device_lifecycle;
+assign mci_reg_hwif_in.SECURITY_STATE.debug_locked.next     = security_state_o.debug_locked;
+assign mci_reg_hwif_in.SECURITY_STATE.scan_mode.next        = scan_mode;
+
+
+// Generate a pulse to set the interrupt bit
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        security_state_debug_locked_d <= '0;
+    end
+    else begin
+        security_state_debug_locked_d <= security_state_o.debug_locked;
+    end
+end
+
+always_comb security_state_debug_locked_edge = security_state_o.debug_locked ^ security_state_debug_locked_d;
+
+// Generate a pulse to set the interrupt bit
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        scan_mode_f <= '0;
+    end
+    else begin
+        scan_mode_f <= scan_mode;
+    end
+end
+
+always_comb scan_mode_p = scan_mode & ~scan_mode_f;
+
+assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_scan_mode_sts.hwset = scan_mode_p;
+assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_sts.hwset = security_state_debug_locked_edge;
+
+
 
 
 ///////////////////////////////////////////////
@@ -415,6 +461,7 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_7   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[7]  )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REQUEST              )}}   &  mci_reg_hwif_out.RESET_REQUEST              )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO             )}}   &  mci_reg_hwif_out.MCI_BOOTFSM_GO             )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_CPTRA_BOOT_GO              )}}   &  mci_reg_hwif_out.CPTRA_BOOT_GO              )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_SRAM_EXEC_REGION_SIZE   )}}   &  mci_reg_hwif_out.FW_SRAM_EXEC_REGION_SIZE   )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR           )}}   &  mci_reg_hwif_out.MCU_RESET_VECTOR           )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT            )}}   &  mci_reg_hwif_out.SS_DEBUG_INTENT            )  |
@@ -429,6 +476,7 @@ always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_unc
                                               // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  | 
                                               // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  | 
                                               // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  | 
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO             )}}   &  mci_reg_hwif_out.MCI_BOOTFSM_GO             )  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   & (mci_reg_hwif_out.HW_FLOW_STATUS            ))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REASON               )}}   & (mci_reg_hwif_out.RESET_REASON              ))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   & (mci_reg_hwif_out.RESET_STATUS              ))  |
@@ -497,27 +545,18 @@ assign mci_reg_hwif_in.mci_rst_b = mci_rst_b;
 assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 
 // Agent requests
-assign mcu_or_debug_req                     = axi_mcu_req | axi_debug_req;
-assign cptra_or_debug_req                   = axi_cptra_req | axi_debug_req;
-assign mci_reg_hwif_in.cptra_or_debug_req   = cptra_or_debug_req; 
-assign mci_reg_hwif_in.mcu_or_debug_req     = mcu_or_debug_req;
+assign mci_reg_hwif_in.axi_mcu_req = axi_mcu_req;
+assign mci_reg_hwif_in.ss_config_unlock = axi_mcu_req;
+assign mci_reg_hwif_in.ss_config_unlock_sticky = axi_mcu_req;
+assign mci_reg_hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.CAP_LOCK.lock.value;
+assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req = axi_mcu_req | axi_mci_soc_config_req;
+assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
+assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky = axi_mcu_req | axi_mci_soc_config_req & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value;
+
 
 ///////////////////////////////////////////////
-// TEMP CONNECTIONS FIXME
+// MTIME                       
 ///////////////////////////////////////////////
-
-
-
-
-assign mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.swwel = '0; // FIXME
-assign mci_reg_hwif_in.CAPABILITIES = '0; // FIXME
-assign mci_reg_hwif_in.HW_REV_ID = '0; // FIXME
-assign mci_reg_hwif_in.HW_CONFIG = '0; // FIXME
-
-
-
-
-
 // mtime always increments, but if it's being written by software the write
 // value will update the register. Deasserting incr in this case prevents the
 // SW write from being dropped (due to RDL compiler failing to give SW precedence properly).
@@ -713,6 +752,18 @@ always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox0_ecc
 always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mbox1_ecc_unc_sts.hwset  = mbox1_sram_double_ecc_error;
 always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox1_ecc_cor_sts.hwset  = mbox1_sram_single_ecc_error;
 
+
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        cptra_mbox_data_avail_d <= '0;
+    end  
+    else begin
+        cptra_mbox_data_avail_d <= cptra_mbox_data_avail;
+    end  
+end
+
+always_comb cptra_mbox_cmd_avail_p = cptra_mbox_data_avail & !cptra_mbox_data_avail_d;
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts.hwset          = cptra_mbox_cmd_avail_p;
 
 ///////////////////////////////////////////////
 // NMI Vector   
@@ -1079,7 +1130,6 @@ end
 ////////////////////////////////////////////////////////
 // AGG MCI Interrupts
 ////////////////////////////////////////////////////////
-// FIXME should these be pluses
 always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal0_sts.hwset  = agg_error_fatal_sync[0];
 always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal1_sts.hwset  = agg_error_fatal_sync[1];
 always_comb mci_reg_hwif_in.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal2_sts.hwset  = agg_error_fatal_sync[2];

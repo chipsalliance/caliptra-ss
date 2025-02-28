@@ -3,7 +3,7 @@ files:
   # Components
   - src/mcu/config/compile.yml
   - src/riscv_core/veer_el2/config/compile.yml
-  - src/i3c-core/config/compile.yml
+  - src/i3c_core/config/compile.yml
   - src/ast/config/compile.yml
   - src/pwrmgr/config/compile.yml
   - src/tlul/config/compile.yml

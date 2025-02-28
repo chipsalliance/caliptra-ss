@@ -22,10 +22,14 @@ requires:
   - lc_ctrl
   - axi_mem_pkg
   - mcu_top
-  - i3c-core
+  - i3c_core
   - fuse_ctrl
   - mci_top
+  - caliptra_top
 targets:
+  rtl_lint:
+    waiver_files:
+      - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
   rtl:
     directories: 
       - $COMPILE_ROOT/rtl
@@ -33,6 +37,15 @@ targets:
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_top.sv
     tops: [caliptra_ss_top]
+---
+provides: [caliptra_ss_top_w_stub]
+schema_version: 2.4.0
+requires: [caliptra_ss_top]
+targets:
+  rtl:
+    files:
+      - $COMPILE_ROOT/rtl/caliptra_ss_top_w_stub.sv
+    tops: [caliptra_ss_top_w_stub]
 --- 
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0
@@ -104,20 +117,28 @@ global:
         - +define+DIGITAL_IO_I3C=1
         # - +define+AI3C_SKIP_DAA=1
         - +define+AVERY_SV_TEST_CASE=1
-        - +define+AI3C_TEST_CASE=/home/ws/caliptra/pateln/caliptra_ws_250114/chipsalliance/caliptra-ss/src/integration/test_suites/ai3ct_ext_basic.sv
+        - +define+AI3C_TEST_CASE=$COMPILE_ROOT/test_suites/ai3ct_ext_basic.sv
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
+        #FIXME : remve this Note suppression
+        - '-suppress=SV-LCM-PPWI'
       elab:
-        #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c-core
+        #FIXME : remve this warning suppression
+        #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
         - '+warn=noIWNF'
         - '+warn=noPCWM-W'
+        - '+warn=noTFIPC,noMDVMO'
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
-        #FIXME unique case violations in i3c-core
+        #FIXME unique case violations in i3c_core
         - '-ignore unique_checks'
       sim:
         # Uncomment for debug prints
         #- +aaxi_dbg_name=all
         #- '+ai3c_dbg_name=master'
         - '+vpi -lpthread'
+        - '+CLP_BUS_LOGS=1'
+        # cmdline_img_sz in bytes in hex
+        # - '+cmdline_img_sz=10'
         # - +AVY_TEST=ai3ct_ext_basic
+        # - '+i3c_run_time=500us'

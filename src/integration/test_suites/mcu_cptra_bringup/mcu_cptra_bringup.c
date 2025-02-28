@@ -1,4 +1,21 @@
 
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020 Western Digital Corporation or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
+
 #include "soc_address_map.h"
 #include "printf.h"
 #include "riscv_hw_if.h"
@@ -38,17 +55,17 @@ void main (void) {
                              0xffffffff };
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
-    uint32_t cptra_boot_go;
+    uint32_t mci_boot_fsm_go;
     uint32_t sram_data;
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Boot FSM Go\n=================\n\n")
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_REG_CALIPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_REG_CALIPTRA_BOOT_GO\n");
+    lsu_write_32(SOC_MCI_REG_MCI_BOOTFSM_GO, 1);
+    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_REG_MCI_BOOTFSM_GO\n");
 
-    cptra_boot_go = lsu_read_32(SOC_MCI_REG_CALIPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
+    mci_boot_fsm_go = lsu_read_32(SOC_MCI_REG_MCI_BOOTFSM_GO);
+    VPRINTF(LOW, "MCU: Reading SOC_MCI_REG_MCI_BOOTFSM_GO %x\n", mci_boot_fsm_go);
 
 
     VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n")
