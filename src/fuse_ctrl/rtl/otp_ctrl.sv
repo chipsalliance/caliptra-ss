@@ -427,7 +427,7 @@ module otp_ctrl
 
     // Intercept write requests to the `VENDOR_HASHES_PROD` partition and verify
     // the write is allowed by the volatile lock of the `VENDOR_PK_HASH_VOLATILE LOCK` register.
-    if (NumPart == 16) begin
+    if (NumVendorPkFuses > 1) begin
       if (dai_cmd == DaiWrite && reg2hw.vendor_pk_hash_volatile_lock != '0 &&
           dai_addr >= VendorHashesProdPartitionOffset &&
           dai_addr < VendorHashesProdPartitionDigestOffset) begin

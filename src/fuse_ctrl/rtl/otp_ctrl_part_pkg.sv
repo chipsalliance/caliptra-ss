@@ -14,6 +14,10 @@ package otp_ctrl_part_pkg;
   import otp_ctrl_reg_pkg::*;
   import otp_ctrl_pkg::*;
 
+  parameter int NumVendorPkFuses = 16;
+  parameter int NumVendorSecretFuses = 16;
+  parameter int NumVendorNonSecretFuses = 16;
+
   ////////////////////////////////////
   // Scrambling Constants and Types //
   ////////////////////////////////////
