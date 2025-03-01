@@ -139,7 +139,12 @@ def main():
     render_template(
         template=TEMPLATES_PATH / PART_PKG_TEMPLATE,
         target_path=RTL_OUTPUT_PATH / PART_PKG_TEMPLATE.replace(".tpl", ""),
-        params={"otp_mmap": otp_mmap, "gen_comment": HEADER_COMMENT_SV}
+        params={
+            "otp_mmap": otp_mmap, "gen_comment": HEADER_COMMENT_SV,
+            "num_vendor_pk_fuses": vendor["num_vendor_pk_fuses"],
+            "num_vendor_secret_fuses": vendor["num_vendor_secret_fuses"],
+            "num_vendor_non_secret_fuses": vendor["num_vendor_non_secret_fuses"]
+        }
     )
 
     # Render register files
