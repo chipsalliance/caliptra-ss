@@ -818,16 +818,18 @@ addrmap mci_reg {
         name = "Subsystem Config Done Sticky";
         desc = "Set to indicate that all sticky configuration registers have been populated in MCI.
                 Locks configuration registers from further modification.
-                [br]Sticky until cold reset once set.";
-        field {sw = rw; hw=r; swwe=ss_config_unlock_sticky; swmod=true; resetsignal = mci_pwrgood;} done=1'h0; 
+                [br]Sticky until cold reset once set.
+                [br]TAP Access [in debug/manuf mode]: RW";
+        field {sw = rw; hw=rw; we; swwe=ss_config_unlock_sticky; swmod=true; resetsignal = mci_pwrgood;} done=1'h0; 
     } SS_CONFIG_DONE_STICKY @0x440;
 
     reg {
         name = "Subsystem Config Done";
         desc = "Set to indicate that all configuration registers have been populated in MCI.
                 Locks configuration registers from further modification.
-                [br]Sticky until warm reset once set.";
-        field {sw = rw; hw=r; swwe=ss_config_unlock; swmod=true; resetsignal = mci_rst_b;} done=1'h0; 
+                [br]Sticky until warm reset once set.
+                [br]TAP Access [in debug/manuf mode]: RW";
+        field {sw = rw; hw=rw; we; swwe=ss_config_unlock; swmod=true; resetsignal = mci_rst_b;} done=1'h0; 
     } SS_CONFIG_DONE;
 
     reg {

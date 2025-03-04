@@ -91,7 +91,6 @@ module mci_axi_sub_decode
 // Valid signals
 logic mbox0_valid_user;
 logic mbox1_valid_user;
-logic all_strb_set;
 
 // GRANT signals
 logic soc_mcu_sram_gnt;
@@ -138,10 +137,6 @@ always_comb soc_mci_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr ins
 // Add qualifiers to grant before sending to IPs
 ///////////////////////////////////////////////////////////
 
-// If write transaction verify all strbs are set. If read transaction strb
-// doesn't care so assert all_strb_set
-always_comb all_strb_set = (&soc_resp_if.req_data.wstrb & soc_resp_if.req_data.write) | ~soc_resp_if.req_data.write ;
-
 // MCU SRAM
 always_comb soc_mcu_sram_req = soc_mcu_sram_gnt;
 
@@ -152,7 +147,7 @@ always_comb soc_mcu_trace_buffer_req = soc_mcu_trace_buffer_gnt;
 always_comb soc_mci_reg_req   = soc_mci_reg_gnt;
 
 // MCI Mbox0
-always_comb soc_mci_mbox0_req = soc_mci_mbox0_gnt & mbox0_valid_user & all_strb_set;
+always_comb soc_mci_mbox0_req = soc_mci_mbox0_gnt & mbox0_valid_user;
 
 //Check if SoC request is coming from a valid user
 //There are 5 valid user registers, check if user attribute matches any of them
@@ -168,7 +163,7 @@ always_comb begin
 end
 
 // MCI Mbox1
-always_comb soc_mci_mbox1_req = soc_mci_mbox1_gnt & mbox1_valid_user & all_strb_set;
+always_comb soc_mci_mbox1_req = soc_mci_mbox1_gnt & mbox1_valid_user;
 
 //Check if SoC request is coming from a valid user
 //There are 5 valid user registers, check if user attribute matches any of them

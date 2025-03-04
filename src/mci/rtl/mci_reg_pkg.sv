@@ -326,6 +326,24 @@ package mci_reg_pkg;
     } mci_reg__SS_DEBUG_INTENT__in_t;
 
     typedef struct packed{
+        logic next;
+        logic we;
+    } mci_reg__SS_CONFIG_DONE_STICKY__done__in_t;
+
+    typedef struct packed{
+        mci_reg__SS_CONFIG_DONE_STICKY__done__in_t done;
+    } mci_reg__SS_CONFIG_DONE_STICKY__in_t;
+
+    typedef struct packed{
+        logic next;
+        logic we;
+    } mci_reg__SS_CONFIG_DONE__done__in_t;
+
+    typedef struct packed{
+        mci_reg__SS_CONFIG_DONE__done__in_t done;
+    } mci_reg__SS_CONFIG_DONE__in_t;
+
+    typedef struct packed{
         logic hwset;
     } mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_cmd_fail_sts_49e52cdd_error_mbox0_ecc_unc_sts_61142362_error_mbox0_inv_dev_sts_13f174db_error_mbox1_cmd_fail_sts_59d67ff4_error_mbox1_ecc_unc_sts_37b6febe_error_mbox1_inv_dev_sts_e1a87391_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2__error_mcu_sram_dmi_axi_collision_sts_enable_a7cbc997_next_507571d9_resetsignal_3e0ae056__in_t;
 
@@ -811,6 +829,8 @@ package mci_reg_pkg;
         mci_reg__MBOX1_AXI_USER_LOCK__in_t [5-1:0]MBOX1_AXI_USER_LOCK;
         mci_reg__GENERIC_INPUT_WIRES__in_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__SS_DEBUG_INTENT__in_t SS_DEBUG_INTENT;
+        mci_reg__SS_CONFIG_DONE_STICKY__in_t SS_CONFIG_DONE_STICKY;
+        mci_reg__SS_CONFIG_DONE__in_t SS_CONFIG_DONE;
         mci_reg__intr_block_t__in_t intr_block_rf;
     } mci_reg__in_t;
 
