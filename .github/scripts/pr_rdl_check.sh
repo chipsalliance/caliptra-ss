@@ -30,6 +30,9 @@ else
     echo "Evaluating RDL modifications for merge into [${merge_dest}] with ref [$(git show-ref "${merge_dest}")]"
 fi
 
+CRRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "Current DIR: $CRRENT_DIR"
+
 if [[ -z "${CALIPTRA_SS_ROOT:+"empty"}" ]]; then
     echo "Error, must set CALIPTRA_SS_ROOT"
     exit 1
