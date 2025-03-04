@@ -14,6 +14,15 @@
 //
 ////////////////////////////////////////////////////////////////
 // MCI Registers
+
+
+`ifndef MCI_TOP_RDL
+`define MCI_TOP_RDL
+
+`include "mci_reg.rdl"
+`include "trace_buffer_csr.rdl"
+`include "../../../third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr.rdl" 
+
 addrmap mci_top {
     desc="Address Map for Caliptra Register Space";
 
@@ -36,3 +45,5 @@ addrmap mci_top {
     } external mcu_sram @ 0x20_0000;
 
 };
+
+`endif // MCI_TOP_RDL
