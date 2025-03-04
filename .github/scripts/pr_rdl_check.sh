@@ -34,7 +34,7 @@ if [[ -z "${CALIPTRA_SS_ROOT:+"empty"}" ]]; then
     echo "Error, must set CALIPTRA_SS_ROOT"
     exit 1
 else
-    echo "CALIPTRA_SS_ROOT: '${CALIPTRA_SS_ROOT}'
+    echo "CALIPTRA_SS_ROOT: '${CALIPTRA_SS_ROOT}'"
 fi
 cd "${CALIPTRA_SS_ROOT}"
 
