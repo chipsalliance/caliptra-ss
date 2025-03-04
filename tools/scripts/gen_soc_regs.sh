@@ -13,10 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License."
 
-python3 ${CALIPTRA_SS}/third_party/caliptra-rtl/tools/scripts/reg_doc_gen.py \
-${CALIPTRA_SS}/src/integration/rtl/soc_address_map.rdl \
-${CALIPTRA_SS}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr.rdl \
-${CALIPTRA_SS}/third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr.rdl \
-${CALIPTRA_SS}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_doc.rdl \
-${CALIPTRA_SS}/third_party/i3c_core/src/rdl/registers.rdl \
-${CALIPTRA_SS}/src/mci/rtl/mci_reg.rdl
+# Check if a path is provided as an argument
+if [ -z "$1" ]; then
+    # No argument provided, use the default CALIPTRA_SS
+    SCRIPT_PATH="$CALIPTRA_SS"
+else
+    # Use the provided argument as the path
+    SCRIPT_PATH="$1"
+fi
+
+# Check if CALIPTRA_SS is set if no argument is provided
+if [ -z "$SCRIPT_PATH" ]; then
+    echo "Error, must set CALIPTRA_SS or provide a path as an argument"
+    exit 1
+fi
+
+# Run the Python script with the appropriate paths
+python3 ${SCRIPT_PATH}/third_party/caliptra-rtl/tools/scripts/reg_doc_gen.py \
+${SCRIPT_PATH}/src/integration/rtl/soc_address_map.rdl \
+${SCRIPT_PATH}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr.rdl \
+${SCRIPT_PATH}/third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr.rdl \
+${SCRIPT_PATH}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_doc.rdl \
+${SCRIPT_PATH}/third_party/i3c-core/src/rdl/registers.rdl \
+${SCRIPT_PATH}/src/mci/rtl/mci_reg.rdl
