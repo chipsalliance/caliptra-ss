@@ -294,7 +294,7 @@ import css_mcu0_el2_pkg::*;
    output logic                            dma_axi_rlast,
 `endif
 
-`ifdef RV_BUILD_AHB_LITE
+`ifdef css_mcu0_RV_BUILD_AHB_LITE
  //// AHB LITE BUS
    output logic [31:0]                     haddr,
    /* exclude signals that are tied to constant value in css_mcu0_axi4_to_ahb.sv */
@@ -602,7 +602,7 @@ import css_mcu0_el2_pkg::*;
 `endif //  `ifdef css_mcu0_RV_BUILD_AXI4
 
 
-`ifdef RV_BUILD_AHB_LITE
+`ifdef css_mcu0_RV_BUILD_AHB_LITE
    // Since all the signals in this block are tied to constant, we exclude this from coverage analysis
    /*pragma coverage off*/
    wire                            lsu_axi_awvalid;
