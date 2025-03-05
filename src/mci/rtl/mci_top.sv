@@ -59,10 +59,10 @@ module mci_top
     
     
     // Straps
-    input logic [$bits(s_axi_r_if.UW)-1:0] strap_mcu_lsu_axi_user,
-    input logic [$bits(s_axi_r_if.UW)-1:0] strap_mcu_ifu_axi_user,
-    input logic [$bits(s_axi_r_if.UW)-1:0] strap_mcu_sram_config_axi_user,
-    input logic [$bits(s_axi_r_if.UW)-1:0] strap_mci_soc_config_axi_user,
+    input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_lsu_axi_user,
+    input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_ifu_axi_user,
+    input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_sram_config_axi_user,
+    input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mci_soc_config_axi_user,
     input logic ss_debug_intent,
 
     // SRAM ADHOC connections

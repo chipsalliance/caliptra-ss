@@ -47,11 +47,11 @@ module mci_axi_sub_top
 
     // Mbox0 SRAM Interface
     cif_if.request  mci_mbox0_req_if,
-    input logic [4:0][$bits(s_axi_w_if.UW)-1:0] valid_mbox0_users,
+    input logic [4:0][$bits(s_axi_w_if.aruser)-1:0] valid_mbox0_users,
 
     // Mbox1 SRAM Interface
     cif_if.request  mci_mbox1_req_if,
-    input logic [4:0][$bits(s_axi_w_if.UW)-1:0] valid_mbox1_users,
+    input logic [4:0][$bits(s_axi_w_if.aruser)-1:0] valid_mbox1_users,
 
 
     // Privileged requests 
@@ -63,10 +63,10 @@ module mci_axi_sub_top
 
     
     // Privileged AXI users
-    input logic [$bits(s_axi_w_if.UW)-1:0] strap_mci_soc_config_axi_user,
-    input logic [$bits(s_axi_w_if.UW)-1:0] strap_mcu_lsu_axi_user,
-    input logic [$bits(s_axi_w_if.UW)-1:0] strap_mcu_ifu_axi_user,
-    input logic [$bits(s_axi_w_if.UW)-1:0] strap_mcu_sram_config_axi_user
+    input logic [$bits(s_axi_w_if.aruser)-1:0] strap_mci_soc_config_axi_user,
+    input logic [$bits(s_axi_w_if.aruser)-1:0] strap_mcu_lsu_axi_user,
+    input logic [$bits(s_axi_w_if.aruser)-1:0] strap_mcu_ifu_axi_user,
+    input logic [$bits(s_axi_w_if.aruser)-1:0] strap_mcu_sram_config_axi_user
     );
 
 
