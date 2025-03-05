@@ -15,7 +15,6 @@ module caliptra_ss_top_w_stub();
     axi_if cptra_ss_mci_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     axi_if cptra_ss_mcu_rom_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     axi_mem_if mcu_rom_mem_export_if(.clk(cptra_ss_clk_i), .rst_b(cptra_ss_rst_b_i));
-    axi_if cptra_ss_mci_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     axi_if cptra_ss_mcu_lsu_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     axi_if cptra_ss_mcu_ifu_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     axi_if cptra_ss_i3c_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
@@ -66,14 +65,8 @@ module caliptra_ss_top_w_stub();
     logic cptra_ss_cptra_core_itrng_valid_i;
 `endif
 
-    mci_mcu_sram_if cptra_ss_mcu_rom_macro_req_if(
-        .clk(cptra_ss_clk_i),
-        .rst_b(cptra_ss_rst_b_i)
-    );
-
     logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i;
     logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i;
-    logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_clp_axi_user_i;
     
     mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if(
         .clk(cptra_ss_clk_i),
@@ -96,11 +89,7 @@ module caliptra_ss_top_w_stub();
     logic cptra_ss_mcu_no_rom_config_i;
     logic cptra_ss_mci_boot_seq_brkpoint_i;
 
-    logic cptra_ss_lc_Allow_RMA_on_PPD_i;
-
     logic [63:0] cptra_ss_mci_generic_output_wires_o;
-    logic cptra_ss_mci_error_fatal_o;
-    logic cptra_ss_mci_error_non_fatal_o;
 
     logic cptra_ss_mcu_jtag_tck_i;
     logic cptra_ss_mcu_jtag_tms_i;
@@ -178,12 +167,10 @@ module caliptra_ss_top_w_stub();
     `endif
         cptra_ss_strap_mcu_lsu_axi_user_i = '0;
         cptra_ss_strap_mcu_ifu_axi_user_i = '0;
-        cptra_ss_strap_clp_axi_user_i = '0;
         cptra_ss_mci_generic_input_wires_i = '0;
         cptra_ss_strap_mcu_reset_vector_i = '0;
         cptra_ss_mcu_no_rom_config_i = '0;
         cptra_ss_mci_boot_seq_brkpoint_i = '0;
-        cptra_ss_lc_Allow_RMA_on_PPD_i = '0;
         cptra_ss_mcu_jtag_tck_i = '0;
         cptra_ss_mcu_jtag_tms_i = '0;
         cptra_ss_mcu_jtag_tdi_i = '0;
@@ -239,9 +226,6 @@ module caliptra_ss_top_w_stub();
     
     //MCI AXI Sub Interface
         .cptra_ss_mci_s_axi_if,
-    
-    // AXI Manager INF
-        .cptra_ss_mci_m_axi_if,
     
         .cptra_ss_mcu_lsu_m_axi_if,
         .cptra_ss_mcu_ifu_m_axi_if,
@@ -311,10 +295,6 @@ module caliptra_ss_top_w_stub();
     //MCU
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
-        .cptra_ss_strap_clp_axi_user_i,
-
-    //MCU ROM
-        .cptra_ss_mcu_rom_macro_req_if,
 
     //MCI
         .cptra_ss_mci_mcu_sram_req_if,
@@ -325,11 +305,8 @@ module caliptra_ss_top_w_stub();
         .cptra_ss_mcu_no_rom_config_i,
         .cptra_ss_mci_generic_input_wires_i,
         .cptra_ss_strap_mcu_reset_vector_i,
-        .cptra_ss_lc_Allow_RMA_on_PPD_i,
 
         .cptra_ss_mci_generic_output_wires_o,
-        .cptra_ss_mci_error_fatal_o,
-        .cptra_ss_mci_error_non_fatal_o,
 
         .cptra_ss_mcu_jtag_tck_i,
         .cptra_ss_mcu_jtag_tms_i,

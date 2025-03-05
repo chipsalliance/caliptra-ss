@@ -67,11 +67,11 @@ module mci_axi_sub_decode
 
     //MCI Mbox0 inf
     cif_if.request  mci_mbox0_req_if,
-    input logic [4:0][soc_resp_if.USER_WIDTH-1:0] valid_mbox0_users,
+    input logic [4:0][$bits(soc_resp_if.req_data.user)-1:0] valid_mbox0_users,
 
     // Mbox1 SRAM Interface
     cif_if.request  mci_mbox1_req_if,
-    input logic [4:0][soc_resp_if.USER_WIDTH-1:0] valid_mbox1_users,
+    input logic [4:0][$bits(soc_resp_if.req_data.user)-1:0] valid_mbox1_users,
 
     // Privileged requests 
     output logic axi_mcu_lsu_req,
@@ -82,10 +82,10 @@ module mci_axi_sub_decode
 
     
     // Privileged AXI users
-    input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_lsu_axi_user,
-    input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_ifu_axi_user,
-    input logic [soc_resp_if.USER_WIDTH-1:0] strap_mcu_sram_config_axi_user,
-    input logic [soc_resp_if.USER_WIDTH-1:0] strap_mci_soc_config_axi_user
+    input logic [$bits(soc_resp_if.req_data.user)-1:0] strap_mcu_lsu_axi_user,
+    input logic [$bits(soc_resp_if.req_data.user)-1:0] strap_mcu_ifu_axi_user,
+    input logic [$bits(soc_resp_if.req_data.user)-1:0] strap_mcu_sram_config_axi_user,
+    input logic [$bits(soc_resp_if.req_data.user)-1:0] strap_mci_soc_config_axi_user
 );
 
 // Valid signals
