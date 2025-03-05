@@ -206,7 +206,7 @@ assign trace_buffer_reg_req = cif_resp_if.dv & debug_en;
 // Map CIF WSTRB to BITEN of CSR block
 genvar i;
 generate 
-    for (i = 0; i < $bits(cif_resp_if.wdata); i = i + 1) begin : map_wstrb_to_biten
+    for (i = 0; i < ($bits(cif_resp_if.wdata)); i = i + 1) begin : map_wstrb_to_biten
         assign c_cpuif_wr_biten[i] = cif_resp_if.req_data.wstrb[i/8];
     end
 endgenerate
