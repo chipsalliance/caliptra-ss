@@ -54,6 +54,7 @@ requires:
   - caliptra_ss_top_defines
   - axi_mem_pkg
   - caliptra_ss_top
+  - lc_ctrl
   - caliptra_top_tb_pkg
   - avery_vip
 targets:
