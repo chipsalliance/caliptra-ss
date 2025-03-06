@@ -1228,10 +1228,10 @@ assign cptra_ss_mci_m_axi_if.rlast =    M_AXI_MCI_RLAST;
 assign cptra_ss_mci_m_axi_if.rvalid =   M_AXI_MCI_RVALID;
 assign M_AXI_MCI_RREADY = cptra_ss_mci_m_axi_if.rready;
 
-mci_mcu_sram_if cptra_ss_mcu_rom_macro_req_if (
-    .clk(core_clk),
-    .rst_b(rst_l)
-);
+//mci_mcu_sram_if cptra_ss_mcu_rom_macro_req_if (
+//    .clk(core_clk),
+//    .rst_b(rst_l)
+//);
 
 /*
 I think this is the one that isn't used
@@ -1710,8 +1710,9 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mcu_rom_s_axi_if,
     .mcu_rom_mem_export_if,
 
+    // TODO: Remove
     // Caliptra SS MCI AXI Manager Interface
-    .cptra_ss_mci_m_axi_if,
+    //.cptra_ss_mci_m_axi_if,
 
     // Caliptra SS MCU LSU/IFU AXI Manager Interface
     .cptra_ss_mcu_lsu_m_axi_if,
@@ -1787,13 +1788,14 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_cptra_core_itrng_valid_i(itrng_valid),
 `endif
 
-    .cptra_ss_mcu_rom_macro_req_if,
+    //.cptra_ss_mcu_rom_macro_req_if,
 
     // Caliptra SS MCU 
     .cptra_ss_strap_mcu_lsu_axi_user_i(hwif_out.interface_regs.lsu_user.lsu_user.value),
     .cptra_ss_strap_mcu_ifu_axi_user_i(hwif_out.interface_regs.ifu_user.ifu_user.value),
     .cptra_ss_strap_cptra_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value),
-    .cptra_ss_strap_debug_axi_user_i(hwif_out.interface_regs.dbg_user.dbg_user.value),
+    .cptra_ss_strap_mcu_sram_config_axi_user_i(hwif_out.interface_regs.sram_config_user.sram_config_user.value),
+    .cptra_ss_strap_mci_soc_config_axi_user_i(hwif_out.interface_regs.soc_config_user.soc_config_user.value),
 
     // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     .cptra_ss_mci_mcu_sram_req_if,
@@ -1831,6 +1833,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_strap_uds_seed_base_addr_i     (64'h0), // TODO: What to set this to?
     .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i(32'h0), // TODO: What to set this to?
     .cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i(32'h0), // TODO: What to set this to?
+    .cptra_ss_strap_caliptra_dma_axi_user_i(32'hCCCCCCCC),
     .cptra_ss_strap_generic_0_i(32'h0),
     .cptra_ss_strap_generic_1_i(32'h0),
     .cptra_ss_strap_generic_2_i(32'h0),

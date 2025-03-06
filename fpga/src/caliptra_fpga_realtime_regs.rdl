@@ -114,6 +114,18 @@ regfile interface_regs {
         default sw=rw;
         default hw=r;
 
+        field {} soc_config_user[32] = 32'b0;
+    } soc_config_user;
+    reg {
+        default sw=rw;
+        default hw=r;
+
+        field {} sram_config_user[32] = 32'b0;
+    } sram_config_user;
+    reg {
+        default sw=rw;
+        default hw=r;
+
         field {} mcu_reset_vector[32] = 32'b0;
     } mcu_reset_vector;
     reg {
@@ -136,12 +148,6 @@ regfile interface_regs {
     reg {
         field { sw=r; hw=rw; } value[32] = 32'b0;
     } mci_generic_output_wires[2];
-    reg {
-        default sw=rw;
-        default hw=r;
-
-        field {} dbg_user[32] = 32'b0;
-    } dbg_user;
 };
 
 regfile fifo_regs {

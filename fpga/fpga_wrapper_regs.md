@@ -20,7 +20,7 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 - Absolute Address: 0x0
 - Base Offset: 0x0
-- Size: 0x74
+- Size: 0x78
 
 |Offset|         Identifier        |Name|
 |------|---------------------------|----|
@@ -45,14 +45,15 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 | 0x48 |          lsu_user         |  — |
 | 0x4C |          ifu_user         |  — |
 | 0x50 |          clp_user         |  — |
-| 0x54 |      mcu_reset_vector     |  — |
-| 0x58 |         mci_error         |  — |
-| 0x5C |         mcu_config        |  — |
-| 0x60 | mci_generic_input_wires[0]|  — |
-| 0x64 | mci_generic_input_wires[1]|  — |
-| 0x68 |mci_generic_output_wires[0]|  — |
-| 0x6C |mci_generic_output_wires[1]|  — |
-| 0x70 |          dbg_user         |  — |
+| 0x54 |      soc_config_user      |  — |
+| 0x58 |      sram_config_user     |  — |
+| 0x5C |      mcu_reset_vector     |  — |
+| 0x60 |         mci_error         |  — |
+| 0x64 |         mcu_config        |  — |
+| 0x68 | mci_generic_input_wires[0]|  — |
+| 0x6C | mci_generic_input_wires[1]|  — |
+| 0x70 |mci_generic_output_wires[0]|  — |
+| 0x74 |mci_generic_output_wires[1]|  — |
 
 ### generic_input_wires register
 
@@ -308,10 +309,30 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |----|----------|------|-----|----|
 |31:0| clp_user |  rw  | 0x0 |  — |
 
-### mcu_reset_vector register
+### soc_config_user register
 
 - Absolute Address: 0x54
 - Base Offset: 0x54
+- Size: 0x4
+
+|Bits|   Identifier  |Access|Reset|Name|
+|----|---------------|------|-----|----|
+|31:0|soc_config_user|  rw  | 0x0 |  — |
+
+### sram_config_user register
+
+- Absolute Address: 0x58
+- Base Offset: 0x58
+- Size: 0x4
+
+|Bits|   Identifier   |Access|Reset|Name|
+|----|----------------|------|-----|----|
+|31:0|sram_config_user|  rw  | 0x0 |  — |
+
+### mcu_reset_vector register
+
+- Absolute Address: 0x5C
+- Base Offset: 0x5C
 - Size: 0x4
 
 |Bits|   Identifier   |Access|Reset|Name|
@@ -320,8 +341,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 ### mci_error register
 
-- Absolute Address: 0x58
-- Base Offset: 0x58
+- Absolute Address: 0x60
+- Base Offset: 0x60
 - Size: 0x4
 
 |Bits|     Identifier    |Access|Reset|Name|
@@ -331,8 +352,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 ### mcu_config register
 
-- Absolute Address: 0x5C
-- Base Offset: 0x5C
+- Absolute Address: 0x64
+- Base Offset: 0x64
 - Size: 0x4
 
 |Bits|            Identifier            |Access|Reset|Name|
@@ -346,8 +367,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 ### mci_generic_input_wires register
 
-- Absolute Address: 0x60
-- Base Offset: 0x60
+- Absolute Address: 0x68
+- Base Offset: 0x68
 - Size: 0x4
 - Array Dimensions: [2]
 - Array Stride: 0x4
@@ -359,8 +380,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 ### mci_generic_input_wires register
 
-- Absolute Address: 0x64
-- Base Offset: 0x60
+- Absolute Address: 0x6C
+- Base Offset: 0x68
 - Size: 0x4
 - Array Dimensions: [2]
 - Array Stride: 0x4
@@ -372,8 +393,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 ### mci_generic_output_wires register
 
-- Absolute Address: 0x68
-- Base Offset: 0x68
+- Absolute Address: 0x70
+- Base Offset: 0x70
 - Size: 0x4
 - Array Dimensions: [2]
 - Array Stride: 0x4
@@ -385,8 +406,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 ### mci_generic_output_wires register
 
-- Absolute Address: 0x6C
-- Base Offset: 0x68
+- Absolute Address: 0x74
+- Base Offset: 0x70
 - Size: 0x4
 - Array Dimensions: [2]
 - Array Stride: 0x4
@@ -395,16 +416,6 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |Bits|Identifier|Access|Reset|Name|
 |----|----------|------|-----|----|
 |31:0|   value  |   r  | 0x0 |  — |
-
-### dbg_user register
-
-- Absolute Address: 0x70
-- Base Offset: 0x70
-- Size: 0x4
-
-|Bits|Identifier|Access|Reset|Name|
-|----|----------|------|-----|----|
-|31:0| dbg_user |  rw  | 0x0 |  — |
 
 ## fifo_regs register file
 

@@ -309,6 +309,22 @@ package caliptra_fpga_realtime_regs_pkg;
 
     typedef struct {
         logic [31:0] value;
+    } interface_regs__soc_config_user__soc_config_user__out_t;
+
+    typedef struct {
+        interface_regs__soc_config_user__soc_config_user__out_t soc_config_user;
+    } interface_regs__soc_config_user__out_t;
+
+    typedef struct {
+        logic [31:0] value;
+    } interface_regs__sram_config_user__sram_config_user__out_t;
+
+    typedef struct {
+        interface_regs__sram_config_user__sram_config_user__out_t sram_config_user;
+    } interface_regs__sram_config_user__out_t;
+
+    typedef struct {
+        logic [31:0] value;
     } interface_regs__mcu_reset_vector__mcu_reset_vector__out_t;
 
     typedef struct {
@@ -378,14 +394,6 @@ package caliptra_fpga_realtime_regs_pkg;
     } interface_regs__mci_generic_output_wires__out_t;
 
     typedef struct {
-        logic [31:0] value;
-    } interface_regs__dbg_user__dbg_user__out_t;
-
-    typedef struct {
-        interface_regs__dbg_user__dbg_user__out_t dbg_user;
-    } interface_regs__dbg_user__out_t;
-
-    typedef struct {
         interface_regs__generic_input_wires__out_t generic_input_wires[2];
         interface_regs__generic_output_wires__out_t generic_output_wires[2];
         interface_regs__cptra_obf_key__out_t cptra_obf_key[8];
@@ -398,12 +406,13 @@ package caliptra_fpga_realtime_regs_pkg;
         interface_regs__lsu_user__out_t lsu_user;
         interface_regs__ifu_user__out_t ifu_user;
         interface_regs__clp_user__out_t clp_user;
+        interface_regs__soc_config_user__out_t soc_config_user;
+        interface_regs__sram_config_user__out_t sram_config_user;
         interface_regs__mcu_reset_vector__out_t mcu_reset_vector;
         interface_regs__mci_error__out_t mci_error;
         interface_regs__mcu_config__out_t mcu_config;
         interface_regs__mci_generic_input_wires__out_t mci_generic_input_wires[2];
         interface_regs__mci_generic_output_wires__out_t mci_generic_output_wires[2];
-        interface_regs__dbg_user__out_t dbg_user;
     } interface_regs__out_t;
 
     typedef struct {
