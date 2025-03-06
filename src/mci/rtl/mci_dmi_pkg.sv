@@ -73,7 +73,8 @@ package mci_dmi_pkg;
     parameter MCI_DMI_MCU_RESET_VECTOR          = 7'h77;
     parameter MCI_DMI_SS_DEBUG_INTENT           = 7'h78;
     parameter MCI_DMI_SS_CONFIG_DONE            = 7'h79;
-    parameter MCI_DMI_MCU_NMI_VECTOR            = 7'h7A;
+    parameter MCI_DMI_SS_CONFIG_DONE_STICKY     = 7'h7A;
+    parameter MCI_DMI_MCU_NMI_VECTOR            = 7'h7B;
 
 endpackage
 `endif

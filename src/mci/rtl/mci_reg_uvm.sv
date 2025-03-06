@@ -2525,7 +2525,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.done = new("done");
-            this.done.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.done.configure(this, 1, 0, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(done_bit_cg[bt]) done_bit_cg[bt] = new();
             end
@@ -2555,7 +2555,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.done = new("done");
-            this.done.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.done.configure(this, 1, 0, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(done_bit_cg[bt]) done_bit_cg[bt] = new();
             end

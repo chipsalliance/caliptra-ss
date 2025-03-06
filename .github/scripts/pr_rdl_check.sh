@@ -33,6 +33,8 @@ fi
 if [[ -z "${CALIPTRA_SS_ROOT:+"empty"}" ]]; then
     echo "Error, must set CALIPTRA_SS_ROOT"
     exit 1
+else
+    echo "CALIPTRA_SS_ROOT: '${CALIPTRA_SS_ROOT}'"
 fi
 cd "${CALIPTRA_SS_ROOT}"
 
@@ -53,7 +55,9 @@ rdl_mod_count=$(git diff --merge-base "${merge_dest}" --name-only | grep -c -e '
 if [[ "${rdl_mod_count}" -gt 0 ]]; then
     # Run the HTML Doc generator script (to update the REG macro header files)
     # and the individual reg generator script but then remove the docs directories
-    bash "${CALIPTRA_SS_ROOT}/tools/scripts/gen_soc_regs.sh"
+
+    bash "${CALIPTRA_SS_ROOT}/tools/scripts/gen_soc_regs.sh" "${CALIPTRA_SS_ROOT}"
+    rm -rf "${CALIPTRA_SS_ROOT}/src/integration/docs"
 
     # Check for any file changes
     if [[ $(git status -s --untracked-files=all --ignored=traditional -- "${CALIPTRA_SS_ROOT}/src/" | wc -l) -gt 0 ]]; then

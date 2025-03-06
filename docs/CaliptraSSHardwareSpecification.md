@@ -1161,7 +1161,8 @@ MCI provides the logic for these enables. When the following condition(s) are me
 | MCU\_RESET\_VECTOR | 0x77 | RW |  |  | Yes |
 | SS\_DEBUG\_INTENT | 0x78 | RW |  |  | Yes |
 | SS\_CONFIG\_DONE | 0x79 | RW |  |  | Yes |
-| MCU\_NMI\_VECTOR | 0x7A | RW |  |  | Yes |
+| SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  |  | Yes |
+| MCU\_NMI\_VECTOR | 0x7B | RW |  |  | Yes |
 
 ##### MCI DMI Interface
 
