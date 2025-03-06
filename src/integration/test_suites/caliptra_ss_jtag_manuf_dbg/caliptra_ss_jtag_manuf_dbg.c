@@ -44,6 +44,16 @@ void main (void) {
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
     uint32_t cptra_boot_go;
+    // New step: Writing the 16-word hash(MANUF_DBG_TOKEN) with byte swapping
+    uint32_t vector[16] = {
+        0xba03f195, 0xcfb86f60, 0x6ce5adc0, 0x90be97cd,
+        0x5021e4df, 0x25edab7d, 0xb141e89a, 0xd115a87b,
+        0x28abfbfa, 0x5a8f41, 0x44901cee, 0x4961df3f,
+        0x8db3e5ea, 0x8d489c51, 0x90e26b42, 0xaf9369e
+    };
+    
+
+
     // VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
@@ -61,10 +71,22 @@ void main (void) {
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
 
     // Initialize fuses
+        uint32_t base_address = SOC_SOC_IFC_REG_FUSE_MANUF_DBG_UNLOCK_TOKEN_0;
+    for (int i = 0; i < 16; i++) {
+        // uint32_t swapped = ((vector[i] & 0xFF) << 24) |
+        //                    ((vector[i] & 0xFF00) << 8) |
+        //                    ((vector[i] & 0xFF0000) >> 8) |
+        //                    ((vector[i] & 0xFF000000) >> 24);
+        VPRINTF(LOW, "MCU: writing 0x%x to address of 0x%x\n", vector[i], base_address + (i * 4));
+        lsu_write_32(base_address + (i * 4), vector[i]);
+    }
+
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
 
-
+    for (uint32_t ii = 0; ii < 5000; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
     
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG MANUF DEBUG FLOW TEST with ROM \n=================\n\n");
     

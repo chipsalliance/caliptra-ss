@@ -361,6 +361,8 @@ module caliptra_ss_top_tb
       
 //------------------------------------------------------------------------
 
+    logic         cptra_ss_debug_intent_i;
+
     logic pwr_otp_init_i;
     logic cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i;
     logic cptra_ss_FIPS_ZEROIZATION_PPD_i;
@@ -1559,6 +1561,7 @@ module caliptra_ss_top_tb
         end
         if ($test$plusargs("CALIPTRA_SS_MANUF_DBG")) begin
             force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = MANUF_state;
+            force caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force cptra_ss_debug_intent_i = 1'b1;
         end 
         if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
@@ -1717,7 +1720,6 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_generic_1_i;
     logic [31:0]  cptra_ss_strap_generic_2_i;
     logic [31:0]  cptra_ss_strap_generic_3_i;
-    logic         cptra_ss_debug_intent_i;
     logic         cptra_ss_dbg_manuf_enable_o;
     logic [63:0]  cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o;
 

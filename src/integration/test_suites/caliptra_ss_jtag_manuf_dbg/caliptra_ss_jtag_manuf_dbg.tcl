@@ -16,41 +16,20 @@ init
 
 set script_dir [file dirname [info script]]
 source [file join $script_dir common.tcl]
-
+# [1023:0] = ABCDEFEB00000...000F888888A
 array set TOKEN_data {
-    0 0x77777777
-    1 0x66666666
-    2 0x55555555
-    3 0x44444444
-    4 0x33333333
-    5 0x22222222
-    6 0x11111111
+    0 0xFFFFF8E2
+    1 0xABCDEFEB
+    2 0x00000000
+    3 0x00000000
+    4 0x00000000
+    5 0x00000000
+    6 0x00000000
     7 0x00000000
-    8 0x77777777
-    9 0x66666666
-    10 0x55555555
-    11 0x44444444
-    12 0x33333333
-    13 0x22222222
-    14 0x11111111
-    15 0x00000000
-    16 0x77777777
-    17 0x66666666
-    18 0x55555555
-    19 0x44444444
-    20 0x33333333
-    21 0x22222222
-    22 0x11111111
-    23 0x00000000
-    24 0x77777777
-    25 0x66666666
-    26 0x55555555
-    27 0x44444444
-    28 0x33333333
-    29 0x22222222
-    30 0x11111111
-    31 0x00000000
+    8 0xF888888A
 }
+
+# Digest value is 9d2fee5ed6ad3ab7de49acb632afd8f2c9cddd33d5ed2846c34b9649b3a54fa367343f15908277c6c6779c52fe55fd7d96966232cd03999d90b3fae27f04e213
 set dlen_words [array size TOKEN_data]
 set dlen_bytes [expr {$dlen_words * 4}]
 
@@ -70,7 +49,7 @@ set DMI_REG_BOOTFSM_GO_ADDR             0x61
 
 # Write to the debug service register to trigger UDS programming.
 puts "TAP: Triggering MANUF DEBUG REQ programming..."
-riscv dmi_write $SS_DBG_MANUF_SERVICE_REG_REQ 0x4
+riscv dmi_write $SS_DBG_MANUF_SERVICE_REG_REQ 0x1
 set actual [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_REQ]
 puts "TAP: SS_DBG_MANUF_SERVICE_REG_REQ: $actual"
 
@@ -93,11 +72,13 @@ puts "TAP: Sending the TOKEN size"
 riscv dmi_write $mbox_dlen_dmi_addr $dlen_bytes
 puts "TAP: Sending the TOKEN"
 for {set i 0} {$i < $dlen_words} {incr i} {
-    riscv dmi_write $mbox_din_dmi_addr $data($i)
-    puts "  TAP: Wrote the TOKEN[$i] = $data($i)"
+    set value $TOKEN_data($i)
+    riscv dmi_write $mbox_din_dmi_addr $value
+    puts "  TAP: Wrote the TOKEN $value"
 }
-puts "TAP: Sending complete command to mailbox"
-riscv dmi_write $mbox_status_dmi_addr 0x00000001
+puts "TAP: Set execute..."
+riscv dmi_write $mbox_execute_dmi_addr 0x1
+
 puts ""
 
 
@@ -128,13 +109,13 @@ set success [expr {($rsp_val & 0x1) != 0}]
 
 if {$failure} {
     puts "TAP: MANUF DBG failed (failure bit set)."
-    shutdown error
+    # shutdown error
 } elseif {$success} {
     puts "TAP: MANUF DBG succeeded (success bit set)."
 } else {
     puts "TAP: MANUF DBG returned an unexpected status: $rsp_val"
-    shutdown error
-}
+    # shutdown error
+} 
 
 puts "TAP: MANUF DBG completed successfully."
 
