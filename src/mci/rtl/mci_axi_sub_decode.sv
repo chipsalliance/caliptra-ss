@@ -74,11 +74,11 @@ module mci_axi_sub_decode
     input logic [4:0][$bits(soc_resp_if.req_data.user)-1:0] valid_mbox1_users,
 
     // Privileged requests 
-    output logic axi_mcu_lsu_req,
-    output logic axi_mcu_ifu_req,
-    output logic axi_mcu_req    ,
-    output logic axi_mci_soc_config_req    ,
-    output logic axi_mcu_sram_config_req    ,
+(* mark_debug = "true" *) output logic axi_mcu_lsu_req,
+(* mark_debug = "true" *)     output logic axi_mcu_ifu_req,
+(* mark_debug = "true" *)     output logic axi_mcu_req    ,
+(* mark_debug = "true" *)     output logic axi_mci_soc_config_req    ,
+(* mark_debug = "true" *)     output logic axi_mcu_sram_config_req    ,
 
     
     // Privileged AXI users

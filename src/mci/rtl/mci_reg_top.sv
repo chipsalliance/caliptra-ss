@@ -155,7 +155,7 @@ module mci_reg_top
 
     
     // Caliptra internal fabric response interface
-    cif_if.response  cif_resp_if
+    (* mark_debug = "true" *) cif_if.response  cif_resp_if
 
     );
 
