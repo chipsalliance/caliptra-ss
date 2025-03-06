@@ -798,6 +798,9 @@ imem_inst1 (
     .web(rom_backdoor_we)
 );
 
+
+logic fifo_write_en;
+logic [7:0] fifo_char;
 // Valid = !Empty
 logic log_fifo_empty;
 assign hwif_in.fifo_regs.log_fifo_data.char_valid.next = ~log_fifo_empty;
@@ -1790,7 +1793,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_strap_mcu_lsu_axi_user_i(hwif_out.interface_regs.lsu_user.lsu_user.value),
     .cptra_ss_strap_mcu_ifu_axi_user_i(hwif_out.interface_regs.ifu_user.ifu_user.value),
     .cptra_ss_strap_cptra_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value),
-    .cptra_ss_strap_debug_axi_user_i(),
+    .cptra_ss_strap_debug_axi_user_i(hwif_out.interface_regs.dbg_user.dbg_user.value),
 
     // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     .cptra_ss_mci_mcu_sram_req_if,
@@ -1832,7 +1835,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_strap_generic_1_i(32'h0),
     .cptra_ss_strap_generic_2_i(32'h0),
     .cptra_ss_strap_generic_3_i(32'h0),
-    .cptra_ss_debug_intent_i(1'b0),            // Debug intent signal
+    .cptra_ss_debug_intent_i(1'b1),            // Debug intent signal
 
     // TODO: Connect
     /*output logic        */ .cptra_ss_dbg_manuf_enable_o(),
@@ -1871,8 +1874,6 @@ caliptra_ss_top caliptra_ss_top_0 (
 );
 
     // Hierarchical references to generic output wires register. Use as input to log FIFO.
-    logic fifo_write_en;
-    logic [7:0] fifo_char;
     assign fifo_write_en = caliptra_ss_top_0.caliptra_top_dut.soc_ifc_top1.i_soc_ifc_reg.field_combo.CPTRA_GENERIC_OUTPUT_WIRES[0].generic_wires.load_next;
     assign fifo_char[7:0] = caliptra_ss_top_0.caliptra_top_dut.soc_ifc_top1.i_soc_ifc_reg.field_combo.CPTRA_GENERIC_OUTPUT_WIRES[0].generic_wires.next[7:0];
 

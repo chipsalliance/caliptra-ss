@@ -136,6 +136,12 @@ regfile interface_regs {
     reg {
         field { sw=r; hw=rw; } value[32] = 32'b0;
     } mci_generic_output_wires[2];
+    reg {
+        default sw=rw;
+        default hw=r;
+
+        field {} dbg_user[32] = 32'b0;
+    } dbg_user;
 };
 
 regfile fifo_regs {

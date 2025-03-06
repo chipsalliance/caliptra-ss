@@ -227,6 +227,7 @@ module caliptra_fpga_realtime_regs (
             logic mcu_config;
             logic mci_generic_input_wires[2];
             logic mci_generic_output_wires[2];
+            logic dbg_user;
         } interface_regs;
         struct {
             logic log_fifo_data;
@@ -272,6 +273,7 @@ module caliptra_fpga_realtime_regs (
         for(int i0=0; i0<2; i0++) begin
             decoded_reg_strb.interface_regs.mci_generic_output_wires[i0] = cpuif_req_masked & (cpuif_addr == 13'h68 + (13)'(i0) * 13'h4);
         end
+        decoded_reg_strb.interface_regs.dbg_user = cpuif_req_masked & (cpuif_addr == 13'h70);
         decoded_reg_strb.fifo_regs.log_fifo_data = cpuif_req_masked & (cpuif_addr == 13'h1000);
         decoded_reg_strb.fifo_regs.log_fifo_status = cpuif_req_masked & (cpuif_addr == 13'h1004);
         decoded_reg_strb.fifo_regs.itrng_fifo_data = cpuif_req_masked & (cpuif_addr == 13'h1008);
@@ -450,6 +452,12 @@ module caliptra_fpga_realtime_regs (
                     logic load_next;
                 } value;
             } mci_generic_output_wires[2];
+            struct {
+                struct {
+                    logic [31:0] next;
+                    logic load_next;
+                } dbg_user;
+            } dbg_user;
         } interface_regs;
         struct {
             struct {
@@ -647,6 +655,11 @@ module caliptra_fpga_realtime_regs (
                     logic [31:0] value;
                 } value;
             } mci_generic_output_wires[2];
+            struct {
+                struct {
+                    logic [31:0] value;
+                } dbg_user;
+            } dbg_user;
         } interface_regs;
         struct {
             struct {
@@ -1426,6 +1439,29 @@ module caliptra_fpga_realtime_regs (
         end
         assign hwif_out.interface_regs.mci_generic_output_wires[i0].value.value = field_storage.interface_regs.mci_generic_output_wires[i0].value.value;
     end
+    // Field: caliptra_fpga_realtime_regs.interface_regs.dbg_user.dbg_user
+    always_comb begin
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.interface_regs.dbg_user.dbg_user.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.interface_regs.dbg_user && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.interface_regs.dbg_user.dbg_user.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end
+        field_combo.interface_regs.dbg_user.dbg_user.next = next_c;
+        field_combo.interface_regs.dbg_user.dbg_user.load_next = load_next_c;
+    end
+    always_ff @(posedge clk) begin
+        if(rst) begin
+            field_storage.interface_regs.dbg_user.dbg_user.value <= 32'h0;
+        end else begin
+            if(field_combo.interface_regs.dbg_user.dbg_user.load_next) begin
+                field_storage.interface_regs.dbg_user.dbg_user.value <= field_combo.interface_regs.dbg_user.dbg_user.next;
+            end
+        end
+    end
+    assign hwif_out.interface_regs.dbg_user.dbg_user.value = field_storage.interface_regs.dbg_user.dbg_user.value;
     // Field: caliptra_fpga_realtime_regs.fifo_regs.log_fifo_data.next_char
     always_comb begin
         automatic logic [7:0] next_c;
@@ -1723,7 +1759,7 @@ module caliptra_fpga_realtime_regs (
     logic [31:0] readback_data;
 
     // Assign readback values to a flattened array
-    logic [31:0] readback_array[35];
+    logic [31:0] readback_array[36];
     for(genvar i0=0; i0<2; i0++) begin
         assign readback_array[i0 * 1 + 0][31:0] = (decoded_reg_strb.interface_regs.generic_input_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.generic_input_wires[i0].value.value : '0;
     end
@@ -1769,22 +1805,23 @@ module caliptra_fpga_realtime_regs (
     for(genvar i0=0; i0<2; i0++) begin
         assign readback_array[i0 * 1 + 26][31:0] = (decoded_reg_strb.interface_regs.mci_generic_output_wires[i0] && !decoded_req_is_wr) ? field_storage.interface_regs.mci_generic_output_wires[i0].value.value : '0;
     end
-    assign readback_array[28][7:0] = (decoded_reg_strb.fifo_regs.log_fifo_data && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_data.next_char.value : '0;
-    assign readback_array[28][8:8] = (decoded_reg_strb.fifo_regs.log_fifo_data && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_data.char_valid.value : '0;
-    assign readback_array[28][31:9] = '0;
-    assign readback_array[29][0:0] = (decoded_reg_strb.fifo_regs.log_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_status.log_fifo_empty.value : '0;
-    assign readback_array[29][1:1] = (decoded_reg_strb.fifo_regs.log_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_status.log_fifo_full.value : '0;
-    assign readback_array[29][31:2] = '0;
-    assign readback_array[30][31:0] = (decoded_reg_strb.fifo_regs.itrng_fifo_data && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_data.itrng_data.value : '0;
-    assign readback_array[31][0:0] = (decoded_reg_strb.fifo_regs.itrng_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_empty.value : '0;
-    assign readback_array[31][1:1] = (decoded_reg_strb.fifo_regs.itrng_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_full.value : '0;
-    assign readback_array[31][2:2] = (decoded_reg_strb.fifo_regs.itrng_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_reset.value : '0;
-    assign readback_array[31][31:3] = '0;
-    assign readback_array[32][31:0] = (decoded_reg_strb.fifo_regs.dbg_fifo_pop && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_pop.out_data.value : '0;
-    assign readback_array[33][31:0] = (decoded_reg_strb.fifo_regs.dbg_fifo_push && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_push.in_data.value : '0;
-    assign readback_array[34][0:0] = (decoded_reg_strb.fifo_regs.dbg_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_empty.value : '0;
-    assign readback_array[34][1:1] = (decoded_reg_strb.fifo_regs.dbg_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_full.value : '0;
-    assign readback_array[34][31:2] = '0;
+    assign readback_array[28][31:0] = (decoded_reg_strb.interface_regs.dbg_user && !decoded_req_is_wr) ? field_storage.interface_regs.dbg_user.dbg_user.value : '0;
+    assign readback_array[29][7:0] = (decoded_reg_strb.fifo_regs.log_fifo_data && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_data.next_char.value : '0;
+    assign readback_array[29][8:8] = (decoded_reg_strb.fifo_regs.log_fifo_data && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_data.char_valid.value : '0;
+    assign readback_array[29][31:9] = '0;
+    assign readback_array[30][0:0] = (decoded_reg_strb.fifo_regs.log_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_status.log_fifo_empty.value : '0;
+    assign readback_array[30][1:1] = (decoded_reg_strb.fifo_regs.log_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.log_fifo_status.log_fifo_full.value : '0;
+    assign readback_array[30][31:2] = '0;
+    assign readback_array[31][31:0] = (decoded_reg_strb.fifo_regs.itrng_fifo_data && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_data.itrng_data.value : '0;
+    assign readback_array[32][0:0] = (decoded_reg_strb.fifo_regs.itrng_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_empty.value : '0;
+    assign readback_array[32][1:1] = (decoded_reg_strb.fifo_regs.itrng_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_full.value : '0;
+    assign readback_array[32][2:2] = (decoded_reg_strb.fifo_regs.itrng_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.itrng_fifo_status.itrng_fifo_reset.value : '0;
+    assign readback_array[32][31:3] = '0;
+    assign readback_array[33][31:0] = (decoded_reg_strb.fifo_regs.dbg_fifo_pop && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_pop.out_data.value : '0;
+    assign readback_array[34][31:0] = (decoded_reg_strb.fifo_regs.dbg_fifo_push && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_push.in_data.value : '0;
+    assign readback_array[35][0:0] = (decoded_reg_strb.fifo_regs.dbg_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_empty.value : '0;
+    assign readback_array[35][1:1] = (decoded_reg_strb.fifo_regs.dbg_fifo_status && !decoded_req_is_wr) ? field_storage.fifo_regs.dbg_fifo_status.dbg_fifo_full.value : '0;
+    assign readback_array[35][31:2] = '0;
 
     // Reduce the array
     always_comb begin
@@ -1792,7 +1829,7 @@ module caliptra_fpga_realtime_regs (
         readback_done = decoded_req & ~decoded_req_is_wr;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<35; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<36; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 

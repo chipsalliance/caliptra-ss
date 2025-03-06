@@ -20,7 +20,7 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 - Absolute Address: 0x0
 - Base Offset: 0x0
-- Size: 0x70
+- Size: 0x74
 
 |Offset|         Identifier        |Name|
 |------|---------------------------|----|
@@ -52,6 +52,7 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 | 0x64 | mci_generic_input_wires[1]|  — |
 | 0x68 |mci_generic_output_wires[0]|  — |
 | 0x6C |mci_generic_output_wires[1]|  — |
+| 0x70 |          dbg_user         |  — |
 
 ### generic_input_wires register
 
@@ -394,6 +395,16 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |Bits|Identifier|Access|Reset|Name|
 |----|----------|------|-----|----|
 |31:0|   value  |   r  | 0x0 |  — |
+
+### dbg_user register
+
+- Absolute Address: 0x70
+- Base Offset: 0x70
+- Size: 0x4
+
+|Bits|Identifier|Access|Reset|Name|
+|----|----------|------|-----|----|
+|31:0| dbg_user |  rw  | 0x0 |  — |
 
 ## fifo_regs register file
 
