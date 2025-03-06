@@ -166,7 +166,7 @@ module tlul_socket_m1 #(
   assign arb_ready = drsp_fifo_o.a_ready;
 
   if (tlul_pkg::ArbiterImpl == "PPC") begin : gen_arb_ppc
-    prim_arbiter_ppc #(
+    caliptra_prim_arbiter_ppc  #(
       .N          (M),
       .DW         ($bits(tlul_pkg::tl_h2d_t))
     ) u_reqarb (
@@ -182,7 +182,7 @@ module tlul_socket_m1 #(
       .ready_i   ( arb_ready   )
     );
   end else if (tlul_pkg::ArbiterImpl == "BINTREE") begin : gen_tree_arb
-    prim_arbiter_tree #(
+    caliptra_prim_arbiter_tree #(
       .N          (M),
       .DW         ($bits(tlul_pkg::tl_h2d_t))
     ) u_reqarb (
