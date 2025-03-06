@@ -79,6 +79,8 @@
   - [Overview](#overview)
   - [MCI Feature Descriptions](#mci-feature-descriptions)
     - [Control/Status Registers (CSRs)](#controlstatus-registers-csrs)
+      - [MCI CSR Access Restrictions](#mci-csr-access-restrictions)
+    - [Straps](#straps)
     - [Subsystem Boot Finite State Machine (CSS-BootFSM)](#subsystem-boot-finite-state-machine-css-bootfsm)
     - [Watchdog Timer](#watchdog-timer)
     - [MCU Mailbox](#mcu-mailbox)
@@ -895,7 +897,62 @@ The following diagram illustrates the internal components of the MCI.
 ### Control/Status Registers (CSRs)
 The Control/Status Registers (CSRs) within the MCI are designed to provide critical control and status monitoring functions for the SoC. These registers include configuration settings, status indicators, and control bits that allow communication and management of the various operations of the MCI. The CSR bank is accessible via the AXI interface and is mapped into the memory space to facilitate straightforward access and manipulation.
 
-**FIXME the link:** caliptra-ss/src/mci/rtl/mci_reg.rdl
+**FIXME the link:** caliptra-ss/src/ci_reg.rdl
+
+#### MCI CSR Access Restrictions
+
+Certain registers within the CSR bank have write access restrictions based off of:
+
+1. AXI User
+2. Lock bits (SS_CONFIG_DONE, CAP_LOCK, etc.)
+
+The privilaged users for the MCI CSRs are:
+
+1. MCU
+2. MCI SOC Config User (MSCU)
+
+Both of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionalality like timers that are needed by the SOC but are critical for MCU functionality. 
+
+The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MCSCU can configure and lock down the MCI configuration. 
+
+The registers can be split up into a few different categories:
+
+
+| **Write restrictions**     | **Description**     | 
+| :---------     | :---------| 
+| MCU Only        | These registers are only meant for MCU to have access. There is no reason for SOC or the MCI SOC Config User to access the. Example is the MTIMER|
+| MCU or MCSU      |  Access restricted to trusted agent but not locked. Example:RESET_REQUEST for MCU. |
+| MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each warm reset |
+| Sticky MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each cold reset |
+| Locked by SS_CONFIG_DONE_STICKY        | Configuration once per cold reset. |
+| MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilieds then locked until next warm reset |
+| MBOX_USER_LOCK       |  Mailbox specific configuration locked by it's own LOCK bit. Configured afer each arem reset.       |
+
+
+### Straps
+
+All MCI straps shall be static before mci_rst_b is deasserted.
+
+MCI has the following types of straps:
+
+| **Strap Type**     | **Sampled or Direct Use**|**Description**     | 
+| :---------     | :---------| :---------| 
+| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These are not overriable by SW. | 
+| **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
+| **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank Until  | 
+
+
+*NOTE: Strap sampling occurs when mci_rst_b is deasserted and is typically performed once per cold boot. This process is controlled by the SS_CONFIG_DONE_STICKY register; when set, sampling is skipped. If a warm reset happens before SS_CONFIG_DONE_STICKY is set, the straps will be sampled again, although this is not the usual behavior.
+
+| **Strap Name**     | **Strap Type**|**Description**     | 
+| :---------     | :---------| :---------| 
+|`strap_mcu_lsu_axi_user`|Non-configurable Direct|MCU Load Store Unit AXI User. Given Special Access within MCI. |
+|`strap_mcu_ifu_axi_user`|Non-configurable Direct|MCU Instruction Fetch Unit AXI User. ive special access within MCI.|
+|`strap_mcu_sram_config_axi_user`|Non-configurable Direct|MCU SRAM Config agent who is given special access to MCU SRAM Execution region to load FW image. Typically set to Caliptra's AXI User.|
+|`strap_mci_soc_config_axi_user`|Non-configurable Direct|MCI SOC Config User (MSCU). AXI agent with MCI configuration access. |
+|`strap_mcu_reset_vector`|Configurable Sampled|Default MCU reset vectore.|
+|`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Show the intent to put the part in a debug unlocked state. Although not writable by SW via AXI. This is writable via DMI.|
+
 
 ### Subsystem Boot Finite State Machine (CSS-BootFSM)
 
@@ -1109,9 +1166,9 @@ MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the 
 The MCI AXI Sub will respond with an AXI error if one of the following conditions is met:
 
 1. AXI Address miss
-2. Not all AXI STRB set when accessing submodule other than MCU SRAM
-3. Submodule error response
-4. Invalid MBOX AXI User access (MCU and Debug AXI USERs bypasses this check)
+2. Submodule error response
+3. Invalid MBOX AXI User access (MCU and Debug AXI USERs bypasses this check)
+
 
 ### Interrupts
 
