@@ -1141,16 +1141,23 @@ It is the only agent allowed to set TARGET_USER and update the final CMD_STATUS.
   *NOTE: MBOX SRAM size is configurable, but MBOX always reserves 2MB address space. See [MCU Mailbox Errors](#mcu-mailbox-errors) for how access to and invalid SRAM address are handled. 
 
 ### MCU SRAM
+![](images/MCI-MCU-SRAM-Diagram.png)
 
 The MCU SRAM provides essential data and instruction memory for the Manufacturer Control Unit. This SRAM bank is utilized by the MCU to load firmware images, store application data structures, and create a runtime stack. The SRAM is accessible via the AXI interface and is mapped into the MCI's memory space for easy access and management. Exposing this SRAM via a restricted API through the SoC AXI interconnect enables seamless and secured Firmware Updates to be managed by Caliptra.
 
-AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the Caliptra AXI_USER, or the MCU IFU/LSU AXI USERSs). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
+**Min Size**: 4KB
+
+**Max Size**: 2MB
+
+AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the MCU SRAM Config AXI_USER, or the MCU IFU/LSU AXI USERSs). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
 
 The MCU SRAM contains two regions, a Protected Data Region and an Updatable Execution Region, each with a different set of access rules.
 
-The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing is locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation.
+After each MCU reset the Updateable Execution Region may only be read/written by MCU SRAM Config User (Typically Caliptra) prior to mcu_sram_fw_exec_region_lock input signal is set. Once fw_exec_region_lock is set it can be read/written by the MCU IFU or MCU LSU until MCU reset is asserted. 
 
-The Updateable Execution Region may only be read/written by Caliptra prior to setting the MCU_RUNTIME_LOCK register and may only be read/written by the MCU IFU or MCU LSU after MCU_RUNTIME_LOCK is set. The Protected Data Region may never be accessed by Caliptra or the MCU IFU. Only the MCU LSU is allowed to read or write to the Protected Data Region, regardless of whether MCU ROM or MCU Runtime firmware is running.
+The Protected Data Region is only ever read/write accessable by MCU LSU. 
+
+The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing shall be locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation in 4KB increments. FW_SRAM_EXEC_REGION_SIZE counts in base 0 meaning the smallest the Updateable Execution Region size can be is 4KB. It is possible for the entire SRAM to be allocated to the Updatable Execution Region and there be no Protected Data Region. 
 
 The entire MCU SRAM has ECC protection. Unlike MCI mailboxes, there is no configuration available to disable MCU SRAM for architectural reasons. Single bit errors are detected and corrected. While double bit errors are detected and error. MCI actions for single bit errors:
 - Correct data and pass corrected data back to the initiator.
@@ -1158,6 +1165,8 @@ The entire MCU SRAM has ECC protection. Unlike MCI mailboxes, there is no config
 - MCI actions for double bit errors:
 - AXI response to the initiator
 - HW_ERROR_FATAL asserted and sent to SOC
+
+MCU SRAM is accessable via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) for more details.
 
 ### MCI AXI Subordinate
 
