@@ -37,6 +37,7 @@ endif
 
 # Define test name
 TESTNAME ?= iccm_lock
+CALIPTRA_CORE_TESTNAME ?= caliptra_hello_world
 TEST_DIR ?= $(CALIPTRA_SS)/src/integration/test_suites/$(TESTNAME)
 HEX_DIR = $(CALIPTRA_SS)/src/integration/test_suites/hex
 INCLUDES_DIR = $(CALIPTRA_SS)/src/integration/test_suites/includes
@@ -282,16 +283,16 @@ vcs: program.hex vcs-build
 ############ TEST build ###############################
 
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
-program.hex: $(BUILD_DIR)/defines.h
+mcu_program.hex: $(BUILD_DIR)/defines.h
 	@echo " !!! No $(GCC_PREFIX)-gcc in path, using canned hex files !!"
 	cp $(HEX_DIR)/$(TESTNAME).hex program.hex
 else ifneq (,$(wildcard $(TEST_DIR)/$(TESTNAME).makefile))
-program.hex:
+mcu_program.hex:
 	@echo Building $(TESTNAME) via $(TEST_DIR)/$(TESTNAME).makefile
 	$(MAKE) -f $(TEST_DIR)/$(TESTNAME).makefile
 else ifneq (,$(wildcard $(TEST_DIR)/$(TESTNAME)))
 # Build program.hex from RUST executable
-program.hex:
+mcu_program.hex:
 	@echo "Building program.hex from $(TESTNAME) using Crypto Test rules for pre-compiled RUST executables"
 	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .bss -R .sbss -R .iccm -R .dccm -R .eh_frame --pad-to 0xC000 --gap-fill 0xFF --no-change-warnings $(TEST_DIR)/$(TESTNAME) program.hex
 	-$(GCC_PREFIX)-objcopy -O verilog -j .data -j .rodata -j .bss -j .sbss -j .dccm \
@@ -318,7 +319,7 @@ else
 # 	riscv64-unknown-elf-nm -B -n mcu_hello_world.exe > mcu_hello_world.sym
 # 	@echo Completed building $(TESTNAME)
 
-mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
+mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK) program.hex
 	@echo Building $(TESTNAME)
 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
 #	-$(GCC_PREFIX)-objcopy --dump-section .dccm=dccm_section.bin $(TESTNAME).exe
@@ -359,6 +360,9 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 # -$(GCC_PREFIX)-objcopy -O verilog -j .mailbox --gap-fill 0x0     --change-section-address .mailbox=0 --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mailbox.hex
 # $(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
 # $(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
+
+program.hex:
+	CALIPTRA_ROOT=$(CALIPTRA_SS_ROOT)/third-party/caliptra-rtl TEST_DIR="$${CALIPTRA_SS_ROOT}/src/integration/caliptra_test_suites/$(CALIPTRA_CORE_TESTNAME) make -f $${CALIPTRA_ROOT}/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=$(CALIPTRA_CORE_TESTNAME) program.hex
 
 # Cannot build caliptra_{fmc,rt}.hex and program.hex in the same make invocation (TESTNAME will be invalid, and consequently other dependencies like LINK)
 # Entire image will be loaded into the mailbox, so it must fit the 128KiB memory
