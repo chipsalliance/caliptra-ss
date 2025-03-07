@@ -84,6 +84,14 @@
     - [Subsystem Boot Finite State Machine (CSS-BootFSM)](#subsystem-boot-finite-state-machine-css-bootfsm)
     - [Watchdog Timer](#watchdog-timer)
     - [MCU Mailbox](#mcu-mailbox)
+      - [MCU Mailbox Limited trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
+      - [MCU Mailbox Locking](#mcu-mailbox-locking)
+      - [MCU Mailbox Target User](#mcu-mailbox-target-user)
+      - [MCU Mailbox Fully addressable SRAM](#mcu-mailbox-fully-addressable-sram)
+      - [MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)
+      - [MCU Mailbox Interrupts](#mcu-mailbox-interrupts)
+      - [MCU Mailbox Errors](#mcu-mailbox-errors)
+      - [MCU Mailbox MCU Access](#mcu-mailbox-mcu-access)
     - [MCU SRAM](#mcu-sram-1)
     - [MCI AXI Subordinate](#mci-axi-subordinate)
     - [Interrupts](#interrupts)
@@ -1017,9 +1025,88 @@ In Independent mode the two timers are completely independent of each other. Whe
 
 There are 2 mailboxes in the MCI. Each Mailbox component of the MCI allows for secure and restricted communication between external SoC entities and the MCU. This communication channel is essential for exchanging control messages, status updates, and other critical information that the MCU will use to monitor system boot, firmware updates, and security critical operations. Mailboxes are designed to ensure that only authorized entities can access and communicate through it, preserving the integrity and security of the SoC operations.
 
-Mailbox logic is adapted from the Caliptra Mailbox and follows the same programming flow and rules as defined for Caliptra.
+Mailbox logic is simlar but different from Caliptra Mailbox.
 
-Each mailbox is paired with an SRAM to store staged data. These SRAMs are **configurable** with minimum size of 0 and a max size of 2MB. SOC depending on the services, it shall increase or decrease the sizes. It is possible that SOCs can disable these mailboxes by setting size=0 and implement its own mailbox mechanism (interrupts, corresponding FW etc.). Independent of reusing CSS mailbox or SOC's own mailbox implementation or both, SRAMs shall have ECC. Please see MCI error handling section for more details for MCI mailboxes.
+
+#### MCU Mailbox Limited trusted AXI users
+
+There are 4 trusted AXI Users determined at built time via parameters or via MCI lockable registers. These users + MCU are the only AXI users that can access or obtain a lock on the mailbox.
+
+#### MCU Mailbox Locking
+
+A requester will read the "LOCK" register to obtain a lock on the mailbox. Once the lock is obtained this user has read/write ability to:
+
+- All mailbox registers except the STATUS register is still only RO
+- Maibox SRAM 
+
+Unlocking occures when the requestor clears the execution register, which in turn clears all the status registers and clears the SRAM up to the max DLEN set. 
+
+#### MCU Mailbox Target User
+
+When the MCU sees a mailbox request it can add an additional 3 target users if the data is not directly processed by the MCU. These target users will gain:
+
+- Write access to DLEN register
+- Write access to STATUS register
+- Mailbox SRAM
+
+It is the MCU FW responsibility to notify these other target users there is data available in the MCU Mailbox. 
+
+#### MCU Mailbox Fully addressable SRAM
+
+The SRAM is fully addressable and reads are not destructive in this mailbox.
+
+**Min Size**: 0
+
+**Max Size**: 2MB
+
+If set to 0 the mailbox is not instantiated. 
+
+#### MCU Mailbox SRAM Clearing
+
+When the mailbox lock is released the SRAM is zeroed out from 0 to max DLEN set during the locking period. The flow for clearing the SRAM is:
+
+1. Requester releases lock by clearing the EXECUTE register
+2. MCU SRAM starts clearing
+3. MCU SRAM clearing ends
+4. Mailbox is unlocked
+
+The Requester is locked out of the mailbox after step 1, even though the lock isn't cleared until step 4. 
+
+It is expected that agents write their content from 0 to DLEN. If an agent writes outside of this SRAM area, there is no security guarantee for that content.
+
+#### MCU Mailbox Interrupts
+
+The following interrupts are sent to MCU:
+
+| **Interrupt** | **Description**     | 
+| :---------         | :---------     | 
+| Mailbox is locked             | Asserted when an agent has obtained a lock on the mailbox.        | 
+| Mailbox is unlocked             | Asserted when an agent has released a mailbox lock        | 
+| Data is available          | Asserted when the EXECUTE register has been asserted indicating data is available in the mailbox.         | 
+
+
+#### MCU Mailbox Errors
+
+Each mailbox has the following errors:
+
+- Access Error without correct permission
+  - Reads 
+    - Data returned 0
+    - Error response on fabric
+  - Writes
+    - Data dropped
+    - Error response on fabric
+- Single Bit ECC
+  - Interrupt for MCU
+- Double Bit ECC
+  - Error interupt for MCU
+  - HW_NON_FATAL error for SOC consumption
+
+Whenever an agent reads data from the SRAM they either need to consume the Double Bit ECC interrupt wire or check the MCU Mailbox status registers to know if the data they received is valid. 
+
+#### MCU Mailbox MCU Access
+
+MCU always has full access to the Mailbox CSRs and SRAM in order to facilitate interactions and help with any lockup. 
 
 ### MCU SRAM
 ![](images/MCI-MCU-SRAM-Diagram.png)
