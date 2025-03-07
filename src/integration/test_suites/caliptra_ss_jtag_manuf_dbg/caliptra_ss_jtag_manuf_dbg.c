@@ -1,3 +1,10 @@
+/*
+    Run this test with the following command
+    submit_i cpt_build2 -tc caliptra_ss_jtag_manuf_dbg -op -to 5000000
+    or 
+    submit_i cpt_build -tc caliptra_ss_jtag_manuf_dbg -op -to 5000000
+*/
+
 
 #include "soc_address_map.h"
 #include "printf.h"
