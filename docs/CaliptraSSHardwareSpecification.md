@@ -1030,26 +1030,28 @@ Mailbox logic is simlar but different from Caliptra Mailbox.
 
 #### MCU Mailbox Limited trusted AXI users
 
-There are 4 trusted AXI Users determined at built time via parameters or via MCI lockable registers. These users + MCU are the only AXI users that can access or obtain a lock on the mailbox.
+There are 4 trusted AXI Users determined at build time via parameters or via MCI lockable registers. These users + MCU are the only AXI users that can access or obtain a lock on the mailbox.
 
 #### MCU Mailbox Locking
 
-A requester will read the "LOCK" register to obtain a lock on the mailbox. Once the lock is obtained this user has read/write ability to:
+A requester will read the "LOCK" register to obtain a lock on the mailbox. This is a read-set register, the lock is acquired when read returns 0. Once the lock is obtained this user has read/write ability to:
 
-- All mailbox registers except the STATUS register is still only RO
+- All mailbox registers except the STATUS and target user registers are still only RO
 - Maibox SRAM 
 
 Unlocking occures when the requestor clears the execution register, which in turn clears all the status registers and clears the SRAM up to the max DLEN set. 
 
 #### MCU Mailbox Target User
 
-When the MCU sees a mailbox request it can add an additional 3 target users if the data is not directly processed by the MCU. These target users will gain:
+When the MCU sees a mailbox request it can add an additional target user if the data is not directly processed by the MCU. These target users will gain:
 
 - Write access to DLEN register
 - Write access to STATUS register
 - Mailbox SRAM
 
 It is the MCU FW responsibility to notify these other target users there is data available in the MCU Mailbox. 
+
+Target users must be an [MCU Mailbox trusted user](mcu-mailbox-limited-truster-AXI-user)
 
 #### MCU Mailbox Fully addressable SRAM
 
