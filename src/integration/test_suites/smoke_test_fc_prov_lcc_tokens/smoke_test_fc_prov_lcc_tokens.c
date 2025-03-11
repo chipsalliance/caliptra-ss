@@ -19,10 +19,6 @@ volatile char* stdout = (char *)0x21000410;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#ifndef MY_RANDOM_SEED
-#define MY_RANDOM_SEED 42
-#endif // MY_RANDOM_SEED
-
 void raw_to_testunlock0(){
     uint32_t reg_value;
     uint32_t status_val;
@@ -48,12 +44,9 @@ void raw_to_testunlock0(){
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in TEST_UNLOCK0 state!\n");
 }
 
-uint32_t calculate_digest(uint32_t partition_base_address) {
+void calculate_digest(uint32_t partition_base_address) {
     // Step 1: Check if DAI is idle
-    uint32_t status = wait_dai_op_idle();
-    if (status) {
-        return status;
-    }
+    wait_dai_op_idle(0);
 
     // Step 2: Write the partition base address to DIRECT_ACCESS_ADDRESS
     lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, partition_base_address);
@@ -63,7 +56,8 @@ uint32_t calculate_digest(uint32_t partition_base_address) {
     lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_CMD, 0x4);
 
     // Step 4: Poll STATUS until DAI state goes back to idle    
-    return wait_dai_op_idle();
+    wait_dai_op_idle(0);
+    return;
 }
 
 /**
@@ -97,29 +91,13 @@ void program_secret_lc_transition_partition() {
     const uint32_t data[4] = {0xdeadbeef, 0xcafebabe, 0x12345678, 0xabababab};
     uint32_t read_data[4];
 
-    uint32_t status = 0;
-
     // Step 1
-    status = dai_wr(fuse_address, data[0], data[1], 64);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_wr failed with status: %08X\n", status);
-        exit(1);
-    }
-    status = dai_wr(fuse_address+8, data[2], data[3], 64);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_wr failed with status: %08X\n", status);
-        exit(1);
-    }
+    dai_wr(fuse_address, data[0], data[1], 64, 0);
+    dai_wr(fuse_address+8, data[2], data[3], 64, 0);
 
     // Step 2
-    status = dai_rd(fuse_address, &read_data[0], &read_data[1], 64);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_rd failed with status: %08X\n", status);
-    }
-    status = dai_rd(fuse_address+8, &read_data[2], &read_data[3], 64);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_rd failed with status: %08X\n", status);
-    }
+    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, 0);
+    dai_rd(fuse_address+8, &read_data[2], &read_data[3], 64, 0);
     if (memcmp(data, read_data, 16)) {
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", data[2], read_data[2]);
         exit(1);
@@ -131,30 +109,20 @@ void program_secret_lc_transition_partition() {
     digest[1] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_1);
     if (digest[0] != 0 || digest[1] != 0) {
         VPRINTF(LOW, "ERROR: digest is not 0\n");
+        exit(1);
     }
 
     // Step 4
-    status = calculate_digest(base_address);
-    if (status) {
-        VPRINTF(LOW, "ERROR: calculate digest failed with status: %08X\n", status);
-    }
+    calculate_digest(base_address);
 
     // Step 5
     reset_rtl();
 
     // Step 6
-    status = dai_rd(fuse_address, &read_data[0], &read_data[1], 64);
-    if (((status >> FUSE_CTRL_STATUS_DAI_ERROR_OFFSET) & 0x1) != 1) {
-        VPRINTF(LOW, "ERROR: dai error not signaled: %08X\n", status);
-        exit(1);
-    }
+    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 7
-    status = dai_wr(fuse_address, data[0], data[1], 64);
-    if (((status >> FUSE_CTRL_STATUS_DAI_ERROR_OFFSET) & 0x1) != 1) {
-        VPRINTF(LOW, "ERROR: dai error not signaled: %08X\n", status);
-        exit(1);
-    }
+    dai_wr(fuse_address, data[0], data[1], 64, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 8
     digest[0] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_0);
@@ -182,8 +150,6 @@ void main (void) {
     lcc_initialization();    
     raw_to_testunlock0();
     initialize_otp_controller();
-
-    //srand((uint32_t)MY_RANDOM_SEED);
 
     program_secret_lc_transition_partition();
 

@@ -34,6 +34,7 @@ offset = 0
 % if len(r.fields) > 1:
 #define FUSE_CTRL_${r.name.upper()}_${f.name.upper()}_WIDTH (${f.bits.width()})
 #define FUSE_CTRL_${r.name.upper()}_${f.name.upper()}_OFFSET (${offset})
+#define FUSE_CTRL_${r.name.upper()}_${f.name.upper()}_MASK (${f.bits.bitmask()})
 % endif
 <%
 offset += f.bits.width()

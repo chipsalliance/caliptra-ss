@@ -19,10 +19,6 @@ volatile char* stdout = (char *)0x21000410;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#ifndef MY_RANDOM_SEED
-#define MY_RANDOM_SEED 42
-#endif // MY_RANDOM_SEED
-
 void raw_to_testunlock0(){
     uint32_t reg_value;
     uint32_t status_val;
@@ -48,29 +44,11 @@ void raw_to_testunlock0(){
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in TEST_UNLOCK0 state!\n");
 }
 
-uint32_t calculate_digest(uint32_t partition_base_address) {
-    // Step 1: Check if DAI is idle
-    uint32_t status = wait_dai_op_idle();
-    if (status) {
-        return status;
-    }
-
-    // Step 2: Write the partition base address to DIRECT_ACCESS_ADDRESS
-    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, partition_base_address);
-    VPRINTF(LOW, "INFO: Partition base address 0x%08X written to DIRECT_ACCESS_ADDRESS.\n", partition_base_address);
-
-    // Step 3: Trigger a digest calculation command
-    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_CMD, 0x4);
-
-    // Step 4: Poll STATUS until DAI state goes back to idle    
-    return wait_dai_op_idle();
-}
-
 /**
  * Program the revocation bits in `VENDOR_REVOCATIONS_PROD_PARTITION`. The test
  * proceeds in the following steps:
  * 
- *   1. Write a value to a randomized fuse.
+ *   1. Write a value to a fuse.
  *   2. Read back the value and verify it is equal to the value written in Step 1.
  *   3. Write a dummy digest into the partition's digest field, which locks the
  *      partition. This works since it is an unbuffered software partition.
@@ -98,50 +76,30 @@ void vendor_revocations_prod_partition() {
     uint32_t status = 0;
 
     // Step 1
-    status = dai_wr(fuse_address, data, 0, 32);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_wr failed with status: %08X\n", status);
-        exit(1);
-    }
+    dai_wr(fuse_address, data, 0, 32, 0);
 
     // Step 2
-    status = dai_rd(fuse_address, &read_data, NULL, 32);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_rd failed with status: %08X\n", status);
-        exit(1);
-    }
+    dai_rd(fuse_address, &read_data, NULL, 32, 0);
     if (data != read_data) {
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", data, read_data);
         exit(1);
     }
 
     // Step 3
-    status = dai_wr(digest_address, 0xff, 0xff, 64);
-    if (status) {
-        VPRINTF(LOW, "ERROR: writing digest failed with status: %08X\n", status);
-        exit(1);
-    }
+    dai_wr(digest_address, 0xff, 0xff, 64, 0);
 
     // Step 4
     reset_rtl();
 
     // Step 5
-    status = dai_rd(fuse_address, &read_data, NULL, 32);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_rd failed with status: %08X\n", status);
-        exit(1);
-    }
+    dai_rd(fuse_address, &read_data, NULL, 32, 0);
     if (data != read_data) {
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", data, read_data);
         exit(1);
     }
 
     // Step 6
-    status = dai_wr(fuse_address, data, 0, 32);
-    if (((status >> FUSE_CTRL_STATUS_DAI_ERROR_OFFSET) & 0x1) != 1) {
-        VPRINTF(LOW, "ERROR: dai error not signaled: %08X\n", status);
-        exit(1);
-    }
+    dai_wr(fuse_address, data, 0, 32, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 7
     uint32_t digest[2];
@@ -167,8 +125,6 @@ void main (void) {
     lcc_initialization();    
     raw_to_testunlock0();
     initialize_otp_controller();
-
-    //srand((uint32_t)MY_RANDOM_SEED);
 
     vendor_revocations_prod_partition();
 

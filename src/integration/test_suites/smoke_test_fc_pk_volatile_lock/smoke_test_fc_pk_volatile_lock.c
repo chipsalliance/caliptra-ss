@@ -19,10 +19,6 @@ volatile char* stdout = (char *)0x21000410;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#ifndef MY_RANDOM_SEED
-#define MY_RANDOM_SEED 42
-#endif // MY_RANDOM_SEED
-
 void raw_to_testunlock0(){
     uint32_t reg_value;
     uint32_t status_val;
@@ -69,31 +65,17 @@ void program_vendor_hashes_prod_partition(void) {
 
     const uint32_t data = 0xdeadbeef;
 
-    uint32_t status = 0;
-
     // Step 1
-    status = dai_wr(addresses[0], data, 0, 32);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_wr failed with status: %08X\n", status);
-        exit(1);
-    }
+    dai_wr(addresses[0], data, 0, 32, 0);
 
     // Step 2
-    status = dai_wr(addresses[1], data+1, 0, 32);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_wr failed with status: %08X\n", status);
-        exit(1);
-    }
+    dai_wr(addresses[1], data+1, 0, 32, 0);
 
     // Step 3
     lsu_write_32(FUSE_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 4); // Lock all hashes starting from index 5.
 
     // Step 4
-    status = dai_wr(addresses[1], data+2, 0, 32);
-    if (((status >> FUSE_CTRL_STATUS_DAI_ERROR_OFFSET) & 0x1) != 1) {
-        VPRINTF(LOW, "ERROR: dai error not signaled with status: %08X\n", status);
-        exit(1);
-    }
+    dai_wr(addresses[1], data+2, 0, 32, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
 }
 
 void main (void) {

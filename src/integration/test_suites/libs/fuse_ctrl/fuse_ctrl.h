@@ -30,9 +30,9 @@ void sw_transition_req(uint32_t next_lc_state,
                         uint32_t token_31_0,
                         uint32_t conditional);
                         
-uint32_t dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity);
-uint32_t dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity);
-uint32_t wait_dai_op_idle(void);
+void dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity, uint32_t exp_mask);
+void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_mask);
+void wait_dai_op_idle(uint32_t exp_mask);
 //void check_dai_status(void);
 
 #endif // FUSE_CTRL_H

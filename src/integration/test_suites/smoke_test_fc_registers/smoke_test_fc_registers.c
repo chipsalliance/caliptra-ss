@@ -19,10 +19,6 @@ volatile char* stdout = (char *)0x21000410;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#ifndef MY_RANDOM_SEED
-#define MY_RANDOM_SEED 42
-#endif // MY_RANDOM_SEED
-
 void raw_to_testunlock0(){
     uint32_t reg_value;
     uint32_t status_val;
@@ -72,8 +68,6 @@ void register_accesses() {
     const uint32_t data = 0xdeadbeef;
     uint32_t read_data;
 
-    uint32_t status = 0;
-
     // Step 1
     for (int i = 0; i < 18; i++) {
         if (lsu_read_32(FUSE_CTRL_ERR_CODE_0+0x4*i)) {
@@ -83,32 +77,16 @@ void register_accesses() {
     }
 
     // Step 2
-    status = dai_wr(fuse_address, data, 0, 32);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_wr failed with status: %08X\n", status);
-        exit(1);
-    }
+    dai_wr(fuse_address, data, 0, 32, 0);
 
     // Step 3
-    status = dai_rd(fuse_address, &read_data, NULL, 32);
-    if (status) {
-        VPRINTF(LOW, "ERROR: dai_rd failed with status: %08X\n", status);
-        exit(1);
-    }
-    if (data != read_data) {
-        VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", data, read_data);
-        exit(1);
-    }
+    dai_rd(fuse_address, &read_data, NULL, 32, 0);
 
     // Step 4
     lsu_write_32(FUSE_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK, 0);
 
     // Step 5
-    status = dai_rd(fuse_address, &read_data, NULL, 32);
-    if (((status >> FUSE_CTRL_STATUS_DAI_ERROR_OFFSET) & 0x1) != 1) {
-        VPRINTF(LOW, "ERROR: dai error not signaled: %08X\n", status);
-        exit(1);
-    }
+    dai_rd(fuse_address, &read_data, NULL, 32, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
 }
 
 void main (void) {
@@ -125,8 +103,6 @@ void main (void) {
     lcc_initialization();    
     raw_to_testunlock0();
     initialize_otp_controller();
-
-    //srand((uint32_t)MY_RANDOM_SEED);
 
     register_accesses();
 

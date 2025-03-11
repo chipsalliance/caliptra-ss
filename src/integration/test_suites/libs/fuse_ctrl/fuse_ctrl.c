@@ -24,14 +24,30 @@
 #include "riscv_hw_if.h"
 #include "fuse_ctrl_address_map.h"
 
-uint32_t wait_dai_op_idle(void) {
+// uint32_t wait_dai_op_idle(void) {
+//     uint32_t status;
+//     VPRINTF(LOW, "DEBUG: Waiting for DAI to become idle...\n");
+//     do {
+//         status = lsu_read_32(FUSE_CTRL_STATUS);
+//     } while (((status >> FUSE_CTRL_STATUS_DAI_IDLE_OFFSET) & 0x1) == 0);
+//     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
+//     return status & ((((uint32_t)1) << (FUSE_CTRL_STATUS_DAI_IDLE_OFFSET - 1)) - 1);
+// }
+
+void wait_dai_op_idle(uint32_t status_mask) {
     uint32_t status;
     VPRINTF(LOW, "DEBUG: Waiting for DAI to become idle...\n");
     do {
         status = lsu_read_32(FUSE_CTRL_STATUS);
     } while (((status >> FUSE_CTRL_STATUS_DAI_IDLE_OFFSET) & 0x1) == 0);
+    // Clear the IDLE bit from the status value
+    status &= ((((uint32_t)1) << (FUSE_CTRL_STATUS_DAI_IDLE_OFFSET - 1)) - 1);
+    if (status != status_mask) {
+        VPRINTF(LOW, "ERROR: unexpected status: expected: %08X actual: %08X\n", status_mask, status);
+        exit(1);
+    }
     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
-    return status & ((((uint32_t)1) << (FUSE_CTRL_STATUS_DAI_IDLE_OFFSET - 1)) - 1);
+    return;
 }
 
 void initialize_otp_controller(void) {
@@ -47,7 +63,7 @@ void initialize_otp_controller(void) {
         return;
     }
 
-    wait_dai_op_idle();
+    wait_dai_op_idle(0);
 
     VPRINTF(LOW, "INFO: OTP controller successfully initialized. STATUS: 0x%08X\n", status);
 
@@ -83,18 +99,16 @@ void reset_rtl(void) {
     for (uint16_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
+    wait_dai_op_idle(0);
 }
 
 #define FUSE_CTRL_CMD_DAI_WRITE 0x2
 #define FUSE_CTRL_CMD_DAI_READ  0x1
 
-uint32_t dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity) {
+void dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity, uint32_t exp_status) {
     VPRINTF(LOW, "DEBUG: Starting DAI write operation...\n");
 
-    uint32_t status = wait_dai_op_idle();
-    if (status) {
-        return status;
-    }
+    //wait_dai_op_idle(0);
 
     VPRINTF(LOW, "DEBUG: Writing wdata0: 0x%08X to DIRECT_ACCESS_WDATA_0.\n", wdata0);
     lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_WDATA_0, wdata0);
@@ -110,16 +124,14 @@ uint32_t dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granul
     VPRINTF(LOW, "DEBUG: Triggering DAI write command.\n");
     lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_WRITE);
 
-    return wait_dai_op_idle();
+    wait_dai_op_idle(exp_status);
+    return;
 }
 
-uint32_t dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity) {
+void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_status) {
     VPRINTF(LOW, "DEBUG: Starting DAI read operation...\n");
 
-    uint32_t status = wait_dai_op_idle();
-    if (status) {
-        return status;
-    }
+    //wait_dai_op_idle(0);
 
     VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
     lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, addr);
@@ -127,10 +139,7 @@ uint32_t dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t gran
     VPRINTF(LOW, "DEBUG: Triggering DAI read command.\n");
     lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_READ);
 
-    status = wait_dai_op_idle();
-    if (status) {
-        return status;
-    }
+    wait_dai_op_idle(exp_status);
 
     *rdata0 = lsu_read_32(FUSE_CTRL_DIRECT_ACCESS_RDATA_0);
     VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_0: 0x%08X\n", *rdata0);
@@ -139,5 +148,5 @@ uint32_t dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t gran
         *rdata1 = lsu_read_32(FUSE_CTRL_DIRECT_ACCESS_RDATA_1);
         VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
     }
-    return 0;
+    return;
 }
