@@ -1,14 +1,16 @@
-#include "soc_address_map.h"
-#include "printf.h"
-#include "fuse_ctrl.h"
-#include "riscv_hw_if.h"
-#include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
-#include "caliptra_ss_lc_ctrl_address_map.h"
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+
+#include "soc_address_map.h"
+#include "printf.h"
+#include "riscv_hw_if.h"
+#include "soc_ifc.h"
+#include "fuse_ctrl_address_map.h"
+#include "caliptra_ss_lc_ctrl_address_map.h"
+#include "fuse_ctrl.h"
+#include "lc_ctrl.h"
 
 volatile char* stdout = (char *)0x21000410;
 #ifdef CPT_VERBOSITY
