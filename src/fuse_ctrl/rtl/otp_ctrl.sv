@@ -392,6 +392,9 @@ module otp_ctrl
   // Access Defaults and CSRs //
   //////////////////////////////
 
+  dai_cmd_e                     dai_cmd;
+  logic [OtpByteAddrWidth-1:0]  dai_addr;
+
   // SEC_CM: ACCESS.CTRL.MUBI
   part_access_t [NumPart-1:0] part_access_pre, part_access;
   always_comb begin : p_access_control
@@ -418,6 +421,18 @@ module otp_ctrl
       for (int k = 0; k < NumPart; k++) begin
         if (PartInfo[k].iskeymgr_owner) begin
           part_access_pre[k] = {2{caliptra_prim_mubi_pkg::MuBi8True}};
+        end
+      end
+    end
+
+    // Intercept write requests to the `VENDOR_HASHES_PROD` partition and verify
+    // the write is allowed by the volatile lock of the `VENDOR_PK_HASH_VOLATILE LOCK` register.
+    if (NumVendorPkFuses > 1) begin
+      if (dai_cmd == DaiWrite && reg2hw.vendor_pk_hash_volatile_lock != '0 &&
+          dai_addr >= VendorHashesProdPartitionOffset &&
+          dai_addr < VendorHashesProdPartitionDigestOffset) begin
+        if (dai_addr >= (VendorHashesProdPartitionOffset + (reg2hw.vendor_pk_hash_volatile_lock * (CptraCoreVendorPkHash1Size + CptraCorePqcKeyType1Size)))) begin
+          part_access_pre[VendorHashesProdPartitionIdx].write_lock = MuBi8True;
         end
       end
     end
@@ -449,8 +464,8 @@ module otp_ctrl
 
   logic                         dai_idle;
   logic                         dai_req;
-  dai_cmd_e                     dai_cmd;
-  logic [OtpByteAddrWidth-1:0]  dai_addr;
+
+
   logic [NumDaiWords-1:0][31:0] dai_wdata, dai_rdata;
   logic direct_access_regwen_d, direct_access_regwen_q;
 
@@ -1527,29 +1542,35 @@ end
     clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
   )
 
-  //////////////////////////////////////////////////////////
-  // TODO: Correctly output unlock tokens for each LC state.
-  //////////////////////////////////////////////////////////
+  int test_unlock_token_idx;
+  assign test_unlock_token_idx = CptraSsTestUnlockToken0Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStRaw :
+                                 CptraSsTestUnlockToken1Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked0 :
+                                 CptraSsTestUnlockToken2Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked1 :
+                                 CptraSsTestUnlockToken3Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked2 :
+                                 CptraSsTestUnlockToken4Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked3 :
+                                 CptraSsTestUnlockToken5Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked4 :
+                                 CptraSsTestUnlockToken6Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked5 :
+                                 CptraSsTestUnlockToken7Offset;
 
-  // Test unlock and exit tokens and RMA token
-  assign otp_lc_data_o.test_exit_dev_token   = part_buf_data[TestUnlockToken0Offset +:
-                                                         TestUnlockToken0Size];
-  assign otp_lc_data_o.test_unlock_token = part_buf_data[TestUnlockToken0Offset +:
-                                                         TestUnlockToken0Size];
-  assign otp_lc_data_o.rma_token         = part_buf_data[RmaTokenOffset +:
-                                                         RmaTokenSize];
+  assign otp_lc_data_o.test_unlock_token = part_buf_data[test_unlock_token_idx +:
+                                                         CptraSsTestUnlockToken0Size];
 
-  //////////////////////////////////////////////////////////
-  // TODO: Correctly compute the valid bits for the tokens.
-  //////////////////////////////////////////////////////////
+  // LCC transition tokens.
+  assign otp_lc_data_o.test_exit_dev_token     = part_buf_data[CptraSsTestExitToManufTokenOffset +:
+                                                               CptraSsTestExitToManufTokenSize];
+  assign otp_lc_data_o.dev_exit_prod_token     = part_buf_data[CptraSsManufToProdTokenOffset +:
+                                                               CptraSsManufToProdTokenSize];
+  assign otp_lc_data_o.prod_exit_prodend_token = part_buf_data[CptraSsProdToProdEndTokenOffset +:
+                                                               CptraSsProdToProdEndTokenSize];
+  assign otp_lc_data_o.rma_token               = '0;
 
   lc_ctrl_pkg::lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
-  // The test tokens have been provisioned.
-  assign test_tokens_valid = (part_digest[SecretLcUnlockPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  // The transition tokens have been provisioned.
+  assign test_tokens_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The rma token has been provisioned.
-  assign rma_token_valid = (part_digest[SecretLcRmaPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign rma_token_valid = lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
-  assign secrets_valid = (part_digest[SecretLcRmaPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign secrets_valid = lc_ctrl_pkg::Off;
 
   // Buffer these constants in order to ensure that synthesis does not try to optimize the encoding.
   // SEC_CM: TOKEN_VALID.CTRL.MUBI
@@ -1601,12 +1622,8 @@ end
   // Assertions //
   ////////////////
 
-  //////////////////////////////////////////////////////////
-  // TODO: Properly assert the unlock tokens.
-  //////////////////////////////////////////////////////////
-
-  `CALIPTRA_ASSERT_INIT(RmaTokenSize_A,        lc_ctrl_state_pkg::LcTokenWidth == RmaTokenSize * 8)
-  `CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, lc_ctrl_state_pkg::LcTokenWidth == TestUnlockToken0Size * 8)
+  //`CALIPTRA_ASSERT_INIT(RmaTokenSize_A,        lc_ctrl_state_pkg::LcTokenWidth == RmaTokenSize * 8)
+  //`CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, lc_ctrl_state_pkg::LcTokenWidth == TestUnlockToken0Size * 8)
   `CALIPTRA_ASSERT_INIT(LcStateSize_A,         lc_ctrl_state_pkg::LcStateWidth == LcStateSize * 8)
   `CALIPTRA_ASSERT_INIT(LcTransitionCntSize_A, lc_ctrl_state_pkg::LcCountWidth == LcTransitionCntSize * 8)
 
@@ -1624,6 +1641,8 @@ end
   `CALIPTRA_ASSERT_KNOWN(OtpSramKeyKnown_A,           sram_otp_key_o)
   `CALIPTRA_ASSERT_KNOWN(OtpOtgnKeyKnown_A,           otbn_otp_key_o)
   `CALIPTRA_ASSERT_KNOWN(OtpBroadcastKnown_A,         otp_broadcast_o)
+
+  `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 |-> test_tokens_valid == lc_ctrl_pkg::On)
 
   // Alert assertions for sparse FSMs.
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlDaiFsmCheck_A,
