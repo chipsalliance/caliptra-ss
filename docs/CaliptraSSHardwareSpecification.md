@@ -90,6 +90,7 @@
       - [MCU Mailbox Interrupts](#mcu-mailbox-interrupts)
       - [MCU Mailbox Errors](#mcu-mailbox-errors)
       - [MCU Mailbox MCU Access](#mcu-mailbox-mcu-access)
+      - [MCU Mailbox Address Map](#mcu-mailbox-address-map)
     - [MCU SRAM](#mcu-sram-1)
     - [MCI AXI Subordinate](#mci-axi-subordinate)
     - [Interrupts](#interrupts)
@@ -1073,6 +1074,15 @@ Whenever an agent reads data from the SRAM they either need to consume the Doubl
 When there is a mailbox lock the MCU has full access to the mailbox CSRs and SRAM in order to facilitage interactions and help with any lockup. 
 
 It is the only agent allowed to set TARGET_USER and update the final CMD_STATUS. 
+
+#### MCU Mailbox Address Map
+
+| Start Address    | End Address      | Name              | Description               |
+|------------------|------------------|-------------------|---------------------------|
+| 0x0000_0000      | 0x01F_FFFF*      | MBOX SRAM        | Mailbox SRAM              |
+| 0x0020_0000      | 0x020_003F       | MBOX CSR        | Mailbox Control Status Registers              |
+
+  *NOTE: MBOX SRAM size is configurable, but MBOX always reserves 2MB address space. See [MCU Mailbox Errors](#mcu-mailbox-errors) for how access to and invalid SRAM address are handled. 
 
 ### MCU SRAM
 
