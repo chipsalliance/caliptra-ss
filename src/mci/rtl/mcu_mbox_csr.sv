@@ -87,6 +87,7 @@ module mcu_mbox_csr (
         logic mbox_lock;
         logic mbox_user;
         logic mbox_target_user;
+        logic mbox_target_user_valid;
         logic mbox_cmd;
         logic mbox_dlen;
         logic mbox_execute;
@@ -112,12 +113,13 @@ module mcu_mbox_csr (
         decoded_reg_strb.mbox_lock = cpuif_req_masked & (cpuif_addr == 22'h200000);
         decoded_reg_strb.mbox_user = cpuif_req_masked & (cpuif_addr == 22'h200004);
         decoded_reg_strb.mbox_target_user = cpuif_req_masked & (cpuif_addr == 22'h200008);
-        decoded_reg_strb.mbox_cmd = cpuif_req_masked & (cpuif_addr == 22'h20000c);
-        decoded_reg_strb.mbox_dlen = cpuif_req_masked & (cpuif_addr == 22'h200010);
-        decoded_reg_strb.mbox_execute = cpuif_req_masked & (cpuif_addr == 22'h200014);
-        decoded_reg_strb.mbox_target_status = cpuif_req_masked & (cpuif_addr == 22'h200018);
-        decoded_reg_strb.mbox_cmd_status = cpuif_req_masked & (cpuif_addr == 22'h20001c);
-        decoded_reg_strb.mbox_hw_status = cpuif_req_masked & (cpuif_addr == 22'h200020);
+        decoded_reg_strb.mbox_target_user_valid = cpuif_req_masked & (cpuif_addr == 22'h20000c);
+        decoded_reg_strb.mbox_cmd = cpuif_req_masked & (cpuif_addr == 22'h200010);
+        decoded_reg_strb.mbox_dlen = cpuif_req_masked & (cpuif_addr == 22'h200014);
+        decoded_reg_strb.mbox_execute = cpuif_req_masked & (cpuif_addr == 22'h200018);
+        decoded_reg_strb.mbox_target_status = cpuif_req_masked & (cpuif_addr == 22'h20001c);
+        decoded_reg_strb.mbox_cmd_status = cpuif_req_masked & (cpuif_addr == 22'h200020);
+        decoded_reg_strb.mbox_hw_status = cpuif_req_masked & (cpuif_addr == 22'h200024);
         decoded_strb_is_external = is_external;
         external_req = is_external;
     end
@@ -152,6 +154,12 @@ module mcu_mbox_csr (
                 logic load_next;
             } user;
         } mbox_target_user;
+        struct packed{
+            struct packed{
+                logic next;
+                logic load_next;
+            } valid;
+        } mbox_target_user_valid;
         struct packed{
             struct packed{
                 logic [31:0] next;
@@ -215,6 +223,11 @@ module mcu_mbox_csr (
                 logic [31:0] value;
             } user;
         } mbox_target_user;
+        struct packed{
+            struct packed{
+                logic value;
+            } valid;
+        } mbox_target_user_valid;
         struct packed{
             struct packed{
                 logic [31:0] value;
@@ -332,6 +345,30 @@ module mcu_mbox_csr (
         end
     end
     assign hwif_out.mbox_target_user.user.value = field_storage.mbox_target_user.user.value;
+    // Field: mcu_mbox_csr.mbox_target_user_valid.valid
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_target_user_valid.valid.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.mbox_target_user_valid && decoded_req_is_wr && hwif_in.valid_root_req) begin // SW write
+            next_c = (field_storage.mbox_target_user_valid.valid.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end else if(hwif_in.mbox_target_user_valid.valid.hwclr) begin // HW Clear
+            next_c = '0;
+            load_next_c = '1;
+        end
+        field_combo.mbox_target_user_valid.valid.next = next_c;
+        field_combo.mbox_target_user_valid.valid.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.rst_b) begin
+        if(~hwif_in.rst_b) begin
+            field_storage.mbox_target_user_valid.valid.value <= 1'h0;
+        end else if(field_combo.mbox_target_user_valid.valid.load_next) begin
+            field_storage.mbox_target_user_valid.valid.value <= field_combo.mbox_target_user_valid.valid.next;
+        end
+    end
+    assign hwif_out.mbox_target_user_valid.valid.value = field_storage.mbox_target_user_valid.valid.value;
     // Field: mcu_mbox_csr.mbox_cmd.command
     always_comb begin
         automatic logic [31:0] next_c;
@@ -553,24 +590,26 @@ module mcu_mbox_csr (
     logic [31:0] readback_data;
 
     // Assign readback values to a flattened array
-    logic [10-1:0][31:0] readback_array;
+    logic [11-1:0][31:0] readback_array;
     assign readback_array[0] = hwif_in.MBOX_SRAM.rd_ack ? hwif_in.MBOX_SRAM.rd_data : '0;
     assign readback_array[1][0:0] = (decoded_reg_strb.mbox_lock && !decoded_req_is_wr) ? field_storage.mbox_lock.lock.value : '0;
     assign readback_array[1][31:1] = '0;
     assign readback_array[2][31:0] = (decoded_reg_strb.mbox_user && !decoded_req_is_wr) ? field_storage.mbox_user.user.value : '0;
     assign readback_array[3][31:0] = (decoded_reg_strb.mbox_target_user && !decoded_req_is_wr) ? field_storage.mbox_target_user.user.value : '0;
-    assign readback_array[4][31:0] = (decoded_reg_strb.mbox_cmd && !decoded_req_is_wr) ? field_storage.mbox_cmd.command.value : '0;
-    assign readback_array[5][31:0] = (decoded_reg_strb.mbox_dlen && !decoded_req_is_wr) ? field_storage.mbox_dlen.length.value : '0;
-    assign readback_array[6][0:0] = (decoded_reg_strb.mbox_execute && !decoded_req_is_wr) ? field_storage.mbox_execute.execute.value : '0;
-    assign readback_array[6][31:1] = '0;
-    assign readback_array[7][3:0] = (decoded_reg_strb.mbox_target_status && !decoded_req_is_wr) ? field_storage.mbox_target_status.status.value : '0;
-    assign readback_array[7][4:4] = (decoded_reg_strb.mbox_target_status && !decoded_req_is_wr) ? field_storage.mbox_target_status.done.value : '0;
-    assign readback_array[7][31:5] = '0;
-    assign readback_array[8][3:0] = (decoded_reg_strb.mbox_cmd_status && !decoded_req_is_wr) ? field_storage.mbox_cmd_status.status.value : '0;
-    assign readback_array[8][31:4] = '0;
-    assign readback_array[9][0:0] = (decoded_reg_strb.mbox_hw_status && !decoded_req_is_wr) ? field_storage.mbox_hw_status.ecc_single_error.value : '0;
-    assign readback_array[9][1:1] = (decoded_reg_strb.mbox_hw_status && !decoded_req_is_wr) ? field_storage.mbox_hw_status.ecc_double_error.value : '0;
-    assign readback_array[9][31:2] = '0;
+    assign readback_array[4][0:0] = (decoded_reg_strb.mbox_target_user_valid && !decoded_req_is_wr) ? field_storage.mbox_target_user_valid.valid.value : '0;
+    assign readback_array[4][31:1] = '0;
+    assign readback_array[5][31:0] = (decoded_reg_strb.mbox_cmd && !decoded_req_is_wr) ? field_storage.mbox_cmd.command.value : '0;
+    assign readback_array[6][31:0] = (decoded_reg_strb.mbox_dlen && !decoded_req_is_wr) ? field_storage.mbox_dlen.length.value : '0;
+    assign readback_array[7][0:0] = (decoded_reg_strb.mbox_execute && !decoded_req_is_wr) ? field_storage.mbox_execute.execute.value : '0;
+    assign readback_array[7][31:1] = '0;
+    assign readback_array[8][3:0] = (decoded_reg_strb.mbox_target_status && !decoded_req_is_wr) ? field_storage.mbox_target_status.status.value : '0;
+    assign readback_array[8][4:4] = (decoded_reg_strb.mbox_target_status && !decoded_req_is_wr) ? field_storage.mbox_target_status.done.value : '0;
+    assign readback_array[8][31:5] = '0;
+    assign readback_array[9][3:0] = (decoded_reg_strb.mbox_cmd_status && !decoded_req_is_wr) ? field_storage.mbox_cmd_status.status.value : '0;
+    assign readback_array[9][31:4] = '0;
+    assign readback_array[10][0:0] = (decoded_reg_strb.mbox_hw_status && !decoded_req_is_wr) ? field_storage.mbox_hw_status.ecc_single_error.value : '0;
+    assign readback_array[10][1:1] = (decoded_reg_strb.mbox_hw_status && !decoded_req_is_wr) ? field_storage.mbox_hw_status.ecc_double_error.value : '0;
+    assign readback_array[10][31:2] = '0;
 
     // Reduce the array
     always_comb begin
@@ -578,7 +617,7 @@ module mcu_mbox_csr (
         readback_done = decoded_req & ~decoded_req_is_wr & ~decoded_strb_is_external;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<10; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<11; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 

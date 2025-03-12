@@ -2191,109 +2191,97 @@
 `ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 `define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (32'h10)
 `endif
-`ifndef MBOX0_CSR_MBOX_LOCK
-`define MBOX0_CSR_MBOX_LOCK                                                                         (32'h0)
-`define MBOX0_CSR_MBOX_LOCK_LOCK_LOW                                                                (0)
-`define MBOX0_CSR_MBOX_LOCK_LOCK_MASK                                                               (32'h1)
+`ifndef MCU_MBOX0_CSR_MBOX_LOCK
+`define MCU_MBOX0_CSR_MBOX_LOCK                                                                     (32'h200000)
+`define MCU_MBOX0_CSR_MBOX_LOCK_LOCK_LOW                                                            (0)
+`define MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK                                                           (32'h1)
 `endif
-`ifndef MBOX0_CSR_MBOX_USER
-`define MBOX0_CSR_MBOX_USER                                                                         (32'h4)
+`ifndef MCU_MBOX0_CSR_MBOX_USER
+`define MCU_MBOX0_CSR_MBOX_USER                                                                     (32'h200004)
 `endif
-`ifndef MBOX0_CSR_MBOX_CMD
-`define MBOX0_CSR_MBOX_CMD                                                                          (32'h8)
+`ifndef MCU_MBOX0_CSR_MBOX_TARGET_USER
+`define MCU_MBOX0_CSR_MBOX_TARGET_USER                                                              (32'h200008)
 `endif
-`ifndef MBOX0_CSR_MBOX_DLEN
-`define MBOX0_CSR_MBOX_DLEN                                                                         (32'hc)
+`ifndef MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID
+`define MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID                                                        (32'h20000c)
+`define MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_LOW                                              (0)
+`define MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK                                             (32'h1)
 `endif
-`ifndef MBOX0_CSR_MBOX_DATAIN
-`define MBOX0_CSR_MBOX_DATAIN                                                                       (32'h10)
+`ifndef MCU_MBOX0_CSR_MBOX_CMD
+`define MCU_MBOX0_CSR_MBOX_CMD                                                                      (32'h200010)
 `endif
-`ifndef MBOX0_CSR_MBOX_DATAOUT
-`define MBOX0_CSR_MBOX_DATAOUT                                                                      (32'h14)
+`ifndef MCU_MBOX0_CSR_MBOX_DLEN
+`define MCU_MBOX0_CSR_MBOX_DLEN                                                                     (32'h200014)
 `endif
-`ifndef MBOX0_CSR_MBOX_EXECUTE
-`define MBOX0_CSR_MBOX_EXECUTE                                                                      (32'h18)
-`define MBOX0_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                          (0)
-`define MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                         (32'h1)
+`ifndef MCU_MBOX0_CSR_MBOX_EXECUTE
+`define MCU_MBOX0_CSR_MBOX_EXECUTE                                                                  (32'h200018)
+`define MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                      (0)
+`define MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                     (32'h1)
 `endif
-`ifndef MBOX0_CSR_MBOX_STATUS
-`define MBOX0_CSR_MBOX_STATUS                                                                       (32'h1c)
-`define MBOX0_CSR_MBOX_STATUS_STATUS_LOW                                                            (0)
-`define MBOX0_CSR_MBOX_STATUS_STATUS_MASK                                                           (32'hf)
-`define MBOX0_CSR_MBOX_STATUS_ECC_SINGLE_ERROR_LOW                                                  (4)
-`define MBOX0_CSR_MBOX_STATUS_ECC_SINGLE_ERROR_MASK                                                 (32'h10)
-`define MBOX0_CSR_MBOX_STATUS_ECC_DOUBLE_ERROR_LOW                                                  (5)
-`define MBOX0_CSR_MBOX_STATUS_ECC_DOUBLE_ERROR_MASK                                                 (32'h20)
-`define MBOX0_CSR_MBOX_STATUS_MBOX_FSM_PS_LOW                                                       (6)
-`define MBOX0_CSR_MBOX_STATUS_MBOX_FSM_PS_MASK                                                      (32'h1c0)
-`define MBOX0_CSR_MBOX_STATUS_SOC_HAS_LOCK_LOW                                                      (9)
-`define MBOX0_CSR_MBOX_STATUS_SOC_HAS_LOCK_MASK                                                     (32'h200)
-`define MBOX0_CSR_MBOX_STATUS_MBOX_RDPTR_LOW                                                        (10)
-`define MBOX0_CSR_MBOX_STATUS_MBOX_RDPTR_MASK                                                       (32'h3fffc00)
-`define MBOX0_CSR_MBOX_STATUS_TAP_HAS_LOCK_LOW                                                      (26)
-`define MBOX0_CSR_MBOX_STATUS_TAP_HAS_LOCK_MASK                                                     (32'h4000000)
+`ifndef MCU_MBOX0_CSR_MBOX_TARGET_STATUS
+`define MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                            (32'h20001c)
+`define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
+`define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (32'hf)
+`define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
+`define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (32'h10)
 `endif
-`ifndef MBOX0_CSR_MBOX_UNLOCK
-`define MBOX0_CSR_MBOX_UNLOCK                                                                       (32'h20)
-`define MBOX0_CSR_MBOX_UNLOCK_UNLOCK_LOW                                                            (0)
-`define MBOX0_CSR_MBOX_UNLOCK_UNLOCK_MASK                                                           (32'h1)
+`ifndef MCU_MBOX0_CSR_MBOX_CMD_STATUS
+`define MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                               (32'h200020)
+`define MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_LOW                                                    (0)
+`define MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK                                                   (32'hf)
 `endif
-`ifndef MBOX0_CSR_TAP_MODE
-`define MBOX0_CSR_TAP_MODE                                                                          (32'h24)
-`define MBOX0_CSR_TAP_MODE_ENABLED_LOW                                                              (0)
-`define MBOX0_CSR_TAP_MODE_ENABLED_MASK                                                             (32'h1)
+`ifndef MCU_MBOX0_CSR_MBOX_HW_STATUS
+`define MCU_MBOX0_CSR_MBOX_HW_STATUS                                                                (32'h200024)
+`define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_LOW                                           (0)
+`define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (32'h1)
+`define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
+`define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (32'h2)
 `endif
-`ifndef MBOX1_CSR_MBOX_LOCK
-`define MBOX1_CSR_MBOX_LOCK                                                                         (32'h0)
-`define MBOX1_CSR_MBOX_LOCK_LOCK_LOW                                                                (0)
-`define MBOX1_CSR_MBOX_LOCK_LOCK_MASK                                                               (32'h1)
+`ifndef MCU_MBOX1_CSR_MBOX_LOCK
+`define MCU_MBOX1_CSR_MBOX_LOCK                                                                     (32'h200000)
+`define MCU_MBOX1_CSR_MBOX_LOCK_LOCK_LOW                                                            (0)
+`define MCU_MBOX1_CSR_MBOX_LOCK_LOCK_MASK                                                           (32'h1)
 `endif
-`ifndef MBOX1_CSR_MBOX_USER
-`define MBOX1_CSR_MBOX_USER                                                                         (32'h4)
+`ifndef MCU_MBOX1_CSR_MBOX_USER
+`define MCU_MBOX1_CSR_MBOX_USER                                                                     (32'h200004)
 `endif
-`ifndef MBOX1_CSR_MBOX_CMD
-`define MBOX1_CSR_MBOX_CMD                                                                          (32'h8)
+`ifndef MCU_MBOX1_CSR_MBOX_TARGET_USER
+`define MCU_MBOX1_CSR_MBOX_TARGET_USER                                                              (32'h200008)
 `endif
-`ifndef MBOX1_CSR_MBOX_DLEN
-`define MBOX1_CSR_MBOX_DLEN                                                                         (32'hc)
+`ifndef MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID
+`define MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID                                                        (32'h20000c)
+`define MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID_VALID_LOW                                              (0)
+`define MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID_VALID_MASK                                             (32'h1)
 `endif
-`ifndef MBOX1_CSR_MBOX_DATAIN
-`define MBOX1_CSR_MBOX_DATAIN                                                                       (32'h10)
+`ifndef MCU_MBOX1_CSR_MBOX_CMD
+`define MCU_MBOX1_CSR_MBOX_CMD                                                                      (32'h200010)
 `endif
-`ifndef MBOX1_CSR_MBOX_DATAOUT
-`define MBOX1_CSR_MBOX_DATAOUT                                                                      (32'h14)
+`ifndef MCU_MBOX1_CSR_MBOX_DLEN
+`define MCU_MBOX1_CSR_MBOX_DLEN                                                                     (32'h200014)
 `endif
-`ifndef MBOX1_CSR_MBOX_EXECUTE
-`define MBOX1_CSR_MBOX_EXECUTE                                                                      (32'h18)
-`define MBOX1_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                          (0)
-`define MBOX1_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                         (32'h1)
+`ifndef MCU_MBOX1_CSR_MBOX_EXECUTE
+`define MCU_MBOX1_CSR_MBOX_EXECUTE                                                                  (32'h200018)
+`define MCU_MBOX1_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                      (0)
+`define MCU_MBOX1_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                     (32'h1)
 `endif
-`ifndef MBOX1_CSR_MBOX_STATUS
-`define MBOX1_CSR_MBOX_STATUS                                                                       (32'h1c)
-`define MBOX1_CSR_MBOX_STATUS_STATUS_LOW                                                            (0)
-`define MBOX1_CSR_MBOX_STATUS_STATUS_MASK                                                           (32'hf)
-`define MBOX1_CSR_MBOX_STATUS_ECC_SINGLE_ERROR_LOW                                                  (4)
-`define MBOX1_CSR_MBOX_STATUS_ECC_SINGLE_ERROR_MASK                                                 (32'h10)
-`define MBOX1_CSR_MBOX_STATUS_ECC_DOUBLE_ERROR_LOW                                                  (5)
-`define MBOX1_CSR_MBOX_STATUS_ECC_DOUBLE_ERROR_MASK                                                 (32'h20)
-`define MBOX1_CSR_MBOX_STATUS_MBOX_FSM_PS_LOW                                                       (6)
-`define MBOX1_CSR_MBOX_STATUS_MBOX_FSM_PS_MASK                                                      (32'h1c0)
-`define MBOX1_CSR_MBOX_STATUS_SOC_HAS_LOCK_LOW                                                      (9)
-`define MBOX1_CSR_MBOX_STATUS_SOC_HAS_LOCK_MASK                                                     (32'h200)
-`define MBOX1_CSR_MBOX_STATUS_MBOX_RDPTR_LOW                                                        (10)
-`define MBOX1_CSR_MBOX_STATUS_MBOX_RDPTR_MASK                                                       (32'h3fffc00)
-`define MBOX1_CSR_MBOX_STATUS_TAP_HAS_LOCK_LOW                                                      (26)
-`define MBOX1_CSR_MBOX_STATUS_TAP_HAS_LOCK_MASK                                                     (32'h4000000)
+`ifndef MCU_MBOX1_CSR_MBOX_TARGET_STATUS
+`define MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                            (32'h20001c)
+`define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
+`define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (32'hf)
+`define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
+`define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (32'h10)
 `endif
-`ifndef MBOX1_CSR_MBOX_UNLOCK
-`define MBOX1_CSR_MBOX_UNLOCK                                                                       (32'h20)
-`define MBOX1_CSR_MBOX_UNLOCK_UNLOCK_LOW                                                            (0)
-`define MBOX1_CSR_MBOX_UNLOCK_UNLOCK_MASK                                                           (32'h1)
+`ifndef MCU_MBOX1_CSR_MBOX_CMD_STATUS
+`define MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                               (32'h200020)
+`define MCU_MBOX1_CSR_MBOX_CMD_STATUS_STATUS_LOW                                                    (0)
+`define MCU_MBOX1_CSR_MBOX_CMD_STATUS_STATUS_MASK                                                   (32'hf)
 `endif
-`ifndef MBOX1_CSR_TAP_MODE
-`define MBOX1_CSR_TAP_MODE                                                                          (32'h24)
-`define MBOX1_CSR_TAP_MODE_ENABLED_LOW                                                              (0)
-`define MBOX1_CSR_TAP_MODE_ENABLED_MASK                                                             (32'h1)
+`ifndef MCU_MBOX1_CSR_MBOX_HW_STATUS
+`define MCU_MBOX1_CSR_MBOX_HW_STATUS                                                                (32'h200024)
+`define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_LOW                                           (0)
+`define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (32'h1)
+`define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
+`define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (32'h2)
 `endif
 
 

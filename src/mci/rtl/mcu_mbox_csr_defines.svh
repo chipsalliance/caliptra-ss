@@ -22,9 +22,13 @@
 `define MCU_MBOX_CSR_MBOX_LOCK                                                                      (32'h200000)
 `define MCU_MBOX_CSR_MBOX_USER                                                                      (32'h200004)
 `define MCU_MBOX_CSR_MBOX_TARGET_USER                                                               (32'h200008)
-`define MCU_MBOX_CSR_MBOX_CMD                                                                       (32'h20000c)
-`define MCU_MBOX_CSR_MBOX_DLEN                                                                      (32'h200010)
-`define MCU_MBOX_CSR_MBOX_EXECUTE                                                                   (32'h200014)
+`define MCU_MBOX_CSR_MBOX_TARGET_USER_VALID                                                         (32'h20000c)
+`define MCU_MBOX_CSR_MBOX_CMD                                                                       (32'h200010)
+`define MCU_MBOX_CSR_MBOX_DLEN                                                                      (32'h200014)
+`define MCU_MBOX_CSR_MBOX_EXECUTE                                                                   (32'h200018)
+`define MCU_MBOX_CSR_MBOX_TARGET_STATUS                                                             (32'h20001c)
+`define MCU_MBOX_CSR_MBOX_CMD_STATUS                                                                (32'h200020)
+`define MCU_MBOX_CSR_MBOX_HW_STATUS                                                                 (32'h200024)
 
 
 `endif

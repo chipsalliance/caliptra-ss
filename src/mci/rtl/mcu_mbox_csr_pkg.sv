@@ -39,6 +39,14 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic hwclr;
+    } mcu_mbox_csr__mbox_target_user_valid__valid__in_t;
+
+    typedef struct packed{
+        mcu_mbox_csr__mbox_target_user_valid__valid__in_t valid;
+    } mcu_mbox_csr__mbox_target_user_valid__in_t;
+
+    typedef struct packed{
+        logic hwclr;
     } mcu_mbox_csr__mbox_cmd__command__in_t;
 
     typedef struct packed{
@@ -98,6 +106,7 @@ package mcu_mbox_csr_pkg;
         mcu_mbox_csr__mbox_lock__in_t mbox_lock;
         mcu_mbox_csr__mbox_user__in_t mbox_user;
         mcu_mbox_csr__mbox_target_user__in_t mbox_target_user;
+        mcu_mbox_csr__mbox_target_user_valid__in_t mbox_target_user_valid;
         mcu_mbox_csr__mbox_cmd__in_t mbox_cmd;
         mcu_mbox_csr__mbox_dlen__in_t mbox_dlen;
         mcu_mbox_csr__mbox_target_status__in_t mbox_target_status;
@@ -137,6 +146,14 @@ package mcu_mbox_csr_pkg;
     typedef struct packed{
         mcu_mbox_csr__mbox_target_user__user__out_t user;
     } mcu_mbox_csr__mbox_target_user__out_t;
+
+    typedef struct packed{
+        logic value;
+    } mcu_mbox_csr__mbox_target_user_valid__valid__out_t;
+
+    typedef struct packed{
+        mcu_mbox_csr__mbox_target_user_valid__valid__out_t valid;
+    } mcu_mbox_csr__mbox_target_user_valid__out_t;
 
     typedef struct packed{
         logic value;
@@ -185,6 +202,7 @@ package mcu_mbox_csr_pkg;
         mcu_mbox_csr__mbox_lock__out_t mbox_lock;
         mcu_mbox_csr__mbox_user__out_t mbox_user;
         mcu_mbox_csr__mbox_target_user__out_t mbox_target_user;
+        mcu_mbox_csr__mbox_target_user_valid__out_t mbox_target_user_valid;
         mcu_mbox_csr__mbox_execute__out_t mbox_execute;
         mcu_mbox_csr__mbox_target_status__out_t mbox_target_status;
         mcu_mbox_csr__mbox_cmd_status__out_t mbox_cmd_status;

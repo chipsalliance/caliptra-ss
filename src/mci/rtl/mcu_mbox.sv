@@ -141,7 +141,7 @@ assign mbox_valid_user_error = !mbox_valid_user & cif_resp_if.dv;
 ///////////////////////////////////////////////
 
 // No need to add in mbox_valid_user_req since to access the CSRs you need to be a valid user
-assign mbox_target_user     = hwif_out.mbox_target_user.user.value == cif_resp_if.req_data.user;
+assign mbox_target_user     = hwif_out.mbox_target_user_valid.valid.value & (hwif_out.mbox_target_user.user.value == cif_resp_if.req_data.user);
 assign mbox_requester_user  = hwif_out.mbox_user.user.value == cif_resp_if.req_data.user;
 assign mbox_axi_root_user   = strap_root_axi_user == cif_resp_if.req_data.user;
 
@@ -201,6 +201,7 @@ assign hwif_in.mbox_lock.lock.hwclr = mbox_sram_zero_done;
 // All other registers are cleared on MBOX release when execute is cleared.
 assign hwif_in.mbox_dlen.length.hwclr = mbox_release; 
 assign hwif_in.mbox_cmd_status.status.hwclr = mbox_release; 
+assign hwif_in.mbox_target_user_valid.valid.hwclr = mbox_release; 
 assign hwif_in.mbox_target_status.status.hwclr = mbox_release; 
 assign hwif_in.mbox_target_status.done.hwclr = mbox_release; 
 assign hwif_in.mbox_cmd.command.hwclr = mbox_release; 

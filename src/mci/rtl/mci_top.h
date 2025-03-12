@@ -2572,131 +2572,123 @@
 #ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 #define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (0x10)
 #endif
-#define MCI_TOP_MBOX0_CSR_BASE_ADDR                                                                 (0x200000)
-#define MCI_TOP_MBOX0_CSR_MBOX_LOCK                                                                 (0x200000)
-#ifndef MBOX0_CSR_MBOX_LOCK
-#define MBOX0_CSR_MBOX_LOCK                                                                         (0x0)
-#define MBOX0_CSR_MBOX_LOCK_LOCK_LOW                                                                (0)
-#define MBOX0_CSR_MBOX_LOCK_LOCK_MASK                                                               (0x1)
+#define MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR                                                             (0x200000)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR                                                   (0x200000)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_END_ADDR                                                    (0x3fffff)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK                                                             (0x400000)
+#ifndef MCU_MBOX0_CSR_MBOX_LOCK
+#define MCU_MBOX0_CSR_MBOX_LOCK                                                                     (0x200000)
+#define MCU_MBOX0_CSR_MBOX_LOCK_LOCK_LOW                                                            (0)
+#define MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK                                                           (0x1)
 #endif
-#define MCI_TOP_MBOX0_CSR_MBOX_USER                                                                 (0x200004)
-#ifndef MBOX0_CSR_MBOX_USER
-#define MBOX0_CSR_MBOX_USER                                                                         (0x4)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_USER                                                             (0x400004)
+#ifndef MCU_MBOX0_CSR_MBOX_USER
+#define MCU_MBOX0_CSR_MBOX_USER                                                                     (0x200004)
 #endif
-#define MCI_TOP_MBOX0_CSR_MBOX_CMD                                                                  (0x200008)
-#ifndef MBOX0_CSR_MBOX_CMD
-#define MBOX0_CSR_MBOX_CMD                                                                          (0x8)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER                                                      (0x400008)
+#ifndef MCU_MBOX0_CSR_MBOX_TARGET_USER
+#define MCU_MBOX0_CSR_MBOX_TARGET_USER                                                              (0x200008)
 #endif
-#define MCI_TOP_MBOX0_CSR_MBOX_DLEN                                                                 (0x20000c)
-#ifndef MBOX0_CSR_MBOX_DLEN
-#define MBOX0_CSR_MBOX_DLEN                                                                         (0xc)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID                                                (0x40000c)
+#ifndef MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID
+#define MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID                                                        (0x20000c)
+#define MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_LOW                                              (0)
+#define MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK                                             (0x1)
 #endif
-#define MCI_TOP_MBOX0_CSR_MBOX_DATAIN                                                               (0x200010)
-#ifndef MBOX0_CSR_MBOX_DATAIN
-#define MBOX0_CSR_MBOX_DATAIN                                                                       (0x10)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD                                                              (0x400010)
+#ifndef MCU_MBOX0_CSR_MBOX_CMD
+#define MCU_MBOX0_CSR_MBOX_CMD                                                                      (0x200010)
 #endif
-#define MCI_TOP_MBOX0_CSR_MBOX_DATAOUT                                                              (0x200014)
-#ifndef MBOX0_CSR_MBOX_DATAOUT
-#define MBOX0_CSR_MBOX_DATAOUT                                                                      (0x14)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN                                                             (0x400014)
+#ifndef MCU_MBOX0_CSR_MBOX_DLEN
+#define MCU_MBOX0_CSR_MBOX_DLEN                                                                     (0x200014)
 #endif
-#define MCI_TOP_MBOX0_CSR_MBOX_EXECUTE                                                              (0x200018)
-#ifndef MBOX0_CSR_MBOX_EXECUTE
-#define MBOX0_CSR_MBOX_EXECUTE                                                                      (0x18)
-#define MBOX0_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                          (0)
-#define MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                         (0x1)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE                                                          (0x400018)
+#ifndef MCU_MBOX0_CSR_MBOX_EXECUTE
+#define MCU_MBOX0_CSR_MBOX_EXECUTE                                                                  (0x200018)
+#define MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                      (0)
+#define MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                     (0x1)
 #endif
-#define MCI_TOP_MBOX0_CSR_MBOX_STATUS                                                               (0x20001c)
-#ifndef MBOX0_CSR_MBOX_STATUS
-#define MBOX0_CSR_MBOX_STATUS                                                                       (0x1c)
-#define MBOX0_CSR_MBOX_STATUS_STATUS_LOW                                                            (0)
-#define MBOX0_CSR_MBOX_STATUS_STATUS_MASK                                                           (0xf)
-#define MBOX0_CSR_MBOX_STATUS_ECC_SINGLE_ERROR_LOW                                                  (4)
-#define MBOX0_CSR_MBOX_STATUS_ECC_SINGLE_ERROR_MASK                                                 (0x10)
-#define MBOX0_CSR_MBOX_STATUS_ECC_DOUBLE_ERROR_LOW                                                  (5)
-#define MBOX0_CSR_MBOX_STATUS_ECC_DOUBLE_ERROR_MASK                                                 (0x20)
-#define MBOX0_CSR_MBOX_STATUS_MBOX_FSM_PS_LOW                                                       (6)
-#define MBOX0_CSR_MBOX_STATUS_MBOX_FSM_PS_MASK                                                      (0x1c0)
-#define MBOX0_CSR_MBOX_STATUS_SOC_HAS_LOCK_LOW                                                      (9)
-#define MBOX0_CSR_MBOX_STATUS_SOC_HAS_LOCK_MASK                                                     (0x200)
-#define MBOX0_CSR_MBOX_STATUS_MBOX_RDPTR_LOW                                                        (10)
-#define MBOX0_CSR_MBOX_STATUS_MBOX_RDPTR_MASK                                                       (0x3fffc00)
-#define MBOX0_CSR_MBOX_STATUS_TAP_HAS_LOCK_LOW                                                      (26)
-#define MBOX0_CSR_MBOX_STATUS_TAP_HAS_LOCK_MASK                                                     (0x4000000)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                    (0x40001c)
+#ifndef MCU_MBOX0_CSR_MBOX_TARGET_STATUS
+#define MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                            (0x20001c)
+#define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
+#define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (0xf)
+#define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
+#define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (0x10)
 #endif
-#define MCI_TOP_MBOX0_CSR_MBOX_UNLOCK                                                               (0x200020)
-#ifndef MBOX0_CSR_MBOX_UNLOCK
-#define MBOX0_CSR_MBOX_UNLOCK                                                                       (0x20)
-#define MBOX0_CSR_MBOX_UNLOCK_UNLOCK_LOW                                                            (0)
-#define MBOX0_CSR_MBOX_UNLOCK_UNLOCK_MASK                                                           (0x1)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                       (0x400020)
+#ifndef MCU_MBOX0_CSR_MBOX_CMD_STATUS
+#define MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                               (0x200020)
+#define MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_LOW                                                    (0)
+#define MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK                                                   (0xf)
 #endif
-#define MCI_TOP_MBOX0_CSR_TAP_MODE                                                                  (0x200024)
-#ifndef MBOX0_CSR_TAP_MODE
-#define MBOX0_CSR_TAP_MODE                                                                          (0x24)
-#define MBOX0_CSR_TAP_MODE_ENABLED_LOW                                                              (0)
-#define MBOX0_CSR_TAP_MODE_ENABLED_MASK                                                             (0x1)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS                                                        (0x400024)
+#ifndef MCU_MBOX0_CSR_MBOX_HW_STATUS
+#define MCU_MBOX0_CSR_MBOX_HW_STATUS                                                                (0x200024)
+#define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_LOW                                           (0)
+#define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (0x1)
+#define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
+#define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (0x2)
 #endif
-#define MCI_TOP_MBOX1_CSR_BASE_ADDR                                                                 (0x600000)
-#define MCI_TOP_MBOX1_CSR_MBOX_LOCK                                                                 (0x600000)
-#ifndef MBOX1_CSR_MBOX_LOCK
-#define MBOX1_CSR_MBOX_LOCK                                                                         (0x0)
-#define MBOX1_CSR_MBOX_LOCK_LOCK_LOW                                                                (0)
-#define MBOX1_CSR_MBOX_LOCK_LOCK_MASK                                                               (0x1)
+#define MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR                                                             (0x600000)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_BASE_ADDR                                                   (0x600000)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_END_ADDR                                                    (0x7fffff)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_LOCK                                                             (0x800000)
+#ifndef MCU_MBOX1_CSR_MBOX_LOCK
+#define MCU_MBOX1_CSR_MBOX_LOCK                                                                     (0x200000)
+#define MCU_MBOX1_CSR_MBOX_LOCK_LOCK_LOW                                                            (0)
+#define MCU_MBOX1_CSR_MBOX_LOCK_LOCK_MASK                                                           (0x1)
 #endif
-#define MCI_TOP_MBOX1_CSR_MBOX_USER                                                                 (0x600004)
-#ifndef MBOX1_CSR_MBOX_USER
-#define MBOX1_CSR_MBOX_USER                                                                         (0x4)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_USER                                                             (0x800004)
+#ifndef MCU_MBOX1_CSR_MBOX_USER
+#define MCU_MBOX1_CSR_MBOX_USER                                                                     (0x200004)
 #endif
-#define MCI_TOP_MBOX1_CSR_MBOX_CMD                                                                  (0x600008)
-#ifndef MBOX1_CSR_MBOX_CMD
-#define MBOX1_CSR_MBOX_CMD                                                                          (0x8)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER                                                      (0x800008)
+#ifndef MCU_MBOX1_CSR_MBOX_TARGET_USER
+#define MCU_MBOX1_CSR_MBOX_TARGET_USER                                                              (0x200008)
 #endif
-#define MCI_TOP_MBOX1_CSR_MBOX_DLEN                                                                 (0x60000c)
-#ifndef MBOX1_CSR_MBOX_DLEN
-#define MBOX1_CSR_MBOX_DLEN                                                                         (0xc)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID                                                (0x80000c)
+#ifndef MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID
+#define MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID                                                        (0x20000c)
+#define MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID_VALID_LOW                                              (0)
+#define MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID_VALID_MASK                                             (0x1)
 #endif
-#define MCI_TOP_MBOX1_CSR_MBOX_DATAIN                                                               (0x600010)
-#ifndef MBOX1_CSR_MBOX_DATAIN
-#define MBOX1_CSR_MBOX_DATAIN                                                                       (0x10)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD                                                              (0x800010)
+#ifndef MCU_MBOX1_CSR_MBOX_CMD
+#define MCU_MBOX1_CSR_MBOX_CMD                                                                      (0x200010)
 #endif
-#define MCI_TOP_MBOX1_CSR_MBOX_DATAOUT                                                              (0x600014)
-#ifndef MBOX1_CSR_MBOX_DATAOUT
-#define MBOX1_CSR_MBOX_DATAOUT                                                                      (0x14)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_DLEN                                                             (0x800014)
+#ifndef MCU_MBOX1_CSR_MBOX_DLEN
+#define MCU_MBOX1_CSR_MBOX_DLEN                                                                     (0x200014)
 #endif
-#define MCI_TOP_MBOX1_CSR_MBOX_EXECUTE                                                              (0x600018)
-#ifndef MBOX1_CSR_MBOX_EXECUTE
-#define MBOX1_CSR_MBOX_EXECUTE                                                                      (0x18)
-#define MBOX1_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                          (0)
-#define MBOX1_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                         (0x1)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_EXECUTE                                                          (0x800018)
+#ifndef MCU_MBOX1_CSR_MBOX_EXECUTE
+#define MCU_MBOX1_CSR_MBOX_EXECUTE                                                                  (0x200018)
+#define MCU_MBOX1_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                      (0)
+#define MCU_MBOX1_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                     (0x1)
 #endif
-#define MCI_TOP_MBOX1_CSR_MBOX_STATUS                                                               (0x60001c)
-#ifndef MBOX1_CSR_MBOX_STATUS
-#define MBOX1_CSR_MBOX_STATUS                                                                       (0x1c)
-#define MBOX1_CSR_MBOX_STATUS_STATUS_LOW                                                            (0)
-#define MBOX1_CSR_MBOX_STATUS_STATUS_MASK                                                           (0xf)
-#define MBOX1_CSR_MBOX_STATUS_ECC_SINGLE_ERROR_LOW                                                  (4)
-#define MBOX1_CSR_MBOX_STATUS_ECC_SINGLE_ERROR_MASK                                                 (0x10)
-#define MBOX1_CSR_MBOX_STATUS_ECC_DOUBLE_ERROR_LOW                                                  (5)
-#define MBOX1_CSR_MBOX_STATUS_ECC_DOUBLE_ERROR_MASK                                                 (0x20)
-#define MBOX1_CSR_MBOX_STATUS_MBOX_FSM_PS_LOW                                                       (6)
-#define MBOX1_CSR_MBOX_STATUS_MBOX_FSM_PS_MASK                                                      (0x1c0)
-#define MBOX1_CSR_MBOX_STATUS_SOC_HAS_LOCK_LOW                                                      (9)
-#define MBOX1_CSR_MBOX_STATUS_SOC_HAS_LOCK_MASK                                                     (0x200)
-#define MBOX1_CSR_MBOX_STATUS_MBOX_RDPTR_LOW                                                        (10)
-#define MBOX1_CSR_MBOX_STATUS_MBOX_RDPTR_MASK                                                       (0x3fffc00)
-#define MBOX1_CSR_MBOX_STATUS_TAP_HAS_LOCK_LOW                                                      (26)
-#define MBOX1_CSR_MBOX_STATUS_TAP_HAS_LOCK_MASK                                                     (0x4000000)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                    (0x80001c)
+#ifndef MCU_MBOX1_CSR_MBOX_TARGET_STATUS
+#define MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                            (0x20001c)
+#define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
+#define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (0xf)
+#define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
+#define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (0x10)
 #endif
-#define MCI_TOP_MBOX1_CSR_MBOX_UNLOCK                                                               (0x600020)
-#ifndef MBOX1_CSR_MBOX_UNLOCK
-#define MBOX1_CSR_MBOX_UNLOCK                                                                       (0x20)
-#define MBOX1_CSR_MBOX_UNLOCK_UNLOCK_LOW                                                            (0)
-#define MBOX1_CSR_MBOX_UNLOCK_UNLOCK_MASK                                                           (0x1)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                       (0x800020)
+#ifndef MCU_MBOX1_CSR_MBOX_CMD_STATUS
+#define MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                               (0x200020)
+#define MCU_MBOX1_CSR_MBOX_CMD_STATUS_STATUS_LOW                                                    (0)
+#define MCU_MBOX1_CSR_MBOX_CMD_STATUS_STATUS_MASK                                                   (0xf)
 #endif
-#define MCI_TOP_MBOX1_CSR_TAP_MODE                                                                  (0x600024)
-#ifndef MBOX1_CSR_TAP_MODE
-#define MBOX1_CSR_TAP_MODE                                                                          (0x24)
-#define MBOX1_CSR_TAP_MODE_ENABLED_LOW                                                              (0)
-#define MBOX1_CSR_TAP_MODE_ENABLED_MASK                                                             (0x1)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_HW_STATUS                                                        (0x800024)
+#ifndef MCU_MBOX1_CSR_MBOX_HW_STATUS
+#define MCU_MBOX1_CSR_MBOX_HW_STATUS                                                                (0x200024)
+#define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_LOW                                           (0)
+#define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (0x1)
+#define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
+#define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (0x2)
 #endif
 #define MCI_TOP_MCU_SRAM_BASE_ADDR                                                                  (0xa00000)
 #define MCI_TOP_MCU_SRAM_END_ADDR                                                                   (0xbfffff)

@@ -110,6 +110,36 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_target_user
 
+    // Reg - mcu_mbox_csr::mbox_target_user_valid
+    class mcu_mbox_csr__mbox_target_user_valid extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mcu_mbox_csr__mbox_target_user_valid_bit_cg valid_bit_cg[1];
+        mcu_mbox_csr__mbox_target_user_valid_fld_cg fld_cg;
+        rand uvm_reg_field valid;
+
+        function new(string name = "mcu_mbox_csr__mbox_target_user_valid");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.valid = new("valid");
+            this.valid.configure(this, 1, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(valid_bit_cg[bt]) valid_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mcu_mbox_csr__mbox_target_user_valid
+
     // Reg - mcu_mbox_csr::mbox_cmd
     class mcu_mbox_csr__mbox_cmd extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -306,6 +336,7 @@ package mcu_mbox_csr_uvm;
         rand mcu_mbox_csr__mbox_lock mbox_lock;
         rand mcu_mbox_csr__mbox_user mbox_user;
         rand mcu_mbox_csr__mbox_target_user mbox_target_user;
+        rand mcu_mbox_csr__mbox_target_user_valid mbox_target_user_valid;
         rand mcu_mbox_csr__mbox_cmd mbox_cmd;
         rand mcu_mbox_csr__mbox_dlen mbox_dlen;
         rand mcu_mbox_csr__mbox_execute mbox_execute;
@@ -338,36 +369,41 @@ package mcu_mbox_csr_uvm;
 
             this.mbox_target_user.build();
             this.default_map.add_reg(this.mbox_target_user, 'h200008);
+            this.mbox_target_user_valid = new("mbox_target_user_valid");
+            this.mbox_target_user_valid.configure(this);
+
+            this.mbox_target_user_valid.build();
+            this.default_map.add_reg(this.mbox_target_user_valid, 'h20000c);
             this.mbox_cmd = new("mbox_cmd");
             this.mbox_cmd.configure(this);
 
             this.mbox_cmd.build();
-            this.default_map.add_reg(this.mbox_cmd, 'h20000c);
+            this.default_map.add_reg(this.mbox_cmd, 'h200010);
             this.mbox_dlen = new("mbox_dlen");
             this.mbox_dlen.configure(this);
 
             this.mbox_dlen.build();
-            this.default_map.add_reg(this.mbox_dlen, 'h200010);
+            this.default_map.add_reg(this.mbox_dlen, 'h200014);
             this.mbox_execute = new("mbox_execute");
             this.mbox_execute.configure(this);
 
             this.mbox_execute.build();
-            this.default_map.add_reg(this.mbox_execute, 'h200014);
+            this.default_map.add_reg(this.mbox_execute, 'h200018);
             this.mbox_target_status = new("mbox_target_status");
             this.mbox_target_status.configure(this);
 
             this.mbox_target_status.build();
-            this.default_map.add_reg(this.mbox_target_status, 'h200018);
+            this.default_map.add_reg(this.mbox_target_status, 'h20001c);
             this.mbox_cmd_status = new("mbox_cmd_status");
             this.mbox_cmd_status.configure(this);
 
             this.mbox_cmd_status.build();
-            this.default_map.add_reg(this.mbox_cmd_status, 'h20001c);
+            this.default_map.add_reg(this.mbox_cmd_status, 'h200020);
             this.mbox_hw_status = new("mbox_hw_status");
             this.mbox_hw_status.configure(this);
 
             this.mbox_hw_status.build();
-            this.default_map.add_reg(this.mbox_hw_status, 'h200020);
+            this.default_map.add_reg(this.mbox_hw_status, 'h200024);
         endfunction : build
     endclass : mcu_mbox_csr
 

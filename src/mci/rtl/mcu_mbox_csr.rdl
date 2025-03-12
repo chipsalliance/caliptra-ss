@@ -64,9 +64,15 @@ addrmap mcu_mbox_csr {
     // Target USER register
     reg {
         name="Mailbox Target USER";
-        desc="Stores the AXI USER for target user access. Only controllable by the root user. Only accessible when mailbox is locked. Cleared when lock is cleared.";
+        desc="Stores the AXI USER for target user access. Only valid when mbox_target_user_valid is set.  Only controllable by the root user. Only accessible when mailbox is locked. Cleared when lock is cleared.";
         field {sw=rw; hw=r;hwclr; swwe=valid_root_req; } user[32]=0;
     } mbox_target_user;
+    
+    reg {
+        name="Mailbox Target USER Valid";
+        desc="Enables access for the mbox_target_user. Only controllable by the root user. Only accessible when mailbox is locked. Cleared when lock is cleared.";
+        field {sw=rw; hw=r;hwclr; swwe=valid_root_req; } valid=0;
+    } mbox_target_user_valid;
 
     reg {
         name="Mailbox Command";
