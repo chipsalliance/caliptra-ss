@@ -24,16 +24,6 @@
 #include "riscv_hw_if.h"
 #include "fuse_ctrl_address_map.h"
 
-// uint32_t wait_dai_op_idle(void) {
-//     uint32_t status;
-//     VPRINTF(LOW, "DEBUG: Waiting for DAI to become idle...\n");
-//     do {
-//         status = lsu_read_32(FUSE_CTRL_STATUS);
-//     } while (((status >> FUSE_CTRL_STATUS_DAI_IDLE_OFFSET) & 0x1) == 0);
-//     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
-//     return status & ((((uint32_t)1) << (FUSE_CTRL_STATUS_DAI_IDLE_OFFSET - 1)) - 1);
-// }
-
 void wait_dai_op_idle(uint32_t status_mask) {
     uint32_t status;
     VPRINTF(LOW, "DEBUG: Waiting for DAI to become idle...\n");
@@ -89,17 +79,6 @@ void initialize_otp_controller(void) {
     VPRINTF(LOW, "DEBUG: Locking background check registers...\n");
     lsu_write_32(FUSE_CTRL_CHECK_REGWEN, 0x0);
     VPRINTF(LOW, "INFO: CHECK_REGWEN locked.\n");
-}
-
-void reset_rtl(void) {
-    uint32_t reg_value;
-
-    reg_value = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm
-    VPRINTF(LOW, "LCC & Fuse_CTRL is under reset!\n");
-    for (uint16_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-    wait_dai_op_idle(0);
 }
 
 #define FUSE_CTRL_CMD_DAI_WRITE 0x2

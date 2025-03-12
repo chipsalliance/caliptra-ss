@@ -45,8 +45,7 @@ TBDIR ?= $(CALIPTRA_SS)/src/integration/testbench
 RISCV_HW_IF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/riscv_hw_if
 #ISR_DIR    = $(CALIPTRA_SS)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
 PRINTF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/printf
-FUSE_CTRL_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/fuse_ctrl
-LC_CTRL_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/lc_ctrl
+LIBS_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs
 
 
 DUT ?= caliptra_mcu_top_tb
@@ -80,8 +79,9 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
-		$(FUSE_CTRL_DIR)/fuse_ctrl.h \
-		$(LC_CTRL_DIR)/lc_ctrl.h
+		$(LIBS_DIR)/caliptra_ss_lib.h \
+		$(LIBS_DIR)/fuse_ctrl.h \
+		$(LIBS_DIR)/lc_ctrl.h
 #		$(ISR_DIR)/riscv-csr.h \
 #		$(ISR_DIR)/riscv-interrupts.h \
 #		$(ISR_DIR)/veer-csr.h
@@ -106,6 +106,9 @@ endif
 # Assume all C tests will import our printf lib, but not assembly
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += printf.o
+endif
+ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
+	OFILES += caliptra_ss_lib.o
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += fuse_ctrl.o
@@ -143,7 +146,7 @@ else
 endif
 
 # VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR) $(COMP_LIBS)
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(FUSE_CTRL_DIR) $(LC_CTRL_DIR)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(LIBS_DIR)
 
 # Use eval to expand env variables in the .vf file
 # $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))

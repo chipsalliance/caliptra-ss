@@ -1622,10 +1622,6 @@ end
   // Assertions //
   ////////////////
 
-  //////////////////////////////////////////////////////////
-  // TODO: Properly assert the unlock tokens.
-  //////////////////////////////////////////////////////////
-
   //`CALIPTRA_ASSERT_INIT(RmaTokenSize_A,        lc_ctrl_state_pkg::LcTokenWidth == RmaTokenSize * 8)
   //`CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, lc_ctrl_state_pkg::LcTokenWidth == TestUnlockToken0Size * 8)
   `CALIPTRA_ASSERT_INIT(LcStateSize_A,         lc_ctrl_state_pkg::LcStateWidth == LcStateSize * 8)
@@ -1645,6 +1641,8 @@ end
   `CALIPTRA_ASSERT_KNOWN(OtpSramKeyKnown_A,           sram_otp_key_o)
   `CALIPTRA_ASSERT_KNOWN(OtpOtgnKeyKnown_A,           otbn_otp_key_o)
   `CALIPTRA_ASSERT_KNOWN(OtpBroadcastKnown_A,         otp_broadcast_o)
+
+  `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 |-> test_tokens_valid == lc_ctrl_pkg::On)
 
   // Alert assertions for sparse FSMs.
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlDaiFsmCheck_A,
