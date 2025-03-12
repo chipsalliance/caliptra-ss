@@ -240,7 +240,7 @@ assign valid_sram_addr = !invalid_sram_addr;
 // SRAM Controls
 /////
 // Only send request if the address is valid and proper user access
-assign mcu_mbox_sram_req_if.req.addr = {MCU_MBOX_SRAM_ADDR_W{(valid_requester_target_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.addr[MCU_MBOX_SRAM_ADDR_W-1:0];
+assign mcu_mbox_sram_req_if.req.addr = {MCU_MBOX_SRAM_ADDR_W{(valid_requester_target_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.addr[MCU_MBOX_SRAM_ADDR_W-1:2];
 assign mcu_mbox_sram_req_if.req.cs   = valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req;
 assign mcu_mbox_sram_req_if.req.we   = valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req_is_wr;
 

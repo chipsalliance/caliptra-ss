@@ -64,6 +64,32 @@ module caliptra_ss_top_tb
     localparam MCU_SRAM_ADDR_WIDTH = $clog2(MCU_SRAM_DEPTH);
 
 
+    localparam MCU_MBOX0_SIZE_KB = 256;
+    localparam MCU_MBOX0_DATA_W = 32;
+    localparam MCU_MBOX0_ECC_DATA_W = 7;
+    localparam MCU_MBOX0_SIZE_BYTES = MCU_MBOX0_SIZE_KB * 1024;
+    localparam MCU_MBOX0_SIZE_DWORDS = MCU_MBOX0_SIZE_BYTES/4;
+    localparam MCU_MBOX0_DATA_AND_ECC_W = MCU_MBOX0_DATA_W + MCU_MBOX0_ECC_DATA_W;
+    localparam MCU_MBOX0_DEPTH = (MCU_MBOX0_SIZE_KB * 1024 * 8) / MCU_MBOX0_DATA_W;
+    localparam MCU_MBOX0_ADDR_W = $clog2(MCU_MBOX0_DEPTH);
+    localparam MCU_MBOX0_DEPTH_LOG2 = $clog2(MCU_MBOX0_DEPTH);
+    localparam [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
+    localparam [4:0][31:0] MCU_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
+
+
+    localparam MCU_MBOX1_SIZE_KB = 256;
+    localparam MCU_MBOX1_DATA_W = 32;
+    localparam MCU_MBOX1_ECC_DATA_W = 7;
+    localparam MCU_MBOX1_SIZE_BYTES = MCU_MBOX1_SIZE_KB * 1024;
+    localparam MCU_MBOX1_SIZE_DWORDS = MCU_MBOX1_SIZE_BYTES/4;
+    localparam MCU_MBOX1_DATA_AND_ECC_W = MCU_MBOX1_DATA_W + MCU_MBOX1_ECC_DATA_W;
+    localparam MCU_MBOX1_DEPTH = (MCU_MBOX1_SIZE_KB * 1024 * 8) / MCU_MBOX1_DATA_W;
+    localparam MCU_MBOX1_ADDR_W = $clog2(MCU_MBOX1_DEPTH);
+    localparam MCU_MBOX1_DEPTH_LOG2 = $clog2(MCU_MBOX1_DEPTH);
+    localparam [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
+    localparam [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
+
+
     bit                         core_clk;
     bit          [31:0]         mem_signature_begin = 32'd0; // TODO:
     bit          [31:0]         mem_signature_end   = 32'd0;
@@ -1180,12 +1206,22 @@ module caliptra_ss_top_tb
         .rst_b(rst_l)
     );
 
-    mci_mcu_sram_if cptra_ss_mcu_mbox0_sram_req_if (
+    mci_mcu_sram_if #(
+        .ADDR_WIDTH(MCU_MBOX0_ADDR_W),
+        .DATA_WIDTH(MCU_MBOX0_DATA_W),
+        .ECC_WIDTH(MCU_MBOX0_ECC_DATA_W)
+    )
+    cptra_ss_mcu_mbox0_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
     
-    mci_mcu_sram_if cptra_ss_mcu_mbox1_sram_req_if (
+    mci_mcu_sram_if #(
+        .ADDR_WIDTH(MCU_MBOX1_ADDR_W),
+        .DATA_WIDTH(MCU_MBOX1_DATA_W),
+        .ECC_WIDTH(MCU_MBOX1_ECC_DATA_W)
+    )
+    cptra_ss_mcu_mbox1_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
@@ -1462,6 +1498,41 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[2].RID           = cptra_ss_mcu_rom_s_axi_if.rid;
     assign axi_interconnect.sintf_arr[2].RLAST         = cptra_ss_mcu_rom_s_axi_if.rlast;
     assign cptra_ss_mcu_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[2].RREADY;
+
+
+    caliptra_sram
+    #(
+        .DATA_WIDTH(MCU_MBOX0_DATA_AND_ECC_W),
+        .DEPTH     (MCU_MBOX0_DEPTH         )
+    )
+    mcu_mbox0_ram
+    (
+        .clk_i(core_clk),
+
+        .cs_i(cptra_ss_mcu_mbox0_sram_req_if.req.cs),
+        .we_i(cptra_ss_mcu_mbox0_sram_req_if.req.we),
+        .addr_i(cptra_ss_mcu_mbox0_sram_req_if.req.addr),
+        .wdata_i(cptra_ss_mcu_mbox0_sram_req_if.req.wdata),
+
+        .rdata_o(cptra_ss_mcu_mbox0_sram_req_if.resp.rdata)
+    );
+    
+    caliptra_sram
+    #(
+        .DATA_WIDTH(MCU_MBOX1_DATA_AND_ECC_W),
+        .DEPTH     (MCU_MBOX1_DEPTH         )
+    )
+    mcu_mbox1_ram
+    (
+        .clk_i(core_clk),
+
+        .cs_i(cptra_ss_mcu_mbox1_sram_req_if.req.cs),
+        .we_i(cptra_ss_mcu_mbox1_sram_req_if.req.we),
+        .addr_i(cptra_ss_mcu_mbox1_sram_req_if.req.addr),
+        .wdata_i(cptra_ss_mcu_mbox1_sram_req_if.req.wdata),
+
+        .rdata_o(cptra_ss_mcu_mbox1_sram_req_if.resp.rdata)
+    );
 
 
     rom #(
@@ -1753,7 +1824,15 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
 
-    caliptra_ss_top
+    caliptra_ss_top #(
+        .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
+        .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),
+        .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),
+        .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB),
+        .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),
+        .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER)
+
+    )
     caliptra_ss_dut (
 
         .cptra_ss_clk_i(core_clk),
