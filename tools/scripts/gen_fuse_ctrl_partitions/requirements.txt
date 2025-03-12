@@ -1,0 +1,5 @@
+hjson==3.1.0
+importlib_resources==5.4.0
+Mako==1.0.6.dev0
+pycryptodome==3.21.0
+tabulate==0.8.10
