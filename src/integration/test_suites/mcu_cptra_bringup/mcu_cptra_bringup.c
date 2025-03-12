@@ -60,9 +60,9 @@ void main (void) {
 
     VPRINTF(LOW, "=================\nMCU Boot FSM Go\n=================\n\n")
     
-    // writing SOC_MCI_REG_CPTRA_BOOT_GO register of MCI for CPTRA Boot FSM to bring Caliptra out of reset
-    lsu_write_32(SOC_MCI_REG_CPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_REG_CPTRA_BOOT_GO\n");
+    // writing SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO register of MCI for CPTRA Boot FSM to bring Caliptra out of reset
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
+    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
 
     VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n")
 
@@ -150,8 +150,8 @@ void main (void) {
     }
     VPRINTF(LOW, "MCU: Mbox response received\n");
     
-    mbox_resp_data = lsu_read_32(SOC_MCI_REG_HW_REV_ID);
-    VPRINTF(LOW, "MCU: MCI SOC_MCI_REG_HW_REV_ID %x\n", mbox_resp_data);
+    mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_REV_ID);
+    VPRINTF(LOW, "MCU: MCI SOC_MCI_TOP_MCI_REG_HW_REV_ID %x\n", mbox_resp_data);
     // lsu_write_32(0x21200000, 0x12345678);
     // VPRINTF(LOW, "MCU: I3C 0x2120_0000 write completed\n");
     // lsu_write_32(0x21200004, 0xABCDABCD);
@@ -177,41 +177,41 @@ void main (void) {
     VPRINTF(LOW, "MCU: Mbox execute clear\n");
     
     VPRINTF(LOW, "=================\nMCU SRAM Testing\n=================\n\n")
-    lsu_write_32(SOC_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , 100);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , 100);
     VPRINTF(LOW, "MCU: Configure EXEC REGION Size\n");
     
-    lsu_write_32( (SOC_MCI_REG_BASE_ADDR + 0x201000), 0xDEADBEEF);
+    lsu_write_32( (SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201000), 0xDEADBEEF);
     VPRINTF(LOW, "MCU: Writing to MCU SRAM\n");
     
-    sram_data = lsu_read_32(SOC_MCI_REG_BASE_ADDR + 0x201000);
+    sram_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201000);
     if(sram_data == 0xDEADBEEF) {VPRINTF(LOW, "MCU: Read from MCU SRAM %x\n", sram_data);}
     else {VPRINTF(LOW, "MCU: Read from MCU SRAM failed %x\n", sram_data);}
     
-    lsu_write_8( (SOC_MCI_REG_BASE_ADDR + 0x201000), 0x00);
+    lsu_write_8( (SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201000), 0x00);
     VPRINTF(LOW, "MCU: Byte0 write to MCU SRAM\n");
     
-    sram_data = lsu_read_32(SOC_MCI_REG_BASE_ADDR + 0x201000);
+    sram_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201000);
     if(sram_data == 0xDEADBE00) {VPRINTF(LOW, "MCU: Read from MCU SRAM %x\n", sram_data);}
     else {VPRINTF(LOW, "MCU: Read from MCU SRAM failed %x : Expected 0xDEADBE00\n", sram_data);}
     
-    lsu_write_8( (SOC_MCI_REG_BASE_ADDR + 0x201001), 0x00);
+    lsu_write_8( (SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201001), 0x00);
     VPRINTF(LOW, "MCU: Byte1 write to MCU SRAM\n");
     
-    sram_data = lsu_read_32(SOC_MCI_REG_BASE_ADDR + 0x201000);
+    sram_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201000);
     if(sram_data == 0xDEAD0000) {VPRINTF(LOW, "MCU: Read from MCU SRAM %x\n", sram_data);}
     else {VPRINTF(LOW, "MCU: Read from MCU SRAM failed %x : Expected 0xDEAD0000\n", sram_data);}
     
-    lsu_write_8( (SOC_MCI_REG_BASE_ADDR + 0x201002), 0x00);
+    lsu_write_8( (SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201002), 0x00);
     VPRINTF(LOW, "MCU: Byte2 write to MCU SRAM\n");
     
-    sram_data = lsu_read_32(SOC_MCI_REG_BASE_ADDR + 0x201000);
+    sram_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201000);
     if(sram_data == 0xDE000000) {VPRINTF(LOW, "MCU: Read from MCU SRAM %x\n", sram_data);}
     else {VPRINTF(LOW, "MCU: Read from MCU SRAM failed %x : Expected 0xDE000000\n", sram_data);}
     
-    lsu_write_8( (SOC_MCI_REG_BASE_ADDR + 0x201003), 0x00);
+    lsu_write_8( (SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201003), 0x00);
     VPRINTF(LOW, "MCU: Byte3 write to MCU SRAM\n");
     
-    sram_data = lsu_read_32(SOC_MCI_REG_BASE_ADDR + 0x201000);
+    sram_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_BASE_ADDR + 0x201000);
     if(sram_data == 0x00000000) {VPRINTF(LOW, "MCU: Read from MCU SRAM %x\n", sram_data);}
     else {VPRINTF(LOW, "MCU: Read from MCU SRAM failed %x : Expected 0x00000000\n", sram_data);}
     
