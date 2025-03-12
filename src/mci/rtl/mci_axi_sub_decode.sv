@@ -121,12 +121,12 @@ always_comb soc_mcu_trace_buffer_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.a
 always_comb soc_mci_reg_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCI_REG_START_ADDR:MCI_REG_END_ADDR]}));
 
 // SoC request to MCI Mbox0
-always_comb soc_mcu_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX0_START_ADDR:MBOX0_END_ADDR]}));
+always_comb soc_mcu_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MBOX0_START_ADDR:MBOX0_END_ADDR]}));
 
 
 
 // SoC request to MCI Mbox1
-always_comb soc_mcu_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr inside {[MBOX1_START_ADDR:MBOX1_END_ADDR]}));
+always_comb soc_mcu_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MBOX1_START_ADDR:MBOX1_END_ADDR]}));
 
 ///////////////////////////////////////////////////////////
 // Add qualifiers to grant before sending to IPs
