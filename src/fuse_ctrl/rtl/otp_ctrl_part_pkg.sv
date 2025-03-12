@@ -138,7 +138,7 @@ package otp_ctrl_part_pkg;
     '{
       variant:          Buffered,
       offset:           12'd0,
-      size:             24,
+      size:             72,
       key_sel:          SecretTestUnlockKey,
       secret:           1'b1,
       sw_digest:        1'b0,
@@ -152,7 +152,7 @@ package otp_ctrl_part_pkg;
     // SECRET_MANUF_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd24,
+      offset:           12'd72,
       size:             72,
       key_sel:          SecretManufKey,
       secret:           1'b1,
@@ -167,7 +167,7 @@ package otp_ctrl_part_pkg;
     // SECRET_PROD_PARTITION_0
     '{
       variant:          Buffered,
-      offset:           12'd96,
+      offset:           12'd144,
       size:             16,
       key_sel:          SecretProdKey0,
       secret:           1'b1,
@@ -182,7 +182,7 @@ package otp_ctrl_part_pkg;
     // SECRET_PROD_PARTITION_1
     '{
       variant:          Buffered,
-      offset:           12'd112,
+      offset:           12'd160,
       size:             16,
       key_sel:          SecretProdKey1,
       secret:           1'b1,
@@ -197,7 +197,7 @@ package otp_ctrl_part_pkg;
     // SECRET_PROD_PARTITION_2
     '{
       variant:          Buffered,
-      offset:           12'd128,
+      offset:           12'd176,
       size:             16,
       key_sel:          SecretProdKey2,
       secret:           1'b1,
@@ -212,7 +212,7 @@ package otp_ctrl_part_pkg;
     // SECRET_PROD_PARTITION_3
     '{
       variant:          Buffered,
-      offset:           12'd144,
+      offset:           12'd192,
       size:             16,
       key_sel:          SecretProdKey3,
       secret:           1'b1,
@@ -227,8 +227,8 @@ package otp_ctrl_part_pkg;
     // SW_MANUF_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd160,
-      size:             1096,
+      offset:           12'd208,
+      size:             1072,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
       sw_digest:        1'b1,
@@ -242,7 +242,7 @@ package otp_ctrl_part_pkg;
     // SECRET_LC_TRANSITION_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd1256,
+      offset:           12'd1280,
       size:             184,
       key_sel:          SecretLifeCycleTransitionKey,
       secret:           1'b1,
@@ -257,7 +257,7 @@ package otp_ctrl_part_pkg;
     // SVN_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1440,
+      offset:           12'd1464,
       size:             40,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -272,7 +272,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_TEST_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1480,
+      offset:           12'd1504,
       size:             64,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -287,7 +287,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_HASHES_MANUF_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1544,
+      offset:           12'd1568,
       size:             64,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -302,7 +302,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_HASHES_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1608,
+      offset:           12'd1632,
       size:             752,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -317,7 +317,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_REVOCATIONS_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd2360,
+      offset:           12'd2384,
       size:             152,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -332,7 +332,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_SECRET_PROD_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd2512,
+      offset:           12'd2536,
       size:             520,
       key_sel:          VendorSecretProdKey,
       secret:           1'b1,
@@ -347,8 +347,8 @@ package otp_ctrl_part_pkg;
     // VENDOR_NON_SECRET_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd3032,
-      size:             976,
+      offset:           12'd3056,
+      size:             952,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
       sw_digest:        1'b1,
@@ -406,13 +406,13 @@ package otp_ctrl_part_pkg;
   // Breakout types for easier access of individual items.
   typedef struct packed {
     logic [63:0] secret_test_unlock_partition_digest;
-    logic [127:0] cptra_core_manuf_debug_unlock_token;
+    logic [511:0] cptra_core_manuf_debug_unlock_token;
   } otp_secret_test_unlock_partition_data_t;
 
   // default value used for intermodule
   parameter otp_secret_test_unlock_partition_data_t OTP_SECRET_TEST_UNLOCK_PARTITION_DATA_DEFAULT = '{
     secret_test_unlock_partition_digest: 64'hD61AA54CC696D54,
-    cptra_core_manuf_debug_unlock_token: 128'h0
+    cptra_core_manuf_debug_unlock_token: 512'h0
   };
   typedef struct packed {
     logic [63:0] secret_manuf_partition_digest;
@@ -535,9 +535,9 @@ package otp_ctrl_part_pkg;
       320'h9E02C05185213FCF029CB3E62CE6FDDCBA7F6C9D2519EA1AACC8E1922AF7B82D7479CD41D20282EB,
       384'h58C2A1BA65D13A0FE39B01C95A626001CC969493D06CDB450C26A87F7BF58DDA1149EFDC5F023299DFB44D70A9F90685
     }),
-    7808'({
+    7616'({
       64'hBC95E25E95D30F45,
-      3648'h0, // unallocated space
+      3456'h0, // unallocated space
       256'h0,
       256'h0,
       256'h0,
@@ -692,9 +692,9 @@ package otp_ctrl_part_pkg;
       128'hD396D1CE085BDC31105733EAA3880C5A,
       128'h7E17D06B5D4E0DDDDBB9844327F20FB5
     }),
-    8768'({
+    8576'({
       64'h86224F25DAB6226B,
-      3688'h0, // unallocated space
+      3496'h0, // unallocated space
       4096'h0,
       16'h0,
       128'h0,
@@ -721,9 +721,9 @@ package otp_ctrl_part_pkg;
       64'h16AF2545001DC3DB,
       512'hCF7A50A9A91EF7F7B3A5B4421F462370FFF698183664DC7EDF3888886BD10DC67ABB319BDA0529AE40119A3C6E63CDF358840E458E4029A6B5AC1F53D00A08C3
     }),
-    192'({
+    576'({
       64'hD61AA54CC696D54,
-      128'h0
+      512'h0
     })});
 
   ///////////////////////////////////////////////

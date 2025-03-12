@@ -83,7 +83,7 @@
             items: [
                 {
                     name: "CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN",
-                    size: "16",
+                    size: "64",
                     desc: '''
                     Secret value for manufacturing debug unlock authorization.
                     '''

@@ -62,8 +62,8 @@ void register_accesses() {
     uint32_t axi_conf;
     axi_conf = lsu_read_32(0x70000080);
 
-    // 0x938: CPTRA_CORE_ECC_REVOCATION_0
-    const uint32_t fuse_address = 0x938;
+    // 0x950: CPTRA_CORE_ECC_REVOCATION_0
+    const uint32_t fuse_address = 0x950;
 
     const uint32_t data = 0xdeadbeef;
     uint32_t read_data;

@@ -59,9 +59,9 @@ void program_vendor_hashes_prod_partition(void) {
     uint32_t axi_conf;
     axi_conf = lsu_read_32(0x70000080);
 
-    // 0x6AA: CPTRA_CORE_VENDOR_PK_HASH_3
-    // 0x70C: CPTRA_CORE_VENDOR_PK_HASH_5
-    const uint32_t addresses[2] = {0x6AA, 0x70C};
+    // 0x6C2: CPTRA_CORE_VENDOR_PK_HASH_3
+    // 0x724: CPTRA_CORE_VENDOR_PK_HASH_5
+    const uint32_t addresses[2] = {0x6C2, 0x724};
 
     const uint32_t data = 0xdeadbeef;
 

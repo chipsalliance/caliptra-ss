@@ -85,13 +85,13 @@ void program_sw_manuf_partition(void) {
     uint32_t axi_conf;
     axi_conf = lsu_read_32(0x70000080);
 
-    // 0x0A0: CPTRA_CORE_ANTI_ROLLBACK_DISABLE
-    // 0x0A1: CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR
-    // 0x101: CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER
-    // 0x111: CPTRA_CORE_SOC_STEPPING_ID
-    // 0x113: CPTRA_SS_PROD_DEBUG_UNLOCK_PKS
-    const uint32_t addresses[5] = {0x0A0, 0x0A1, 0x101, 0x111, 0x113};
-    const uint32_t digest_address = 0x4E0;
+    // 0x0D0: CPTRA_CORE_ANTI_ROLLBACK_DISABLE
+    // 0x0D1: CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR
+    // 0x131: CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER
+    // 0x141: CPTRA_CORE_SOC_STEPPING_ID
+    // 0x143: CPTRA_SS_PROD_DEBUG_UNLOCK_PKS
+    const uint32_t addresses[5] = {0x0D0, 0x0D1, 0x131, 0x141, 0x143};
+    const uint32_t digest_address = 0x4F8;
     uint32_t fuse_address = addresses[2];
 
     const uint32_t data = 0xAB;

@@ -84,9 +84,9 @@ void program_secret_lc_transition_partition() {
     uint32_t axi_conf;
     axi_conf = lsu_read_32(0x70000080);
 
-    // 0x568: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
-    const uint32_t base_address = 0x4E8;
-    const uint32_t fuse_address = 0x568;
+    // 0x500: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
+    const uint32_t base_address = 0x500;
+    const uint32_t fuse_address = 0x580;
 
     const uint32_t data[4] = {0xdeadbeef, 0xcafebabe, 0x12345678, 0xabababab};
     uint32_t read_data[4];
