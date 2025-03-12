@@ -5,14 +5,19 @@
 // Package partition metadata.
 //
 ${gen_comment}
+
 <%
-from topgen.lib import Name
+from lib.name import Name
 %>\
 package otp_ctrl_part_pkg;
 
-  import prim_util_pkg::vbits;
+  import caliptra_prim_util_pkg::vbits;
   import otp_ctrl_reg_pkg::*;
   import otp_ctrl_pkg::*;
+
+  parameter int NumVendorPkFuses = ${num_vendor_pk_fuses};
+  parameter int NumVendorSecretFuses = ${num_vendor_secret_fuses};
+  parameter int NumVendorNonSecretFuses = ${num_vendor_non_secret_fuses};
 
   ////////////////////////////////////
   // Scrambling Constants and Types //
@@ -70,6 +75,17 @@ package otp_ctrl_part_pkg;
 % endfor
   };
 
+  parameter digest_const_array_t RndCnstDigestConstDefault = {
+% for dig in otp_mmap.config["scrambling"]["digests"][::-1]:
+    ${"{0:}'h{1:0X}".format(otp_mmap.config["scrambling"]["cnst_size"] * 8, dig["cnst_value"])}${"" if loop.last else ","}
+% endfor
+  };
+
+  parameter digest_iv_array_t RndCnstDigestIVDefault = {
+% for dig in otp_mmap.config["scrambling"]["digests"][::-1]:
+    ${"{0:}'h{1:0X}".format(otp_mmap.config["scrambling"]["iv_size"] * 8, dig["iv_value"])}${"" if loop.last else ","}
+% endfor
+  };
 
   /////////////////////////////////////
   // Typedefs for Partition Metadata //
@@ -146,7 +162,6 @@ package otp_ctrl_part_pkg;
     // add these at the end of certain arrays.
     DaiIdx,
     LciIdx,
-    KdiIdx,
     // Number of agents is the last idx+1.
     NumAgentsIdx
   } part_idx_e;
@@ -163,7 +178,7 @@ package otp_ctrl_part_pkg;
       % endif
 <%
   if item['ismubi']:
-    item_type = 'prim_mubi_pkg::mubi' + str(item["size"]*8) + '_t'
+    item_type = 'caliptra_prim_mubi_pkg::mubi' + str(item["size"]*8) + '_t'
   else:
     item_type = 'logic [' + str(int(item["size"])*8-1) + ':0]'
 %>\
@@ -179,7 +194,7 @@ package otp_ctrl_part_pkg;
     % endif
 <%
   if item['ismubi']:
-    item_cast_pre = "prim_mubi_pkg::mubi" + str(item["size"]*8) + "_t'("
+    item_cast_pre = "caliptra_prim_mubi_pkg::mubi" + str(item["size"]*8) + "_t'("
     item_cast_post = ")"
   else:
     item_cast_pre = ""
@@ -259,7 +274,7 @@ package otp_ctrl_part_pkg;
     logic unused_sigs;
     unused_sigs = ^reg2hw;
     // Default (this will be overridden by partition-internal settings).
-    part_access_pre = {{32'(2*NumPart)}{prim_mubi_pkg::MuBi8False}};
+    part_access_pre = {{32'(2*NumPart)}{caliptra_prim_mubi_pkg::MuBi8False}};
     // Note: these could be made a MuBi CSRs in the future.
     // The main thing that is missing right now is proper support for W0C.
 % for k, part in enumerate(otp_mmap.config["partitions"]):
@@ -267,7 +282,7 @@ package otp_ctrl_part_pkg;
     // ${part["name"]}
     if (!reg2hw.${part["name"].lower()}_read_lock) begin
 <% part_name = Name.from_snake_case(part["name"]) %>\
-      part_access_pre[${part_name.as_camel_case()}Idx].read_lock = prim_mubi_pkg::MuBi8True;
+      part_access_pre[${part_name.as_camel_case()}Idx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
     end
   % endif
 % endfor
