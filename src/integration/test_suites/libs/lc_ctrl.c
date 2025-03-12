@@ -102,7 +102,7 @@ void sw_transition_req(uint32_t next_lc_state,
         uint32_t OTP_ERROR = ((status_val & 0x100) >> 8);
         uint32_t RMA_ERROR = ((status_val & 0x80) >> 7);
 
-        VPRINTF(LOW, "Status Register: 0x%08x | Transition Successful: %d | Token Error: %d | OTP Error: %d\n",
+        VPRINTF(LOW, "Status Register: 0x%08x | Transition Successful: 0x%08x | Token E**or: 0x%08x | OTP E**or: 0x%08x\n",
                 status_val, TRANSITION_SUCCESSFUL, TOKEN_ERROR, OTP_ERROR);
 
         if (TRANSITION_SUCCESSFUL) {
