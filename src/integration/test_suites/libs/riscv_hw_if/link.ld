@@ -28,11 +28,11 @@ SECTIONS {
   .text   : { *(.text*) }
   _text_end = .;
 
-  . = 0x21200000;
+  . = 0x21A00000;
   .data : { *(.*data) *(.rodata*) *(.srodata*) *(.sbss) }
   _data_end = .;
 
-  . = 0x21210000;
+  . = 0x21A10000;
   .bss : { *(.bss) }
   _bss_end = .;
 

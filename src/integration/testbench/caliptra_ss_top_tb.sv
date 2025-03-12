@@ -389,6 +389,7 @@ module caliptra_ss_top_tb
     tb_top_pkg::veer_sram_error_injection_mode_t error_injection_mode;
 
     `define MCU_DEC caliptra_ss_dut.rvtop_wrapper.rvtop.veer.dec
+    `define MCU_TOP_PATH caliptra_ss_dut.rvtop_wrapper
 
 
     assign mailbox_write    = caliptra_ss_dut.mci_top_i.s_axi_w_if.awvalid && (caliptra_ss_dut.mci_top_i.s_axi_w_if.awaddr == mem_mailbox) && rst_l;
@@ -501,18 +502,18 @@ module caliptra_ss_top_tb
         wb_csr_valid  <= `MCU_DEC.dec_csr_wen_r;
         wb_csr_dest   <= `MCU_DEC.dec_csr_wraddr_r;
         wb_csr_data   <= `MCU_DEC.dec_csr_wrdata_r;
-        if (trace_rv_i_valid_ip) begin
-           $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", trace_rv_i_valid_ip, 0, trace_rv_i_address_ip,
-                  0, trace_rv_i_insn_ip,trace_rv_i_exception_ip,trace_rv_i_ecause_ip,
-                  trace_rv_i_tval_ip,trace_rv_i_interrupt_ip);
+        if (`MCU_TOP_PATH.trace_rv_i_valid_ip) begin
+           $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", `MCU_TOP_PATH.trace_rv_i_valid_ip, 0, `MCU_TOP_PATH.trace_rv_i_address_ip,
+                  0, `MCU_TOP_PATH.trace_rv_i_insn_ip,`MCU_TOP_PATH.trace_rv_i_exception_ip,`MCU_TOP_PATH.trace_rv_i_ecause_ip,
+                  `MCU_TOP_PATH.trace_rv_i_tval_ip,`MCU_TOP_PATH.trace_rv_i_interrupt_ip);
            // Basic trace - no exception register updates
            // #1 0 ee000000 b0201073 c 0b02       00000000
            commit_count++;
            $fwrite (el, "%10d : %8s 0 %h %h%13s %14s ; %s\n", cycleCnt, $sformatf("#%0d",commit_count),
-                        trace_rv_i_address_ip, trace_rv_i_insn_ip,
+                        `MCU_TOP_PATH.trace_rv_i_address_ip, `MCU_TOP_PATH.trace_rv_i_insn_ip,
                         (wb_dest !=0 && wb_valid)?  $sformatf("%s=%h", abi_reg[wb_dest], wb_data) : "            ",
                         (wb_csr_valid)? $sformatf("c%h=%h", wb_csr_dest, wb_csr_data) : "             ",
-                        dasm(trace_rv_i_insn_ip, trace_rv_i_address_ip, wb_dest & {5{wb_valid}}, wb_data)
+                        dasm(`MCU_TOP_PATH.trace_rv_i_insn_ip, `MCU_TOP_PATH.trace_rv_i_address_ip, wb_dest & {5{wb_valid}}, wb_data)
                    );
         end
         if(`MCU_DEC.dec_nonblock_load_wen) begin
