@@ -21,9 +21,9 @@ addrmap mci_top {
     
     trace_buffer_csr mcu_trace_buffer_csr @ 0x0001_0000;
     
-    mbox_csr mbox0_csr @ 0x0008_0000;
+    mcu_mbox_csr mcu_mbox0_csr @ 0x0020_0000;
     
-    mbox_csr mbox1_csr @ 0x0009_0000;
+    mcu_mbox_csr mcu_mbox1_csr @ 0x0060_0000;
 
     mem {name="MCU SRAM";
          desc="Mailbox SRAM for Caliptra direct-mode accesses. Accessible by either MCU or Caliptra depending on the security configuration. Max size is 2MB but is configurable by integration team.
@@ -33,6 +33,6 @@ addrmap mci_top {
          memwidth=32;
          mementries=524288;
          sw=rw;
-    } external mcu_sram @ 0x20_0000;
+    } external mcu_sram @ 0xA0_0000;
 
 };

@@ -362,6 +362,8 @@ module caliptra_ss_top_tb
 //------------------------------------------------------------------------
 
     logic         cptra_ss_debug_intent_i;
+    logic cptra_ss_soc_mcu_mbox0_data_avail;
+    logic cptra_ss_soc_mcu_mbox1_data_avail;
 
     logic pwr_otp_init_i;
     logic cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i;
@@ -1177,12 +1179,12 @@ module caliptra_ss_top_tb
         .rst_b(rst_l)
     );
 
-    mci_mcu_sram_if cptra_ss_mci_mbox0_sram_req_if (
+    mci_mcu_sram_if cptra_ss_mcu_mbox0_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
     
-    mci_mcu_sram_if cptra_ss_mci_mbox1_sram_req_if (
+    mci_mcu_sram_if cptra_ss_mcu_mbox1_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
@@ -1846,8 +1848,8 @@ module caliptra_ss_top_tb
 
     //MCI
         .cptra_ss_mci_mcu_sram_req_if,
-        .cptra_ss_mci_mbox0_sram_req_if,
-        .cptra_ss_mci_mbox1_sram_req_if,
+        .cptra_ss_mcu_mbox0_sram_req_if,
+        .cptra_ss_mcu_mbox1_sram_req_if,
         .cptra_ss_mcu0_el2_mem_export,
         .cptra_ss_mci_boot_seq_brkpoint_i,
         .cptra_ss_mcu_no_rom_config_i,
@@ -1855,6 +1857,8 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mcu_reset_vector_i,
         .cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i,
         .cptra_ss_FIPS_ZEROIZATION_PPD_i,
+        .cptra_ss_soc_mcu_mbox0_data_avail,
+        .cptra_ss_soc_mcu_mbox1_data_avail,
 
         .cptra_ss_mci_generic_output_wires_o,
         .cptra_ss_all_error_fatal_o,

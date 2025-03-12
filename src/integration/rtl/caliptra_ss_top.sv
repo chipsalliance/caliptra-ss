@@ -30,12 +30,12 @@ module caliptra_ss_top
     import soc_ifc_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
-    ,parameter MCI_MBOX0_SIZE_KB = 4
-    ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
-    ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
-    ,parameter MCI_MBOX1_SIZE_KB = 4
-    ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
-    ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+    ,parameter MCU_MBOX0_SIZE_KB = 4
+    ,parameter [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCU_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+    ,parameter MCU_MBOX1_SIZE_KB = 4
+    ,parameter [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
 ) (
     input logic cptra_ss_clk_i,
@@ -132,9 +132,13 @@ module caliptra_ss_top
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
-    mci_mcu_sram_if.request cptra_ss_mci_mbox0_sram_req_if,
-    mci_mcu_sram_if.request cptra_ss_mci_mbox1_sram_req_if,
+    mci_mcu_sram_if.request cptra_ss_mcu_mbox0_sram_req_if,
+    mci_mcu_sram_if.request cptra_ss_mcu_mbox1_sram_req_if,
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export,
+
+//  MCU MBOX signals
+    output logic cptra_ss_soc_mcu_mbox0_data_avail,
+    output logic cptra_ss_soc_mcu_mbox1_data_avail,
 
     input logic [63:0] cptra_ss_mci_generic_input_wires_i,
 
@@ -1127,12 +1131,12 @@ module caliptra_ss_top
         .AXI_DATA_WIDTH(32),
         .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
 
-        .MCI_MBOX0_SIZE_KB(MCI_MBOX0_SIZE_KB),
-        .MCI_SET_MBOX0_AXI_USER_INTEG(MCI_SET_MBOX0_AXI_USER_INTEG),  
-        .MCI_MBOX0_VALID_AXI_USER(MCI_MBOX0_VALID_AXI_USER),    
-        .MCI_MBOX1_SIZE_KB(MCI_MBOX1_SIZE_KB),
-        .MCI_SET_MBOX1_AXI_USER_INTEG(MCI_SET_MBOX1_AXI_USER_INTEG),  
-        .MCI_MBOX1_VALID_AXI_USER(MCI_MBOX1_VALID_AXI_USER)    
+        .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
+        .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),  
+        .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),    
+        .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB),
+        .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),  
+        .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER)    
     ) mci_top_i (
 
         .clk(cptra_ss_clk_i),
@@ -1181,6 +1185,9 @@ module caliptra_ss_top
         .mcu_rst_b(mcu_rst_b),
         .cptra_rst_b(mcu_cptra_rst_b),
 
+        // MBOX
+        .soc_mcu_mbox0_data_avail(cptra_ss_soc_mcu_mbox0_data_avail),
+        .soc_mcu_mbox1_data_avail(cptra_ss_soc_mcu_mbox1_data_avail),
 
         // MCU DMI
         .mcu_dmi_core_enable,
@@ -1217,8 +1224,8 @@ module caliptra_ss_top
         // .fc_intr_otp_error(1'b0),
 
         .mci_mcu_sram_req_if  (cptra_ss_mci_mcu_sram_req_if),
-        .mci_mbox0_sram_req_if(cptra_ss_mci_mbox0_sram_req_if),
-        .mci_mbox1_sram_req_if(cptra_ss_mci_mbox1_sram_req_if),
+        .mcu_mbox0_sram_req_if(cptra_ss_mcu_mbox0_sram_req_if),
+        .mcu_mbox1_sram_req_if(cptra_ss_mcu_mbox1_sram_req_if),
         
 
         .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
