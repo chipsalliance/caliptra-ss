@@ -1014,8 +1014,7 @@ If a second Target user is required it is the MCU's responsibility to:
 
 Otherwise these registers are cleared when the mailbox lock is released. 
 
-Target users must be an [MCU Mailbox trusted user](mcu-mailbox-limited-truster-AXI-user)
-
+Target users must be an [MCU Mailbox trusted user](mcu-mailbox-limited-trusted-AXI-user)
 #### MCU Mailbox Fully addressable SRAM
 
 The SRAM is fully addressable and reads are not destructive in this mailbox.
