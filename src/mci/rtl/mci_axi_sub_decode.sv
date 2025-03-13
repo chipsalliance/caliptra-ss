@@ -42,7 +42,7 @@ module mci_axi_sub_decode
     localparam MBOX0_END_ADDR                   = MBOX0_START_ADDR + ((32'h0000_0001 << MCU_MBOX_CSR_ADDR_WIDTH) - 1),
     localparam MBOX1_START_ADDR                 = 32'h0080_0000,
     localparam MBOX1_END_ADDR                   = MBOX1_START_ADDR + ((32'h0000_0001 << MCU_MBOX_CSR_ADDR_WIDTH) - 1),
-    localparam MCU_SRAM_START_ADDR              = 32'h00A0_0000,
+    localparam MCU_SRAM_START_ADDR              = 32'h00C0_0000,
     localparam MCU_SRAM_END_ADDR                = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1, 
       
     localparam MCI_END_ADDR   = MCU_SRAM_END_ADDR,
