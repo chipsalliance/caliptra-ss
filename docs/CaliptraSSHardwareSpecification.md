@@ -1052,8 +1052,7 @@ The following interrup(s) are available for SOC consumption:
 
 | **Interrupt** | **Description**     | 
 | :---------         | :---------     | 
-| Mailbox data available from MCU             | Asserted when MCU gets lock and assert the EXECUTE register, indicating data is availalbe for SOC consumption.        | 
-
+| Mailbox data available from MCU             | Asserted when MCU gets lock and assert the EXECUTE register, indicating data is available for SOC consumption.        |
 #### MCU Mailbox Errors
 
 Each mailbox has the following errors:
