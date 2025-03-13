@@ -986,10 +986,8 @@ A Requester will read the "LOCK" register to obtain a lock on the mailbox. This 
   -  TARGET_STATUS
   -  TARGET_DONE
   -  TARGET_USER
-- Maibox SRAM 
-
-Unlocking occures when the requestor clears the execution register. After releasing the mailbox the SRAM is zeroed out ([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
-
+- Mailbox SRAM
+Unlocking occurs when the requestor clears the execution register. After releasing the mailbox the SRAM is zeroed out ([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
 #### MCU Mailbox Target User
 
 A Target user is an additional user that can access and process the MBOX request. This user can only be setup by MCU and only valid when the TARGET_USER_VALID bit is set.
@@ -1010,13 +1008,12 @@ The Target user will notify MCU it is done processing by setting TARGET_STATUS a
 If a second Target user is required it is the MCU's responsibility to:
 
 1. Clear TARGET_STATUS
-2. Cleare TARGET_DONE
+2. Clear TARGET_DONE
 3. Set new TARGET_USER
 
 Otherwise these registers are cleared when the mailbox lock is released. 
 
-Target users must be an [MCU Mailbox trusted user](mcu-mailbox-limited-truster-AXI-user)
-
+Target users must be an [MCU Mailbox trusted user](mcu-mailbox-limited-trusted-AXI-user)
 #### MCU Mailbox Fully addressable SRAM
 
 The SRAM is fully addressable and reads are not destructive in this mailbox.
@@ -1054,8 +1051,7 @@ The following interrup(s) are available for SOC consumption:
 
 | **Interrupt** | **Description**     | 
 | :---------         | :---------     | 
-| Mailbox data available from MCU             | Asserted when MCU gets lock and assert the EXECUTE register, indicating data is availalbe for SOC consumption.        | 
-
+| Mailbox data available from MCU             | Asserted when MCU gets lock and assert the EXECUTE register, indicating data is available for SOC consumption.        |
 #### MCU Mailbox Errors
 
 Each mailbox has the following errors:
@@ -1063,7 +1059,7 @@ Each mailbox has the following errors:
 | **Error Type** | **Response**     | **Description** |
 | :---------         | :---------     | :---------     | 
 | Untrusted User Access | Read:<br>&nbsp;- Data return 0 <br>&nbsp;- AXI Error<br>Write:<br>&nbsp;- Data dropped<br>&nbsp;- AXI Error | When an [Untrusted user](#mcu-mailbox-limited-trusted-axi-users) tries to access any address within the MBOX. |
-| Tusted User Illegal Access | Read:<br>&nbsp;- Data return 0 <br>Write:<br>&nbsp;- Data dropped| When a [Trusted user](#mcu-mailbox-limited-trusted-axi-users) tries to:<br>- Access the mailbox when it doesn't have a locl<br>- Tries to write to a register it doesn't have access to.<br>- Tries to access an illegal SRAM address within the mailbox. |
+| Trusted User Illegal Access | Read:<br>&nbsp;- Data return 0 <br>Write:<br>&nbsp;- Data dropped| When a [Trusted user](#mcu-mailbox-limited-trusted-axi-users) tries to:<br>- Access the mailbox when it doesn't have a lock<br>- Tries to write to a register it doesn't have access to.<br>- Tries to access an illegal SRAM address within the mailbox. |
 | Single Bit ECC Error |- Interrupt to MCU<br>- Mailbox ECC SB status set<br>- Data corrected | Single bit ECC error while reading Mailbox. |
 | Double Bit ECC Error |- Error interrupt to MCU<br> - HW_NON_FATAL error set for SOC consumption<br>- Mailbox ECC DB status set<br>- Invalid data returned | Double bit ECC error while reading Mailbox. |
 
