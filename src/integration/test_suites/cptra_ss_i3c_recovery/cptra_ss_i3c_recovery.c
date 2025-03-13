@@ -244,7 +244,7 @@ void boot_mcu(){
     VPRINTF(LOW, "MCU: Ready for FW\n");
 
     // MBOX: Setup valid AXI USER
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0xffffffff);
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0x1);
     //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_1, 1);
     //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_2, 2);
     //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_3, 3);
@@ -268,11 +268,11 @@ void boot_mcu(){
     // MBOX: Write DLEN
     lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 0);
 
-    // MBOX: SOC_MBOX_CSR_MBOX_USER
-    // Writing MBOX user anything but 0xffff_ffff
-    // DPE considers all ffff_ffff as invalid user
-    // suggested based on Caliptra 1.x requirements.
-    lsu_write_32(SOC_MBOX_CSR_MBOX_USER, 0x1);
+//    // MBOX: SOC_MBOX_CSR_MBOX_USER
+//    // Writing MBOX user anything but 0xffff_ffff
+//    // DPE considers all ffff_ffff as invalid user
+//    // suggested based on Caliptra 1.x requirements.
+//    lsu_write_32(SOC_MBOX_CSR_MBOX_USER, 0x1);
 
     // // MBOX: Write datain
     // for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
