@@ -1060,7 +1060,7 @@ Each mailbox has the following errors:
 | **Error Type** | **Response**     | **Description** |
 | :---------         | :---------     | :---------     | 
 | Untrusted User Access | Read:<br>&nbsp;- Data return 0 <br>&nbsp;- AXI Error<br>Write:<br>&nbsp;- Data dropped<br>&nbsp;- AXI Error | When an [Untrusted user](#mcu-mailbox-limited-trusted-axi-users) tries to access any address within the MBOX. |
-| Tusted User Illegal Access | Read:<br>&nbsp;- Data return 0 <br>Write:<br>&nbsp;- Data dropped| When a [Trusted user](#mcu-mailbox-limited-trusted-axi-users) tries to:<br>- Access the mailbox when it doesn't have a locl<br>- Tries to write to a register it doesn't have access to.<br>- Tries to access an illegal SRAM address within the mailbox. |
+| Tusted User Illegal Access | Read:<br>&nbsp;- Data return 0 <br>Write:<br>&nbsp;- Data dropped| When a [Trusted user](#mcu-mailbox-limited-trusted-axi-users) tries to:<br>- Access the mailbox when it doesn't have a lock<br>- Tries to write to a register it doesn't have access to.<br>- Tries to access an illegal SRAM address within the mailbox. |
 | Single Bit ECC Error |- Interrupt to MCU<br>- Mailbox ECC SB status set<br>- Data corrected | Single bit ECC error while reading Mailbox. |
 | Double Bit ECC Error |- Error interrupt to MCU<br> - HW_NON_FATAL error set for SOC consumption<br>- Mailbox ECC DB status set<br>- Invalid data returned | Double bit ECC error while reading Mailbox. |
 
