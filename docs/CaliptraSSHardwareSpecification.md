@@ -986,8 +986,7 @@ A Requester will read the "LOCK" register to obtain a lock on the mailbox. This 
   -  TARGET_STATUS
   -  TARGET_DONE
   -  TARGET_USER
-- Maibox SRAM 
-
+- Mailbox SRAM
 Unlocking occures when the requestor clears the execution register. After releasing the mailbox the SRAM is zeroed out ([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
 
 #### MCU Mailbox Target User
