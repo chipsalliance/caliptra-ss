@@ -1,3 +1,8 @@
 ---
 seed: 1
 testname: mcu_cptra_bringup
+pre_exec: |
+  # Explicitly specify which Caliptra-core test to pair with this testcase
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third-party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third-party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=smoke_test_mbox program.hex
+  # TESTNAME variable is assigned at runtime to the value of 'testname:' above, and used by SS makefile
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile mcu_program.hex

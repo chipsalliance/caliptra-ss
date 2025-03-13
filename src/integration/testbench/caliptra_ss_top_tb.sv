@@ -1659,6 +1659,7 @@ module caliptra_ss_top_tb
     `endif
 
     initial begin
+        string avy_test_name;
         // --- Avery I3C slave ---
         // slave = new("slave", , AI3C_SLAVE, slave_intf);
         // slave.log.enable_bus_tracker = 1;
@@ -1680,11 +1681,11 @@ module caliptra_ss_top_tb
         i3c_env0.add_master(master0);
 
         // run test for i3C
-        if($test$plusargs("AVY_TEST")) begin
-            $display("Waiting for 150us before Running I3C test..");
+        if($value$plusargs("AVY_TEST=%s", avy_test_name)) begin
+            $display("Waiting for 150us before Running I3C test [%s]", avy_test_name);
             #150us;  // system boot delay
             master0.set("start_bfm");
-            ai3c_run_test("ai3ct_ext_basic", i3c_env0); 
+            ai3c_run_test(avy_test_name, i3c_env0); 
         end
     end
 

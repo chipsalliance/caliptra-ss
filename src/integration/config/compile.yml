@@ -66,6 +66,7 @@ targets:
       - $AVERY_HOME/axixactor-2.1e.230314//checker/BP063-BU-01000-r0p1-00rel0/sva
       - $AVERY_HOME/axixactor-2.1e.230314//testbench
       - $COMPILE_ROOT/testbench
+      - $COMPILE_ROOT/testbench/sv_tests/ai3c
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
@@ -116,6 +117,7 @@ global:
         - +define+AAXI_INTC_SLAVE_CNT=8
         - +define+AI3C_LANE_NUM=1
         - +define+DIGITAL_IO_I3C=1
+        - +define+CALIPTRA_MODE_SUBSYSTEM
         # - +define+AI3C_SKIP_DAA=1
         - +define+AVERY_SV_TEST_CASE=1
         - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_tests_top.svh
