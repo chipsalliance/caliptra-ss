@@ -361,9 +361,6 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK) program.hex
 # $(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
 # $(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
 
-program.hex:
-	CALIPTRA_ROOT=$(CALIPTRA_SS_ROOT)/third-party/caliptra-rtl TEST_DIR="$${CALIPTRA_SS_ROOT}/src/integration/caliptra_test_suites/$(CALIPTRA_CORE_TESTNAME)" make -f $${CALIPTRA_ROOT}/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=$(CALIPTRA_CORE_TESTNAME) program.hex
-
 # Cannot build caliptra_{fmc,rt}.hex and program.hex in the same make invocation (TESTNAME will be invalid, and consequently other dependencies like LINK)
 # Entire image will be loaded into the mailbox, so it must fit the 128KiB memory
 %.hex: $(OFILES) $(LINK)

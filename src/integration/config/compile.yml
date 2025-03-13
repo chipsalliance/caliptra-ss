@@ -80,7 +80,7 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]
   sim:
-    pre_exec: '$MSFT_SCRIPTS_DIR/run_test_makefile && echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
+    pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
                 && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py .
                 && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py .
                 && echo "[PRE-EXEC] Copying MLDSA vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 .
@@ -118,7 +118,7 @@ global:
         - +define+DIGITAL_IO_I3C=1
         # - +define+AI3C_SKIP_DAA=1
         - +define+AVERY_SV_TEST_CASE=1
-        - +define+AI3C_TEST_CASE=$COMPILE_ROOT/test_suites/ai3ct_ext_basic.sv
+        - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_tests_top.svh
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME : remve this Note suppression
