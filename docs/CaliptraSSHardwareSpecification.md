@@ -1009,7 +1009,7 @@ The Target user will notify MCU it is done processing by setting TARGET_STATUS a
 If a second Target user is required it is the MCU's responsibility to:
 
 1. Clear TARGET_STATUS
-2. Cleare TARGET_DONE
+2. Clear TARGET_DONE
 3. Set new TARGET_USER
 
 Otherwise these registers are cleared when the mailbox lock is released. 
