@@ -113,7 +113,6 @@ logic [$bits(mcu_mbox_sram_req_if.resp.rdata.data)-1:0] sram_rdata_cor;
 logic invalid_sram_addr;
 logic valid_sram_addr;
 
-logic rst_b_dly;
 logic rst_mbox_lock_req;
 
 assign hwif_in.rst_b = rst_b;
@@ -193,18 +192,17 @@ always_ff @(posedge clk or negedge rst_b) begin
     if (!rst_b) begin
        mbox_sram_zero_done <= 1'b0;
        mbox_sram_zero_in_progress <= 1'b0;
-       rst_b_dly <= 1'b0;
+       rst_mbox_lock_req <= 1'b1;
     end else begin
        mbox_sram_zero_done        <= mbox_release; // FIXME - need real logic behind this.
        mbox_sram_zero_in_progress <= mbox_release; // FIXME - need real logic behind this.
-       rst_b_dly <= 1'b1;
+       rst_mbox_lock_req <= 1'b0;
     end
 end
 
 // Release the mailbox one clock cycle after execute is cleared
 assign mbox_release = !hwif_out.mbox_execute.execute.value & execute_prev;  
 
-assign rst_mbox_lock_req = !rst_b_dly & rst_b;
 // One reset lock in root_user. Otherwise when lock is not set and user reads
 // the registers set the lock.
 assign hwif_in.mbox_lock.lock.hwset = (!hwif_out.mbox_lock.lock.value & hwif_out.mbox_lock.lock.swmod) | rst_mbox_lock_req; 
