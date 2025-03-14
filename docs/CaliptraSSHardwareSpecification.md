@@ -1038,7 +1038,7 @@ When the mailbox lock is released the SRAM is zeroed out from 0 to max DLEN set 
 
 The Requester is locked out of the mailbox after step 1, even though the lock isn't cleared until step 4. 
 
-It is expected that agents write their content from 0 to DLEN. If an agent writes outside of this SRAM area, there is no security guarantee for that content.
+It is expected that agents write their content from 0 to DLEN. If an agent writes outside of this SRAM area, there is no security guarantee for that content because that data would not be zeroized between mailbox operations.
 
 #### MCU Mailbox Interrupts
 
