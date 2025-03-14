@@ -108,8 +108,8 @@ addrmap mci_reg {
         desc = "MCU HW Configuration
                 ";
         // No storage, i.e. no resetsignal
-        field {desc = "MCI MBOX1 SRAM SIZE KB. If 0 there is no mailbox"; hw=w; sw=r;} MCI_MBOX1_SRAM_SIZE[12];
-        field {desc = "MCI MBOX0 SRAM SIZE KB. If 0 there is no mailbox"; hw=w; sw=r;} MCI_MBOX0_SRAM_SIZE[12];
+        field {desc = "MCU MBOX1 SRAM SIZE KB. If 0 there is no mailbox"; hw=w; sw=r;} MCU_MBOX1_SRAM_SIZE[12];
+        field {desc = "MCU MBOX0 SRAM SIZE KB. If 0 there is no mailbox"; hw=w; sw=r;} MCU_MBOX0_SRAM_SIZE[12];
     } HW_CONFIG0;
     reg {
         name = "MCU HW Config";
@@ -257,10 +257,6 @@ addrmap mci_reg {
                 [/list]
                 [br]AXI Access:      RW1C
                 [br]TAP Access [with debug intent set]: RO";
-        rw_rw_sticky_hw mbox0_prot_no_lock=0; /* SOC access while not locked */
-        rw_rw_sticky_hw mbox1_prot_no_lock=0; /* SOC access while not locked */
-        rw_rw_sticky_hw mbox0_prot_ooo=0;     /* Register access out-of-order */
-        rw_rw_sticky_hw mbox1_prot_ooo=0;     /* Register access out-of-order */
         rw_rw_sticky_hw mbox0_ecc_unc=0;      /* Uncorrectable double-bit error in MBOX0 */
         rw_rw_sticky_hw mbox1_ecc_unc=0;      /* Uncorrectable double-bit error in MBOX1 */
 
@@ -415,10 +411,6 @@ addrmap mci_reg {
                 [br] [*] agg_error_non_fatal_mask
                 [br] [*] fw_error_non_fatal_mask 
                 [/list]";
-        rw_ro_ro_hw mask_mbox0_prot_no_lock=0; /* SOC access while not locked */
-        rw_ro_ro_hw mask_mbox1_prot_no_lock=0; /* SOC access while not locked */
-        rw_ro_ro_hw mask_mbox0_prot_ooo=0;     /* Register access out-of-order */
-        rw_ro_ro_hw mask_mbox1_prot_ooo=0;     /* Register access out-of-order */
         rw_ro_ro_hw mask_mbox0_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
         rw_ro_ro_hw mask_mbox1_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
     } internal_hw_error_non_fatal_mask;
@@ -988,10 +980,6 @@ regfile intr_block_t {
         // event type in the instantiating peripheral.
         field {desc = "Enable bit for Collision between AXI and DMI port in MCU SRAM.";                            } error_mcu_sram_dmi_axi_collision_en = 1'b0;
         field {desc = "Enable bit for Internal Errors";                                                            } error_internal_en = 1'b0;
-        field {desc = "Enable bit for Invalid Device in Pauser field";                                             } error_mbox0_inv_dev_en  = 1'b0;
-        field {desc = "Enable bit for Invalid Device in Pauser field";                                             } error_mbox1_inv_dev_en  = 1'b0;
-        field {desc = "Enable bit for Failed Commands (invalid protocol or FW Fail Status)";                       } error_mbox0_cmd_fail_en = 1'b0;
-        field {desc = "Enable bit for Failed Commands (invalid protocol or FW Fail Status)";                       } error_mbox1_cmd_fail_en = 1'b0;
         field {desc = "Enable bit for Mailbox ECC Double-bit Error (uncorrectable)";                               } error_mbox0_ecc_unc_en = 1'b0;
         field {desc = "Enable bit for Mailbox ECC Double-bit Error (uncorrectable)";                               } error_mbox1_ecc_unc_en = 1'b0;
         field {desc = "Enable bit for WDT Timer1 timeout";                                                         } error_wdt_timer1_timeout_en = 1'b0;
@@ -1052,6 +1040,8 @@ regfile intr_block_t {
         field {desc = "Enable bit for MCUS SRAM ECC Single-bit Error (corretable)";     } notif_mcu_sram_ecc_cor_en = 1'b0;
         field {desc = "Enable bit for Caliptra requests MCU to reset itself";           } notif_cptra_mcu_reset_req_en = 1'b0;
         field {desc = "Enable bit for Generic Input Wires Toggle";                      } notif_gen_in_toggle_en = 1'b0;
+        field {desc = "Enable bit for MBOX0 Target done and status available";          } notif_mbox0_target_done_en = 1'b0;
+        field {desc = "Enable bit for MBOX1 Target done and status available";          } notif_mbox1_target_done_en = 1'b0;
         field {desc = "Enable bit for MBOX0 Command Available";                         } notif_mbox0_cmd_avail_en = 1'b0;
         field {desc = "Enable bit for MBOX1 Command Available";                         } notif_mbox1_cmd_avail_en = 1'b0;
         field {desc = "Enable bit for Caliptra MBOX Command Available";                 } notif_cptra_mbox_cmd_avail_en = 1'b0;
@@ -1059,8 +1049,8 @@ regfile intr_block_t {
         field {desc = "Enable bit for Mailbox ECC Single-bit Error (correctable)";      } notif_mbox1_ecc_cor_en = 1'b0;
         field {desc = "Enable bit for Security State, Debug Locked transition";         } notif_debug_locked_en = 1'b0;
         field {desc = "Enable bit for Scan mode asserted";                              } notif_scan_mode_en = 1'b0;
-        field {desc = "Enable bit for SoC requested the mailbox while locked";          } notif_mbox0_soc_req_lock_en = 1'b0;
-        field {desc = "Enable bit for SoC requested the mailbox while locked";          } notif_mbox1_soc_req_lock_en = 1'b0;
+        field {desc = "Enable bit for SoC requested the mailbox while mcu has lock";          } notif_mbox0_soc_req_lock_en = 1'b0;
+        field {desc = "Enable bit for SoC requested the mailbox while mcu has lock";          } notif_mbox1_soc_req_lock_en = 1'b0;
     };
     reg notif1_intr_en_t {
         name = "Per-Event Interrupt Enable Register";
@@ -1119,10 +1109,6 @@ regfile intr_block_t {
 
         field {desc = "Collision between AXI and DMI port in MCU SRAM.";                 } error_mcu_sram_dmi_axi_collision_sts = 1'b0;
         field {desc = "Internal Errors status bit";                                      } error_internal_sts = 1'b0;
-        field {desc = "Invalid Device in Pauser field status bit";                       } error_mbox0_inv_dev_sts = 1'b0;
-        field {desc = "Invalid Device in Pauser field status bit";                       } error_mbox1_inv_dev_sts = 1'b0;
-        field {desc = "Failed Commands status bit (invalid protocol or FW Fail Status)"; } error_mbox0_cmd_fail_sts = 1'b0;
-        field {desc = "Failed Commands status bit (invalid protocol or FW Fail Status)"; } error_mbox1_cmd_fail_sts = 1'b0;
         field {desc = "Mailbox ECC Double-bit Error (uncorrectable) status bit";         } error_mbox0_ecc_unc_sts = 1'b0;
         field {desc = "Mailbox ECC Double-bit Error (uncorrectable) status bit";         } error_mbox1_ecc_unc_sts = 1'b0;
         field {hw = rw; desc = "WDT Timer1 timeout status bit";                                   } error_wdt_timer1_timeout_sts = 1'b0;
@@ -1190,6 +1176,8 @@ regfile intr_block_t {
         field {desc = "MCU SRAM ECC Single-bit Error (correctable) status bit";} notif_mcu_sram_ecc_cor_sts = 1'b0;
         field {desc = "Caliptra requests MCU to reset itself status bit";      } notif_cptra_mcu_reset_req_sts = 1'b0;
         field {desc = "Generic Input Wires Toggle status bit";                 } notif_gen_in_toggle_sts = 1'b0;
+        field {desc = "MBOX0 Target done and status available bit";            } notif_mbox0_target_done_sts = 1'b0;
+        field {desc = "MBOX1 Target done and status available bit";            } notif_mbox1_target_done_sts = 1'b0;
         field {desc = "MBOX0 Command Available status bit";                    } notif_mbox0_cmd_avail_sts = 1'b0;
         field {desc = "MBOX1 Command Available status bit";                    } notif_mbox1_cmd_avail_sts = 1'b0;
         field {desc = "Caliptra MBOX Command Available status bit";            } notif_cptra_mbox_cmd_avail_sts = 1'b0;
@@ -1197,8 +1185,8 @@ regfile intr_block_t {
         field {desc = "Mailbox ECC Single-bit Error (correctable) status bit"; } notif_mbox1_ecc_cor_sts = 1'b0;
         field {desc = "Security State, Debug Locked transition status bit";    } notif_debug_locked_sts = 1'b0;
         field {desc = "Scan mode asserted status bit";                         } notif_scan_mode_sts = 1'b0;
-        field {desc = "SoC requested the mailbox while locked status bit";     } notif_mbox0_soc_req_lock_sts = 1'b0;
-        field {desc = "SoC requested the mailbox while locked status bit";     } notif_mbox1_soc_req_lock_sts = 1'b0;
+        field {desc = "SoC requested the mailbox while mcu has lock status bit";     } notif_mbox0_soc_req_lock_sts = 1'b0;
+        field {desc = "SoC requested the mailbox while mcu has lock status bit";     } notif_mbox1_soc_req_lock_sts = 1'b0;
     };
     reg notif1_intr_t {
         name = "Interrupt Status Register type definition";
@@ -1284,10 +1272,6 @@ regfile intr_block_t {
         // Instantiate triggers bit-by-bit.
         field {desc = "Collision between AXI and DMI port in MCU SRAM trigger bit";     } error_mcu_sram_dmi_axi_collision_trig = 1'b0;
         field {desc = "Internal Errors trigger bit";                                    } error_internal_trig = 1'b0;
-        field {desc = "Invalid Device in Pauser field trigger bit";                     } error_mbox0_inv_dev_trig  = 1'b0;
-        field {desc = "Invalid Device in Pauser field trigger bit";                     } error_mbox1_inv_dev_trig  = 1'b0;
-        field {desc = "Failed Commands trigger bit";                                    } error_mbox0_cmd_fail_trig = 1'b0;
-        field {desc = "Failed Commands trigger bit";                                    } error_mbox1_cmd_fail_trig = 1'b0;
         field {desc = "Mailbox ECC Double-bit Error (uncorrectable) trigger bit";       } error_mbox0_ecc_unc_trig = 1'b0;
         field {desc = "Mailbox ECC Double-bit Error (uncorrectable) trigger bit";       } error_mbox1_ecc_unc_trig = 1'b0;
         field {desc = "WDT Timer1 timeout trigger bit";                                 } error_wdt_timer1_timeout_trig = 1'b0;
@@ -1359,6 +1343,8 @@ regfile intr_block_t {
         field {desc = "MCU SRAM ECC Single-bit Error (correctable) trigger bit";} notif_mcu_sram_ecc_cor_trig = 1'b0;
         field {desc = "Caliptra requests MCU to reset itself trigger bit";      } notif_cptra_mcu_reset_req_trig = 1'b0;
         field {desc = "Generic Input Wires Toggle trigger bit";                 } notif_gen_in_toggle_trig = 1'b0;
+        field {desc = "MBOX0 Target done and status available trigger bit";     } notif_mbox0_target_done_trig = 1'b0;
+        field {desc = "MBOX1 Target done and status available trigger bit";     } notif_mbox1_target_done_trig = 1'b0;
         field {desc = "MBOX0 Command Available trigger bit";                    } notif_mbox0_cmd_avail_trig = 1'b0;
         field {desc = "MBOX1 Command Available trigger bit";                    } notif_mbox1_cmd_avail_trig = 1'b0;
         field {desc = "Caliptra MBOX Command Available trigger bit";            } notif_cptra_mbox_cmd_avail_trig = 1'b0;
@@ -1366,8 +1352,8 @@ regfile intr_block_t {
         field {desc = "Mailbox ECC Single-bit Error (correctable) trigger bit"; } notif_mbox1_ecc_cor_trig = 1'b0;
         field {desc = "Security State, Debug Locked transition trigger bit";    } notif_debug_locked_trig = 1'b0;
         field {desc = "Scan mode asserted trigger bit";                         } notif_scan_mode_trig = 1'b0;
-        field {desc = "SoC requested the mailbox while locked trigger bit";     } notif_mbox0_soc_req_lock_trig = 1'b0;
-        field {desc = "SoC requested the mailbox while locked trigger bit";     } notif_mbox1_soc_req_lock_trig = 1'b0;
+        field {desc = "SoC requested the mailbox while mcu has lock trigger bit";     } notif_mbox0_soc_req_lock_trig = 1'b0;
+        field {desc = "SoC requested the mailbox while mcu has lock trigger bit";     } notif_mbox1_soc_req_lock_trig = 1'b0;
     };
 
     reg notif1_intr_trig_t {
@@ -1475,10 +1461,6 @@ regfile intr_block_t {
                                                                                                                      //
     // Align this set of registers; number of counters is based on peripheral event requirements                     //
     intr_count_t      error_internal_intr_count_r @0x100;  /* Per error */                                           //
-    intr_count_t      error_mbox0_inv_dev_intr_count_r;          /* Per error */                                           //
-    intr_count_t      error_mbox1_inv_dev_intr_count_r;          /* Per error */                                           //
-    intr_count_t      error_mbox0_cmd_fail_intr_count_r;         /* Per error */                                           //
-    intr_count_t      error_mbox1_cmd_fail_intr_count_r;         /* Per error */                                           //
     intr_count_t      error_mbox0_ecc_unc_intr_count_r;     /* Per error */                                           //
     intr_count_t      error_mbox1_ecc_unc_intr_count_r;     /* Per error */                                           //
     intr_count_t      error_mcu_sram_dmi_axi_collision_intr_count_r;     /* Per error */                                           //
@@ -1551,6 +1533,8 @@ regfile intr_block_t {
     intr_count_t      notif_agg_error_non_fatal29_intr_count_r;   /* Per notification  */                              //
     intr_count_t      notif_agg_error_non_fatal30_intr_count_r;   /* Per notification  */                              //
     intr_count_t      notif_agg_error_non_fatal31_intr_count_r;   /* Per notification  */                              //
+    intr_count_t      notif_mbox0_target_done_intr_count_r; /* Per notification */                                    //
+    intr_count_t      notif_mbox1_target_done_intr_count_r; /* Per notification */                                    //
     intr_count_t      notif_mbox0_cmd_avail_intr_count_r; /* Per notification */                                    //
     intr_count_t      notif_mbox1_cmd_avail_intr_count_r; /* Per notification */                                    //
     intr_count_t      notif_cptra_mbox_cmd_avail_intr_count_r; /* Per notification */                                    //
@@ -1567,10 +1551,6 @@ regfile intr_block_t {
     // offset 0x100), and still allowing the entire regfile to fit                                                   //
     // inside a 1024-byte space.                                                                                     //
     intr_count_incr_t error_internal_intr_count_incr_r @0x300; /* Per error count incrementor pulse */               //
-    intr_count_incr_t error_mbox0_inv_dev_intr_count_incr_r;         /* Per error count incrementor pulse */               //
-    intr_count_incr_t error_mbox1_inv_dev_intr_count_incr_r;         /* Per error count incrementor pulse */               //
-    intr_count_incr_t error_mbox0_cmd_fail_intr_count_incr_r;        /* Per error count incrementor pulse */               //
-    intr_count_incr_t error_mbox1_cmd_fail_intr_count_incr_r;        /* Per error count incrementor pulse */               //
     intr_count_incr_t error_mbox0_ecc_unc_intr_count_incr_r;    /* Per error count incrementor pulse */               //
     intr_count_incr_t error_mbox1_ecc_unc_intr_count_incr_r;    /* Per error count incrementor pulse */               //
     intr_count_incr_t error_wdt_timer1_timeout_intr_count_incr_r;  /* Per error count incrementor pulse */            //
@@ -1643,6 +1623,8 @@ regfile intr_block_t {
     intr_count_incr_t notif_agg_error_non_fatal29_intr_count_incr_r;   /* Per notification count incrementor pulse  */                              //
     intr_count_incr_t notif_agg_error_non_fatal30_intr_count_incr_r;   /* Per notification count incrementor pulse  */                              //
     intr_count_incr_t notif_agg_error_non_fatal31_intr_count_incr_r;   /* Per notification count incrementor pulse  */                              //
+    intr_count_incr_t notif_mbox0_target_done_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_mbox1_target_done_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_mbox0_cmd_avail_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_mbox1_cmd_avail_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_cptra_mbox_cmd_avail_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
@@ -1656,10 +1638,6 @@ regfile intr_block_t {
 
     /* ---- Reset assignment for Error Events ---- */
     error0_internal_intr_r.error_internal_sts     -> resetsignal = mci_pwrgood;
-    error0_internal_intr_r.error_mbox0_inv_dev_sts      -> resetsignal = mci_pwrgood;
-    error0_internal_intr_r.error_mbox1_inv_dev_sts      -> resetsignal = mci_pwrgood;
-    error0_internal_intr_r.error_mbox0_cmd_fail_sts     -> resetsignal = mci_pwrgood;
-    error0_internal_intr_r.error_mbox1_cmd_fail_sts     -> resetsignal = mci_pwrgood;
     error0_internal_intr_r.error_mbox0_ecc_unc_sts -> resetsignal = mci_pwrgood;
     error0_internal_intr_r.error_mbox1_ecc_unc_sts -> resetsignal = mci_pwrgood;
     error0_internal_intr_r.error_wdt_timer1_timeout_sts -> resetsignal = mci_pwrgood;
@@ -1698,10 +1676,6 @@ regfile intr_block_t {
     error1_internal_intr_r.error_agg_error_fatal30_sts -> resetsignal = mci_pwrgood;
     error1_internal_intr_r.error_agg_error_fatal31_sts -> resetsignal = mci_pwrgood;
     error_internal_intr_count_r.cnt          -> resetsignal = mci_pwrgood;
-    error_mbox0_inv_dev_intr_count_r.cnt           -> resetsignal = mci_pwrgood;
-    error_mbox1_inv_dev_intr_count_r.cnt           -> resetsignal = mci_pwrgood;
-    error_mbox0_cmd_fail_intr_count_r.cnt          -> resetsignal = mci_pwrgood;
-    error_mbox1_cmd_fail_intr_count_r.cnt          -> resetsignal = mci_pwrgood;
     error_mbox0_ecc_unc_intr_count_r.cnt      -> resetsignal = mci_pwrgood;
     error_mbox1_ecc_unc_intr_count_r.cnt      -> resetsignal = mci_pwrgood;
     error_wdt_timer1_timeout_intr_count_r.cnt -> resetsignal = mci_pwrgood;
@@ -1743,10 +1717,6 @@ regfile intr_block_t {
 
     /* ---- Interrupt Event Dynamic Assignments ---- */
     error0_internal_intr_r.error_internal_sts     -> enable = error0_intr_en_r.error_internal_en;
-    error0_internal_intr_r.error_mbox0_inv_dev_sts      -> enable = error0_intr_en_r.error_mbox0_inv_dev_en;
-    error0_internal_intr_r.error_mbox1_inv_dev_sts      -> enable = error0_intr_en_r.error_mbox1_inv_dev_en;
-    error0_internal_intr_r.error_mbox0_cmd_fail_sts     -> enable = error0_intr_en_r.error_mbox0_cmd_fail_en;
-    error0_internal_intr_r.error_mbox1_cmd_fail_sts     -> enable = error0_intr_en_r.error_mbox1_cmd_fail_en;
     error0_internal_intr_r.error_mbox0_ecc_unc_sts -> enable = error0_intr_en_r.error_mbox0_ecc_unc_en;
     error0_internal_intr_r.error_mbox1_ecc_unc_sts -> enable = error0_intr_en_r.error_mbox1_ecc_unc_en;
     error0_internal_intr_r.error_wdt_timer1_timeout_sts -> enable = error0_intr_en_r.error_wdt_timer1_timeout_en;
@@ -1787,6 +1757,8 @@ regfile intr_block_t {
     notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts     -> enable = notif0_intr_en_r.notif_mcu_sram_ecc_cor_en;
     notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts     -> enable = notif0_intr_en_r.notif_cptra_mcu_reset_req_en;
     notif0_internal_intr_r.notif_gen_in_toggle_sts -> enable = notif0_intr_en_r.notif_gen_in_toggle_en;
+    notif0_internal_intr_r.notif_mbox0_target_done_sts     -> enable = notif0_intr_en_r.notif_mbox0_target_done_en;
+    notif0_internal_intr_r.notif_mbox1_target_done_sts     -> enable = notif0_intr_en_r.notif_mbox1_target_done_en;
     notif0_internal_intr_r.notif_mbox0_cmd_avail_sts     -> enable = notif0_intr_en_r.notif_mbox0_cmd_avail_en;
     notif0_internal_intr_r.notif_mbox1_cmd_avail_sts     -> enable = notif0_intr_en_r.notif_mbox1_cmd_avail_en;
     notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts     -> enable = notif0_intr_en_r.notif_cptra_mbox_cmd_avail_en;
@@ -1830,10 +1802,6 @@ regfile intr_block_t {
     notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts  -> enable = notif0_intr_en_r.notif_mbox1_soc_req_lock_en;
 
     error0_internal_intr_r.error_internal_sts     -> next   = error0_intr_trig_r.error_internal_trig;
-    error0_internal_intr_r.error_mbox0_inv_dev_sts      -> next   = error0_intr_trig_r.error_mbox0_inv_dev_trig;
-    error0_internal_intr_r.error_mbox1_inv_dev_sts      -> next   = error0_intr_trig_r.error_mbox1_inv_dev_trig;
-    error0_internal_intr_r.error_mbox0_cmd_fail_sts     -> next   = error0_intr_trig_r.error_mbox0_cmd_fail_trig;
-    error0_internal_intr_r.error_mbox1_cmd_fail_sts     -> next   = error0_intr_trig_r.error_mbox1_cmd_fail_trig;
     error0_internal_intr_r.error_mbox0_ecc_unc_sts -> next   = error0_intr_trig_r.error_mbox0_ecc_unc_trig;
     error0_internal_intr_r.error_mbox1_ecc_unc_sts -> next   = error0_intr_trig_r.error_mbox1_ecc_unc_trig;
     error0_internal_intr_r.error_wdt_timer1_timeout_sts -> next   = error0_intr_trig_r.error_wdt_timer1_timeout_trig;
@@ -1874,6 +1842,8 @@ regfile intr_block_t {
     notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts     -> next   = notif0_intr_trig_r.notif_mcu_sram_ecc_cor_trig;
     notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts     -> next   = notif0_intr_trig_r.notif_cptra_mcu_reset_req_trig;
     notif0_internal_intr_r.notif_gen_in_toggle_sts -> next   = notif0_intr_trig_r.notif_gen_in_toggle_trig;
+    notif0_internal_intr_r.notif_mbox0_target_done_sts     -> next   = notif0_intr_trig_r.notif_mbox0_target_done_trig;
+    notif0_internal_intr_r.notif_mbox1_target_done_sts     -> next   = notif0_intr_trig_r.notif_mbox1_target_done_trig;
     notif0_internal_intr_r.notif_mbox0_cmd_avail_sts     -> next   = notif0_intr_trig_r.notif_mbox0_cmd_avail_trig;
     notif0_internal_intr_r.notif_mbox1_cmd_avail_sts     -> next   = notif0_intr_trig_r.notif_mbox1_cmd_avail_trig;
     notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts     -> next   = notif0_intr_trig_r.notif_cptra_mbox_cmd_avail_trig;
@@ -1940,30 +1910,6 @@ regfile intr_block_t {
     error_internal_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_internal_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
     error_internal_intr_count_incr_r.pulse -> decr     = error_internal_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     error_internal_intr_count_r.cnt        -> incr     = error_internal_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
-
-    error_mbox0_inv_dev_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox0_inv_dev_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    error_mbox0_inv_dev_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox0_inv_dev_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    error_mbox0_inv_dev_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox0_inv_dev_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    error_mbox0_inv_dev_intr_count_incr_r.pulse -> decr     = error_mbox0_inv_dev_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    error_mbox0_inv_dev_intr_count_r.cnt        -> incr     = error_mbox0_inv_dev_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
-
-    error_mbox1_inv_dev_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox1_inv_dev_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    error_mbox1_inv_dev_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox1_inv_dev_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    error_mbox1_inv_dev_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox1_inv_dev_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    error_mbox1_inv_dev_intr_count_incr_r.pulse -> decr     = error_mbox1_inv_dev_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    error_mbox1_inv_dev_intr_count_r.cnt        -> incr     = error_mbox1_inv_dev_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
-
-    error_mbox0_cmd_fail_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox0_cmd_fail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    error_mbox0_cmd_fail_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox0_cmd_fail_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    error_mbox0_cmd_fail_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox0_cmd_fail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    error_mbox0_cmd_fail_intr_count_incr_r.pulse -> decr     = error_mbox0_cmd_fail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    error_mbox0_cmd_fail_intr_count_r.cnt        -> incr     = error_mbox0_cmd_fail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
-
-    error_mbox1_cmd_fail_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox1_cmd_fail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
-    error_mbox1_cmd_fail_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox1_cmd_fail_sts -> next;  // /      as a pulse to increment the intr_count_r register
-    error_mbox1_cmd_fail_intr_count_incr_r.pulse -> we       = error0_internal_intr_r.error_mbox1_cmd_fail_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
-    error_mbox1_cmd_fail_intr_count_incr_r.pulse -> decr     = error_mbox1_cmd_fail_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
-    error_mbox1_cmd_fail_intr_count_r.cnt        -> incr     = error_mbox1_cmd_fail_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
     error_mbox0_ecc_unc_intr_count_incr_r.pulse -> hwset    = error0_internal_intr_r.error_mbox0_ecc_unc_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
     error_mbox0_ecc_unc_intr_count_incr_r.pulse -> next     = error0_internal_intr_r.error_mbox0_ecc_unc_sts -> next;  // /      as a pulse to increment the intr_count_r register
@@ -2399,6 +2345,18 @@ regfile intr_block_t {
     notif_agg_error_non_fatal31_intr_count_incr_r.pulse -> we       = notif1_internal_intr_r.notif_agg_error_non_fatal31_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
     notif_agg_error_non_fatal31_intr_count_incr_r.pulse -> decr     = notif_agg_error_non_fatal31_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     notif_agg_error_non_fatal31_intr_count_r.cnt        -> incr     = notif_agg_error_non_fatal31_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+    
+    notif_mbox0_target_done_intr_count_incr_r.pulse -> hwset    = notif0_internal_intr_r.notif_mbox0_target_done_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_mbox0_target_done_intr_count_incr_r.pulse -> next     = notif0_internal_intr_r.notif_mbox0_target_done_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_mbox0_target_done_intr_count_incr_r.pulse -> we       = notif0_internal_intr_r.notif_mbox0_target_done_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_mbox0_target_done_intr_count_incr_r.pulse -> decr     = notif_mbox0_target_done_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_mbox0_target_done_intr_count_r.cnt        -> incr     = notif_mbox0_target_done_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+
+    notif_mbox1_target_done_intr_count_incr_r.pulse -> hwset    = notif0_internal_intr_r.notif_mbox1_target_done_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_mbox1_target_done_intr_count_incr_r.pulse -> next     = notif0_internal_intr_r.notif_mbox1_target_done_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_mbox1_target_done_intr_count_incr_r.pulse -> we       = notif0_internal_intr_r.notif_mbox1_target_done_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_mbox1_target_done_intr_count_incr_r.pulse -> decr     = notif_mbox1_target_done_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_mbox1_target_done_intr_count_r.cnt        -> incr     = notif_mbox1_target_done_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
     notif_mbox0_cmd_avail_intr_count_incr_r.pulse -> hwset    = notif0_internal_intr_r.notif_mbox0_cmd_avail_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
     notif_mbox0_cmd_avail_intr_count_incr_r.pulse -> next     = notif0_internal_intr_r.notif_mbox0_cmd_avail_sts -> next;  // /      as a pulse to increment the intr_count_r register

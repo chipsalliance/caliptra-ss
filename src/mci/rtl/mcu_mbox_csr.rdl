@@ -1,0 +1,180 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+
+addrmap mcu_mbox_csr {
+    desc="address maps for mbox register space";
+    littleendian = true;
+    default hw = na;
+    signal {activelow; async; cpuif_reset; field_reset;} rst_b;
+    signal {activelow; async;} pwrgood;
+    default resetsignal=rst_b;
+    
+
+
+
+    //signal to indicate requests
+    signal {desc = "Root user, user with lock on mailbox, or target user request.";} valid_requester_target_req;
+    signal {desc = "Root user or target user request.";} valid_target_req;
+    signal {desc = "Root user or user with lock on mailbox request.";} valid_requester_req;
+    signal {desc = "Root user request and mailbox is is locked. Most restrictive access.";} valid_root_req;
+
+    // MBOX SRAM
+    // Shall be first in memory map to reduce address waste.
+    external mem {
+        name = "Mailbox SRAM";
+        desc = "Mailbox SRAM storage. The maximum size is 2MB, but is configurable by the integration team. Only writable once a lock is obtained. Cleared from 0x0 to max DLEN after lock is released.
+        [br] Root user, user with lock on mailbox, and target user have RW access.";
+        sw = rw; 
+        mementries = 524288;
+        memwidth = 32; 
+    } MBOX_SRAM;
+
+
+    // lock register
+    // set on read, indicate to mailbox when modified
+    // clear comes from mailbox control
+    reg {
+        name="Mailbox Lock";
+        desc="Mailbox lock register for mailbox access, reading 0 will set the lock. On reset release lock is set to root_user (MCU) to allow SRAM clearing";
+        field {rset; sw=r; hw=r; hwset=true; hwclr=true; precedence=hw; swmod=true;} lock=0;
+    } mbox_lock;
+
+    // USER register
+    // store AXI USER from interface when setting lock
+    reg {
+        name="Mailbox USER";
+        desc="Stores the AXI USER that locked the mailbox. Cleared when lock is cleared.";
+        field {sw=r; hw=rw; we;} user[32]=0;
+    } mbox_user;
+    
+    mbox_user.user->we  = mbox_lock.lock->hwset;
+
+    
+    // Target USER register
+    reg {
+        name="Mailbox Target USER";
+        desc="Stores the AXI USER for target user access. Only valid when mbox_target_user_valid is set.  Only controllable by the root user. Only accessible when mailbox is locked. Cleared when lock is cleared.";
+        field {sw=rw; hw=r;hwclr; swwe=valid_root_req; } user[32]=0;
+    } mbox_target_user;
+    
+    reg {
+        name="Mailbox Target USER Valid";
+        desc="Enables access for the mbox_target_user. Only controllable by the root user. Only accessible when mailbox is locked. Cleared when lock is cleared.";
+        field {sw=rw; hw=r;hwclr; swwe=valid_root_req; } valid=0;
+    } mbox_target_user_valid;
+
+    reg {
+        name="Mailbox Command";
+        desc="Command requested for data in mailbox. Cleared when lock is cleared.";
+        field {sw=rw;hwclr; swwe=valid_requester_req; } command[32]=0;
+    } mbox_cmd;
+
+    reg {
+        name="Mailbox Data Length";
+        desc="Data length for mailbox access in bytes. Cleared when lock is cleared";
+        field {sw=rw; hwclr;  swwe=valid_requester_target_req; } length[32]=0;
+    } mbox_dlen;
+
+    reg {
+        name="Mailbox Execute";
+        desc="Mailbox execute register indicates to receiver that the sender is done. ";
+        field {sw=rw; hw=r; swwe=valid_requester_req; } execute=0;
+    } mbox_execute;
+
+    reg {   name="Mailbox Target Status";
+        desc="Status of the mailbox command";
+        field {
+            name = "Mailbox Target Status";
+            desc = "Indicates the status of mailbox for the target user. Valid when done is set.";
+
+            enum mbox_status_e {
+                CMD_BUSY = 4'd0 {
+                    desc = "Receiver is busy, command is not yet complete.";
+                };
+                DATA_READY = 4'd1 {
+                    desc = "Requested data is ready in the mailbox.";
+                };
+                CMD_COMPLETE = 4'd2 {
+                    desc = "Requested command is complete.";
+                };
+                CMD_FAILURE = 4'd3 {
+                    desc = "The requested command experienced a failure.";
+                };
+            };
+            sw=rw; hw=r; swwe=valid_target_req; encode = mbox_status_e; hwclr; precedence=hw;} status[4]=0;
+            field {
+                name = "Mailbox Target Done";
+                desc = "Indicates target user is done and target status is valid.";
+                sw=rw; hwclr; hw=r; swwe=valid_target_req; precedence=hw; } done=0;
+    } mbox_target_status;
+
+    reg {  
+        name="Mailbox Command Status";
+        desc="Status of the mailbox command";
+        field {
+            name = "Mailbox Status";
+            desc = "Indicates the status of mailbox command.";
+
+            enum mbox_status_e {
+                CMD_BUSY = 4'd0 {
+                    desc = "Receiver is busy, command is not yet complete.";
+                };
+                DATA_READY = 4'd1 {
+                    desc = "Requested data is ready in the mailbox.";
+                };
+                CMD_COMPLETE = 4'd2 {
+                    desc = "Requested command is complete.";
+                };
+                CMD_FAILURE = 4'd3 {
+                    desc = "The requested command experienced a failure.";
+                };
+            };
+            sw=rw; hw=r; swwe=valid_root_req; encode = mbox_status_e; hwclr; precedence=hw;} status[4]=0;
+    } mbox_cmd_status;
+
+    reg {  
+        name="Mailbox HW Status";
+        desc="HW status of the mailbox";
+        field {
+            name = "Mailbox ECC Single Error";
+            desc = "Indicates a correctable ECC single-bit error was
+                    detected and corrected while reading dataout.
+                    Auto-clears when mbox_execute field is cleared.";
+
+            sw=r; hwset = true; hw=rw; wel; } ecc_single_error=1'b0;
+        field {
+            name = "Mailbox ECC Double Error";
+            desc = "Indicates an uncorrectable ECC double-bit error
+                    was detected while reading dataout.
+                    Firmware developers are advised to set the command
+                    status to CMD_FAILURE in response.
+                    Auto-clears when mbox_execute field is cleared.";
+
+            sw=r; hwset = true; hw=rw; wel; } ecc_double_error=1'b0;
+    } mbox_hw_status;
+
+
+    // This will auto clear the status register whenever a mailbox transfer
+    // is not in progress. 1-cycle delayed from when the Receiver clears
+    // the execute field.
+    // For errors during AHB (direct-mode) reads, interrupt signals
+    // will be used.
+    mbox_hw_status.ecc_single_error->wel  = mbox_execute.execute;
+    mbox_hw_status.ecc_double_error->wel  = mbox_execute.execute;
+    mbox_hw_status.ecc_single_error->next = mbox_execute.execute;
+    mbox_hw_status.ecc_double_error->next = mbox_execute.execute;
+
+};

@@ -25,13 +25,14 @@ module mci_top_tb
   //Mailbox configuration
   parameter MCI_TB_MBOX0_DMI_DLEN_ADDR = 0; //TODO define
   parameter MCI_TB_MBOX0_SIZE_KB = 4;
-  localparam MCI_TB_MBOX0_DEPTH = (MCI_TB_MBOX0_SIZE_KB * KB * 8) / MCI_MBOX_DATA_W;
+  parameter MCU_MBOX_DATA_W = 32;
+  localparam MCI_TB_MBOX0_DEPTH = (MCI_TB_MBOX0_SIZE_KB * KB * 8) / MCU_MBOX_DATA_W;
   localparam MCI_TB_MBOX0_ADDR_W = $clog2(MCI_TB_MBOX0_DEPTH);
   localparam MCI_TB_MBOX0_DEPTH_LOG2 = $clog2(MCI_TB_MBOX0_DEPTH);
 
   parameter MCI_TB_MBOX1_DMI_DLEN_ADDR = 0; //TODO define
   parameter MCI_TB_MBOX1_SIZE_KB = 4;
-  localparam MCI_TB_MBOX1_DEPTH = (MCI_TB_MBOX1_SIZE_KB * KB * 8) / MCI_MBOX_DATA_W;
+  localparam MCI_TB_MBOX1_DEPTH = (MCI_TB_MBOX1_SIZE_KB * KB * 8) / MCU_MBOX_DATA_W;
   localparam MCI_TB_MBOX1_ADDR_W = $clog2(MCI_TB_MBOX1_DEPTH);
   localparam MCI_TB_MBOX1_DEPTH_LOG2 = $clog2(MCI_TB_MBOX1_DEPTH);
 
@@ -44,18 +45,18 @@ module mci_top_tb
   mci_mcu_sram_if mci_mcu_sram_req_if(.clk('0), .rst_b('0));
 
   // Mbox0 SRAM Interface
-  mci_mcu_sram_if#(.ADDR_WIDTH(MCI_TB_MBOX0_ADDR_W)) mci_mbox0_sram_req_if(.clk('0), .rst_b('0));
+  mci_mcu_sram_if#(.ADDR_WIDTH(MCI_TB_MBOX0_ADDR_W)) mcu_mbox0_sram_req_if(.clk('0), .rst_b('0));
 
   // Mbox0 SRAM Interface
-  mci_mcu_sram_if#(.ADDR_WIDTH(MCI_TB_MBOX1_ADDR_W)) mci_mbox1_sram_req_if(.clk('0), .rst_b('0)); 
+  mci_mcu_sram_if#(.ADDR_WIDTH(MCI_TB_MBOX1_ADDR_W)) mcu_mbox1_sram_req_if(.clk('0), .rst_b('0)); 
 
   mci_top
   #(
     .MCU_SRAM_SIZE_KB(MCI_TB_MCU_SRAM_SIZE_KB), 
 
     //Mailbox configuration
-    .MCI_MBOX0_SIZE_KB(MCI_TB_MBOX0_SIZE_KB),
-    .MCI_MBOX1_SIZE_KB(MCI_TB_MBOX1_SIZE_KB)
+    .MCU_MBOX0_SIZE_KB(MCI_TB_MBOX0_SIZE_KB),
+    .MCU_MBOX1_SIZE_KB(MCI_TB_MBOX1_SIZE_KB)
   )
   mci_top_inst
   (
@@ -125,10 +126,10 @@ module mci_top_tb
     .mci_mcu_sram_req_if,
 
     // Mbox0 SRAM Interface
-    .mci_mbox0_sram_req_if,
+    .mcu_mbox0_sram_req_if,
 
     // Mbox1 SRAM Interface
-    .mci_mbox1_sram_req_if 
+    .mcu_mbox1_sram_req_if 
 
   );
 

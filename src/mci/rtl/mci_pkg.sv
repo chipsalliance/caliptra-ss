@@ -21,9 +21,9 @@ package mci_pkg;
     localparam MB = KB * 1024;
     localparam MB_BASE0 = MB - 1;
 
-    localparam MCI_MBOX_DATA_W = 32; //not configurable
-    localparam MCI_MBOX_ECC_DATA_W = 7; //not configurable
-    localparam MCI_DEF_MBOX_VALID_AXI_USER = 32'hFFFF_FFFF;
+    localparam MCU_MBOX_DATA_W = 32; //not configurable
+    localparam MCU_MBOX_ECC_DATA_W = 7; //not configurable
+    localparam MCU_DEF_MBOX_VALID_AXI_USER = 32'hFFFF_FFFF;
 
     // Assert reset for 10 cycles then deassert
     // to facilitate the hitless update
