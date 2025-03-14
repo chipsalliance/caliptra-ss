@@ -395,6 +395,8 @@ module otp_ctrl
   dai_cmd_e                     dai_cmd;
   logic [OtpByteAddrWidth-1:0]  dai_addr;
 
+  int lc_state_idx;
+
   // SEC_CM: ACCESS.CTRL.MUBI
   part_access_t [NumPart-1:0] part_access_pre, part_access;
   always_comb begin : p_access_control
@@ -436,6 +438,40 @@ module otp_ctrl
         end
       end
     end
+
+    // XXX: Maybe encode the LC state index directly into the LC partition
+    // instead of decoding it on-the-fly.
+    unique case (otp_lc_data_o.state)
+      lc_ctrl_state_pkg::LcStRaw:           lc_state_idx = 0;
+      lc_ctrl_state_pkg::LcStTestUnlocked0: lc_state_idx = 1;
+      lc_ctrl_state_pkg::LcStTestLocked0:   lc_state_idx = 2;
+      lc_ctrl_state_pkg::LcStTestUnlocked1: lc_state_idx = 3;
+      lc_ctrl_state_pkg::LcStTestLocked1:   lc_state_idx = 4;
+      lc_ctrl_state_pkg::LcStTestUnlocked2: lc_state_idx = 5;
+      lc_ctrl_state_pkg::LcStTestLocked2:   lc_state_idx = 6;
+      lc_ctrl_state_pkg::LcStTestUnlocked3: lc_state_idx = 7;
+      lc_ctrl_state_pkg::LcStTestLocked3:   lc_state_idx = 8;
+      lc_ctrl_state_pkg::LcStTestUnlocked4: lc_state_idx = 9;
+      lc_ctrl_state_pkg::LcStTestLocked4:   lc_state_idx = 10;
+      lc_ctrl_state_pkg::LcStTestUnlocked5: lc_state_idx = 11;
+      lc_ctrl_state_pkg::LcStTestLocked5:   lc_state_idx = 12;
+      lc_ctrl_state_pkg::LcStTestUnlocked6: lc_state_idx = 13;
+      lc_ctrl_state_pkg::LcStTestLocked6:   lc_state_idx = 14;
+      lc_ctrl_state_pkg::LcStTestUnlocked7: lc_state_idx = 15;
+      lc_ctrl_state_pkg::LcStDev:           lc_state_idx = 16;
+      lc_ctrl_state_pkg::LcStProd:          lc_state_idx = 17;
+      lc_ctrl_state_pkg::LcStProdEnd:       lc_state_idx = 18;
+      lc_ctrl_state_pkg::LcStRma:           lc_state_idx = 19;
+      default:                              lc_state_idx = 20;
+    endcase
+
+    // Write-lock partitions whose LC phase has expired.
+    for (int k = 0; k < NumPart-1; k++) begin
+      if ((lc_state_idx == 0) || (lc_state_idx > PartInfo[k].lc_state_idx)) begin
+        part_access_pre[k].write_lock = MuBi8True;
+      end
+    end
+
   end
 
   // This prevents the synthesis tool from optimizing the multibit signals.
@@ -1543,14 +1579,13 @@ end
   )
 
   int test_unlock_token_idx;
-  assign test_unlock_token_idx = CptraSsTestUnlockToken0Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStRaw :
-                                 CptraSsTestUnlockToken1Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked0 :
-                                 CptraSsTestUnlockToken2Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked1 :
-                                 CptraSsTestUnlockToken3Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked2 :
-                                 CptraSsTestUnlockToken4Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked3 :
-                                 CptraSsTestUnlockToken5Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked4 :
-                                 CptraSsTestUnlockToken6Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked5 :
-                                 CptraSsTestUnlockToken7Offset;
+  assign test_unlock_token_idx = otp_lc_data_o.state == lc_ctrl_state_pkg::LcStRaw           ? CptraSsTestUnlockToken0Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked0 ? CptraSsTestUnlockToken1Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked1 ? CptraSsTestUnlockToken2Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked2 ? CptraSsTestUnlockToken3Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked3 ? CptraSsTestUnlockToken4Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked4 ? CptraSsTestUnlockToken5Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked5 ? CptraSsTestUnlockToken6Offset : CptraSsTestUnlockToken7Offset;
 
   assign otp_lc_data_o.test_unlock_token = part_buf_data[test_unlock_token_idx +:
                                                          CptraSsTestUnlockToken0Size];
