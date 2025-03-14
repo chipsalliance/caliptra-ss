@@ -67,7 +67,7 @@ module caliptra_ss_top_tb
     bit                         core_clk;
     bit          [31:0]         mem_signature_begin = 32'd0; // TODO:
     bit          [31:0]         mem_signature_end   = 32'd0;
-    bit          [31:0]         mem_mailbox         = 32'h21000410;
+    bit          [31:0]         mem_mailbox         = `SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     logic                       rst_l;
     logic                       porst_l;
     logic [pt.PIC_TOTAL_INT:1]  ext_int_tb;

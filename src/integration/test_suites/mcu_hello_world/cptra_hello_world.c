@@ -26,7 +26,7 @@
 //#define ee_printf whisperPrintf
 
 
-volatile uint32_t* stdout           = (uint32_t *)STDOUT;
+volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 volatile uint32_t  intr_count;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
