@@ -33,7 +33,7 @@ targets:
   rtl:
     directories:
       - $COMPILE_ROOT/rtl
-      - $COMPILE_ROOT/../src/integration/rtl
+      - $COMPILE_ROOT/../integration/rtl
     files:
       - $COMPILE_ROOT/rtl/otp_ctrl_core_reg_top.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_prim_reg_top.sv

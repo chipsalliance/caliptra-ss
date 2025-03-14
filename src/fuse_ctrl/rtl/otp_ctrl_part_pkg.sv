@@ -112,6 +112,9 @@ package otp_ctrl_part_pkg;
     logic integrity;        // Whether the partition is integrity protected
     logic iskeymgr_creator; // Whether the partition has any creator key material
     logic iskeymgr_owner;   // Whether the partition has any owner key material
+    // Decoded LC state index. A partition can be written as long this index is
+    // smaller or equal the current state index of the LC (see `dec_lc_state_e`).
+    int lc_state_idx;
   } part_info_t;
 
   parameter part_info_t PartInfoDefault = '{
@@ -126,7 +129,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     0
   };
 
   ////////////////////////
@@ -147,7 +151,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b1,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     16
     },
     // SECRET_MANUF_PARTITION
     '{
@@ -162,7 +167,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b1,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     16
     },
     // SECRET_PROD_PARTITION_0
     '{
@@ -177,7 +183,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b1,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // SECRET_PROD_PARTITION_1
     '{
@@ -192,7 +199,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b1,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // SECRET_PROD_PARTITION_2
     '{
@@ -207,7 +215,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b1,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // SECRET_PROD_PARTITION_3
     '{
@@ -222,7 +231,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b1,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // SW_MANUF_PARTITION
     '{
@@ -237,7 +247,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     16
     },
     // SECRET_LC_TRANSITION_PARTITION
     '{
@@ -252,7 +263,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b1,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     16
     },
     // SVN_PARTITION
     '{
@@ -267,7 +279,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // VENDOR_TEST_PARTITION
     '{
@@ -282,7 +295,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // VENDOR_HASHES_MANUF_PARTITION
     '{
@@ -297,7 +311,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // VENDOR_HASHES_PROD_PARTITION
     '{
@@ -312,7 +327,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // VENDOR_REVOCATIONS_PROD_PARTITION
     '{
@@ -327,7 +343,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // VENDOR_SECRET_PROD_PARTITION
     '{
@@ -342,7 +359,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b1,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // VENDOR_NON_SECRET_PROD_PARTITION
     '{
@@ -357,7 +375,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     17
     },
     // LIFE_CYCLE
     '{
@@ -372,7 +391,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_state_idx:     0
     }
   };
 
