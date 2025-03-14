@@ -50,17 +50,17 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_lock
 
-    // Reg - mcu_mbox_csr::mbox_user
-    class mcu_mbox_csr__mbox_user extends uvm_reg;
+    // Reg - mcu_mbox_csr::mbox_user_user_70a5ffab
+    class mcu_mbox_csr__mbox_user_user_70a5ffab extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mcu_mbox_csr__mbox_user_bit_cg user_bit_cg[32];
-        mcu_mbox_csr__mbox_user_fld_cg fld_cg;
+        mcu_mbox_csr__mbox_user_user_70a5ffab_bit_cg user_bit_cg[32];
+        mcu_mbox_csr__mbox_user_user_70a5ffab_fld_cg fld_cg;
         rand uvm_reg_field user;
 
-        function new(string name = "mcu_mbox_csr__mbox_user");
+        function new(string name = "mcu_mbox_csr__mbox_user_user_70a5ffab");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -78,7 +78,7 @@ package mcu_mbox_csr_uvm;
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mcu_mbox_csr__mbox_user
+    endclass : mcu_mbox_csr__mbox_user_user_70a5ffab
 
     // Reg - mcu_mbox_csr::mbox_target_user
     class mcu_mbox_csr__mbox_target_user extends uvm_reg;
@@ -334,7 +334,7 @@ package mcu_mbox_csr_uvm;
     class mcu_mbox_csr extends uvm_reg_block;
         rand mcu_mbox_csr__MBOX_SRAM MBOX_SRAM;
         rand mcu_mbox_csr__mbox_lock mbox_lock;
-        rand mcu_mbox_csr__mbox_user mbox_user;
+        rand mcu_mbox_csr__mbox_user_user_70a5ffab mbox_user;
         rand mcu_mbox_csr__mbox_target_user mbox_target_user;
         rand mcu_mbox_csr__mbox_target_user_valid mbox_target_user_valid;
         rand mcu_mbox_csr__mbox_cmd mbox_cmd;

@@ -23,11 +23,11 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic [31:0] next;
-    } mcu_mbox_csr__mbox_user__user__in_t;
+    } mcu_mbox_csr__mbox_user_user_70a5ffab__user_we_466f6a8b__in_t;
 
     typedef struct packed{
-        mcu_mbox_csr__mbox_user__user__in_t user;
-    } mcu_mbox_csr__mbox_user__in_t;
+        mcu_mbox_csr__mbox_user_user_70a5ffab__user_we_466f6a8b__in_t user;
+    } mcu_mbox_csr__mbox_user_user_70a5ffab__in_t;
 
     typedef struct packed{
         logic hwclr;
@@ -97,14 +97,13 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic rst_b;
-        logic lock_set;
         logic valid_requester_target_req;
         logic valid_target_req;
         logic valid_requester_req;
         logic valid_root_req;
         mcu_mbox_csr__MBOX_SRAM__external__in_t MBOX_SRAM;
         mcu_mbox_csr__mbox_lock__in_t mbox_lock;
-        mcu_mbox_csr__mbox_user__in_t mbox_user;
+        mcu_mbox_csr__mbox_user_user_70a5ffab__in_t mbox_user;
         mcu_mbox_csr__mbox_target_user__in_t mbox_target_user;
         mcu_mbox_csr__mbox_target_user_valid__in_t mbox_target_user_valid;
         mcu_mbox_csr__mbox_cmd__in_t mbox_cmd;
@@ -133,11 +132,11 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic [31:0] value;
-    } mcu_mbox_csr__mbox_user__user__out_t;
+    } mcu_mbox_csr__mbox_user_user_70a5ffab__user_we_466f6a8b__out_t;
 
     typedef struct packed{
-        mcu_mbox_csr__mbox_user__user__out_t user;
-    } mcu_mbox_csr__mbox_user__out_t;
+        mcu_mbox_csr__mbox_user_user_70a5ffab__user_we_466f6a8b__out_t user;
+    } mcu_mbox_csr__mbox_user_user_70a5ffab__out_t;
 
     typedef struct packed{
         logic [31:0] value;
@@ -200,7 +199,7 @@ package mcu_mbox_csr_pkg;
     typedef struct packed{
         mcu_mbox_csr__MBOX_SRAM__external__out_t MBOX_SRAM;
         mcu_mbox_csr__mbox_lock__out_t mbox_lock;
-        mcu_mbox_csr__mbox_user__out_t mbox_user;
+        mcu_mbox_csr__mbox_user_user_70a5ffab__out_t mbox_user;
         mcu_mbox_csr__mbox_target_user__out_t mbox_target_user;
         mcu_mbox_csr__mbox_target_user_valid__out_t mbox_target_user_valid;
         mcu_mbox_csr__mbox_execute__out_t mbox_execute;

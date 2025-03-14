@@ -988,6 +988,9 @@ A Requester will read the "LOCK" register to obtain a lock on the mailbox. This 
   -  TARGET_USER
 - Mailbox SRAM
 Unlocking occurs when the requestor clears the execution register. After releasing the mailbox the SRAM is zeroed out ([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
+
+On MCI reset release the MCU MBOX is locked for MCU. The MCU shall set the DLEN to the size of the SRAM and release the MBOX, causing the SRAM to be zeroed. This is done to prevent data leaking between warm resets via the SRAM. 
+
 #### MCU Mailbox Target User
 
 A Target user is an additional user that can access and process the MBOX request. This user can only be setup by MCU and only valid when the TARGET_USER_VALID bit is set.

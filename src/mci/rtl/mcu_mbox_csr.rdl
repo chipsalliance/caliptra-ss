@@ -26,7 +26,6 @@ addrmap mcu_mbox_csr {
 
 
     //signal to indicate requests
-    signal {desc = "Mailbox has been locked";} lock_set;
     signal {desc = "Root user, user with lock on mailbox, or target user request.";} valid_requester_target_req;
     signal {desc = "Root user or target user request.";} valid_target_req;
     signal {desc = "Root user or user with lock on mailbox request.";} valid_requester_req;
@@ -49,7 +48,7 @@ addrmap mcu_mbox_csr {
     // clear comes from mailbox control
     reg {
         name="Mailbox Lock";
-        desc="Mailbox lock register for mailbox access, reading 0 will set the lock.";
+        desc="Mailbox lock register for mailbox access, reading 0 will set the lock. On reset release lock is set to root_user (MCU) to allow SRAM clearing";
         field {rset; sw=r; hw=r; hwset=true; hwclr=true; precedence=hw; swmod=true;} lock=0;
     } mbox_lock;
 
@@ -58,8 +57,11 @@ addrmap mcu_mbox_csr {
     reg {
         name="Mailbox USER";
         desc="Stores the AXI USER that locked the mailbox. Cleared when lock is cleared.";
-        field {sw=r; hw=rw; we=lock_set;} user[32]=0;
+        field {sw=r; hw=rw; we;} user[32]=0;
     } mbox_user;
+    
+    mbox_user.user->we  = mbox_lock.lock->hwset;
+
     
     // Target USER register
     reg {
