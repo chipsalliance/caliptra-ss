@@ -1164,8 +1164,7 @@ The entire MCU SRAM has ECC protection. Unlike MCI mailboxes, there is no config
 - AXI response to the initiator
 - HW_ERROR_FATAL asserted and sent to SOC
 
-MCU SRAM is accessable via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) for more details.
-
+MCU SRAM is accessible via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) for more details.
 ### MCI AXI Subordinate
 
 MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the appropriate submodule within MCI. 
