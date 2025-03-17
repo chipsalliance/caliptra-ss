@@ -947,7 +947,7 @@ MCI has the following types of straps:
 | **Strap Name**     | **Strap Type**|**Description**     | 
 | :---------     | :---------| :---------| 
 |`strap_mcu_lsu_axi_user`|Non-configurable Direct|MCU Load Store Unit AXI User. Given Special Access within MCI. |
-|`strap_mcu_ifu_axi_user`|Non-configurable Direct|MCU Instruction Fetch Unit AXI User. ive special access within MCI.|
+|`strap_mcu_ifu_axi_user`|Non-configurable Direct|MCU Instruction Fetch Unit AXI User. given special access within MCI.|
 |`strap_mcu_sram_config_axi_user`|Non-configurable Direct|MCU SRAM Config agent who is given special access to MCU SRAM Execution region to load FW image. Typically set to Caliptra's AXI User.|
 |`strap_mci_soc_config_axi_user`|Non-configurable Direct|MCI SOC Config User (MSCU). AXI agent with MCI configuration access. |
 |`strap_mcu_reset_vector`|Configurable Sampled|Default MCU reset vectore.|
