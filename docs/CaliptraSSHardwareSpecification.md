@@ -950,7 +950,7 @@ MCI has the following types of straps:
 |`strap_mcu_ifu_axi_user`|Non-configurable Direct|MCU Instruction Fetch Unit AXI User. given special access within MCI.|
 |`strap_mcu_sram_config_axi_user`|Non-configurable Direct|MCU SRAM Config agent who is given special access to MCU SRAM Execution region to load FW image. Typically set to Caliptra's AXI User.|
 |`strap_mci_soc_config_axi_user`|Non-configurable Direct|MCI SOC Config User (MSCU). AXI agent with MCI configuration access. |
-|`strap_mcu_reset_vector`|Configurable Sampled|Default MCU reset vectore.|
+|`strap_mcu_reset_vector`|Configurable Sampled|Default MCU reset vector.|
 |`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Show the intent to put the part in a debug unlocked state. Although not writable by SW via AXI. This is writable via DMI.|
 
 
