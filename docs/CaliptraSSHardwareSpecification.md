@@ -80,7 +80,7 @@
   - [MCI Feature Descriptions](#mci-feature-descriptions)
     - [Control/Status Registers (CSRs)](#controlstatus-registers-csrs)
       - [MCI CSR Access Restrictions](#mci-csr-access-restrictions)
-    - [Straps](#straps)
+    - [MCI Straps](#mci-straps)
     - [Subsystem Boot Finite State Machine (CSS-BootFSM)](#subsystem-boot-finite-state-machine-css-bootfsm)
     - [Watchdog Timer](#watchdog-timer)
     - [MCU Mailbox](#mcu-mailbox)
@@ -897,7 +897,7 @@ The following diagram illustrates the internal components of the MCI.
 ### Control/Status Registers (CSRs)
 The Control/Status Registers (CSRs) within the MCI are designed to provide critical control and status monitoring functions for the SoC. These registers include configuration settings, status indicators, and control bits that allow communication and management of the various operations of the MCI. The CSR bank is accessible via the AXI interface and is mapped into the memory space to facilitate straightforward access and manipulation.
 
-**FIXME the link:** caliptra-ss/src/ci_reg.rdl
+**FIXME the link:** caliptra-ss/src/mci/rtl/mci_reg.rdl
 
 #### MCI CSR Access Restrictions
 
@@ -929,7 +929,7 @@ The registers can be split up into a few different categories:
 | MBOX_USER_LOCK       |  Mailbox specific configuration locked by it's own LOCK bit. Configured afer each arem reset.       |
 
 
-### Straps
+### MCI Straps
 
 All MCI straps shall be static before mci_rst_b is deasserted.
 
