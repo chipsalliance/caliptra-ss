@@ -1552,6 +1552,7 @@ module caliptra_ss_top_tb
             $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_GO is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_BOOTFSM_GO);
             $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_BrkPoint_Latched is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.BootFSM_BrkPoint_Latched);
             $monitor("CALIPTRA_SS_UDS_PROG: CPTRA_FLOW_STATUS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_FLOW_STATUS);
+            force cptra_ss_cptra_core_m_axi_if.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
             force cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
             force caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
         end
@@ -1727,11 +1728,11 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_no_rom_config_i         = 1'b0;
     assign cptra_ss_strap_mcu_reset_vector_i    = 32'h0;
     assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
-    assign cptra_ss_strap_mcu_lsu_axi_user_i    = CPTRA_SS_STRAP_MCU_LSU_AXI_USER;
-    assign cptra_ss_strap_mcu_ifu_axi_user_i    = CPTRA_SS_STRAP_MCU_IFU_AXI_USER;
-    assign cptra_ss_strap_cptra_axi_user_i        = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
+    assign cptra_ss_strap_mcu_lsu_axi_user_i    = 32'hFFFFFFFF;
+    assign cptra_ss_strap_mcu_ifu_axi_user_i    = 32'hFFFFFFFF;
+    assign cptra_ss_strap_cptra_axi_user_i        = 32'hFFFFFFFF;
     assign cptra_ss_strap_mcu_sram_config_axi_user_i        = cptra_ss_strap_cptra_axi_user_i; // FIXME set to real value
-    assign cptra_ss_strap_mci_soc_config_axi_user_i        = cptra_ss_strap_cptra_axi_user_i; // FIXME set to real value
+    assign cptra_ss_strap_mci_soc_config_axi_user_i        = 32'h1; // FIXME set to real value
     assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
