@@ -18,5 +18,10 @@
 #define CALIPTRA_SS_LIB
 
 void reset_rtl(void);
+void mcu_mci_boot_go();
+void mcu_cptra_fuse_init();
+void mcu_cptra_user_init();
+void mcu_cptra_poll_mb_ready();
+void mcu_cptra_mbox_cmd();
 
 #endif // CALIPTRA_SS_LIB
