@@ -20,7 +20,6 @@ module mci_top
     import mci_reg_pkg::*;
     import mci_pkg::*;
     import mci_dmi_pkg::*;
-    import mbox_pkg::*;
     import mci_mcu_trace_buffer_pkg::*;
     #(    
     parameter AXI_ADDR_WIDTH = 32,
@@ -35,12 +34,12 @@ module mci_top
                                             // to come out of reset during a FW RT Update
 
     //Mailbox configuration
-    ,parameter MCI_MBOX0_SIZE_KB = 128
-    ,parameter [4:0] MCI_SET_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
-    ,parameter [4:0][31:0] MCI_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
-    ,parameter MCI_MBOX1_SIZE_KB = 4
-    ,parameter [4:0] MCI_SET_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
-    ,parameter [4:0][31:0] MCI_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+    ,parameter MCU_MBOX0_SIZE_KB = 128
+    ,parameter [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCU_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
+    ,parameter MCU_MBOX1_SIZE_KB = 4
+    ,parameter [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
+    ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
 
     )
     (
@@ -115,6 +114,10 @@ module mci_top
     // Caliptra MBOX
     input logic cptra_mbox_data_avail,
 
+    // MBOX
+    output logic soc_mcu_mbox0_data_avail,
+    output logic soc_mcu_mbox1_data_avail,
+
     
     // Reset controls
     output logic mcu_rst_b,
@@ -139,10 +142,10 @@ module mci_top
     mci_mcu_sram_if.request mci_mcu_sram_req_if,
 
     // Mbox0 SRAM Interface
-    mci_mcu_sram_if.request mci_mbox0_sram_req_if,
+    mci_mcu_sram_if.request mcu_mbox0_sram_req_if,
 
     // Mbox1 SRAM Interface
-    mci_mcu_sram_if.request mci_mbox1_sram_req_if,
+    mci_mcu_sram_if.request mcu_mbox1_sram_req_if,
 
 
     //=============== LCC GASKET PORTS ========================
@@ -222,14 +225,12 @@ module mci_top
     logic mbox0_sram_double_ecc_error;
     logic mbox1_sram_single_ecc_error;
     logic mbox1_sram_double_ecc_error;
-    logic mci_mbox0_data_avail;
-    logic mci_mbox1_data_avail;
+    logic mcu_mbox0_data_avail;
+    logic mcu_mbox1_data_avail;
+    logic mcu_mbox0_target_user_done;
+    logic mcu_mbox1_target_user_done;
     logic soc_req_mbox0_lock;
     logic soc_req_mbox1_lock;
-    mbox_protocol_error_t mbox0_protocol_error;
-    mbox_protocol_error_t mbox1_protocol_error;
-    logic mbox0_inv_user_p;
-    logic mbox1_inv_user_p;
 
     // Other
     logic mci_ss_debug_intent;
@@ -286,7 +287,7 @@ cif_if #(
     ,.DATA_WIDTH(AXI_DATA_WIDTH)
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
-) mci_mbox0_req_if(
+) mcu_mbox0_req_if(
     .clk, 
     .rst_b(mci_rst_b));
 
@@ -298,7 +299,7 @@ cif_if #(
     ,.DATA_WIDTH(AXI_DATA_WIDTH)
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
-) mci_mbox1_req_if(
+) mcu_mbox1_req_if(
     .clk, 
     .rst_b(mci_rst_b));
 
@@ -334,12 +335,10 @@ mci_axi_sub_top #(
     .mcu_trace_buffer_req_if( mcu_trace_buffer_req_if.request ),
 
     // MCI Mbox0 Interface
-    .mci_mbox0_req_if ( mci_mbox0_req_if.request ),
-    .valid_mbox0_users,
+    .mcu_mbox0_req_if ( mcu_mbox0_req_if.request ),
 
     // MCI Mbox1 Interface
-    .mci_mbox1_req_if ( mci_mbox1_req_if.request ),
-    .valid_mbox1_users,
+    .mcu_mbox1_req_if ( mcu_mbox1_req_if.request ),
 
     // Privileged requests 
     .axi_mci_soc_config_req,
@@ -517,10 +516,10 @@ mci_wdt_top #(
 // MCI CSR bank
 mci_reg_top #(
     .AXI_USER_WIDTH(AXI_USER_WIDTH),   
-    .MCI_SET_MBOX0_AXI_USER_INTEG(MCI_SET_MBOX0_AXI_USER_INTEG),  
-    .MCI_MBOX0_VALID_AXI_USER(MCI_MBOX0_VALID_AXI_USER),    
-    .MCI_SET_MBOX1_AXI_USER_INTEG(MCI_SET_MBOX1_AXI_USER_INTEG),  
-    .MCI_MBOX1_VALID_AXI_USER(MCI_MBOX1_VALID_AXI_USER)    
+    .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),  
+    .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),    
+    .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),  
+    .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER)    
 )i_mci_reg_top (
     .clk,
 
@@ -582,15 +581,13 @@ mci_reg_top #(
     // MBOX
     .valid_mbox0_users,
     .valid_mbox1_users,
-    .mci_mbox0_data_avail,
-    .mci_mbox1_data_avail,
+    .mcu_mbox0_data_avail,
+    .mcu_mbox1_data_avail,
+    .mcu_mbox0_target_user_done,
+    .mcu_mbox1_target_user_done,
     .cptra_mbox_data_avail,
     .soc_req_mbox0_lock,
     .soc_req_mbox1_lock,
-    .mbox0_protocol_error, 
-    .mbox1_protocol_error, 
-    .mbox0_inv_user_p,
-    .mbox1_inv_user_p,
     .mbox0_sram_single_ecc_error,
     .mbox0_sram_double_ecc_error,
     .mbox1_sram_single_ecc_error,
@@ -636,170 +633,103 @@ mci_reg_top #(
 
 );
 generate
-if (MCI_MBOX0_SIZE_KB == 0) begin
+if (MCU_MBOX0_SIZE_KB == 0) begin : no_mcu_mbox0
     always_comb begin
         //TIE-OFF zero sized mailbox
-        mci_mbox0_req_if.hold = 0;
-        mci_mbox0_req_if.rdata = 0;
-        mci_mbox0_req_if.error = 1;
-        mci_mbox0_sram_req_if.req.cs = 0;
-        mci_mbox0_sram_req_if.req.we = 0;
-        mci_mbox0_sram_req_if.req.addr = 0;
-        mci_mbox0_sram_req_if.req.wdata = 0;
-        mbox0_sram_single_ecc_error = 0;
-        mbox0_sram_double_ecc_error = 0;
+        mcu_mbox0_req_if.hold = 0;
+        mcu_mbox0_req_if.rdata = 0;
+        mcu_mbox0_req_if.error = 1;
+        mcu_mbox0_sram_req_if.req = '0;
+        mbox0_sram_single_ecc_error = '0;
+        mbox0_sram_double_ecc_error = '0;
+        soc_req_mbox0_lock = '0;
+        soc_mcu_mbox0_data_avail = '0;
+        mcu_mbox0_data_avail = '0;
     end
-end else begin
-mbox
+end else begin : mcu_mbox0
+mcu_mbox
 #(
-    .DMI_REG_MBOX_DLEN_ADDR(MCI_DMI_REG_MBOX0_DLEN),
-    .MBOX_SIZE_KB(MCI_MBOX0_SIZE_KB),
-    .MBOX_DATA_W(MCI_MBOX_DATA_W),
-    .MBOX_ECC_DATA_W(MCI_MBOX_ECC_DATA_W),
-    .MBOX_IFC_DATA_W(AXI_DATA_WIDTH),
-    .MBOX_IFC_USER_W(AXI_USER_WIDTH),
-    .MBOX_IFC_ADDR_W(AXI_ADDR_WIDTH)
+    .MCU_MBOX_SRAM_SIZE_KB(MCU_MBOX0_SIZE_KB)
+    ,.DEF_MBOX_VALID_AXI_USER(MCU_DEF_MBOX_VALID_AXI_USER)
 )
-mci_mbox0_i (
-    .clk(clk),
-    .rst_b(mci_rst_b),
-    //mailbox request interface
-    .req_dv(mci_mbox0_req_if.dv), 
-    .req_hold(mci_mbox0_req_if.hold),
-    .req_data_addr(mci_mbox0_req_if.req_data.addr),
-    .req_data_wdata(mci_mbox0_req_if.req_data.wdata),
-    .req_data_user(mci_mbox0_req_if.req_data.user),
-    .req_data_write(mci_mbox0_req_if.req_data.write),
-    .req_data_soc_req(~axi_mcu_req),
-    .rdata(mci_mbox0_req_if.rdata),
-    .mbox_error(mci_mbox0_req_if.error),
-    .mbox_sram_req_cs(mci_mbox0_sram_req_if.req.cs),
-    .mbox_sram_req_we(mci_mbox0_sram_req_if.req.we), 
-    .mbox_sram_req_addr(mci_mbox0_sram_req_if.req.addr),
-    .mbox_sram_req_ecc(mci_mbox0_sram_req_if.req.wdata.ecc),
-    .mbox_sram_req_wdata(mci_mbox0_sram_req_if.req.wdata.data),
-    .mbox_sram_resp_ecc(mci_mbox0_sram_req_if.resp.rdata.ecc),
-    .mbox_sram_resp_data(mci_mbox0_sram_req_if.resp.rdata.data),
+mcu_mbox0 (
+    .clk,
+
+    // MCI Resets
+    .rst_b(mci_rst_b), // FIXME: Need to sync reset,
+
+    // Caliptra internal fabric response interface
+    .cif_resp_if(mcu_mbox0_req_if.response),
+
+    .strap_root_axi_user(strap_mcu_lsu_axi_user),
+
+    // Mailbox valid users. 
+    .valid_mbox_users(valid_mbox0_users),
+
+    // Mailbox Status
+    .soc_req_mbox_locked(soc_req_mbox0_lock), // SoC user requested lock when root user has lock
+    .root_mbox_data_available(soc_mcu_mbox0_data_avail),
+    .soc_mbox_data_available(mcu_mbox0_data_avail),
+    .target_user_done(mcu_mbox0_target_user_done),
+
+    // Mailbox SRAM ECC error flags
     .sram_single_ecc_error(mbox0_sram_single_ecc_error),
     .sram_double_ecc_error(mbox0_sram_double_ecc_error),
-    //status
-    .uc_mbox_lock(), //FIXME
-    //interrupts
-    .soc_mbox_data_avail(mbox0_data_avail), 
-    .uc_mbox_data_avail(mci_mbox0_data_avail), 
-    .soc_req_mbox_lock(soc_req_mbox0_lock),
-    .mbox_protocol_error(mbox0_protocol_error),
-    .mbox_inv_axi_user_axs(mbox0_inv_user_p), 
-    //direct request unsupported
-    .dir_req_dv(1'b0),
-    .dir_rdata(),
-    //sha accelerator unsupported
-    .sha_sram_req_dv('0),
-    .sha_sram_req_addr('0),
-    .sha_sram_resp_ecc(),
-    .sha_sram_resp_data(),
-    .sha_sram_hold(),
-    //dma unused
-    .dma_sram_req_dv  ('0),
-    .dma_sram_req_write('0),
-    .dma_sram_req_addr('0),
-    .dma_sram_req_wdata('0),
-    .dma_sram_rdata   (),
-    .dma_sram_hold    (),
-    .dma_sram_error   (),
-    //dmi port unused
-    .dmi_inc_rdptr('0),
-    .dmi_inc_wrptr('0),
-    .dmi_reg_wen('0),
-    .dmi_reg_addr('0),
-    .dmi_reg_wdata('0),
-    .dmi_reg()
+
+    .mcu_mbox_sram_req_if(mcu_mbox0_sram_req_if)
 );
 end
 endgenerate
 
 generate
-if (MCI_MBOX1_SIZE_KB == 0) begin
+if (MCU_MBOX1_SIZE_KB == 0) begin : no_mcu_mbox1
     always_comb begin
         //TIE-OFF zero sized mailbox
-        mci_mbox1_req_if.hold = 0;
-        mci_mbox1_req_if.rdata = 0;
-        mci_mbox1_req_if.error = 1;
-        mci_mbox1_sram_req_if.req.cs = 0;
-        mci_mbox1_sram_req_if.req.we = 0;
-        mci_mbox1_sram_req_if.req.addr = 0;
-        mci_mbox1_sram_req_if.req.wdata = 0;
-        mbox1_sram_single_ecc_error = 0;
-        mbox1_sram_double_ecc_error = 0;
+        mcu_mbox1_req_if.hold = 0;
+        mcu_mbox1_req_if.rdata = 0;
+        mcu_mbox1_req_if.error = 1;
+        mcu_mbox1_sram_req_if.req = '0;
+        mbox1_sram_single_ecc_error = '0;
+        mbox1_sram_double_ecc_error = '0;
+        soc_req_mbox1_lock = '0;
+        soc_mcu_mbox1_data_avail = '0;
+        mcu_mbox1_data_avail = '0;
     end
-end else begin
-mbox
+end else begin : mcu_mbox1
+mcu_mbox
 #(
-    .DMI_REG_MBOX_DLEN_ADDR(MCI_DMI_REG_MBOX1_DLEN),
-    .MBOX_SIZE_KB(MCI_MBOX1_SIZE_KB),
-    .MBOX_DATA_W(MCI_MBOX_DATA_W),
-    .MBOX_ECC_DATA_W(MCI_MBOX_ECC_DATA_W),
-    .MBOX_IFC_DATA_W(AXI_DATA_WIDTH),
-    .MBOX_IFC_USER_W(AXI_USER_WIDTH),
-    .MBOX_IFC_ADDR_W(AXI_ADDR_WIDTH)
+    .MCU_MBOX_SRAM_SIZE_KB(MCU_MBOX1_SIZE_KB)
+    ,.DEF_MBOX_VALID_AXI_USER(MCU_DEF_MBOX_VALID_AXI_USER)
 )
-mci_mbox1_i (
-    .clk(clk),
-    .rst_b(mci_rst_b),
-    //mailbox request interface
-    .req_dv(mci_mbox1_req_if.dv), 
-    .req_hold(mci_mbox1_req_if.hold),
-    .req_data_addr(mci_mbox1_req_if.req_data.addr),
-    .req_data_wdata(mci_mbox1_req_if.req_data.wdata),
-    .req_data_user(mci_mbox1_req_if.req_data.user),
-    .req_data_write(mci_mbox1_req_if.req_data.write),
-    .req_data_soc_req(~axi_mcu_req),
-    .rdata(mci_mbox1_req_if.rdata),
-    .mbox_error(mci_mbox1_req_if.error),
-    .mbox_sram_req_cs(mci_mbox1_sram_req_if.req.cs),
-    .mbox_sram_req_we(mci_mbox1_sram_req_if.req.we), 
-    .mbox_sram_req_addr(mci_mbox1_sram_req_if.req.addr),
-    .mbox_sram_req_ecc(mci_mbox1_sram_req_if.req.wdata.ecc),
-    .mbox_sram_req_wdata(mci_mbox1_sram_req_if.req.wdata.data),
-    .mbox_sram_resp_ecc(mci_mbox1_sram_req_if.resp.rdata.ecc),
-    .mbox_sram_resp_data(mci_mbox1_sram_req_if.resp.rdata.data),
+mcu_mbox1 (
+    .clk,
+
+    // MCI Resets
+    .rst_b(mci_rst_b), // FIXME: Need to sync reset,
+
+    // Caliptra internal fabric response interface
+    .cif_resp_if(mcu_mbox1_req_if.response),
+
+    .strap_root_axi_user(strap_mcu_lsu_axi_user),
+
+    // Mailbox valid users. 
+    .valid_mbox_users(valid_mbox1_users),
+
+    // Mailbox Status
+    .soc_req_mbox_locked(soc_req_mbox1_lock), // SoC user requested lock when root user has lock
+    .root_mbox_data_available(soc_mcu_mbox1_data_avail),
+    .soc_mbox_data_available(mcu_mbox1_data_avail),
+    .target_user_done(mcu_mbox1_target_user_done),
+
+    // Mailbox SRAM ECC error flags
     .sram_single_ecc_error(mbox1_sram_single_ecc_error),
     .sram_double_ecc_error(mbox1_sram_double_ecc_error),
-    //status
-    .uc_mbox_lock(), //FIXME
-    //interrupts
-    .soc_mbox_data_avail(mbox1_data_avail), 
-    .uc_mbox_data_avail(mci_mbox1_data_avail), 
-    .soc_req_mbox_lock(soc_req_mbox1_lock), 
-    .mbox_protocol_error(mbox1_protocol_error), 
-    .mbox_inv_axi_user_axs(mbox1_inv_user_p), 
-    //dma unused
-    .dma_sram_req_dv  ('0),
-    .dma_sram_req_write('0),
-    .dma_sram_req_addr('0),
-    .dma_sram_req_wdata('0),
-    .dma_sram_rdata   (),
-    .dma_sram_hold    (),
-    .dma_sram_error   (),
-    // DMI unused 
-    .dmi_inc_rdptr('0),
-    .dmi_inc_wrptr('0),
-    .dmi_reg_wen('0),
-    .dmi_reg_addr('0),
-    .dmi_reg_wdata('0),
-    .dmi_reg(),
-    //direct request unsupported
-    .dir_req_dv(1'b0),
-    .dir_rdata(),
-    //sha accelerator unsupported
-    .sha_sram_req_dv('0),
-    .sha_sram_req_addr('0),
-    .sha_sram_resp_ecc(),
-    .sha_sram_resp_data(),
-    .sha_sram_hold()
+
+    .mcu_mbox_sram_req_if(mcu_mbox1_sram_req_if)
 );
 end
 endgenerate
+
 
 
  // DUT instantiation
@@ -828,7 +758,7 @@ mci_lcc_st_trans LCC_state_translator (
 // Assertions
 ///////////////////////////////////////
 
-`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_gnt, soc_mcu_trace_buffer_gnt, soc_mci_reg_gnt, soc_mci_mbox0_gnt, soc_mci_mbox1_gnt}, clk, !reset_n)
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_gnt, soc_mcu_trace_buffer_gnt, soc_mci_reg_gnt, soc_mcu_mbox0_gnt, soc_mcu_mbox1_gnt}, clk, !reset_n)
 
 // Today we don't support anything other than 32 bits
 `CALIPTRA_ASSERT_INIT(ERR_AXI_DATA_WIDTH, AXI_DATA_WIDTH == 32)
@@ -838,13 +768,13 @@ mci_lcc_st_trans LCC_state_translator (
 // Verify max size of MCU SRAM
 `CALIPTRA_ASSERT_INIT(ERR_MCU_SRAM_MAX_SIZE, MCU_SRAM_SIZE_KB <= 2048)
 // Verify min size of MBOX0 
-`CALIPTRA_ASSERT_INIT(ERR_MCI_MBOX0_MIN_SIZE, MCI_MBOX0_SIZE_KB >= 0)
+`CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX0_MIN_SIZE, MCU_MBOX0_SIZE_KB >= 0)
 // Verify max size of MBOX0
-`CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX0_MAX_SIZE, MCI_MBOX0_SIZE_KB <= 2048)
+`CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX0_MAX_SIZE, MCU_MBOX0_SIZE_KB <= 2048)
 // Verify min size of MBOX1 
-`CALIPTRA_ASSERT_INIT(ERR_MCI_MBOX1_MIN_SIZE, MCI_MBOX1_SIZE_KB >= 0)
+`CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX1_MIN_SIZE, MCU_MBOX1_SIZE_KB >= 0)
 // Verify max size of MBOX1
-`CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX1_MAX_SIZE, MCI_MBOX1_SIZE_KB <= 2048)
+`CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX1_MAX_SIZE, MCU_MBOX1_SIZE_KB <= 2048)
 
 // AXI SUB W - Verify AXI addr width matches
 `CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_W_ADDR_SIZE_MATCH,  AXI_ADDR_WIDTH == s_axi_w_if.AW)

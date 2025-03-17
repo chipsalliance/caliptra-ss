@@ -30,9 +30,4 @@ fi
 
 # Run the Python script with the appropriate paths
 python3 ${SCRIPT_PATH}/third_party/caliptra-rtl/tools/scripts/reg_doc_gen.py \
-${SCRIPT_PATH}/src/integration/rtl/soc_address_map.rdl \
-${SCRIPT_PATH}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr.rdl \
-${SCRIPT_PATH}/third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr.rdl \
-${SCRIPT_PATH}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_doc.rdl \
-${SCRIPT_PATH}/third_party/i3c-core/src/rdl/registers.rdl \
-${SCRIPT_PATH}/src/mci/rtl/mci_reg.rdl
+${SCRIPT_PATH}/src/integration/rtl/soc_address_map.rdl

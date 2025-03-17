@@ -46,12 +46,10 @@ module mci_axi_sub_top
     cif_if.request  mcu_trace_buffer_req_if,
 
     // Mbox0 SRAM Interface
-    cif_if.request  mci_mbox0_req_if,
-    input logic [4:0][$bits(s_axi_w_if.awuser)-1:0] valid_mbox0_users,
+    cif_if.request  mcu_mbox0_req_if,
 
     // Mbox1 SRAM Interface
-    cif_if.request  mci_mbox1_req_if,
-    input logic [4:0][$bits(s_axi_w_if.awuser)-1:0] valid_mbox1_users,
+    cif_if.request  mcu_mbox1_req_if,
 
 
     // Privileged requests 
@@ -111,12 +109,14 @@ axi_sub #(
     .id    (soc_resp_if.req_data.id      ),
     .wdata (soc_resp_if.req_data.wdata   ), // Requires: Component dwidth == AXI dwidth
     .wstrb (soc_resp_if.req_data.wstrb   ), 
+    .size  (),
     .rdata (soc_resp_if.rdata   ), // Requires: Component dwidth == AXI dwidth
     .last  (soc_resp_if.req_data.last), 
     .hld   (soc_resp_if.hold    ),
     .rd_err(soc_resp_if.error   ),
     .wr_err(soc_resp_if.error   )
 );
+
 
 assign soc_resp_if.req_data.size = '0; 
 
@@ -144,12 +144,10 @@ mci_axi_sub_decode #(
     .mcu_trace_buffer_req_if,
 
     //MCI Mbox0
-    .mci_mbox0_req_if,
-    .valid_mbox0_users,
+    .mcu_mbox0_req_if,
 
     //MCI Mbox1
-    .mci_mbox1_req_if,
-    .valid_mbox1_users,
+    .mcu_mbox1_req_if,
 
     // Privileged requests 
     .axi_mci_soc_config_req,
