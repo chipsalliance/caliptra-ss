@@ -1149,8 +1149,7 @@ The MCU SRAM provides essential data and instruction memory for the Manufacturer
 
 **Max Size**: 2MB
 
-AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the MCU SRAM Config AXI_USER, or the MCU IFU/LSU AXI USERSs). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
-
+AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the MCU SRAM Config AXI_USER, or the MCU IFU/LSU AXI USERS). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
 The MCU SRAM contains two regions, a Protected Data Region and an Updatable Execution Region, each with a different set of access rules.
 
 After each MCU reset the Updateable Execution Region may only be read/written by MCU SRAM Config User (Typically Caliptra) prior to mcu_sram_fw_exec_region_lock input signal is set. Once fw_exec_region_lock is set it can be read/written by the MCU IFU or MCU LSU until MCU reset is asserted. 
