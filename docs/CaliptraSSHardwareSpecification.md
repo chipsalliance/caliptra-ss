@@ -1154,8 +1154,7 @@ The MCU SRAM contains two regions, a Protected Data Region and an Updatable Exec
 
 After each MCU reset the Updateable Execution Region may only be read/written by MCU SRAM Config User (Typically Caliptra) prior to mcu_sram_fw_exec_region_lock input signal is set. Once fw_exec_region_lock is set it can be read/written by the MCU IFU or MCU LSU until MCU reset is asserted. 
 
-The Protected Data Region is only ever read/write accessable by MCU LSU. 
-
+The Protected Data Region is only ever read/write accessible by MCU LSU.
 The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing shall be locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation in 4KB increments. FW_SRAM_EXEC_REGION_SIZE counts in base 0 meaning the smallest the Updateable Execution Region size can be is 4KB. It is possible for the entire SRAM to be allocated to the Updatable Execution Region and there be no Protected Data Region. 
 
 The entire MCU SRAM has ECC protection. Unlike MCI mailboxes, there is no configuration available to disable MCU SRAM for architectural reasons. Single bit errors are detected and corrected. While double bit errors are detected and error. MCI actions for single bit errors:
