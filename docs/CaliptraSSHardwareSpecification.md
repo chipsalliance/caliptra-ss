@@ -937,9 +937,9 @@ MCI has the following types of straps:
 
 | **Strap Type**     | **Sampled or Direct Use**|**Description**     | 
 | :---------     | :---------| :---------| 
-| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These are not overriable by SW. | 
+| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These are not overridable by SW. | 
 | **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
-| **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank Until  | 
+| **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
 
 
 *NOTE: Strap sampling occurs when mci_rst_b is deasserted and is typically performed once per cold boot. This process is controlled by the SS_CONFIG_DONE_STICKY register; when set, sampling is skipped. If a warm reset happens before SS_CONFIG_DONE_STICKY is set, the straps will be sampled again, although this is not the usual behavior.
@@ -1152,19 +1152,19 @@ The MCU SRAM provides essential data and instruction memory for the Manufacturer
 AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the MCU SRAM Config AXI_USER, or the MCU IFU/LSU AXI USERS). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
 The MCU SRAM contains two regions, a Protected Data Region and an Updatable Execution Region, each with a different set of access rules.
 
-After each MCU reset the Updateable Execution Region may only be read/written by MCU SRAM Config User (Typically Caliptra) prior to mcu_sram_fw_exec_region_lock input signal is set. Once fw_exec_region_lock is set it can be read/written by the MCU IFU or MCU LSU until MCU reset is asserted. 
+After each MCU reset the Updateable Execution Region may only be read/written by MCU SRAM Config User (typically Caliptra) prior to mcu_sram_fw_exec_region_lock input signal is set. Once fw_exec_region_lock is set it can be read/written by the MCU IFU or MCU LSU until MCU reset is asserted. 
 
 The Protected Data Region is only ever read/write accessible by MCU LSU.
 The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing shall be locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation in 4KB increments. FW_SRAM_EXEC_REGION_SIZE counts in base 0 meaning the smallest the Updateable Execution Region size can be is 4KB. It is possible for the entire SRAM to be allocated to the Updatable Execution Region and there be no Protected Data Region. 
 
-The entire MCU SRAM has ECC protection with no ability to disable. Single bit errors are detected and corrected. While double bit errors are detected and error. 
+The entire MCU SRAM has ECC protection with no ability to disable. Single bit errors are detected and corrected. Double bit errors are detected and error. 
 
 **MCI actions for single bit errors:**
 - Correct data and pass corrected data back to the initiator.
 - Send interrupt notification to MCU.
 
 **MCI actions for double bit errors:**
-- AXI response to the initiator
+- AXI SLVERR response to the initiator
 - HW_ERROR_FATAL asserted and sent to SOC
 
 MCU SRAM is accessible via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) for more details.
