@@ -60,19 +60,11 @@ CALIPTRA_RTL = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/rtl
 #  TEST_DIR = $(TBDIR)/tests/$(TEST)
 #endif
 
-# Libraries providing functionality for each peripheral component in Caliptra
-# COMP_LIB_NAMES := aes \
-# 		  doe \
-# 		  ecc \
-# 		  hmac \
-# 		  keyvault \
-# 		  datavault \
-# 		  sha256 \
-# 		  sha512 \
-# 		  soc_ifc \
-# 		  clk_gate \
-# 		  wdt
-# COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_SS)/src/integration/test_suites/libs/$(name))
+# Libraries providing functionality for each peripheral component in Caliptra Subsystem
+COMP_LIB_NAMES := caliptra_ss_lib \
+		  fuse_ctrl \
+		  lc_ctrl
+COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
 		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
@@ -80,17 +72,7 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
-		$(LIBS_DIR)/caliptra_ss_lib.h \
-		$(LIBS_DIR)/fuse_ctrl.h \
-		$(LIBS_DIR)/lc_ctrl.h
-#		$(ISR_DIR)/riscv-csr.h \
-#		$(ISR_DIR)/riscv-interrupts.h \
-#		$(ISR_DIR)/veer-csr.h
-
-#$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
-#$(CALIPTRA_SS)/src/integration/rtl/caliptra_reg.h
-#$(INCLUDES_DIR)/caliptra_defines.h \
-#$(INCLUDES_DIR)/defines.h \
+		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
 TEST_GEN_FILES := $(CALIPTRA_SS)/src/ecc/tb/ecdsa_secp384r1.exe \
 	          $(CALIPTRA_SS)/src/doe/tb/doe_test_gen.py
@@ -109,16 +91,8 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += printf.o
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
-	OFILES += caliptra_ss_lib.o
+	OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
 endif
-ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
-	OFILES += fuse_ctrl.o
-endif
-ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
-	OFILES += lc_ctrl.o
-endif
-# Always compile the lib files - for every target
-# OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
 
 # Verilator trace format
 VERILATOR_TRACE=vcd
@@ -147,7 +121,7 @@ else
 endif
 
 # VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR) $(COMP_LIBS)
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(LIBS_DIR)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
 # $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
