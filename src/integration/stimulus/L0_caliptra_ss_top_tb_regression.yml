@@ -1,0 +1,19 @@
+document:
+  schema: 1.0
+
+contents:
+  - generator:
+      tags: ["L0", "caliptra_ss_top_tb"]
+      path: ""
+      weight: 100
+      generations: 1
+      formats:
+        generate: "reseed {template}.yml -seed {seed}"
+        path: "{template_basename}__{seed}.yml"
+      templates:
+        $CALIPTRA_SS/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup: { weight: 100}
+        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation: { weight: 100}
+        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock: { weight: 100}
+        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens: { weight: 100}
+        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_random_item_prov/smoke_test_fc_random_item_prov: { weight: 100}
+        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_registers/smoke_test_fc_registers: { weight: 100}
