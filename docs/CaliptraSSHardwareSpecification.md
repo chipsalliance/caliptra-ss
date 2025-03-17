@@ -287,6 +287,97 @@ Caliptra ROM & RT firmware must program DMA assist with correct image size (mult
 Received transfer data can be obtained by the driver via a read from XFER_DATA_PORT register. Received data threshold is indicated to BMC by the controller with TX_THLD_STAT interrupt if RX_THLD_STAT_EN is set. The RX threshold can be set via RX_BUF_THLD. In case of a read when no RX data is available, the controller shall raise an error on the frontend bus interface (AHB / AXI).
 
 # Caliptra AXI Manager & DMA assist
+SOC\_IFC includes a hardware-assist block that is capable of initiating DMA transfers to the attached SoC AXI interconnect. The DMA transfers include several modes of operation, including raw transfer between SoC (AXI) addresses, moving data into or out of the SOC\_IFC mailbox, and directly driving data through AHB CSR accesses to datain/dataout registers. One additional operating mode allows the DMA engine to autonomously wait for data availability via the OCP Recovery interface (which will be slowly populated via an I3C or similar interface). 
+
+Caliptra arms transfers by populating a transaction descriptor to the AXI DMA CSR block via register writes over the internal AHB bus. Once armed, the DMA will autonomously issue AXI transactions to the SoC until the requested data movement is completed.
+
+When arming the engine, Caliptra firmware is expected to have information about available AXI addresses that are legal for DMA usage. The DMA can facilitate transfer requests with 64-bit addresses. DMA AXI Manager logic automatically breaks larger transfer sizes into multiple valid AXI burst transfers (max 4KiB size), and legally traverses 4KiB address boundaries. The DMA AXI Manager supports a maximum transfer size of 1MiB in total. FIXED AXI bursts are allowed, to facilitate a FIFO-like operation on either read or write channels.
+
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Caliptra-AXI-DMA.png)
+
+## Routes
+
+In the AXI DMA control state machine, both the read and write interfaces have their own “route”. A route is configured for read and write channels for every DMA operation that is requested. Routes determine how data flows through the DMA block.
+
+Read routes always apply when an AXI read is requested. Any AXI read will push the response data into the internal FIFO. The read route determines where this data will ultimately be sent when it is popped from the FIFO. For the AHB route, data from the FIFO is populated to the dataout register, where it may be read via AHB by the Caliptra RV core. For the mailbox route, data from the FIFO flows into the mailbox; for these operations, the mailbox address is determined by the destination address register value, with an offset applied based on how many bytes have been written to the mailbox. For the AXI route, data from the FIFO flows into the AXI Write Manager, whereupon it is sent out to AXI on the WDATA signal.
+
+Write routes always apply when an AXI write is requested. Any AXI write will read data from the internal FIFO before sending it over AXI. The write route determines where this data originates before it is pushed onto the FIFO. For the AHB route, a write to the datain register via AHB results in write data being pushed onto the FIFO. For the mailbox route, data is read from the mailbox and pushed onto the FIFO; for these operations, the mailbox address is determined by the source address register value, with an offset applied based on how many bytes have been read from the mailbox. For the AXI route, data flows from the AXI Read Manager into the FIFO.
+
+*Example 1: Write Route \== MBOX*
+
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Caliptra-AXI-DMA-WR.png)
+
+*Example 2: Read Route \== AHB*
+
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Caliptra-AXI-DMA-RD.png)
+
+
+## Streaming Boot Payloads
+
+The DMA block supports a special mode of operation that is intended for use in reading Firmware Image Payloads (for Streaming Boot) from the Recovery Interface, present in the Caliptra Subsystem. This operation mode relies on three key control signals: the payload\_available signal input from the recovery interface, the read\_fixed control bit, and the block\_size register (from the DMA control CSR block). 
+
+This special mode of operation is only used for AXI Reads. To trigger the DMA to operate in this mode, Caliptra Firmware must program the block\_size register to a non-zero value that is a power-of-two. Caliptra Firmware must also program the read\_fixed control bit. Once the “go” bit is set, causing the DMA to begin operation, the DMA control logic will wait for the payload\_available input to trigger. When this occurs, the DMA controller issues a read that has a size equal to (or smaller) than the configured block\_size (the read may be smaller if required by AXI rules). This process repeats until the amount of data indicated in the byte\_size register has been transferred.
+
+In all cases other than reading Recovery Interface Payloads, the block\_size register must be programmed to 0\.
+
+## Programming Flowchart {#programming-flowchart}
+
+General Rules:
+
+1. If either Read or Write route is configured to AXI RD \-\> AXI WR, both routes must be configured as AXI RD \-\> AXI WR.  
+2. Read Route and Write Route must not both be disabled.  
+3. If Read Route is enabled to any configuration other than AXI RD-\> AXI WR, Write route must be disabled.  
+4. If Read Route is disabled, Write route must be enabled to a configuration that is not AXI RD \-\> AXI WR.  
+5. If Read Route is disabled, Read Fixed field is ignored.  
+6. If Write Route is disabled, Write Fixed field is ignored.  
+7. Addresses and Byte Counts must be aligned to AXI data width (1 DWORD).
+
+8. Block Size is used only for reads from the Subsystem Recovery Interface. When block size has a non-zero value, the DMA will only issue AXI read requests when the payload available input signal is set to 1, and will limit the size of read requests to the value of block size. For all other transactions (such as AXI writes, or any single-dword access to a subsystem register via the DMA), block size shall be set to a value of 0 for every transaction.
+
+Steps:
+
+1. Write Byte Count  
+2. Write Block Size  
+3. Write Source Addr (value is ignored if data is from AHB)  
+4. Write Dest Addr (value is ignored if data is to AHB).  
+   1. To perform an accelerated SHA operation on incoming read data, firmware sets the Read/Write route to AXI RD-\> AXI WR, and the destination address to the SoC address for the SHA Acceleration data in aperture.  
+5. Set Interrupt Enables (optional)  
+6. If Mailbox R/W: Acquire Mailbox Lock  
+7. If SHA Acc Op:   
+   1. First acquire Sha Accel Lock via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
+   2. Initiate Sha Accel streaming operation via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
+   3. Run this operation with the AXI RD \-\> AXI WR route to move data from SoC location into Sha Accelerator  
+8. Set Control Register  
+   1. Set Read/Write Routes  
+   2. Set Read/Write Fixed=0/1  
+   3. GO  
+   4. (All 3 may be single write or separate, GO must be last bit to set)  
+9. If AHB data: Wait for RD FIFO not empty or WR FIFO not full  
+   1. Push/Pop data (using Rd Data/Wr Data register offsets) until all requested bytes transferred  
+   2. If AHB Error – check status0 for Error, then check for “Command Error”   
+10. Wait for TXN Done Interrupt (or Poll Status0)   
+11. Read Status0, confirm Busy=0, Error=0
+
+## Descriptor {#descriptor}
+
+The following table illustrates registers implemented for DMA control.
+
+| Register | Description |
+| :---- | :---- |
+| **ID** | Identifies DMA engine uniquely |
+| **Capabilities** | Reports DMA configuration/capabilities |
+| **Control** | 0: GO 1: Flush (abort operation safely and purge FIFO. Zeroize all entries?) 15:2 RESERVED 17:16: Read Route  00: Read path disabled 01: AXI RD \-\> Mailbox 10: AXI RD \-\> AHB reads to consume 11: AXI RD \-\> AXI WR 19:18: RESERVED Route bits 20: Read addr fixed 23:21 RESERVED 25:24 Write Route 00=Write path disabled 01=Mailbox \-\> AXI WR 10=AHB writes to fill \-\> AXI WR 11=AXI RD \-\> AXI WR 27:26 RESERVED Route bits 28: Write addr fixed 31:29 RESERVED |
+| **Status0** | 0: Busy (0 \= ready to accept transfer request, 1 \= operation in progress) 1: Error 15:2: RESERVED N:16: Control FSM State 31:N: RESERVED |
+| **Status1** | 31:0: Byte count remaining to destination |
+| **Source Addr L** | 31:0: Addr\[31:0\]. Must be aligned to AXI data width. |
+| **Source Addr H** | N:0: Addr\[AW-1:32\] 31:N: RESERVED |
+| **Dest Addr L** | 31:0: Addr\[31:0\]. Must be aligned to AXI data width. |
+| **Dest Addr H** | N:0: Addr\[AW-1:32\] 31:N: RESERVED |
+| **Byte Count** | 31:0: Byte count to send. Must be a multiple of AXI data width. Maximum allowed value is 0x10\_0000 (decimal 1048576\) which equates to a 1MiB transfer. |
+| **Block Size** | 11:0: Byte size of individual blocks to send as part of the total Byte Count. This register indicates what granularity of AXI transactions are issued at a time. When non-zero, this field instructs the DMA to wait for the input “WIRE” to pulse high before issuing each transaction. Total burst is done once “Byte\_count/block\_size” transactions have completed. When zero, DMA issues AXI transactions of maximum size without any stalls in between transactions. Must be a multiple of AXI data width. If block size is not aligned to the AXI data width, it will be rounded down. Value of 4096 or larger is unsupported – AXI native maximum size is 4096\. 31:12: RESERVED |
+| **WR Data** | WO. Data word push into WR FIFO from uC/AHB to send via AXI WR. |
+| **RD Data** | RO. Data word output from RD FIFO after AXI RD. |
+| **Intr Block (xN…)** | Status interrupts: TXN done RD FIFO Not Empty RD FIFO Full WR FIFO Not Full WR FIFO Empty Error interrupts: Command Error AXI RD error AXI WR error Mailbox not locked error RD FIFO Overflow RD FIFO Underflow WR FIFO Overflow WR FIFO Underflow |
 
 # Caliptra SS Fuse Controller
 
