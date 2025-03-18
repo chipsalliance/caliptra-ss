@@ -1,0 +1,2 @@
++incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
+${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
