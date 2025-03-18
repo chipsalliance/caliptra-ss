@@ -358,26 +358,9 @@ Steps:
 10. Wait for TXN Done Interrupt (or Poll Status0)   
 11. Read Status0, confirm Busy=0, Error=0
 
-## Descriptor {#descriptor}
+## Descriptor
 
-The following table illustrates registers implemented for DMA control.
-
-| Register | Description |
-| :---- | :---- |
-| **ID** | Identifies DMA engine uniquely |
-| **Capabilities** | Reports DMA configuration/capabilities |
-| **Control** | 0: GO 1: Flush (abort operation safely and purge FIFO. Zeroize all entries?) 15:2 RESERVED 17:16: Read Route  00: Read path disabled 01: AXI RD \-\> Mailbox 10: AXI RD \-\> AHB reads to consume 11: AXI RD \-\> AXI WR 19:18: RESERVED Route bits 20: Read addr fixed 23:21 RESERVED 25:24 Write Route 00=Write path disabled 01=Mailbox \-\> AXI WR 10=AHB writes to fill \-\> AXI WR 11=AXI RD \-\> AXI WR 27:26 RESERVED Route bits 28: Write addr fixed 31:29 RESERVED |
-| **Status0** | 0: Busy (0 \= ready to accept transfer request, 1 \= operation in progress) 1: Error 15:2: RESERVED N:16: Control FSM State 31:N: RESERVED |
-| **Status1** | 31:0: Byte count remaining to destination |
-| **Source Addr L** | 31:0: Addr\[31:0\]. Must be aligned to AXI data width. |
-| **Source Addr H** | N:0: Addr\[AW-1:32\] 31:N: RESERVED |
-| **Dest Addr L** | 31:0: Addr\[31:0\]. Must be aligned to AXI data width. |
-| **Dest Addr H** | N:0: Addr\[AW-1:32\] 31:N: RESERVED |
-| **Byte Count** | 31:0: Byte count to send. Must be a multiple of AXI data width. Maximum allowed value is 0x10\_0000 (decimal 1048576\) which equates to a 1MiB transfer. |
-| **Block Size** | 11:0: Byte size of individual blocks to send as part of the total Byte Count. This register indicates what granularity of AXI transactions are issued at a time. When non-zero, this field instructs the DMA to wait for the input “WIRE” to pulse high before issuing each transaction. Total burst is done once “Byte\_count/block\_size” transactions have completed. When zero, DMA issues AXI transactions of maximum size without any stalls in between transactions. Must be a multiple of AXI data width. If block size is not aligned to the AXI data width, it will be rounded down. Value of 4096 or larger is unsupported – AXI native maximum size is 4096\. 31:12: RESERVED |
-| **WR Data** | WO. Data word push into WR FIFO from uC/AHB to send via AXI WR. |
-| **RD Data** | RO. Data word output from RD FIFO after AXI RD. |
-| **Intr Block (xN…)** | Status interrupts: TXN done RD FIFO Not Empty RD FIFO Full WR FIFO Not Full WR FIFO Empty Error interrupts: Command Error AXI RD error AXI WR error Mailbox not locked error RD FIFO Overflow RD FIFO Underflow WR FIFO Overflow WR FIFO Underflow |
+https://chipsalliance.github.io/caliptra-rtl/main/internal-regs/?p=clp.axi_dma_reg
 
 # Caliptra SS Fuse Controller
 
