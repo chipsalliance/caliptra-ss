@@ -57,6 +57,7 @@ requires:
   - lc_ctrl
   - caliptra_top_tb_pkg
   - avery_vip
+  - mci_coverage
 targets:
   tb:
     directories:

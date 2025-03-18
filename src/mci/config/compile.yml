@@ -134,3 +134,15 @@ global:
         # declare all signals as inout, but are driven at a lower layer than the
         # instantiation, so they will always flag this
         - '-suppress=TFIPC'
+---
+provides: [mci_coverage]  
+schema_version: 2.4.0
+requires: 
+  - mci_top
+targets:
+  tb:
+    directories: 
+      - $COMPILE_ROOT/coverage
+    files:
+      - $COMPILE_ROOT/coverage/mci_top_cov_if.sv
+      - $COMPILE_ROOT/coverage/mci_top_cov_bind.sv
