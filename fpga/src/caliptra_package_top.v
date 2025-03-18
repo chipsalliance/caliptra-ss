@@ -325,7 +325,7 @@ module caliptra_package_axi_top (
     input	wire [2:0]                S_AXI_I3C_AWPROT,
     input	wire                      S_AXI_I3C_WVALID,
     output	wire                      S_AXI_I3C_WREADY,
-    input	wire [63:0]               S_AXI_I3C_WDATA,
+    input	wire [31:0]               S_AXI_I3C_WDATA,
     input	wire [7:0]                S_AXI_I3C_WSTRB,
     output	wire                      S_AXI_I3C_BVALID,
     input	wire                      S_AXI_I3C_BREADY,
@@ -336,7 +336,7 @@ module caliptra_package_axi_top (
     input	wire [2:0]                S_AXI_I3C_ARPROT,
     output	wire                      S_AXI_I3C_RVALID,
     input	wire                      S_AXI_I3C_RREADY,
-    output	wire [63:0]               S_AXI_I3C_RDATA,
+    output	wire [31:0]               S_AXI_I3C_RDATA,
     output	wire [1:0]                S_AXI_I3C_RRESP,
     
     input wire [1:0] S_AXI_I3C_ARBURST,
