@@ -318,6 +318,10 @@ The DMA block supports a special mode of operation that is intended for use in r
 
 This special mode of operation is only used for AXI Reads. To trigger the DMA to operate in this mode, Caliptra Firmware must program the block\_size register to a non-zero value that is a power-of-two. Caliptra Firmware must also program the read\_fixed control bit. Once the “go” bit is set, causing the DMA to begin operation, the DMA control logic will wait for the payload\_available input to trigger. When this occurs, the DMA controller issues a read that has a size equal to (or smaller) than the configured block\_size (the read may be smaller if required by AXI rules). This process repeats until the amount of data indicated in the byte\_size register has been transferred.
 
+When programming an AXI to AXI transfer for a Streaming Boot Payload (e.g., to transfer an SoC Firmware manifest into an AXI-attached SRAM), firmware must also follow these rules:
+* Programmed value of block\_size must not exceed the largest legal AXI transaction size for a FIXED burst type. The DMA assist has a native data width of 4-bytes, so transaction size is restricted to 64-bytes due to the AXI specification limit of AxLEN == 15 for FIXED transactions.
+* Destination address must be aligned to the programmed value of block\_size. For example, if block\_size is set to 64-bytes, destination address must be an integer multiple of 0x40.
+
 In all cases other than reading Recovery Interface Payloads, the block\_size register must be programmed to 0\.
 
 ## Programming Flowchart {#programming-flowchart}
