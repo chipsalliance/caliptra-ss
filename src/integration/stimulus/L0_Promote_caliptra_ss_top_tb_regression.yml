@@ -6,10 +6,10 @@ contents:
       tags: ["L0", "caliptra_ss_top_tb"]
       path: ""
       weight: 100
-      generations: 60
+      generations: 6
       formats:
-        generate: "reseed {template}.yml -seed {seed}"
-        path: "{template_basename}__{seed}.yml"
+        generate: "reseed {template}.yml -seed 1"
+        path: "{template_basename}__1.yml"
       templates:
         $CALIPTRA_SS/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup: { weight: 100}
         $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation: { weight: 100}

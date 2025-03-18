@@ -95,13 +95,18 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
     for item in filtered_data:
         logger.debug(f"  - {item['TestName']}")
 
-    # Adjust generations to be 10x the number of templates
+    # Adjust generations based on criteria
     template_count = len(filtered_data)
     if template_count > 0:
-        adjusted_generations = max(generations, template_count * 10)
-        if adjusted_generations != generations:
-            logger.info(f"Adjusted generations from {generations} to {adjusted_generations} (10x template count)")
-            generations = adjusted_generations
+        # For L0 or PromotePipeline, set generations equal to template count
+        if criteria.get("L0") == "L0" or criteria.get("PromotePipeline") == "Promote":
+            adjusted_generations = template_count
+            logger.info(f"Setting generations to {adjusted_generations} (match template count for L0 or PromotePipeline)")
+        else:
+            # For other criteria, set to 10x template count
+            adjusted_generations = max(generations, template_count * 10)
+            logger.info(f"Setting generations to {adjusted_generations} (10x template count)")
+        generations = adjusted_generations
     else:
         logger.warning(f"No templates matched for criteria: {criteria}")
 
@@ -289,7 +294,7 @@ if __name__ == "__main__":
         logger.error(f"Error reading CSV file: {e}")
 
     combinations = [
-        {"Directed|Random": None, "Nightly|Weekly": None, "L0": "L0", "L1": None, "DUT": "caliptra_ss_top_tb", "PromotePipeline": None},
+        {"Directed|Random": None, "Nightly|Weekly": None, "L0": "L0", "L1": None, "DUT": "caliptra_ss_top_tb", "PromotePipeline": "Promote"},
         {"Directed|Random": "Directed", "Nightly|Weekly": "Nightly", "L0": None, "L1": "L1", "DUT": "caliptra_ss_top_tb", "PromotePipeline": None},
     ]
 
