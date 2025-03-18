@@ -82,9 +82,6 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILE_CRT := mcu_crt0.o
 endif
 OFILES += $(TESTNAME).o
-ifeq (0,$(shell test -e $(TEST_DIR)/caliptra_isr.h && echo $$?))
-	OFILES += caliptra_isr.o
-endif
 # Assume all C tests will import our printf lib, but not assembly
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += printf.o
