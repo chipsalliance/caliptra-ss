@@ -14,18 +14,14 @@
 // limitations under the License.
 //
 
-#include "soc_address_map.h"
-#include "printf.h"
-#include "soc_ifc.h"
-#include "caliptra_ss_lc_ctrl_address_map.h"
-#include "riscv_hw_if.h"
+#ifndef CALIPTRA_SS_LIB
+#define CALIPTRA_SS_LIB
 
-void reset_rtl(void) {
-    uint32_t reg_value;
+void reset_rtl(void);
+void mcu_mci_boot_go();
+void mcu_cptra_fuse_init();
+void mcu_cptra_user_init();
+void mcu_cptra_poll_mb_ready();
+void mcu_cptra_mbox_cmd();
 
-    reg_value = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm
-    VPRINTF(LOW, "LCC & Fuse_CTRL is under reset!\n");
-    for (uint16_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-}
+#endif // CALIPTRA_SS_LIB

@@ -29,15 +29,15 @@ SECTIONS {
   _text_end = .;
 
   . = 0x21C00000;
-  .data : { *(.*data) *(.rodata*) *(.srodata*) *(.sbss) }
+  .data : { *(.*data) *(.rodata*) *(.srodata*) }
   _data_end = .;
 
   . = 0x21C10000;
-  .bss : { *(.bss) }
+  .bss : { *(.bss) *(.sbss) }
   _bss_end = .;
 
   STACK = ALIGN(16) + 0x1000;
   
-  . = 0x21000410;
+  . = 0x21000414;
   .data.io : { *(.data.io) }
 }
