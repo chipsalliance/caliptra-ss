@@ -26,8 +26,8 @@ interface mci_top_cov_if
     input scan_mode,
 
     // MCI AXI Interface
-    //axi_if.w_sub s_axi_w_if,
-    //axi_if.r_sub s_axi_r_if,
+    axi_if.w_sub s_axi_w_if,
+    axi_if.r_sub s_axi_r_if,
     
     // Straps
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_lsu_axi_user,
@@ -109,13 +109,13 @@ interface mci_top_cov_if
     input logic FIPS_ZEROIZATION_CMD_o,
 
     // MCU SRAM Interface
-    //mci_mcu_sram_if.request mci_mcu_sram_req_if,
+    mci_mcu_sram_if.request mci_mcu_sram_req_if,
 
     // Mbox0 SRAM Interface
-    //mci_mcu_sram_if.request mcu_mbox0_sram_req_if,
+    mci_mcu_sram_if.request mcu_mbox0_sram_req_if,
 
     // Mbox1 SRAM Interface
-    //mci_mcu_sram_if.request mcu_mbox1_sram_req_if,
+    mci_mcu_sram_if.request mcu_mbox1_sram_req_if,
 
 
     //=============== LCC GASKET PORTS ========================
@@ -142,7 +142,25 @@ interface mci_top_cov_if
     covergroup mci_top_cg @(posedge clk);
         option.per_instance = 1;
 
+        mci_rst_b_cp: coverpoint mci_rst_b;
+        mcu_rst_b_cp: coverpoint  mcu_rst_b;
+        cptra_rst_b_cp: coverpoint  cptra_rst_b;
+        mci_pwrgood_cp: coverpoint mci_pwrgood;    
 
+        all_error_fatal_cp: coverpoint all_error_fatal;
+        all_error_non_fatal_cp: coverpoint all_error_non_fatal;
+
+        mcu_timer_int_cp: coverpoint  mcu_timer_int;
+        mci_intr_cp: coverpoint  mci_intr;
+        nmi_intr_cp: coverpoint  nmi_intr;
+        cptra_mbox_data_avail_cp: coverpoint  cptra_mbox_data_avail;
+        soc_mcu_mbox0_data_avail_cp: coverpoint  soc_mcu_mbox0_data_avail;
+        soc_mcu_mbox1_data_avail_cp: coverpoint  soc_mcu_mbox1_data_avail;
+        mci_boot_seq_brkpoint_cp: coverpoint  mci_boot_seq_brkpoint;
+        lc_done_cp: coverpoint  lc_done;
+        lc_init_cp: coverpoint  lc_init;
+        fc_opt_done_cp: coverpoint  fc_opt_done;
+        fc_opt_init_cp: coverpoint  fc_opt_init;
     endgroup
 
     //Check toggles of generic wires
@@ -159,10 +177,16 @@ interface mci_top_cov_if
     
     generic_wires_cg giw_cg[64];
     generic_wires_cg gow_cg[64];
+    generic_wires_cg agg_err_fatal_cg[32];
+    generic_wires_cg agg_err_non_fatal_cg[32];
     initial begin
         for(int i = 0; i < 64; i++) begin
             giw_cg[i] = new(mci_generic_input_wires[i]);
             gow_cg[i] = new(mci_generic_output_wires[i]);
+        end
+        for(int i = 0; i < 32; i++) begin
+            agg_err_fatal_cg[i] = new(agg_error_fatal[i]);
+            agg_err_non_fatal_cg[i] = new(agg_error_non_fatal[i]);
         end
     end
 
