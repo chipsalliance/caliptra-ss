@@ -240,7 +240,7 @@ Stretch Goal: DMA data payload back to destination (Caliptra or MCU)
 
 
 # Caliptra Subsystem Architectural Flows
-Please refer to [Caliptra Security Subsystem Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-security-subsystem)), for more details
+Please refer to [Caliptra Security Subsystem Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-security-subsystem) for more details.
 
 # I3C Streaming Boot (Recovery) Interface
 The I3C recovery interface acts as a standalone I3C target device for recovery. It will have a unique address compared to any other I3C endpoint for the device. It will comply with I3C Basic v1.1.1 specification. It will support I3C read and write transfer operations. It must support Max read and write data transfer of 1-256B excluding the command code (1 Byte), length (2 Byte), and PEC (1 Byte), total 4 Byte I3C header. Therefore, max recovery data per transfer will be limited to 256-byte data.
@@ -255,7 +255,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 *Figure: I3C Streaming Boot (Recovery) Interface Logic Block Diagram*
 
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/I3C-Recovery-IFC.png)
+![](./images/I3C-Recovery-IFC.png)
 
 ## Hardware Registers
 Hardware registers size is fixed to multiple of 4 bytes, so that firmware can read or write with word boundary. Address offset will be programmed outside of the I3C device. Register access size must be restricted to individual register space and burst access with higher size must not be allowed.
@@ -278,7 +278,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 Please refer to [Caliptra Security Subsystem Recovery Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-recovery-sequence).
 
 *Figure: Caliptra Subsystem I3C Streaming Boot (Recovery) Flow*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/CSS-Recovery-Flow.png)
+![](./images/CSS-Recovery-Flow.png)
 
 ## Caliptra ROM Requirements
 Caliptra ROM & RT firmware must program DMA assist with correct image size (multiple of 4B) + FIXED Read + block size is 256B (burst / FIFO size). Caliptra ROM & RT Firmware must wait for "image_activated" signal to assert before processing the image. Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes. 
@@ -293,7 +293,7 @@ Caliptra arms transfers by populating a transaction descriptor to the AXI DMA CS
 
 When arming the engine, Caliptra firmware is expected to have information about available AXI addresses that are legal for DMA usage. The DMA can facilitate transfer requests with 64-bit addresses. DMA AXI Manager logic automatically breaks larger transfer sizes into multiple valid AXI burst transfers (max 4KiB size), and legally traverses 4KiB address boundaries. The DMA AXI Manager supports a maximum transfer size of 1MiB in total. FIXED AXI bursts are allowed, to facilitate a FIFO-like operation on either read or write channels.
 
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Caliptra-AXI-DMA.png)
+![](./images/Caliptra-AXI-DMA.png)
 
 ## Routes
 
@@ -305,11 +305,11 @@ Write routes always apply when an AXI write is requested. Any AXI write will rea
 
 *Example 1: Write Route \== MBOX*
 
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Caliptra-AXI-DMA-WR.png)
+![](./images/Caliptra-AXI-DMA-WR.png)
 
 *Example 2: Read Route \== AHB*
 
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Caliptra-AXI-DMA-RD.png)
+![](./images/Caliptra-AXI-DMA-RD.png)
 
 
 ## Streaming Boot Payloads
@@ -614,13 +614,13 @@ It is an overview of the architecture of the Life-Cycle Controller (LCC) Module 
 Figure below shows the Debug Architecture of the Caliptra Subsystem and some important high-level signals routed towards SOC. The table in Key Components and Interfaces section shows all the signals that are available to SOC (outside of Caliptra Subsystem usage).
 
 *Figure: Caliptra Subsystem & SOC Debug Architecture Interaction*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/LCC-SOC-View.png)
+![](./images/LCC-SOC-View.png)
 **Note:** SoC Debug Architecture of the Caliptra Subsystem with LCC; the red dashed circles highlight the newly added blocks and signals.
 
 The figure below shows the LCC state transition and Caliptra Subsystem enhancement on LCC state transitions. It illustrates the life cycle flow of Caliptra Subsystem.
 
 *Figure: Caliptra Subsystem Life Cycle Controller Summary*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/LCC-Summary.png)
+![](./images/LCC-Summary.png)
 
 **Note:** Caliptra Subsystem life cycle flow. This flow shows legal state transitions in life cycle controller by excluding its invalid states for simplicity.
 
@@ -683,7 +683,7 @@ In the manufacturing phase, the Caliptra Subsystem asserts SOC_HW_DEBUG_EN high,
 The LCC includes a TAP interface, which operates on its own dedicated clock and is used for injecting tokens into the LCC. Notably, the LCC TAP interface remains accessible in all life cycle states, providing a consistent entry point for test and debug operations. This TAP interface can be driven by either the TAP GPIO pins or internal chip-level wires, depending on the system's current configuration.
 
 *Figure: Caliptra Subsystem Life Cycle Controller Summary*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/TAP-Pin-Muxing.png)
+![](./images/TAP-Pin-Muxing.png)
 **Note:** Above figure of TAP pin muxing block diagram with a conceptual representation. SOCs may implement this in their own way
 
 SOC logic incorporates the TAP pin muxing to provide the integration support and manage the connection between the TAP GPIO pins and the Chip-Level TAP (CLTAP). As illustrated in figure above, this muxing logic determines the source that drives the LCC TAP interface. The selection between these two sources is controlled by the SOC_HW_DEBUG_EN signal. When SOC_HW_DEBUG_EN is set to high, control is handed over to the CLTAP, allowing for chip-level debug access through the TAP GPIO pins. Conversely, when SOC_HW_DEBUG_EN is low, the TAP GPIO pins take control, enabling external access to the LCC TAP interface.
@@ -704,7 +704,7 @@ TAP pin muxing also enables routing to Caliptra TAP. This selection happens when
 The following figure illustrates how Caliptra Subsystem enters the manufacturing debug mode. To enter this mode, LCC should be in MANUF state. While being in manufacturing debug mode, LCC does not change its state from MANUF to any other state. During the MANUF state, Caliptra Subsystem can enable manufacturing debug flow by following steps:
 
 *Figure: Caliptra Subsystem Manuf Debug Life Cycle View*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Manuf-Debug-LifeCycle.png)
+![](./images/Manuf-Debug-LifeCycle.png)
 **Note:** The flow diagram on the right side shows the LCC states (grey boxes) and their transitions, while the flow diagram on the left illustrates Caliptra SS’s enhancements to the LCC for the manufacturing phase. Specifically, the flow on the left depicts the routine for entering manufacturing debug mode.
 
 #### Flow Explanation:
@@ -790,7 +790,7 @@ If either the authentication or the hash comparison fails, Caliptra returns a fa
 This flow establishes a secure and controlled process for entering Caliptra’s production debug mode, ensuring that only authorized access is granted while maintaining the integrity and confidentiality of the system’s sensitive assets. The more details about the flow sequence as illustrated with flow figure and explanation of each steps in the flow.
 
 *Figure: Caliptra Subsystem Production Debug Life Cycle View*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Prod-Debug-LifeCycle.png)
+![](./images/Prod-Debug-LifeCycle.png)
 
 1. (Platform) DEBUG_INTENT_STRAP Assertion:
    * The process is initiated when the DEBUG_INTENT_STRAP pin, connected via the SoC's GPIO, is asserted high.
