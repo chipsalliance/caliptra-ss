@@ -126,7 +126,7 @@ module caliptra_ss_top
 // Caliptra SS MCU 
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_cptra_axi_user_i,
+    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_cptra_axi_user_i, // FIXME what is this even for???
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
     input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mci_soc_config_axi_user_i,
 
@@ -564,12 +564,12 @@ module caliptra_ss_top
 
 
      always_comb begin
-        cptra_ss_mcu_lsu_m_axi_if.awuser                                             = 32'hFFFF_FFFF;
-        cptra_ss_mcu_lsu_m_axi_if.aruser                                             = 32'hFFFF_FFFF;
+        cptra_ss_mcu_lsu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_lsu_axi_user_i; // TODO part-select?
+        cptra_ss_mcu_lsu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_lsu_axi_user_i; // TODO part-select?
         cptra_ss_mcu_lsu_m_axi_if.arid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
         cptra_ss_mcu_lsu_m_axi_if.awid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
-        cptra_ss_mcu_lsu_m_axi_if.aruser[CPTRA_SS_MCU_LSU_ARUSER_WIDTH-1:0]          = '1;
-        cptra_ss_mcu_lsu_m_axi_if.awuser[CPTRA_SS_MCU_LSU_AWUSER_WIDTH-1:0]          = '1;
+        cptra_ss_mcu_ifu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_ifu_axi_user_i; // TODO part-select?
+        cptra_ss_mcu_ifu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_ifu_axi_user_i; // TODO part-select?
         cptra_ss_mcu_ifu_m_axi_if.arid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
         cptra_ss_mcu_ifu_m_axi_if.awid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
       
