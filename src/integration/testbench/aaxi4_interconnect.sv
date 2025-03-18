@@ -221,8 +221,8 @@ initial begin
         slave[4].cfg_info.passive_mode= 1; 
         slave[4].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[4].cfg_info.base_address[0]  = {32'h0, `SOC_MCI_REG_BASE_ADDR}; //64'h2100_0000;
-        slave[4].cfg_info.limit_address[0] = {32'h0, `SOC_MCI_REG_BASE_ADDR + 32'h00FF_FFFF};
+        slave[4].cfg_info.base_address[0]  = {32'h0, `SOC_MCI_TOP_MCI_REG_BASE_ADDR}; //64'h2100_0000;
+        slave[4].cfg_info.limit_address[0] = {32'h0, `SOC_MCI_TOP_MCU_SRAM_END_ADDR}; // Always the last address in MCU
         slave[4].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         slave[4].cfg_info.total_outstanding_depth = 4;
         slave[4].cfg_info.id_outstanding_depth = 4;

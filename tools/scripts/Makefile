@@ -45,6 +45,8 @@ TBDIR ?= $(CALIPTRA_SS)/src/integration/testbench
 RISCV_HW_IF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/riscv_hw_if
 #ISR_DIR    = $(CALIPTRA_SS)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
 PRINTF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/printf
+LIBS_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs
+
 
 DUT ?= caliptra_mcu_top_tb
 
@@ -76,7 +78,10 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
-		$(PRINTF_DIR)/printf.h
+		$(PRINTF_DIR)/printf.h \
+		$(LIBS_DIR)/caliptra_ss_lib.h \
+		$(LIBS_DIR)/fuse_ctrl.h \
+		$(LIBS_DIR)/lc_ctrl.h
 #		$(ISR_DIR)/riscv-csr.h \
 #		$(ISR_DIR)/riscv-interrupts.h \
 #		$(ISR_DIR)/veer-csr.h
@@ -101,6 +106,15 @@ endif
 # Assume all C tests will import our printf lib, but not assembly
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += printf.o
+endif
+ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
+	OFILES += caliptra_ss_lib.o
+endif
+ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
+	OFILES += fuse_ctrl.o
+endif
+ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
+	OFILES += lc_ctrl.o
 endif
 # Always compile the lib files - for every target
 # OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
@@ -132,7 +146,7 @@ else
 endif
 
 # VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR) $(COMP_LIBS)
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(LIBS_DIR)
 
 # Use eval to expand env variables in the .vf file
 # $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
@@ -312,7 +326,7 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	-$(GCC_PREFIX)-objcopy -O verilog -j .dccm --change-section-lma .dccm-0x50000000 --pad-to 0x4000 --no-change-warnings $(TESTNAME).exe mcu_dccm.hex
 	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000  --change-section-lma .text-0x80000000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0xC000  --no-change-warnings $(TESTNAME).exe mcu_program.bin
-	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21200000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21C00000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 # $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 # $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis

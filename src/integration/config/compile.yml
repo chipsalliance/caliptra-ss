@@ -54,6 +54,7 @@ requires:
   - caliptra_ss_top_defines
   - axi_mem_pkg
   - caliptra_ss_top
+  - lc_ctrl
   - caliptra_top_tb_pkg
   - avery_vip
 targets:
@@ -96,6 +97,7 @@ global:
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
+        - +define+CALIPTRA_MODE_SUBSYSTEM
         - +define+MCU_RV_BUILD_AXI4
         - +define+MCU_RV_OPENSOURCE
         - +define+AVERY_VCS

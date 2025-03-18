@@ -64,6 +64,32 @@ module caliptra_ss_top_tb
     localparam MCU_SRAM_ADDR_WIDTH = $clog2(MCU_SRAM_DEPTH);
 
 
+    localparam MCU_MBOX0_SIZE_KB = 256;
+    localparam MCU_MBOX0_DATA_W = 32;
+    localparam MCU_MBOX0_ECC_DATA_W = 7;
+    localparam MCU_MBOX0_SIZE_BYTES = MCU_MBOX0_SIZE_KB * 1024;
+    localparam MCU_MBOX0_SIZE_DWORDS = MCU_MBOX0_SIZE_BYTES/4;
+    localparam MCU_MBOX0_DATA_AND_ECC_W = MCU_MBOX0_DATA_W + MCU_MBOX0_ECC_DATA_W;
+    localparam MCU_MBOX0_DEPTH = (MCU_MBOX0_SIZE_KB * 1024 * 8) / MCU_MBOX0_DATA_W;
+    localparam MCU_MBOX0_ADDR_W = $clog2(MCU_MBOX0_DEPTH);
+    localparam MCU_MBOX0_DEPTH_LOG2 = $clog2(MCU_MBOX0_DEPTH);
+    localparam [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
+    localparam [4:0][31:0] MCU_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
+
+
+    localparam MCU_MBOX1_SIZE_KB = 256;
+    localparam MCU_MBOX1_DATA_W = 32;
+    localparam MCU_MBOX1_ECC_DATA_W = 7;
+    localparam MCU_MBOX1_SIZE_BYTES = MCU_MBOX1_SIZE_KB * 1024;
+    localparam MCU_MBOX1_SIZE_DWORDS = MCU_MBOX1_SIZE_BYTES/4;
+    localparam MCU_MBOX1_DATA_AND_ECC_W = MCU_MBOX1_DATA_W + MCU_MBOX1_ECC_DATA_W;
+    localparam MCU_MBOX1_DEPTH = (MCU_MBOX1_SIZE_KB * 1024 * 8) / MCU_MBOX1_DATA_W;
+    localparam MCU_MBOX1_ADDR_W = $clog2(MCU_MBOX1_DEPTH);
+    localparam MCU_MBOX1_DEPTH_LOG2 = $clog2(MCU_MBOX1_DEPTH);
+    localparam [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
+    localparam [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
+
+
     bit                         core_clk;
     bit          [31:0]         mem_signature_begin = 32'd0; // TODO:
     bit          [31:0]         mem_signature_end   = 32'd0;
@@ -361,6 +387,10 @@ module caliptra_ss_top_tb
       
 //------------------------------------------------------------------------
 
+    logic         cptra_ss_debug_intent_i;
+    logic cptra_ss_soc_mcu_mbox0_data_avail;
+    logic cptra_ss_soc_mcu_mbox1_data_avail;
+
     logic pwr_otp_init_i;
     logic cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i;
     logic cptra_ss_FIPS_ZEROIZATION_PPD_i;
@@ -385,6 +415,7 @@ module caliptra_ss_top_tb
     tb_top_pkg::veer_sram_error_injection_mode_t error_injection_mode;
 
     `define MCU_DEC caliptra_ss_dut.rvtop_wrapper.rvtop.veer.dec
+    `define MCU_TOP_PATH caliptra_ss_dut.rvtop_wrapper
 
 
     assign mailbox_write    = caliptra_ss_dut.mci_top_i.s_axi_w_if.awvalid && (caliptra_ss_dut.mci_top_i.s_axi_w_if.awaddr == mem_mailbox) && rst_l;
@@ -497,18 +528,18 @@ module caliptra_ss_top_tb
         wb_csr_valid  <= `MCU_DEC.dec_csr_wen_r;
         wb_csr_dest   <= `MCU_DEC.dec_csr_wraddr_r;
         wb_csr_data   <= `MCU_DEC.dec_csr_wrdata_r;
-        if (trace_rv_i_valid_ip) begin
-           $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", trace_rv_i_valid_ip, 0, trace_rv_i_address_ip,
-                  0, trace_rv_i_insn_ip,trace_rv_i_exception_ip,trace_rv_i_ecause_ip,
-                  trace_rv_i_tval_ip,trace_rv_i_interrupt_ip);
+        if (`MCU_TOP_PATH.trace_rv_i_valid_ip) begin
+           $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", `MCU_TOP_PATH.trace_rv_i_valid_ip, 0, `MCU_TOP_PATH.trace_rv_i_address_ip,
+                  0, `MCU_TOP_PATH.trace_rv_i_insn_ip,`MCU_TOP_PATH.trace_rv_i_exception_ip,`MCU_TOP_PATH.trace_rv_i_ecause_ip,
+                  `MCU_TOP_PATH.trace_rv_i_tval_ip,`MCU_TOP_PATH.trace_rv_i_interrupt_ip);
            // Basic trace - no exception register updates
            // #1 0 ee000000 b0201073 c 0b02       00000000
            commit_count++;
            $fwrite (el, "%10d : %8s 0 %h %h%13s %14s ; %s\n", cycleCnt, $sformatf("#%0d",commit_count),
-                        trace_rv_i_address_ip, trace_rv_i_insn_ip,
+                        `MCU_TOP_PATH.trace_rv_i_address_ip, `MCU_TOP_PATH.trace_rv_i_insn_ip,
                         (wb_dest !=0 && wb_valid)?  $sformatf("%s=%h", abi_reg[wb_dest], wb_data) : "            ",
                         (wb_csr_valid)? $sformatf("c%h=%h", wb_csr_dest, wb_csr_data) : "             ",
-                        dasm(trace_rv_i_insn_ip, trace_rv_i_address_ip, wb_dest & {5{wb_valid}}, wb_data)
+                        dasm(`MCU_TOP_PATH.trace_rv_i_insn_ip, `MCU_TOP_PATH.trace_rv_i_address_ip, wb_dest & {5{wb_valid}}, wb_data)
                    );
         end
         if(`MCU_DEC.dec_nonblock_load_wen) begin
@@ -1175,12 +1206,22 @@ module caliptra_ss_top_tb
         .rst_b(rst_l)
     );
 
-    mci_mcu_sram_if cptra_ss_mci_mbox0_sram_req_if (
+    mci_mcu_sram_if #(
+        .ADDR_WIDTH(MCU_MBOX0_ADDR_W),
+        .DATA_WIDTH(MCU_MBOX0_DATA_W),
+        .ECC_WIDTH(MCU_MBOX0_ECC_DATA_W)
+    )
+    cptra_ss_mcu_mbox0_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
     
-    mci_mcu_sram_if cptra_ss_mci_mbox1_sram_req_if (
+    mci_mcu_sram_if #(
+        .ADDR_WIDTH(MCU_MBOX1_ADDR_W),
+        .DATA_WIDTH(MCU_MBOX1_DATA_W),
+        .ECC_WIDTH(MCU_MBOX1_ECC_DATA_W)
+    )
+    cptra_ss_mcu_mbox1_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
@@ -1459,6 +1500,41 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[2].RREADY;
 
 
+    caliptra_sram
+    #(
+        .DATA_WIDTH(MCU_MBOX0_DATA_AND_ECC_W),
+        .DEPTH     (MCU_MBOX0_DEPTH         )
+    )
+    mcu_mbox0_ram
+    (
+        .clk_i(core_clk),
+
+        .cs_i(cptra_ss_mcu_mbox0_sram_req_if.req.cs),
+        .we_i(cptra_ss_mcu_mbox0_sram_req_if.req.we),
+        .addr_i(cptra_ss_mcu_mbox0_sram_req_if.req.addr),
+        .wdata_i(cptra_ss_mcu_mbox0_sram_req_if.req.wdata),
+
+        .rdata_o(cptra_ss_mcu_mbox0_sram_req_if.resp.rdata)
+    );
+    
+    caliptra_sram
+    #(
+        .DATA_WIDTH(MCU_MBOX1_DATA_AND_ECC_W),
+        .DEPTH     (MCU_MBOX1_DEPTH         )
+    )
+    mcu_mbox1_ram
+    (
+        .clk_i(core_clk),
+
+        .cs_i(cptra_ss_mcu_mbox1_sram_req_if.req.cs),
+        .we_i(cptra_ss_mcu_mbox1_sram_req_if.req.we),
+        .addr_i(cptra_ss_mcu_mbox1_sram_req_if.req.addr),
+        .wdata_i(cptra_ss_mcu_mbox1_sram_req_if.req.wdata),
+
+        .rdata_o(cptra_ss_mcu_mbox1_sram_req_if.resp.rdata)
+    );
+
+
     rom #(
         .DEPTH     (16'h7FFF), // 64KB
         .DATA_WIDTH(64),
@@ -1535,6 +1611,39 @@ module caliptra_ss_top_tb
     initial begin
         cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
     end
+
+    `include "caliptra_ss_includes.svh"
+    logic [$bits(lc_ctrl_state_pkg::lc_state_t)-1:0] MANUF_state;
+    logic [$bits(lc_ctrl_state_pkg::lc_state_t)-1:0] PROD_state;
+    assign MANUF_state = lc_ctrl_state_pkg::lc_state_t'(lc_ctrl_state_pkg::LcStDev);
+    assign PROD_state = lc_ctrl_state_pkg::lc_state_t'(lc_ctrl_state_pkg::LcStProd);
+    initial begin
+        if ($test$plusargs("CALIPTRA_SS_UDS_PROG") || $test$plusargs("CALIPTRA_SS_MANUF_DBG") || $test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_REQ is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_REQ.UDS_PROGRAM_REQ.value);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP IN PROGRESS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_IN_PROGRESS);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_FAIL is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_FAIL);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_SUCCESS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_SUCCESS);
+            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_GO is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_BOOTFSM_GO);
+            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_BrkPoint_Latched is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.BootFSM_BrkPoint_Latched);
+            $monitor("CALIPTRA_SS_UDS_PROG: CPTRA_FLOW_STATUS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_FLOW_STATUS);
+            force cptra_ss_cptra_core_m_axi_if.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
+            force cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
+            force caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
+        end
+        if ($test$plusargs("CALIPTRA_SS_UDS_PROG")) begin
+            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = MANUF_state;
+        end
+        if ($test$plusargs("CALIPTRA_SS_MANUF_DBG")) begin
+            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = MANUF_state;
+            force caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
+            force cptra_ss_debug_intent_i = 1'b1;
+        end 
+        if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
+            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = PROD_state;
+            force cptra_ss_debug_intent_i = 1'b1;
+        end 
+    end
+
 
 `ifdef LCC_FC_BFM_SIM
     
@@ -1685,7 +1794,6 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_generic_1_i;
     logic [31:0]  cptra_ss_strap_generic_2_i;
     logic [31:0]  cptra_ss_strap_generic_3_i;
-    logic         cptra_ss_debug_intent_i;
     logic         cptra_ss_dbg_manuf_enable_o;
     logic [63:0]  cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o;
 
@@ -1705,8 +1813,8 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'hba5e_ba11;
     assign cptra_ss_strap_mci_base_addr_i       = 64'h0;
     assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
-    assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0;
-    assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0;
+    assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
+    assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0000;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
     assign cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i        = 32'h0;
     assign cptra_ss_strap_caliptra_dma_axi_user_i = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
@@ -1716,7 +1824,15 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
 
-    caliptra_ss_top
+    caliptra_ss_top #(
+        .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
+        .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),
+        .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),
+        .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB),
+        .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),
+        .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER)
+
+    )
     caliptra_ss_dut (
 
         .cptra_ss_clk_i(core_clk),
@@ -1812,8 +1928,8 @@ module caliptra_ss_top_tb
 
     //MCI
         .cptra_ss_mci_mcu_sram_req_if,
-        .cptra_ss_mci_mbox0_sram_req_if,
-        .cptra_ss_mci_mbox1_sram_req_if,
+        .cptra_ss_mcu_mbox0_sram_req_if,
+        .cptra_ss_mcu_mbox1_sram_req_if,
         .cptra_ss_mcu0_el2_mem_export,
         .cptra_ss_mci_boot_seq_brkpoint_i,
         .cptra_ss_mcu_no_rom_config_i,
@@ -1821,6 +1937,8 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mcu_reset_vector_i,
         .cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i,
         .cptra_ss_FIPS_ZEROIZATION_PPD_i,
+        .cptra_ss_soc_mcu_mbox0_data_avail,
+        .cptra_ss_soc_mcu_mbox1_data_avail,
 
         .cptra_ss_mci_generic_output_wires_o,
         .cptra_ss_all_error_fatal_o,
