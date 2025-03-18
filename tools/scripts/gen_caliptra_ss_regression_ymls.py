@@ -95,6 +95,16 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
     for item in filtered_data:
         logger.debug(f"  - {item['TestName']}")
 
+    # Adjust generations to be 10x the number of templates
+    template_count = len(filtered_data)
+    if template_count > 0:
+        adjusted_generations = max(generations, template_count * 10)
+        if adjusted_generations != generations:
+            logger.info(f"Adjusted generations from {generations} to {adjusted_generations} (10x template count)")
+            generations = adjusted_generations
+    else:
+        logger.warning(f"No templates matched for criteria: {criteria}")
+
     # Prepare the YAML structure using CommentedMap and CommentedSeq for better control
     tags = CommentedSeq([DoubleQuotedScalarString(criteria[key]) for key in ["L0", "L1", "DUT", "Directed|Random", "Nightly|Weekly"] if criteria[key] is not None])
     
@@ -279,12 +289,12 @@ if __name__ == "__main__":
         logger.error(f"Error reading CSV file: {e}")
 
     combinations = [
-        {"Directed|Random": None, "Nightly|Weekly": None, "L0": "L0", "L1": None, "DUT": "caliptra_ss_top_tb", "PromotePipeline": None, "generations": 1},
-        {"Directed|Random": "Directed", "Nightly|Weekly": "Nightly", "L0": None, "L1": "L1", "DUT": "caliptra_ss_top_tb", "PromotePipeline": None, "generations": 1},
+        {"Directed|Random": None, "Nightly|Weekly": None, "L0": "L0", "L1": None, "DUT": "caliptra_ss_top_tb", "PromotePipeline": None},
+        {"Directed|Random": "Directed", "Nightly|Weekly": "Nightly", "L0": None, "L1": "L1", "DUT": "caliptra_ss_top_tb", "PromotePipeline": None},
     ]
 
     for criteria in combinations:
         output_filename = generate_output_filename(csv_file_path, criteria)
         logger.info(f"Creating YAML file '{output_filename}' with criteria: {criteria}")
-        csv_to_yaml(csv_file_path, output_filename, criteria, criteria["generations"])
+        csv_to_yaml(csv_file_path, output_filename, criteria, 1) # Default to 1, will be adjusted based on template count
         logger.info(f"YAML file '{output_filename}' successfully created.")

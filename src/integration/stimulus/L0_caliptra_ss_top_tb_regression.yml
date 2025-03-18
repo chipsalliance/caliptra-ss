@@ -6,7 +6,7 @@ contents:
       tags: ["L0", "caliptra_ss_top_tb"]
       path: ""
       weight: 100
-      generations: 1
+      generations: 60
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
