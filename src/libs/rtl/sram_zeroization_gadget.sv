@@ -90,7 +90,6 @@ module sram_zeroization_gadget #(
 
     always_comb begin
         sram_wr_data_out = (sram_zero_in_progress) ? {SRAM_DATA_WIDTH{1'b0}} : sram_wr_data_in;
-        sram_wr_addr_out = '0;
         sram_wr_addr_out = (sram_zero_in_progress) ? sram_zero_wr_addr : sram_wr_addr_in;
         sram_we_out   = sram_zero_in_progress || sram_we_in;
         sram_cs_out   = sram_zero_in_progress || sram_cs_in;

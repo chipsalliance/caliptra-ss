@@ -107,6 +107,7 @@ logic mbox_sram_zero_done;
 logic mbox_sram_zero_in_progress;
 
 logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_max_dlen;
+logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_sram_zero_end_addr_bytes;
 logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_sram_zero_end_addr;
 logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_sram_zero_wr_addr;
 logic [MCU_MBOX_SRAM_DATA_W-1:0] mcu_mbox_sram_wr_data;
@@ -230,13 +231,13 @@ always_ff @(posedge clk or negedge rst_b) begin
         mbox_max_dlen <= '0;
     end else begin
         mbox_max_dlen <= (hwif_out.mbox_dlen.length.value > mbox_max_dlen) ? hwif_out.mbox_dlen.length.value : mbox_max_dlen;
-
-
     end
 end
 
-assign mbox_sram_zero_end_addr = {2'b0, (mbox_max_dlen[MCU_MBOX_SRAM_ADDR_W-1:2]-1)};
-
+always_comb begin
+    mbox_sram_zero_end_addr_bytes = mbox_max_dlen - 1;
+    mbox_sram_zero_end_addr = {2'b0, mbox_sram_zero_end_addr_bytes[MCU_MBOX_SRAM_ADDR_W-1:2]};
+end
 
 // Release the mailbox one clock cycle after execute is cleared
 assign mbox_release = !hwif_out.mbox_execute.execute.value & execute_prev;  
