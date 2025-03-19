@@ -36,7 +36,7 @@ ABI = -mabi=ilp32 -march=rv32imc
 endif
 
 # Define test name
-TESTNAME ?= iccm_lock
+TESTNAME ?= mcu_hello_world
 TEST_DIR ?= $(CALIPTRA_SS)/src/integration/test_suites/$(TESTNAME)
 HEX_DIR = $(CALIPTRA_SS)/src/integration/test_suites/hex
 INCLUDES_DIR = $(CALIPTRA_SS)/src/integration/test_suites/includes
@@ -59,19 +59,11 @@ CALIPTRA_RTL = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/rtl
 #  TEST_DIR = $(TBDIR)/tests/$(TEST)
 #endif
 
-# Libraries providing functionality for each peripheral component in Caliptra
-# COMP_LIB_NAMES := aes \
-# 		  doe \
-# 		  ecc \
-# 		  hmac \
-# 		  keyvault \
-# 		  datavault \
-# 		  sha256 \
-# 		  sha512 \
-# 		  soc_ifc \
-# 		  clk_gate \
-# 		  wdt
-# COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(CALIPTRA_SS)/src/integration/test_suites/libs/$(name))
+# Libraries providing functionality for each peripheral component in Caliptra Subsystem
+COMP_LIB_NAMES := caliptra_ss_lib \
+		  fuse_ctrl \
+		  lc_ctrl
+COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
 		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
@@ -79,17 +71,7 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
-		$(LIBS_DIR)/caliptra_ss_lib.h \
-		$(LIBS_DIR)/fuse_ctrl.h \
-		$(LIBS_DIR)/lc_ctrl.h
-#		$(ISR_DIR)/riscv-csr.h \
-#		$(ISR_DIR)/riscv-interrupts.h \
-#		$(ISR_DIR)/veer-csr.h
-
-#$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
-#$(CALIPTRA_SS)/src/integration/rtl/caliptra_reg.h
-#$(INCLUDES_DIR)/caliptra_defines.h \
-#$(INCLUDES_DIR)/defines.h \
+		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
 TEST_GEN_FILES := $(CALIPTRA_SS)/src/ecc/tb/ecdsa_secp384r1.exe \
 	          $(CALIPTRA_SS)/src/doe/tb/doe_test_gen.py
@@ -100,24 +82,13 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILE_CRT := mcu_crt0.o
 endif
 OFILES += $(TESTNAME).o
-ifeq (0,$(shell test -e $(TEST_DIR)/caliptra_isr.h && echo $$?))
-	OFILES += caliptra_isr.o
-endif
 # Assume all C tests will import our printf lib, but not assembly
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += printf.o
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
-	OFILES += caliptra_ss_lib.o
+	OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
 endif
-ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
-	OFILES += fuse_ctrl.o
-endif
-ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
-	OFILES += lc_ctrl.o
-endif
-# Always compile the lib files - for every target
-# OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
 
 # Verilator trace format
 VERILATOR_TRACE=vcd
@@ -146,7 +117,7 @@ else
 endif
 
 # VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR) $(COMP_LIBS)
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(LIBS_DIR)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
 # $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
@@ -272,28 +243,29 @@ vcs-build: $(INCLUDES_DIR)/defines.h $(TB_DPI_SRCS)
 
 ############ TEST Simulation ###############################
 
-verilator: program.hex verilator-build
+verilator: mcu_program.hex verilator-build
 	./obj_dir/V$(DUT) $(VERILATOR_RUN_ARGS)
 
-vcs: program.hex vcs-build
+vcs: mcu_program.hex vcs-build
 	cp $(TEST_GEN_FILES) $(BUILD_DIR)
 	./simv.$(DUT)
 
 ############ TEST build ###############################
 
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
-program.hex: $(BUILD_DIR)/defines.h
+mcu_program.hex: $(BUILD_DIR)/defines.h
 	@echo " !!! No $(GCC_PREFIX)-gcc in path, using canned hex files !!"
-	cp $(HEX_DIR)/$(TESTNAME).hex program.hex
+	cp $(HEX_DIR)/$(TESTNAME).hex mcu_program.hex
 else ifneq (,$(wildcard $(TEST_DIR)/$(TESTNAME).makefile))
-program.hex:
+mcu_program.hex:
 	@echo Building $(TESTNAME) via $(TEST_DIR)/$(TESTNAME).makefile
 	$(MAKE) -f $(TEST_DIR)/$(TESTNAME).makefile
 else ifneq (,$(wildcard $(TEST_DIR)/$(TESTNAME)))
-# Build program.hex from RUST executable
-program.hex:
-	@echo "Building program.hex from $(TESTNAME) using Crypto Test rules for pre-compiled RUST executables"
-	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .bss -R .sbss -R .iccm -R .dccm -R .eh_frame --pad-to 0xC000 --gap-fill 0xFF --no-change-warnings $(TEST_DIR)/$(TESTNAME) program.hex
+# Build mcu_program.hex from RUST executable
+# TODO update this if/when we have pre-built binaries to test
+mcu_program.hex:
+	@echo "Building mcu_program.hex from $(TESTNAME) using rules for pre-compiled RUST executables"
+	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .bss -R .sbss -R .iccm -R .dccm -R .eh_frame --pad-to 0xC000 --gap-fill 0xFF --no-change-warnings $(TEST_DIR)/$(TESTNAME) mcu_program.hex
 	-$(GCC_PREFIX)-objcopy -O verilog -j .data -j .rodata -j .bss -j .sbss -j .dccm \
 			      --change-section-lma       .data-0x80000000 \
 			      --change-section-lma     .rodata-0x80000000 \
@@ -302,33 +274,22 @@ program.hex:
 			      --change-section-lma       .dccm-0x80000000 \
 			      --pad-to 0x20000 \
 			      --no-change-warnings \
-			      $(TEST_DIR)/$(TESTNAME) dccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -j .iccm                       --change-section-address .iccm=0 --pad-to 0x20000 --no-change-warnings $(TEST_DIR)/$(TESTNAME) iccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -j .mailbox --gap-fill 0x0     --change-section-address .mailbox=0 --pad-to 0x20000 --no-change-warnings $(TEST_DIR)/$(TESTNAME) mailbox.hex
+			      $(TEST_DIR)/$(TESTNAME) mcu_dccm.hex
 	$(GCC_PREFIX)-objdump -S  $(TEST_DIR)/$(TESTNAME) > $(TESTNAME).dis
 	$(GCC_PREFIX)-size        $(TEST_DIR)/$(TESTNAME) | tee $(TESTNAME).size
 
 else
-# # Build program.hex from source (test_suites)
-# program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
-# 	@echo Building $(TESTNAME)
-# 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
-# 	$(GCC_PREFIX)-objcopy -O verilog  mcu_hello_world.exe program.hex
-# 	$(GCC_PREFIX)-objdump -S  mcu_hello_world.exe > mcu_hello_world.dis
-# 	riscv64-unknown-elf-nm -B -n mcu_hello_world.exe > mcu_hello_world.sym
-# 	@echo Completed building $(TESTNAME)
-
 mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	@echo Building $(TESTNAME)
 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
-#	-$(GCC_PREFIX)-objcopy --dump-section .dccm=dccm_section.bin $(TESTNAME).exe
-#	-$(GCC_PREFIX)-objcopy -O verilog -I binary dccm_section.bin mcu_dccm.hex
+	#-$(GCC_PREFIX)-objcopy --dump-section .dccm=dccm_section.bin $(TESTNAME).exe
+	#-$(GCC_PREFIX)-objcopy -O verilog -I binary dccm_section.bin mcu_dccm.hex
 	-$(GCC_PREFIX)-objcopy -O verilog -j .dccm --change-section-lma .dccm-0x50000000 --pad-to 0x4000 --no-change-warnings $(TESTNAME).exe mcu_dccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000  --change-section-lma .text-0x80000000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -R .dccm -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000  --change-section-lma .text-0x80000000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0xC000  --no-change-warnings $(TESTNAME).exe mcu_program.bin
 	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21C00000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
-# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
-# $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+	# $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
 	$(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
 	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
@@ -380,13 +341,7 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	cp $(HEADER_FILES) $(BUILD_DIR)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 
-# # Specific rule for crt0.o
-# crt0.o: /home/ws/caliptra/pateln/caliptra-ss-int-ws-0723/caliptra-ss-int/integration/test_suites/libs/riscv_hw_if/crt0.s
-# 	$(GCC_PREFIX)-as $(ABI) -o $@ $<
-
 endif
-
-# $(GCC_PREFIX)-cpp $(includes) -I$(TEST_DIR)  $<  > $*.cpp.s
 
 help:
 	@echo Make sure the environment variable RV_ROOT is set.
