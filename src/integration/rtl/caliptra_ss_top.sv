@@ -751,7 +751,7 @@ module caliptra_ss_top
         .rst_l                  ( mcu_rst_b ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ), //FIXME same as caliptra?
         .clk                    ( cptra_ss_clk_i ),
-        .rst_vec                ( reset_vector[31:1]),
+        .rst_vec                ( cptra_ss_strap_mcu_reset_vector_i[31:1]), //reset_vector[31:1]),
         .nmi_int                ( mci_mcu_nmi_int),
         .nmi_vec                ( mci_mcu_nmi_vector[31:1]),
 
