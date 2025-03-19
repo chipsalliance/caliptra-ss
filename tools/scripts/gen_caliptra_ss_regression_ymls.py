@@ -63,7 +63,7 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
                 l0_match = (row["L0"] == criteria["L0"] or row["L0"] == "None")
                 logger.debug(f"L0 comparison: row[L0]={row['L0']} vs criteria[L0]={criteria['L0']}, match={l0_match}")
             
-            # Detailed matching logic with better logging
+            # Matching logic
             dir_rand_match = (row["Directed|Random"] == criteria["Directed|Random"] or row["Directed|Random"] == "None")
             nw_match = (row["Nightly|Weekly"] == criteria["Nightly|Weekly"] or criteria["Nightly|Weekly"] is None or 
                         criteria["Nightly|Weekly"] == "" or row["Nightly|Weekly"] == "None")
@@ -95,135 +95,245 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
     for item in filtered_data:
         logger.debug(f"  - {item['TestName']}")
 
-    # Adjust generations based on criteria
-    template_count = len(filtered_data)
-    if template_count > 0:
-        # For L0 or PromotePipeline, set generations equal to template count
-        if criteria.get("L0") == "L0" or criteria.get("PromotePipeline") == "Promote":
-            adjusted_generations = template_count
-            logger.info(f"Setting generations to {adjusted_generations} (match template count for L0 or PromotePipeline)")
-        else:
-            # For other criteria, set to 10x template count
-            adjusted_generations = max(generations, template_count * 10)
-            logger.info(f"Setting generations to {adjusted_generations} (10x template count)")
-        generations = adjusted_generations
-    else:
-        logger.warning(f"No templates matched for criteria: {criteria}")
-
-    # Prepare the YAML structure using CommentedMap and CommentedSeq for better control
-    tags = CommentedSeq([DoubleQuotedScalarString(criteria[key]) for key in ["L0", "L1", "DUT", "Directed|Random", "Nightly|Weekly"] if criteria[key] is not None])
-    
-    # Add OtherTags if it's not None
-    if criteria.get("OtherTags"):
-        tags.append(DoubleQuotedScalarString(criteria["OtherTags"]))
-    tags.fa.set_flow_style()
-
-    generator_data = CommentedMap()
-    generator_data['generator'] = CommentedMap()
-    generator_data['generator']['tags'] = tags
-    generator_data['generator']['path'] = DoubleQuotedScalarString("")
-    generator_data['generator']['weight'] = 100
-    generator_data['generator']['generations'] = generations
-    
-    # Use different formats based on PromotePipeline
-    if criteria.get("PromotePipeline") == "Promote":
-        generator_data['generator']['formats'] = CommentedMap([
-            ('generate', DoubleQuotedScalarString("reseed {template}.yml -seed 1")),
-            ('path', DoubleQuotedScalarString("{template_basename}__1.yml"))
-        ])
-    else:
-        generator_data['generator']['formats'] = CommentedMap([
-            ('generate', DoubleQuotedScalarString("reseed {template}.yml -seed {seed}")),
-            ('path', DoubleQuotedScalarString("{template_basename}__{seed}.yml"))
-        ])
-        
-
-    templates = CommentedMap()
-    for row in filtered_data:
-        template_path = row["TestName"]
-        templates[template_path] = CommentedMap([('weight', int(row["Weight"]))])
-        templates[template_path].fa.set_flow_style()
-
-    generator_data['generator']['templates'] = templates
-
-    # Add timeout if specified
-    if "timeout" in criteria:
-        generator_data["generator"]["config"] = {
-            "params": {
-                "timeout": criteria["timeout"]
-            }
-        }
-
-    # Wrap generator_data in a list for the contents section
-    contents = CommentedSeq([generator_data])
-    
-    # Create the final document structure
-    document = CommentedMap()
-    document["document"] = CommentedMap([('schema', 1.0)])  # Add schema version
-    document["contents"] = contents
-
+    # Create the new YAML structure for L0 Promote tests
     # Use ruamel.yaml for better control over YAML formatting
     yaml = YAML()
     yaml.default_flow_style = False
     yaml.indent(sequence=4, offset=2)
 
-    # Write the document to the file
-    with open(yml_file_path, mode='w', encoding='utf-8') as yml_file:
-        yaml.dump(document, yml_file)
-
-    # Log templates section for debugging
-    logger.debug(f"Templates in YAML: {pprint.pformat(templates)}")
-
-    # Post-process the generated YAML file to fix lines with question marks and extra colons
-    with open(yml_file_path, mode='r', encoding='utf-8') as yml_file:
-        lines = yml_file.readlines()
-
-    with open(yml_file_path, mode='w', encoding='utf-8') as yml_file:
-        previous_line = None
-        for line in lines:
-            logger.debug(f"Current line: {line}")
-            if line.strip().startswith('contents'):
-                yml_file.write('\n')
-                yml_file.write(line)
-            elif re.search(r'^\s*\?\s*', line):
-                logger.debug(f"Question mark line: {line}")
-                indent = re.match(r'^\s*', line).group(0)
-                line = re.sub(r'^\s*\?\s*', '', line)
-                previous_line = f'{indent}{line.rstrip()}'
-            elif re.search(r'^\s*\:\s*', line):
-                logger.debug(f"Colon line: {line}")
-                logger.debug(f"Previous line: {previous_line}")
-                indent = re.match(r'^\s*', line).group(0)
-                line = re.sub(r'^\s*\:\s*', '', line)
-                current_line = f'{indent}{line}'
-                yml_file.write(f'{previous_line}: {current_line}')
-                previous_line = None
-            elif re.search(r'\s+\{$', line):
-                indent = re.match(r'^\s*', line).group(0)
-                line = re.sub(r'^\s*', '', line)
-                previous_line = f'{indent}{line.rstrip()}'
-                logger.debug(f"Modified to {previous_line}")
-            elif re.search(r'^\s*weight', line) and previous_line is not None:
-                line = re.sub(r'^\s*', '', line)
-                yml_file.write(f'{previous_line} {line.rstrip()}\n')
-                previous_line = None
+    # Check if this is an L0 Promote regression
+    if criteria.get("L0") == "L0" and criteria.get("PromotePipeline") == "Promote":
+        # Create the new L0 Promote structure
+        document = CommentedMap()
+        document["document"] = CommentedMap([('schema', 1.0)])
+        
+        contents = CommentedSeq()
+        tests_map = CommentedMap()
+        
+        # Create tags list with flow style
+        tags = CommentedSeq(["L0"])  # L0 is always required for L0 Promote
+        
+        # Add tags from OtherTags
+        if criteria.get("OtherTags"):
+            existing_tags = set(tags)
+            other_tags = criteria["OtherTags"].split(',')
+            for tag in other_tags:
+                tag = tag.strip()
+                if tag and tag not in existing_tags:  # Skip empty tags and duplicates
+                    tags.append(tag)
+                    existing_tags.add(tag)
+        
+        # Set flow style for compact array notation
+        tags.fa.set_flow_style()
+        
+        tests_map["tags"] = tags
+        
+        # Create paths list
+        paths = CommentedSeq()
+        for row in filtered_data:
+            # Format the path properly
+            test_path = row["TestName"]
+            
+            # If the test path is in the format "ip_name/path/to/test.yml", 
+            # convert it to "../test_suites/path/to/test.yml"
+            if '/' in test_path:
+                # Skip the IP name part and use the rest of the path
+                test_parts = test_path.split('/', 3)
+                test_path = f"../{test_parts[3]}.yml"
             else:
-                if previous_line:
-                    yml_file.write(f'{previous_line}\n')
+                test_path = f"../test_suites/{test_path}"
+                if not (test_path.endswith('.yml') or test_path.endswith('.yaml')):
+                    test_path += '.yml'
+                
+            paths.append(test_path)
+        
+        tests_map["paths"] = paths
+        
+        # Add tests map to contents
+        tests_entry = CommentedMap()
+        tests_entry["tests"] = tests_map
+        contents.append(tests_entry)
+        
+        # Write the document to the file 
+        with open(yml_file_path, 'w', encoding='utf-8') as yml_file:
+            # Write document part
+            yml_file.write("document:\n")
+            yml_file.write("  schema: 1.0\n")
+            yml_file.write("\n")  # Extra line break
+            
+            # Write contents part
+            yml_file.write("contents:\n")
+            # Write tests-based format manually for L0 Promote
+            yml_file.write("  - tests:\n")
+            
+            # Write tags with flow style
+            yml_file.write("      tags: ")
+            yml_file.write(str(tags).replace("'", "\""))
+            yml_file.write("\n")
+            
+            # Write paths
+            yml_file.write("      paths:\n")
+            for path in paths:
+                yml_file.write(f"        - {path}\n")
+            
+    else:
+        # For non-L0 Promote, use the generator format
+        # Adjust generations based on criteria
+        template_count = len(filtered_data)
+        if template_count > 0:
+            adjusted_generations = max(generations, template_count * 10)
+            logger.info(f"Setting generations to {adjusted_generations} (10x template count)")
+            generations = adjusted_generations
+        else:
+            logger.warning(f"No templates matched for criteria: {criteria}")
+
+        # Prepare the YAML structure using CommentedMap and CommentedSeq for better control
+        tags = CommentedSeq([DoubleQuotedScalarString(criteria[key]) for key in ["L0", "L1", "DUT", "Directed|Random", "Nightly|Weekly"] if criteria[key] is not None])
+        
+        # Add OtherTags if it's not None
+        if criteria.get("OtherTags"):
+            tags.append(DoubleQuotedScalarString(criteria["OtherTags"]))
+        tags.fa.set_flow_style()
+
+        generator_data = CommentedMap()
+        generator_data['generator'] = CommentedMap()
+        generator_data['generator']['tags'] = tags
+        generator_data['generator']['path'] = DoubleQuotedScalarString("")
+        generator_data['generator']['weight'] = 100
+        generator_data['generator']['generations'] = generations
+        
+        # Use different formats based on PromotePipeline
+        if criteria.get("PromotePipeline") == "Promote":
+            generator_data['generator']['formats'] = CommentedMap([
+                ('generate', DoubleQuotedScalarString("reseed {template}.yml -seed 1")),
+                ('path', DoubleQuotedScalarString("{template_basename}__1.yml"))
+            ])
+        else:
+            generator_data['generator']['formats'] = CommentedMap([
+                ('generate', DoubleQuotedScalarString("reseed {template}.yml -seed {seed}")),
+                ('path', DoubleQuotedScalarString("{template_basename}__{seed}.yml"))
+            ])
+            
+        templates = CommentedMap()
+        for row in filtered_data:
+            template_path = row["TestName"]
+            templates[template_path] = CommentedMap([('weight', int(row["Weight"]))])
+            templates[template_path].fa.set_flow_style()
+
+        generator_data['generator']['templates'] = templates
+
+        # Add timeout if specified
+        if "timeout" in criteria:
+            generator_data["generator"]["config"] = {
+                "params": {
+                    "timeout": criteria["timeout"]
+                }
+            }
+
+        # Wrap generator_data in a list for the contents section
+        contents = CommentedSeq([generator_data])
+        
+        # Create the final document structure
+        document = CommentedMap()
+        document["document"] = CommentedMap([('schema', 1.0)])  # Add schema version
+        document["contents"] = contents
+
+        # Write the document to the file 
+        with open(yml_file_path, mode='w', encoding='utf-8') as yml_file:
+            # Write document part
+            yml_file.write("document:\n")
+            yml_file.write("  schema: 1.0\n")
+            #yml_file.write("\n")  # Extra line break
+            
+            # Write contents part
+            yml_file.write("contents:\n")
+            # Write generator-based format manually
+            yml_file.write("  - generator:\n")
+            
+            # Write tags
+            yml_file.write("      tags: ")
+            yml_file.write(str(generator_data['generator']['tags']).replace("'", "\""))
+            yml_file.write("\n")
+            
+            # Write path
+            yml_file.write(f"      path: \"{generator_data['generator']['path']}\"\n")
+            
+            # Write weight
+            yml_file.write(f"      weight: {generator_data['generator']['weight']}\n")
+            
+            # Write generations
+            yml_file.write(f"      generations: {generator_data['generator']['generations']}\n")
+            
+            # Write formats
+            yml_file.write("      formats:\n")
+            for key, value in generator_data['generator']['formats'].items():
+                yml_file.write(f"        {key}: \"{value}\"\n")
+            
+            # Write templates
+            yml_file.write("      templates:\n")
+            for template_path, template_config in generator_data['generator']['templates'].items():
+                yml_file.write(f"        {template_path}: {{ weight: {template_config['weight']} }}\n")
+            
+            # Write config if present
+            if 'config' in generator_data['generator']:
+                yml_file.write("      config:\n")
+                yml_file.write("        params:\n")
+                yml_file.write(f"          timeout: {generator_data['generator']['config']['params']['timeout']}\n")
+
+        # Log templates section for debugging
+        logger.debug(f"Templates in YAML: {pprint.pformat(templates)}")
+
+        # Post-process the generated YAML file to fix lines with question marks and extra colons
+        with open(yml_file_path, mode='r', encoding='utf-8') as yml_file:
+            lines = yml_file.readlines()
+
+        with open(yml_file_path, mode='w', encoding='utf-8') as yml_file:
+            previous_line = None
+            for line in lines:
+                logger.debug(f"Current line: {line}")
+                if line.strip().startswith('contents'):
+                    yml_file.write('\n')
+                    yml_file.write(line)
+                elif re.search(r'^\s*\?\s*', line):
+                    logger.debug(f"Question mark line: {line}")
+                    indent = re.match(r'^\s*', line).group(0)
+                    line = re.sub(r'^\s*\?\s*', '', line)
+                    previous_line = f'{indent}{line.rstrip()}'
+                elif re.search(r'^\s*\:\s*', line):
+                    logger.debug(f"Colon line: {line}")
+                    logger.debug(f"Previous line: {previous_line}")
+                    indent = re.match(r'^\s*', line).group(0)
+                    line = re.sub(r'^\s*\:\s*', '', line)
+                    current_line = f'{indent}{line}'
+                    yml_file.write(f'{previous_line}: {current_line}')
                     previous_line = None
-                yml_file.write(line)
+                elif re.search(r'\s+\{$', line):
+                    indent = re.match(r'^\s*', line).group(0)
+                    line = re.sub(r'^\s*', '', line)
+                    previous_line = f'{indent}{line.rstrip()}'
+                    logger.debug(f"Modified to {previous_line}")
+                elif re.search(r'^\s*weight', line) and previous_line is not None:
+                    line = re.sub(r'^\s*', '', line)
+                    yml_file.write(f'{previous_line} {line.rstrip()}\n')
+                    previous_line = None
+                else:
+                    if previous_line:
+                        yml_file.write(f'{previous_line}\n')
+                        previous_line = None
+                    yml_file.write(line)
 
 def scan_test_suites(caliptra_ss):
-    """
-    Scan through all src/<ip>/test_suites/ directories and print a list of all test names,
-    excluding 'includes' and 'libs' directories.
-    
-    Args:
-        caliptra_ss (str): The root directory of the Caliptra project
-    
-    Returns:
-        list: A list of all test names found
-    """
+    ############################################################################
+    # Scan through all src/<ip>/test_suites/ directories and print a list of all test names,
+    # excluding 'includes' and 'libs' directories.
+    #
+    # Args:
+    #    caliptra_ss (str): The root directory of the Caliptra project
+    #
+    # Returns:
+    #    list: A list of all test names found
+    #############################################################################
+
     logger.info("Scanning for test suites...")
     
     # Create the pattern to match src/<ip>/test_suites/ directories
@@ -294,7 +404,7 @@ if __name__ == "__main__":
         logger.error(f"Error reading CSV file: {e}")
 
     combinations = [
-        {"Directed|Random": None, "Nightly|Weekly": None, "L0": "L0", "L1": None, "DUT": "caliptra_ss_top_tb", "PromotePipeline": "Promote"},
+        {"Directed|Random": None, "Nightly|Weekly": None, "L0": "L0", "L1": None, "DUT": "caliptra_ss_top_tb", "PromotePipeline": "Promote", "OtherTags": "Lop_regression,top_regression"},  
         {"Directed|Random": "Directed", "Nightly|Weekly": "Nightly", "L0": None, "L1": "L1", "DUT": "caliptra_ss_top_tb", "PromotePipeline": None},
     ]
 

@@ -2,18 +2,12 @@ document:
   schema: 1.0
 
 contents:
-  - generator:
-      tags: ["L0", "caliptra_ss_top_tb"]
-      path: ""
-      weight: 100
-      generations: 6
-      formats:
-        generate: "reseed {template}.yml -seed 1"
-        path: "{template_basename}__1.yml"
-      templates:
-        $CALIPTRA_SS/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup: { weight: 100}
-        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation: { weight: 100}
-        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock: { weight: 100}
-        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens: { weight: 100}
-        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_random_item_prov/smoke_test_fc_random_item_prov: { weight: 100}
-        $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_registers/smoke_test_fc_registers: { weight: 100}
+  - tests:
+      tags: ["L0", "Lop_regression", "top_regression"]
+      paths:
+        - ../test_suites/mcu_cptra_bringup/mcu_cptra_bringup.yml
+        - ../test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation.yml
+        - ../test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock.yml
+        - ../test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens.yml
+        - ../test_suites/smoke_test_fc_random_item_prov/smoke_test_fc_random_item_prov.yml
+        - ../test_suites/smoke_test_fc_registers/smoke_test_fc_registers.yml
