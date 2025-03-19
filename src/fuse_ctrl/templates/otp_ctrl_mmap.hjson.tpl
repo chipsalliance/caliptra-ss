@@ -1,9 +1,3 @@
-// Licensed under the Apache License, Version 2.0, see LICENSE for details.
-// SPDX-License-Identifier: Apache-2.0
-//
-// Use the gen-otp-mmap.py script to update dependent files (like documentation
-// tables the comportable hjson and metadata SV package):
-
 {
     // 256 bit seed to be used for generation of partition item default values.
     // Can be overridden on the command line with the --seed switch.
@@ -80,7 +74,7 @@
             key_sel:      "SecretTestUnlockKey",
             integrity:    true,
             bkout_type:   true,
-            lc_state_idx: 16,
+            lc_phase:     "LcStDev",
             items: [
                 {
                     name: "CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN",
@@ -104,7 +98,7 @@
             key_sel:      "SecretManufKey",
             integrity:    true,
             bkout_type:   true,
-            lc_state_idx: 16,
+            lc_phase:     "LcStDev",
             items: [
                 {
                     name: "CPTRA_CORE_UDS_SEED",
@@ -130,7 +124,7 @@
             key_sel:      "SecretProdKey0",
             integrity:    true,
             bkout_type:   true,
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_0",
@@ -156,7 +150,7 @@
             key_sel:      "SecretProdKey1",
             integrity:    true,
             bkout_type:   true,
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_1",
@@ -182,7 +176,7 @@
             key_sel:      "SecretProdKey2",
             integrity:    true,
             bkout_type:   true,
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_2",
@@ -208,7 +202,7 @@
             key_sel:      "SecretProdKey3",
             integrity:    true,
             bkout_type:   true,
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_3",
@@ -235,7 +229,7 @@
             key_sel:      "NoKey",
             integrity:    true,
             bkout_type:   false,
-            lc_state_idx: 16,
+            lc_phase:     "LcStDev",
             items: [
                 {
                     name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
@@ -292,7 +286,7 @@
             key_sel:      "SecretLifeCycleTransitionKey",
             integrity:    true,
             bkout_type:   false,
-            lc_state_idx: 16,
+            lc_phase:     "LcStDev",
             items: [
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_0",
@@ -376,7 +370,7 @@
             // Integrity is handled at a higher level by SW as described below.
             integrity:    false,
             bkout_type:   false,
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FMC_KEY_MANIFEST_SVN",
@@ -422,7 +416,7 @@
             key_sel:      "NoKey",
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "VENDOR_TEST",
@@ -451,7 +445,7 @@
             key_sel:      "NoKey",
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_0",
@@ -482,7 +476,7 @@
             key_sel:      "NoKey",
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [    
     % for i in range(1, num_vendor_pk_fuses):               
                 {
@@ -523,7 +517,7 @@
             key_sel:      "NoKey",
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
     % for i in range(num_vendor_pk_fuses):  
                 {
@@ -565,7 +559,7 @@
             key_sel:      "VendorSecretProdKey",
             integrity:    true,
             bkout_type:   true,
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
     % for i in range(num_vendor_secret_fuses):
                 {
@@ -594,7 +588,7 @@
             key_sel:      "NoKey",
             integrity:    true,
             bkout_type:   false,
-            lc_state_idx: 17,
+            lc_phase:     "LcStProd",
             items: [
     % for i in range(num_vendor_non_secret_fuses):
                {
@@ -623,7 +617,7 @@
             key_sel:      "NoKey",
             integrity:    true,
             bkout_type:   false,
-            lc_state_idx: 0,
+            lc_phase:     "LcStRaw",
             items: [
                 // The life cycle transition count is specified
                 // first such that any programming attempt of the life cycle

@@ -373,7 +373,7 @@ module otp_ctrl
   dai_cmd_e                     dai_cmd;
   logic [OtpByteAddrWidth-1:0]  dai_addr;
 
-  int lc_state_idx;
+  logic [lc_ctrl_state_pkg::DecLcStateWidth-1:0] lc_state_idx;
 
   // SEC_CM: ACCESS.CTRL.MUBI
   part_access_t [NumPart-1:0] part_access_pre, part_access;
@@ -428,7 +428,7 @@ module otp_ctrl
 
     // Write-lock partitions whose LC phase has expired.
     for (int k = 0; k < NumPart-1; k++) begin
-      if ((lc_state_idx == 0) || (lc_state_idx > PartInfo[k].lc_state_idx)) begin
+      if ((lc_state_idx == 0) || (lc_state_idx > PartInfo[k].lc_phase)) begin
         part_access_pre[k].write_lock = MuBi8True;
       end
     end
@@ -1354,14 +1354,14 @@ end
     otp_broadcast_FIPS_checked.valid = otp_broadcast_valid_q;
   end
 
-  int test_unlock_token_idx;
-  assign test_unlock_token_idx = otp_lc_data_o.state == lc_ctrl_state_pkg::LcStRaw           ? CptraSsTestUnlockToken0Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked0 ? CptraSsTestUnlockToken1Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked1 ? CptraSsTestUnlockToken2Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked2 ? CptraSsTestUnlockToken3Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked3 ? CptraSsTestUnlockToken4Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked4 ? CptraSsTestUnlockToken5Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked5 ? CptraSsTestUnlockToken6Offset : CptraSsTestUnlockToken7Offset;
+  logic [31:0] test_unlock_token_idx;
+  assign test_unlock_token_idx = otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked0 ? CptraSsTestUnlockToken0Offset : 
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked1 ? CptraSsTestUnlockToken1Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked2 ? CptraSsTestUnlockToken2Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked3 ? CptraSsTestUnlockToken3Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked4 ? CptraSsTestUnlockToken4Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked5 ? CptraSsTestUnlockToken5Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked6 ? CptraSsTestUnlockToken6Offset : '0;
 
   assign otp_lc_data_o.test_unlock_token = part_buf_data[test_unlock_token_idx +:
                                                          CptraSsTestUnlockToken0Size];

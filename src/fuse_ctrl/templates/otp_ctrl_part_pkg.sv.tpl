@@ -1,9 +1,3 @@
-// Copyright lowRISC contributors (OpenTitan project).
-// Licensed under the Apache License, Version 2.0, see LICENSE for details.
-// SPDX-License-Identifier: Apache-2.0
-//
-// Package partition metadata.
-//
 ${gen_comment}
 
 <%
@@ -14,6 +8,7 @@ package otp_ctrl_part_pkg;
   import caliptra_prim_util_pkg::vbits;
   import otp_ctrl_reg_pkg::*;
   import otp_ctrl_pkg::*;
+  import lc_ctrl_state_pkg::*;
 
   parameter int NumVendorPkFuses = ${num_vendor_pk_fuses};
   parameter int NumVendorSecretFuses = ${num_vendor_secret_fuses};
@@ -115,7 +110,7 @@ package otp_ctrl_part_pkg;
     logic iskeymgr_owner;   // Whether the partition has any owner key material
     // Decoded LC state index. A partition can be written as long this index is
     // smaller or equal the current state index of the LC (see `dec_lc_state_e`).
-    int lc_state_idx;
+    logic [DecLcStateWidth-1:0] lc_phase;
   } part_info_t;
 
   parameter part_info_t PartInfoDefault = '{
@@ -131,7 +126,7 @@ package otp_ctrl_part_pkg;
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0,
-      lc_state_idx:     0
+      lc_phase:         DecLcStRaw
   };
 
   ////////////////////////
@@ -154,7 +149,7 @@ package otp_ctrl_part_pkg;
       integrity:        1'b${"1" if part["integrity"] else "0"},
       iskeymgr_creator: 1'b${"1" if part["iskeymgr_creator"] else "0"},
       iskeymgr_owner:   1'b${"1" if part["iskeymgr_owner"] else "0"},
-      lc_state_idx:     ${part["lc_state_idx"]}
+      lc_phase:         ${"Dec"+part["lc_phase"]}
     }${"" if loop.last else ","}
 % endfor
   };

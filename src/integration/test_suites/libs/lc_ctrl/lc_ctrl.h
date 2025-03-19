@@ -19,13 +19,44 @@
 
 #include <stdint.h>
 
+typedef enum {
+    RAW            = 0,
+    TEST_UNLOCKED0 = 1,
+    TEST_LOCKED0   = 2,
+    TEST_UNLOCKED1 = 3,
+    TEST_LOCKED1   = 4,
+    TEST_UNLOCKED2 = 5,
+    TEST_LOCKED2   = 6,
+    TEST_UNLOCKED3 = 7,
+    TEST_LOCKED3   = 8,
+    TEST_UNLOCKED4 = 9,
+    TEST_LOCKED4   = 10,
+    TEST_UNLOCKED5 = 11,
+    TEST_LOCKED5   = 12,
+    TEST_UNLOCKED6 = 13,
+    TEST_LOCKED6   = 14,
+    TEST_UNLOCKED7 = 15,
+    MANUF          = 16,
+    PROD           = 17,
+    PROD_END       = 18,
+    RMA            = 19,
+    SCRAP          = 20
+} lc_state_dec_t;
+
+uint32_t raw_unlock_token[4] = {
+    0xef1fadea, 0xadfc9693, 0x421748a2, 0xf12a5911
+};
+
 void lcc_initialization(void);
 
 void sw_transition_req(uint32_t next_lc_state,
-                        uint32_t token_127_96,
-                        uint32_t token_95_64,
-                        uint32_t token_63_32,
                         uint32_t token_31_0,
+                        uint32_t token_63_32,
+                        uint32_t token_95_64,
+                        uint32_t token_127_96,
                         uint32_t conditional);
+                        
+uint32_t calc_lc_state_mnemonic(uint32_t state);
+void transition_state(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
 
 #endif // LC_CTRL_H

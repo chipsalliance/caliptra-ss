@@ -17,6 +17,7 @@
 #ifndef CALIPTRA_SS_LIB
 #define CALIPTRA_SS_LIB
 
+void xorshift32(uint32_t *state); 
 void reset_rtl(void);
 void mcu_mci_boot_go();
 void mcu_cptra_fuse_init();

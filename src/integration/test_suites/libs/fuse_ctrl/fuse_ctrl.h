@@ -33,4 +33,6 @@ void dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularit
 void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_mask);
 void wait_dai_op_idle(uint32_t exp_mask);
 
+void calculate_digest(uint32_t partition_base_address);
+
 #endif // FUSE_CTRL_H
