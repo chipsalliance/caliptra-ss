@@ -55,6 +55,8 @@ requires:
   - axi_mem_pkg
   - caliptra_ss_top
   - lc_ctrl
+  - ast_pkg
+  - fuse_ctrl_pkg
   - caliptra_top_tb_pkg
   - avery_vip
 targets:
@@ -77,6 +79,7 @@ targets:
       - $COMPILE_ROOT/testbench/aaxi_pkg_caliptra_test.sv
       - $COMPILE_ROOT/testbench/aaxi4_interconnect.sv
       - $COMPILE_ROOT/testbench/fuse_ctrl_bfm.sv
+      - $COMPILE_ROOT/testbench/prim_generic_otp.sv
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]

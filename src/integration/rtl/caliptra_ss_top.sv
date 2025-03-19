@@ -190,6 +190,8 @@ module caliptra_ss_top
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
     input  tlul_pkg::tl_h2d_t                          cptra_ss_fuse_macro_prim_tl_i,
     output tlul_pkg::tl_d2h_t                          cptra_ss_fuse_macro_prim_tl_o,
+    input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
+    output otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o,
    
 // Caliptra SS I3C GPIO Interface
 `ifdef DIGITAL_IO_I3C
@@ -1362,6 +1364,8 @@ module caliptra_ss_top
         
         .prim_tl_i                  (cptra_ss_fuse_macro_prim_tl_i),
         .prim_tl_o                  (cptra_ss_fuse_macro_prim_tl_o),
+        .prim_generic_otp_outputs_i (cptra_ss_fuse_macro_outputs_i),
+        .prim_generic_otp_inputs_o  (cptra_ss_fuse_macro_inputs_o),
 
         .intr_otp_operation_done_o  (intr_otp_operation_done),
         .intr_otp_error_o           (fc_intr_otp_error), //TODO: This signal should be connected to MCI

@@ -1577,6 +1577,14 @@ module caliptra_ss_top_tb
         .rdata_o (        )
     );
 
+
+  //-------------------------------------------------------------------------
+  // Aggregated signals for the OTP macro interface.
+  // These signals will connect both to caliptra_ss_top ports and to prim_generic_otp.
+  //-------------------------------------------------------------------------
+  otp_ctrl_pkg::prim_generic_otp_outputs_t cptra_ss_fuse_macro_outputs_tb;
+  otp_ctrl_pkg::prim_generic_otp_inputs_t  cptra_ss_fuse_macro_inputs_tb;
+
    // driven by lc_ctrl_bfm
    logic cptra_ss_lc_esclate_scrap_state0_i;
    logic cptra_ss_lc_esclate_scrap_state1_i;
@@ -1702,6 +1710,54 @@ module caliptra_ss_top_tb
         .lc_check_byp_en_i   (),
         .otp_lc_data_o (caliptra_ss_dut.u_otp_ctrl.otp_lc_data_o),
         .fuse_ctrl_rdy       (fuse_ctrl_rdy       )
+    );
+
+
+    prim_generic_otp #(
+        .Width            ( otp_ctrl_pkg::OtpWidth            ),
+        .Depth            ( otp_ctrl_pkg::OtpDepth            ),
+        .SizeWidth        ( otp_ctrl_pkg::OtpSizeWidth        ),
+        .PwrSeqWidth      ( otp_ctrl_pkg::OtpPwrSeqWidth      ),
+        .TestCtrlWidth    ( otp_ctrl_pkg::OtpTestCtrlWidth    ),
+        .TestStatusWidth  ( otp_ctrl_pkg::OtpTestStatusWidth  ),
+        .TestVectWidth    ( otp_ctrl_pkg::OtpTestVectWidth    ),
+        .MemInitFile      ("otp-img.2048.vmem"                  ),
+        .VendorTestOffset ( otp_ctrl_reg_pkg::VendorTestOffset    ),
+        .VendorTestSize   ( otp_ctrl_reg_pkg::VendorTestSize      )
+    ) u_otp (
+        // Clock and Reset
+        .clk_i          ( cptra_ss_fuse_macro_inputs_tb.clk_i ),
+        .rst_ni         ( cptra_ss_fuse_macro_inputs_tb.rst_ni ),
+        // Observability controls to/from AST
+        .obs_ctrl_i     ( cptra_ss_fuse_macro_inputs_tb.obs_ctrl_i ),
+        .otp_obs_o      ( cptra_ss_fuse_macro_outputs_tb.otp_obs_o ),
+        // Power sequencing signals to/from AST
+        .pwr_seq_o      ( cptra_ss_fuse_macro_outputs_tb.pwr_seq_o ),
+        .pwr_seq_h_i    ( cptra_ss_fuse_macro_inputs_tb.pwr_seq_h_i ),
+        // Test interface
+        .test_ctrl_i    ( cptra_ss_fuse_macro_inputs_tb.test_ctrl_i ),
+        .test_status_o  ( cptra_ss_fuse_macro_outputs_tb.test_status_o ),
+        .test_vect_o    ( cptra_ss_fuse_macro_outputs_tb.test_vect_o ),
+        .test_tl_i      ( cptra_ss_fuse_macro_inputs_tb.test_tl_i ),
+        .test_tl_o      ( cptra_ss_fuse_macro_outputs_tb.test_tl_o ),
+        // Other DFT signals
+        .scanmode_i     ( cptra_ss_fuse_macro_inputs_tb.scanmode_i ),
+        .scan_en_i      ( cptra_ss_fuse_macro_inputs_tb.scan_en_i ),
+        .scan_rst_ni    ( cptra_ss_fuse_macro_inputs_tb.scan_rst_ni ),
+        // Alert signals
+        .fatal_alert_o  ( cptra_ss_fuse_macro_outputs_tb.fatal_alert_o ),
+        .recov_alert_o  ( cptra_ss_fuse_macro_outputs_tb.recov_alert_o ),
+        // Ready/valid handshake and command interface
+        .ready_o        ( cptra_ss_fuse_macro_outputs_tb.ready_o ),
+        .valid_i        ( cptra_ss_fuse_macro_inputs_tb.valid_i ),
+        .size_i         ( cptra_ss_fuse_macro_inputs_tb.size_i ),
+        .cmd_i          ( cptra_ss_fuse_macro_inputs_tb.cmd_i ),
+        .addr_i         ( cptra_ss_fuse_macro_inputs_tb.addr_i ),
+        .wdata_i        ( cptra_ss_fuse_macro_inputs_tb.wdata_i ),
+        // Response channel
+        .valid_o        ( cptra_ss_fuse_macro_outputs_tb.valid_o ),
+        .rdata_o        ( cptra_ss_fuse_macro_outputs_tb.rdata_o ),
+        .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
     );
 
     // --- I3C env and interface ---
@@ -1978,6 +2034,8 @@ module caliptra_ss_top_tb
 
         .cptra_ss_fuse_macro_prim_tl_i('0),
         .cptra_ss_fuse_macro_prim_tl_o(),
+        .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
+        .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
     
     // I3C Interface
     `ifdef DIGITAL_IO_I3C

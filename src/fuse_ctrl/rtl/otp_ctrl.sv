@@ -44,6 +44,9 @@ module otp_ctrl
   input  tlul_pkg::tl_h2d_t                          prim_tl_i,
   output tlul_pkg::tl_d2h_t                          prim_tl_o,
 
+  input prim_generic_otp_outputs_t                  prim_generic_otp_outputs_i,
+  output prim_generic_otp_inputs_t                  prim_generic_otp_inputs_o,
+
   // Interrupt Requests
   output logic                                       intr_otp_operation_done_o,
   output logic                                       intr_otp_error_o,
@@ -891,53 +894,49 @@ end
   assign cio_test_en_o = (lc_ctrl_pkg::lc_tx_test_true_strict(lc_dft_en[2])) ?
                          {OtpTestVectWidth{1'b1}} : '0;
 
-  // SEC_CM: MACRO.MEM.CM, MACRO.MEM.INTEGRITY
-  prim_generic_otp #(
-    .Width            ( OtpWidth            ),
-    .Depth            ( OtpDepth            ),
-    .SizeWidth        ( OtpSizeWidth        ),
-    .PwrSeqWidth      ( OtpPwrSeqWidth      ),
-    .TestCtrlWidth    ( OtpTestCtrlWidth    ),
-    .TestStatusWidth  ( OtpTestStatusWidth  ),
-    .TestVectWidth    ( OtpTestVectWidth    ),
-    .MemInitFile      ( MemInitFile         ),
-    .VendorTestOffset ( VendorTestOffset    ),
-    .VendorTestSize   ( VendorTestSize      )
-  ) u_otp (
-    .clk_i,
-    .rst_ni,
-    // Observability controls to/from AST
-    .obs_ctrl_i,
-    .otp_obs_o,
-    // Power sequencing signals to/from AST
-    .pwr_seq_o        ( otp_ast_pwr_seq_o.pwr_seq     ),
-    .pwr_seq_h_i      ( otp_ast_pwr_seq_h_i.pwr_seq_h ),
-    .ext_voltage_io   ( otp_ext_voltage_h_io          ),
-    // Test interface
-    .test_ctrl_i      ( lc_otp_vendor_test_i.ctrl     ),
-    .test_status_o    ( lc_otp_vendor_test_o.status   ),
-    .test_vect_o      ( otp_test_vect                 ),
-    .test_tl_i        ( prim_tl_h2d_gated             ),
-    .test_tl_o        ( prim_tl_d2h_gated             ),
+
+  always_comb begin : FCM_port_assignment
+    // Clock, reset and observability
+    prim_generic_otp_inputs_o.clk_i      = clk_i;
+    prim_generic_otp_inputs_o.rst_ni     = rst_ni;
+    prim_generic_otp_inputs_o.obs_ctrl_i = obs_ctrl_i;
+    otp_obs_o                          = prim_generic_otp_outputs_i.otp_obs_o;
+    
+    // Power sequencing signals
+    prim_generic_otp_inputs_o.pwr_seq_h_i = otp_ast_pwr_seq_h_i.pwr_seq_h;
+    otp_ast_pwr_seq_o.pwr_seq            = prim_generic_otp_outputs_i.pwr_seq_o;
+    
+    // Test interface signals
+    prim_generic_otp_inputs_o.test_ctrl_i = lc_otp_vendor_test_i.ctrl;
+    prim_generic_otp_inputs_o.test_tl_i   = prim_tl_h2d_gated;
+    lc_otp_vendor_test_o.status          = prim_generic_otp_outputs_i.test_status_o;
+    otp_test_vect                        = prim_generic_otp_outputs_i.test_vect_o;
+    prim_tl_d2h_gated                    = prim_generic_otp_outputs_i.test_tl_o;
+    
     // Other DFT signals
-    .scan_en_i,
-    .scan_rst_ni,
-    .scanmode_i,
-    // Alerts
-    .fatal_alert_o    ( fatal_prim_otp_alert ),
-    .recov_alert_o    ( recov_prim_otp_alert ),
-    // Read / Write command interface
-    .ready_o          ( otp_prim_ready       ),
-    .valid_i          ( otp_prim_valid       ),
-    .cmd_i            ( otp_arb_bundle.cmd   ),
-    .size_i           ( otp_arb_bundle.size  ),
-    .addr_i           ( otp_arb_bundle.addr  ),
-    .wdata_i          ( otp_arb_bundle.wdata ),
-    // Read data out
-    .valid_o          ( otp_rvalid           ),
-    .rdata_o          ( part_otp_rdata       ),
-    .err_o            ( part_otp_err         )
-  );
+    prim_generic_otp_inputs_o.scanmode_i  = scanmode_i;
+    prim_generic_otp_inputs_o.scan_en_i   = scan_en_i;
+    prim_generic_otp_inputs_o.scan_rst_ni = scan_rst_ni;
+    
+    // Command interface (read/write)
+    prim_generic_otp_inputs_o.valid_i  = otp_prim_valid;
+    prim_generic_otp_inputs_o.size_i   = otp_arb_bundle.size;
+    prim_generic_otp_inputs_o.cmd_i    = otp_arb_bundle.cmd;
+    prim_generic_otp_inputs_o.addr_i   = otp_arb_bundle.addr;
+    prim_generic_otp_inputs_o.wdata_i  = otp_arb_bundle.wdata;
+    
+    // Ready/Response signals
+    otp_prim_ready      = prim_generic_otp_outputs_i.ready_o;
+    otp_rvalid          = prim_generic_otp_outputs_i.valid_o;
+    part_otp_rdata      = prim_generic_otp_outputs_i.rdata_o;
+    part_otp_err        = prim_generic_otp_outputs_i.err_o;
+    
+    // Alert signals
+    fatal_prim_otp_alert = prim_generic_otp_outputs_i.fatal_alert_o;
+    recov_prim_otp_alert = prim_generic_otp_outputs_i.recov_alert_o;
+  end
+  
+
 
   logic otp_fifo_valid;
   logic [vbits(NumAgents)-1:0] otp_part_idx;
