@@ -189,7 +189,7 @@ module caliptra_wrapper_top #(
     output wire S_AXI_MCU_ROM_RVALID,
     input  wire S_AXI_MCU_ROM_RREADY,
 
-    // MCI M_AXI Interface
+    // MCI M_AXI Interface - Remove
     output  wire [31:0] M_AXI_MCI_AWADDR,
     output  wire [1:0] M_AXI_MCI_AWBURST,
     output  wire [2:0] M_AXI_MCI_AWSIZE,
@@ -331,7 +331,7 @@ module caliptra_wrapper_top #(
     input	wire                      S_AXI_I3C_WVALID,
     output	wire                      S_AXI_I3C_WREADY,
     input	wire [31:0]               S_AXI_I3C_WDATA,
-    input	wire [7:0]                S_AXI_I3C_WSTRB,
+    input	wire [3:0]                S_AXI_I3C_WSTRB,
     output	wire                      S_AXI_I3C_BVALID,
     input	wire                      S_AXI_I3C_BREADY,
     output	wire [1:0]                S_AXI_I3C_BRESP,
@@ -368,8 +368,8 @@ module caliptra_wrapper_top #(
     input	wire [2:0]                S_AXI_LCC_AWPROT,
     input	wire                      S_AXI_LCC_WVALID,
     output	wire                      S_AXI_LCC_WREADY,
-    input	wire [63:0]               S_AXI_LCC_WDATA,
-    input	wire [7:0]                S_AXI_LCC_WSTRB,
+    input	wire [31:0]               S_AXI_LCC_WDATA,
+    input	wire [3:0]                S_AXI_LCC_WSTRB,
     output	wire                      S_AXI_LCC_BVALID,
     input	wire                      S_AXI_LCC_BREADY,
     output	wire [1:0]                S_AXI_LCC_BRESP,
@@ -379,7 +379,7 @@ module caliptra_wrapper_top #(
     input	wire [2:0]                S_AXI_LCC_ARPROT,
     output	wire                      S_AXI_LCC_RVALID,
     input	wire                      S_AXI_LCC_RREADY,
-    output	wire [63:0]               S_AXI_LCC_RDATA,
+    output	wire [31:0]               S_AXI_LCC_RDATA,
     output	wire [1:0]                S_AXI_LCC_RRESP,
     
     input wire [1:0] S_AXI_LCC_ARBURST,
@@ -406,8 +406,8 @@ module caliptra_wrapper_top #(
     input	wire [2:0]                S_AXI_OTP_AWPROT,
     input	wire                      S_AXI_OTP_WVALID,
     output	wire                      S_AXI_OTP_WREADY,
-    input	wire [63:0]               S_AXI_OTP_WDATA,
-    input	wire [7:0]                S_AXI_OTP_WSTRB,
+    input	wire [31:0]               S_AXI_OTP_WDATA,
+    input	wire [3:0]                S_AXI_OTP_WSTRB,
     output	wire                      S_AXI_OTP_BVALID,
     input	wire                      S_AXI_OTP_BREADY,
     output	wire [1:0]                S_AXI_OTP_BRESP,
@@ -417,7 +417,7 @@ module caliptra_wrapper_top #(
     input	wire [2:0]                S_AXI_OTP_ARPROT,
     output	wire                      S_AXI_OTP_RVALID,
     input	wire                      S_AXI_OTP_RREADY,
-    output	wire [63:0]               S_AXI_OTP_RDATA,
+    output	wire [31:0]               S_AXI_OTP_RDATA,
     output	wire [1:0]                S_AXI_OTP_RRESP,
     
     input wire [1:0] S_AXI_OTP_ARBURST,
@@ -1120,65 +1120,65 @@ axi_mem_if #(
 
 // Dual port memory for MCU ROM. A is to SS, B is backdoor
 xpm_memory_tdpram #(
-   .ADDR_WIDTH_A(32),              // DECIMAL
-   .ADDR_WIDTH_B(32),              // DECIMAL
-   .AUTO_SLEEP_TIME(0),            // DECIMAL
-   .BYTE_WRITE_WIDTH_A(64),        // DECIMAL
-   .BYTE_WRITE_WIDTH_B(8),         // DECIMAL
-   .CASCADE_HEIGHT(0),             // DECIMAL
-   .CLOCKING_MODE("common_clock"), // String
-   .ECC_MODE("no_ecc"),            // String
-   .MEMORY_INIT_FILE("none"),      // String
-   .MEMORY_INIT_PARAM("0"),        // String
-   .MEMORY_OPTIMIZATION("false"),  // String
-   .MEMORY_PRIMITIVE("auto"),      // String
-   .MEMORY_SIZE(128*1024*8),       // DECIMAL
-   .MESSAGE_CONTROL(0),            // DECIMAL
-   .READ_DATA_WIDTH_A(64),         // DECIMAL
-   .READ_DATA_WIDTH_B(32),         // DECIMAL
-   .READ_LATENCY_A(1),             // DECIMAL
-   .READ_LATENCY_B(1),             // DECIMAL
-   .READ_RESET_VALUE_A("0"),       // String
-   .READ_RESET_VALUE_B("0"),       // String
-   .RST_MODE_A("SYNC"),            // String
-   .RST_MODE_B("SYNC"),            // String
-   .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
-   .USE_EMBEDDED_CONSTRAINT(0),    // DECIMAL
-   .USE_MEM_INIT(1),               // DECIMAL
-   .USE_MEM_INIT_MMI(0),           // DECIMAL
-   .WAKEUP_TIME("disable_sleep"),  // String
-   .WRITE_DATA_WIDTH_A(64),        // DECIMAL
-   .WRITE_DATA_WIDTH_B(32),        // DECIMAL
-   .WRITE_MODE_A("no_change"),     // String
-   .WRITE_MODE_B("no_change"),     // String
-   .WRITE_PROTECT(1)               // DECIMAL
+    .ADDR_WIDTH_A(32),              // DECIMAL
+    .ADDR_WIDTH_B(32),              // DECIMAL
+    .AUTO_SLEEP_TIME(0),            // DECIMAL
+    .BYTE_WRITE_WIDTH_A(64),        // DECIMAL
+    .BYTE_WRITE_WIDTH_B(8),         // DECIMAL
+    .CASCADE_HEIGHT(0),             // DECIMAL
+    .CLOCKING_MODE("common_clock"), // String
+    .ECC_MODE("no_ecc"),            // String
+    .MEMORY_INIT_FILE("none"),      // String
+    .MEMORY_INIT_PARAM("0"),        // String
+    .MEMORY_OPTIMIZATION("false"),  // String
+    .MEMORY_PRIMITIVE("auto"),      // String
+    .MEMORY_SIZE(128*1024*8),       // DECIMAL
+    .MESSAGE_CONTROL(0),            // DECIMAL
+    .READ_DATA_WIDTH_A(64),         // DECIMAL
+    .READ_DATA_WIDTH_B(32),         // DECIMAL
+    .READ_LATENCY_A(1),             // DECIMAL
+    .READ_LATENCY_B(1),             // DECIMAL
+    .READ_RESET_VALUE_A("0"),       // String
+    .READ_RESET_VALUE_B("0"),       // String
+    .RST_MODE_A("SYNC"),            // String
+    .RST_MODE_B("SYNC"),            // String
+    .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+    .USE_EMBEDDED_CONSTRAINT(0),    // DECIMAL
+    .USE_MEM_INIT(1),               // DECIMAL
+    .USE_MEM_INIT_MMI(0),           // DECIMAL
+    .WAKEUP_TIME("disable_sleep"),  // String
+    .WRITE_DATA_WIDTH_A(64),        // DECIMAL
+    .WRITE_DATA_WIDTH_B(32),        // DECIMAL
+    .WRITE_MODE_A("no_change"),     // String
+    .WRITE_MODE_B("no_change"),     // String
+    .WRITE_PROTECT(1)               // DECIMAL
 )
 mcu_rom (
-   .dbiterra(),
-   .dbiterrb(),
-   .douta(mcu_rom_mem_export_if.resp.rdata),
-   .doutb(mcu_rom_backdoor_dout),
-   .sbiterra(),
-   .sbiterrb(),
-   .addra(mcu_rom_mem_export_if.req.addr),
-   .addrb(mcu_rom_backdoor_addr),
-   .clka(core_clk),
-   .clkb(mcu_rom_backdoor_clk),
-   .dina(mcu_rom_mem_export_if.req.wdata),
-   .dinb(mcu_rom_backdoor_din),
-   .ena(mcu_rom_mem_export_if.req.cs),
-   .enb(mcu_rom_backdoor_en),
-   .injectdbiterra(0),
-   .injectdbiterrb(0),
-   .injectsbiterra(0),
-   .injectsbiterrb(0),
-   .regcea(1),
-   .regceb(1),
-   .rsta(mcu_rom_backdoor_rst),
-   .rstb(mcu_rom_backdoor_rst),
-   .sleep(0),
-   .wea(mcu_rom_mem_export_if.req.we),
-   .web(mcu_rom_backdoor_we)
+    .dbiterra(),
+    .dbiterrb(),
+    .douta(mcu_rom_mem_export_if.resp.rdata),
+    .doutb(mcu_rom_backdoor_dout),
+    .sbiterra(),
+    .sbiterrb(),
+    .addra(mcu_rom_mem_export_if.req.addr),
+    .addrb(mcu_rom_backdoor_addr),
+    .clka(core_clk),
+    .clkb(mcu_rom_backdoor_clk),
+    .dina(mcu_rom_mem_export_if.req.wdata),
+    .dinb(mcu_rom_backdoor_din),
+    .ena(mcu_rom_mem_export_if.req.cs),
+    .enb(mcu_rom_backdoor_en),
+    .injectdbiterra(0),
+    .injectdbiterrb(0),
+    .injectsbiterra(0),
+    .injectsbiterrb(0),
+    .regcea(1),
+    .regceb(1),
+    .rsta(mcu_rom_backdoor_rst),
+    .rstb(mcu_rom_backdoor_rst),
+    .sleep(0),
+    .wea(mcu_rom_mem_export_if.req.we),
+    .web(mcu_rom_backdoor_we)
 );
 
 // MCI AXI Manager
@@ -1320,7 +1320,7 @@ I think this is the one that isn't used
         .wea(cptra_ss_mci_mcu_sram_req_if.req.we)
     );
 
-    mci_mcu_sram_if cptra_ss_mci_mbox0_sram_req_if (
+    mci_mcu_sram_if cptra_ss_mcu_mbox0_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
@@ -1350,21 +1350,21 @@ I think this is the one that isn't used
     )
     mbox0 (
         .dbiterra(),
-        .douta(cptra_ss_mci_mbox0_sram_req_if.resp.rdata),
+        .douta(cptra_ss_mcu_mbox0_sram_req_if.resp.rdata),
         .sbiterra(),
-        .addra({cptra_ss_mci_mbox0_sram_req_if.req.addr, 2'b0}),
+        .addra({cptra_ss_mcu_mbox0_sram_req_if.req.addr, 2'b0}),
         .clka(core_clk),
-        .dina(cptra_ss_mci_mbox0_sram_req_if.req.wdata),
-        .ena(cptra_ss_mci_mbox0_sram_req_if.req.cs),
+        .dina(cptra_ss_mcu_mbox0_sram_req_if.req.wdata),
+        .ena(cptra_ss_mcu_mbox0_sram_req_if.req.cs),
         .injectdbiterra(0),
         .injectsbiterra(0),
         .regcea(1),
         .rsta(rom_backdoor_rst),
         .sleep(0),
-        .wea(cptra_ss_mci_mbox0_sram_req_if.req.we)
+        .wea(cptra_ss_mcu_mbox0_sram_req_if.req.we)
     );
     
-    mci_mcu_sram_if cptra_ss_mci_mbox1_sram_req_if (
+    mci_mcu_sram_if cptra_ss_mcu_mbox1_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
@@ -1394,18 +1394,18 @@ I think this is the one that isn't used
     )
     mbox1 (
         .dbiterra(),
-        .douta(cptra_ss_mci_mbox1_sram_req_if.resp.rdata),
+        .douta(cptra_ss_mcu_mbox1_sram_req_if.resp.rdata),
         .sbiterra(),
-        .addra({cptra_ss_mci_mbox1_sram_req_if.req.addr, 2'b0}),
+        .addra({cptra_ss_mcu_mbox1_sram_req_if.req.addr, 2'b0}),
         .clka(core_clk),
-        .dina(cptra_ss_mci_mbox1_sram_req_if.req.wdata),
-        .ena(cptra_ss_mci_mbox1_sram_req_if.req.cs),
+        .dina(cptra_ss_mcu_mbox1_sram_req_if.req.wdata),
+        .ena(cptra_ss_mcu_mbox1_sram_req_if.req.cs),
         .injectdbiterra(0),
         .injectsbiterra(0),
         .regcea(1),
         .rsta(rom_backdoor_rst),
         .sleep(0),
-        .wea(cptra_ss_mci_mbox1_sram_req_if.req.we)
+        .wea(cptra_ss_mcu_mbox1_sram_req_if.req.we)
     );
     
     // MCU LSU AXI Manager
@@ -1799,8 +1799,8 @@ caliptra_ss_top caliptra_ss_top_0 (
 
     // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     .cptra_ss_mci_mcu_sram_req_if,
-    .cptra_ss_mci_mbox0_sram_req_if,
-    .cptra_ss_mci_mbox1_sram_req_if,
+    .cptra_ss_mcu_mbox0_sram_req_if,
+    .cptra_ss_mcu_mbox1_sram_req_if,
     .cptra_ss_mcu0_el2_mem_export,
     
     .cptra_ss_mci_generic_input_wires_i({hwif_out.interface_regs.mci_generic_input_wires[0].value.value, hwif_out.interface_regs.mci_generic_input_wires[1].value.value}),
