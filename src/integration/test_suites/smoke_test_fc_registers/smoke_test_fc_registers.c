@@ -90,6 +90,19 @@ void register_accesses() {
     dai_rd(fuse_address, &read_data, NULL, 32, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
 }
 
+void test_all_tb_service_commands(void) {
+    uint8_t command = 0x08;  // Start from 0x00
+    VPRINTF(LOW, "Sent command: 0x%02X\n", command);
+    // Iterate through all 8-bit commands
+    while (command > 0x1) {
+        // lsu_write_32(0x21000410, command);
+        SEND_STDOUT_CTRL(command);
+        VPRINTF(LOW, "Sent command: 0x%02X\n", command);
+        command--;
+    }
+}
+
+
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
@@ -101,15 +114,17 @@ void main (void) {
     uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
     VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
     
-    lcc_initialization();    
-    raw_to_testunlock0();
-    initialize_otp_controller();
+    // lcc_initialization();    
+    // raw_to_testunlock0();
+    // initialize_otp_controller();
 
-    register_accesses();
+    // register_accesses();
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    // for (uint8_t ii = 0; ii < 160; ii++) {
+    //     __asm__ volatile ("nop"); // Sleep loop as "nop"
+    // }
+
+    test_all_tb_service_commands();
 
     SEND_STDOUT_CTRL(0xff);
 }
