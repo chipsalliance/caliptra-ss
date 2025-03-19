@@ -289,11 +289,25 @@ Received transfer data can be obtained by the driver via a read from XFER_DATA_P
 # Caliptra AXI Manager & DMA assist
 SOC\_IFC includes a hardware-assist block that is capable of initiating DMA transfers to the attached SoC AXI interconnect. The DMA transfers include several modes of operation, including raw transfer between SoC (AXI) addresses, moving data into or out of the SOC\_IFC mailbox, and directly driving data through AHB CSR accesses to datain/dataout registers. One additional operating mode allows the DMA engine to autonomously wait for data availability via the OCP Recovery interface (which will be slowly populated via an I3C or similar interface). 
 
-Caliptra arms transfers by populating a transaction descriptor to the AXI DMA CSR block via register writes over the internal AHB bus. Once armed, the DMA will autonomously issue AXI transactions to the SoC until the requested data movement is completed.
+Caliptra arms transfers by populating a transaction descriptor to the AXI DMA CSR block via register writes over the internal AHB bus. Once armed, the DMA will autonomously issue AXI transactions to the SoC until the requested data movement is completed. The DMA uses an internal FIFO to buffer transfer data. For any transfer using AXI Writes (Write Route is not disabled), the DMA waits until sufficient data is available in the FIFO before initiating any AXI write requests.
 
 When arming the engine, Caliptra firmware is expected to have information about available AXI addresses that are legal for DMA usage. The DMA can facilitate transfer requests with 64-bit addresses. DMA AXI Manager logic automatically breaks larger transfer sizes into multiple valid AXI burst transfers (max 4KiB size), and legally traverses 4KiB address boundaries. The DMA AXI Manager supports a maximum transfer size of 1MiB in total. FIXED AXI bursts are allowed, to facilitate a FIFO-like operation on either read or write channels.
 
 ![](./images/Caliptra-AXI-DMA.png)
+
+## AXI Feature Support
+The DMA assist initiates transactions on the AXI manager interface in compliance with the AXI specification. The generated AXI transactions adhere to the following rules:
+* All address requests will be aligned to the data width of the interface, which is configured as 32-bit in the 2.0 release.
+* The DMA will not issue Narrow transfers. That is, AxSIZE will always be set to match the data width of the interface (4 bytes).
+* All data lanes are used on all transfers. That is, the AXI manager Write channel will always set WSTRB to all 1s.
+* At most, 2 reads and 2 writes will be initiated at any time.
+  * When using a non-zero block\_size for the transfer, in accordance with the [Streaming Boot](#Streaming-Boot-Payloads) feature, at most 1 read and 1 write will be issued concurrently.
+* All transactions are initiated with AxID = 0, meaning that both reads and writes require in-order responses.
+* The maximum burst length initiated is constrained by the following parameters:
+  * Any transfer using the INCR burst type is restricted by both the maximum allowable length of an AXI transaction (AxLEN=255 or total byte count of 4KiB, whichever is smaller) and the size of the internal FIFO. In the 2.0 release the internal FIFO is configured with a depth of 512 bytes; the maximum transaction size allowed is 256 bytes, to allow up to 2 transactions to be outstanding at a time. In summary, the transfer size will always be 256 bytes or less (AxLEN = 63), as this is the smallest of (AxLEN = 255 -> 1KiB, 4KiB, and 256 bytes).
+  * Any transfer using the FIXED burst type is restricted by the AXI specification to a burst length of 16.
+  * When the block\_size field is set to a non-zero value when arming the DMA, all transfers are restricted in size to specified block_size, in bytes.
+  * AXI transactions must not cross a 4KiB boundary, per the specification. If the transfer size requires crossing a boundary, the DMA will break it into smaller transactions that will go up to the boundary, then start from the next alignment boundary.
 
 ## Routes
 
