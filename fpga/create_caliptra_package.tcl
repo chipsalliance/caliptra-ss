@@ -73,12 +73,12 @@ add_files [ glob $i3cDir/src/*/*/*_pkg.sv ]
 add_files [ glob $i3cDir/src/*/*_pkg.sv ]
 add_files [ glob $i3cDir/src/*_pkg.sv ]
 # Then the rest of the sv files
-add_files [ glob $i3cDir/src/*/*/*.v ]
+#add_files [ glob $i3cDir/src/*/*/*.v ]
 add_files [ glob $i3cDir/src/*/*/*.sv ]
 add_files [ glob $i3cDir/src/*/*.sv ]
 add_files [ glob $i3cDir/src/*.sv ]
 # Remove the i3c-core versions of the AXI modules, so that it uses the caliptra-rtl versions instead
-remove_files [ glob $i3cDir/src/libs/axi/*.sv ]
+#remove_files [ glob $i3cDir/src/libs/axi/*.sv ]
 
 # Remove spi_host files that aren't used yet and are flagged as having syntax errors
 # TODO: Re-include these files when spi_host is used.
