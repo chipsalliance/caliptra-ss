@@ -188,8 +188,6 @@ module caliptra_ss_top
     output wire cptra_ss_soc_hw_debug_en_o,
 
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
-    input  tlul_pkg::tl_h2d_t                          cptra_ss_fuse_macro_prim_tl_i,
-    output tlul_pkg::tl_d2h_t                          cptra_ss_fuse_macro_prim_tl_o,
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
     output otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o,
    
@@ -1362,8 +1360,8 @@ module caliptra_ss_top
         .core_axi_rd_req            (cptra_ss_otp_core_axi_rd_req_i),
         .core_axi_rd_rsp            (cptra_ss_otp_core_axi_rd_rsp_o),
         
-        .prim_tl_i                  (cptra_ss_fuse_macro_prim_tl_i),
-        .prim_tl_o                  (cptra_ss_fuse_macro_prim_tl_o),
+        .prim_tl_i                  ('0),
+        .prim_tl_o                  (),
         .prim_generic_otp_outputs_i (cptra_ss_fuse_macro_outputs_i),
         .prim_generic_otp_inputs_o  (cptra_ss_fuse_macro_inputs_o),
 

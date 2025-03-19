@@ -2032,8 +2032,6 @@ module caliptra_ss_top_tb
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
 
-        .cptra_ss_fuse_macro_prim_tl_i('0),
-        .cptra_ss_fuse_macro_prim_tl_o(),
         .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
         .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
     
