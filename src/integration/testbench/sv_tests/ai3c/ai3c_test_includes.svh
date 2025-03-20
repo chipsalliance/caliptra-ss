@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +13,4 @@
 // limitations under the License.
 //
 
-#ifndef CALIPTRA_SS_LIB
-#define CALIPTRA_SS_LIB
-
-void reset_rtl(void);
-
-#endif // CALIPTRA_SS_LIB
+`include "ai3ct_ext_basic.svh"
