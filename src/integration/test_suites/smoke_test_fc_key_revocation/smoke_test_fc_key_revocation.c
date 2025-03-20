@@ -13,7 +13,7 @@
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
 
-volatile char* stdout = (char *)0x21000410;
+volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
