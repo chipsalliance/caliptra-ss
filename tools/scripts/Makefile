@@ -46,6 +46,7 @@ RISCV_HW_IF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/riscv_hw_if
 #ISR_DIR    = $(CALIPTRA_SS)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
 PRINTF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/printf
 LIBS_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs
+LIBS_MCI_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/mci
 
 
 DUT ?= caliptra_mcu_top_tb
