@@ -1,5 +1,5 @@
 TestName                                                                                                  , Directed|Random, Nightly|Weekly, L0  , L1  , DUT               , PromotePipeline, OtherTags, Weight
-$CALIPTRA_SS/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup                              , None           , None          , L0  , None, caliptra_ss_top_tb, Promote        , None     , 100
+$CALIPTRA_SS/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup                              , Directed       , Nightly       , L0  , L1  , caliptra_ss_top_tb, Promote        , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation        , None           , None          , L0  , None, caliptra_ss_top_tb, Promote        , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock    , None           , None          , L0  , None, caliptra_ss_top_tb, Promote        , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens      , None           , None          , L0  , None, caliptra_ss_top_tb, Promote        , None     , 100
@@ -10,7 +10,6 @@ $CALIPTRA_SS/src/integration/test_suites/caliptra_ss_jtag_uds_prog/caliptra_ss_j
 $CALIPTRA_SS/src/integration/test_suites/caliptra_ss_lc_ctrl_st_trans/caliptra_ss_lc_ctrl_st_trans        , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/cptra_ss_i3c_recovery/cptra_ss_i3c_recovery                      , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/i3c_smoke/i3c_smoke                                              , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
-$CALIPTRA_SS/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup                              , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/mcu_dccm_access/mcu_dccm_access                                  , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/mcu_hello_world/mcu_hello_world                                  , None           , None          , L0  , None, caliptra_ss_top_tb, Promote        , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/mcu_lmem_exe/mcu_lmem_exe                                        , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
