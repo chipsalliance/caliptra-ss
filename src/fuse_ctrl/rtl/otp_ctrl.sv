@@ -81,11 +81,8 @@ module otp_ctrl
   output otp_keymgr_key_t                            otp_keymgr_key_o,
   // Scrambling key requests
   input  flash_otp_key_req_t                         flash_otp_key_i,
-  output flash_otp_key_rsp_t                         flash_otp_key_o,
   input  sram_otp_key_req_t [NumSramKeyReqSlots-1:0] sram_otp_key_i,
-  output sram_otp_key_rsp_t [NumSramKeyReqSlots-1:0] sram_otp_key_o,
   input  otbn_otp_key_req_t                          otbn_otp_key_i,
-  output otbn_otp_key_rsp_t                          otbn_otp_key_o,
   // Hardware config bits
   output otp_broadcast_t                             otp_broadcast_o,
   // External voltage for OTP
@@ -1300,8 +1297,8 @@ end
                                          cnsty_chk_req[k]};
 
       // Alert assertion for sparse FSM.
-      `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlPartUnbufFsmCheck_A,
-          u_part_unbuf.u_state_regs, alert_tx_o[1])
+      //`CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlPartUnbufFsmCheck_A,
+      //    u_part_unbuf.u_state_regs, alert_tx_o[1])
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else if (PartInfo[k].variant == Buffered) begin : gen_buffered
       otp_ctrl_part_buf #(
@@ -1355,10 +1352,10 @@ end
       assign part_tlul_rdata[k]  = '0;
 
       // Alert assertion for sparse FSM.
-      `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlPartBufFsmCheck_A,
-          u_part_buf.u_state_regs, alert_tx_o[1])
-      `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntPartBufCheck_A,
-          u_part_buf.u_prim_count, alert_tx_o[1])
+      //`CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlPartBufFsmCheck_A,
+      //    u_part_buf.u_state_regs, alert_tx_o[1])
+      //`CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntPartBufCheck_A,
+      //    u_part_buf.u_prim_count, alert_tx_o[1])
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else if (PartInfo[k].variant == LifeCycle) begin : gen_lifecycle
       otp_ctrl_part_buf #(
@@ -1424,10 +1421,10 @@ end
                                          part_scrmbl_req_ready[k],
                                          part_scrmbl_rsp_valid[k]};
       // Alert assertion for sparse FSM.
-      `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlPartLcFsmCheck_A,
-          u_part_buf.u_state_regs, alert_tx_o[1])
-      `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntPartLcCheck_A,
-          u_part_buf.u_prim_count, alert_tx_o[1])
+      //`CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlPartLcFsmCheck_A,
+      //    u_part_buf.u_state_regs, alert_tx_o[1])
+      //`CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntPartLcCheck_A,
+      //    u_part_buf.u_prim_count, alert_tx_o[1])
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else begin : gen_invalid
       // This is invalid and should break elaboration
@@ -1632,65 +1629,64 @@ end
   `CALIPTRA_ASSERT_KNOWN(PrimTlOutKnown_A,            prim_tl_o)
   `CALIPTRA_ASSERT_KNOWN(IntrOtpOperationDoneKnown_A, intr_otp_operation_done_o)
   `CALIPTRA_ASSERT_KNOWN(IntrOtpErrorKnown_A,         intr_otp_error_o)
-  `CALIPTRA_ASSERT_KNOWN(AlertTxKnown_A,              alert_tx_o)
+  //`CALIPTRA_ASSERT_KNOWN(AlertTxKnown_A,              alert_tx_o) Note port not used anymore
   `CALIPTRA_ASSERT_KNOWN(PwrOtpInitRspKnown_A,        pwr_otp_o)
   `CALIPTRA_ASSERT_KNOWN(LcOtpProgramRspKnown_A,      lc_otp_program_o)
   `CALIPTRA_ASSERT_KNOWN(OtpLcDataKnown_A,            otp_lc_data_o)
   `CALIPTRA_ASSERT_KNOWN(OtpKeymgrKeyKnown_A,         otp_keymgr_key_o)
-  `CALIPTRA_ASSERT_KNOWN(FlashOtpKeyRspKnown_A,       flash_otp_key_o)
-  `CALIPTRA_ASSERT_KNOWN(OtpSramKeyKnown_A,           sram_otp_key_o)
-  `CALIPTRA_ASSERT_KNOWN(OtpOtgnKeyKnown_A,           otbn_otp_key_o)
   `CALIPTRA_ASSERT_KNOWN(OtpBroadcastKnown_A,         otp_broadcast_o)
 
   `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 |-> test_tokens_valid == lc_ctrl_pkg::On)
 
+  // NOTE alert_tx_o port not used anymore
   // Alert assertions for sparse FSMs.
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlDaiFsmCheck_A,
-      u_otp_ctrl_dai.u_state_regs, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlDaiFsmCheck_A,
+  //    u_otp_ctrl_dai.u_state_regs, alert_tx_o[1]) NOTE port not used anymore
   // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKdiFsmCheck_A,
   //     u_otp_ctrl_kdi.u_state_regs, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLciFsmCheck_A,
-      u_otp_ctrl_lci.u_state_regs, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLfsrTimerFsmCheck_A,
-      u_otp_ctrl_lfsr_timer.u_state_regs, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlScrambleFsmCheck_A,
-      u_otp_ctrl_scrmbl.u_state_regs, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLciFsmCheck_A,
+  //    u_otp_ctrl_lci.u_state_regs, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLfsrTimerFsmCheck_A,
+  //    u_otp_ctrl_lfsr_timer.u_state_regs, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlScrambleFsmCheck_A,
+  //    u_otp_ctrl_scrmbl.u_state_regs, alert_tx_o[1])
 
+  // NOTE alert_tx_o port not used anymore
   // Alert assertions for redundant counters.
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntIntegCheck_A,
-      u_otp_ctrl_lfsr_timer.u_prim_count_integ, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntCnstyCheck_A,
-      u_otp_ctrl_lfsr_timer.u_prim_count_cnsty, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntDaiCheck_A,
-      u_otp_ctrl_dai.u_prim_count, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntIntegCheck_A,
+  //    u_otp_ctrl_lfsr_timer.u_prim_count_integ, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntCnstyCheck_A,
+  //    u_otp_ctrl_lfsr_timer.u_prim_count_cnsty, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntDaiCheck_A,
+  //    u_otp_ctrl_dai.u_prim_count, alert_tx_o[1])
   // `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntKdiSeedCheck_A,
   //     u_otp_ctrl_kdi.u_prim_count_seed, alert_tx_o[1])
   // `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntKdiEntropyCheck_A,
   //     u_otp_ctrl_kdi.u_prim_count_entropy, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntLciCheck_A,
-      u_otp_ctrl_lci.u_prim_count, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntScrmblCheck_A,
-      u_otp_ctrl_scrmbl.u_prim_count, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(TlLcGateFsm_A,
-      u_tlul_lc_gate.u_state_regs, alert_tx_o[2])
+  //`CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntLciCheck_A,
+  //    u_otp_ctrl_lci.u_prim_count, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntScrmblCheck_A,
+  //    u_otp_ctrl_scrmbl.u_prim_count, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(TlLcGateFsm_A,
+  //    u_tlul_lc_gate.u_state_regs, alert_tx_o[2])
 
   // Alert assertions for double LFSR.
-  `CALIPTRA_ASSERT_PRIM_DOUBLE_LFSR_ERROR_TRIGGER_ALERT(DoubleLfsrCheck_A,
-      u_otp_ctrl_lfsr_timer.u_prim_double_lfsr, alert_tx_o[1])
+  //`CALIPTRA_ASSERT_PRIM_DOUBLE_LFSR_ERROR_TRIGGER_ALERT(DoubleLfsrCheck_A,
+  //    u_otp_ctrl_lfsr_timer.u_prim_double_lfsr, alert_tx_o[1])
 
   // Alert assertions for reg_we onehot check
-  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegWeOnehotCheck_A, u_reg_core, alert_tx_o[2])
+  //`CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegWeOnehotCheck_A, u_reg_core, alert_tx_o[2])
 
   // Assertions for countermeasures inside prim_otp
   `ifndef PRIM_DEFAULT_IMPL
     `define PRIM_DEFAULT_IMPL prim_pkg::ImplGeneric
   `endif
-  if (`CALIPTRA_PRIM_DEFAULT_IMPL == caliptra_prim_pkg::ImplGeneric) begin : gen_reg_we_assert_generic
-    `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(PrimFsmCheck_A,
-        u_otp.u_state_regs, alert_tx_o[3])
-        //u_otp.gen_generic.u_impl_generic.u_state_regs, alert_tx_o[3])
-    `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(PrimRegWeOnehotCheck_A,
-        u_otp.u_reg_top, alert_tx_o[3])
-    //    //u_otp.gen_generic.u_impl_generic.u_reg_top, alert_tx_o[3])
-  end
+  //if (`CALIPTRA_PRIM_DEFAULT_IMPL == caliptra_prim_pkg::ImplGeneric) begin : gen_reg_we_assert_generic
+  //  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(PrimFsmCheck_A,
+  //      u_otp.u_state_regs, alert_tx_o[3])
+  //      //u_otp.gen_generic.u_impl_generic.u_state_regs, alert_tx_o[3])
+  //  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(PrimRegWeOnehotCheck_A,
+  //      u_otp.u_reg_top, alert_tx_o[3])
+  //  //    //u_otp.gen_generic.u_impl_generic.u_reg_top, alert_tx_o[3])
+  //end
 endmodule : otp_ctrl

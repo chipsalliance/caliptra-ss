@@ -69,7 +69,7 @@ assign CSYSACK_PLL = ((CSYSACK === 1'bx)? 1: CSYSACK);
 
 genvar i;
 generate
-    for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++ ) begin
+    for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++ ) begin : master_loop
 	initial begin
 	    master[i] = new($psprintf("master%0d" ,i), AAXI_MASTER, AAXI4, mintf_arr[i],, i);
 	    #1;	// wait to instantiate intc bfm 
@@ -78,7 +78,7 @@ generate
 	end
     end
 
-    for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin
+    for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin: slave_loop
 	initial begin
 	    slave[i] = new($psprintf("slave%0d", i), AAXI_SLAVE_TO_INTERCONNECT, AAXI4, sintf_arr[i],, i);
 	    #1;	// wait to instantiate intc bfm 
@@ -142,6 +142,8 @@ initial begin
         master[i].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         master[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        master[i].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        master[i].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.passive_mode= 1;       //-- changed to put master to passive mode
         // master[i].cfg_info.id_width=3;
 `ifdef FOUR_OUTSTANDING
@@ -168,6 +170,8 @@ initial begin
         slave[i].cfg_info.passive_mode= 1; 
         slave[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[i].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[i].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         // slave[i].add_fifo(64'habcc+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'ha000_0000+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'hb000_0001+i*64'h100_0000, 4);
