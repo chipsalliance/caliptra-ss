@@ -79,6 +79,8 @@
   - [Overview](#overview)
   - [MCI Feature Descriptions](#mci-feature-descriptions)
     - [Control/Status Registers (CSRs)](#controlstatus-registers-csrs)
+      - [MCI CSR Access Restrictions](#mci-csr-access-restrictions)
+    - [MCI Straps](#mci-straps)
     - [Subsystem Boot Finite State Machine (CSS-BootFSM)](#subsystem-boot-finite-state-machine-css-bootfsm)
     - [Watchdog Timer](#watchdog-timer)
     - [MCU Mailbox](#mcu-mailbox)
@@ -989,6 +991,61 @@ The Control/Status Registers (CSRs) within the MCI are designed to provide criti
 
 **FIXME the link:** caliptra-ss/src/mci/rtl/mci_reg.rdl
 
+#### MCI CSR Access Restrictions
+
+Certain registers within the CSR bank have write access restrictions based off of:
+
+1. AXI User
+2. Lock bits (SS_CONFIG_DONE, CAP_LOCK, etc.)
+
+The privilaged users for the MCI CSRs are:
+
+1. MCU
+2. MCI SOC Config User (MSCU)
+
+Both of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionalality like timers that are needed by the SOC but are critical for MCU functionality. 
+
+The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MCSCU can configure and lock down the MCI configuration. 
+
+The registers can be split up into a few different categories:
+
+
+| **Write restrictions**     | **Description**     | 
+| :---------     | :---------| 
+| MCU Only        | These registers are only meant for MCU to have access. There is no reason for SOC or the MCI SOC Config User to access the. Example is the MTIMER|
+| MCU or MCSU      |  Access restricted to trusted agent but not locked. Example:RESET_REQUEST for MCU. |
+| MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each warm reset |
+| Sticky MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each cold reset |
+| Locked by SS_CONFIG_DONE_STICKY        | Configuration once per cold reset. |
+| MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilieds then locked until next warm reset |
+| MBOX_USER_LOCK       |  Mailbox specific configuration locked by it's own LOCK bit. Configured afer each arem reset.       |
+
+
+### MCI Straps
+
+All MCI straps shall be static before mci_rst_b is deasserted.
+
+MCI has the following types of straps:
+
+| **Strap Type**     | **Sampled or Direct Use**|**Description**     | 
+| :---------     | :---------| :---------| 
+| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These are not overridable by SW. | 
+| **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
+| **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
+
+
+*NOTE: Strap sampling occurs when mci_rst_b is deasserted and is typically performed once per cold boot. This process is controlled by the SS_CONFIG_DONE_STICKY register; when set, sampling is skipped. If a warm reset happens before SS_CONFIG_DONE_STICKY is set, the straps will be sampled again, although this is not the usual behavior.
+
+| **Strap Name**     | **Strap Type**|**Description**     | 
+| :---------     | :---------| :---------| 
+|`strap_mcu_lsu_axi_user`|Non-configurable Direct|MCU Load Store Unit AXI User. Given Special Access within MCI. |
+|`strap_mcu_ifu_axi_user`|Non-configurable Direct|MCU Instruction Fetch Unit AXI User. given special access within MCI.|
+|`strap_mcu_sram_config_axi_user`|Non-configurable Direct|MCU SRAM Config agent who is given special access to MCU SRAM Execution region to load FW image. Typically set to Caliptra's AXI User.|
+|`strap_mci_soc_config_axi_user`|Non-configurable Direct|MCI SOC Config User (MSCU). AXI agent with MCI configuration access. |
+|`strap_mcu_reset_vector`|Configurable Sampled|Default MCU reset vector.|
+|`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Show the intent to put the part in a debug unlocked state. Although not writable by SW via AXI. This is writable via DMI.|
+
+
 ### Subsystem Boot Finite State Machine (CSS-BootFSM)
 
 The Boot Sequencer FSM is responsible for the orderly and controlled boot process of the Caliptra Subsystem. This state machine ensures that all necessary initialization steps are completed in the correct sequence after power application. The boot sequence includes MCU and Caliptra Reset deassertions, Fuse Controller Initialization, and Lifecycle Controller Initialization.
@@ -1176,24 +1233,33 @@ It is the only agent allowed to set TARGET_USER and update the final CMD_STATUS.
   *NOTE: MBOX SRAM size is configurable, but MBOX always reserves 2MB address space. See [MCU Mailbox Errors](#mcu-mailbox-errors) for how access to and invalid SRAM address are handled. 
 
 ### MCU SRAM
+![](images/MCI-MCU-SRAM-Diagram.png)
 
 The MCU SRAM provides essential data and instruction memory for the Manufacturer Control Unit. This SRAM bank is utilized by the MCU to load firmware images, store application data structures, and create a runtime stack. The SRAM is accessible via the AXI interface and is mapped into the MCI's memory space for easy access and management. Exposing this SRAM via a restricted API through the SoC AXI interconnect enables seamless and secured Firmware Updates to be managed by Caliptra.
 
-AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the Caliptra AXI_USER, or the MCU IFU/LSU AXI USERSs). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
+**Min Size**: 4KB
 
+**Max Size**: 2MB
+
+AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the MCU SRAM Config AXI_USER, or the MCU IFU/LSU AXI USERS). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
 The MCU SRAM contains two regions, a Protected Data Region and an Updatable Execution Region, each with a different set of access rules.
 
-The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing is locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation.
+After each MCU reset the Updateable Execution Region may only be read/written by MCU SRAM Config User (typically Caliptra) prior to mcu_sram_fw_exec_region_lock input signal is set. Once fw_exec_region_lock is set it can be read/written by the MCU IFU or MCU LSU until MCU reset is asserted. 
 
-The Updateable Execution Region may only be read/written by Caliptra prior to setting the MCU_RUNTIME_LOCK register and may only be read/written by the MCU IFU or MCU LSU after MCU_RUNTIME_LOCK is set. The Protected Data Region may never be accessed by Caliptra or the MCU IFU. Only the MCU LSU is allowed to read or write to the Protected Data Region, regardless of whether MCU ROM or MCU Runtime firmware is running.
+The Protected Data Region is only ever read/write accessible by MCU LSU.
+The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing shall be locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation in 4KB increments. FW_SRAM_EXEC_REGION_SIZE counts in base 0 meaning the smallest the Updateable Execution Region size can be is 4KB. It is possible for the entire SRAM to be allocated to the Updatable Execution Region and there be no Protected Data Region. 
 
-The entire MCU SRAM has ECC protection. Unlike MCI mailboxes, there is no configuration available to disable MCU SRAM for architectural reasons. Single bit errors are detected and corrected. While double bit errors are detected and error. MCI actions for single bit errors:
+The entire MCU SRAM has ECC protection with no ability to disable. Single bit errors are detected and corrected. Double bit errors are detected and error. 
+
+**MCI actions for single bit errors:**
 - Correct data and pass corrected data back to the initiator.
 - Send interrupt notification to MCU.
-- MCI actions for double bit errors:
-- AXI response to the initiator
+
+**MCI actions for double bit errors:**
+- AXI SLVERR response to the initiator
 - HW_ERROR_FATAL asserted and sent to SOC
 
+MCU SRAM is accessible via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) for more details.
 ### MCI AXI Subordinate
 
 MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the appropriate submodule within MCI. 
@@ -1201,9 +1267,9 @@ MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the 
 The MCI AXI Sub will respond with an AXI error if one of the following conditions is met:
 
 1. AXI Address miss
-2. Not all AXI STRB set when accessing submodule other than MCU SRAM
-3. Submodule error response
-4. Invalid MBOX AXI User access (MCU and Debug AXI USERs bypasses this check)
+2. Submodule error response
+3. Invalid MBOX AXI User access (MCU and Debug AXI USERs bypasses this check)
+
 
 ### Interrupts
 
