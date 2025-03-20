@@ -106,8 +106,8 @@ module mcu_mbox_csr (
     logic [31:0] decoded_wr_biten;
 
     always_comb begin
-        automatic logic is_external = '0;
-    
+        automatic logic is_external;
+        is_external = '0;
         decoded_reg_strb.MBOX_SRAM = cpuif_req_masked & (cpuif_addr >= 22'h0) & (cpuif_addr <= 22'h0 + 22'h1fffff);
         is_external |= cpuif_req_masked & (cpuif_addr >= 22'h0) & (cpuif_addr <= 22'h0 + 22'h1fffff);
         decoded_reg_strb.mbox_lock = cpuif_req_masked & (cpuif_addr == 22'h200000);
@@ -122,7 +122,6 @@ module mcu_mbox_csr (
         decoded_reg_strb.mbox_hw_status = cpuif_req_masked & (cpuif_addr == 22'h200024);
         decoded_strb_is_external = is_external;
         external_req = is_external;
-    
     end
 
     // Pass down signals to next stage
@@ -275,8 +274,10 @@ module mcu_mbox_csr (
     assign hwif_out.MBOX_SRAM.wr_biten = decoded_wr_biten;
     // Field: mcu_mbox_csr.mbox_lock.lock
     always_comb begin
-        automatic logic [0:0] next_c = field_storage.mbox_lock.lock.value;
-        automatic logic load_next_c = '0;
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_lock.lock.value;
+        load_next_c = '0;
         if(hwif_in.mbox_lock.lock.hwset) begin // HW Set
             next_c = '1;
             load_next_c = '1;
@@ -301,8 +302,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_lock.lock.swmod = decoded_reg_strb.mbox_lock && !decoded_req_is_wr;
     // Field: mcu_mbox_csr.mbox_user.user
     always_comb begin
-        automatic logic [31:0] next_c = field_storage.mbox_user.user.value;
-        automatic logic load_next_c = '0;
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_user.user.value;
+        load_next_c = '0;
         if(hwif_in.mbox_lock.lock.hwset) begin // HW Write - we
             next_c = hwif_in.mbox_user.user.next;
             load_next_c = '1;
@@ -320,8 +323,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_user.user.value = field_storage.mbox_user.user.value;
     // Field: mcu_mbox_csr.mbox_target_user.user
     always_comb begin
-        automatic logic [31:0] next_c = field_storage.mbox_target_user.user.value;
-        automatic logic load_next_c = '0;
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_target_user.user.value;
+        load_next_c = '0;
         if(decoded_reg_strb.mbox_target_user && decoded_req_is_wr && hwif_in.valid_root_req) begin // SW write
             next_c = (field_storage.mbox_target_user.user.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
@@ -342,8 +347,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_target_user.user.value = field_storage.mbox_target_user.user.value;
     // Field: mcu_mbox_csr.mbox_target_user_valid.valid
     always_comb begin
-        automatic logic [0:0] next_c = field_storage.mbox_target_user_valid.valid.value;
-        automatic logic load_next_c = '0;
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_target_user_valid.valid.value;
+        load_next_c = '0;
         if(decoded_reg_strb.mbox_target_user_valid && decoded_req_is_wr && hwif_in.valid_root_req) begin // SW write
             next_c = (field_storage.mbox_target_user_valid.valid.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
@@ -364,8 +371,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_target_user_valid.valid.value = field_storage.mbox_target_user_valid.valid.value;
     // Field: mcu_mbox_csr.mbox_cmd.command
     always_comb begin
-        automatic logic [31:0] next_c = field_storage.mbox_cmd.command.value;
-        automatic logic load_next_c = '0;
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_cmd.command.value;
+        load_next_c = '0;
         if(decoded_reg_strb.mbox_cmd && decoded_req_is_wr && hwif_in.valid_requester_req) begin // SW write
             next_c = (field_storage.mbox_cmd.command.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
@@ -385,8 +394,10 @@ module mcu_mbox_csr (
     end
     // Field: mcu_mbox_csr.mbox_dlen.length
     always_comb begin
-        automatic logic [31:0] next_c = field_storage.mbox_dlen.length.value;
-        automatic logic load_next_c = '0;
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_dlen.length.value;
+        load_next_c = '0;
         if(decoded_reg_strb.mbox_dlen && decoded_req_is_wr && hwif_in.valid_requester_target_req) begin // SW write
             next_c = (field_storage.mbox_dlen.length.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
@@ -407,8 +418,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_dlen.length.value = field_storage.mbox_dlen.length.value;
     // Field: mcu_mbox_csr.mbox_execute.execute
     always_comb begin
-        automatic logic [0:0] next_c = field_storage.mbox_execute.execute.value;
-        automatic logic load_next_c = '0;
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_execute.execute.value;
+        load_next_c = '0;
         if(decoded_reg_strb.mbox_execute && decoded_req_is_wr && hwif_in.valid_requester_req) begin // SW write
             next_c = (field_storage.mbox_execute.execute.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
@@ -426,8 +439,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_execute.execute.value = field_storage.mbox_execute.execute.value;
     // Field: mcu_mbox_csr.mbox_target_status.status
     always_comb begin
-        automatic logic [3:0] next_c = field_storage.mbox_target_status.status.value;
-        automatic logic load_next_c = '0;
+        automatic logic [3:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_target_status.status.value;
+        load_next_c = '0;
         if(hwif_in.mbox_target_status.status.hwclr) begin // HW Clear
             next_c = '0;
             load_next_c = '1;
@@ -448,8 +463,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_target_status.status.value = field_storage.mbox_target_status.status.value;
     // Field: mcu_mbox_csr.mbox_target_status.done
     always_comb begin
-        automatic logic [0:0] next_c = field_storage.mbox_target_status.done.value;
-        automatic logic load_next_c = '0;
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_target_status.done.value;
+        load_next_c = '0;
         if(hwif_in.mbox_target_status.done.hwclr) begin // HW Clear
             next_c = '0;
             load_next_c = '1;
@@ -470,8 +487,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_target_status.done.value = field_storage.mbox_target_status.done.value;
     // Field: mcu_mbox_csr.mbox_cmd_status.status
     always_comb begin
-        automatic logic [3:0] next_c = field_storage.mbox_cmd_status.status.value;
-        automatic logic load_next_c = '0;
+        automatic logic [3:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_cmd_status.status.value;
+        load_next_c = '0;
         if(hwif_in.mbox_cmd_status.status.hwclr) begin // HW Clear
             next_c = '0;
             load_next_c = '1;
@@ -492,8 +511,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_cmd_status.status.value = field_storage.mbox_cmd_status.status.value;
     // Field: mcu_mbox_csr.mbox_hw_status.ecc_single_error
     always_comb begin
-        automatic logic [0:0] next_c = field_storage.mbox_hw_status.ecc_single_error.value;
-        automatic logic load_next_c = '0;
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_hw_status.ecc_single_error.value;
+        load_next_c = '0;
         if(!field_storage.mbox_execute.execute.value) begin // HW Write - wel
             next_c = field_storage.mbox_execute.execute.value;
             load_next_c = '1;
@@ -514,8 +535,10 @@ module mcu_mbox_csr (
     assign hwif_out.mbox_hw_status.ecc_single_error.value = field_storage.mbox_hw_status.ecc_single_error.value;
     // Field: mcu_mbox_csr.mbox_hw_status.ecc_double_error
     always_comb begin
-        automatic logic [0:0] next_c = field_storage.mbox_hw_status.ecc_double_error.value;
-        automatic logic load_next_c = '0;
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.mbox_hw_status.ecc_double_error.value;
+        load_next_c = '0;
         if(!field_storage.mbox_execute.execute.value) begin // HW Write - wel
             next_c = field_storage.mbox_execute.execute.value;
             load_next_c = '1;
@@ -566,7 +589,7 @@ module mcu_mbox_csr (
     logic readback_err;
     logic readback_done;
     logic [31:0] readback_data;
-    
+
     // Assign readback values to a flattened array
     logic [11-1:0][31:0] readback_array;
     assign readback_array[0] = hwif_in.MBOX_SRAM.rd_ack ? hwif_in.MBOX_SRAM.rd_data : '0;
