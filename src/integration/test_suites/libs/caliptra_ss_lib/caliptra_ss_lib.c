@@ -20,6 +20,15 @@
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "riscv_hw_if.h"
 
+void xorshift32(uint32_t *state)
+{
+    uint32_t x = *state;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    *state = x;
+}
+
 void reset_rtl(void) {
     uint32_t reg_value;
 
