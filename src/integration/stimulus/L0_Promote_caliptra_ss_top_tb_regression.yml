@@ -11,3 +11,4 @@ contents:
         - ../test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens.yml
         - ../test_suites/smoke_test_fc_random_item_prov/smoke_test_fc_random_item_prov.yml
         - ../test_suites/smoke_test_fc_registers/smoke_test_fc_registers.yml
+        - ../test_suites/mcu_hello_world/mcu_hello_world.yml
