@@ -4,6 +4,7 @@ schema_version: 2.4.0
 requires:
   - caliptra_prim
   - lc_ctrl_pkg
+  - ast_pkg
 targets:
   rtl:
     directories: [$COMPILE_ROOT/rtl]
@@ -46,7 +47,7 @@ targets:
       - $COMPILE_ROOT/rtl/otp_ctrl_part_unbuf.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_scrmbl.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_token_const.sv
-      - $COMPILE_ROOT/rtl/prim_generic_otp.sv
+      # - $COMPILE_ROOT/rtl/prim_generic_otp.sv
       - $COMPILE_ROOT/rtl/otp_ctrl.sv
       #- $COMPILE_ROOT/rtl/otp_ctrl_top.sv
     tops: [otp_ctrl]
