@@ -79,6 +79,8 @@
   - [Overview](#overview)
   - [MCI Feature Descriptions](#mci-feature-descriptions)
     - [Control/Status Registers (CSRs)](#controlstatus-registers-csrs)
+      - [MCI CSR Access Restrictions](#mci-csr-access-restrictions)
+    - [MCI Straps](#mci-straps)
     - [Subsystem Boot Finite State Machine (CSS-BootFSM)](#subsystem-boot-finite-state-machine-css-bootfsm)
     - [Watchdog Timer](#watchdog-timer)
     - [MCU Mailbox](#mcu-mailbox)
@@ -240,7 +242,7 @@ Stretch Goal: DMA data payload back to destination (Caliptra or MCU)
 
 
 # Caliptra Subsystem Architectural Flows
-Please refer to [Caliptra Security Subsystem Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-security-subsystem)), for more details
+Please refer to [Caliptra Security Subsystem Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-security-subsystem) for more details.
 
 # I3C Streaming Boot (Recovery) Interface
 The I3C recovery interface acts as a standalone I3C target device for recovery. It will have a unique address compared to any other I3C endpoint for the device. It will comply with I3C Basic v1.1.1 specification. It will support I3C read and write transfer operations. It must support Max read and write data transfer of 1-256B excluding the command code (1 Byte), length (2 Byte), and PEC (1 Byte), total 4 Byte I3C header. Therefore, max recovery data per transfer will be limited to 256-byte data.
@@ -255,7 +257,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 *Figure: I3C Streaming Boot (Recovery) Interface Logic Block Diagram*
 
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/I3C-Recovery-IFC.png)
+![](./images/I3C-Recovery-IFC.png)
 
 ## Hardware Registers
 Hardware registers size is fixed to multiple of 4 bytes, so that firmware can read or write with word boundary. Address offset will be programmed outside of the I3C device. Register access size must be restricted to individual register space and burst access with higher size must not be allowed.
@@ -278,7 +280,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 Please refer to [Caliptra Security Subsystem Recovery Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-recovery-sequence).
 
 *Figure: Caliptra Subsystem I3C Streaming Boot (Recovery) Flow*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/CSS-Recovery-Flow.png)
+![](./images/CSS-Recovery-Flow.png)
 
 ## Caliptra ROM Requirements
 Caliptra ROM & RT firmware must program DMA assist with correct image size (multiple of 4B) + FIXED Read + block size is 256B (burst / FIFO size). Caliptra ROM & RT Firmware must wait for "image_activated" signal to assert before processing the image. Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes. 
@@ -287,6 +289,98 @@ Caliptra ROM & RT firmware must program DMA assist with correct image size (mult
 Received transfer data can be obtained by the driver via a read from XFER_DATA_PORT register. Received data threshold is indicated to BMC by the controller with TX_THLD_STAT interrupt if RX_THLD_STAT_EN is set. The RX threshold can be set via RX_BUF_THLD. In case of a read when no RX data is available, the controller shall raise an error on the frontend bus interface (AHB / AXI).
 
 # Caliptra AXI Manager & DMA assist
+SOC\_IFC includes a hardware-assist block that is capable of initiating DMA transfers to the attached SoC AXI interconnect. The DMA transfers include several modes of operation, including raw transfer between SoC (AXI) addresses, moving data into or out of the SOC\_IFC mailbox, and directly driving data through AHB CSR accesses to datain/dataout registers. One additional operating mode allows the DMA engine to autonomously wait for data availability via the OCP Recovery interface (which will be slowly populated via an I3C or similar interface). 
+
+Caliptra arms transfers by populating a transaction descriptor to the AXI DMA CSR block via register writes over the internal AHB bus. Once armed, the DMA will autonomously issue AXI transactions to the SoC until the requested data movement is completed. The DMA uses an internal FIFO to buffer transfer data. For any transfer using AXI Writes (Write Route is not disabled), the DMA waits until sufficient data is available in the FIFO before initiating any AXI write requests.
+
+When arming the engine, Caliptra firmware is expected to have information about available AXI addresses that are legal for DMA usage. The DMA can facilitate transfer requests with 64-bit addresses. DMA AXI Manager logic automatically breaks larger transfer sizes into multiple valid AXI burst transfers (max 4KiB size), and legally traverses 4KiB address boundaries. The DMA AXI Manager supports a maximum transfer size of 1MiB in total. FIXED AXI bursts are allowed, to facilitate a FIFO-like operation on either read or write channels.
+
+![](./images/Caliptra-AXI-DMA.png)
+
+## AXI Feature Support
+The DMA assist initiates transactions on the AXI manager interface in compliance with the AXI specification. The generated AXI transactions adhere to the following rules:
+* All address requests will be aligned to the data width of the interface, which is configured as 32-bit in the 2.0 release.
+* The DMA will not issue Narrow transfers. That is, AxSIZE will always be set to match the data width of the interface (4 bytes).
+* All data lanes are used on all transfers. That is, the AXI manager Write channel will always set WSTRB to all 1s.
+* At most, 2 reads and 2 writes will be initiated at any time.
+  * When using a non-zero block\_size for the transfer, in accordance with the [Streaming Boot](#Streaming-Boot-Payloads) feature, at most 1 read and 1 write will be issued concurrently.
+* All transactions are initiated with AxID = 0, meaning that both reads and writes require in-order responses.
+* The maximum burst length initiated is constrained by the following parameters:
+  * Any transfer using the INCR burst type is restricted by both the maximum allowable length of an AXI transaction (AxLEN=255 or total byte count of 4KiB, whichever is smaller) and the size of the internal FIFO. In the 2.0 release the internal FIFO is configured with a depth of 512 bytes; the maximum transaction size allowed is 256 bytes, to allow up to 2 transactions to be outstanding at a time. In summary, the transfer size will always be 256 bytes or less (AxLEN = 63), as this is the smallest of (AxLEN = 255 -> 1KiB, 4KiB, and 256 bytes).
+  * Any transfer using the FIXED burst type is restricted by the AXI specification to a burst length of 16.
+  * When the block\_size field is set to a non-zero value when arming the DMA, all transfers are restricted in size to specified block_size, in bytes.
+  * AXI transactions must not cross a 4KiB boundary, per the specification. If the transfer size requires crossing a boundary, the DMA will break it into smaller transactions that will go up to the boundary, then start from the next alignment boundary.
+
+## Routes
+
+In the AXI DMA control state machine, both the read and write interfaces have their own “route”. A route is configured for read and write channels for every DMA operation that is requested. Routes determine how data flows through the DMA block.
+
+Read routes always apply when an AXI read is requested. Any AXI read will push the response data into the internal FIFO. The read route determines where this data will ultimately be sent when it is popped from the FIFO. For the AHB route, data from the FIFO is populated to the dataout register, where it may be read via AHB by the Caliptra RV core. For the mailbox route, data from the FIFO flows into the mailbox; for these operations, the mailbox address is determined by the destination address register value, with an offset applied based on how many bytes have been written to the mailbox. For the AXI route, data from the FIFO flows into the AXI Write Manager, whereupon it is sent out to AXI on the WDATA signal.
+
+Write routes always apply when an AXI write is requested. Any AXI write will read data from the internal FIFO before sending it over AXI. The write route determines where this data originates before it is pushed onto the FIFO. For the AHB route, a write to the datain register via AHB results in write data being pushed onto the FIFO. For the mailbox route, data is read from the mailbox and pushed onto the FIFO; for these operations, the mailbox address is determined by the source address register value, with an offset applied based on how many bytes have been read from the mailbox. For the AXI route, data flows from the AXI Read Manager into the FIFO.
+
+*Example 1: Write Route \== MBOX*
+
+![](./images/Caliptra-AXI-DMA-WR.png)
+
+*Example 2: Read Route \== AHB*
+
+![](./images/Caliptra-AXI-DMA-RD.png)
+
+
+## Streaming Boot Payloads
+
+The DMA block supports a special mode of operation that is intended for use in reading Firmware Image Payloads (for Streaming Boot) from the Recovery Interface, present in the Caliptra Subsystem. This operation mode relies on three key control signals: the payload\_available signal input from the recovery interface, the read\_fixed control bit, and the block\_size register (from the DMA control CSR block). 
+
+This special mode of operation is only used for AXI Reads. To trigger the DMA to operate in this mode, Caliptra Firmware must program the block\_size register to a non-zero value that is a power-of-two. Caliptra Firmware must also program the read\_fixed control bit. Once the “go” bit is set, causing the DMA to begin operation, the DMA control logic will wait for the payload\_available input to trigger. When this occurs, the DMA controller issues a read that has a size equal to (or smaller) than the configured block\_size (the read may be smaller if required by AXI rules). This process repeats until the amount of data indicated in the byte\_size register has been transferred.
+
+When programming an AXI to AXI transfer for a Streaming Boot Payload (e.g., to transfer an SoC Firmware manifest into an AXI-attached SRAM), firmware must also follow these rules:
+* Programmed value of block\_size must not exceed the largest legal AXI transaction size for a FIXED burst type. The DMA assist has a native data width of 4-bytes, so transaction size is restricted to 64-bytes due to the AXI specification limit of AxLEN == 15 for FIXED transactions.
+* Destination address must be aligned to the programmed value of block\_size. For example, if block\_size is set to 64-bytes, destination address must be an integer multiple of 0x40.
+
+In all cases other than reading Recovery Interface Payloads, the block\_size register must be programmed to 0\.
+
+## Programming Flowchart {#programming-flowchart}
+
+General Rules:
+
+1. If either Read or Write route is configured to AXI RD \-\> AXI WR, both routes must be configured as AXI RD \-\> AXI WR.  
+2. Read Route and Write Route must not both be disabled.  
+3. If Read Route is enabled to any configuration other than AXI RD-\> AXI WR, Write route must be disabled.  
+4. If Read Route is disabled, Write route must be enabled to a configuration that is not AXI RD \-\> AXI WR.  
+5. If Read Route is disabled, Read Fixed field is ignored.  
+6. If Write Route is disabled, Write Fixed field is ignored.  
+7. Addresses and Byte Counts must be aligned to AXI data width (1 DWORD).
+
+8. Block Size is used only for reads from the Subsystem Recovery Interface. When block size has a non-zero value, the DMA will only issue AXI read requests when the payload available input signal is set to 1, and will limit the size of read requests to the value of block size. For all other transactions (such as AXI writes, or any single-dword access to a subsystem register via the DMA), block size shall be set to a value of 0 for every transaction.
+
+Steps:
+
+1. Write Byte Count  
+2. Write Block Size  
+3. Write Source Addr (value is ignored if data is from AHB)  
+4. Write Dest Addr (value is ignored if data is to AHB).  
+   1. To perform an accelerated SHA operation on incoming read data, firmware sets the Read/Write route to AXI RD-\> AXI WR, and the destination address to the SoC address for the SHA Acceleration data in aperture.  
+5. Set Interrupt Enables (optional)  
+6. If Mailbox R/W: Acquire Mailbox Lock  
+7. If SHA Acc Op:   
+   1. First acquire Sha Accel Lock via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
+   2. Initiate Sha Accel streaming operation via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
+   3. Run this operation with the AXI RD \-\> AXI WR route to move data from SoC location into Sha Accelerator  
+8. Set Control Register  
+   1. Set Read/Write Routes  
+   2. Set Read/Write Fixed=0/1  
+   3. GO  
+   4. (All 3 may be single write or separate, GO must be last bit to set)  
+9. If AHB data: Wait for RD FIFO not empty or WR FIFO not full  
+   1. Push/Pop data (using Rd Data/Wr Data register offsets) until all requested bytes transferred  
+   2. If AHB Error – check status0 for Error, then check for “Command Error”   
+10. Wait for TXN Done Interrupt (or Poll Status0)   
+11. Read Status0, confirm Busy=0, Error=0
+
+## Descriptor
+
+https://chipsalliance.github.io/caliptra-rtl/main/internal-regs/?p=clp.axi_dma_reg
 
 # Caliptra SS Fuse Controller
 
@@ -540,13 +634,13 @@ It is an overview of the architecture of the Life-Cycle Controller (LCC) Module 
 Figure below shows the Debug Architecture of the Caliptra Subsystem and some important high-level signals routed towards SOC. The table in Key Components and Interfaces section shows all the signals that are available to SOC (outside of Caliptra Subsystem usage).
 
 *Figure: Caliptra Subsystem & SOC Debug Architecture Interaction*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/LCC-SOC-View.png)
+![](./images/LCC-SOC-View.png)
 **Note:** SoC Debug Architecture of the Caliptra Subsystem with LCC; the red dashed circles highlight the newly added blocks and signals.
 
 The figure below shows the LCC state transition and Caliptra Subsystem enhancement on LCC state transitions. It illustrates the life cycle flow of Caliptra Subsystem.
 
 *Figure: Caliptra Subsystem Life Cycle Controller Summary*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/LCC-Summary.png)
+![](./images/LCC-Summary.png)
 
 **Note:** Caliptra Subsystem life cycle flow. This flow shows legal state transitions in life cycle controller by excluding its invalid states for simplicity.
 
@@ -609,7 +703,7 @@ In the manufacturing phase, the Caliptra Subsystem asserts SOC_HW_DEBUG_EN high,
 The LCC includes a TAP interface, which operates on its own dedicated clock and is used for injecting tokens into the LCC. Notably, the LCC TAP interface remains accessible in all life cycle states, providing a consistent entry point for test and debug operations. This TAP interface can be driven by either the TAP GPIO pins or internal chip-level wires, depending on the system's current configuration.
 
 *Figure: Caliptra Subsystem Life Cycle Controller Summary*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/TAP-Pin-Muxing.png)
+![](./images/TAP-Pin-Muxing.png)
 **Note:** Above figure of TAP pin muxing block diagram with a conceptual representation. SOCs may implement this in their own way
 
 SOC logic incorporates the TAP pin muxing to provide the integration support and manage the connection between the TAP GPIO pins and the Chip-Level TAP (CLTAP). As illustrated in figure above, this muxing logic determines the source that drives the LCC TAP interface. The selection between these two sources is controlled by the SOC_HW_DEBUG_EN signal. When SOC_HW_DEBUG_EN is set to high, control is handed over to the CLTAP, allowing for chip-level debug access through the TAP GPIO pins. Conversely, when SOC_HW_DEBUG_EN is low, the TAP GPIO pins take control, enabling external access to the LCC TAP interface.
@@ -630,7 +724,7 @@ TAP pin muxing also enables routing to Caliptra TAP. This selection happens when
 The following figure illustrates how Caliptra Subsystem enters the manufacturing debug mode. To enter this mode, LCC should be in MANUF state. While being in manufacturing debug mode, LCC does not change its state from MANUF to any other state. During the MANUF state, Caliptra Subsystem can enable manufacturing debug flow by following steps:
 
 *Figure: Caliptra Subsystem Manuf Debug Life Cycle View*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Manuf-Debug-LifeCycle.png)
+![](./images/Manuf-Debug-LifeCycle.png)
 **Note:** The flow diagram on the right side shows the LCC states (grey boxes) and their transitions, while the flow diagram on the left illustrates Caliptra SS’s enhancements to the LCC for the manufacturing phase. Specifically, the flow on the left depicts the routine for entering manufacturing debug mode.
 
 #### Flow Explanation:
@@ -716,7 +810,7 @@ If either the authentication or the hash comparison fails, Caliptra returns a fa
 This flow establishes a secure and controlled process for entering Caliptra’s production debug mode, ensuring that only authorized access is granted while maintaining the integrity and confidentiality of the system’s sensitive assets. The more details about the flow sequence as illustrated with flow figure and explanation of each steps in the flow.
 
 *Figure: Caliptra Subsystem Production Debug Life Cycle View*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/Prod-Debug-LifeCycle.png)
+![](./images/Prod-Debug-LifeCycle.png)
 
 1. (Platform) DEBUG_INTENT_STRAP Assertion:
    * The process is initiated when the DEBUG_INTENT_STRAP pin, connected via the SoC's GPIO, is asserted high.
@@ -896,6 +990,61 @@ The following diagram illustrates the internal components of the MCI.
 The Control/Status Registers (CSRs) within the MCI are designed to provide critical control and status monitoring functions for the SoC. These registers include configuration settings, status indicators, and control bits that allow communication and management of the various operations of the MCI. The CSR bank is accessible via the AXI interface and is mapped into the memory space to facilitate straightforward access and manipulation.
 
 **FIXME the link:** caliptra-ss/src/mci/rtl/mci_reg.rdl
+
+#### MCI CSR Access Restrictions
+
+Certain registers within the CSR bank have write access restrictions based off of:
+
+1. AXI User
+2. Lock bits (SS_CONFIG_DONE, CAP_LOCK, etc.)
+
+The privilaged users for the MCI CSRs are:
+
+1. MCU
+2. MCI SOC Config User (MSCU)
+
+Both of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionalality like timers that are needed by the SOC but are critical for MCU functionality. 
+
+The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MCSCU can configure and lock down the MCI configuration. 
+
+The registers can be split up into a few different categories:
+
+
+| **Write restrictions**     | **Description**     | 
+| :---------     | :---------| 
+| MCU Only        | These registers are only meant for MCU to have access. There is no reason for SOC or the MCI SOC Config User to access the. Example is the MTIMER|
+| MCU or MCSU      |  Access restricted to trusted agent but not locked. Example:RESET_REQUEST for MCU. |
+| MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each warm reset |
+| Sticky MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each cold reset |
+| Locked by SS_CONFIG_DONE_STICKY        | Configuration once per cold reset. |
+| MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilieds then locked until next warm reset |
+| MBOX_USER_LOCK       |  Mailbox specific configuration locked by it's own LOCK bit. Configured afer each arem reset.       |
+
+
+### MCI Straps
+
+All MCI straps shall be static before mci_rst_b is deasserted.
+
+MCI has the following types of straps:
+
+| **Strap Type**     | **Sampled or Direct Use**|**Description**     | 
+| :---------     | :---------| :---------| 
+| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These are not overridable by SW. | 
+| **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
+| **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
+
+
+*NOTE: Strap sampling occurs when mci_rst_b is deasserted and is typically performed once per cold boot. This process is controlled by the SS_CONFIG_DONE_STICKY register; when set, sampling is skipped. If a warm reset happens before SS_CONFIG_DONE_STICKY is set, the straps will be sampled again, although this is not the usual behavior.
+
+| **Strap Name**     | **Strap Type**|**Description**     | 
+| :---------     | :---------| :---------| 
+|`strap_mcu_lsu_axi_user`|Non-configurable Direct|MCU Load Store Unit AXI User. Given Special Access within MCI. |
+|`strap_mcu_ifu_axi_user`|Non-configurable Direct|MCU Instruction Fetch Unit AXI User. given special access within MCI.|
+|`strap_mcu_sram_config_axi_user`|Non-configurable Direct|MCU SRAM Config agent who is given special access to MCU SRAM Execution region to load FW image. Typically set to Caliptra's AXI User.|
+|`strap_mci_soc_config_axi_user`|Non-configurable Direct|MCI SOC Config User (MSCU). AXI agent with MCI configuration access. |
+|`strap_mcu_reset_vector`|Configurable Sampled|Default MCU reset vector.|
+|`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Show the intent to put the part in a debug unlocked state. Although not writable by SW via AXI. This is writable via DMI.|
+
 
 ### Subsystem Boot Finite State Machine (CSS-BootFSM)
 
@@ -1084,24 +1233,33 @@ It is the only agent allowed to set TARGET_USER and update the final CMD_STATUS.
   *NOTE: MBOX SRAM size is configurable, but MBOX always reserves 2MB address space. See [MCU Mailbox Errors](#mcu-mailbox-errors) for how access to and invalid SRAM address are handled. 
 
 ### MCU SRAM
+![](images/MCI-MCU-SRAM-Diagram.png)
 
 The MCU SRAM provides essential data and instruction memory for the Manufacturer Control Unit. This SRAM bank is utilized by the MCU to load firmware images, store application data structures, and create a runtime stack. The SRAM is accessible via the AXI interface and is mapped into the MCI's memory space for easy access and management. Exposing this SRAM via a restricted API through the SoC AXI interconnect enables seamless and secured Firmware Updates to be managed by Caliptra.
 
-AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the Caliptra AXI_USER, or the MCU IFU/LSU AXI USERSs). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
+**Min Size**: 4KB
 
+**Max Size**: 2MB
+
+AXI USER filtering is used to restrict access within the MCU SRAM based on system state and accessor. Access permissions are based on the AXI USER input straps (either the MCU SRAM Config AXI_USER, or the MCU IFU/LSU AXI USERS). Any write attempt by an invalid AXI_USER is discarded and returns an error status. Any read attempt returns 0 data and an error status.
 The MCU SRAM contains two regions, a Protected Data Region and an Updatable Execution Region, each with a different set of access rules.
 
-The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing is locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation.
+After each MCU reset the Updateable Execution Region may only be read/written by MCU SRAM Config User (typically Caliptra) prior to mcu_sram_fw_exec_region_lock input signal is set. Once fw_exec_region_lock is set it can be read/written by the MCU IFU or MCU LSU until MCU reset is asserted. 
 
-The Updateable Execution Region may only be read/written by Caliptra prior to setting the MCU_RUNTIME_LOCK register and may only be read/written by the MCU IFU or MCU LSU after MCU_RUNTIME_LOCK is set. The Protected Data Region may never be accessed by Caliptra or the MCU IFU. Only the MCU LSU is allowed to read or write to the Protected Data Region, regardless of whether MCU ROM or MCU Runtime firmware is running.
+The Protected Data Region is only ever read/write accessible by MCU LSU.
+The span of each region is dynamically defined by the MCU ROM during boot up. Once MCU has switched to running Runtime Firmware, the RAM sizing shall be locked until any SoC-level reset. ROM uses the register FW_SRAM_EXEC_REGION_SIZE to configure the SRAM allocation in 4KB increments. FW_SRAM_EXEC_REGION_SIZE counts in base 0 meaning the smallest the Updateable Execution Region size can be is 4KB. It is possible for the entire SRAM to be allocated to the Updatable Execution Region and there be no Protected Data Region. 
 
-The entire MCU SRAM has ECC protection. Unlike MCI mailboxes, there is no configuration available to disable MCU SRAM for architectural reasons. Single bit errors are detected and corrected. While double bit errors are detected and error. MCI actions for single bit errors:
+The entire MCU SRAM has ECC protection with no ability to disable. Single bit errors are detected and corrected. Double bit errors are detected and error. 
+
+**MCI actions for single bit errors:**
 - Correct data and pass corrected data back to the initiator.
 - Send interrupt notification to MCU.
-- MCI actions for double bit errors:
-- AXI response to the initiator
+
+**MCI actions for double bit errors:**
+- AXI SLVERR response to the initiator
 - HW_ERROR_FATAL asserted and sent to SOC
 
+MCU SRAM is accessible via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) for more details.
 ### MCI AXI Subordinate
 
 MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the appropriate submodule within MCI. 
@@ -1109,9 +1267,9 @@ MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the 
 The MCI AXI Sub will respond with an AXI error if one of the following conditions is met:
 
 1. AXI Address miss
-2. Not all AXI STRB set when accessing submodule other than MCU SRAM
-3. Submodule error response
-4. Invalid MBOX AXI User access (MCU and Debug AXI USERs bypasses this check)
+2. Submodule error response
+3. Invalid MBOX AXI User access (MCU and Debug AXI USERs bypasses this check)
+
 
 ### Interrupts
 
