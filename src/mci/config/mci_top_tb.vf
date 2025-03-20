@@ -16,6 +16,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/include
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_sva.svh
@@ -193,3 +194,4 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_boot_seqr.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_lcc_st_trans.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_trace_buffer.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/trace_buffer_csr.sv
+${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
