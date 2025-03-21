@@ -13,4 +13,8 @@
 // limitations under the License.
 //
 
+`include "cptra_ss_i3c_core_defines.svh"
+`include "cptra_ss_i3c_core_base_test.svh"
+`include "i3c_reg_rd_wr.svh"
+`include "i3c_sboot.svh"
 `include "ai3ct_ext_basic.svh"
