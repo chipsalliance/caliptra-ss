@@ -39,6 +39,9 @@ module caliptra_ss_top
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
 ) (
+    
+    input logic force_mcu_dmi_core_enable,
+    input logic force_mcu_dmi_uncore_enable,
     input logic cptra_ss_clk_i,
     // TODO: Hacking in this i3c clock
     input logic cptra_i3c_clk_i,
@@ -1025,8 +1028,8 @@ module caliptra_ss_top
         .scan_mode              ( 1'b0 ),        // To enable scan mode
         .mbist_mode             ( 1'b0 ),        // to enable mbist
 
-        .dmi_core_enable   (mcu_dmi_core_enable),
-        .dmi_uncore_enable   (mcu_dmi_uncore_enable),
+        .dmi_core_enable   (mcu_dmi_core_enable | force_mcu_dmi_core_enable),
+        .dmi_uncore_enable   (mcu_dmi_uncore_enable | force_mcu_dmi_uncore_enable),
         .dmi_uncore_en   (mcu_dmi_uncore_en),
         .dmi_uncore_wr_en   (mcu_dmi_uncore_wr_en),
         .dmi_uncore_addr   (mcu_dmi_uncore_addr),

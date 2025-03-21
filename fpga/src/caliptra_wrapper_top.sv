@@ -571,8 +571,8 @@ module caliptra_wrapper_top #(
     jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i;
     assign cptra_ss_lc_ctrl_jtag_i.tck = lc_jtag_tck_i;
     assign cptra_ss_lc_ctrl_jtag_i.tms = lc_jtag_tms_i;
-    assign cptra_ss_lc_ctrl_jtag_i.trst_n = lc_jtag_tdi_i;
-    assign cptra_ss_lc_ctrl_jtag_i.tdi = lc_jtag_trst_n_i;
+    assign cptra_ss_lc_ctrl_jtag_i.tdi = lc_jtag_tdi_i;
+    assign cptra_ss_lc_ctrl_jtag_i.trst_n = lc_jtag_trst_n_i;
     jtag_pkg::jtag_rsp_t cptra_ss_lc_ctrl_jtag_o;
     assign lc_jtag_tdo_o = cptra_ss_lc_ctrl_jtag_o.tdo;
 
@@ -1651,7 +1651,7 @@ I think this is the one that isn't used
     sel_od_pp == 1 indicates push-pull
     | sel_od_pp | phy2io | phy_data_io |    |   IN |   EN | UP |    |      wire      |
     |         0 |      0 |           z | -> |    x |    1 |  1 | -> | z              | // TODO: Use z or pull up 2k?
-    |         0 |      1 |           0 | -> |    1 |    0 |  0 | -> | open drain low |
+    |         0 |      1 |           0 | -> |    1 |    0 |  0 | -> | open drain low | // What? These look backwards
     |         1 |      0 |           0 | -> |    1 |    0 |  1 | -> | push pull low  |
     |         1 |      1 |           1 | -> |    0 |    0 |  1 | -> | push pull high |
 
@@ -1666,6 +1666,49 @@ I think this is the one that isn't used
     logic cptra_ss_i3c_scl_o;
     logic cptra_ss_i3c_sda_o;
     logic cptra_ss_sel_od_pp_o;
+
+/*
+    always_comb begin
+        case ({
+        i3c_core_sel_od_pp_o, i3c_core_scl_o, axi_i3c_scl_t, axi_i3c_scl_o, axi_i3c_scl_pullup_en
+        })
+        // Open drain, i3c_core pulls data low.
+        2'b00000:   SCL = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 0, output disable, data 0 // Conflict between OD status
+        2'b00001:   SCL = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 0, output disable, data 1 // Conflict between OD status
+        2'b00010:   SCL = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 0, output enable,  data 0 // Conflict between OD status
+        2'b00011:   SCL = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 0, output enable,  data 1 // Conflict between OD status
+        2'b00100:   SCL = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 1, output disable, data 0
+        2'b00101:   SCL = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 1, output disable, data 1
+        2'b00110:   SCL = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 1, output enable,  data 0
+        2'b00111:   SCL = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 1, output enable,  data 1
+
+        // Open drain, i3c_core leaves data high. High unless AXI I3C pulls low
+        2'b01000:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 0, output disable, data 0
+        2'b01001:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 0, output disable, data 1
+        2'b01010:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 0, output enable,  data 0 // Conflict between OD status. AXI I3C trying to drive PP
+        2'b01011:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 0, output enable,  data 1 // Conflict between OD status. AXI I3C trying to drive PP
+        2'b01100:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output disable, data 0 // AXI I3C not driving
+        2'b01101:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output disable, data 1 // AXI I3C not driving
+        2'b01110:   SCL = 1'b0; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output enable,  data 0 // AXI I3C pulling low
+        2'b01111:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output enable,  data 1
+
+        // I3C core Push Pull - output low
+        2'b10000:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output disable, data 0
+        2'b10001:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output disable, data 1
+        2'b10010:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output enable,  data 0
+        2'b10011:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output enable,  data 1
+        2'b10100:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
+        2'b10101:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
+        2'b10110:   SCL = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output enable,  data 0 // Conflict between OD status.
+        2'b10111:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
+
+
+        2'b11:   SCL = 1'b1; // I3C core Push Pull - output high
+        default: SCL = 1'b1;
+        endcase
+    end
+*/
+
 
     always_comb begin
         case ({
@@ -1691,7 +1734,15 @@ I think this is the one that isn't used
         endcase
     end
 
+//i3c_core_sda_i = (sda_o & sda_t) | (~sda_pullup_en)
+
+
 caliptra_ss_top caliptra_ss_top_0 (
+
+    // TODO: I can't figure out the LCC and debug interactions right now. Try forcing these bits
+    .force_mcu_dmi_core_enable(hwif_out.interface_regs.control.force_mcu_dmi_core_enable.value),
+    .force_mcu_dmi_uncore_enable(hwif_out.interface_regs.control.force_mcu_dmi_uncore_enable.value),
+
     .cptra_ss_clk_i(core_clk),
     .cptra_i3c_clk_i(i3c_clk),
     .cptra_ss_pwrgood_i(hwif_out.interface_regs.control.cptra_pwrgood.value),

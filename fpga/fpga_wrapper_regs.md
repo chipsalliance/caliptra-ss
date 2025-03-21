@@ -217,11 +217,13 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 - Base Offset: 0x30
 - Size: 0x4
 
-|Bits|   Identifier   |Access|Reset|Name|
-|----|----------------|------|-----|----|
-|  0 |  cptra_pwrgood |  rw  | 0x0 |  — |
-|  1 | cptra_ss_rst_b |  rw  | 0x0 |  — |
-|  2 |bootfsm_brkpoint|  rw  | 0x0 |  — |
+|Bits|         Identifier        |Access|Reset|Name|
+|----|---------------------------|------|-----|----|
+|  0 |       cptra_pwrgood       |  rw  | 0x0 |  — |
+|  1 |       cptra_ss_rst_b      |  rw  | 0x0 |  — |
+|  2 | force_mcu_dmi_core_enable |  rw  | 0x0 |  — |
+|  3 |force_mcu_dmi_uncore_enable|  rw  | 0x0 |  — |
+|  4 |      bootfsm_brkpoint     |  rw  | 0x0 |  — |
 
 ### status register
 

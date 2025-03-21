@@ -146,6 +146,9 @@ set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells cptra_rom_bram_ctrl_0]
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 cptra_rom_bram_ctrl_1
 set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells cptra_rom_bram_ctrl_1]
 
+# Create AXI I3C to act as external I3C
+#create_bd_cell -type ip -vlnv xilinx.com:ip:axi_i3c:1.0 axi_i3c_0
+
 # Create reset block
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset_0
 
@@ -239,12 +242,14 @@ if {$FAST_I3C} {
     [get_bd_pins ps_0/pl1_ref_clk] \
     [get_bd_pins axi_interconnect_0/aclk1] \
     [get_bd_pins caliptra_package_top_0/i3c_clk]
+  #  [get_bd_pins axi_i3c_0/s_axi_aclk]
 } else {
   # Use regular clock for i3c to avoid timing problems
   connect_bd_net \
     [get_bd_pins $ps_pl_clk] \
     [get_bd_pins axi_interconnect_0/aclk1] \
     [get_bd_pins caliptra_package_top_0/i3c_clk]
+  #  [get_bd_pins axi_i3c_0/s_axi_aclk]
 }
 
 # Connections to I3C driver board
@@ -290,6 +295,7 @@ foreach manager $managers {
   # MCI needs 0x200000. TODO: What is a reasonable size for this? MCU SRAM starts at 0x200000 so assume this needs extra.
   # TODO: integration spec has this take 0x0100_0000
   assign_bd_address -offset 0xA8000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCI/reg0] -force
+  # AXI I3C
 }
 
 # Connect JTAG signals to PS GPIO pins
