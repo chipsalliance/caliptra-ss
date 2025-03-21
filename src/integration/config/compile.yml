@@ -141,7 +141,5 @@ global:
         #- '+ai3c_dbg_name=master'
         - '+vpi -lpthread'
         - '+CLP_BUS_LOGS=1'
-        # cmdline_img_sz in bytes in hex
-        - '+cmdline_img_sz=11'
         # - +AVY_TEST=ai3ct_ext_basic
         # - '+i3c_run_time=500us'
