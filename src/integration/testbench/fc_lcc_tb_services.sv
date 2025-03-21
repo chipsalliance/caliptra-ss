@@ -33,12 +33,12 @@ module fc_lcc_tb_services (
       if (tb_service_cmd_valid) begin
         case (tb_service_cmd)
           CMD_FORCE_FC_AWUSER_CPTR_CORE: begin
-            $display("fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER");
-            force `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
+            $display("fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = CLPTRA_CORE_AXI_USER");
+            force `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser = `CPTRA_SS_TOP_PATH.cptra_ss_strap_caliptra_dma_axi_user_i;
           end
           CMD_FORCE_FC_AWUSER_MCU: begin
-            $display("fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = CPTRA_SS_STRAP_MCU_LSU_AXI_USER");
-            force `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser = CPTRA_SS_STRAP_MCU_LSU_AXI_USER;
+            $display("fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = MCU_LSU_AXI_USER");
+            force `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser = `CPTRA_SS_TOP_PATH.cptra_ss_strap_mcu_lsu_axi_user_i;
           end
           CMD_RELEASE_AWUSER: begin
             $display("fc_lcc_tb_services: Releasing fuse ctrl's force on core_axi_wr_req.awuser");
