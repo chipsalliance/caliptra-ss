@@ -970,7 +970,6 @@ module lc_ctrl
   // Assertions //
   ////////////////
 
-  //`CALIPTRA_ASSERT_KNOWN(TlOKnown,               tl_o                       )
   //`CALIPTRA_ASSERT_KNOWN(AlertTxKnown_A,         alert_tx_o                 ) // -> NOTE: Removed since we do not use this port anymore
   `CALIPTRA_ASSERT_KNOWN(PwrLcKnown_A,           pwr_lc_o                   )
   `CALIPTRA_ASSERT_KNOWN(LcOtpProgramKnown_A,    lc_otp_program_o           )
