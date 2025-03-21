@@ -28,4 +28,10 @@ void sw_transition_req(uint32_t next_lc_state,
                         uint32_t token_31_0,
                         uint32_t conditional);
 
+uint32_t read_lc_state(void);
+
+uint32_t read_lc_counter(void);
+
+uint32_t encode_lc_state(uint32_t lc_state);
+
 #endif // LC_CTRL_H
