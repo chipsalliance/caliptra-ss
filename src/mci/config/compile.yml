@@ -31,6 +31,7 @@ requires:
   - fuse_ctrl_pkg
   # for beh_lib with rvecc_encode/decode
   - el2_veer_pkg
+  - ss_libs
 targets:
   rtl:
     directories:
@@ -85,6 +86,7 @@ requires:
   - el2_veer_pkg
   - lc_ctrl_pkg
   - fuse_ctrl_pkg
+  - ss_libs
 targets:
   rtl:
     directories:
