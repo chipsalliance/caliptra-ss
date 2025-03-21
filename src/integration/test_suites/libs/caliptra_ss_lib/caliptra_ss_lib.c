@@ -19,11 +19,25 @@
 #include "soc_ifc.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "riscv_hw_if.h"
+#include "caliptra_ss_lib.h"
 
-void reset_rtl(void) {
-    uint32_t reg_value;
 
-    reg_value = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm
+#ifdef MY_RANDOM_SEED
+    uint32_t state = (unsigned) MY_RANDOM_SEED;
+#else
+    uint32_t state = 0;
+#endif
+
+uint32_t xorshift32(void)
+{
+    state ^= state << 13;
+    state ^= state >> 17;
+    state ^= state << 5;
+    return state;
+}
+
+void reset_fc_lcc_rtl(void) {
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_RESET);
     VPRINTF(LOW, "LCC & Fuse_CTRL is under reset!\n");
     for (uint16_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"

@@ -44,12 +44,13 @@ localparam TB_SERVICE_CMD_NOPE              = 8'h00;
 
 
 localparam CMD_FC_LCC_RESET                 = FC_LCC_CMD_OFFSET + 8'h02;
-localparam CMD_FORCE_AWUSER_0               = FC_LCC_CMD_OFFSET + 8'h03;
-localparam CMD_FORCE_AWUSER_1               = FC_LCC_CMD_OFFSET + 8'h04;
+localparam CMD_FORCE_FC_AWUSER_CPTR_CORE    = FC_LCC_CMD_OFFSET + 8'h03;
+localparam CMD_FORCE_FC_AWUSER_MCU          = FC_LCC_CMD_OFFSET + 8'h04;
 localparam CMD_RELEASE_AWUSER               = FC_LCC_CMD_OFFSET + 8'h05;
 localparam CMD_FC_FORCE_ZEROIZATION         = FC_LCC_CMD_OFFSET + 8'h06;
 localparam CMD_FC_FORCE_ZEROIZATION_RESET   = FC_LCC_CMD_OFFSET + 8'h07;
 localparam CMD_RELEASE_ZEROIZATION          = FC_LCC_CMD_OFFSET + 8'h08;
 localparam CMD_FORCE_LC_TOKENS              = FC_LCC_CMD_OFFSET + 8'h09;
+localparam CMD_LC_FORCE_RMA_SCRAP_PPD       = FC_LCC_CMD_OFFSET + 8'd10;
 
 `endif // CALIPTRA_SS_TB_CMD_LIST_SVH

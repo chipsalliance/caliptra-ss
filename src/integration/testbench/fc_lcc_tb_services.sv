@@ -32,11 +32,11 @@ module fc_lcc_tb_services (
     if (cptra_rst_b) begin
       if (tb_service_cmd_valid) begin
         case (tb_service_cmd)
-          CMD_FORCE_AWUSER_0: begin
+          CMD_FORCE_FC_AWUSER_CPTR_CORE: begin
             $display("fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER");
             force `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
           end
-          CMD_FORCE_AWUSER_1: begin
+          CMD_FORCE_FC_AWUSER_MCU: begin
             $display("fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = CPTRA_SS_STRAP_MCU_LSU_AXI_USER");
             force `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser = CPTRA_SS_STRAP_MCU_LSU_AXI_USER;
           end
@@ -66,11 +66,15 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: Forcing LCC TOKENS");            
             force `LCC_PATH.otp_lc_data_i.test_tokens_valid = 4'b0101; //from_otp_caliptra_ss_lc_data_i.test_tokens_valid;//caliptra_ss_lc_tx_t'(On);
             force `LCC_PATH.otp_lc_data_i.test_unlock_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
-            force `LCC_PATH.otp_lc_data_i.test_exit_dev_token = 128'hee4f_e51a_73f2_9e7b_542f_2d2d_e65e_577c;
-            force `LCC_PATH.otp_lc_data_i.dev_exit_prod_token = 128'h3656_71d1_31ba_fcef_ac7f_4d2a_776a_6ed3;
-            force `LCC_PATH.otp_lc_data_i.prod_exit_prodend_token = 128'h5622_8106_a663_40c7_0f86_ccda_dcbc_2b7f;
+            force `LCC_PATH.otp_lc_data_i.test_exit_dev_token = 128'hd10ceca9_725373ec_32ac874c_7381bd54;
+            force `LCC_PATH.otp_lc_data_i.dev_exit_prod_token = 128'hf1c0bd8a_da705018_5d3667f5_aeebc767;
+            force `LCC_PATH.otp_lc_data_i.prod_exit_prodend_token = 128'hdb17c6f2_fa63d690_734a8a31_6147d7e5;
             force `LCC_PATH.otp_lc_data_i.rma_token_valid = 4'b0101;//from_otp_caliptra_ss_lc_data_i.rma_token_valid;//caliptra_ss_lc_tx_t'(On);
-            force `LCC_PATH.otp_lc_data_i.rma_token = 128'h9704_5d52_04f2_f7fc_8756_e714_5ad7_6df9;
+            force `LCC_PATH.otp_lc_data_i.rma_token = 128'h67926115_6880f4cc_51785553_16c51e4d;
+          end
+          CMD_LC_FORCE_RMA_SCRAP_PPD: begin
+            $display("fc_lcc_tb_services: Forcing Allow_RMA_or_SCRAP_on_PPD  = 1");
+            force `CPTRA_SS_TOP_PATH.cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i = 1'b1;
           end
           default: begin
             // No action for unrecognized commands.
