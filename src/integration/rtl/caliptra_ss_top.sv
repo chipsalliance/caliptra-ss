@@ -861,7 +861,7 @@ module caliptra_ss_top
         .sb_axi_awprot          (),
         .sb_axi_awqos           (),
 
-         // FIXME - no port on RV is this OK?.sb_axi_wvalid          (),
+        .sb_axi_wvalid          (),
         .sb_axi_wready          (sb_axi_wready),
         .sb_axi_wdata           (),
         .sb_axi_wstrb           (),
