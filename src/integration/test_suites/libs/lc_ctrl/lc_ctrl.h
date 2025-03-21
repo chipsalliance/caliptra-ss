@@ -69,4 +69,8 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
 void force_PPD_pin(void);
 
 
+uint32_t read_lc_state(void);
+
+uint32_t read_lc_counter(void);
+
 #endif // LC_CTRL_H
