@@ -129,3 +129,19 @@ void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granular
     }
     return;
 }
+
+void calculate_digest(uint32_t partition_base_address) {
+    // Step 1: Check if DAI is idle
+    wait_dai_op_idle(0);
+
+    // Step 2: Write the partition base address to DIRECT_ACCESS_ADDRESS
+    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, partition_base_address);
+    VPRINTF(LOW, "INFO: Partition base address 0x%08X written to DIRECT_ACCESS_ADDRESS.\n", partition_base_address);
+
+    // Step 3: Trigger a digest calculation command
+    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_CMD, 0x4);
+
+    // Step 4: Poll STATUS until DAI state goes back to idle    
+    wait_dai_op_idle(0);
+    return;
+}
