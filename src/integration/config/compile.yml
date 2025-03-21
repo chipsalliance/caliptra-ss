@@ -1,4 +1,54 @@
 ---
+provides: [avery_vip]
+schema_version: 2.4.0
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/vip
+      #-- General
+      - $AVERY_SIM
+      - $AVERY_SIM/src
+      - $AVERY_SIM/src.IEEE
+      - $AVERY_PLI
+      #-- AXI Interconnect
+      - $AVERY_AXI/src.axi.VCS
+      - $AVERY_AXI/src.axi
+      - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
+      - $AVERY_AXI/testbench
+      #-- I3C VIP
+      - $AVERY_HOME/i3cxactor-2025.1/
+      - $AVERY_HOME/i3cxactor-2025.1/src
+      - $AVERY_HOME/i3cxactor-2025.1/src.i3c
+      - $AVERY_HOME/i3cxactor-2025.1/src.VCS
+      - $AVERY_HOME/i3cxactor-2025.1/src.i3c
+      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/examples
+      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/examples.uvm
+      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut
+      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut1_1
+      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut_slave
+      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut_master
+      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut_master_stby
+      - $AVERY_HOME/i3cxactor-2025.1/testbench
+    files:
+      #-- General
+      - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
+      - $AVERY_SIM/src/avery_pkg.sv
+      - $AVERY_SIM/src/avery_pkg_test.sv
+      #-- AXI Interconnect
+      - $AVERY_AXI/src.axi/aaxi_pkg.sv
+      - $AVERY_AXI/src.axi/aaxi_pkg_xactor.sv
+      - $AVERY_AXI/src.axi/aaxi_class_pll.sv
+      - $AVERY_AXI/src.axi/aaxi_pkg_test.sv
+      - $AVERY_AXI/src.axi/aaxi_intf.sv
+      #-- I3C VIP
+      - $AVERY_HOME/i3cxactor-2025.1/src/ai2c_pkg.sv
+      - $AVERY_HOME/i3cxactor-2025.1/src.i3c/ai3c_pkg.sv
+      - $AVERY_HOME/i3cxactor-2025.1/src/ai2c_intf.sv
+      - $AVERY_HOME/i3cxactor-2025.1/src.i3c/ai3c_intf.sv
+    tops:
+      #-- NOTE: include this in the top level testbench
+      - ai3c_tests_bench
+---
 provides: [caliptra_ss_top_defines]
 schema_version: 2.4.0
 targets:
@@ -61,10 +111,6 @@ targets:
   tb:
     directories:
       - $COMPILE_ROOT/vip
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi.VCS
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi
-      - $AVERY_HOME/axixactor-2.1e.230314//checker/BP063-BU-01000-r0p1-00rel0/sva
-      - $AVERY_HOME/axixactor-2.1e.230314//testbench
       - $COMPILE_ROOT/testbench
       - $COMPILE_ROOT/testbench/sv_tests/ai3c
     files:

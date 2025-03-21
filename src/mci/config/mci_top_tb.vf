@@ -71,6 +71,7 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_dmi_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_trace_buffer_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/trace_buffer_csr_pkg.sv
+${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox_csr_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
@@ -193,3 +194,5 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_boot_seqr.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_lcc_st_trans.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_trace_buffer.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/trace_buffer_csr.sv
+${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox.sv
+${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox_csr.sv
