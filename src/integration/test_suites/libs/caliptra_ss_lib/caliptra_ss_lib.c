@@ -19,8 +19,11 @@
 #include "soc_ifc.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "riscv_hw_if.h"
+<<<<<<< HEAD
 #include "string.h"
 #include "stdint.h"
+=======
+>>>>>>> 37691f4be06052eb741ac8b254fc416cfb1c2de0
 
 void reset_rtl(void) {
     uint32_t reg_value;
@@ -33,6 +36,7 @@ void reset_rtl(void) {
 }
 
 void mcu_mci_boot_go() {
+<<<<<<< HEAD
 
     // writing SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO register of MCI for CPTRA Boot FSM to bring Caliptra out of reset
     uint32_t cptra_boot_go;
@@ -42,6 +46,11 @@ void mcu_mci_boot_go() {
     VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO");
     cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
     VPRINTF(LOW, "MCU: SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO set to %x\n", cptra_boot_go);
+=======
+    // writing SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO register of MCI for CPTRA Boot FSM to bring Caliptra out of reset
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
+    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
+>>>>>>> 37691f4be06052eb741ac8b254fc416cfb1c2de0
 }
 
 void mcu_cptra_fuse_init() {
@@ -160,6 +169,7 @@ void mcu_cptra_mbox_cmd() {
     lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0);
     VPRINTF(LOW, "MCU: Mbox execute clear\n");
 }
+<<<<<<< HEAD
 
 
 // -- function to update various register to default values
@@ -450,3 +460,5 @@ void boot_mcu_with_fuses(){
     VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
  
 }
+=======
+>>>>>>> 37691f4be06052eb741ac8b254fc416cfb1c2de0

@@ -13,8 +13,26 @@
 // limitations under the License.
 //
 
+<<<<<<< HEAD
+<<<<<<< HEAD:src/integration/testbench/sv_tests/ai3c/ai3c_test_includes.svh
 `include "cptra_ss_i3c_core_defines.svh"
 `include "cptra_ss_i3c_core_base_test.svh"
 `include "i3c_reg_rd_wr.svh"
 `include "i3c_sboot.svh"
 `include "ai3ct_ext_basic.svh"
+=======
+#ifndef CALIPTRA_SS_LIB
+#define CALIPTRA_SS_LIB
+
+void reset_rtl(void);
+void mcu_mci_boot_go();
+void mcu_cptra_fuse_init();
+void mcu_cptra_user_init();
+void mcu_cptra_poll_mb_ready();
+void mcu_cptra_mbox_cmd();
+
+#endif // CALIPTRA_SS_LIB
+>>>>>>> 37691f4be06052eb741ac8b254fc416cfb1c2de0:src/integration/test_suites/libs/caliptra_ss_lib/caliptra_ss_lib.h
+=======
+`include "ai3ct_ext_basic.svh"
+>>>>>>> 37691f4be06052eb741ac8b254fc416cfb1c2de0
