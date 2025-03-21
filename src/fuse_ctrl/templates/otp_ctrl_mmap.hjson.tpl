@@ -286,7 +286,7 @@
             key_sel:      "SecretLifeCycleTransitionKey",
             integrity:    true,
             bkout_type:   false,
-            lc_phase:     "LcStDev",
+            lc_phase:     "LcStTestUnlocked0",
             items: [
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_0",
@@ -445,7 +445,7 @@
             key_sel:      "NoKey",
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
-            lc_phase:     "LcStProd",
+            lc_phase:     "LcStDev",
             items: [
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_0",

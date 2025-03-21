@@ -1656,7 +1656,7 @@ module caliptra_ss_top_tb
             release caliptra_ss_dut.u_otp_ctrl.rst_ni;
         end
         if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_007c)
-            force caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser = 32'h0;
+            force caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser = 32'hffff_ffff;
         if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_0080)
             force caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser = 32'h1;
         if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_0084)

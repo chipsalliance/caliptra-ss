@@ -259,7 +259,7 @@ package otp_ctrl_part_pkg;
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0,
-      lc_phase:         DecLcStDev
+      lc_phase:         DecLcStTestUnlocked0
     },
     // SVN_PARTITION
     '{
@@ -307,7 +307,7 @@ package otp_ctrl_part_pkg;
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0,
-      lc_phase:         DecLcStProd
+      lc_phase:         DecLcStDev
     },
     // VENDOR_HASHES_PROD_PARTITION
     '{
