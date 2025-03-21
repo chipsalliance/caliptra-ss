@@ -17,11 +17,26 @@
 #ifndef CALIPTRA_SS_LIB
 #define CALIPTRA_SS_LIB
 
-void reset_rtl(void);
+
+extern uint32_t state;
+uint32_t xorshift32(void);
+
+void reset_fc_lcc_rtl(void);
 void mcu_mci_boot_go();
 void mcu_cptra_fuse_init();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
 void mcu_cptra_mbox_cmd();
+
+#define FC_LCC_CMD_OFFSET 0xB0
+#define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
+#define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
+#define CMD_FORCE_FC_AWUSER_MCU         FC_LCC_CMD_OFFSET + 0x04
+#define CMD_RELEASE_AWUSER              FC_LCC_CMD_OFFSET + 0x05
+#define CMD_FC_FORCE_ZEROIZATION        FC_LCC_CMD_OFFSET + 0x06
+#define CMD_FC_FORCE_ZEROIZATION_RESET  FC_LCC_CMD_OFFSET + 0x07
+#define CMD_RELEASE_ZEROIZATION         FC_LCC_CMD_OFFSET + 0x08
+#define CMD_FORCE_LC_TOKENS             FC_LCC_CMD_OFFSET + 0x09
+#define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 10
 
 #endif // CALIPTRA_SS_LIB

@@ -1350,6 +1350,10 @@ module caliptra_ss_top
         .clk_i                      (cptra_ss_clk_i),
         .rst_ni                     (cptra_ss_rst_b_i),
         .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
+
+        .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
+        .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_caliptra_dma_axi_user_i),
+
         .clk_edn_i                  (1'b0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .rst_edn_ni                 (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .edn_o                      (),     // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL

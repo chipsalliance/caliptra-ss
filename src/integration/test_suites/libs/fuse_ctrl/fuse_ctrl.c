@@ -23,6 +23,23 @@
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "riscv_hw_if.h"
 #include "fuse_ctrl_address_map.h"
+#include "fuse_ctrl.h"
+
+void grant_mcu_for_fc_writes(void) {
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FORCE_FC_AWUSER_MCU);
+    VPRINTF(LOW, "LCC & Fuse_CTRL is under MCU_LSU_AXI_USER!\n");
+    for (uint16_t ii = 0; ii < 160; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
+
+void grant_caliptra_core_for_fc_writes(void) {
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FORCE_FC_AWUSER_CPTR_CORE);
+    VPRINTF(LOW, "LCC & Fuse_CTRL is under CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER!\n");
+    for (uint16_t ii = 0; ii < 160; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
 
 void wait_dai_op_idle(uint32_t status_mask) {
     uint32_t status;
@@ -127,5 +144,21 @@ void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granular
         *rdata1 = lsu_read_32(FUSE_CTRL_DIRECT_ACCESS_RDATA_1);
         VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
     }
+    return;
+}
+
+void calculate_digest(uint32_t partition_base_address) {
+    // Step 1: Check if DAI is idle
+    wait_dai_op_idle(0);
+
+    // Step 2: Write the partition base address to DIRECT_ACCESS_ADDRESS
+    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, partition_base_address);
+    VPRINTF(LOW, "INFO: Partition base address 0x%08X written to DIRECT_ACCESS_ADDRESS.\n", partition_base_address);
+
+    // Step 3: Trigger a digest calculation command
+    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_CMD, 0x4);
+
+    // Step 4: Poll STATUS until DAI state goes back to idle    
+    wait_dai_op_idle(0);
     return;
 }

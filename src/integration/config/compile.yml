@@ -6,10 +6,12 @@ targets:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
+      - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
   rtl:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
+      - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
 ---
 provides: [caliptra_ss_top]
 schema_version: 2.4.0
@@ -34,7 +36,6 @@ targets:
     directories: 
       - $COMPILE_ROOT/rtl
     files:
-      - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_top.sv
     tops: [caliptra_ss_top]
 ---
@@ -78,6 +79,9 @@ targets:
       - $COMPILE_ROOT/testbench/aaxi4_interconnect.sv
       - $COMPILE_ROOT/testbench/fuse_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_tb_cmd_list.svh
+      - $COMPILE_ROOT/testbench/fc_lcc_tb_services.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_services.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]
   sim:
@@ -103,7 +107,6 @@ global:
         - +define+MCU_RV_OPENSOURCE
         - +define+AVERY_VCS
         - +define+AVERY_CLOCK=5
-        - +define+LCC_FC_BFM_SIM=1 # this is a defined to enable LCC BFM reset to be driven to LCC and FC
         - +define+FOUR_OUTSTANDING
         - +define+AVERY_AXI_INTERCONNECT
         - +define+AAXI_MAX_DATA_WIDTH=64

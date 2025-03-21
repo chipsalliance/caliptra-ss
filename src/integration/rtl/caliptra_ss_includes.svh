@@ -15,8 +15,8 @@
 // limitations under the License.
 //********************************************************************************
 
-`ifndef CPTRA_SS_INCLUDES_SVH
-`define CPTRA_SS_INCLUDES_SVH
+`ifndef CALIPTRA_SS_INCLUDES_SVH
+`define CALIPTRA_SS_INCLUDES_SVH
 
 parameter CPTRA_SS_MCU_LSU_ARID_WIDTH = 8;
 parameter CPTRA_SS_MCU_LSU_AWID_WIDTH = 8;
