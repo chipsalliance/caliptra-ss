@@ -5,7 +5,7 @@
 +incdir+${AVERY_HOME}/avery_pli-2025.1
 +incdir+${AVERY_AXI}/src.axi.VCS
 +incdir+${AVERY_AXI}/src.axi
-+incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb
++incdir+${CALIPTRA_AXI4PC_DIR}
 +incdir+${AVERY_AXI}/testbench
 +incdir+${AVERY_HOME}/i3cxactor-2025.1/
 +incdir+${AVERY_HOME}/i3cxactor-2025.1/src
@@ -19,7 +19,7 @@
 +incdir+${AVERY_HOME}/i3cxactor-2025.1/testsuite.i3c/dut_master
 +incdir+${AVERY_HOME}/i3cxactor-2025.1/testsuite.i3c/dut_master_stby
 +incdir+${AVERY_HOME}/i3cxactor-2025.1/testbench
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb/Axi4PC.sv
+${CALIPTRA_AXI4PC_DIR}/Axi4PC.sv
 ${AVERY_SIM}/src/avery_pkg.sv
 ${AVERY_SIM}/src/avery_pkg_test.sv
 ${AVERY_AXI}/src.axi/aaxi_pkg.sv

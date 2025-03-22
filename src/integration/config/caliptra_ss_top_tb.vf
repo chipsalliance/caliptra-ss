@@ -34,7 +34,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/ntt_top/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/norm_check/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/asserts
-+incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb
++incdir+${CALIPTRA_AXI4PC_DIR}
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/tb
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha256/coverage
@@ -46,6 +46,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/coverage
++incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/vip
 +incdir+${AVERY_SIM}
@@ -227,7 +228,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_pri
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/ntt_top/rtl/ntt_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/norm_check/rtl/norm_check_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/asserts/caliptra_top_sva.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb/Axi4PC.sv
+${CALIPTRA_AXI4PC_DIR}/Axi4PC.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/tb/physical_rng.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/coverage/sha512_ctrl_cov_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/coverage/sha512_ctrl_cov_bind.sv
