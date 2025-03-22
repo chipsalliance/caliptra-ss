@@ -234,6 +234,13 @@ always_ff @(posedge clk or negedge rst_b) begin
     end
 end
 
+always_ff @(posedge clk or negedge rst_b) begin
+    if (!rst_b) begin
+        rst_mbox_lock_req <= 1'b1;
+    end else begin
+        rst_mbox_lock_req <= 1'b0;
+    end
+end
 always_comb begin
     mbox_sram_zero_end_addr_bytes = mbox_max_dlen - 1;
     mbox_sram_zero_end_addr = {2'b0, mbox_sram_zero_end_addr_bytes[MCU_MBOX_SRAM_ADDR_W-1:2]};

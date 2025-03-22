@@ -758,7 +758,7 @@ mci_lcc_st_trans LCC_state_translator (
 // Assertions
 ///////////////////////////////////////
 
-`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_gnt, soc_mcu_trace_buffer_gnt, soc_mci_reg_gnt, soc_mcu_mbox0_gnt, soc_mcu_mbox1_gnt}, clk, !reset_n)
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {mci_reg_req_if.dv, mcu_sram_req_if.dv, mcu_trace_buffer_req_if.dv, mcu_mbox0_req_if.dv, mcu_mbox1_req_if.dv}, clk, !mci_rst_b)
 
 // Today we don't support anything other than 32 bits
 `CALIPTRA_ASSERT_INIT(ERR_AXI_DATA_WIDTH, AXI_DATA_WIDTH == 32)
