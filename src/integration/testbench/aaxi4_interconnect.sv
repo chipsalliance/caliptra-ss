@@ -142,6 +142,7 @@ initial begin
         master[i].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         master[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        master[i].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.passive_mode= 1;       //-- changed to put master to passive mode
@@ -170,6 +171,7 @@ initial begin
         slave[i].cfg_info.passive_mode= 1; 
         slave[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[i].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         // slave[i].add_fifo(64'habcc+i*64'h100_0000, 4);
@@ -200,7 +202,7 @@ initial begin
         slave[1].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[1].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[1].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[1].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[1].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[1].cfg_info.base_address[0] = 64'h2000_4000;
         slave[1].cfg_info.limit_address[0] = 64'h2000_4FFF;
         slave[1].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
@@ -217,6 +219,7 @@ initial begin
         slave[3].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[3].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.base_address[0] = 64'h3000_0000;
         slave[3].cfg_info.limit_address[0] = 64'h3FFF_FFFF;
         slave[3].cfg_info.base_address[1]  = 64'h0003_0000;
@@ -229,6 +232,7 @@ initial begin
         slave[4].cfg_info.passive_mode= 1; 
         slave[4].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[4].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.base_address[0]  = {32'h0, `SOC_MCI_TOP_MCI_REG_BASE_ADDR}; //64'h2100_0000;
@@ -241,6 +245,7 @@ initial begin
         slave[5].cfg_info.passive_mode = 1; 
         slave[5].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[5].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[5].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[5].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[5].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[5].cfg_info.base_address[0] = 64'h7000_0000;
@@ -253,6 +258,7 @@ initial begin
         slave[6].cfg_info.passive_mode = 1; 
         slave[6].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[6].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[6].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[6].cfg_info.base_address[0] = 64'h7000_0200;
         slave[6].cfg_info.limit_address[0] = 64'h7000_03FF;
         slave[6].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
@@ -263,6 +269,7 @@ initial begin
         slave[7].cfg_info.passive_mode = 1; 
         slave[7].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[7].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[7].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[7].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[7].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[7].cfg_info.base_address[0] = 64'h7000_0400;
