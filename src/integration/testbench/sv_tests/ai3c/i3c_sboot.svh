@@ -64,6 +64,8 @@ class i3c_sboot extends cptra_ss_i3c_core_base_test;
 		test_log.step("=================================================================");
 		test_log.step("Step 0: Reading Firmware test image from file");
 
+
+		// -- FIXME: Randomize the image size 4 to (1024 + 256) bytes (4 byte boundary)
 		if($value$plusargs("cmdline_img_sz=%h", cmdline_img_sz)) begin
 			
 			test_log.substep($psprintf("using CMD Line for Image Size (in bytes): 'd %0d",cmdline_img_sz));

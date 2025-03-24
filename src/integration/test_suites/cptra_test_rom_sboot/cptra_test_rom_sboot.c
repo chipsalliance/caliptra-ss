@@ -74,24 +74,10 @@ void update_prot_cap(){
 // To start streaming boot, Caliptra ROM updates the DEVICE_STATUS register 
 // to "Recovery mode - ready to accept recovery image” for Device status byte (for the first image only) 
 // and "Flashless/Streaming Boot (FSB)" for Recovery reason codes.
-void update_device_status() {
+void update_device_status(uint32_t device_status) {
 
-    uint32_t i3c_reg_data; 
-    
-    // Write DEVICE_STATUS_0
-    // Byte 0    : 0x3 : Recovery mode - ready to accept recovery image
-    // Byte 2,3  : 0x12: Flashless/Streaming Boot (FSB) (Reason of recovery)
-    i3c_reg_data = 0x00000000;
-    i3c_reg_data = 0x3 | i3c_reg_data;
-    i3c_reg_data = 0x12 << 16 | i3c_reg_data;
-    VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0 with 'h %0x\n", i3c_reg_data);
-    soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, 0, &i3c_reg_data, 4, 0);
-
-    // Write DEVICE_STATUS_1
-    // Byte 6: Vendor Status Length, 0x0
-    i3c_reg_data = 0x00000000;
-    VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1 with 'h %0x\n", i3c_reg_data);
-    soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1, 0, &i3c_reg_data, 4, 0);
+    VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0 with 'h %0x\n", device_status);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, 0, &device_status, 4, 0);
 
 }
 
@@ -267,9 +253,18 @@ void wait(uint32_t wait_time) {
 void recovery_sequence() {
     
     uint32_t fw_image_size;
+    uint32_t i3c_reg_data;
 
     update_prot_cap();
-    update_device_status();
+
+    // Write DEVICE_STATUS_0
+    // Byte 0    : 0x3 : Recovery mode - ready to accept recovery image
+    // Byte 2,3  : 0x12: Flashless/Streaming Boot (FSB) (Reason of recovery)
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 0x3 | i3c_reg_data;
+    i3c_reg_data = 0x12 << 16 | i3c_reg_data;
+    update_device_status(i3c_reg_data);
+
     update_recovery_status(0x1); // Awaiting recovery image
     poll_for_payload_available();
 
@@ -277,15 +272,23 @@ void recovery_sequence() {
     
     // Read the image from the FIFO
     read_image_from_fifo(fw_image_size);
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 0x4 | i3c_reg_data;
+    update_device_status(i3c_reg_data); // 0x4: Recovery Pending (waiting for activation) 
+
     read_image_activation();
 
-    update_recovery_status(0x2); // Booting recovery image
-    wait(10);
-    update_recovery_status(0x3); // Recovery successful
-
     update_recovery_ctrl(0x00010000); // Clear Image Activation
+    update_recovery_status(0x2);      // Booting recovery image
+    update_recovery_status(0x3);      // Recovery successful
+
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 0x5 | i3c_reg_data;
+    update_device_status(i3c_reg_data); // 0x5: Running Recovery Image
+ 
 
     VPRINTF(LOW, "CPTRA: Recovery Sequence completed successfully\n");
+
     SEND_STDOUT_CTRL(0xff);
         
 }

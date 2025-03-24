@@ -164,14 +164,14 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 
 	endtask
 
-    virtual task data_check(
+    virtual task check_data(
         input bit [7:0] data[],
         input bit [7:0] expected_data[],
         input int       len
     );
         for (int i = 0; i < len; i++) begin
             if (data[i] != expected_data[i]) begin
-                test_log.substep($psprintf("Data mismatch at index %0d: expected 'h %0h, got 'h %0h", i, expected_data[i], data[i]));
+                test_log.substep($psprintf("Error : Data mismatch at index %0d: expected 'h %0h, got 'h %0h", i, expected_data[i], data[i]));
             end
         end
     endtask

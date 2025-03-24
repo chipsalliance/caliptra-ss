@@ -9,5 +9,5 @@ pre-exec: |
 plusargs:
   - '+AVY_TEST=i3c_sboot'
   # cmdline_img_sz in bytes in hex
-  - '+cmdline_img_sz=11'
+  - '+cmdline_img_sz=110'
 
