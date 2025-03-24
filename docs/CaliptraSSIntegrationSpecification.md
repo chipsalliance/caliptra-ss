@@ -447,7 +447,7 @@ If an SOC wants to keep Caliptra in reset they can tie off ```cptra_ss_mci_cptra
 
 If an SOC wants to modify Caliptra reset they can do so by adding additional logic to the above signals. 
 
-**NOTE**: Caliptra SS RDC and CEC is only evaluated when the MCI control is looped back to Caliptra. Any modification to this reset control requires a full RDC analysis done by the SOC integration team. 
+**NOTE**: Caliptra SS RDC and CDC are only evaluated when the MCI control is looped back to Caliptra. Any modification to this reset control requires a full RDC and CDC analysis done by the SOC integration team. 
 
 ## Programming interface
 
