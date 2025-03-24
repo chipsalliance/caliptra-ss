@@ -436,8 +436,7 @@ FW Execute Control is typically controlled by Caliptra. These means ```cptra_ss_
 2. Synchronous to MCI clock domain
 3. 1 indicates FW patch is valid in the MCU SRAM
 4. 0 indicates FW patch is invalid and will request MCU to reset itself
-See Hitless Update Flow to understand exectly when this signal shall be set/cleared in the hitless FW flow.
-
+See Hitless Update Flow to understand exactly when this signal shall be set/cleared in the hitless FW flow.
 ### Caliptra Core Reset Control
 
 Typically Caliptra reset is directly controlled by MCI. This means ```cptra_ss_mci_cptra_rst_b_o``` is directly looped back to  ```cptra_ss_mci_cptra_rst_b_i```. 
