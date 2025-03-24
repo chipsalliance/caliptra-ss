@@ -435,8 +435,7 @@ FW Execute Control is typically controlled by Caliptra. These means ```cptra_ss_
 1. On same reset at MCI 
 2. Synchronous to MCI clock domain
 3. 1 indicates FW patch is valid in the MCU SRAM
-4. 0 indicates FW patch is invalid and will request MCU to reset iteself
-
+4. 0 indicates FW patch is invalid and will request MCU to reset itself
 See Hitless Update Flow to understand exectly when this signal shall be set/cleared in the hitless FW flow.
 
 ### Caliptra Core Reset Control
