@@ -106,6 +106,15 @@ logic execute_prev;
 logic mbox_sram_zero_done;
 logic mbox_sram_zero_in_progress;
 
+logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_max_dlen;
+logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_sram_zero_end_addr_bytes;
+logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_sram_zero_end_addr;
+logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_sram_zero_wr_addr;
+logic [MCU_MBOX_SRAM_DATA_W-1:0] mcu_mbox_sram_wr_data;
+logic [MCU_MBOX_SRAM_ADDR_W-1:0] mcu_mbox_sram_req_addr;
+logic mcu_mbox_sram_req_cs;
+logic mcu_mbox_sram_req_we;
+
 logic mbox_release;
 logic sram_rd_ecc_en;
 logic mbox_sram_rd_ack;
@@ -188,16 +197,46 @@ always_ff @(posedge clk or negedge rst_b) begin
     end
 end
 
+
+sram_zeroization_gadget #(
+    .SRAM_DEPTH(MCU_MBOX_SRAM_DEPTH),
+    .SRAM_DATA_WIDTH(MCU_MBOX_SRAM_DATA_W)
+
+) mcu_mbox_zeroization (
+// Inputs
+    .clk(clk),
+    .rst_b(rst_b),
+    .sram_start_zeroing(mbox_release),
+    .sram_zero_start_addr({MCU_MBOX_SRAM_ADDR_W{1'b0}}),
+    .sram_zero_end_addr(mbox_sram_zero_end_addr),
+    .sram_we_in(mcu_mbox_sram_req_we),
+    .sram_cs_in(mcu_mbox_sram_req_cs),
+    .sram_wr_addr_in(mcu_mbox_sram_req_addr[MCU_MBOX_SRAM_ADDR_W-1:0]),
+    .sram_wr_data_in(hwif_out.MBOX_SRAM.wr_data),
+
+// Outputs
+    .sram_we_out(mcu_mbox_sram_req_if.req.we),
+    .sram_cs_out(mcu_mbox_sram_req_if.req.cs),
+    .sram_wr_addr_out(mcu_mbox_sram_req_if.req.addr[MCU_MBOX_SRAM_ADDR_W-1:0]),
+    .sram_wr_data_out(mcu_mbox_sram_wr_data),
+    .sram_zero_done(mbox_sram_zero_done),
+    .sram_zero_in_progress(mbox_sram_zero_in_progress)
+);
+
+// Track max DLEN during the lock for clearing
 always_ff @(posedge clk or negedge rst_b) begin
     if (!rst_b) begin
-       mbox_sram_zero_done <= 1'b0;
-       mbox_sram_zero_in_progress <= 1'b0;
-       rst_mbox_lock_req <= 1'b1;
+        mbox_max_dlen <= '0;
+    end else if (mbox_sram_zero_done) begin
+        mbox_max_dlen <= '0;
     end else begin
-       mbox_sram_zero_done        <= mbox_release; // FIXME - need real logic behind this.
-       mbox_sram_zero_in_progress <= mbox_release; // FIXME - need real logic behind this.
-       rst_mbox_lock_req <= 1'b0;
+        mbox_max_dlen <= (hwif_out.mbox_dlen.length.value > mbox_max_dlen) ? hwif_out.mbox_dlen.length.value : mbox_max_dlen;
     end
+end
+
+always_comb begin
+    mbox_sram_zero_end_addr_bytes = mbox_max_dlen - 1;
+    mbox_sram_zero_end_addr = {2'b0, mbox_sram_zero_end_addr_bytes[MCU_MBOX_SRAM_ADDR_W-1:2]};
 end
 
 // Release the mailbox one clock cycle after execute is cleared
@@ -253,9 +292,10 @@ assign valid_sram_addr = !invalid_sram_addr;
 // SRAM Controls
 /////
 // Only send request if the address is valid and proper user access
-assign mcu_mbox_sram_req_if.req.addr = {MCU_MBOX_SRAM_ADDR_W{(valid_requester_target_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.addr[MCU_MBOX_SRAM_ADDR_W-1:2];
-assign mcu_mbox_sram_req_if.req.cs   = valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req;
-assign mcu_mbox_sram_req_if.req.we   = valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req_is_wr;
+assign mcu_mbox_sram_req_addr = {MCU_MBOX_SRAM_ADDR_W{(valid_requester_target_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.addr[MCU_MBOX_SRAM_ADDR_W-1:2];
+assign mcu_mbox_sram_req_cs = (valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req);
+assign mcu_mbox_sram_req_we = (valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req_is_wr);
+
 
 /////
 // SRAM Write
@@ -265,13 +305,13 @@ assign mcu_mbox_sram_req_if.req.we   = valid_requester_target_req & valid_sram_a
 assign hwif_in.MBOX_SRAM.wr_ack = hwif_out.MBOX_SRAM.req & hwif_out.MBOX_SRAM.req_is_wr;
 
 // Setting write data only if valid address and prper user access
-assign mcu_mbox_sram_req_if.req.wdata.data = {MCU_MBOX_SRAM_DATA_W{(valid_requester_target_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.wr_data;
+assign mcu_mbox_sram_req_if.req.wdata.data = {MCU_MBOX_SRAM_DATA_W{(valid_requester_target_req & valid_sram_addr)}} & mcu_mbox_sram_wr_data;
 
 // From RISC-V core beh_lib.sv
 // 32-bit data width hardcoded
 // 7-bit ECC width hardcoded
 rvecc_encode mbox_ecc_encode (
-    .din    (hwif_out.MBOX_SRAM.wr_data), 
+    .din    (mcu_mbox_sram_wr_data), 
     .ecc_out(mcu_mbox_sram_req_if.req.wdata.ecc)
 );
 

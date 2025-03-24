@@ -826,7 +826,7 @@ addrmap mci_reg {
 
     reg {
         name = "Production Debug Unlock PK HASH";
-        desc = "Production Debug Unlock PK HASH. Initialized from strap inputs, overwritable by MCU until SS_CONFIG_DONE is set.
+        desc = "Production Debug Unlock PK HASH. Configured by MCU and locked when SS_CONFIG_DONE_STICKY is set.
                 Once SS_CONFIG_DONE_STICKY is set value persists until cold reset.";
         field {sw = rw; hw = r; swwe=ss_config_unlock_sticky; resetsignal = mci_pwrgood;} hash[32]=32'h0; 
     } PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12] @0x480;
