@@ -913,11 +913,9 @@ end
     otp_ast_pwr_seq_o.pwr_seq            = prim_generic_otp_outputs_i.pwr_seq_o;
     
     // Test interface signals
-    prim_generic_otp_inputs_o.test_ctrl_i = lc_otp_vendor_test_i.ctrl;
-    prim_generic_otp_inputs_o.test_tl_i   = prim_tl_h2d_gated;
-    lc_otp_vendor_test_o.status          = prim_generic_otp_outputs_i.test_status_o;
-    otp_test_vect                        = prim_generic_otp_outputs_i.test_vect_o;
-    prim_tl_d2h_gated                    = prim_generic_otp_outputs_i.test_tl_o;
+    lc_otp_vendor_test_o.status          = '0;
+    otp_test_vect                        = '0;
+    prim_tl_d2h_gated                    = '0;
     
     // Other DFT signals
     prim_generic_otp_inputs_o.scanmode_i  = scanmode_i;

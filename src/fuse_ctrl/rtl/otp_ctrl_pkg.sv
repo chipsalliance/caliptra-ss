@@ -369,10 +369,7 @@ package otp_ctrl_pkg;
   
       // Power sequencing (input from host)
       logic [OtpPwrSeqWidth-1:0]       pwr_seq_h_i;
-  
-      // Test interface input signals
-      logic [OtpTestCtrlWidth-1:0]     test_ctrl_i;
-      tlul_pkg::tl_h2d_t            test_tl_i;
+
   
       // DFT signals
       caliptra_prim_mubi_pkg::mubi4_t scanmode_i;
@@ -397,10 +394,6 @@ package otp_ctrl_pkg;
       // Power sequencing output
       logic [OtpPwrSeqWidth-1:0]     pwr_seq_o;
   
-      // Test interface output signals
-      logic [OtpTestStatusWidth-1:0] test_status_o;
-      logic [OtpTestVectWidth-1:0]   test_vect_o;
-      tlul_pkg::tl_d2h_t          test_tl_o;
   
       // Alert signals
       logic                       fatal_alert_o;

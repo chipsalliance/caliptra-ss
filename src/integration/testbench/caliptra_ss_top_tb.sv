@@ -1659,12 +1659,6 @@ module caliptra_ss_top_tb
         // Power sequencing signals to/from AST
         .pwr_seq_o      ( cptra_ss_fuse_macro_outputs_tb.pwr_seq_o ),
         .pwr_seq_h_i    ( cptra_ss_fuse_macro_inputs_tb.pwr_seq_h_i ),
-        // Test interface
-        .test_ctrl_i    ( cptra_ss_fuse_macro_inputs_tb.test_ctrl_i ),
-        .test_status_o  ( cptra_ss_fuse_macro_outputs_tb.test_status_o ),
-        .test_vect_o    ( cptra_ss_fuse_macro_outputs_tb.test_vect_o ),
-        .test_tl_i      ( cptra_ss_fuse_macro_inputs_tb.test_tl_i ),
-        .test_tl_o      ( cptra_ss_fuse_macro_outputs_tb.test_tl_o ),
         // Other DFT signals
         .scanmode_i     ( cptra_ss_fuse_macro_inputs_tb.scanmode_i ),
         .scan_en_i      ( cptra_ss_fuse_macro_inputs_tb.scan_en_i ),
