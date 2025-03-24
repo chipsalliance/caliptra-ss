@@ -88,6 +88,11 @@ module mci_top
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
     input  logic mcu_no_rom_config,                // Determines boot sequencer boot flow
 
+    // MCU Halt Signals
+    output logic mcu_cpu_halt_req_o,
+    input  logic mcu_cpu_halt_ack_i,
+    input  logic mcu_cpu_halt_status_i,
+
     // NMI Vector 
     output logic nmi_intr,
     output logic [31:0] mcu_nmi_vector,
@@ -367,6 +372,11 @@ mci_boot_seqr #(
     // Reset controls
     .mcu_rst_b,
     .cptra_rst_b,
+
+    // MCU Halt Signals
+    .mcu_cpu_halt_req_o,
+    .mcu_cpu_halt_ack_i,
+    .mcu_cpu_halt_status_i,
 
     // Internal signals
     .caliptra_boot_go(mci_reg_hwif_out.CPTRA_BOOT_GO.go),

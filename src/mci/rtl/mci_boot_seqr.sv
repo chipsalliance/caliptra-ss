@@ -31,6 +31,11 @@ import mci_pkg::*;
     output logic mcu_rst_b,
     output logic cptra_rst_b,
 
+    // MCU Halt Signals
+    output logic mcu_cpu_halt_req_o,
+    input  logic mcu_cpu_halt_ack_i,
+    input  logic mcu_cpu_halt_status_i,
+
     // Internal signals
     input  logic caliptra_boot_go,
     input  logic mci_bootfsm_go,
@@ -78,6 +83,7 @@ logic fw_boot_upd_reset_nxt;     // First MCU reset request
 logic fw_hitless_upd_reset_nxt;  // Other MCU reset requests
 logic mcu_reset_once_nxt;
 
+logic mcu_cpu_halt_req_nxt;
 logic [MIN_MCU_RST_COUNTER_WIDTH-1:0] min_mcu_rst_count;
 logic [MIN_MCU_RST_COUNTER_WIDTH-1:0] min_mcu_rst_count_nxt;
 logic min_mcu_rst_count_elapsed;
@@ -164,6 +170,7 @@ always_comb begin
     mcu_rst_b_nxt   = mcu_rst_b_ff;
     cptra_rst_b_nxt = cptra_rst_b_ff;
     mcu_reset_once_nxt  = mcu_reset_once;
+    mcu_cpu_halt_req_nxt = 1'b0;
     fw_boot_upd_reset_nxt = fw_boot_upd_reset;     
     fw_hitless_upd_reset_nxt = fw_hitless_upd_reset;  
     unique case(boot_fsm)
@@ -226,6 +233,17 @@ always_comb begin
         end
         BOOT_WAIT_MCU_RST_REQ: begin
             if(mcu_rst_req) begin
+                boot_fsm_nxt        = BOOT_HALT_MCU;
+            end
+        end
+        BOOT_HALT_MCU: begin
+            if(mcu_cpu_halt_ack_i) begin
+                boot_fsm_nxt        = BOOT_WAIT_MCU_HALTED;
+            end
+            mcu_cpu_halt_req_nxt = 1'b1;
+        end
+        BOOT_WAIT_MCU_HALTED: begin
+            if (mcu_cpu_halt_status_i) begin
                 boot_fsm_nxt        = BOOT_RST_MCU;
                 fw_boot_upd_reset_nxt   = !mcu_reset_once;
                 fw_hitless_upd_reset_nxt = mcu_reset_once;
@@ -248,6 +266,14 @@ always_comb begin
     endcase
 end
 
+always_ff@(posedge clk or negedge mci_rst_b) begin
+    if (!mci_rst_b) begin
+        mcu_cpu_halt_req_o <= 1'b0;
+    end
+    else begin
+        mcu_cpu_halt_req_o <= mcu_cpu_halt_req_nxt;
+    end
+end
 
 // Min MCU reset count
 always_comb begin
