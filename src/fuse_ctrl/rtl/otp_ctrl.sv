@@ -6,6 +6,7 @@
 //
 
 `include "caliptra_prim_assert.sv"
+`include "caliptra_ss_includes.svh"
 
 module otp_ctrl
   import otp_ctrl_pkg::*;
@@ -33,6 +34,11 @@ module otp_ctrl
   logic                                              rst_edn_ni,
   output edn_pkg::edn_req_t                          edn_o,
   input  edn_pkg::edn_rsp_t                          edn_i,
+
+
+  input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+  input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
+
   // Bus Interface
   // input  tlul_pkg::tl_h2d_t                          core_tl_i,
   // output tlul_pkg::tl_d2h_t                          core_tl_o,
@@ -1089,8 +1095,10 @@ end
   wire discarded_fuse_write, discard_fuse_write;
 
   fuse_ctrl_filter u_fuse_ctrl_filter (
-    .clk_i                   (clk_i),
-    .rst_n_i                 (rst_ni),
+    .clk_i                              (clk_i),
+    .rst_n_i                            (rst_ni),
+    .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
+    .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_cptra_axi_user_i),
     .fc_init_done            (pwr_otp_rsp_d),
     .core_axi_wr_req         (core_axi_wr_req),
     .core_axi_wr_rsp         (core_axi_wr_rsp),

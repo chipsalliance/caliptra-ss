@@ -343,6 +343,19 @@ package otp_ctrl_pkg;
   } fc_table_state_t;
 
 
+  typedef struct packed {
+    logic [31:0] lower_addr;  // Lower bound of the address range
+    logic [31:0] upper_addr;  // Upper bound of the address range
+  } access_control_entry_t;
+  
+  localparam int FC_TABLE_NUM_RANGES = 2;
+  
+  localparam access_control_entry_t access_control_table [FC_TABLE_NUM_RANGES] = '{
+    '{ lower_addr: 32'h00000000, upper_addr: 32'h0000FFFF}, // Caliptra core
+    '{ lower_addr: 32'h00000088, upper_addr: 32'h0000FFFF} // MCU core
+  };
+
+
 
 
     //------------------------------------------------------------------
