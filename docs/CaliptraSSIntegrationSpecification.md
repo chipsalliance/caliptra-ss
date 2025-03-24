@@ -277,8 +277,8 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | input     | 1     | `cptra_ss_clk_i`                     | Caliptra subsystem clock input           |
 | External | input     | 1     | `cptra_ss_pwrgood_i`                 | Power good signal input                  |
 | External | input     | 1     | `cptra_ss_rst_b_i`                   | Reset signal input, active low           |
-| External | input     | 1     | `cptra_ss_mci_cptra_rst_b_i`                   | Reset signal input for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-controls) for more details          |
-| External | output    | 1     | `cptra_ss_mci_cptra_rst_b_o`                   | Reset signal output from MCI for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-controls) for more details          |
+| External | input     | 1     | `cptra_ss_mci_cptra_rst_b_i`                   | Reset signal input for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
+| External | output    | 1     | `cptra_ss_mci_cptra_rst_b_o`                   | Reset signal output from MCI for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
 | External | axi_if    | na    | `cptra_ss_cptra_core_s_axi_if`       | Caliptra core AXI sub-interface          |
 | External | axi_if    | na    | `cptra_ss_cptra_core_m_axi_if`       | Caliptra core AXI manager interface      |
 | External | axi_if    | na    | `cptra_ss_mci_s_axi_if`              | Caliptra Subsystem MCI AXI sub-interface |
