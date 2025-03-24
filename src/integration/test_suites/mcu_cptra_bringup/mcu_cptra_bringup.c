@@ -100,6 +100,7 @@ void main (void) {
         mcu_mci_poll_exec_lock();
         VPRINTF(LOW, "MCU: Observed Caliptra reset req; issuing reset\n");
         mcu_mci_req_reset();
+        while(1);
     }
     // lsu_write_32(0x21200000, 0x12345678);
     // VPRINTF(LOW, "MCU: I3C 0x2120_0000 write completed\n");
