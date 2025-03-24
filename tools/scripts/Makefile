@@ -48,7 +48,7 @@ PRINTF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/printf
 LIBS_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs
 
 
-DUT ?= caliptra_mcu_top_tb
+DUT ?= caliptra_ss_top_tb
 
 CALIPTRA_DIR = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/test_suites
 SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
@@ -73,8 +73,13 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(PRINTF_DIR)/printf.h \
 		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
-TEST_GEN_FILES := $(CALIPTRA_SS)/src/ecc/tb/ecdsa_secp384r1.exe \
-	          $(CALIPTRA_SS)/src/doe/tb/doe_test_gen.py
+TEST_GEN_FILES := $(CALIPTRA_SS)/src/fuse_ctrl/data/otp-img.2048.vmem \
+	          $(CALIPTRA_SS)/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe \
+	          $(CALIPTRA_SS)/third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py \
+	          $(CALIPTRA_SS)/third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py \
+	          $(CALIPTRA_SS)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 \
+	          $(CALIPTRA_SS)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug \
+	          $(CALIPTRA_SS)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex
 
 # Separate OFILE variable since this is not used to build remote images
 # (i.e. FMC or RunTime)
@@ -116,11 +121,10 @@ else
 	LINK = $(TEST_DIR)/$(TESTNAME).ld
 endif
 
-# VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(ISR_DIR) $(PRINTF_DIR) $(COMP_LIBS)
 VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
-# $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
+$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
 
 #defines  = $(BUILD_DIR)/common_defines.vh
 #defines += $(RV_ROOT)/design/include/el2_def.sv
@@ -178,8 +182,8 @@ VERILATOR_MAKE_FLAGS = OPT_FAST="-Os"
 TB_DPI_SRCS = jtagdpi/jtagdpi.c \
               tcp_server/tcp_server.c
 
-TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS)/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
-TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS)/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
+TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
+TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
 
 # Testbench sources
 TB_VERILATOR_SRCS = $(TBDIR)/test_$(DUT).cpp $(TB_DPI_SRCS)
@@ -203,6 +207,52 @@ VERILATOR_RUN_ARGS ?= ""
 
 # Add testbench lib include paths
 CFLAGS += $(TB_DPI_INCS)
+
+############# VCS Compile options #############
+VCS_COMP_OPTS += '-assert svaext'
+VCS_COMP_OPTS += '-debug_access+all'
+# Used in caliptra_top_sva to find signals
+VCS_COMP_OPTS += "+define+CPTRA_TB_TOP_NAME=$(DUT)"
+VCS_COMP_OPTS += "+define+CPTRA_TOP_PATH=$(DUT).caliptra_ss_dut.caliptra_top_dut"
+VCS_COMP_OPTS += '+define+CALIPTRA_MODE_SUBSYSTEM'
+VCS_COMP_OPTS += '+define+MCU_RV_BUILD_AXI4'
+VCS_COMP_OPTS += '+define+MCU_RV_OPENSOURCE'
+VCS_COMP_OPTS += '+define+AVERY_VCS'
+VCS_COMP_OPTS += '+define+AVERY_CLOCK=5'
+# this is a defined to enable LCC BFM reset to be driven to LCC and FC
+VCS_COMP_OPTS += '+define+LCC_FC_BFM_SIM=1'
+VCS_COMP_OPTS += '+define+FOUR_OUTSTANDING'
+VCS_COMP_OPTS += '+define+AVERY_AXI_INTERCONNECT'
+VCS_COMP_OPTS += '+define+AAXI_MAX_DATA_WIDTH=64'
+VCS_COMP_OPTS += '+define+AAXI_MAX_ADDR_WIDTH=64'
+VCS_COMP_OPTS += '+define+AAXI_MAX_ID_WIDTH=5'
+VCS_COMP_OPTS += '+define+AAXI_MAX_ARUSER_WIDTH=32'
+VCS_COMP_OPTS += '+define+AAXI_MAX_AWUSER_WIDTH=32'
+VCS_COMP_OPTS += '+define+CALIPTRA_INTERNAL_UART'
+VCS_COMP_OPTS += '-noinherit_timescale=1ns/1ps'
+VCS_COMP_OPTS += '+define+AAXI_INTC_MASTER_CNT=5'
+VCS_COMP_OPTS += '+define+AAXI_INTC_SLAVE_CNT=8'
+VCS_COMP_OPTS += '+define+AI3C_LANE_NUM=1'
+VCS_COMP_OPTS += '+define+DIGITAL_IO_I3C=1'
+VCS_COMP_OPTS += '+define+CALIPTRA_MODE_SUBSYSTEM'
+VCS_COMP_OPTS += '+define+AI3C_SKIP_DAA=1'
+VCS_COMP_OPTS += '+define+AVERY_SV_TEST_CASE=1'
+VCS_COMP_OPTS += "+define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh"
+VCS_COMP_OPTS += "$(AVERY_PLI)/lib.linux/libtb_vcs64.a"
+VCS_COMP_OPTS += "-P $(AVERY_PLI)/tb_vcs64.tab"
+#FIXME : remve this Note suppression
+VCS_COMP_OPTS += '-suppress=SV-LCM-PPWI'
+############# VCS Elab options #############
+#FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
+VCS_ELAB_OPTS += '+warn=noIWNF'
+VCS_ELAB_OPTS += '+warn=noPCWM-W'
+VCS_ELAB_OPTS += '+warn=noTFIPC,noMDVMO'
+VCS_ELAB_OPTS += "$(AVERY_PLI)/lib.linux/libtb_vcs64.a"
+VCS_ELAB_OPTS += "-P $(AVERY_PLI)/tb_vcs64.tab"
+#FIXME unique case violations in i3c_core
+VCS_ELAB_OPTS += "-ignore unique_checks"
+############# VCS Simulation options #############
+VCS_SIM_OPTS  += "+vpi -lpthread"
 
 # Targets
 all: clean verilator
@@ -233,12 +283,14 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	$(MAKE) -j`nproc` -e -C obj_dir/ -f V$(DUT).mk $(VERILATOR_MAKE_FLAGS) VM_PARALLEL_BUILDS=1
 	touch verilator-build
 
-#vcs-build: $(TBFILES) $(INCLUDES_DIR)/defines.h $(TB_DPI_SRCS)
-vcs-build: $(INCLUDES_DIR)/defines.h $(TB_DPI_SRCS)
-	vlogan -full64 -sverilog -kdb -incr_vlogan +lint=IA_CHECKFAIL -assert svaext \
-	  +define+CLP_ASSERT_ON $(TB_DEFS) -noinherit_timescale=1ns/1ps \
+vcs-build: $(TBFILES) $(TB_DPI_SRCS)
+	vlogan -sverilog -full64 -kdb -incr_vlogan +lint=IA_CHECKFAIL \
+	  $(VCS_COMP_OPTS) \
+	  -l vcs_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vf
-	vcs -full64 -kdb -lca -debug_access+all -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
+	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
+	  $(VCS_ELAB_OPTS) \
+	  -l vcs_elab.log \
 	  -assert enable_hier $(DUT) -o simv.$(DUT) +dpi -cflags "$(TB_DPI_INCS)" $(TB_DPI_SRCS)
 
 ############ TEST Simulation ###############################
@@ -248,7 +300,9 @@ verilator: mcu_program.hex verilator-build
 
 vcs: mcu_program.hex vcs-build
 	cp $(TEST_GEN_FILES) $(BUILD_DIR)
-	./simv.$(DUT)
+	./simv.$(DUT) \
+	  $(VCS_SIM_OPTS) \
+	  -l vcs_sim.log
 
 ############ TEST build ###############################
 
