@@ -124,10 +124,10 @@ module caliptra_ss_top
 `endif
 
 // Caliptra SS MCU 
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mci_soc_config_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
@@ -561,12 +561,12 @@ module caliptra_ss_top
 
 
      always_comb begin
-        cptra_ss_mcu_lsu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_lsu_axi_user_i; // TODO part-select?
-        cptra_ss_mcu_lsu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_lsu_axi_user_i; // TODO part-select?
+        cptra_ss_mcu_lsu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_lsu_axi_user_i;
+        cptra_ss_mcu_lsu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_lsu_axi_user_i;
         cptra_ss_mcu_lsu_m_axi_if.arid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
         cptra_ss_mcu_lsu_m_axi_if.awid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
-        cptra_ss_mcu_ifu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_ifu_axi_user_i; // TODO part-select?
-        cptra_ss_mcu_ifu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_ifu_axi_user_i; // TODO part-select?
+        cptra_ss_mcu_ifu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_ifu_axi_user_i;
+        cptra_ss_mcu_ifu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_ifu_axi_user_i;
         cptra_ss_mcu_ifu_m_axi_if.arid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
         cptra_ss_mcu_ifu_m_axi_if.awid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
       
