@@ -1699,7 +1699,6 @@ module caliptra_ss_top_tb
     logic         cptra_ss_all_error_non_fatal_o;
     logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
-    logic [31:0]  cptra_ss_strap_cptra_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_sram_config_axi_user_i;
     logic [31:0]  cptra_ss_strap_mci_soc_config_axi_user_i;
     logic         cptra_ss_mcu_jtag_tck_i;
@@ -1728,10 +1727,9 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_mcu_reset_vector_i    = 32'h0;
     assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
     assign cptra_ss_strap_mcu_lsu_axi_user_i    = CPTRA_SS_STRAP_MCU_LSU_AXI_USER;
-    assign cptra_ss_strap_mcu_ifu_axi_user_i    = 32'hFFFFFFFF;
-    assign cptra_ss_strap_cptra_axi_user_i        = 32'hFFFFFFFF;
-    assign cptra_ss_strap_mcu_sram_config_axi_user_i        = cptra_ss_strap_cptra_axi_user_i; // FIXME set to real value
-    assign cptra_ss_strap_mci_soc_config_axi_user_i        = 32'h1; // FIXME set to real value
+    assign cptra_ss_strap_mcu_ifu_axi_user_i    = CPTRA_SS_STRAP_MCU_IFU_AXI_USER;
+    assign cptra_ss_strap_mcu_sram_config_axi_user_i        = cptra_ss_strap_caliptra_dma_axi_user_i;
+    assign cptra_ss_strap_mci_soc_config_axi_user_i        = cptra_ss_strap_mcu_lsu_axi_user_i; // FIXME set to real value
     assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
@@ -1848,7 +1846,6 @@ module caliptra_ss_top_tb
     //MCU
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
-        .cptra_ss_strap_cptra_axi_user_i,
         .cptra_ss_strap_mcu_sram_config_axi_user_i,
         .cptra_ss_strap_mci_soc_config_axi_user_i,
 
