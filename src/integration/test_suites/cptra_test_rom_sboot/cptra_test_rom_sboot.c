@@ -178,7 +178,7 @@ uint32_t read_image_size(){
     soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1, 0, &i3c_reg_data, 4, 0);
     VPRINTF(LOW, "CPTRA: Reading SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1 with 'h %0x\n", i3c_reg_data);
     img_size = i3c_reg_data;
-    img_size = 0x00000011; //-- FIXME 
+    img_size = 0x00000045; //-- FIXME -- in bytes 0x114
 
     VPRINTF(LOW, "CPTRA: Image Size is 'h %0x , 'd %0d\n", img_size, img_size);
     return img_size;
@@ -187,10 +187,16 @@ uint32_t read_image_size(){
 
 // Read the image from the FIFO
 void read_image_from_fifo(uint32_t fw_image_size) {
-     
+
+    uint32_t dma_block_size;
+
+    // -- randomize block size between 1 to 256 bytes for the power of 2
+    // dma_block_size = 1 << (rand() % 8); //-- FIXME : uncomment this.
+    dma_block_size = 256; // 256 bytes
+
     // Program DMA to read the payload from the FIFO
     VPRINTF(LOW, "CPTRA: Programming DMA to read DWORDS : 'h %0x , 'd %0d \n", fw_image_size, fw_image_size);
-    soc_ifc_axi_dma_read_mbox_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA, 0x4400, 1, fw_image_size*4, 256);
+    soc_ifc_axi_dma_read_mbox_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA, 0x4400, 1, fw_image_size*4, dma_block_size);
     VPRINTF(LOW, "CPTRA: Reading payload from Mailbox via Direct Mode\n");
            
 }

@@ -24,7 +24,7 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
         super.new("i3c_reg_rd_wr", parent);
 	endfunction
 
-	virtual task read_reg(bit [7:0] addr, bit [7:0] data[], int size);
+	virtual task read_reg(input ai3c_addr_t target_addr, input bit [7:0] addr, input int size, output bit [7:0] data[]);
 		i3c_read(target_addr, addr, size, data);
 		test_log.substep($psprintf("Received data:"));
 		foreach(data[i]) begin
@@ -72,12 +72,12 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 		test_log.step("=============================================================");
 		test_log.step("Step : Reading Read Only Registers");
 
-		read_reg(`I3C_CORE_PROT_CAP, read_data, 15);
-		read_reg(`I3C_CORE_DEVICE_ID, read_data, 24);
-		read_reg(`I3C_CORE_DEVICE_STATUS, daread_datata, 7);
-		read_reg(`I3C_CORE_RECOVERY_STATUS, read_data, 2);
-		read_reg(`I3C_CORE_HW_STATUS, read_data, 4);
-		read_reg(`I3C_CORE_INDIRECT_FIFO_STATUS, read_data, 20);
+		read_reg(recovery_target_addr, `I3C_CORE_PROT_CAP, 15, read_data);
+		read_reg(recovery_target_addr,`I3C_CORE_DEVICE_ID,  24, read_data);
+		read_reg(recovery_target_addr,`I3C_CORE_DEVICE_STATUS,  7, read_data);
+		read_reg(recovery_target_addr,`I3C_CORE_RECOVERY_STATUS,  2, read_data);
+		read_reg(recovery_target_addr,`I3C_CORE_HW_STATUS,  4, read_data);
+		read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_STATUS,  20, read_data);
 
 		test_log.step("=============================================================");
 		test_log.step("Step : Write & Read back RECOVERY_CTRL Registers");
@@ -91,7 +91,7 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 		i3c_write(recovery_target_addr, `I3C_CORE_RECOVERY_CTRL, data, 3);
 
 		test_log.substep($psprintf("Sending read to RECOVERY_CTRL register"));
-		read_reg(`I3C_CORE_RECOVERY_CTRL, read_data, 3);
+		read_reg(recovery_target_addr,`I3C_CORE_RECOVERY_CTRL,  3, read_data);
 		check_data(data, read_data, 3);
 		
 		test_log.step("=============================================================");
@@ -109,7 +109,7 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 		i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_CTRL, data, 6);
 
 		test_log.substep($psprintf("Sending read to INDIRECT_FIFO_CTRL register"));
-		read_reg(`I3C_CORE_INDIRECT_FIFO_CTRL, read_data, 6);
+		read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_CTRL,  6, read_data);
 		check_data(data, read_data, 6);
 
 		test_log.step("=============================================================");
@@ -125,7 +125,7 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 		i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, random_data_count);
 
 		test_log.substep($psprintf("Sending read to INDIRECT_FIFO_CTRL register"));
-		read_reg(`I3C_CORE_INDIRECT_FIFO_DATA, read_data, random_data_count);
+		read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_DATA,  random_data_count, read_data);
 		check_data(data, read_data, random_data_count);
 
 		test_log.step("=============================================================");

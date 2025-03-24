@@ -28,11 +28,26 @@
       1. Main Master can do read/write transfer to each slave
 */
 
+class random_len_helper;
+    rand int random_len[];  // Declare as class member
+    int len;               // Length of the data to be written
+
+    constraint len_c {
+        random_len.sum() == len;
+        random_len.size() > 0;
+        foreach (random_len[i]) { random_len[i] inside {4, 8, 16, 32, 64}; }
+    }
+    function new(int length);
+        this.len = length;
+    endfunction
+endclass
+
 class cptra_ss_i3c_core_base_test extends ai3ct_base;
 
 	`avery_test_reg(cptra_ss_i3c_core_base_test)
+    random_len_helper random_lengths;  // Create an instance
 
-	function new(string name, `avery_xvm_parent);
+    function new(string name, `avery_xvm_parent);
         super.new("cptra_ss_i3c_core_base_test", parent);
 	endfunction
 
@@ -72,6 +87,9 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
        	ai3c_message    msg;
        	bit [7:0]       pec;
 
+        time timeout;
+        timeout = (len * 2us) + 20us;
+
 		test_log.step($psprintf("I3C wr txfer started at...: addr = 'h %0h, len = 'd %0d", addr, len));
 
 		tr = new(`avery_strarg sys_agt.mgr);
@@ -95,11 +113,48 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 		test_log.substep($psprintf("Writing data:\n%s", tr.sprint(2)));
 
 		sys_agt.post_transaction(tr);
-       	tr.wait_done(20us);
+       	tr.wait_done(timeout);
        	chk_tr(tr);
        	test_log.step($psprintf("I3C wr txfer completed at.: addr = 'h %0h, len = 'd %0d", addr, len));
 
 	endtask
+
+    virtual task i3c_random_write(
+        input ai3c_addr_t addr,
+        input bit[7:0] cmd,
+        input bit[7:0] data[],
+        input int      len);
+
+        bit [7:0] data_subset[];
+        int data_idx;
+        int wr_len[];
+
+        //-- create a new instance of RandomWriteHelper
+        random_lengths = new(len);
+        assert(random_lengths.randomize());  // Randomize wr_len
+        wr_len = random_lengths.random_len;  // Retrieve randomized values
+        test_log.substep($psprintf("Randomized write lengths: %0d", wr_len.size()));
+        foreach (wr_len[i]) begin
+            test_log.substep($psprintf("Randomized write length %0d: %0d", i, wr_len[i]));
+        end
+
+        //-- perform write with each wr_len
+        foreach (wr_len[i]) begin
+            test_log.substep($psprintf("Writing %0d bytes", wr_len[i]));
+            data_subset = new[wr_len[i]];
+            data_idx = 0;
+            for (int j = 0; j < i; j++) begin
+                data_idx += wr_len[j];
+            end
+            test_log.substep($psprintf("starting data_index = %0d, wr_len = %0d", data_idx, wr_len[i]));
+            for (int j = 0; j < wr_len[i]; j++) begin
+                data_subset[j] = data[data_idx + j];
+            end
+            i3c_write(addr, cmd, data, wr_len[i]);
+        end
+        test_log.substep($psprintf("Completed writing %0d bytes in %0d chunks", len, wr_len.size()));
+
+    endtask
 
 	virtual task i3c_read(	input ai3c_addr_t  addr,
 					input bit [7:0]    cmd,
@@ -111,6 +166,9 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 		bit              ok;
 		// bit [7:0]        data[];
         bit [7:0]        pec;
+
+        time timeout;
+        timeout = (len * 2us) + 20us;
 
 		test_log.step($psprintf("I3C rd txfer started at...: addr = 'h %0h, len = 'd %0d", addr, len));
 		tr = new(`avery_strarg sys_agt.mgr);
@@ -136,7 +194,7 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 		test_log.substep($psprintf("Transfer:\n%s", tr.sprint(2)));
 
 		sys_agt.post_transaction(tr);
-		tr.wait_done(32us);
+		tr.wait_done(timeout);
 
 		//-- read data from the subordinate
 		msg = tr.msgs[1];

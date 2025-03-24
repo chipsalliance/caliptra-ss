@@ -17,4 +17,5 @@
 `include "cptra_ss_i3c_core_base_test.svh"
 `include "i3c_reg_rd_wr.svh"
 `include "i3c_sboot.svh"
+`include "i3c_rand_streaming_boot.svh"
 `include "ai3ct_ext_basic.svh"
