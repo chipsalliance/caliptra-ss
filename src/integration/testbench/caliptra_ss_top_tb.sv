@@ -95,6 +95,7 @@ module caliptra_ss_top_tb
     bit          [31:0]         mem_signature_end   = 32'd0;
     bit          [31:0]         mem_mailbox         = `SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     logic                       rst_l;
+    logic                       cptra_ss_mci_cptra_rst_b_o;
     logic                       porst_l;
     logic [pt.PIC_TOTAL_INT:1]  ext_int_tb;
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
@@ -1764,6 +1765,7 @@ module caliptra_ss_top_tb
 
     //instantiate caliptra ss top module
     logic [124:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
+    logic         cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o;
     logic         cptra_ss_mci_boot_seq_brkpoint_i;
     logic         cptra_ss_mcu_no_rom_config_i;
     logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;
@@ -1836,6 +1838,8 @@ module caliptra_ss_top_tb
         .cptra_ss_clk_i(core_clk),
         .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i), //fixme
         .cptra_ss_rst_b_i(rst_l),
+        .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
+        .cptra_ss_mci_cptra_rst_b_o,
     
     //SoC AXI Interface
         .cptra_ss_cptra_core_s_axi_if,
@@ -1881,6 +1885,8 @@ module caliptra_ss_top_tb
         .cptra_ss_cptra_core_jtag_tdo_o,    // JTAG TDO
         .cptra_ss_cptra_core_jtag_tdoEn_o,  // JTAG TDO enable
         .cptra_ss_cptra_generic_fw_exec_ctrl_o,
+        .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o,
+        .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o),
         .cptra_ss_debug_intent_i,
         .cptra_ss_dbg_manuf_enable_o,
         .cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o,
