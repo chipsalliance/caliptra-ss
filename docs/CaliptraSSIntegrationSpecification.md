@@ -433,7 +433,7 @@ Integrator must connect, following list of manager and subordinates to axi inter
 FW Execute Control is typically controlled by Caliptra. These means ```cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o``` should be looped back and directly connected to ```cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i```. If the SOC decided to note use Caliptra Core, the SOC must drive cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i the same way Caliptra Core drives this signal.
 
 1. On same reset at MCI 
-2. Syncronous to MCI clock domain
+2. Synchronous to MCI clock domain
 3. 1 indicates FW patch is valid in the MCU SRAM
 4. 0 indicates FW patch is invalid and will request MCU to reset iteself
 
