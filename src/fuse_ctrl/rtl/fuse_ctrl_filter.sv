@@ -28,8 +28,8 @@ module fuse_ctrl_filter
     input wire rst_n_i,
     input wire fc_init_done,
 
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_cptra_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+    input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
 
     // Core interface
     input  axi_wr_req_t  core_axi_wr_req,  // AXI write request from the core
@@ -100,7 +100,7 @@ end
 // Combinational Block: Generate the allowed vector based on the access control table.
 // For each entry in the table, check if the latched fuse address is within the allowed range
 // and if the AXI user ID matches the allowed ID. Each bit in wr_allowed_vec corresponds to an entry.
-logic [FC_TABLE_NUM_RANGES-1:0][CPTRA_SS_MCU_USER_WIDTH-1:0] AXI_user_id_arr;
+logic [FC_TABLE_NUM_RANGES-1:0][31:0] AXI_user_id_arr;
 always_comb begin
     wr_allowed_vec = '0;
     AXI_user_id_arr[0] = cptra_ss_strap_cptra_axi_user_i;

@@ -124,10 +124,10 @@ module caliptra_ss_top
 `endif
 
 // Caliptra SS MCU 
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mci_soc_config_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
@@ -225,6 +225,7 @@ module caliptra_ss_top
     logic                       o_debug_mode_status;
 
     logic                       jtag_tdo;
+    logic                       i_cpu_halt_req;
     logic                       o_cpu_halt_ack;
     logic                       o_cpu_halt_status;
     logic                       o_cpu_run_ack;
@@ -531,9 +532,6 @@ module caliptra_ss_top
     logic payload_available_o;
     logic image_activated_o;
 
-    // tie offs
-        assign reset_vector = `css_mcu0_RV_RESET_VEC;
-
     // MCU DMA AXI Interface - UNUSED
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
@@ -563,12 +561,12 @@ module caliptra_ss_top
 
 
      always_comb begin
-        cptra_ss_mcu_lsu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_lsu_axi_user_i; // TODO part-select?
-        cptra_ss_mcu_lsu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_lsu_axi_user_i; // TODO part-select?
+        cptra_ss_mcu_lsu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_lsu_axi_user_i;
+        cptra_ss_mcu_lsu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_lsu_axi_user_i;
         cptra_ss_mcu_lsu_m_axi_if.arid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
         cptra_ss_mcu_lsu_m_axi_if.awid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
-        cptra_ss_mcu_ifu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_ifu_axi_user_i; // TODO part-select?
-        cptra_ss_mcu_ifu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_ifu_axi_user_i; // TODO part-select?
+        cptra_ss_mcu_ifu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_ifu_axi_user_i;
+        cptra_ss_mcu_ifu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_ifu_axi_user_i;
         cptra_ss_mcu_ifu_m_axi_if.arid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
         cptra_ss_mcu_ifu_m_axi_if.awid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
       
@@ -959,13 +957,13 @@ module caliptra_ss_top
         .mpc_debug_run_ack      ( mpc_debug_run_ack),
         .mpc_debug_run_req      ( 1'b1),
         .mpc_reset_run_req      ( 1'b1),             // Start running after reset
-        .debug_brkpt_status    (debug_brkpt_status),
+        .debug_brkpt_status     (debug_brkpt_status),
+        .o_debug_mode_status    (o_debug_mode_status),
 
-        .i_cpu_halt_req         ( 1'b0  ),    // Async halt req to CPU
+        .i_cpu_halt_req         ( i_cpu_halt_req ),    // Async halt req to CPU
         .o_cpu_halt_ack         ( o_cpu_halt_ack ),    // core response to halt
         .o_cpu_halt_status      ( o_cpu_halt_status ), // 1'b1 indicates core is halted
         .i_cpu_run_req          ( 1'b0  ),     // Async restart req to CPU
-        .o_debug_mode_status    (o_debug_mode_status),
         .o_cpu_run_ack          ( o_cpu_run_ack ),     // Core response to run req
 
         .dec_tlu_perfcnt0       (),
@@ -1174,7 +1172,11 @@ module caliptra_ss_top
 
         .strap_mcu_reset_vector(cptra_ss_strap_mcu_reset_vector_i),
         
-        .mcu_reset_vector(),
+        .mcu_reset_vector(reset_vector),
+        // MCU Halt Signals
+        .mcu_cpu_halt_req_o   (i_cpu_halt_req   ),
+        .mcu_cpu_halt_ack_i   (o_cpu_halt_ack   ),
+        .mcu_cpu_halt_status_i(o_cpu_halt_status),
 
         .mcu_no_rom_config(cptra_ss_mcu_no_rom_config_i),
 

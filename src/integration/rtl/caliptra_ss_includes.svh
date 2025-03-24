@@ -20,14 +20,11 @@
 
 parameter CPTRA_SS_MCU_LSU_ARID_WIDTH = 8;
 parameter CPTRA_SS_MCU_LSU_AWID_WIDTH = 8;
-//parameter CPTRA_SS_MCU_LSU_ARUSER_WIDTH = 8;
-//parameter CPTRA_SS_MCU_LSU_AWUSER_WIDTH = 8;
 parameter CPTRA_SS_MCU_IFU_ARID_WIDTH = 8;
 parameter CPTRA_SS_MCU_IFU_AWID_WIDTH = 8;
-parameter CPTRA_SS_MCU_USER_WIDTH = 32; // FIXME ?
 
-parameter CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER   = 32'h3; // FIXME
-parameter CPTRA_SS_STRAP_MCU_LSU_AXI_USER       = 32'h1; // FIXME
-parameter CPTRA_SS_STRAP_MCU_IFU_AXI_USER       = 32'h2; // FIXME
+parameter CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER   = 32'h3; // FIXME make these values modifiable at run-time for testing
+parameter CPTRA_SS_STRAP_MCU_LSU_AXI_USER       = 32'h1; // FIXME make these values modifiable at run-time for testing
+parameter CPTRA_SS_STRAP_MCU_IFU_AXI_USER       = 32'h2; // FIXME make these values modifiable at run-time for testing
 
 `endif // CPTRA_SS_INCLUDES_SVH

@@ -36,8 +36,8 @@ module otp_ctrl
   input  edn_pkg::edn_rsp_t                          edn_i,
 
 
-  input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
-  input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_cptra_axi_user_i,
+  input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+  input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
 
   // Bus Interface
   // input  tlul_pkg::tl_h2d_t                          core_tl_i,
