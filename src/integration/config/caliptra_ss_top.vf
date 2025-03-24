@@ -33,6 +33,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/ntt_top/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/norm_check/rtl
++incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/tb
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/rtl
@@ -146,7 +147,6 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_dmi_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_trace_buffer_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/trace_buffer_csr_pkg.sv
-${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox_csr_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/datavault/rtl/dv_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/doe/rtl/doe_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/rtl/mldsa_config_defines.svh
@@ -190,6 +190,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_pri
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim/rtl/abr_prim_sparse_fsm_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/ntt_top/rtl/ntt_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/norm_check/rtl/norm_check_defines_pkg.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/tb/physical_rng.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/ahb_to_reg_adapter.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/el2_mem.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/el2_dma_ctrl.sv
@@ -504,8 +505,6 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_boot_seqr.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_lcc_st_trans.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_trace_buffer.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/trace_buffer_csr.sv
-${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox.sv
-${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox_csr.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/dbg/el2_dbg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/dec/el2_dec_decode_ctl.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/dec/el2_dec_gpr_ctl.sv
@@ -788,6 +787,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/rtl/aes_prng_clearing.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/rtl/aes_reduced_round.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/rtl/aes_reg_status.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/rtl/aes_reg_top.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/rtl/aes_wrap.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/rtl/aes.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/rtl/aes_clp_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/rtl/aes_clp_reg.sv
