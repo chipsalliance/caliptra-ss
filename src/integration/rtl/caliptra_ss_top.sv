@@ -531,9 +531,6 @@ module caliptra_ss_top
     logic payload_available_o;
     logic image_activated_o;
 
-    // tie offs
-        assign reset_vector = `css_mcu0_RV_RESET_VEC;
-
     // MCU DMA AXI Interface - UNUSED
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
@@ -1174,7 +1171,7 @@ module caliptra_ss_top
 
         .strap_mcu_reset_vector(cptra_ss_strap_mcu_reset_vector_i),
         
-        .mcu_reset_vector(),
+        .mcu_reset_vector(reset_vector),
 
         .mcu_no_rom_config(cptra_ss_mcu_no_rom_config_i),
 

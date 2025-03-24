@@ -1798,7 +1798,7 @@ module caliptra_ss_top_tb
 
     assign cptra_ss_mci_boot_seq_brkpoint_i     = 1'b0;
     assign cptra_ss_mcu_no_rom_config_i         = 1'b0;
-    assign cptra_ss_strap_mcu_reset_vector_i    = 32'h0;
+    assign cptra_ss_strap_mcu_reset_vector_i    = `css_mcu0_RV_RESET_VEC;
     assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
     assign cptra_ss_strap_mcu_lsu_axi_user_i    = CPTRA_SS_STRAP_MCU_LSU_AXI_USER;
     assign cptra_ss_strap_mcu_ifu_axi_user_i    = CPTRA_SS_STRAP_MCU_IFU_AXI_USER;
