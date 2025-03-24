@@ -31,6 +31,11 @@
   - [Caliptra ROM Requirements](#caliptra-rom-requirements)
   - [I3C and Caliptra-AXI Interactions](#i3c-and-caliptra-axi-interactions)
 - [Caliptra AXI Manager \& DMA assist](#caliptra-axi-manager--dma-assist)
+  - [AXI Feature Support](#axi-feature-support)
+  - [Routes](#routes)
+  - [Streaming Boot Payloads](#streaming-boot-payloads)
+  - [Programming Flowchart {#programming-flowchart}](#programming-flowchart-programming-flowchart)
+  - [Descriptor](#descriptor)
 - [Caliptra SS Fuse Controller](#caliptra-ss-fuse-controller)
   - [Partition Details](#partition-details)
     - [Key Characteristics of Secret Partitions:](#key-characteristics-of-secret-partitions)
@@ -94,6 +99,7 @@
       - [MCU Mailbox MCU Access](#mcu-mailbox-mcu-access)
       - [MCU Mailbox Address Map](#mcu-mailbox-address-map)
     - [MCU SRAM](#mcu-sram-1)
+      - [MCU Hitless Update Handshake](#mcu-hitless-update-handshake)
     - [MCI AXI Subordinate](#mci-axi-subordinate)
     - [Interrupts](#interrupts)
     - [MCI Error handling](#mci-error-handling)
@@ -1023,13 +1029,13 @@ The registers can be split up into a few different categories:
 
 ### MCI Straps
 
-All MCI straps shall be static before mci_rst_b is deasserted.
+All MCI straps shall be static before mci_rst_b is deasserted. With some straps with further restrictions as described below.  
 
 MCI has the following types of straps:
 
 | **Strap Type**     | **Sampled or Direct Use**|**Description**     | 
 | :---------     | :---------| :---------| 
-| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These are not overridable by SW. | 
+| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These shall be constant non-configurable inputs to CSS/MCI. Inside MCI these are not overridable by SW.| 
 | **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
 | **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
 
@@ -1260,6 +1266,23 @@ The entire MCU SRAM has ECC protection with no ability to disable. Single bit er
 - HW_ERROR_FATAL asserted and sent to SOC
 
 MCU SRAM is accessible via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) for more details.
+
+#### MCU Hitless Update Handshake
+
+The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). This section is focused on the HW registers both Caliptra and MCU will used to complete the flow. 
+
+1. While MCU is waiting for Caliptra to verify the image. MCU should use ```notif_cptra_mcu_reset_req_sts``` interrupt to know when Caliptra has cleared the EXEC Lock bit. MCU can either poll or enable the interrupt. 
+2. Caliptra clears EXEC_LOCK[2]
+3. MCU sees request from Caliptra and should clear the interrupt status bit then set ```RESET_REQUEST.mcu_req``` in MCI.
+4. MCI will reset MCU (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
+5. Caliptra will gain access to MCU SRAM Updatable Execution Region and update the FW image
+6. Caliptra sets EXEC_LOCK[2]
+8. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
+9. If it is a FW update MCU jumps to MCU SRAM for execution
+
+MCI tracks two different hitless update types in ```RESET_RESON```. ```FW_BOOT_UPD_RESET``` is the first hitless update since an MCI warm reset. This update means FW needs to initialize more the MCU SRAM. Whereas the ```FW_HITLESS_UPD_RESET``` is any subsequent hitless update and less needs to be initialized in the MCU SRAM. 
+
+
 ### MCI AXI Subordinate
 
 MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the appropriate submodule within MCI. 
