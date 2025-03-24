@@ -19,6 +19,8 @@
 
 void reset_rtl(void);
 void mcu_mci_boot_go();
+void mcu_mci_poll_exec_lock();
+void mcu_mci_req_reset();
 void mcu_cptra_fuse_init();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
