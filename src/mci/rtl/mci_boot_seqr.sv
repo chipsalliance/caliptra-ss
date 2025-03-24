@@ -263,7 +263,7 @@ always_comb begin
         min_mcu_rst_count_nxt = min_mcu_rst_count + 1'b1;
     end
     // Once timeout has been reached set the elapsed timer
-    else if(boot_fsm == BOOT_RST_MCU && min_mcu_rst_count != '1) begin
+    else if(boot_fsm == BOOT_RST_MCU && min_mcu_rst_count == '1) begin
         min_mcu_rst_count_elapsed_nxt = 1'b1;
     end
 end
