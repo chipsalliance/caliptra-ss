@@ -209,49 +209,50 @@ VERILATOR_RUN_ARGS ?= ""
 CFLAGS += $(TB_DPI_INCS)
 
 ############# VCS Compile options #############
-VCS_COMP_OPTS += '-debug_access+all'
+VCS_COMP_OPTS += -debug_access+all
 # Used in caliptra_top_sva to find signals
-VCS_COMP_OPTS += "+define+CPTRA_TB_TOP_NAME=$(DUT)"
-VCS_COMP_OPTS += "+define+CPTRA_TOP_PATH=$(DUT).caliptra_ss_dut.caliptra_top_dut"
-VCS_COMP_OPTS += '+define+CALIPTRA_MODE_SUBSYSTEM'
-VCS_COMP_OPTS += '+define+MCU_RV_BUILD_AXI4'
-VCS_COMP_OPTS += '+define+MCU_RV_OPENSOURCE'
-VCS_COMP_OPTS += '+define+AVERY_VCS'
-VCS_COMP_OPTS += '+define+AVERY_CLOCK=5'
+VCS_COMP_OPTS += +define+CPTRA_TB_TOP_NAME=$(DUT)
+VCS_COMP_OPTS += +define+CPTRA_TOP_PATH=$(DUT).caliptra_ss_dut.caliptra_top_dut
+VCS_COMP_OPTS += +define+CALIPTRA_MODE_SUBSYSTEM
+VCS_COMP_OPTS += +define+MCU_RV_BUILD_AXI4
+VCS_COMP_OPTS += +define+MCU_RV_OPENSOURCE
+VCS_COMP_OPTS += +define+AVERY_VCS
+VCS_COMP_OPTS += +define+AVERY_CLOCK=5
 # this is a defined to enable LCC BFM reset to be driven to LCC and FC
-VCS_COMP_OPTS += '+define+LCC_FC_BFM_SIM=1'
-VCS_COMP_OPTS += '+define+FOUR_OUTSTANDING'
-VCS_COMP_OPTS += '+define+AVERY_AXI_INTERCONNECT'
-VCS_COMP_OPTS += '+define+AAXI_MAX_DATA_WIDTH=64'
-VCS_COMP_OPTS += '+define+AAXI_MAX_ADDR_WIDTH=64'
-VCS_COMP_OPTS += '+define+AAXI_MAX_ID_WIDTH=5'
-VCS_COMP_OPTS += '+define+AAXI_MAX_ARUSER_WIDTH=32'
-VCS_COMP_OPTS += '+define+AAXI_MAX_AWUSER_WIDTH=32'
-VCS_COMP_OPTS += '+define+CALIPTRA_INTERNAL_UART'
-VCS_COMP_OPTS += '-noinherit_timescale=1ns/1ps'
-VCS_COMP_OPTS += '+define+AAXI_INTC_MASTER_CNT=5'
-VCS_COMP_OPTS += '+define+AAXI_INTC_SLAVE_CNT=8'
-VCS_COMP_OPTS += '+define+AI3C_LANE_NUM=1'
-VCS_COMP_OPTS += '+define+DIGITAL_IO_I3C=1'
-VCS_COMP_OPTS += '+define+CALIPTRA_MODE_SUBSYSTEM'
-VCS_COMP_OPTS += '+define+AI3C_SKIP_DAA=1'
-VCS_COMP_OPTS += '+define+AVERY_SV_TEST_CASE=1'
-VCS_COMP_OPTS += "+define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh"
-VCS_COMP_OPTS += "$(AVERY_PLI)/lib.linux/libtb_vcs64.a"
-VCS_COMP_OPTS += "-P $(AVERY_PLI)/tb_vcs64.tab"
+VCS_COMP_OPTS += +define+LCC_FC_BFM_SIM=1
+VCS_COMP_OPTS += +define+FOUR_OUTSTANDING
+VCS_COMP_OPTS += +define+AVERY_AXI_INTERCONNECT
+VCS_COMP_OPTS += +define+AAXI_MAX_DATA_WIDTH=64
+VCS_COMP_OPTS += +define+AAXI_MAX_ADDR_WIDTH=64
+VCS_COMP_OPTS += +define+AAXI_MAX_ID_WIDTH=5
+VCS_COMP_OPTS += +define+AAXI_MAX_ARUSER_WIDTH=32
+VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
+VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_UART
+VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
+VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
+VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
+VCS_COMP_OPTS += +define+DIGITAL_IO_I3C=1
+VCS_COMP_OPTS += +define+CALIPTRA_MODE_SUBSYSTEM
+#VCS_COMP_OPTS += +define+AI3C_SKIP_DAA=1
+VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
+VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
+VCS_COMP_OPTS += $(AVERY_PLI)/lib.linux/libtb_vcs64.a
+VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME : remve this Note suppression
-VCS_COMP_OPTS += '-suppress=SV-LCM-PPWI'
+VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
 ############# VCS Elab options #############
 #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
-VCS_ELAB_OPTS += '+warn=noIWNF'
-VCS_ELAB_OPTS += '+warn=noPCWM-W'
-VCS_ELAB_OPTS += '+warn=noTFIPC,noMDVMO'
-VCS_ELAB_OPTS += "$(AVERY_PLI)/lib.linux/libtb_vcs64.a"
-VCS_ELAB_OPTS += "-P $(AVERY_PLI)/tb_vcs64.tab"
+VCS_ELAB_OPTS += -debug_access+all
+VCS_ELAB_OPTS += +warn=noIWNF
+VCS_ELAB_OPTS += +warn=noPCWM-W
+VCS_ELAB_OPTS += +warn=noTFIPC,noMDVMO
+VCS_ELAB_OPTS += $(AVERY_PLI)/lib.linux/libtb_vcs64.a
+VCS_ELAB_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME unique case violations in i3c_core
-VCS_ELAB_OPTS += "-ignore unique_checks"
+VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
-VCS_SIM_OPTS  += "+vpi -lpthread"
+VCS_SIM_OPTS  += +vpi -lpthread
 
 # Targets
 all: clean verilator
