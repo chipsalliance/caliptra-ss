@@ -415,6 +415,7 @@ module mcu_mbox_csr (
             field_storage.mbox_dlen.length.value <= field_combo.mbox_dlen.length.next;
         end
     end
+    assign hwif_out.mbox_dlen.length.value = field_storage.mbox_dlen.length.value;
     // Field: mcu_mbox_csr.mbox_execute.execute
     always_comb begin
         automatic logic [0:0] next_c;
