@@ -1281,7 +1281,7 @@ The hitless flow is described in full in [Caliptra Top Spec](https://github.com/
 8. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
 9. If it is a FW update MCU jumps to MCU SRAM for execution
 
-MCI tracks two different hitless update types in ```RESET_RESON```. ```FW_BOOT_UPD_RESET``` is the first hitless update since an MCI warm reset. This update means FW needs to initialize more the MCU SRAM. Whereas the ```FW_HITLESS_UPD_RESET``` is any subsequent hitless update and less needs to be initialized in the MCU SRAM. 
+MCI tracks two different hitless update types in ```RESET_RESON```. ```FW_BOOT_UPD_RESET``` is the first hitless update since an MCI cold reset. This update means FW needs to initialize more the MCU SRAM. Whereas the ```FW_HITLESS_UPD_RESET``` is any subsequent hitless update and less needs to be initialized in the MCU SRAM. 
 
 
 ### MCI AXI Subordinate
