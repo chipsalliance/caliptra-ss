@@ -209,7 +209,6 @@ VERILATOR_RUN_ARGS ?= ""
 CFLAGS += $(TB_DPI_INCS)
 
 ############# VCS Compile options #############
-VCS_COMP_OPTS += '-assert svaext'
 VCS_COMP_OPTS += '-debug_access+all'
 # Used in caliptra_top_sva to find signals
 VCS_COMP_OPTS += "+define+CPTRA_TB_TOP_NAME=$(DUT)"
@@ -284,7 +283,7 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	touch verilator-build
 
 vcs-build: $(TBFILES) $(TB_DPI_SRCS)
-	vlogan -sverilog -full64 -kdb -incr_vlogan +lint=IA_CHECKFAIL \
+	vlogan -sverilog -full64 -assert svaext -kdb -incr_vlogan +lint=IA_CHECKFAIL \
 	  $(VCS_COMP_OPTS) \
 	  -l vcs_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vf
