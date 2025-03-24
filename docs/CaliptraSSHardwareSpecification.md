@@ -1099,7 +1099,7 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 13. MCU ROM will do a fuse_write_done write to Caliptra
 14. Caliptra ROM starts to execute from here on.
 15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
-16. CSS-BootFSM will wait for a confirmation from MCU ROM and assert the reset to MCU and deassert the reset to MCU after 10 cycles.
+16. CSS-BootFSM waits for MCU to request the reset. Then CSS-BootFSM will do a halt req/ack handshake with MCU and assert the MCU reset. 
 17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
 ![](images/Caliptra-SS-BootFSM.png)
@@ -1272,11 +1272,12 @@ MCU SRAM is accessible via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) 
 The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). This section is focused on the HW registers both Caliptra and MCU will used to complete the flow. 
 
 1. While MCU is waiting for Caliptra to verify the image. MCU should use ```notif_cptra_mcu_reset_req_sts``` interrupt to know when Caliptra has cleared the EXEC Lock bit. MCU can either poll or enable the interrupt. 
-2. Caliptra clears EXEC_LOCK[2]
+2. Caliptra clears FW_EXEC_CTL[2]
 3. MCU sees request from Caliptra and should clear the interrupt status bit then set ```RESET_REQUEST.mcu_req``` in MCI.
-4. MCI will reset MCU (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
-5. Caliptra will gain access to MCU SRAM Updatable Execution Region and update the FW image
-6. Caliptra sets EXEC_LOCK[2]
+4. MCI does an MCU halt req/ack handshake to ensure the MCU is idle.
+5. MCI asserted MCU reset (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
+6. Caliptra will gain access to MCU SRAM Updatable Execution Region and update the FW image
+7. Caliptra sets FW_EXEC_CTL[2]
 8. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
 9. If it is a FW update MCU jumps to MCU SRAM for execution
 
