@@ -51,6 +51,7 @@ targets:
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0
 requires:
+  - ss_asserts
   - caliptra_ss_lc_ctrl_pkg
   - caliptra_ss_top_defines
   - axi_mem_pkg
