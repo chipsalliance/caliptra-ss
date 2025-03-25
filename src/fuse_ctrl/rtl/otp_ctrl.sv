@@ -6,7 +6,6 @@
 //
 
 `include "caliptra_prim_assert.sv"
-`include "caliptra_ss_includes.svh"
 
 module otp_ctrl
   import otp_ctrl_pkg::*;
