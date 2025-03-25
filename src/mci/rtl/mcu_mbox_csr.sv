@@ -437,6 +437,7 @@ module mcu_mbox_csr (
         end
     end
     assign hwif_out.mbox_execute.execute.value = field_storage.mbox_execute.execute.value;
+    assign hwif_out.mbox_execute.execute.swmod = decoded_reg_strb.mbox_execute && decoded_req_is_wr;
     // Field: mcu_mbox_csr.mbox_target_status.status
     always_comb begin
         automatic logic [3:0] next_c;

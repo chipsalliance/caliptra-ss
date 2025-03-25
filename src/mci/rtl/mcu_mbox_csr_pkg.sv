@@ -164,6 +164,7 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic value;
+        logic swmod;
     } mcu_mbox_csr__mbox_execute__execute__out_t;
 
     typedef struct packed{
