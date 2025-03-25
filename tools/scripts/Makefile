@@ -220,8 +220,6 @@ VCS_COMP_OPTS += +define+MCU_RV_BUILD_AXI4
 VCS_COMP_OPTS += +define+MCU_RV_OPENSOURCE
 VCS_COMP_OPTS += +define+AVERY_VCS
 VCS_COMP_OPTS += +define+AVERY_CLOCK=5
-# this is a defined to enable LCC BFM reset to be driven to LCC and FC
-VCS_COMP_OPTS += +define+LCC_FC_BFM_SIM=1
 VCS_COMP_OPTS += +define+FOUR_OUTSTANDING
 VCS_COMP_OPTS += +define+AVERY_AXI_INTERCONNECT
 VCS_COMP_OPTS += +define+AAXI_MAX_DATA_WIDTH=64
@@ -245,7 +243,6 @@ VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
 ############# VCS Elab options #############
 #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
-VCS_ELAB_OPTS += -debug_access+all
 VCS_ELAB_OPTS += +warn=noIWNF
 VCS_ELAB_OPTS += +warn=noPCWM-W
 VCS_ELAB_OPTS += +warn=noTFIPC,noMDVMO
