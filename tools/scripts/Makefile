@@ -37,6 +37,7 @@ endif
 
 # Define test name
 TESTNAME ?= mcu_hello_world
+CALIPTRA_TESTNAME ?= cptra_hello_world
 TEST_DIR ?= $(CALIPTRA_SS)/src/integration/test_suites/$(TESTNAME)
 HEX_DIR = $(CALIPTRA_SS)/src/integration/test_suites/hex
 INCLUDES_DIR = $(CALIPTRA_SS)/src/integration/test_suites/includes
@@ -52,7 +53,8 @@ DUT ?= caliptra_ss_top_tb
 
 CALIPTRA_DIR = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/test_suites
 SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
-CALIPTRA_RTL = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/rtl
+CALIPTRA_ROOT = $(CALIPTRA_SS)/third_party/caliptra-rtl
+CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
 
 # Determine test directory
 #ifneq (,$(wildcard $(TBDIR)/tests/$(TEST)))
@@ -253,6 +255,7 @@ VCS_ELAB_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
 VCS_SIM_OPTS  += +vpi -lpthread
+VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
 
 # Targets
 all: clean verilator
@@ -298,13 +301,22 @@ vcs-build: $(TBFILES) $(TB_DPI_SRCS)
 verilator: mcu_program.hex verilator-build
 	./obj_dir/V$(DUT) $(VERILATOR_RUN_ARGS)
 
-vcs: mcu_program.hex vcs-build
+vcs: cptra_program.hex mcu_program.hex vcs-build
 	cp $(TEST_GEN_FILES) $(BUILD_DIR)
 	./simv.$(DUT) \
 	  $(VCS_SIM_OPTS) \
 	  -l vcs_sim.log
 
-############ TEST build ###############################
+############ Caliptra TEST build ######################
+ifneq (,$(wildcard $(CALIPTRA_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME)))
+cptra_program.hex:
+	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=$(CALIPTRA_TESTNAME) program.hex
+else
+cptra_program.hex:
+	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$(TEST_DIR) TESTNAME=$(CALIPTRA_TESTNAME) program.hex
+endif
+
+############ MCU TEST build ###############################
 
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
 mcu_program.hex: $(BUILD_DIR)/defines.h
