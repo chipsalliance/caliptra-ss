@@ -81,11 +81,11 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
                 logger.debug(f"L0 comparison: row[L0]={row['L0']} vs criteria[L0]={criteria['L0']}, match={l0_match}")
             
             # Matching logic
-            dir_rand_match = (row["Directed|Random"] == criteria["Directed|Random"] or row["Directed|Random"] == "None")
+            dir_rand_match = (row["Directed|Random"] == criteria["Directed|Random"] or row["Directed|Random"] == "None" or criteria["Nightly|Weekly"] is None)
             nw_match = (row["Nightly|Weekly"] == criteria["Nightly|Weekly"] or criteria["Nightly|Weekly"] is None or 
                         criteria["Nightly|Weekly"] == "" or row["Nightly|Weekly"] == "None")
-            l0_match = (row["L0"] == criteria["L0"] or row["L0"] == "None")
-            l1_match = (row["L1"] == criteria["L1"] or row["L1"] == "None")
+            l0_match = (row["L0"] == criteria["L0"] or row["L0"] == "None" or criteria["L0"] is None)
+            l1_match = (row["L1"] == criteria["L1"] or row["L1"] == "None" or criteria["L1"] is None)
             dut_match = (row["DUT"] == criteria["DUT"])
             promote_match = (criteria["PromotePipeline"] == row["PromotePipeline"] or criteria["PromotePipeline"] is None)
             
