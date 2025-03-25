@@ -45,5 +45,7 @@ void mcu_mbox_clear_lock_out_of_reset();
 #define CMD_RELEASE_ZEROIZATION         FC_LCC_CMD_OFFSET + 0x08
 #define CMD_FORCE_LC_TOKENS             FC_LCC_CMD_OFFSET + 0x09
 #define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 10
+#define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 11
+
 
 #endif // CALIPTRA_SS_LIB

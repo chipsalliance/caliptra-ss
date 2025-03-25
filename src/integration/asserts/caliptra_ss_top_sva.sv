@@ -18,8 +18,10 @@
 `define CPTRA_SS_TOP_PATH `CPTRA_SS_TB_TOP_NAME.caliptra_ss_dut
 
 module caliptra_ss_top_sva
+  import otp_ctrl_pkg::*;
   import otp_ctrl_part_pkg::*;
   import otp_ctrl_reg_pkg::*;
+  import lc_ctrl_pkg::*;
   import lc_ctrl_state_pkg::*;
   import caliptra_prim_mubi_pkg::*;
   ();
@@ -61,6 +63,16 @@ module caliptra_ss_top_sva
       dec_lc_state > PartInfo[i].lc_phase |-> mubi8_t'(`CPTRA_SS_TOP_PATH.u_otp_ctrl.part_access[i].write_lock) == MuBi8True
     )
     else $display("SVA ERROR: partition %d is not write-locked for life-cycle state %d", i, dec_lc_state);
+  end
+  endgenerate
+
+  generate
+  for (genvar i = 0; i < NumPart; i++) begin
+    fc_partition_escalation_lock : assert property (
+      @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+      `CPTRA_SS_TOP_PATH.u_otp_ctrl.lc_escalate_en_i == On |-> ##10 otp_err_e'(`CPTRA_SS_TOP_PATH.u_otp_ctrl.part_error[i]) == FsmStateError
+    )
+    else $display("SVA ERROR: partition %d is not locked after escalation", i);
   end
   endgenerate
 
