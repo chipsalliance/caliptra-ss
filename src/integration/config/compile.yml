@@ -16,19 +16,19 @@ targets:
       - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
       - $AVERY_AXI/testbench
       #-- I3C VIP
-      - $AVERY_HOME/i3cxactor-2025.1/
-      - $AVERY_HOME/i3cxactor-2025.1/src
-      - $AVERY_HOME/i3cxactor-2025.1/src.i3c
-      - $AVERY_HOME/i3cxactor-2025.1/src.VCS
-      - $AVERY_HOME/i3cxactor-2025.1/src.i3c
-      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/examples
-      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/examples.uvm
-      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut
-      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut1_1
-      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut_slave
-      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut_master
-      - $AVERY_HOME/i3cxactor-2025.1/testsuite.i3c/dut_master_stby
-      - $AVERY_HOME/i3cxactor-2025.1/testbench
+      - $AVERY_I3C/
+      - $AVERY_I3C/src
+      - $AVERY_I3C/src.i3c
+      - $AVERY_I3C/src.VCS
+      - $AVERY_I3C/src.i3c
+      - $AVERY_I3C/testsuite.i3c/examples
+      - $AVERY_I3C/testsuite.i3c/examples.uvm
+      - $AVERY_I3C/testsuite.i3c/dut
+      - $AVERY_I3C/testsuite.i3c/dut1_1
+      - $AVERY_I3C/testsuite.i3c/dut_slave
+      - $AVERY_I3C/testsuite.i3c/dut_master
+      - $AVERY_I3C/testsuite.i3c/dut_master_stby
+      - $AVERY_I3C/testbench
     files:
       #-- General
       - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
@@ -41,10 +41,10 @@ targets:
       - $AVERY_AXI/src.axi/aaxi_pkg_test.sv
       - $AVERY_AXI/src.axi/aaxi_intf.sv
       #-- I3C VIP
-      - $AVERY_HOME/i3cxactor-2025.1/src/ai2c_pkg.sv
-      - $AVERY_HOME/i3cxactor-2025.1/src.i3c/ai3c_pkg.sv
-      - $AVERY_HOME/i3cxactor-2025.1/src/ai2c_intf.sv
-      - $AVERY_HOME/i3cxactor-2025.1/src.i3c/ai3c_intf.sv
+      - $AVERY_I3C/src/ai2c_pkg.sv
+      - $AVERY_I3C/src.i3c/ai3c_pkg.sv
+      - $AVERY_I3C/src/ai2c_intf.sv
+      - $AVERY_I3C/src.i3c/ai3c_intf.sv
     tops:
       #-- NOTE: include this in the top level testbench
       - ai3c_tests_bench
