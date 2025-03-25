@@ -49,7 +49,7 @@ typedef enum {
 } lc_state_dec_t;
 
 void lcc_initialization(void);
-
+void force_lcc_tokens(void);
 void sw_transition_req(uint32_t next_lc_state,
                         uint32_t token_31_0,
                         uint32_t token_63_32,
@@ -59,7 +59,6 @@ void sw_transition_req(uint32_t next_lc_state,
                         
 uint32_t calc_lc_state_mnemonic(uint32_t state);
 void transition_state(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
-void test_all_lc_transitions_no_RMA_no_SCRAP(void);
 void test_all_lc_transitions_no_RMA_no_SCRAP(void);
 void sw_transition_req_with_expec_error(uint32_t next_lc_state,
     uint32_t token_31_0,
