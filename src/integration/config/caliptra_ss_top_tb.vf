@@ -13,10 +13,10 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/edn/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/tlul/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/ast/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl
-+incdir+${CALIPTRA_SS_ROOT}/src/ast/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/dmi/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl
@@ -132,6 +132,7 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/jtag_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/alert_handler_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map_defines.svh
+${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_includes.svh
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem_if.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/testbench/rom.sv
@@ -153,6 +154,7 @@ ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_assert.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_state_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_pkg.sv
+${CALIPTRA_SS_ROOT}/src/ast/rtl/ast_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
@@ -164,7 +166,6 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_if.sv
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_pkg.sv
-${CALIPTRA_SS_ROOT}/src/ast/rtl/ast_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dm_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/i3c_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_pkg.sv
@@ -284,7 +285,11 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_sram.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/aaxi_pkg_caliptra_test.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/aaxi4_interconnect.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/fuse_ctrl_bfm.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/prim_generic_otp.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/lc_ctrl_bfm.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_tb_cmd_list.svh
+${CALIPTRA_SS_ROOT}/src/integration/testbench/fc_lcc_tb_services.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_services.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/ahb_to_reg_adapter.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/el2_mem.sv
@@ -549,7 +554,6 @@ ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_buf.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_unbuf.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_scrmbl.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_token_const.sv
-${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/prim_generic_otp.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr_pkg.sv
@@ -899,6 +903,5 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/csrng/rtl/csrng_state_db.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/csrng/rtl/csrng_cmd_stage.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/csrng/rtl/csrng.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_top.sv
-${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_includes.svh
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
