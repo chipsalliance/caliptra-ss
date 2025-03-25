@@ -57,7 +57,7 @@ addrmap mcu_mbox_csr {
     reg {
         name="Mailbox USER";
         desc="Stores the AXI USER that locked the mailbox. Cleared when lock is cleared.";
-        field {sw=r; hw=rw; we;} user[32]=0;
+        field {sw=r; hw=rw; we; hwclr;} user[32]=0;
     } mbox_user;
     
     mbox_user.user->we  = mbox_lock.lock->hwset;

@@ -266,6 +266,7 @@ assign hwif_in.mbox_target_status.status.hwclr = mbox_release;
 assign hwif_in.mbox_target_status.done.hwclr = mbox_release; 
 assign hwif_in.mbox_cmd.command.hwclr = mbox_release; 
 assign hwif_in.mbox_target_user.user.hwclr = mbox_release; 
+assign hwif_in.mbox_user.user.hwclr = mbox_release; 
 
 // User locking is done via RDL. Only need to pass the user value to the HWIF if
 // there is a valid user request.
