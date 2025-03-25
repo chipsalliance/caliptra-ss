@@ -76,6 +76,10 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: Forcing Allow_RMA_or_SCRAP_on_PPD  = 1");
             force `CPTRA_SS_TOP_PATH.cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i = 1'b1;
           end
+          CMD_FC_TRIGGER_ESCALATION: begin
+            $display("fc_lcc_tb_services: triggering an escalation");
+            force `FC_PATH.lc_escalate_en_i = lc_ctrl_pkg::On;     
+          end
           default: begin
             // No action for unrecognized commands.
           end
