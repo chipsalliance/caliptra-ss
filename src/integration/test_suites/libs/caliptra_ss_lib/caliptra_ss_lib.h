@@ -23,5 +23,6 @@ void mcu_cptra_fuse_init();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
 void mcu_cptra_mbox_cmd();
+void mcu_mbox_clear_lock_out_of_reset();
 
 #endif // CALIPTRA_SS_LIB

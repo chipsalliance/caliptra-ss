@@ -81,6 +81,17 @@ void mcu_cptra_user_init() {
 
 }
 
+void mcu_mbox_clear_lock_out_of_reset() {
+    // MBOX: Write DLEN  (normally would be max SRAM size but using smaller size for test run time)
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, 32);
+
+    // MBOX: Clear Execute
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0);
+    VPRINTF(LOW, "MCU: Mbox0 execute clear\n");
+    
+    VPRINTF(LOW, "MCU: MBOX Lock out of reset cleared\n");
+}
+
 void mcu_cptra_poll_mb_ready() {
     // MBOX: Wait for ready_for_mb_processing
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {

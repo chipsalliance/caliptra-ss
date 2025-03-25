@@ -17,3 +17,6 @@ $CALIPTRA_SS/src/integration/test_suites/mcu_lmem_exe/mcu_lmem_exe, Directed, Ni
 $CALIPTRA_SS/src/integration/test_suites/smoke_test_fuse_prov_with_axi_id/smoke_test_fuse_prov_with_axi_id, Directed, Nightly, None, L1, caliptra_ss_top_tb, None, None, 100
 $CALIPTRA_SS/src/integration/test_suites/smoke_test_fuse_zeroize/smoke_test_fuse_zeroize, Directed, Nightly, None, L1, caliptra_ss_top_tb, None, None, 100
 $CALIPTRA_SS/src/integration/test_suites/smoke_test_lcc_scrap/smoke_test_lcc_scrap, Directed, Nightly, None, L1, caliptra_ss_top_tb, None, None, 100
+$CALIPTRA_SS/src/integration/test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox, None, None, L0, None, caliptra_ss_top_tb, Promote, None, 100
+$CALIPTRA_SS/src/integration/test_suites/smoke_test_mcu_mbox_zeroize/smoke_test_mcu_mbox_zeroize, None, None, L0, None, caliptra_ss_top_tb, Promote, None, 100
+$CALIPTRA_SS/src/integration/test_suites/mcu_mbox_lock_return_one_during_zeroize/mcu_mbox_lock_return_one_during_zeroize, None, None, L0, None, caliptra_ss_top_tb, Promote, None, 100
