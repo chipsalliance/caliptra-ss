@@ -1355,10 +1355,6 @@ module caliptra_ss_top
         .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
         .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_caliptra_dma_axi_user_i),
 
-        .clk_edn_i                  (1'b0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .rst_edn_ni                 (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .edn_o                      (),     // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .edn_i                      ('0),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
 
         .core_axi_wr_req            (cptra_ss_otp_core_axi_wr_req_i),
         .core_axi_wr_rsp            (cptra_ss_otp_core_axi_wr_rsp_o),
@@ -1396,14 +1392,6 @@ module caliptra_ss_top
 
         .otp_lc_data_o(from_otp_to_lcc_data_i),
 
-
-        .otp_keymgr_key_o           (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .flash_otp_key_i            ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .flash_otp_key_o            (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .sram_otp_key_i             ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .sram_otp_key_o             (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .otbn_otp_key_i             ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .otbn_otp_key_o             (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
         .otp_ext_voltage_h_io       (otp_ext_voltage_h_io),
         .scan_en_i                  ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
