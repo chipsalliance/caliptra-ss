@@ -54,9 +54,6 @@ void sw_transition_req(uint32_t next_lc_state,
                         uint32_t token_31_0,
                         uint32_t token_63_32,
                         uint32_t token_95_64,
-                        uint32_t token_31_0,
-                        uint32_t token_63_32,
-                        uint32_t token_95_64,
                         uint32_t token_127_96,
                         uint32_t conditional);
                         
