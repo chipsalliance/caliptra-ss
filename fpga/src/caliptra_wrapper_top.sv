@@ -33,6 +33,17 @@ module caliptra_wrapper_top #(
     input bit core_clk,
     input bit i3c_clk,
 
+    // I3C signals from AXI I3C
+    (* syn_keep = "true", mark_debug = "true" *) input wire axi_i3c_scl_t,
+    (* syn_keep = "true", mark_debug = "true" *) input wire axi_i3c_scl_o,
+    (* syn_keep = "true", mark_debug = "true" *) input wire axi_i3c_scl_pullup_en,
+    (* syn_keep = "true", mark_debug = "true" *) input wire axi_i3c_sda_t,
+    (* syn_keep = "true", mark_debug = "true" *) input wire axi_i3c_sda_o,
+    (* syn_keep = "true", mark_debug = "true" *) input wire axi_i3c_sda_pullup_en,
+    // I3C signals back to AXI I3C
+    (* syn_keep = "true", mark_debug = "true" *) output reg SCL,
+    (* syn_keep = "true", mark_debug = "true" *) output reg SDA,
+
     // Caliptra S_AXI Interface
     input  wire [31:0] S_AXI_CALIPTRA_AWADDR,
     input  wire [1:0] S_AXI_CALIPTRA_AWBURST,
@@ -494,17 +505,17 @@ module caliptra_wrapper_top #(
     output	wire                      S_AXI_WRAPPER_RVALID,
     input	wire                      S_AXI_WRAPPER_RREADY,
     output	wire [31:0]               S_AXI_WRAPPER_RDATA,
-    output	wire [1:0]                S_AXI_WRAPPER_RRESP,
+    output	wire [1:0]                S_AXI_WRAPPER_RRESP
 
     // I3C
-    output logic SDA_UP,
-    output logic SDA_PUSH,
-    output logic SDA_PULL,
-    input  logic SDA,
-    output logic SCL_UP,
-    output logic SCL_PUSH,
-    output logic SCL_PULL,
-    input  logic SCL
+    //output logic SDA_UP,
+    //output logic SDA_PUSH,
+    //output logic SDA_PULL,
+    //input  logic SDA,
+    //output logic SCL_UP,
+    //output logic SCL_PUSH,
+    //output logic SCL_PULL,
+    //input  logic SCL
     );
 
     axi4lite_intf wrapper_s_axil ();
@@ -1663,14 +1674,16 @@ I think this is the one that isn't used
     |         1 |      0 |           0 | -> |    1 |    1 |  1 | -> | push pull low  |
     |         1 |      1 |           1 | -> |    0 |    0 |  1 | -> | push pull high |
     */
-    logic cptra_ss_i3c_scl_o;
-    logic cptra_ss_i3c_sda_o;
-    logic cptra_ss_sel_od_pp_o;
+    //logic cptra_ss_i3c_scl_o;
+    //logic cptra_ss_i3c_sda_o;
+    //logic cptra_ss_sel_od_pp_o;
+    (* syn_keep = "true", mark_debug = "true" *) logic i3c_core_scl_o;
+    (* syn_keep = "true", mark_debug = "true" *) logic i3c_core_sda_o;
 
-/*
+
     always_comb begin
-        case ({
-        i3c_core_sel_od_pp_o, i3c_core_scl_o, axi_i3c_scl_t, axi_i3c_scl_o, axi_i3c_scl_pullup_en
+        //     i3c-core                             | AXI I3C
+        case ({i3c_core_sel_od_pp_o, i3c_core_scl_o, axi_i3c_scl_pullup_en, axi_i3c_scl_t, axi_i3c_scl_o
         })
         // Open drain, i3c_core pulls data low.
         2'b00000:   SCL = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 0, output disable, data 0 // Conflict between OD status
@@ -1690,53 +1703,141 @@ I think this is the one that isn't used
         2'b01100:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output disable, data 0 // AXI I3C not driving
         2'b01101:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output disable, data 1 // AXI I3C not driving
         2'b01110:   SCL = 1'b0; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output enable,  data 0 // AXI I3C pulling low
-        2'b01111:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output enable,  data 1
+        2'b01111:   SCL = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output enable,  data 1 // Both pushing the same high value
 
         // I3C core Push Pull - output low
-        2'b10000:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output disable, data 0
-        2'b10001:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output disable, data 1
-        2'b10010:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output enable,  data 0
-        2'b10011:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output enable,  data 1
-        2'b10100:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
-        2'b10101:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
+        2'b10000:   SCL = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output disable, data 0 // AXI I3C not driving
+        2'b10001:   SCL = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output disable, data 1 // AXI I3C not driving
+        2'b10010:   SCL = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output enable,  data 0 // Both driving the same
+        2'b10011:   SCL = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output enable,  data 1 // Conflict! Driving different values!!! This should never happen according to I3C spec
+        2'b10100:   SCL = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
+        2'b10101:   SCL = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
         2'b10110:   SCL = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output enable,  data 0 // Conflict between OD status.
-        2'b10111:   SCL = 1'b1; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
+        2'b10111:   SCL = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
 
 
-        2'b11:   SCL = 1'b1; // I3C core Push Pull - output high
+        // I3C core Push Pull - output high
+        2'b10000:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 0 // AXI I3C not driving
+        2'b10001:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 1 // AXI I3C not driving
+        2'b10010:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 0 // Conflict! Driving different values!!! This should never happen according to I3C spec
+        2'b10011:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 1 // Both driving the same
+        2'b10100:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
+        2'b10101:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
+        2'b10110:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 0 // Conflict between OD status.
+        2'b10111:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
         default: SCL = 1'b1;
         endcase
     end
+
+    always_comb begin
+        //     i3c-core                             | AXI I3C
+        case ({i3c_core_sel_od_pp_o, i3c_core_sda_o, axi_i3c_sda_pullup_en, axi_i3c_sda_t, axi_i3c_sda_o
+        })
+        // Open drain, i3c_core pulls data low.
+        2'b00000:   SDA = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 0, output disable, data 0 // Conflict between OD status
+        2'b00001:   SDA = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 0, output disable, data 1 // Conflict between OD status
+        2'b00010:   SDA = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 0, output enable,  data 0 // Conflict between OD status
+        2'b00011:   SDA = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 0, output enable,  data 1 // Conflict between OD status
+        2'b00100:   SDA = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 1, output disable, data 0
+        2'b00101:   SDA = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 1, output disable, data 1
+        2'b00110:   SDA = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 1, output enable,  data 0
+        2'b00111:   SDA = 1'b0; // I3C core Open Drain - data 0, pull low | AXI_I3C | pullup 1, output enable,  data 1
+
+        // Open drain, i3c_core leaves data high. High unless AXI I3C pulls low
+        2'b01000:   SDA = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 0, output disable, data 0
+        2'b01001:   SDA = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 0, output disable, data 1
+        2'b01010:   SDA = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 0, output enable,  data 0 // Conflict between OD status. AXI I3C trying to drive PP
+        2'b01011:   SDA = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 0, output enable,  data 1 // Conflict between OD status. AXI I3C trying to drive PP
+        2'b01100:   SDA = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output disable, data 0 // AXI I3C not driving
+        2'b01101:   SDA = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output disable, data 1 // AXI I3C not driving
+        2'b01110:   SDA = 1'b0; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output enable,  data 0 // AXI I3C pulling low
+        2'b01111:   SDA = 1'b1; // I3C core Open Drain - data 1, pull up | AXI_I3C | pullup 1, output enable,  data 1 // Both pushing the same high value
+
+        // I3C core Push Pull - output low
+        2'b10000:   SDA = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output disable, data 0 // AXI I3C not driving
+        2'b10001:   SDA = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output disable, data 1 // AXI I3C not driving
+        2'b10010:   SDA = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output enable,  data 0 // Both driving the same
+        2'b10011:   SDA = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 0, output enable,  data 1 // Conflict! Driving different values!!! This should never happen according to I3C spec
+        2'b10100:   SDA = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
+        2'b10101:   SDA = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
+        2'b10110:   SDA = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output enable,  data 0 // Conflict between OD status.
+        2'b10111:   SDA = 1'b0; // I3C core Push Pull - data 0 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
+
+
+        // I3C core Push Pull - output high
+        2'b10000:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 0 // AXI I3C not driving
+        2'b10001:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 1 // AXI I3C not driving
+        2'b10010:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 0 // Conflict! Driving different values!!! This should never happen according to I3C spec
+        2'b10011:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 1 // Both driving the same
+        2'b10100:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
+        2'b10101:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
+        2'b10110:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 0 // Conflict between OD status.
+        2'b10111:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
+        default: SDA = 1'b1;
+        endcase
+    end
+/*
+
+  i3c #(
+      .CsrDataWidth(32),
+      .CsrAddrWidth(32),
+      .DatAw(32),
+      .DctAw(32)
+  ) i3c (
+      .clk_i(i3c_clk),
+      .rst_ni(hwif_out.interface_regs.control.cptra_ss_rst_b.value),
+
+      // AXI Read Channels
+      .araddr_i(S_AXI_I3C_ARADDR),
+      .arburst_i(S_AXI_I3C_ARBURST),
+      .arsize_i(S_AXI_I3C_ARSIZE),
+      .arlen_i(S_AXI_I3C_ARLEN),
+      .aruser_i(S_AXI_I3C_ARUSER),
+      .arid_i(S_AXI_I3C_ARID),
+      .arlock_i(S_AXI_I3C_ARLOCK),
+      .arvalid_i(S_AXI_I3C_ARVALID),
+      .arready_o(S_AXI_I3C_ARREADY),
+
+      .rdata_o(S_AXI_I3C_RDATA),
+      .rresp_o(S_AXI_I3C_RRESP),
+      .rid_o(S_AXI_I3C_RID),
+      .rlast_o(S_AXI_I3C_RLAST),
+      .rvalid_o(S_AXI_I3C_RVALID),
+      .rready_i(S_AXI_I3C_RREADY),
+
+      // AXI Write Channels
+      .awaddr_i(S_AXI_I3C_AWADDR),
+      .awburst_i(S_AXI_I3C_AWBURST),
+      .awsize_i(S_AXI_I3C_AWSIZE),
+      .awlen_i(S_AXI_I3C_AWLEN),
+      .awuser_i(S_AXI_I3C_AWUSER),
+      .awid_i(S_AXI_I3C_AWID),
+      .awlock_i(S_AXI_I3C_AWLOCK),
+      .awvalid_i(S_AXI_I3C_AWVALID),
+      .awready_o(S_AXI_I3C_AWREADY),
+
+      .wdata_i (S_AXI_I3C_WDATA),
+      .wstrb_i (S_AXI_I3C_WSTRB),
+      .wlast_i (S_AXI_I3C_WLAST),
+      .wvalid_i(S_AXI_I3C_WVALID),
+      .wready_o(S_AXI_I3C_WREADY),
+
+      .bresp_o(S_AXI_I3C_BRESP),
+      .bid_o(S_AXI_I3C_BID),
+      .bvalid_o(S_AXI_I3C_BVALID),
+      .bready_i(S_AXI_I3C_BREADY),
+
+
+      .dat_mem_src_i (dat_mem_src),
+      .dat_mem_sink_o(dat_mem_sink),
+
+      .dct_mem_src_i (dct_mem_src),
+      .dct_mem_sink_o(dct_mem_sink),
+
+      .recovery_payload_available_o(),
+      .recovery_image_activated_o  ()
+  );
 */
-
-
-    always_comb begin
-        case ({
-        cptra_ss_sel_od_pp_o, cptra_ss_i3c_scl_o
-        })
-        2'b00:   {SCL_PUSH, SCL_PULL, SCL_UP} = 3'b101;
-        2'b01:   {SCL_PUSH, SCL_PULL, SCL_UP} = 3'b110;
-        2'b10:   {SCL_PUSH, SCL_PULL, SCL_UP} = 3'b111;
-        2'b11:   {SCL_PUSH, SCL_PULL, SCL_UP} = 3'b001;
-        default: {SCL_PUSH, SCL_PULL, SCL_UP} = 3'b101;
-        endcase
-    end
-
-    always_comb begin
-        case ({
-        cptra_ss_sel_od_pp_o, cptra_ss_i3c_sda_o
-        })
-        2'b00:   {SDA_PUSH, SDA_PULL, SDA_UP} = 3'b101;
-        2'b01:   {SDA_PUSH, SDA_PULL, SDA_UP} = 3'b110;
-        2'b10:   {SDA_PUSH, SDA_PULL, SDA_UP} = 3'b111;
-        2'b11:   {SDA_PUSH, SDA_PULL, SDA_UP} = 3'b001;
-        default: {SDA_PUSH, SDA_PULL, SDA_UP} = 3'b101;
-        endcase
-    end
-
-//i3c_core_sda_i = (sda_o & sda_t) | (~sda_pullup_en)
-
-
 caliptra_ss_top caliptra_ss_top_0 (
 
     // TODO: I can't figure out the LCC and debug interactions right now. Try forcing these bits
@@ -1913,9 +2014,9 @@ caliptra_ss_top caliptra_ss_top_0 (
     // Caliptra SS I3C GPIO Interface
     .cptra_ss_i3c_scl_i(SCL),
     .cptra_ss_i3c_sda_i(SDA),
-    .cptra_ss_i3c_scl_o,
-    .cptra_ss_i3c_sda_o,
-    .cptra_ss_sel_od_pp_o,
+    .cptra_ss_i3c_scl_o(i3c_core_scl_o),
+    .cptra_ss_i3c_sda_o(i3c_core_sda_o),
+    .cptra_ss_sel_od_pp_o(i3c_core_sel_od_pp_o),
 
     // -- THESE ARE NOT RTL SIGNALS, DO NOT USE THEM
     .cptra_ss_cptra_core_generic_input_wires_i(),
@@ -1926,12 +2027,11 @@ caliptra_ss_top caliptra_ss_top_0 (
     .ready_for_mb_processing(),
     .mailbox_data_avail()
 );
-
+/*
     // Hierarchical references to generic output wires register. Use as input to log FIFO.
     assign fifo_write_en = caliptra_ss_top_0.caliptra_top_dut.soc_ifc_top1.i_soc_ifc_reg.field_combo.CPTRA_GENERIC_OUTPUT_WIRES[0].generic_wires.load_next;
     assign fifo_char[7:0] = caliptra_ss_top_0.caliptra_top_dut.soc_ifc_top1.i_soc_ifc_reg.field_combo.CPTRA_GENERIC_OUTPUT_WIRES[0].generic_wires.next[7:0];
-
-
+*/
 
 
 //////////////////////////////////////////////////////

@@ -604,7 +604,7 @@ module caliptra_ss_top
     
     logic [127:0] cptra_ss_cptra_generic_fw_exec_ctrl_internal;
     assign cptra_ss_cptra_generic_fw_exec_ctrl_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[127:3];
-
+`ifdef doopdoop
     caliptra_top caliptra_top_dut (
         .clk                        (cptra_ss_clk_i),
         .cptra_pwrgood              (cptra_ss_pwrgood_i),
@@ -700,7 +700,7 @@ module caliptra_ss_top
         .scan_mode     (cptra_ss_cptra_core_scan_mode_i)
     );
 
-
+`endif
 
 
     logic mci_intr;
