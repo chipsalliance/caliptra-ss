@@ -36,7 +36,8 @@ Simulation:
    - `Version U-2023.03-SP1-1_Full64`
  - Mentor Graphics AVERY
    - `avery/2025.1` AXI interconnect and I3C VIP
-   - Requires Axi4PC, acquired from ARM
+ - ARM AXI Protocol Checker
+   - `BP063-BU-01000-r0p1-00rel0` Axi4PC.sv may be acquired from the ARM website
  - UVM installation
    - `Version 1.1d`
 
