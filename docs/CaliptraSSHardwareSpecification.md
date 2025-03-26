@@ -1099,7 +1099,7 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 13. MCU ROM will do a fuse_write_done write to Caliptra
 14. Caliptra ROM starts to execute from here on.
 15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU. MCU either needs to enable interrupts or poll on the appropriate bit to detect that Caliptra has requested a reset.
-16. CSS-BootFSM waits for MCU to request the reset. Then CSS-BootFSM will do a halt req/ack handshake with MCU and assert the MCU reset. 
+16. CSS-BootFSM waits for MCU to request the reset. Then CSS-BootFSM will do a halt req/ack handshake with MCU and assert the MCU reset after the MCU reports that it has successfully halted.
 17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
 ![](images/Caliptra-SS-BootFSM.png)
