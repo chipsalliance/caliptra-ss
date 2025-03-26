@@ -252,6 +252,12 @@ if {$FAST_I3C} {
     [get_bd_pins caliptra_package_top_0/i3c_clk] \
     [get_bd_pins axi_i3c_0/s_axi_aclk] \
     [get_bd_pins xpm_cdc_gen_0/dest_clk]
+  set_property -dict [list \
+    CONFIG.ENABLE_PEC {1} \
+    CONFIG.HJ_CAPABLE {1} \
+    CONFIG.IBI_CAPABLE {1} \
+    #CONFIG.SCL_CLK_FREQ {12500} \
+  ] [get_bd_cells axi_i3c_0]
 } else {
   # Use regular clock for i3c to avoid timing problems
   connect_bd_net \
