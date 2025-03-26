@@ -11,6 +11,11 @@ contents:
         - ../test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens.yml
         - ../test_suites/smoke_test_fc_random_item_prov/smoke_test_fc_random_item_prov.yml
         - ../test_suites/smoke_test_fc_registers/smoke_test_fc_registers.yml
+        - ../test_suites/mcu_hello_world/mcu_hello_world.yml
+        - ../test_suites/smoke_test_lcc_scrap/smoke_test_lcc_scrap.yml
+        - ../test_suites/smoke_test_lcc_RMA/smoke_test_lcc_RMA.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_manuf_prod_prov/caliptra_ss_fuse_ctrl_manuf_prod_prov.yml
+        - ../test_suites/smoke_test_fc_unlock_transitions/smoke_test_fc_unlock_transitions.yml
         - ../test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox.yml
         - ../test_suites/smoke_test_mcu_mbox_zeroize/smoke_test_mcu_mbox_zeroize.yml
         - ../test_suites/mcu_mbox_lock_return_one_during_zeroize/mcu_mbox_lock_return_one_during_zeroize.yml
