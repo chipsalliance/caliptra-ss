@@ -1,8 +1,6 @@
 /*
     Run this test with the following command
-    submit_i cpt_build2 -tc caliptra_ss_jtag_uds_prog -op -to 5000000
-    or 
-    submit_i cpt_build -tc caliptra_ss_jtag_uds_prog -op -to 5000000
+    submit_i cpt_build_ss -tc caliptra_ss_jtag_uds_prog -op -to 5000000
 */
 
 
@@ -19,7 +17,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-volatile char* stdout = (char *)0x21000410;
+volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else

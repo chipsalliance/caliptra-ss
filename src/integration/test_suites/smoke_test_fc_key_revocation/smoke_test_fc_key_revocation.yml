@@ -1,3 +1,7 @@
 ---
 seed: 1
 testname: smoke_test_fc_key_revocation
+pre-exec: |
+  echo "Running pre_exec for [smoke_test_fc_key_revocation]"
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=smoke_test_mbox program.hex
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_fc_key_revocation mcu_program.hex

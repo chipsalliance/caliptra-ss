@@ -85,7 +85,7 @@ addrmap mcu_mbox_csr {
     reg {
         name="Mailbox Data Length";
         desc="Data length for mailbox access in bytes. Cleared when lock is cleared";
-        field {sw=rw; hwclr;  swwe=valid_requester_target_req; } length[32]=0;
+        field {sw=rw; hw=r; hwclr;  swwe=valid_requester_target_req; } length[32]=0;
     } mbox_dlen;
 
     reg {

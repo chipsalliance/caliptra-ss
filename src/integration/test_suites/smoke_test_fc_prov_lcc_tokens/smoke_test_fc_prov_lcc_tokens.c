@@ -13,53 +13,12 @@
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
 
-volatile char* stdout = (char *)0x21000410;
+volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
     enum printf_verbosity verbosity_g = LOW;
 #endif
-
-void raw_to_testunlock0(){
-    uint32_t reg_value;
-    uint32_t status_val;
-    uint32_t loop_ctrl;
-
-    uint32_t next_lc_state = 0x1; // TEST_UNLOCKED0
-    uint32_t next_lc_state_5bit = next_lc_state & 0x1F; // Extract 5-bit value (DecLcStateWidth = 5)
-    uint32_t targeted_state_5 = 
-        (next_lc_state_5bit << 25) | 
-        (next_lc_state_5bit << 20) | 
-        (next_lc_state_5bit << 15) | 
-        (next_lc_state_5bit << 10) | 
-        (next_lc_state_5bit << 5)  | 
-        next_lc_state_5bit;
-
-    sw_transition_req(targeted_state_5, 0xf12a5911, 0x421748a2, 0xadfc9693, 0xef1fadea, 1); //TEST_UNLOCKED0, tokenmsb, tokenlsb, conditional
-
-    reg_value = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm
-    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is under reset!\n");
-    for (uint8_t ii = 0; ii < 16; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in TEST_UNLOCK0 state!\n");
-}
-
-void calculate_digest(uint32_t partition_base_address) {
-    // Step 1: Check if DAI is idle
-    wait_dai_op_idle(0);
-
-    // Step 2: Write the partition base address to DIRECT_ACCESS_ADDRESS
-    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, partition_base_address);
-    VPRINTF(LOW, "INFO: Partition base address 0x%08X written to DIRECT_ACCESS_ADDRESS.\n", partition_base_address);
-
-    // Step 3: Trigger a digest calculation command
-    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_CMD, 0x4);
-
-    // Step 4: Poll STATUS until DAI state goes back to idle    
-    wait_dai_op_idle(0);
-    return;
-}
 
 /**
  * Program a LCC transition token in `SECRET_LC_TRANSITION_PARTITION` and verify
@@ -81,9 +40,6 @@ void calculate_digest(uint32_t partition_base_address) {
  *   9. Use a backdoor channel to verify that the valid bit is set.
  */
 void program_secret_lc_transition_partition() {
-    // Set AXI user ID to 1.
-    uint32_t axi_conf;
-    axi_conf = lsu_read_32(0x70000080);
 
     // 0x500: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
     const uint32_t base_address = 0x500;
@@ -117,7 +73,7 @@ void program_secret_lc_transition_partition() {
     calculate_digest(base_address);
 
     // Step 5
-    reset_rtl();
+    reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
     // Step 6
@@ -149,8 +105,13 @@ void main (void) {
     uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
     VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
     
-    lcc_initialization();    
-    raw_to_testunlock0();
+    lcc_initialization();
+    // Set AXI user ID to MCU.
+    grant_mcu_for_fc_writes(); 
+
+    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    wait_dai_op_idle(0);
+
     initialize_otp_controller();
 
     program_secret_lc_transition_partition();

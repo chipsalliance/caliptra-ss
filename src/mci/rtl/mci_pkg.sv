@@ -42,7 +42,9 @@ package mci_pkg;
         BOOT_WAIT_CPTRA_GO      = 4'h6,
         BOOT_CPTRA              = 4'h7,
         BOOT_WAIT_MCU_RST_REQ   = 4'h8,
-        BOOT_RST_MCU            = 4'h9,
+        BOOT_HALT_MCU           = 4'h9,
+        BOOT_WAIT_MCU_HALTED    = 4'ha,
+        BOOT_RST_MCU            = 4'hb,
         BOOT_UNKNOWN            = 'x
     } mci_boot_fsm_state_e;
 

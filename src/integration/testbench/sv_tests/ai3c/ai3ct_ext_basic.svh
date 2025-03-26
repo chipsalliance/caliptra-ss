@@ -1,16 +1,18 @@
-/*
- * |-----------------------------------------------------------------------|
- * |                                                                       |
- * |   Copyright Avery Design Systems, Inc. 2016.           |
- * |     All Rights Reserved.       Licensed Software.           |
- * |                                                                       |
- * |                                                                       |
- * | THIS IS UNPUBLISHED PROPRIETARY SOURCE CODE OF AVERY DESIGN SYSTEMS   |
- * | The copyright notice above does not evidence any actual or intended   |
- * | publication of such source code.           |
- * |                                                                       |
- * |-----------------------------------------------------------------------|
- */
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 /*
       .DUT type: slave 
       .Checklist items:
@@ -346,7 +348,7 @@ class ai3ct_ext_basic extends ai3ct_base;
 		//-- Image size byte 2 to 5 field to size of the image.
 		data = new[6];
 		data[0] = 'h0; // CMS set to 0
-		data[1] = 'h1; // FIFO 
+		data[1] = 'h0; // FIFO reset -- FIXME should be 'h1. Tracking https://github.com/chipsalliance/caliptra-ss/issues/146
 
 		data[2] = img_sz_in_4B[7:0]; // Image size 0
 		data[3] = img_sz_in_4B[15:8]; // Image size 1
