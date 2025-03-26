@@ -1029,7 +1029,7 @@ The registers can be split up into a few different categories:
 
 ### MCI Straps
 
-All MCI straps shall be static before mci_rst_b is deasserted. With some straps with further restrictions as described below.  
+All MCI straps shall be static before mci_rst_b is deasserted. Some straps have further restrictions as described below.  
 
 MCI has the following types of straps:
 
