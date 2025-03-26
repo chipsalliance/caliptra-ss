@@ -170,7 +170,6 @@ global:
         - +define+AAXI_INTC_SLAVE_CNT=8
         - +define+AI3C_LANE_NUM=1
         - +define+DIGITAL_IO_I3C=1
-        - +define+CALIPTRA_MODE_SUBSYSTEM
         # - +define+AI3C_SKIP_DAA=1
         - +define+AVERY_SV_TEST_CASE=1
         - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
