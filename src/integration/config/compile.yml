@@ -110,6 +110,7 @@ requires:
   - fuse_ctrl_pkg
   - caliptra_top_tb_pkg
   - avery_vip
+  - mci_coverage
 targets:
   tb:
     directories:
