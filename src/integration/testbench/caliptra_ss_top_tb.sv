@@ -1417,6 +1417,7 @@ module caliptra_ss_top_tb
     );
 
     caliptra_top_sva sva();
+    caliptra_ss_top_sva ss_sva();
 
     //=========================================================================-
     // AXI MEM instance : IMEM
