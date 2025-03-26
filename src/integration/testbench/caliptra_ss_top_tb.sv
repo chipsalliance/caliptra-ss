@@ -1578,6 +1578,14 @@ module caliptra_ss_top_tb
         .rdata_o (        )
     );
 
+
+  //-------------------------------------------------------------------------
+  // Aggregated signals for the OTP macro interface.
+  // These signals will connect both to caliptra_ss_top ports and to prim_generic_otp.
+  //-------------------------------------------------------------------------
+  otp_ctrl_pkg::prim_generic_otp_outputs_t cptra_ss_fuse_macro_outputs_tb;
+  otp_ctrl_pkg::prim_generic_otp_inputs_t  cptra_ss_fuse_macro_inputs_tb;
+
    // driven by lc_ctrl_bfm
    logic cptra_ss_lc_esclate_scrap_state0_i;
    logic cptra_ss_lc_esclate_scrap_state1_i;
@@ -1613,80 +1621,6 @@ module caliptra_ss_top_tb
         cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
     end
 
-    `include "caliptra_ss_includes.svh"
-    logic [$bits(lc_ctrl_state_pkg::lc_state_t)-1:0] MANUF_state;
-    logic [$bits(lc_ctrl_state_pkg::lc_state_t)-1:0] PROD_state;
-    assign MANUF_state = lc_ctrl_state_pkg::lc_state_t'(lc_ctrl_state_pkg::LcStDev);
-    assign PROD_state = lc_ctrl_state_pkg::lc_state_t'(lc_ctrl_state_pkg::LcStProd);
-    initial begin
-        if ($test$plusargs("CALIPTRA_SS_UDS_PROG") || $test$plusargs("CALIPTRA_SS_MANUF_DBG") || $test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_REQ is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_REQ.UDS_PROGRAM_REQ.value);
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP IN PROGRESS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_IN_PROGRESS);
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_FAIL is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_FAIL);
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_SUCCESS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_SUCCESS);
-            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_GO is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_BOOTFSM_GO);
-            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_BrkPoint_Latched is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.BootFSM_BrkPoint_Latched);
-            $monitor("CALIPTRA_SS_UDS_PROG: CPTRA_FLOW_STATUS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_FLOW_STATUS);
-            force cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
-            force caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
-        end
-        if ($test$plusargs("CALIPTRA_SS_UDS_PROG")) begin
-            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = MANUF_state;
-        end
-        if ($test$plusargs("CALIPTRA_SS_MANUF_DBG")) begin
-            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = MANUF_state;
-            force caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
-            force cptra_ss_debug_intent_i = 1'b1;
-        end 
-        if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
-            force caliptra_ss_dut.mci_top_i.from_otp_to_lcc_program_i.state = PROD_state;
-            force cptra_ss_debug_intent_i = 1'b1;
-        end 
-    end
-
-
-`ifdef LCC_FC_BFM_SIM
-    
-    always_comb begin
-        if (!lcc_bfm_reset) begin
-            force caliptra_ss_dut.u_lc_ctrl.rst_ni = 1'b0;
-            force caliptra_ss_dut.u_otp_ctrl.rst_ni = 1'b0;
-        end else begin
-            release caliptra_ss_dut.u_lc_ctrl.rst_ni;
-            release caliptra_ss_dut.u_otp_ctrl.rst_ni;
-        end
-        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_tokens_valid = 4'b0101; //from_otp_caliptra_ss_lc_data_i.test_tokens_valid;//caliptra_ss_lc_tx_t'(On);
-        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_unlock_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
-        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.test_exit_dev_token = 128'hee4f_e51a_73f2_9e7b_542f_2d2d_e65e_577c;
-        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.dev_exit_prod_token = 128'h3656_71d1_31ba_fcef_ac7f_4d2a_776a_6ed3;
-        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.prod_exit_prodend_token = 128'h5622_8106_a663_40c7_0f86_ccda_dcbc_2b7f;
-        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.rma_token_valid = 4'b0101;//from_otp_caliptra_ss_lc_data_i.rma_token_valid;//caliptra_ss_lc_tx_t'(On);
-        force caliptra_ss_dut.u_lc_ctrl.otp_lc_data_i.rma_token = 128'h9704_5d52_04f2_f7fc_8756_e714_5ad7_6df9;
-        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_007c)
-            force caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser = 32'h0;
-        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_0080)
-            force caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser = 32'h1;
-        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_0084)
-            release caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser;
-        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_0098) begin
-            force caliptra_ss_dut.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b1;
-            force caliptra_ss_dut.mci_top_i.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg = 32'hFFFF_FFFF;
-            force caliptra_ss_dut.u_otp_ctrl.lcc_is_in_SCRAP_mode = 1'b0;
-        end
-        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_009C) begin
-            force caliptra_ss_dut.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
-            force caliptra_ss_dut.mci_top_i.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg = 32'h0;
-            force caliptra_ss_dut.u_otp_ctrl.lcc_is_in_SCRAP_mode = 1'b1;
-        end
-        if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready && cptra_ss_otp_core_axi_rd_req_i.araddr == 32'h7000_00A0) begin
-            release caliptra_ss_dut.cptra_ss_FIPS_ZEROIZATION_PPD_i;
-            release caliptra_ss_dut.mci_top_i.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg;
-            release caliptra_ss_dut.u_otp_ctrl.lcc_is_in_SCRAP_mode;
-        end
-        
-    end
-`endif
-
     //--------------------------------------------------------------------------------------------
 
     assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(caliptra_ss_dut.u_lc_ctrl.pwr_lc_o.lc_done);
@@ -1702,6 +1636,48 @@ module caliptra_ss_top_tb
         .lc_check_byp_en_i   (),
         .otp_lc_data_o (caliptra_ss_dut.u_otp_ctrl.otp_lc_data_o),
         .fuse_ctrl_rdy       (fuse_ctrl_rdy       )
+    );
+
+
+    prim_generic_otp #(
+        .Width            ( otp_ctrl_pkg::OtpWidth            ),
+        .Depth            ( otp_ctrl_pkg::OtpDepth            ),
+        .SizeWidth        ( otp_ctrl_pkg::OtpSizeWidth        ),
+        .PwrSeqWidth      ( otp_ctrl_pkg::OtpPwrSeqWidth      ),
+        .TestCtrlWidth    ( otp_ctrl_pkg::OtpTestCtrlWidth    ),
+        .TestStatusWidth  ( otp_ctrl_pkg::OtpTestStatusWidth  ),
+        .TestVectWidth    ( otp_ctrl_pkg::OtpTestVectWidth    ),
+        .MemInitFile      ("otp-img.2048.vmem"                  ),
+        .VendorTestOffset ( otp_ctrl_reg_pkg::VendorTestOffset    ),
+        .VendorTestSize   ( otp_ctrl_reg_pkg::VendorTestSize      )
+    ) u_otp (
+        // Clock and Reset
+        .clk_i          ( cptra_ss_fuse_macro_inputs_tb.clk_i ),
+        .rst_ni         ( cptra_ss_fuse_macro_inputs_tb.rst_ni ),
+        // Observability controls to/from AST
+        .obs_ctrl_i     ( cptra_ss_fuse_macro_inputs_tb.obs_ctrl_i ),
+        .otp_obs_o      ( cptra_ss_fuse_macro_outputs_tb.otp_obs_o ),
+        // Power sequencing signals to/from AST
+        .pwr_seq_o      ( cptra_ss_fuse_macro_outputs_tb.pwr_seq_o ),
+        .pwr_seq_h_i    ( cptra_ss_fuse_macro_inputs_tb.pwr_seq_h_i ),
+        // Other DFT signals
+        .scanmode_i     ( cptra_ss_fuse_macro_inputs_tb.scanmode_i ),
+        .scan_en_i      ( cptra_ss_fuse_macro_inputs_tb.scan_en_i ),
+        .scan_rst_ni    ( cptra_ss_fuse_macro_inputs_tb.scan_rst_ni ),
+        // Alert signals
+        .fatal_alert_o  ( cptra_ss_fuse_macro_outputs_tb.fatal_alert_o ),
+        .recov_alert_o  ( cptra_ss_fuse_macro_outputs_tb.recov_alert_o ),
+        // Ready/valid handshake and command interface
+        .ready_o        ( cptra_ss_fuse_macro_outputs_tb.ready_o ),
+        .valid_i        ( cptra_ss_fuse_macro_inputs_tb.valid_i ),
+        .size_i         ( cptra_ss_fuse_macro_inputs_tb.size_i ),
+        .cmd_i          ( cptra_ss_fuse_macro_inputs_tb.cmd_i ),
+        .addr_i         ( cptra_ss_fuse_macro_inputs_tb.addr_i ),
+        .wdata_i        ( cptra_ss_fuse_macro_inputs_tb.wdata_i ),
+        // Response channel
+        .valid_o        ( cptra_ss_fuse_macro_outputs_tb.valid_o ),
+        .rdata_o        ( cptra_ss_fuse_macro_outputs_tb.rdata_o ),
+        .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
     );
 
     // --- I3C env and interface ---
@@ -1978,8 +1954,8 @@ module caliptra_ss_top_tb
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
 
-        .cptra_ss_fuse_macro_prim_tl_i('0),
-        .cptra_ss_fuse_macro_prim_tl_o(),
+        .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
+        .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
     
     // I3C Interface
     `ifdef DIGITAL_IO_I3C
@@ -2004,7 +1980,14 @@ module caliptra_ss_top_tb
 
     );
     
-
+    // Instantiate caliptra_ss_top_tb_services
+    caliptra_ss_top_tb_services u_caliptra_ss_top_tb_services (
+        .clk                    (core_clk),
+        .cptra_rst_b            (rst_l),
+        .tb_service_cmd_valid   (mailbox_write),
+        .tb_service_cmd         (mailbox_data[7:0])
+    );
+    
 
 task preload_mcu_sram;
     bit[MCU_SRAM_ECC_WIDTH-1:0] ecc;

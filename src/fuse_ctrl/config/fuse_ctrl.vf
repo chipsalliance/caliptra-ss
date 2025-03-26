@@ -197,5 +197,4 @@ ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_buf.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_unbuf.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_scrmbl.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_token_const.sv
-${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/prim_generic_otp.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl.sv

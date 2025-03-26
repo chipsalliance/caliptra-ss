@@ -14,6 +14,7 @@ package otp_ctrl_part_pkg;
   import caliptra_prim_util_pkg::vbits;
   import otp_ctrl_reg_pkg::*;
   import otp_ctrl_pkg::*;
+  import lc_ctrl_state_pkg::*;
 
   parameter int NumVendorPkFuses = ${num_vendor_pk_fuses};
   parameter int NumVendorSecretFuses = ${num_vendor_secret_fuses};

@@ -17,7 +17,7 @@
 
 
 // Include the generated access control table.
-`include "fc_access_control_table.sv"
+`include "caliptra_ss_includes.svh"
 
 module fuse_ctrl_filter
     import axi_struct_pkg::*;
@@ -27,6 +27,9 @@ module fuse_ctrl_filter
     input wire clk_i,
     input wire rst_n_i,
     input wire fc_init_done,
+
+    input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+    input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
 
     // Core interface
     input  axi_wr_req_t  core_axi_wr_req,  // AXI write request from the core
@@ -97,12 +100,15 @@ end
 // Combinational Block: Generate the allowed vector based on the access control table.
 // For each entry in the table, check if the latched fuse address is within the allowed range
 // and if the AXI user ID matches the allowed ID. Each bit in wr_allowed_vec corresponds to an entry.
+logic [FC_TABLE_NUM_RANGES-1:0][31:0] AXI_user_id_arr;
 always_comb begin
     wr_allowed_vec = '0;
+    AXI_user_id_arr[0] = cptra_ss_strap_cptra_axi_user_i;
+    AXI_user_id_arr[1] = cptra_ss_strap_mcu_lsu_axi_user_i;
     for (int i = 0; i < FC_TABLE_NUM_RANGES; i = i + 1) begin : gen_wr_allowed
-        wr_allowed_vec[i] = ((latched_fuse_addr >= access_control_table[i].lower_addr) &&
-                                    (latched_fuse_addr <= access_control_table[i].upper_addr) &&
-                                    (latched_data_id0 == access_control_table[i].axi_user_id));
+        wr_allowed_vec[i] = ( (latched_fuse_addr >= access_control_table[i].lower_addr)
+                             && (latched_fuse_addr <= access_control_table[i].upper_addr)
+                             && (latched_data_id0 == AXI_user_id_arr[i]));
     end
 end
 
