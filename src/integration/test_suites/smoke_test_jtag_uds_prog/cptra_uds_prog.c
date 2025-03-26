@@ -50,7 +50,7 @@
 8. ROM then resets the `UDS_PROGRAM_IN_PROGRESS` bit in the `SS_DBG_MANUF_SERVICE_REG_RSP` register to indicate completion of the programming.
 
 9. The manufacturing process then polls this bit and continues with the fuse burning flow as outlined by the fuse controller specifications and SOC-specific VR methodologies.
-
+*/
 
 
 volatile uint32_t* stdout           = (uint32_t *)STDOUT;
@@ -73,19 +73,29 @@ volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 #define FUSE_CTRL_DIRECT_ACCESS_RDATA_1                                       (FUSE_CTRL_BASE_ADDR + 0x074)
 #define FUSE_CTRL_STATUS_DAI_IDLE_OFFSET (22)
 
+uint32_t dma_read_from_lsu(uint32_t address){
+    uint32_t read_data;
+    soc_ifc_axi_dma_read_ahb_payload(address, 0, &read_data, 4, 0);
+    return read_data;
+}
+
+void dma_write_from_lsu(uint32_t address, uint32_t write_data){
+    soc_ifc_axi_dma_send_ahb_payload(address, 0, &write_data, 16, 0);
+    return;
+}
 
 void wait_dai_op_idle(uint32_t status_mask) {
     uint32_t status;
     VPRINTF(LOW, "CLP_CORE: Waiting for DAI to become idle...\n");
     do {
-        status = lsu_read_32(FUSE_CTRL_STATUS);
+        status = dma_read_from_lsu(FUSE_CTRL_STATUS);
     } while (((status >> FUSE_CTRL_STATUS_DAI_IDLE_OFFSET) & 0x1) == 0);
     // Clear the IDLE bit from the status value
     status &= ((((uint32_t)1) << (FUSE_CTRL_STATUS_DAI_IDLE_OFFSET - 1)) - 1);
     if (status != status_mask) {
         VPRINTF(LOW, "CLP_CORE ERROR: unexpected status: expected: %08X actual: %08X\n", status_mask, status);
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_MASK);
-        exit(1);
+        printf("%c",0xff); //End the test
     }
     VPRINTF(LOW, "CLP_CORE: DAI is now idle.\n");
     return;
@@ -97,18 +107,18 @@ void dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularit
     //wait_dai_op_idle(0);
 
     VPRINTF(LOW, "CLP_CORE: Writing wdata0: 0x%08X to DIRECT_ACCESS_WDATA_0.\n", wdata0);
-    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_WDATA_0, wdata0);
+    dma_write_from_lsu(FUSE_CTRL_DIRECT_ACCESS_WDATA_0, wdata0);
 
     if (granularity == 64) {
         VPRINTF(LOW, "CLP_CORE: Writing wdata1: 0x%08X to DIRECT_ACCESS_WDATA_1.\n", wdata1);
-        lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_WDATA_1, wdata1);
+        dma_write_from_lsu(FUSE_CTRL_DIRECT_ACCESS_WDATA_1, wdata1);
     }
 
     VPRINTF(LOW, "CLP_CORE: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
-    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+    dma_write_from_lsu(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, addr);
 
     VPRINTF(LOW, "CLP_CORE: Triggering DAI write command.\n");
-    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_CMD, 0x2);
+    dma_write_from_lsu(FUSE_CTRL_DIRECT_ACCESS_CMD, 0x2);
 
     wait_dai_op_idle(exp_status);
     return;
@@ -119,11 +129,11 @@ void calculate_digest(uint32_t partition_base_address) {
     wait_dai_op_idle(0);
 
     // Step 2: Write the partition base address to DIRECT_ACCESS_ADDRESS
-    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, partition_base_address);
+    dma_write_from_lsu(FUSE_CTRL_DIRECT_ACCESS_ADDRESS, partition_base_address);
     VPRINTF(LOW, "CLP_CORE: Partition base address 0x%08X written to DIRECT_ACCESS_ADDRESS.\n", partition_base_address);
 
     // Step 3: Trigger a digest calculation command
-    lsu_write_32(FUSE_CTRL_DIRECT_ACCESS_CMD, 0x4);
+    dma_write_from_lsu(FUSE_CTRL_DIRECT_ACCESS_CMD, 0x4);
 
     // Step 4: Poll STATUS until DAI state goes back to idle    
     wait_dai_op_idle(0);
@@ -134,15 +144,14 @@ void UDS_provision(uint32_t base_address) {
 
     // 0x580: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
     int i;
-    for (i=0;i<8;i++){
+    for (i=0;i<1;i++){
         dai_wr(base_address, i*2, i*2+1, 64, 0);
-        VPRINTF(LOW, "CLP_CORE: programming %08d item in UDS partition with X%08X and X%08X...\n",i, i*2, i*2+1);
+        VPRINTF(LOW, "CLP_CORE: programming %02d item in UDS partition with 0x%08X and 0x%08X...\n",i, i*2, i*2+1);
     }
 
     calculate_digest(base_address);
     VPRINTF(LOW, "CLP_CORE: triggered digest operation\n");
 
-    reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 }
 
@@ -170,8 +179,10 @@ void main(void) {
         status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
         status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        while(1);
     } else {
         VPRINTF(LOW, "CLP_CORE: Error because there is no UDS prog request...\n");
+        printf("%c",0xff); //End the test
     } 
 
 }

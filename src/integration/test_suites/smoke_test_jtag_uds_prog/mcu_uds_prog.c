@@ -16,6 +16,9 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include "caliptra_ss_lib.h"
+#include "fuse_ctrl.h"
+#include "lc_ctrl.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -67,6 +70,12 @@ void main (void) {
     // Wait for ready_for_fuses
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
 
+
+    
+    lcc_initialization();
+    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    reset_fc_lcc_rtl();
+
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
@@ -75,10 +84,6 @@ void main (void) {
     
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG UDS Prov TEST with ROM \n=================\n\n");
     
-
-    for (uint32_t ii = 0; ii < 5000; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
 
     cptra_boot_go = 0;
     VPRINTF(LOW, "MCU: waits in success loop\n");
