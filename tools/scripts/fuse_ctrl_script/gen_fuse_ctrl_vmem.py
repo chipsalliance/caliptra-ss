@@ -105,19 +105,12 @@ def main():
                         help='''
                         Life cycle counter to write into the OTP.
                         ''')
-    parser.add_argument('--token-name',
+    parser.add_argument('--token-configuration',
                         type=str,
-                        metavar='token-name',
+                        metavar='token-configuration',
                         required=False,
                         help='''
-                        Name of the token to write into the OTP.
-                        ''')
-    parser.add_argument('--token-value',
-                        type=str,
-                        metavar='token-value',
-                        required=False,
-                        help='''
-                        Raw token value to write into the OTP.
+                        HSJON file containing the tokens required for state transitions.
                         ''')
 
     args = parser.parse_args()
@@ -128,7 +121,12 @@ def main():
     log.info('Loading OTP memory map definition file {}'.format(args.mmap_def))
     with open(args.mmap_def, 'r') as infile:
         otp_mmap_cfg = hjson.load(infile)
-
+    
+    token_cfg = None
+    if args.token_configuration is not None:
+        with open(args.token_configuration, 'r') as infile:
+                token_cfg = hjson.load(infile)
+ 
      # If specified, override the seed.
     _override_seed(args, 'otp_seed', otp_mmap_cfg)
 
@@ -144,22 +142,26 @@ def main():
     lc_config['lock'] = False
     img_config['partitions'].append(lc_config)
     # Configure the unlock token.
-    if args.token_name is not None and args.token_value is not None:
-        # Hash the token.
-        value = int(args.token_value, 0)
-        data = value.to_bytes(16, byteorder='little')
-        custom = 'LC_CTRL'.encode('UTF-8')
-        shake = cSHAKE128.new(data=data, custom=custom)
-        digest = int.from_bytes(shake.read(16), byteorder='little')
+    if token_cfg is not None:
         # Configure the partition.
         token_config = {}
         token_config['name'] = 'SECRET_LC_TRANSITION_PARTITION'
         token_config['lock'] = True # Lock the partition such that the digest is calculated.
-        token_item = {}
-        token_item['name'] = args.token_name
-        token_item['value'] = str(hex(digest))
         token_config['items'] = []
-        token_config['items'].append(token_item)
+        # Create the tokens.
+        for token_name, token_value in token_cfg.items():
+            # Hash the token.
+            value = int(token_value, 0)
+            data = value.to_bytes(16, byteorder='little')
+            custom = 'LC_CTRL'.encode('UTF-8')
+            shake = cSHAKE128.new(data=data, custom=custom)
+            digest = int.from_bytes(shake.read(16), byteorder='little')
+            # Create the token item.
+            token_item = {}
+            token_item['name'] = token_name
+            token_item['value'] = str(hex(digest))
+            token_config['items'].append(token_item)
+        # Append the tokens to the partition.
         img_config['partitions'].append(token_config)
 
     try:
