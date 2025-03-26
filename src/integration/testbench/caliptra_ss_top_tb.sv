@@ -1788,7 +1788,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_mci_base_addr_i       = 64'h0;
     assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
-    assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0000;
+    assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
     assign cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i        = 32'h0;
     assign cptra_ss_strap_caliptra_dma_axi_user_i = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
