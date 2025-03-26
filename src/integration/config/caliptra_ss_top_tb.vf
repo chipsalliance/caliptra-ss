@@ -69,6 +69,7 @@
 +incdir+${AVERY_I3C}/testsuite.i3c/dut_master
 +incdir+${AVERY_I3C}/testsuite.i3c/dut_master_stby
 +incdir+${AVERY_I3C}/testbench
++incdir+${CALIPTRA_SS_ROOT}/src/mci/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/ai3c
 +incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/rtl
@@ -278,6 +279,8 @@ ${AVERY_I3C}/src/ai2c_pkg.sv
 ${AVERY_I3C}/src.i3c/ai3c_pkg.sv
 ${AVERY_I3C}/src/ai2c_intf.sv
 ${AVERY_I3C}/src.i3c/ai3c_intf.sv
+${CALIPTRA_SS_ROOT}/src/mci/coverage/mci_top_cov_if.sv
+${CALIPTRA_SS_ROOT}/src/mci/coverage/mci_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/tb_top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/axi_slv.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/mci_sram.sv
