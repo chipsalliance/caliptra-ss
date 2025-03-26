@@ -11,11 +11,12 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/mci/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/ast/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/include
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/rtl
-+incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_sva.svh
@@ -71,9 +72,12 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_dmi_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_trace_buffer_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/trace_buffer_csr_pkg.sv
+${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox_csr_pkg.sv
+${CALIPTRA_SS_ROOT}/src/ast/rtl/ast_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
+${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/ahb_to_reg_adapter.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop_en.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop.sv
@@ -192,4 +196,5 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_boot_seqr.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_lcc_st_trans.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_trace_buffer.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/trace_buffer_csr.sv
-${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
+${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox.sv
+${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox_csr.sv

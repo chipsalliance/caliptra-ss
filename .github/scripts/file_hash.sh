@@ -18,7 +18,7 @@
 # ====================================
 # This tool is used to generate a hash over the Caliptra Subsystem source code files
 # This can be used to verify the hash of the code for which internal workflows were
-# run prior to submission to the adams-bridge repo.
+# run prior to submission to the caliptra-ss repo.
 # 
 # Usage: file_hash.sh <path_to_rtl_src_dir> <file_list>
 #   path_to_rtl_src_dir     Path to the root directory of the Caliptra Subsystem RTL repo.
