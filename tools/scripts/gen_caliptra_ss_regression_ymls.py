@@ -398,10 +398,10 @@ def scan_test_suites(caliptra_ss):
 
 
 if __name__ == "__main__":
-    caliptra_ss = os.getenv('CALIPTRA_SS')
+    caliptra_ss = os.getenv('CALIPTRA_SS_ROOT')
 
     if not caliptra_ss:
-        logger.error("CALIPTRA_SS environment variable is not set. Please set it before running this script.")
+        logger.error("CALIPTRA_SS_ROOT environment variable is not set. Please set it before running this script.")
         exit(1)
     
     # Scan for all test suites first
