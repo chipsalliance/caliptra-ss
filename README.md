@@ -82,7 +82,7 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
   `TESTNAME`: Contains the name of one of the tests listed inside the `$CALIPTRA_SS_ROOT/src/integration/test_suites` folder; used for simulations with `caliptra_ss_top_tb` tests<BR>
   `CALIPTRA_TESTNAME`: Identifies which firmware test will be compiled and executed on the Caliptra Core RV processor as part of the Subsystem test. This may indicate the name of a directory inside `$CALIPTRA_ROOT/src/integration/test_suites`, or it may indicate the name of a test firmware file contained inside the caliptra-ss repository for execution on Caliptra core. In this case, the file must be:
   * Located in the same directory as the MCU test firmware, i.e. `$CALIPTRA_SS_ROOT/src/integration/test_suites/$TESTNAME`
-  * Be named with a `cptra` prefix, to uniquely identify it from MCU firmware test files
+  * Named with a `cptra` prefix, to uniquely identify it from MCU firmware test files
 
 ## **Repository Overview** ##
 ```
