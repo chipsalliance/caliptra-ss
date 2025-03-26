@@ -38,7 +38,7 @@ void main (void) {
 
     lcc_initialization();
     uint32_t lc_state_curr = read_lc_state();
-    uint32_t lc_state_next = lc_state_curr + 1;
+    uint32_t lc_state_next = state_sequence[lc_state_curr + 1];
     uint32_t lc_cnt_curr = read_lc_counter();
     uint32_t lc_cnt_next = lc_cnt_curr + 1;
 
