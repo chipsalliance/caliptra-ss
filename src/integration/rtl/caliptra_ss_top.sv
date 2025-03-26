@@ -16,8 +16,6 @@
 `define MCU_RV_LSU_BUS_TAG_local 1
 `define INCLUDE_FUSE_CTRL = 1
 
-`default_nettype none
-
 `include "common_defines.sv"
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
