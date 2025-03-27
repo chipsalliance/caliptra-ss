@@ -90,12 +90,21 @@ void main (void) {
         // Transition to SCRAP require setting the PPD pin.
         force_PPD_pin();
     }
-    transition_state(lc_state_next,
-                     tokens[lc_state_next][0],
-                     tokens[lc_state_next][1],
-                     tokens[lc_state_next][2],
-                     tokens[lc_state_next][3],
-                     use_token[lc_state_next]);
+    if (lc_state_curr == 0) {
+        transition_state(lc_state_next,
+                         raw_unlock_token[0],
+                         raw_unlock_token[1],
+                         raw_unlock_token[2],
+                         raw_unlock_token[3],
+                         1);
+    } else {
+        transition_state(lc_state_next,
+                         tokens[lc_state_next][0],
+                         tokens[lc_state_next][1],
+                         tokens[lc_state_next][2],
+                         tokens[lc_state_next][3],
+                         use_token[lc_state_next]);
+    }
 
     wait_dai_op_idle(0);
 

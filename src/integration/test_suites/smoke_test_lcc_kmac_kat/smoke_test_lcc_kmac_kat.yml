@@ -7,7 +7,7 @@ pre-exec: |
   echo "Running pre_exec for [smoke_test_lcc_kmac_kat]"
   pip install -r $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/requirements.txt
   echo "Generate random test unlock tokens."
-  rm -rf otp-img_randomized.2048.vmem
+  rm -rf otp-img.2048.vmem
   $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py --lc-state-def $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson --mmap-def $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp_ctrl_mmap.hjson --lc-state 2 --lc-cnt 5 --token-tpl $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/state_transition_tokens.h.tpl --token-header $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_kmac_kat/smoke_test_lcc_kmac_kat.h -o otp-img.2048.vmem
   CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=smoke_test_mbox program.hex
   make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_lcc_kmac_kat mcu_program.hex
