@@ -29,6 +29,7 @@ void mcu_cptra_fuse_init();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
 void mcu_cptra_mbox_cmd();
+void mcu_mbox_clear_lock_out_of_reset();
 
 #define FC_LCC_CMD_OFFSET 0xB0
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
