@@ -91,19 +91,19 @@ void lcc_initialization(void) {
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
     uint32_t reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    uint32_t loop_ctrl = reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK; 
+    uint32_t loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1); 
     while(!loop_ctrl){
         VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_READY_MASK); 
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK; 
+        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is ready!\n");
     reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK)>>1) & 1; 
+    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     while(!loop_ctrl){
         VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK)>>1) & 1; 
+        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
 }
@@ -125,11 +125,11 @@ void sw_transition_req(uint32_t next_lc_state,
     uint32_t loop_ctrl;
     int trigger_alert = 0;
     reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK)>>1) & 1; 
+    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     while(!loop_ctrl){
         VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK)>>1) & 1; 
+        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
 
@@ -316,12 +316,12 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
     uint32_t loop_ctrl;
     int trigger_alert = 0;
     reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK)>>1) & 1; 
+    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
 
     while(!loop_ctrl){
     VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK)>>1) & 1; 
+        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
     VPRINTF(LOW, "Starting sw_transition_req...\n");
