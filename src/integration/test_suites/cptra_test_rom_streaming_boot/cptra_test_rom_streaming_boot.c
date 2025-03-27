@@ -190,8 +190,10 @@ void read_image_from_fifo(uint32_t fw_image_size) {
 
     uint32_t dma_block_size;
 
-    // -- randomize block size between 1 to 256 bytes for the power of 2
-    // dma_block_size = 1 << (rand() % 8); //-- FIXME : uncomment this.
+    // -- FIXME: Uncomment code for randomized block size
+    // -- randomize block size between 4 to 256 bytes for the power of 2
+    // dma_block_size = 1<<(rand() % 8); // 2^0 to 2^7
+    // dma_block_size = (dma_block_size < 4) ? 4 : dma_block_size; // minimum block size is 4 bytes
     dma_block_size = 256; // 256 bytes
 
     // Program DMA to read the payload from the FIFO

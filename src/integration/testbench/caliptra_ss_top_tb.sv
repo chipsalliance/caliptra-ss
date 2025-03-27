@@ -1755,6 +1755,7 @@ module caliptra_ss_top_tb
         master0.log.enable_bus_tracker  = 1;
         master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
         master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
+        master0.cfg_info.receive_all_txn = 0;
 
         // --- I3C env ---
         i3c_env0 = new("i3c_env0");
