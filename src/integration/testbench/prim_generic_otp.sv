@@ -34,14 +34,6 @@ module prim_generic_otp
   // Macro-specific power sequencing signals to/from AST
   output logic [PwrSeqWidth-1:0] pwr_seq_o,
   input        [PwrSeqWidth-1:0] pwr_seq_h_i,
-  // External programming voltage
-  inout wire                     ext_voltage_io,
-  // Test interfaces
-  input        [TestCtrlWidth-1:0]   test_ctrl_i,
-  output logic [TestStatusWidth-1:0] test_status_o,
-  output logic [TestVectWidth-1:0]   test_vect_o,
-  input  tlul_pkg::tl_h2d_t          test_tl_i,
-  output tlul_pkg::tl_d2h_t          test_tl_o,
   // Other DFT signals
   input caliptra_prim_mubi_pkg::mubi4_t   scanmode_i,  // Scan Mode input
   input                          scan_en_i,   // Scan Shift
@@ -80,10 +72,6 @@ module prim_generic_otp
   assign unused_obs = |obs_ctrl_i;
   assign otp_obs_o = '0;
 
-  wire unused_ext_voltage;
-  assign unused_ext_voltage = ext_voltage_io;
-  logic unused_test_ctrl_i;
-  assign unused_test_ctrl_i = ^test_ctrl_i;
 
   logic unused_scan;
   assign unused_scan = ^{scanmode_i, scan_en_i, scan_rst_ni};
@@ -92,8 +80,7 @@ module prim_generic_otp
   assign fatal_alert_o = intg_err || fsm_err;
   assign recov_alert_o = 1'b0;
 
-  assign test_vect_o = '0;
-  assign test_status_o = '0;
+
 
   ////////////////////////////////////
   // TL-UL Test Interface Emulation //
@@ -104,8 +91,8 @@ module prim_generic_otp
   otp_ctrl_prim_reg_top u_reg_top (
     .clk_i,
     .rst_ni,
-    .tl_i      (test_tl_i ),
-    .tl_o      (test_tl_o ),
+    .tl_i      ('0 ),
+    .tl_o      ( ),
     .reg2hw    (reg2hw    ),
     .hw2reg    (hw2reg    ),
     .intg_err_o(intg_err  )

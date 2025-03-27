@@ -1,4 +1,54 @@
 ---
+provides: [avery_vip]
+schema_version: 2.4.0
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/vip
+      #-- General
+      - $AVERY_SIM
+      - $AVERY_SIM/src
+      - $AVERY_SIM/src.IEEE
+      - $AVERY_PLI
+      #-- AXI Interconnect
+      - $AVERY_AXI/src.axi.VCS
+      - $AVERY_AXI/src.axi
+      - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
+      - $AVERY_AXI/testbench
+      #-- I3C VIP
+      - $AVERY_I3C/
+      - $AVERY_I3C/src
+      - $AVERY_I3C/src.i3c
+      - $AVERY_I3C/src.VCS
+      - $AVERY_I3C/src.i3c
+      - $AVERY_I3C/testsuite.i3c/examples
+      - $AVERY_I3C/testsuite.i3c/examples.uvm
+      - $AVERY_I3C/testsuite.i3c/dut
+      - $AVERY_I3C/testsuite.i3c/dut1_1
+      - $AVERY_I3C/testsuite.i3c/dut_slave
+      - $AVERY_I3C/testsuite.i3c/dut_master
+      - $AVERY_I3C/testsuite.i3c/dut_master_stby
+      - $AVERY_I3C/testbench
+    files:
+      #-- General
+      - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
+      - $AVERY_SIM/src/avery_pkg.sv
+      - $AVERY_SIM/src/avery_pkg_test.sv
+      #-- AXI Interconnect
+      - $AVERY_AXI/src.axi/aaxi_pkg.sv
+      - $AVERY_AXI/src.axi/aaxi_pkg_xactor.sv
+      - $AVERY_AXI/src.axi/aaxi_class_pll.sv
+      - $AVERY_AXI/src.axi/aaxi_pkg_test.sv
+      - $AVERY_AXI/src.axi/aaxi_intf.sv
+      #-- I3C VIP
+      - $AVERY_I3C/src/ai2c_pkg.sv
+      - $AVERY_I3C/src.i3c/ai3c_pkg.sv
+      - $AVERY_I3C/src/ai2c_intf.sv
+      - $AVERY_I3C/src.i3c/ai3c_intf.sv
+    tops:
+      #-- NOTE: include this in the top level testbench
+      - ai3c_tests_bench
+---
 provides: [caliptra_ss_top_defines]
 schema_version: 2.4.0
 targets:
@@ -6,10 +56,12 @@ targets:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
+      - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
   rtl:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
+      - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
 ---
 provides: [caliptra_ss_top]
 schema_version: 2.4.0
@@ -34,7 +86,6 @@ targets:
     directories: 
       - $COMPILE_ROOT/rtl
     files:
-      - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_top.sv
     tops: [caliptra_ss_top]
 ---
@@ -55,16 +106,15 @@ requires:
   - axi_mem_pkg
   - caliptra_ss_top
   - lc_ctrl
+  - ast_pkg
+  - fuse_ctrl_pkg
   - caliptra_top_tb_pkg
   - avery_vip
+  - mci_coverage
 targets:
   tb:
     directories:
       - $COMPILE_ROOT/vip
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi.VCS
-      - $AVERY_HOME/axixactor-2.1e.230314//src.axi
-      - $AVERY_HOME/axixactor-2.1e.230314//checker/BP063-BU-01000-r0p1-00rel0/sva
-      - $AVERY_HOME/axixactor-2.1e.230314//testbench
       - $COMPILE_ROOT/testbench
       - $COMPILE_ROOT/testbench/sv_tests/ai3c
     files:
@@ -77,7 +127,11 @@ targets:
       - $COMPILE_ROOT/testbench/aaxi_pkg_caliptra_test.sv
       - $COMPILE_ROOT/testbench/aaxi4_interconnect.sv
       - $COMPILE_ROOT/testbench/fuse_ctrl_bfm.sv
+      - $COMPILE_ROOT/testbench/prim_generic_otp.sv
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_tb_cmd_list.svh
+      - $COMPILE_ROOT/testbench/fc_lcc_tb_services.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_services.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]
   sim:
@@ -103,7 +157,6 @@ global:
         - +define+MCU_RV_OPENSOURCE
         - +define+AVERY_VCS
         - +define+AVERY_CLOCK=5
-        - +define+LCC_FC_BFM_SIM=1 # this is a defined to enable LCC BFM reset to be driven to LCC and FC
         - +define+FOUR_OUTSTANDING
         - +define+AVERY_AXI_INTERCONNECT
         - +define+AAXI_MAX_DATA_WIDTH=64

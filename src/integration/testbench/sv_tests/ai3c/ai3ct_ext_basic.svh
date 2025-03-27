@@ -332,7 +332,7 @@ class ai3ct_ext_basic extends ai3ct_base;
 		//-- Image size byte 2 to 5 field to size of the image.
 		data = new[6];
 		data[0] = 'h0; // CMS set to 0
-		data[1] = 'h0; // FIFO reset -- FIXME should be 'h1
+		data[1] = 'h0; // FIFO reset -- FIXME should be 'h1. Tracking https://github.com/chipsalliance/caliptra-ss/issues/146
 
 		data[2] = img_sz_in_4B[7:0]; // Image size 0
 		data[3] = img_sz_in_4B[15:8]; // Image size 1

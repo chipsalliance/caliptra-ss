@@ -353,11 +353,11 @@ module mcu_top
     output logic mpc_debug_halt_ack,  // Halt ack
     output logic mpc_debug_run_ack,   // Run ack
     output logic debug_brkpt_status,  // debug breakpoint
+    output logic o_debug_mode_status, // Core to the PMU that core is in debug mode. When core is in debug mode, the PMU should refrain from sendng a halt or run request
 
     input logic i_cpu_halt_req,  // Async halt req to CPU
     output logic o_cpu_halt_ack,  // core response to halt
     output logic o_cpu_halt_status,  // 1'b1 indicates core is halted
-    output logic                            o_debug_mode_status, // Core to the PMU that core is in debug mode. When core is in debug mode, the PMU should refrain from sendng a halt or run request
     input logic i_cpu_run_req,  // Async restart req to CPU
     output logic o_cpu_run_ack,  // Core response to run req
     input logic scan_mode,  // To enable scan mode

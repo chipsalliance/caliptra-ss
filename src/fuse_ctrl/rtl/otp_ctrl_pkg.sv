@@ -7,6 +7,7 @@ package otp_ctrl_pkg;
 
   import caliptra_prim_util_pkg::vbits;
   import otp_ctrl_reg_pkg::*;
+  import ast_pkg::*;
 
   ////////////////////////
   // General Parameters //
@@ -340,5 +341,66 @@ package otp_ctrl_pkg;
     FUSE_CMD_AXI_ADDR_ST       = 3'd6,
     DISCARD_FUSE_CMD_AXI_WR_ST = 3'd7
   } fc_table_state_t;
+
+
+  typedef struct packed {
+    logic [31:0] lower_addr;  // Lower bound of the address range
+    logic [31:0] upper_addr;  // Upper bound of the address range
+  } access_control_entry_t;
+  
+  localparam int FC_TABLE_NUM_RANGES = 2;
+  
+  localparam access_control_entry_t access_control_table [FC_TABLE_NUM_RANGES] = '{
+    '{ lower_addr: 32'h00000000, upper_addr: 32'h0000FFFF}, // Caliptra core
+    '{ lower_addr: 32'h00000088, upper_addr: 32'h0000FFFF} // MCU core
+  };
+
+    //------------------------------------------------------------------
+    // Typedef for PRIM GENERIC Module Inputs
+    //------------------------------------------------------------------
+    typedef struct packed {
+      // Clock, reset, and observability
+      logic                         clk_i;
+      logic                         rst_ni;
+      ast_pkg::ast_obs_ctrl_t       obs_ctrl_i;
+  
+      // Power sequencing (input from host)
+      logic [OtpPwrSeqWidth-1:0]       pwr_seq_h_i;
+
+  
+      // DFT signals
+      caliptra_prim_mubi_pkg::mubi4_t scanmode_i;
+      logic                         scan_en_i;
+      logic                         scan_rst_ni;
+  
+      // Ready/valid handshake and command channel
+      logic                            valid_i;
+      logic [OtpSizeWidth-1:0]         size_i;   // (Native words)-1
+      caliptra_prim_otp_pkg::cmd_e     cmd_i;
+      logic [OtpAddrWidth-1:0]         addr_i;
+      logic [OtpIfWidth-1:0]           wdata_i;
+    } prim_generic_otp_inputs_t;
+  
+    //------------------------------------------------------------------
+    // Typedef for PRIM GENERIC Module Outputs
+    //------------------------------------------------------------------
+    typedef struct packed {
+      // Observability output
+      logic [7:0]                 otp_obs_o;
+  
+      // Power sequencing output
+      logic [OtpPwrSeqWidth-1:0]     pwr_seq_o;
+  
+  
+      // Alert signals
+      logic                       fatal_alert_o;
+      logic                       recov_alert_o;
+  
+      // Ready/valid handshake and response channel
+      logic                       ready_o;
+      logic                       valid_o;
+      logic [OtpIfWidth-1:0]         rdata_o;
+      caliptra_prim_otp_pkg::err_e     err_o;
+    } prim_generic_otp_outputs_t;
 
 endpackage : otp_ctrl_pkg
