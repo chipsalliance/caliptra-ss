@@ -1142,7 +1142,7 @@ A Requester will read the "LOCK" register to obtain a lock on the mailbox. This 
   -  TARGET_DONE
   -  TARGET_USER
 - Mailbox SRAM
-Unlocking occurs when the requestor clears the execution register. After releasing the mailbox the SRAM is zeroed out ([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
+Unlocking/releasing occurs when the requestor writes 0 to the EXECUTE register. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
 
 On MCI reset release the MCU MBOX is locked for MCU. The MCU shall set the DLEN to the size of the SRAM and release the MBOX, causing the SRAM to be zeroed. This is done to prevent data leaking between warm resets via the SRAM. 
 
@@ -1186,7 +1186,7 @@ If set to 0 the mailbox is not instantiated.
 
 When the mailbox lock is released the SRAM is zeroed out from 0 to max DLEN set during the locking period. The flow for clearing the SRAM is:
 
-1. Requester releases lock by clearing the EXECUTE register
+1. Requester releases lock
 2. MCU SRAM starts clearing
 3. MCU SRAM clearing ends
 4. Mailbox is unlocked

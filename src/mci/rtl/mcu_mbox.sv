@@ -102,7 +102,7 @@ logic mbox_axi_root_user_req ;
 logic lock_set;
 logic valid_requester_target_req;
 
-logic execute_prev;
+logic execute_valid_write;
 logic mbox_sram_zero_done;
 logic mbox_sram_zero_in_progress;
 
@@ -189,14 +189,15 @@ assign hwif_in.valid_root_req             = valid_root_req           ;
 // MBOX Lock and Clearing of Registers
 ///////////////////////////////////////////////
 
+// Detect incoming valid write to execute register.
+// Swmod indication is pulsed one cycle before write data
 always_ff @(posedge clk or negedge rst_b) begin
     if (!rst_b) begin
-        execute_prev <= 1'b0;
+        execute_valid_write <= 1'b0;
     end else begin
-        execute_prev <= hwif_out.mbox_execute.execute.value;
+        execute_valid_write <= (hwif_out.mbox_execute.execute.swmod && valid_requester_req);
     end
 end
-
 
 sram_zeroization_gadget #(
     .SRAM_DEPTH(MCU_MBOX_SRAM_DEPTH),
@@ -241,13 +242,15 @@ always_ff @(posedge clk or negedge rst_b) begin
         rst_mbox_lock_req <= 1'b0;
     end
 end
+
+
 always_comb begin
     mbox_sram_zero_end_addr_bytes = mbox_max_dlen - 1;
     mbox_sram_zero_end_addr = {2'b0, mbox_sram_zero_end_addr_bytes[MCU_MBOX_SRAM_ADDR_W-1:2]};
 end
 
-// Release the mailbox one clock cycle after execute is cleared
-assign mbox_release = !hwif_out.mbox_execute.execute.value & execute_prev;  
+// Release the mailbox after execute has had 0 written to it
+assign mbox_release = !hwif_out.mbox_execute.execute.value && execute_valid_write;  
 
 // One reset lock in root_user. Otherwise when lock is not set and user reads
 // the registers set the lock.
@@ -264,6 +267,7 @@ assign hwif_in.mbox_target_status.status.hwclr = mbox_release;
 assign hwif_in.mbox_target_status.done.hwclr = mbox_release; 
 assign hwif_in.mbox_cmd.command.hwclr = mbox_release; 
 assign hwif_in.mbox_target_user.user.hwclr = mbox_release; 
+assign hwif_in.mbox_user.user.hwclr = mbox_release; 
 
 // User locking is done via RDL. Only need to pass the user value to the HWIF if
 // there is a valid user request.
