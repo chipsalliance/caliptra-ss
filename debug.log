@@ -1,0 +1,16 @@
+2025-03-26 22:44:11,500 - INFO - CSV file contents:
+2025-03-26 22:44:11,502 - INFO - Line 0: TestName, Directed|Random, Nightly|Weekly, L0, L1, DUT, PromotePipeline, OtherTags, Weight
+2025-03-26 22:44:11,502 - INFO - Line 1: $CALIPTRA_SS/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup, None, None, L0, None, caliptra_ss_top_tb, Promote, None, 100
+2025-03-26 22:44:11,502 - INFO - Line 2: $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation, None, None, L0, None, caliptra_ss_top_tb, Promote, None, 100
+2025-03-26 22:44:11,502 - INFO - Line 3: $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock, None, None, L0, None, caliptra_ss_top_tb, Promote, None, 100
+2025-03-26 22:44:11,503 - INFO - Line 4: $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens, None, None, L0, None, caliptra_ss_top_tb, Promote, None, 100
+2025-03-26 22:44:11,504 - INFO - Line 5: $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_random_item_prov/smoke_test_fc_random_item_prov, None, None, L0, None, caliptra_ss_top_tb, Promote, None, 100
+2025-03-26 22:44:11,505 - INFO - Line 6: $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_registers/smoke_test_fc_registers, None, None, L0, None, caliptra_ss_top_tb, Promote, None, 100
+2025-03-26 22:44:11,505 - INFO - Line 7: $CALIPTRA_SS/src/integration/test_suites/caliptra_ss_jtag_manuf_dbg/caliptra_ss_jtag_manuf_dbg, Directed, Nightly, None, L1, caliptra_ss_top_tb, None, None, 100
+2025-03-26 22:44:11,506 - INFO - Line 8: $CALIPTRA_SS/src/integration/test_suites/caliptra_ss_jtag_uds_prog/caliptra_ss_jtag_uds_prog, Directed, Nightly, None, L1, caliptra_ss_top_tb, None, None, 100
+2025-03-26 22:44:11,507 - INFO - Line 9: $CALIPTRA_SS/src/integration/test_suites/caliptra_ss_lc_ctrl_st_trans/caliptra_ss_lc_ctrl_st_trans, Directed, Nightly, None, L1, caliptra_ss_top_tb, None, None, 100
+2025-03-26 22:44:11,508 - INFO - Creating YAML file '/home/ws/caliptra/pateln/caliptra_ws_250317/chipsalliance/caliptra-ss/src/integration/stimulus/L0_Promote_caliptra_ss_top_tb_regression.yml' with criteria: {'Directed|Random': None, 'Nightly|Weekly': None, 'L0': 'L0', 'L1': None, 'DUT': 'caliptra_ss_top_tb', 'PromotePipeline': 'Promote', 'OtherTags': 'Lop_regression,top_regression'}
+2025-03-26 22:44:11,514 - INFO - YAML file '/home/ws/caliptra/pateln/caliptra_ws_250317/chipsalliance/caliptra-ss/src/integration/stimulus/L0_Promote_caliptra_ss_top_tb_regression.yml' successfully created.
+2025-03-26 22:44:11,514 - INFO - Creating YAML file '/home/ws/caliptra/pateln/caliptra_ws_250317/chipsalliance/caliptra-ss/src/integration/stimulus/L1_Nightly_Directed_caliptra_ss_top_tb_regression.yml' with criteria: {'Directed|Random': 'Directed', 'Nightly|Weekly': 'Nightly', 'L0': None, 'L1': 'L1', 'DUT': 'caliptra_ss_top_tb', 'PromotePipeline': None}
+2025-03-26 22:44:11,516 - INFO - Setting generations to 120 (10x template count)
+2025-03-26 22:44:11,523 - INFO - YAML file '/home/ws/caliptra/pateln/caliptra_ws_250317/chipsalliance/caliptra-ss/src/integration/stimulus/L1_Nightly_Directed_caliptra_ss_top_tb_regression.yml' successfully created.

@@ -77,7 +77,7 @@ void main (void) {
         if (i3c_reg_data != 0x00000000) {
             break;
         }
-        for (uint8_t ii = 0; ii < 32; ii++) {
+        for (uint8_t ii = 0; ii < 100; ii++) {
             __asm__ volatile ("nop");    
         }    
     }

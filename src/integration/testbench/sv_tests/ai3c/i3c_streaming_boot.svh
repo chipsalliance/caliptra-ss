@@ -28,12 +28,12 @@
       1. Main Master can do read/write transfer to each slave
 */
 
-class i3c_sboot extends cptra_ss_i3c_core_base_test;
+class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 
-	`avery_test_reg(i3c_sboot)
+	`avery_test_reg(i3c_streaming_boot)
 
 	function new(string name, `avery_xvm_parent);
-        super.new("i3c_sboot", parent);
+        super.new("i3c_streaming_boot", parent);
 	endfunction
 
 	virtual task test_body();
