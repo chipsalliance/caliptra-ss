@@ -43,6 +43,8 @@ module caliptra_ss_top_tb
     import avery_pkg_test::*;
     import jtag_pkg::*;
 
+    `include "caliptra_ss_assertion_overrides.svh"
+
 `ifndef VERILATOR
     // Time formatting for %t in display tasks
     // -9 = ns units

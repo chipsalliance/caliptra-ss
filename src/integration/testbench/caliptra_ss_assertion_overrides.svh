@@ -27,8 +27,6 @@ initial begin
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.gen_partitions[7].gen_buffered.u_part_buf.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.gen_partitions[8].gen_unbuffered.u_part_unbuf.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.gen_partitions[9].gen_unbuffered.u_part_unbuf.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
-    $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
-    $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_otp.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_otp_ctrl_dai.u_prim_count.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_otp_ctrl_dai.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_otp_ctrl_lci.u_prim_count.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
@@ -41,11 +39,10 @@ initial begin
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_otp_ctrl_scrmbl.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_reg_core.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_tlul_lc_gate.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
+    $assertoff(0, caliptra_ss_top_tb.u_otp.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
+    $assertoff(0, caliptra_ss_top_tb.u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
 
 
-    $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_edn_arb.ValidKnown_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/156 
-    $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_edn_arb.IdxKnown_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/156
-    $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_edn_arb.GrantKnown_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/156
 
     $assertoff(0, caliptra_ss_top_tb.CPTRA_AXI_RD_32BITcptra_ss_mcu_rom_s_axi_if); // FIXME - https://github.com/chipsalliance/caliptra-ss/issues/157
 
