@@ -16,8 +16,6 @@
 `define MCU_RV_LSU_BUS_TAG_local 1
 `define INCLUDE_FUSE_CTRL = 1
 
-`default_nettype none
-
 `include "common_defines.sv"
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
@@ -124,11 +122,10 @@ module caliptra_ss_top
 `endif
 
 // Caliptra SS MCU 
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_cptra_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
-    input logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mci_soc_config_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
+    input logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
@@ -188,8 +185,8 @@ module caliptra_ss_top
     output wire cptra_ss_soc_hw_debug_en_o,
 
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
-    input  tlul_pkg::tl_h2d_t                          cptra_ss_fuse_macro_prim_tl_i,
-    output tlul_pkg::tl_d2h_t                          cptra_ss_fuse_macro_prim_tl_o,
+    input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
+    output otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o,
    
 // Caliptra SS I3C GPIO Interface
 `ifdef DIGITAL_IO_I3C
@@ -226,6 +223,7 @@ module caliptra_ss_top
     logic                       o_debug_mode_status;
 
     logic                       jtag_tdo;
+    logic                       i_cpu_halt_req;
     logic                       o_cpu_halt_ack;
     logic                       o_cpu_halt_status;
     logic                       o_cpu_run_ack;
@@ -532,10 +530,6 @@ module caliptra_ss_top
     logic payload_available_o;
     logic image_activated_o;
 
-    // tie offs
-        assign reset_vector = `css_mcu0_RV_RESET_VEC;
-
-
     mci_mcu_sram_if cptra_ss_mcu_rom_mbox0_sram_req_if (
         .clk(cptra_ss_clk_i),
         .rst_b(cptra_ss_rst_b_i)
@@ -552,6 +546,7 @@ module caliptra_ss_top
 
 
      always_comb begin
+
         ///////
         // AXI USER assignments
         ///////
@@ -963,13 +958,13 @@ module caliptra_ss_top
         .mpc_debug_run_ack      ( mpc_debug_run_ack),
         .mpc_debug_run_req      ( 1'b1),
         .mpc_reset_run_req      ( 1'b1),             // Start running after reset
-        .debug_brkpt_status    (debug_brkpt_status),
+        .debug_brkpt_status     (debug_brkpt_status),
+        .o_debug_mode_status    (o_debug_mode_status),
 
-        .i_cpu_halt_req         ( 1'b0  ),    // Async halt req to CPU
+        .i_cpu_halt_req         ( i_cpu_halt_req ),    // Async halt req to CPU
         .o_cpu_halt_ack         ( o_cpu_halt_ack ),    // core response to halt
         .o_cpu_halt_status      ( o_cpu_halt_status ), // 1'b1 indicates core is halted
         .i_cpu_run_req          ( 1'b0  ),     // Async restart req to CPU
-        .o_debug_mode_status    (o_debug_mode_status),
         .o_cpu_run_ack          ( o_cpu_run_ack ),     // Core response to run req
 
         .dec_tlu_perfcnt0       (),
@@ -1178,7 +1173,11 @@ module caliptra_ss_top
 
         .strap_mcu_reset_vector(cptra_ss_strap_mcu_reset_vector_i),
         
-        .mcu_reset_vector(),
+        .mcu_reset_vector(reset_vector),
+        // MCU Halt Signals
+        .mcu_cpu_halt_req_o   (i_cpu_halt_req   ),
+        .mcu_cpu_halt_ack_i   (o_cpu_halt_ack   ),
+        .mcu_cpu_halt_status_i(o_cpu_halt_status),
 
         .mcu_no_rom_config(cptra_ss_mcu_no_rom_config_i),
 
@@ -1353,18 +1352,20 @@ module caliptra_ss_top
         .clk_i                      (cptra_ss_clk_i),
         .rst_ni                     (cptra_ss_rst_b_i),
         .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
-        .clk_edn_i                  (1'b0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .rst_edn_ni                 (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .edn_o                      (),     // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .edn_i                      ('0),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
+
+        .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
+        .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_caliptra_dma_axi_user_i),
+
 
         .core_axi_wr_req            (cptra_ss_otp_core_axi_wr_req_i),
         .core_axi_wr_rsp            (cptra_ss_otp_core_axi_wr_rsp_o),
         .core_axi_rd_req            (cptra_ss_otp_core_axi_rd_req_i),
         .core_axi_rd_rsp            (cptra_ss_otp_core_axi_rd_rsp_o),
         
-        .prim_tl_i                  (cptra_ss_fuse_macro_prim_tl_i),
-        .prim_tl_o                  (cptra_ss_fuse_macro_prim_tl_o),
+        .prim_tl_i                  ('0),
+        .prim_tl_o                  (),
+        .prim_generic_otp_outputs_i (cptra_ss_fuse_macro_outputs_i),
+        .prim_generic_otp_inputs_o  (cptra_ss_fuse_macro_inputs_o),
 
         .intr_otp_operation_done_o  (intr_otp_operation_done),
         .intr_otp_error_o           (fc_intr_otp_error), //TODO: This signal should be connected to MCI
@@ -1392,11 +1393,6 @@ module caliptra_ss_top
 
         .otp_lc_data_o(from_otp_to_lcc_data_i),
 
-
-        .otp_keymgr_key_o           (),   // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .flash_otp_key_i            ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .sram_otp_key_i             ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .otbn_otp_key_i             ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
         .otp_ext_voltage_h_io       (otp_ext_voltage_h_io),
         .scan_en_i                  ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
