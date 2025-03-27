@@ -21,6 +21,7 @@
 #include "riscv_hw_if.h"
 #include "string.h"
 #include "stdint.h"
+#include "caliptra_ss_clk_freq.h"
 
 void reset_rtl(void) {
     uint32_t reg_value;
@@ -167,23 +168,23 @@ void boot_i3c_reg(void) {
 
     uint32_t i3c_reg_data;
     //-- PROT_CAP
-    VPRINTF(LOW, "MCU: Updating I3C Recovery Registers\n");
-
-    i3c_reg_data = 0x00000000;
+    VPRINTF(LOW, "MCU: Updating I3C Recovery Registers..\n");
+    
+    i3c_reg_data = 0x2050434f;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_0 with 'h %0x\n", i3c_reg_data);
-    i3c_reg_data = 0x52454356;
+    i3c_reg_data = 0x56434552;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_1 with 'h %0x\n", i3c_reg_data);    
 
     //-- DEVICE_ID
     i3c_reg_data = 0x00000001; //-- Dummy value
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0, i3c_reg_data);
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_1, i3c_reg_data);
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_2, i3c_reg_data);
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_3, i3c_reg_data);
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_4, i3c_reg_data);
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_5, i3c_reg_data);
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0, i3c_reg_data++);
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_1, i3c_reg_data++);
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_2, i3c_reg_data++);
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_3, i3c_reg_data++);
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_4, i3c_reg_data++);
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_5, i3c_reg_data++);
     VPRINTF(LOW, "MCU: Wr DEVICE_ID with 'h %0x\n", i3c_reg_data);
 
     //-- HW_STATUS
@@ -192,8 +193,7 @@ void boot_i3c_reg(void) {
     VPRINTF(LOW, "MCU: Wr HW_STATUS with 'h %0x\n", i3c_reg_data);
 
     //-- DEVICE_STATUS
-    i3c_reg_data = 0x00000000;
-    i3c_reg_data = 0x03 | i3c_reg_data;
+    i3c_reg_data = 0x00000001; //-- DEVICE_HEALTHY
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, i3c_reg_data);
 
 }
@@ -211,28 +211,52 @@ void boot_i3c_standby_ctrl_mode(){
     i3c_reg_data = 1 << I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL_TARGET_XACT_ENABLE_LOW | i3c_reg_data;
     lsu_write_32( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL, i3c_reg_data);
 
-    i3c_reg_data = lsu_read_32( SOC_I3CCSR_I3CBASE_HC_CONTROL);
-    i3c_reg_data = 1 << I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW | i3c_reg_data;
-    lsu_write_32( SOC_I3CCSR_I3CBASE_HC_CONTROL, i3c_reg_data);
-
 }
 
-// -- function boot_i3c_socmgmt_if
-// tb.reg_map.I3C_EC.SOCMGMTIF.T_R_REG = 2
-// tb.reg_map.I3C_EC.SOCMGMTIF.T_HD_DAT_REG = 10 
-// tb.reg_map.I3C_EC.SOCMGMTIF.T_SU_DAT_REG =  10
-// tb.reg_map.I3CBASE.HC_CONTROL.BUS_ENABLE = 1
-void boot_i3c_socmgmt_if(void){
-    uint32_t i3c_reg_data;
+// Helper function to write I3C SOCMGMTIF registers
+void write_i3c_socmgmtif_registers(uint32_t t_r, uint32_t t_f, uint32_t t_hd_dat, uint32_t t_su_dat) {
     VPRINTF(LOW, "MCU: boot_i3c_socmgmt_if register writes \n");
-    i3c_reg_data = 0x00000002;
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG, i3c_reg_data);
-    i3c_reg_data = 0x0000000A;
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG , i3c_reg_data);
-    i3c_reg_data = 0x0000000A;
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG, i3c_reg_data);
-    i3c_reg_data = 0x00000000;
-    i3c_reg_data = 1 << I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW;
+    lsu_write_32(SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG, t_r);
+    lsu_write_32(SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG, t_f);
+    lsu_write_32(SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG, t_hd_dat);
+    lsu_write_32(SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG, t_su_dat);
+}
+
+//-- function to boot i3c socmgmt interface
+void boot_i3c_socmgmt_if(void) {
+    uint32_t i3c_reg_data;
+
+    // Read clock frequency from configuration file
+    // file name : caliptra_ss_clk_freq.h
+    uint32_t clk_freq = CALIPTRA_SS_CLK_FREQ;
+    VPRINTF(LOW, "MCU: I3C Clock Frequency: %u MHz\n", clk_freq);
+
+    switch (clk_freq) {
+        case 160:
+            //-- for 160 MHz
+            write_i3c_socmgmtif_registers(0x00000002, 0x00000002, 0x00000003, 0x00000001);
+            break;
+        case 400:
+            //-- for 400 MHz
+            write_i3c_socmgmtif_registers(0x00000005, 0x00000005, 0x00000006, 0x00000002);
+            break;
+        case 500:
+            //-- for 500 MHz
+            write_i3c_socmgmtif_registers(0x00000006, 0x00000006, 0x00000007, 0x00000003);
+            break;
+        case 1000:
+            //-- for 1000 MHz
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+            break;
+        default:
+            VPRINTF(LOW, "Error: Unsupported clock frequency %u MHz\n", clk_freq);
+            return;
+    }
+
+    //-- Enable the I3C bus
+    VPRINTF(LOW, "MCU:  writing I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW register  \n");
+    i3c_reg_data = lsu_read_32( SOC_I3CCSR_I3CBASE_HC_CONTROL);
+    i3c_reg_data = 1 << I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW | i3c_reg_data;
     lsu_write_32( SOC_I3CCSR_I3CBASE_HC_CONTROL, i3c_reg_data);
 }
 
@@ -246,81 +270,8 @@ void boot_i3c_core(void) {
 
 }
 
-// -- function to boot mcu
-void boot_mcu(){
-
-    enum boot_fsm_state_e boot_fsm_ps;
-    const uint32_t mbox_dlen = 64;
-    uint32_t mbox_data[] = { 0x00000000,
-                             0x11111111,
-                             0x22222222,
-                             0x33333333,
-                             0x44444444,
-                             0x55555555,
-                             0x66666666,
-                             0x77777777,
-                             0x88888888,
-                             0x99999999,
-                             0xaaaaaaaa,
-                             0xbbbbbbbb,
-                             0xcccccccc,
-                             0xdddddddd,
-                             0xeeeeeeee,
-                             0xffffffff };
-    uint32_t mbox_resp_dlen;
-    uint32_t mbox_resp_data;
-    uint32_t cptra_boot_go;
-    uint32_t reg_data_32;
-    
-    mcu_mci_boot_go();
-
-    ////////////////////////////////////
-    // Fuse and Boot Bringup
-    //
-    // Wait for ready_for_fuses
-    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
-
-    // Initialize fuses
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
-    VPRINTF(LOW, "MCU: Set fuse wr done\n");
-    // Wait for Boot FSM to stall (on breakpoint) or finish bootup
-    boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
-    while(boot_fsm_ps != BOOT_DONE && boot_fsm_ps != BOOT_WAIT) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
-        boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
-    }
-
-    // Advance from breakpoint, if set
-    if (boot_fsm_ps == BOOT_WAIT) {
-        lsu_write_32(SOC_SOC_IFC_REG_CPTRA_BOOTFSM_GO, SOC_IFC_REG_CPTRA_BOOTFSM_GO_GO_MASK);
-    }
-    VPRINTF(LOW, "MCU: Set BootFSM GO\n");
-
-    // MBOX: Wait for ready_for_mb_processing
-    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
-    }
-    VPRINTF(LOW, "MCU: Ready for FW\n");
-
-    // MBOX: Setup valid AXI USER
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0xffffffff); // LSU AxUSER value. TODO: Derive from parameter
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_1, 1);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_2, 2);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_3, 3);
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0_LOCK_MASK);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_1, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_1_LOCK_MASK);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_2, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_2_LOCK_MASK);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3_LOCK_MASK);
-    VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
-
-}
-
 // -- function to boot_mcu_with_fuses
-void boot_mcu_with_fuses(){
+void boot_mcu(){
 
     enum boot_fsm_state_e boot_fsm_ps;
     const uint32_t mbox_dlen = 64;
@@ -428,7 +379,6 @@ void boot_mcu_with_fuses(){
     ////////////////////////////////////
     // Mailbox command test
     //
-
     // MBOX: Wait for ready_for_mb_processing
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
         for (uint8_t ii = 0; ii < 16; ii++) {
@@ -439,13 +389,8 @@ void boot_mcu_with_fuses(){
 
     // MBOX: Setup valid AXI USER
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0xffffffff); // LSU AxUSER value. TODO: Derive from parameter
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_1, 1);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_2, 2);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_3, 3);
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0_LOCK_MASK);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_1, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_1_LOCK_MASK);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_2, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_2_LOCK_MASK);
-    //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3_LOCK_MASK);
+
     VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
  
 }

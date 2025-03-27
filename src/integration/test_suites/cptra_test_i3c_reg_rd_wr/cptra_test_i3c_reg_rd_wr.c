@@ -36,104 +36,6 @@ volatile uint32_t intr_count       = 0;
 
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
-// Function Name : update_recovery_status
-void update_recovery_status(uint32_t recovery_status) {
-    
-    uint32_t i3c_reg_data; 
-    
-    // Write RECOVERY_STATUS
-    // 0x0: Not in recovery mode
-    // 0x1: Awaiting recovery image
-    // 0x2: Booting recovery image
-    // 0x3: Recovery successful
-    // 0xc: Recovery failed
-    // 0xd: Recovery image authentication error
-    // 0xe: Error entering  Recovery mode (might be administratively disabled)
-    // 0xf: Invalid component address space
-
-    i3c_reg_data = recovery_status;
-
-    switch (recovery_status) {
-        case 0x0:
-            VPRINTF(LOW, "CPTRA: Recovery Status is Not in recovery mode\n");
-            break;
-        case 0x1:
-            VPRINTF(LOW, "CPTRA: Recovery Status is Awaiting recovery image\n");
-            break;
-        case 0x2:
-            VPRINTF(LOW, "CPTRA: Recovery Status is Booting recovery image\n");
-            break;
-        case 0x3:
-            VPRINTF(LOW, "CPTRA: Recovery Status is Recovery successful\n");
-            break;
-        case 0xc:
-            VPRINTF(LOW, "CPTRA: Recovery Status is Recovery failed\n");
-            break;
-        case 0xd:
-            VPRINTF(LOW, "CPTRA: Recovery Status is Recovery image authentication error\n");
-            break;
-        case 0xe:
-            VPRINTF(LOW, "CPTRA: Recovery Status is Error entering Recovery mode (might be administratively disabled)\n");
-            break;
-        case 0xf:
-            VPRINTF(LOW, "CPTRA: Recovery Status is Invalid component address space\n");
-            break;
-        default:
-            VPRINTF(ERROR, "CPTRA: Invalid recovery status value\n");
-    }
-    
-    VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS with 'h %0x\n", i3c_reg_data);
-    soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS, 0, &i3c_reg_data, 4, 0);
-    
-}
-
-// 	Read  INDIRECT_FIFO_CTRL_0 (Byte 2,3) for the Image Size
-// 	Read  INDIRECT_FIFO_CTRL_1 (Byte 0,1) for the Image Size
-// Combine Byte{1,0,3,2} for Size of the image to be loaded in 4B units
-uint32_t read_image_size(){
-
-    uint32_t i3c_reg_data;
-    uint32_t img_size;
-    uint32_t loop_count = 0;
-    
-    VPRINTF(LOW, "CPTRA: Reading Image Size from INDIRECT_FIFO_CTRL_1 Register\n");
-    img_size = 0x00000000;
-
-    while (img_size == 0x00000000) {
-        // Read INDIRECT_FIFO_CTRL_1
-        soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1, 0, &i3c_reg_data, 4, 0);
-        VPRINTF(LOW, "CPTRA: Reading SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1 with 'h %0x\n", i3c_reg_data);
-        img_size = i3c_reg_data;
-        VPRINTF(LOW, "CPTRA: Image Size is 'h %0x , 'd %0d\n", img_size, img_size);
-
-        if (img_size == 0x00000000) {
-            VPRINTF(LOW, "CPTRA: Image Size is not available yet\n");
-            for (uint8_t ii = 0; ii < 160; ii++) {
-                __asm__ volatile ("nop");
-            }
-        }
-        loop_count++;
-        if (loop_count > 1000) {
-            VPRINTF(ERROR, "CPTRA: Image Size not available after 1000 attempts\n");
-            SEND_STDOUT_CTRL(0x1);
-            while(1);
-        }
-    }
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop");
-    }
-
-    // Read INDIRECT_FIFO_CTRL_1
-    soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1, 0, &i3c_reg_data, 4, 0);
-    VPRINTF(LOW, "CPTRA: Reading SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1 with 'h %0x\n", i3c_reg_data);
-    img_size = i3c_reg_data;
-    VPRINTF(LOW, "CPTRA: Image Size is 'h %0x , 'd %0d\n", img_size, img_size);
-
-    
-    return img_size;
-
-}
 
 // Wait function
 void wait(uint32_t wait_time) {
@@ -144,15 +46,65 @@ void wait(uint32_t wait_time) {
     }
 }
 
-// Recovery Sequence
-void recovery_sequence() {
-    
-    uint32_t fw_image_size;
 
-    update_recovery_status(0x1); // Awaiting recovery image
-    fw_image_size = read_image_size();
-    SEND_STDOUT_CTRL(0xff);
-        
+
+void wait_for_write_to_i3c_fifo(){
+    // reading INDIRECT_FIFO_STATUS
+    uint32_t i3c_reg_data;
+    while (1) {
+        i3c_reg_data = 0x00000000;
+        soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0, 0, &i3c_reg_data, 4, 0);
+        VPRINTF(LOW, "CPTRA: INDIRECT_FIFO_STATUS is 'h %0x\n", i3c_reg_data);
+        //-- check if FIFO is empty by reading bit 0 as 1'b1
+        i3c_reg_data = i3c_reg_data & 0x00000001;
+        if (i3c_reg_data == 0x00000001) {
+            VPRINTF(LOW, "CPTRA: INDIRECT FIFO DATA is empty\n");
+            wait(100);
+        } else {
+            VPRINTF(LOW, "CPTRA: INDIRECT FIFO DATA is available\n");
+            break;
+        }
+    }
+}
+
+void print_i3c_reg(uint32_t i3c_reg_addr, char *reg_name) {
+    uint32_t i3c_reg_data;
+    soc_ifc_axi_dma_read_ahb_payload(i3c_reg_addr, 0, &i3c_reg_data, 4, 0);
+    VPRINTF(LOW, "CPTRA: Read %s with 'h %0x\n", reg_name, i3c_reg_data);
+}
+
+void read_i3c_registers(){
+    uint32_t i3c_reg_data;
+    // read PROT_CAP
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, "PROT_CAP_0");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, "PROT_CAP_1");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2, "PROT_CAP_2");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3, "PROT_CAP_3");
+    // Read DEVICE_ID
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0, "DEVICE_ID_0");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_1, "DEVICE_ID_1");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_2, "DEVICE_ID_2");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_3, "DEVICE_ID_3");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_4, "DEVICE_ID_4");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_5, "DEVICE_ID_5");
+    // Read DEVICE_STATUS
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, "DEVICE_STATUS_0");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1, "DEVICE_STATUS_1");
+    // Read HW_STATUS
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS, "HW_STATUS");
+    // Read RECOVERY_CTRL
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL, "RECOVERY_CTRL");
+    // Read RECOVERY_STATUS
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS, "RECOVERY_STATUS");
+    // Read INDIRECT_FIFO_CTRL
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0, "INDIRECT_FIFO_CTRL_0");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1, "INDIRECT_FIFO_CTRL_1");
+    // Read INDIRECT_FIFO_STATUS
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0, "INDIRECT_FIFO_STATUS_0");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_1, "INDIRECT_FIFO_STATUS_1");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_2, "INDIRECT_FIFO_STATUS_2");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_3, "INDIRECT_FIFO_STATUS_3");
+    print_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_4, "INDIRECT_FIFO_STATUS_4");
 }
 
 void main(void) {
@@ -183,8 +135,13 @@ void main(void) {
     //set ready for FW so tb will push FW
     soc_ifc_set_flow_status_field(SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK);
 
-    VPRINTF(LOW, "Initiating Recovery Sequence\n");
-    recovery_sequence();  
+    // // Wait for I3C VIP Sequence to write the INDIRECT_FIFO_DATA Register
+    // wait_for_write_to_i3c_fifo();
+    // read_i3c_registers();
+
+    wait(100000);
+
+    VPRINTF(LOW, "End of Caliptra Test\n");
 
     if (fail) {
         VPRINTF(FATAL, " cptra_ss_test_rom failed!\n");

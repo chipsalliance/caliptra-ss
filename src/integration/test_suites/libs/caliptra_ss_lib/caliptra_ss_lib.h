@@ -21,7 +21,6 @@ void mcu_cptra_fuse_init();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
 void mcu_cptra_mbox_cmd();
-void boot_mcu_with_fuses();
 void boot_mcu();
 void boot_i3c_core(void);
 void boot_i3c_socmgmt_if(void);

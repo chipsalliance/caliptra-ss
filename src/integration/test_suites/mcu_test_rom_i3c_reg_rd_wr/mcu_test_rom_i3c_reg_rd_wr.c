@@ -33,7 +33,7 @@ void main (void) {
     uint32_t i3c_reg_data;
 
     //-- Boot MCU
-    VPRINTF(LOW, "MCU: Booting... with fuses\n");
+    VPRINTF(LOW, "MCU: Booting... \n");
     boot_mcu();
 
     // -- Boot I3C Core
@@ -54,11 +54,41 @@ void main (void) {
     lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
     VPRINTF(LOW, "MCU: I3C Virtual Device Address set to 0x5B\n");
 
-    for(uint8_t ii=0; ii<10000; ii++) {
+    VPRINTF(LOW, "MCU: Updating I3C Recovery Registers\n");
+    // Programming I3C for Recovery Mode 
+    // - DEVICE_STATUS_0
+    i3c_reg_data = 0x00000003; // Recovery mode - ready to accept recovery image
+    i3c_reg_data = 1 << 12 | i3c_reg_data; // Flashless/Streaming Boot (FSB) (Reason of recovery) 
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, i3c_reg_data);
+
+    // - RECOVERY_STATU_0
+    i3c_reg_data = 0x00000001; // Awaiting recovery image
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS, i3c_reg_data);
+    VPRINTF(LOW, "MCU: I3C Recovery Registers updated\n");
+
+    //-- Read INDIRTECT_FIFO_CTRL Register for non-zero value
+    i3c_reg_data = 0x00000000;
+    
+    while(1) {
+
+        i3c_reg_data = 0x00000000;
+        i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1);
+        VPRINTF(LOW, "MCU: Read INDIRECT_FIFO_CTRL_1 with 'h %0x\n", i3c_reg_data);
+        if (i3c_reg_data != 0x00000000) {
+            break;
+        }
+        for (uint8_t ii = 0; ii < 32; ii++) {
+            __asm__ volatile ("nop");    
+        }    
+    }
+
+    VPRINTF(LOW, "MCU: INDIRECT_FIFO_CTRL_1 is not zero\n");
+    for(uint8_t ii=0; ii<1000; ii++) {
         for (uint8_t ii = 0; ii < 16; ii++) {
             __asm__ volatile ("nop");
         }    
     }
-
+    
+    VPRINTF(LOW, "MCU: End of I3C Reg Read Write Test\n");
     SEND_STDOUT_CTRL(0xff);
 }

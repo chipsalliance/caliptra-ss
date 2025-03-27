@@ -506,7 +506,7 @@ module caliptra_ss_top_tb
                         $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
                         #i3c_run_time;
                     end else begin
-                        $display("Waiting 500us for I3C tests to finish..\n", 1000);
+                        $display("Waiting 150us for I3C tests to finish..\n", 1000);
                         #500us;
                     end
                 end
@@ -617,14 +617,44 @@ module caliptra_ss_top_tb
 
     end
 
-    initial  begin
+    // -- Read clock frequency from file and set the clock accordingly using a case statement
+    initial begin
+        
+        integer file;
+        integer status;
+        int frequency;
+    
+        // Open the file to read the clock frequency
+        file = $fopen("caliptra_ss_clk_freq.cfg", "r");
+        if (file == 0) begin
+            $display("Error: Unable to open file caliptra_ss_clk_freq.cfg");
+            $finish;
+        end
+    
+        // Read the frequency from the file
+        status = $fscanf(file, "%d", frequency);
+        $fclose(file);
+    
+        if (status != 1) begin
+            $display("Error: Failed to read clock frequency from file");
+            $finish;
+        end
+
         core_clk = 0;
-        // forever  core_clk = #1 ~core_clk; // 500MHz
-        forever  core_clk = #(0.5) ~core_clk; // 1GHz -- FIXME : depends on I3C bug
+        // Use a case statement to set the clock period based on the frequency
+        case (frequency)
+            160: forever core_clk = #(3.125) ~core_clk; // 160MHz -> 6.25ns period, 3.125ns half-period
+            400: forever core_clk = #(1.25) ~core_clk;  // 400MHz -> 2.5ns period, 1.25ns half-period
+            500: forever core_clk = #(1.0) ~core_clk;   // 500MHz -> 2.0ns period, 1.0ns half-period
+            1000: forever core_clk = #(0.5) ~core_clk;   // 1000MHz -> 1.0ns period, 0.5ns half-period
+            default: begin
+                $display("Error: Unsupported frequency value %d in file", frequency);
+                $finish;
+            end
+        endcase
     end
 
-    assign rst_l = cycleCnt > 5 ? 1'b1 : 1'b0;
-    // assign rst_l = fuse_ctrl_rdy ? 1'b1 : 1'b0;
+    assign rst_l   = cycleCnt > 5 ? 1'b1 : 1'b0;
     assign porst_l = cycleCnt > 2;
 
    //=========================================================================
@@ -1734,6 +1764,7 @@ module caliptra_ss_top_tb
 
     initial begin
         string avy_test_name;
+        
         // --- Avery I3C slave ---
         // slave = new("slave", , AI3C_SLAVE, slave_intf);
         // slave.log.enable_bus_tracker = 1;
@@ -1761,6 +1792,7 @@ module caliptra_ss_top_tb
             master0.set("start_bfm");
             ai3c_run_test(avy_test_name, i3c_env0); 
         end
+
     end
 
     //instantiate caliptra ss top module

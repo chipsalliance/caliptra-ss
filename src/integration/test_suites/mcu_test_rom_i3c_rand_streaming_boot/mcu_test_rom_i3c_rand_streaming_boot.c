@@ -34,7 +34,7 @@ void main (void) {
 
     //-- Boot MCU
     VPRINTF(LOW, "MCU: Booting... with fuses\n");
-    boot_mcu_with_fuses();
+    boot_mcu();
 
     // -- Boot I3C Core
     VPRINTF(LOW, "MCU: Boot I3C Core\n");
