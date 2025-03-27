@@ -125,8 +125,8 @@ VF files provide absolute filepaths (prefixed by the `CALIPTRA_SS_ROOT` environm
 The "Integration" sub-component contains the top-level fileset for Caliptra Subsystem. `src/integration/config/compile.yml` defines the required filesets and sub-component dependencies for this build target. All of the files/dependencies for compiling the top-level testbench are explicitly listed in `src/integration/config/caliptra_ss_top_tb.vf`. Users may compile the entire design using only this VF filelist.<BR>
 Verilog file lists are generated via VCS and included in the config directory for each unit. File lists define the compilation sources (including all dependencies) required to build and simulate a given module or testbench, and should be used by integrators for simulation, lint, and synthesis. Compilation using the provided Verilog file lists requires all [environment variables](#environment-variables) to be defined.
 
-IMPORTANT: Users MUST download the ARM AXI4 Protocol Checker from ARM's website, as it is a dependency
-for the Avery AXI VIP. This file contains copyrighted materials and therefore is not included in the
+Important: Users must download the [ARM AXI4 Protocol Checker](https://developer.arm.com/downloads/view/BP063) from ARM, as it is a dependency
+for the Avery AXI VIP. These files contain proprietary materials and therefore are not included in the
 caliptra-ss GitHub repository.
 
 ## **Simulation Flow** ##
