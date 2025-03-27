@@ -1275,7 +1275,7 @@ The hitless flow is described in full in [Caliptra Top Spec](https://github.com/
 2. Caliptra clears FW_EXEC_CTL[2]
 3. MCU sees request from Caliptra and should clear the interrupt status bit then set ```RESET_REQUEST.mcu_req``` in MCI.
 4. MCI does an MCU halt req/ack handshake to ensure the MCU is idle.
-5. MCI asserted MCU reset (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
+5. MCI asserts MCU reset (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
 6. Caliptra will gain access to MCU SRAM Updatable Execution Region and update the FW image
 7. Caliptra sets FW_EXEC_CTL[2]
 8. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
