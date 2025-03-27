@@ -1,10 +1,50 @@
 #!/usr/bin/env python3
-# Copyright lowRISC contributors (OpenTitan project).
-# Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
-r"""Generate RTL and documentation collateral from OTP memory
-map definition file (hjson).
-"""
+# 
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Generate `fuse_ctrl` VMEM script
+# Generates a VMEM memory image that can be loaded into `fuse_ctrl`.
+#
+# To create `otp-img.24.vmem`, execute the following:
+# 
+# ```sh
+# cd ${CALIPTRA_SS_ROOT}
+# python3 -m pip install -r tools/scripts/fuse_ctrl_script/requirements.txt
+# ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py \
+#     --lc-state-def tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson \
+#     --mmap-def src/fuse_ctrl/data/otp_ctrl_mmap.hjson \
+#     --lc-state "PROD" --lc-cnt 5 \
+#     --token-header token_header.h
+# ```
+# 
+# * `--lc-state-def`: Contains information about the life cycle state encoding
+# * `--mmap-def`: Defines the format of the vmem file.
+# * `--lc-state`: The desired life cycle state number (0...20). This value is encoded by the script.
+#                 If this argument is not provided, a random life cycle state will be generated.
+# * `--lc-cnt`: The desired raw life cycle counter. This value is encoded by the script.
+#               If this argument is not provided, a random life cycle counter will be generated.
+# * `--token-configuration`: HJSON that contains a list of unhashed tokens for the state transitions.
+# * `--token-header`: If provided, a C header file containing an array of the token will be generated.
+#                     If not provided, the tokens provided in `--token-configuration` are used.
+# * `--token-tpl`:  Template file for the C header file that contains the unhased token. 
+#                     If not provided, the tokens provided in `--token-configuration` are used.
+# * `--seed`:  Seed for the random() function that is used for generating LC counter, LC state, and
+#              unlock tockens.
+#  
+
 import argparse
 import datetime
 import logging as log
@@ -147,8 +187,23 @@ def main():
                         help='''
                         Path to the state_transition_tokens.h.tpl file.
                         ''')
+    parser.add_argument('--seed',
+                        type=int,
+                        help='''
+                        Optional. When passed, the random function for generating LC state,
+                        LC count, and unlock tokens is seeded with the provided seed.
+                        ''')
 
     args = parser.parse_args()
+
+    seed = 0
+    if args.seed is not None:
+        seed = args.seed
+    else:
+        seed = random.randint(0, 65536)
+
+    print("Seed used for generating VMEM: "+str(seed))
+    random.seed(seed)
 
     log.info('Loading LC state definition file {}'.format(args.lc_state_def))
     with open(args.lc_state_def, 'r') as infile:
@@ -237,7 +292,10 @@ def main():
         # Create the tokens.
         for token_name, token_value in token_cfg.items():
             # Hash the token.
-            value = token_value
+            if isinstance(token_value, str):
+                value = int(token_value, 16)
+            else:
+                value = token_value
             data = value.to_bytes(16, byteorder='little')
             custom = 'LC_CTRL'.encode('UTF-8')
             shake = cSHAKE128.new(data=data, custom=custom)
