@@ -73,16 +73,17 @@ Required for simulation:<BR>
 `ADAMSBRIDGE_ROOT`: Defines the absolute path to the Adams-Bridge submodule root. Must be defined as `${CALIPTRA_ROOT}/submodules/adams-bridge`.<BR>
 `CALIPTRA_AXI4PC_DIR`: Path to the directory that contains the ARM AXI4 Protocol Checker file. This file must be acquired from the Arm website by integrators, as it contains copyrighted materials.<BR>
 `AVERY_HOME`: Installation root for Avery VIP<BR>
-`AVERY_PLI`: Directory within AVERY_HOME that contains avery_pli<BR>
-`AVERY_SIM`: Directory within AVERY_HOME that contains avery_sim<BR>
-`AVERY_AXI`: Directory within AVERY_HOME that contains axixactor<BR>
-`AVERY_I3C`: Directory within AVERY_HOME that contains i3cxactor<BR>
+`AVERY_PLI`: Directory within AVERY\_HOME that contains avery\_pli<BR>
+`AVERY_SIM`: Directory within AVERY\_HOME that contains avery\_sim<BR>
+`AVERY_AXI`: Directory within AVERY\_HOME that contains axixactor<BR>
+`AVERY_I3C`: Directory within AVERY\_HOME that contains i3cxactor<BR>
 
 Required for Firmware (i.e. Test suites) makefile:<BR>
   `TESTNAME`: Contains the name of one of the tests listed inside the `$CALIPTRA_SS_ROOT/src/integration/test_suites` folder; used for simulations with `caliptra_ss_top_tb` tests<BR>
   `CALIPTRA_TESTNAME`: Identifies which firmware test will be compiled and executed on the Caliptra Core RV processor as part of the Subsystem test. This may indicate the name of a directory inside `$CALIPTRA_ROOT/src/integration/test_suites`, or it may indicate the name of a test firmware file contained inside the caliptra-ss repository for execution on Caliptra core. In this case, the file must be:
-  * Located in the same directory as the MCU test firmware, i.e. `$CALIPTRA_SS_ROOT/src/integration/test_suites/$TESTNAME`
-  * Named with a `cptra` prefix, to uniquely identify it from MCU firmware test files
+  * Named with a `cptra` prefix, to uniquely identify it from MCU firmware test files, and EITHER
+  * Located in the same directory as the MCU test firmware, i.e. `$CALIPTRA_SS_ROOT/src/integration/test_suites/$TESTNAME` OR
+  * Located in the the test\_suites folder in a directory with the same name as the test file, i.e. `$CALIPTRA_SS_ROOT/src/integration/test_suites/$CALIPTRA_TESTNAME`
 
 ## **Repository Overview** ##
 ```
@@ -144,9 +145,9 @@ caliptra-ss GitHub repository.
     - NOTE: `TESTNAME=${TESTNAME}` is optional; if not provided, test defaults to value of TESTNAME environment variable, then to `mcu_hello_world`
 1. Remaining steps describe how to manually run the individual steps for a VCS simulation
 1. [OPTIONAL] By default, this run flow will use the RISC-V toolchain to compile test firmware (according to TESTNAME, CALIPTRA_TESTNAME) into mcu_program.hex, mcu_lmem.hex, mcu_dccm.hex, program.hex, iccm.hex, dccm.hex, and mailbox.hex. 
-1. Invoke `${CALIPTRA_ROOT}/tools/scripts/Makefile` with target 'program.hex' to produce SRAM initialization files from the firmware found in `src/integration/test_suites/${TESTNAME}` or in `${CALIPTRA_ROOT}/src/integration/test_suites/${CALIPTRA_TESTNAME}`
+1. Invoke `${CALIPTRA_ROOT}/tools/scripts/Makefile` with target 'program.hex' to produce SRAM initialization files from the firmware found in `src/integration/test_suites/${TESTNAME}`, `src/integration/test_suites/${CALIPTRA_TESTNAME}` or in `${CALIPTRA_ROOT}/src/integration/test_suites/${CALIPTRA_TESTNAME}`
     - E.g.: `make -f ${CALIPTRA_ROOT}/tools/scripts/Makefile program.hex`
-    - NOTE: TESTNAME may also be overridden in the makefile command line invocation, e.g. `make -f ${CALIPTRA_ROOT}/tools/scripts/Makefile CALIPTRA_TESTNAME=smoke_test_mbox program.hex`
+    - NOTE: CALIPTRA_TESTNAME may also be overridden in the makefile command line invocation, e.g. `make -f ${CALIPTRA_ROOT}/tools/scripts/Makefile CALIPTRA_TESTNAME=smoke_test_mbox program.hex`
     - NOTE: The following macro values must be overridden to match the value provided (later) during hardware compilation. The full L0 regression suite includes tests that will fail if the firmware and hardware configuration has a discrepancy. Default values in the Makefile are shown with each macro:
       - CALIPTRA_INTERNAL_TRNG=1
       - E.g. `make -f ${CALIPTRA_ROOT}/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=1 program.hex`
