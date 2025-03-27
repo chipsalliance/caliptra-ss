@@ -66,6 +66,7 @@ module caliptra_ss_top_sva
   end
   endgenerate
 
+  // Assert that an escalation moves the fuse controller into an terminal unresponsive state.
   generate
   for (genvar i = 0; i < NumPart; i++) begin
     fc_partition_escalation_lock : assert property (
@@ -75,5 +76,9 @@ module caliptra_ss_top_sva
     else $display("SVA ERROR: partition %d is not locked after escalation", i);
   end
   endgenerate
+  fc_partition_escalation_dai_lock : assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    `CPTRA_SS_TOP_PATH.u_otp_ctrl.lc_escalate_en_i == On |-> ##10 `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.state_q == `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.ErrorSt
+  ) else $display("SVA ERROR: fuse ctrl dai is not in a terminal state");
 
 endmodule

@@ -18,7 +18,7 @@ on:
   workflow_call:
 
 env:
-  MSFT_ACTORS: ( "Nitsirks" "calebofearth" "mojtaba-bisheh" "anjpar" "upadhyayulakiran" "nileshbpat" "ekarabu" "clayton8" "kedjenks")
+  MSFT_ACTORS: ( "Nitsirks" "calebofearth" "mojtaba-bisheh" "anjpar" "upadhyayulakiran" "nileshbpat" "ekarabu" "clayton8" "kedjenks" "andrea-caforio" "nasahlpa" )
 
 jobs:
   # Fail if any compile.yml has been modified
