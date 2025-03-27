@@ -93,7 +93,7 @@ For the exact definition of these vendor-specific fuses see `otp_ctrl_mmap.hjson
 ### Execution
 ```sh
 python3 -m pip install -r requirements.txt
-./caliptra-ss/tools/scripts/gen_fuse_ctrl_partitions/gen_fuse_ctrl_partitions.py -f gen_fuse_ctr_partitions.yml
+./caliptra-ss/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.py -f gen_fuse_ctr_partitions.yml
 ```
 
 ### Verification

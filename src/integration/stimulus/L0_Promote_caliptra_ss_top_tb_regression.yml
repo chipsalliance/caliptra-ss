@@ -16,3 +16,5 @@ contents:
         - ../test_suites/smoke_test_lcc_RMA/smoke_test_lcc_RMA.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_manuf_prod_prov/caliptra_ss_fuse_ctrl_manuf_prod_prov.yml
         - ../test_suites/smoke_test_fc_unlock_transitions/smoke_test_fc_unlock_transitions.yml
+        - ../test_suites/smoke_test_lcc_kmac_kat/smoke_test_lcc_kmac_kat.yml
+        - ../test_suites/caliptra_ss_lcc_st_trans/caliptra_ss_lcc_st_trans.yml

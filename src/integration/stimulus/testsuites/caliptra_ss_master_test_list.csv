@@ -18,3 +18,5 @@ $CALIPTRA_SS/src/integration/test_suites/smoke_test_lcc_scrap/smoke_test_lcc_scr
 $CALIPTRA_SS/src/integration/test_suites/smoke_test_lcc_RMA/smoke_test_lcc_RMA                                      , Directed       , Nightly       , L0  , L1  , caliptra_ss_top_tb, Promote        , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/caliptra_ss_fuse_ctrl_manuf_prod_prov/caliptra_ss_fuse_ctrl_manuf_prod_prov, Directed       , Nightly       , L0  , L1  , caliptra_ss_top_tb, Promote        , None     , 100
 $CALIPTRA_SS/src/integration/test_suites/smoke_test_fc_unlock_transitions/smoke_test_fc_unlock_transitions          , Directed       , Nightly       , L0  , L1  , caliptra_ss_top_tb, Promote        , None     , 100
+$CALIPTRA_SS/src/integration/test_suites/smoke_test_lcc_kmac_kat/smoke_test_lcc_kmac_kat                            , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, Promote        , None     , 100
+$CALIPTRA_SS/src/integration/test_suites/caliptra_ss_lcc_st_trans/caliptra_ss_lcc_st_trans                          , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, Promote        , None     , 100

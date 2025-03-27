@@ -5,6 +5,7 @@ pre-exec: |
   echo "Running pre_exec for [caliptra_ss_lcc_st_trans]"
   pip install -r $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/requirements.txt
   echo "Generate random LC start state and LC counter value."
-  $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py --lc-state-def $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson --mmap-def $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp_ctrl_mmap.hjson --token-tpl $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/state_transition_tokens.h.tpl --token-header $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans/caliptra_ss_lcc_st_trans.h -o $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp-img.2048.vmem
+  rm -rf otp-img_randomized.2048.vmem
+  $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py --lc-state-def $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson --mmap-def $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp_ctrl_mmap.hjson --token-configuration $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans/test_unlock_token.hjson -o $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp-img.2048.vmem
   CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=smoke_test_mbox program.hex
   make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=caliptra_ss_lcc_st_trans mcu_program.hex
