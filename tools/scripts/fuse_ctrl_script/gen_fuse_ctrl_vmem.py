@@ -11,6 +11,9 @@ import logging as log
 import random
 from pathlib import Path
 from Crypto.Hash import cSHAKE128
+from mako import exceptions
+from mako.template import Template
+from typing import Dict
 
 import hjson
 
@@ -42,6 +45,25 @@ def _override_seed(args, seed_name, config):
             log.warning('No {} specified, setting to {}.'.format(
                 seed_name, new_seed))
 
+def render_template(template: str, target_path: Path, tokens):
+    try:
+        tpl = Template(filename=str(template))
+    except OSError as e:
+        log.error(f"Error creating template: {e}")
+        exit(1)
+
+    try:
+        expansion = tpl.render(tokens = tokens)
+    except exceptions.MakoException:
+        log.error(exceptions.text_error_template().render())
+        exit(1)
+
+    try:
+        with target_path.open(mode='w', encoding='UTF-8') as outfile:
+            outfile.write(expansion)
+    except OSError as e:
+        log.error(f"Error rendering template: {e}")
+        exit(1)
 
 def main():
     log.basicConfig(level=log.INFO, format="%(levelname)s: %(message)s")
@@ -94,14 +116,14 @@ def main():
     parser.add_argument('--lc-state',
                         type=str,
                         metavar='state',
-                        required=True,
+                        required=False,
                         help='''
                         Life cycle state to write into the OTP.
                         ''')
     parser.add_argument('--lc-cnt',
                         type=int,
                         metavar='counter',
-                        required=True,
+                        required=False,
                         help='''
                         Life cycle counter to write into the OTP.
                         ''')
@@ -111,6 +133,19 @@ def main():
                         required=False,
                         help='''
                         HSJON file containing the tokens required for state transitions.
+                        ''')
+    parser.add_argument('-t',
+                        '--token-header',
+                        type=str,
+                        metavar='<path>',
+                        help='''
+                        If provided, a .h file with the state transition tokens is generated.
+                        ''')
+    parser.add_argument('--token-tpl',
+                        type=str,
+                        metavar='<path>',
+                        help='''
+                        Path to the state_transition_tokens.h.tpl file.
                         ''')
 
     args = parser.parse_args()
@@ -123,12 +158,63 @@ def main():
         otp_mmap_cfg = hjson.load(infile)
     
     token_cfg = None
+    token_tpl = {}
     if args.token_configuration is not None:
         with open(args.token_configuration, 'r') as infile:
                 token_cfg = hjson.load(infile)
+    else:
+        # Create random token configuration.
+        token_cfg = {}
+        token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_0'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_0'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_0'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_1'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_1'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_1'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_2'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_2'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_2'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_3'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_3'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_3'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_4'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_4'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_4'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_5'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_5'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_5'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_6'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_6'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_6'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_7'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_7'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_7'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN'] = [(token_cfg['CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_MANUF_TO_PROD_TOKEN'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_MANUF_TO_PROD_TOKEN'] = [(token_cfg['CPTRA_SS_MANUF_TO_PROD_TOKEN'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_PROD_TO_PROD_END_TOKEN'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_PROD_TO_PROD_END_TOKEN'] = [(token_cfg['CPTRA_SS_PROD_TO_PROD_END_TOKEN'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
  
+    if args.token_header is not None and args.token_tpl is not None:
+        render_template(template = Path(args.token_tpl),
+                        target_path=Path(args.token_header),
+                        tokens=token_tpl)
+
      # If specified, override the seed.
     _override_seed(args, 'otp_seed', otp_mmap_cfg)
+    
+    lc_state_idx = 0
+    # Take LC state from command line arguments or choose a random one.
+    if args.lc_state is not None:
+        lc_state_idx = int(args.lc_state)
+    else:
+        # Generate random LC state index.
+        num_states = len(lc_state_cfg['lc_state'])
+        lc_state_idx = random.randint(0, num_states - 1)
+    # Convert LC state index to LC state string.
+    lc_state = list(lc_state_cfg['lc_state'].items())[lc_state_idx][0]
+
+    lc_cnt = 0
+    # Take LC count from command line arguments or choose a random one.
+    if args.lc_cnt is not None:
+        lc_cnt = int(args.lc_cnt)
+    else:
+        # Generate random LC state index.
+        num_cnts = len(lc_state_cfg['lc_cnt'])
+        lc_cnt = random.randint(0, num_cnts - 1)  
 
     img_config = {}
     img_config['seed'] = 0 # Not used.
@@ -136,8 +222,8 @@ def main():
     # Configure the LC state & counter.
     lc_config = {}
     lc_config['name'] = 'LIFE_CYCLE'
-    lc_config['count'] = args.lc_cnt
-    lc_config['state'] = args.lc_state
+    lc_config['count'] = lc_cnt
+    lc_config['state'] = lc_state
     lc_config['items'] = []
     lc_config['lock'] = False
     img_config['partitions'].append(lc_config)
@@ -151,7 +237,7 @@ def main():
         # Create the tokens.
         for token_name, token_value in token_cfg.items():
             # Hash the token.
-            value = int(token_value, 0)
+            value = token_value
             data = value.to_bytes(16, byteorder='little')
             custom = 'LC_CTRL'.encode('UTF-8')
             shake = cSHAKE128.new(data=data, custom=custom)

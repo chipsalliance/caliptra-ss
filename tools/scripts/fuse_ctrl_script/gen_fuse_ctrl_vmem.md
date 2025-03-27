@@ -13,11 +13,11 @@ python3 -m pip install -r tools/scripts/fuse_ctrl_script/requirements.txt
     --lc-state-def tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson \
     --mmap-def src/fuse_ctrl/data/otp_ctrl_mmap.hjson \
     --lc-state "PROD" --lc-cnt 5 \
-    --token-configuration tools/scripts/fuse_ctrl_script/example_tokens.hjson
+    --token-header token_header.h
 ```
 
 * `--lc-state-def`: Contains information about the life cycle state encoding
 * `--mmap-def`: Defines the format of the vmem file.
-* `--lc-state`: The desired life cycle state. This value is encoded by the script.
-* `--lc-cnt`: The desired raw life cycle counter. This value is encoded by the script.
-* `--token-configuration`: File that consists of one or multiple raw unlock tokens.
+* `--lc-state`: The desired life cycle state. This value is encoded by the script. If this argument is not provided, a random life cycle state will be generated.
+* `--lc-cnt`: The desired raw life cycle counter. This value is encoded by the script. If this argument is not provided, a random life cycle counter will be generated.
+* `--token-header`: If provided, a C header file containing an array of the token will be generated.
