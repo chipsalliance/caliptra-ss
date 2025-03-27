@@ -13,6 +13,9 @@
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
 
+// Auto generated with the gen_fuse_ctrl_vmem.py script
+#include "caliptra_ss_lcc_st_trans.h"
+
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
@@ -30,11 +33,6 @@ void main (void) {
 
     uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
     VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
-    
-    // Raw token for the state transition. Replace with the actual one.
-    const uint32_t raw_token[4] = {
-        0, 0, 0, 0
-    };
 
     lcc_initialization();
     uint32_t lc_state_curr = read_lc_state();
@@ -44,17 +42,28 @@ void main (void) {
 
     VPRINTF(LOW, "current_state %d next_state %d use_token %d\n", lc_state_curr, lc_state_next, use_token[lc_state_next]);
 
+    if (lc_state_next == 20) {
+        // Transition to SCRAP require setting the PPD pin.
+        force_PPD_pin();
+    }
     transition_state(lc_state_next,
-                     raw_token[0],
-                     raw_token[1],
-                     raw_token[2],
-                     raw_token[3],
+                     tokens[lc_state_next][0],
+                     tokens[lc_state_next][1],
+                     tokens[lc_state_next][2],
+                     tokens[lc_state_next][3],
                      use_token[lc_state_next]);
 
     wait_dai_op_idle(0);
 
-    lc_state_curr = read_lc_state();
+    // Check if we have reached the counter limit.
+    // State transition will then fail.
     uint32_t lc_state_exp = lc_state_next;
+    if (lc_cnt_curr == 24) {
+        VPRINTF(LOW, "Info: Reach LC_CNT limit, state transition not allowed.\n");
+        lc_state_exp = lc_state_curr;
+    }
+
+    lc_state_curr = read_lc_state();
     if (lc_state_curr != lc_state_exp) {
         VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act: %d\n", lc_state_exp, lc_state_curr);
         exit(1);
@@ -62,8 +71,13 @@ void main (void) {
 
     VPRINTF(LOW, "In state: %d, as expected\n", lc_state_curr);
 
-    lc_cnt_curr = read_lc_counter();
     uint32_t lc_cnt_exp = lc_cnt_next;
+    if (lc_cnt_curr == 24) {
+        VPRINTF(LOW, "Info: Reach LC_CNT limit, counter does not increment any more.\n");
+        lc_cnt_exp = lc_cnt_curr;
+    }
+
+    lc_cnt_curr = read_lc_counter();
     if (lc_cnt_curr != lc_cnt_exp) {
         VPRINTF(LOW, "ERROR: incorrect counter: exp: %d, act: %d\n", lc_cnt_exp, lc_cnt_curr);
         exit(1);
