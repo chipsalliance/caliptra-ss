@@ -67,21 +67,26 @@ module caliptra_ss_top_w_stub();
 
     logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i;
     logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i;
+    logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_sram_config_axi_user_i;
+    logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mci_soc_config_axi_user_i;
     
     mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if(
         .clk(cptra_ss_clk_i),
         .rst_b(cptra_ss_rst_b_i)
     );
-    mci_mcu_sram_if cptra_ss_mci_mbox0_sram_req_if(
+    mci_mcu_sram_if cptra_ss_mcu_mbox0_sram_req_if(
         .clk(cptra_ss_clk_i),
         .rst_b(cptra_ss_rst_b_i)
     );
-    mci_mcu_sram_if cptra_ss_mci_mbox1_sram_req_if(
+    mci_mcu_sram_if cptra_ss_mcu_mbox1_sram_req_if(
         .clk(cptra_ss_clk_i),
         .rst_b(cptra_ss_rst_b_i)
     );
 
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export();
+
+    logic cptra_ss_soc_mcu_mbox0_data_avail;
+    logic cptra_ss_soc_mcu_mbox1_data_avail;
 
     logic [63:0] cptra_ss_mci_generic_input_wires_i;
 
@@ -167,6 +172,8 @@ module caliptra_ss_top_w_stub();
     `endif
         cptra_ss_strap_mcu_lsu_axi_user_i = '0;
         cptra_ss_strap_mcu_ifu_axi_user_i = '0;
+        cptra_ss_strap_mcu_sram_config_axi_user_i = '0;
+        cptra_ss_strap_mci_soc_config_axi_user_i = '0;
         cptra_ss_mci_generic_input_wires_i = '0;
         cptra_ss_strap_mcu_reset_vector_i = '0;
         cptra_ss_mcu_no_rom_config_i = '0;
@@ -295,12 +302,16 @@ module caliptra_ss_top_w_stub();
     //MCU
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
+        .cptra_ss_strap_mcu_sram_config_axi_user_i,
+        .cptra_ss_strap_mci_soc_config_axi_user_i,
 
     //MCI
         .cptra_ss_mci_mcu_sram_req_if,
-        .cptra_ss_mci_mbox0_sram_req_if,
-        .cptra_ss_mci_mbox1_sram_req_if,
+        .cptra_ss_mcu_mbox0_sram_req_if,
+        .cptra_ss_mcu_mbox1_sram_req_if,
         .cptra_ss_mcu0_el2_mem_export,
+        .cptra_ss_soc_mcu_mbox0_data_avail,
+        .cptra_ss_soc_mcu_mbox1_data_avail,
         .cptra_ss_mci_boot_seq_brkpoint_i,
         .cptra_ss_mcu_no_rom_config_i,
         .cptra_ss_mci_generic_input_wires_i,
