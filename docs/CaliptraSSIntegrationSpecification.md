@@ -24,6 +24,8 @@
     - [Reset](#reset)
     - [Power Good Signal](#power-good-signal)
     - [Connecting AXI Interconnect](#connecting-axi-interconnect)
+    - [FW Execution Control Connections](#fw-execution-control-connections)
+    - [Caliptra Core Reset Control](#caliptra-core-reset-control)
   - [Programming interface](#programming-interface)
   - [Sequences](#sequences)
   - [How to test](#how-to-test)
@@ -275,6 +277,8 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | input     | 1     | `cptra_ss_clk_i`                     | Caliptra subsystem clock input           |
 | External | input     | 1     | `cptra_ss_pwrgood_i`                 | Power good signal input                  |
 | External | input     | 1     | `cptra_ss_rst_b_i`                   | Reset signal input, active low           |
+| External | input     | 1     | `cptra_ss_mci_cptra_rst_b_i`                   | Reset signal input for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
+| External | output    | 1     | `cptra_ss_mci_cptra_rst_b_o`                   | Reset signal output from MCI for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
 | External | axi_if    | na    | `cptra_ss_cptra_core_s_axi_if`       | Caliptra core AXI sub-interface          |
 | External | axi_if    | na    | `cptra_ss_cptra_core_m_axi_if`       | Caliptra core AXI manager interface      |
 | External | axi_if    | na    | `cptra_ss_mci_s_axi_if`              | Caliptra Subsystem MCI AXI sub-interface |
@@ -301,6 +305,8 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | output    | 1     | `cptra_ss_cptra_core_jtag_tdo_o`     | JTAG TDO output                          |
 | External | output    | 1     | `cptra_ss_cptra_core_jtag_tdoEn_o`   | JTAG TDO enable output                   |
 | External | output    | 125   | `cptra_ss_cptra_generic_fw_exec_ctrl_o` | Generic firmware execution control output |
+| External | output    | 1     | `cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o` | Generic firmware execution control bit 2 from Caliptra output |
+| External | input    | 1     | `cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i` | Generic firmware execution control bit 2 for MCU input |
 | External | input     | na    | `cptra_ss_lc_ctrl_jtag_i`            | LC controller JTAG request input         |
 | External | output    | na    | `cptra_ss_lc_ctrl_jtag_o`            | LC controller JTAG response output       |
 | External | interface | na    | `cptra_ss_cptra_core_el2_mem_export` | Caliptra core EL2 memory export interface |
@@ -421,6 +427,25 @@ Integrator must connect, following list of manager and subordinates to axi inter
 
   - `caliptra-ss\src\integration\rtl\soc_address_map.h`
   - `caliptra-ss\src\integration\rtl\soc_address_map_defines.svh `
+
+### FW Execution Control Connections
+
+FW Execute Control is typically controlled by Caliptra. This means ```cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o``` should be looped back and directly connected to ```cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i```. If the SOC decided to not use Caliptra Core, the SOC must drive cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i the same way Caliptra Core drives this signal.
+
+1. On same reset at MCI 
+2. Synchronous to MCI clock domain
+3. 1 indicates FW patch is valid in the MCU SRAM
+4. 0 indicates FW patch is invalid and will request MCU to reset itself
+See Hitless Update Flow to understand exactly when this signal shall be set/cleared in the hitless FW flow.
+### Caliptra Core Reset Control
+
+Typically Caliptra reset is directly controlled by MCI. This means ```cptra_ss_mci_cptra_rst_b_o``` is directly looped back to  ```cptra_ss_mci_cptra_rst_b_i```. 
+
+If an SOC wants to keep Caliptra in reset they can tie off ```cptra_ss_mci_cptra_rst_b_i``` and not user  ```cptra_ss_mci_cptra_rst_b_o```.
+
+If an SOC wants to modify Caliptra reset they can do so by adding additional logic to the above signals. 
+
+**NOTE**: Caliptra SS RDC and CDC are only evaluated when the MCI control is looped back to Caliptra. Any modification to this reset control requires a full RDC and CDC analysis done by the SOC integration team. 
 
 ## Programming interface
 
