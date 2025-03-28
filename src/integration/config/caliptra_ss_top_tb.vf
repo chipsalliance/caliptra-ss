@@ -469,6 +469,8 @@ ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_sram_byte.sv
 ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dmi_jtag_tap.sv
 ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dmi_cdc.sv
 ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dmi_jtag.sv
+${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_if.sv
+${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/caliptra_ss_keccak_2share.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/caliptra_ss_keccak_round.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/caliptra_ss_sha3pad.sv
