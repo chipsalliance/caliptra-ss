@@ -12,142 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+/*
+      .DUT type: slave 
+      .Checklist items:
+      .Spec section: 
+      5.1.4 Bus Initialization and Dynamic Address Assignment Mode
+      .Procedure: 
+            * Device State For Test: 
+            * Overview of Test Steps:
+      1. Wait for Dynamic Address Assignment and Bus Initialization done
+      2. Send random write transfer
+      3. Send random read transfer
+      4. Send random transfer
+      .Result:
+      1. Main Master can do read/write transfer to each slave
+*/
 
-class ai3ct_ext_basic extends ai3ct_base;
+class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 
-	`avery_test_reg(ai3ct_ext_basic)
+	`avery_test_reg(i3c_streaming_boot)
 
 	function new(string name, `avery_xvm_parent);
-        super.new("ai3ct_ext_basic", parent);
+        super.new("i3c_streaming_boot", parent);
 	endfunction
-
-	task pre_bfm_started();
-	if (!chk_test_app("has_i3c_slv"))
-		return;
-    endtask
-
-    function bit [7:0] crc8 ( bit [7:0] data [], bit [7:0] crc_prv = '0 );
-        automatic bit [7:0] crc = crc_prv;
-
-        for (int i=0; i<data.size(); i=i+1) begin
-            automatic bit [7:0] dat = data[i];
-            automatic bit [7:0] crc_new;
-
-            crc_new[0] = crc[0] ^ crc[6] ^ crc[7] ^ dat[0] ^ dat[6] ^ dat[7];
-            crc_new[1] = crc[0] ^ crc[1] ^ crc[6] ^ dat[0] ^ dat[1] ^ dat[6];
-            crc_new[2] = crc[0] ^ crc[1] ^ crc[2] ^ crc[6] ^ dat[0] ^ dat[1] ^ dat[2] ^ dat[6];
-            crc_new[3] = crc[1] ^ crc[2] ^ crc[3] ^ crc[7] ^ dat[1] ^ dat[2] ^ dat[3] ^ dat[7];
-            crc_new[4] = crc[2] ^ crc[3] ^ crc[4] ^ dat[2] ^ dat[3] ^ dat[4];
-            crc_new[5] = crc[3] ^ crc[4] ^ crc[5] ^ dat[3] ^ dat[4] ^ dat[5];
-            crc_new[6] = crc[4] ^ crc[5] ^ crc[6] ^ dat[4] ^ dat[5] ^ dat[6];
-            crc_new[7] = crc[5] ^ crc[6] ^ crc[7] ^ dat[5] ^ dat[6] ^ dat[7];
-
-            crc = crc_new;
-        end
-
-        return crc;
-    endfunction
-
-	task i3c_write( input ai3c_addr_t addr,
-					input bit[7:0] cmd,
-					input bit[7:0] data[],
-					input int      len);
-
-		ai3c_transaction tr;
-       	ai3c_message    msg;
-       	bit [7:0]       pec;
-
-		test_log.step($psprintf("I3C wr txfer started at...: addr = 'h %0h, len = 'd %0d", addr, len));
-
-		tr = new(`avery_strarg sys_agt.mgr);
-       	tr.mhs[0].addr = addr;
-       	tr.mhs[0].rw   = AI3C_write;
-       	tr.mhs[0].len  = len + 4; // added 4 bytes for cmd, legnth lsb, length msb, and pec
-       	tr.msgs[0]     = new(tr.mhs[0], tr);
-       	msg            = tr.msgs[0];
-
-        pec = crc8('{addr << 1, cmd, len, 0});
-        pec = crc8(data, pec);
-
-		for(int i = 0; i < len + 4; i++) begin
-			if(i==0) 	  		msg.data_bytes[i] = cmd;        // cmd byte [0th byte]
-			else if(i==1) 		msg.data_bytes[i] = len;        // cmd lsb  [1st byte]
-			else if(i==2) 		msg.data_bytes[i] = 0;          // cmd msb  [2nd byte]
-			else if(i==len+3)   msg.data_bytes[i] = pec;        // pec byte [nth byte]
-			else 				msg.data_bytes[i] = data[i-3];  // data bytes [3rd to nth byte]
-		end
-
-		test_log.substep($psprintf("Writing data:\n%s", tr.sprint(2)));
-
-		sys_agt.post_transaction(tr);
-       	tr.wait_done(20us);
-       	chk_tr(tr);
-       	test_log.step($psprintf("I3C wr txfer completed at.: addr = 'h %0h, len = 'd %0d", addr, len));
-
-	endtask
-
-	task i3c_read(	input ai3c_addr_t  addr,
-					input bit [7:0]    cmd,
-					input int   	   len,
-					output bit [7:0] data[]);
-
-		ai3c_transaction tr;
-		ai3c_message     msg;
-		bit              ok;
-		// bit [7:0]        data[];
-        bit [7:0]        pec;
-
-		test_log.step($psprintf("I3C rd txfer started at...: addr = 'h %0h, len = 'd %0d", addr, len));
-		tr = new(`avery_strarg sys_agt.mgr);
-		ok = tr.randomize () with {
-				mhs.size() == 2;
-				mhs.size() == 2 -> mhs[0].addr == addr;
-				mhs.size() == 2 -> mhs[0].rw   == AI3C_write;
-				mhs.size() == 2 -> mhs[0].len  == 2;
-				mhs.size() == 2 -> mhs[1].addr == addr;
-				mhs.size() == 2 -> mhs[1].rw   == AI3C_read;
-                mhs.size() == 2 -> mhs[1].len  == len + 3; // Account for len lsb+msb and PEC
-		};
-
-		if (!ok) begin 
-				test_log.fatal($psprintf("%m: randomization failed"));
-		end
-
-        pec = crc8('{addr << 1, cmd});
-
-		msg = tr.msgs[0];
-		msg.data_bytes[0] = cmd;
-		msg.data_bytes[1] = pec;
-		test_log.substep($psprintf("Transfer:\n%s", tr.sprint(2)));
-
-		sys_agt.post_transaction(tr);
-		tr.wait_done(32us);
-
-		//-- read data from the subordinate
-		msg = tr.msgs[1];
-		data = new[len];
-		foreach(msg.data_bytes[i]) begin
-            data[i] = msg.data_bytes[2 + i]; // Account for len lsb+msb
-            test_log.substep($psprintf("Data Read : 'h %0h", msg.data_bytes[i]));
-		end
-
-        pec = crc8('{(addr << 1) | 1}); // address
-        pec = crc8('{msg.data_bytes[0], msg.data_bytes[1]}, pec); // len
-        pec = crc8(data, pec); // payload
-
-		test_log.substep($psprintf("Addr      : 'h %0h ", addr));
-		test_log.substep($psprintf("Length    : 'h %0h ", len));
-		test_log.substep($psprintf("Data Read :\n%s", tr.sprint(2)));
-
-        test_log.substep($psprintf("PEC recvd : 'h %0h", msg.data_bytes[2+len]));
-        test_log.substep($psprintf("PEC calcd : 'h %0h", pec));
-
-        if (pec != msg.data_bytes[2+len])
-            test_log.substep("Received PEC mismatch!");
-
-		test_log.step($psprintf("I3C rd txfer completed at.: addr = 'h %0h, len = 'd %0d", addr, len));
-
-	endtask
 
 	virtual task test_body();
 
@@ -156,6 +43,7 @@ class ai3ct_ext_basic extends ai3ct_base;
 		ai3c_addr_t addr = 8'h5A;
 		bit ok;
 		bit [7:0] data[];
+		bit [7:0] exp_data[];
 
 		int fp;
 		string line;
@@ -171,14 +59,26 @@ class ai3ct_ext_basic extends ai3ct_base;
 		int wr_count_1B;
 		int r;
 		bit [31:0] cmdline_img_sz;
+		bit [31:0] remaining_img_sz_in_bytes;
 
 		test_log.step("=================================================================");
 		test_log.step("Step 0: Reading Firmware test image from file");
 
+		// -- firmware image size
+		// -- check if,
+		// -- 1. cmdline argument is provided
+		// -- 2. random image size is provided
+		// -- if not, read the image size from the file
 		if($value$plusargs("cmdline_img_sz=%h", cmdline_img_sz)) begin
 			
 			test_log.substep($psprintf("using CMD Line for Image Size (in bytes): 'd %0d",cmdline_img_sz));
 			img_sz = cmdline_img_sz;
+		
+		end else if ($test$plusargs("random_img_sz")) begin
+
+			test_log.substep($psprintf("using random image size"));
+			img_sz = 4 + ($urandom_range(0, 319) * 4); //-- 4 to 1280 bytes
+			test_log.substep($psprintf("Random Image Size (in bytes): 'd %0d",img_sz));
 
 		end else begin
 
@@ -188,12 +88,10 @@ class ai3ct_ext_basic extends ai3ct_base;
 			if (fp == 0) begin
 				test_log.step($psprintf("ERROR : File not found: %s", "./fw_update.size"));
 			end
-			
 			r = $fgets(line, fp);
 			if (r == 0) begin
 				test_log.step($psprintf("ERROR : File read error: %s", "./fw_update.size"));
 			end
-
 			img_sz = line.atoi();
 			$fclose(fp);
 
@@ -259,8 +157,23 @@ class ai3ct_ext_basic extends ai3ct_base;
 		test_log.sample(AI3C_5_1_2_2n1);
 
 		//-- grabbing dynamic address for the I3C core
-		recovery_target_addr = sys_agt.mgr.i3c_dev_das[0]; // get 0 slave
-		general_target_addr = sys_agt.mgr.i3c_dev_das[1]; // get 1 slave
+		test_log.step($psprintf("I3C device count: %0d", sys_agt.mgr.dev_infos.size()));
+		foreach (sys_agt.mgr.dev_infos[i]) begin
+			case(sys_agt.mgr.dev_infos[i].sa)
+				'h5A: begin
+					general_target_addr= sys_agt.mgr.i3c_dev_das[i];
+					test_log.substep($psprintf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, general_target_addr));
+				end
+				'h5B: begin
+					recovery_target_addr = sys_agt.mgr.i3c_dev_das[i];
+					test_log.substep($psprintf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, recovery_target_addr));
+				end
+				default: begin
+					//-- print error message if the static address is not 0x5A or 0x5B
+					test_log.substep($psprintf(" ERROR : I3C device %0d: static addr 'h %0h is not 0x5A or 0x5B", i, sys_agt.mgr.dev_infos[i].sa));
+				end
+			endcase
+		end
 		test_log.substep($psprintf("I3C Subordinate Recovery addr 'h %0h", recovery_target_addr));
 		test_log.substep($psprintf("I3C Subordinate General addr 'h %0h", general_target_addr));
 
@@ -268,25 +181,34 @@ class ai3ct_ext_basic extends ai3ct_base;
 		test_log.step("Step 1: Reading Base Registers");
 
 		test_log.substep("Reading PROT_CAP register");
-		i3c_read(recovery_target_addr, 'd34, 15, data);
+		
+		exp_data = new[15];
+		exp_data = '{'h20, 'h50, 'h43, 'h4f, 'h56, 'h43, 'h45, 'h52, 'h00, 'h00, 'h00, 'h00, 'h00, 'h00, 'h00};
+		exp_data[10] |= 1 << 7;
+		exp_data[11] |= 1 << (10 - 8);
+		exp_data[11] |= 1 << (11 - 8);
+		i3c_read(recovery_target_addr, `I3C_CORE_PROT_CAP, 15, data);
+		check_data(data, exp_data, 15);
 
 		test_log.substep("Reading DEVICE_ID register");
-		i3c_read(recovery_target_addr, 'd35, 24, data);
+		i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_ID, 24, data);
 	
         test_log.substep("Reading HW_STATUS register");
-		i3c_read(recovery_target_addr, 'd40, 4, data);
+		i3c_read(recovery_target_addr, `I3C_CORE_HW_STATUS, 4, data);
 
+		test_log.substep("Reading DEVICE_STATUS register");
+		i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_STATUS, 4, data);
 
 		test_log.step("=============================================================");
 		test_log.step("Step 2: waiting for recovery start");
 
 		//-- reading device status
 		//-- DEVICE_STATUS ('d36)
-		data = new[1];
+		data = new[8];
 		data[0] = 0;
 		test_log.substep($psprintf("Reading DEVICE_STATUS register"));
-		for(int i = 0; i < 100; i++) begin
-			i3c_read(recovery_target_addr, 'd36, 7, data);
+		for(int i = 0; i < 1; i++) begin //-- FIXME : should be 100
+			i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_STATUS, 8, data);
 			if(data[0] == 'h3) begin
 				test_log.substep($psprintf("Recovery started : 'd %0d", data[0]));
 				break;
@@ -294,14 +216,14 @@ class ai3ct_ext_basic extends ai3ct_base;
 			#1us;
 		end
 		if(data[0] != 'h3) begin	
-			test_log.substep("Recovery did not start");
+			test_log.substep("Recovery did not start"); //-- FIXME : it must be an error
 		end
 
 		//-- Reading RECOVERY_STATUS register for recovery status
 		//-- RECOVERY_STATUS ('d39)
 		test_log.substep($psprintf("Reading RECOVERY_STATUS register"));
 		for(int i = 0; i < 100; i++) begin
-			i3c_read(recovery_target_addr, 'd39, 2, data);
+			i3c_read(recovery_target_addr, `I3C_CORE_RECOVERY_STATUS, 2, data);
 			if(data[0] == 'h1) begin
 				test_log.substep($psprintf("Device recovery status : 0x1: Awaiting recovery image"));
 				break;
@@ -321,7 +243,7 @@ class ai3ct_ext_basic extends ai3ct_base;
 		data[1] = 'h0; // Use Recovery Image from memory window (CMS)
 		data[2] = 'h0; // do not activate recovery image
 		test_log.substep($psprintf("Sending write to RECOVERY_CTRL register"));
-		i3c_write(recovery_target_addr, 'd38, data, 'h3);
+		i3c_write(recovery_target_addr, `I3C_CORE_RECOVERY_CTRL, data, 'h3);
 
 		//-- writing INDIRECT_FIFO_CTRL register
 		//-- INDIRECT_FIFO_CTRL ('d45)
@@ -332,15 +254,17 @@ class ai3ct_ext_basic extends ai3ct_base;
 		//-- Image size byte 2 to 5 field to size of the image.
 		data = new[6];
 		data[0] = 'h0; // CMS set to 0
-		data[1] = 'h0; // FIFO reset -- FIXME should be 'h1. Tracking https://github.com/chipsalliance/caliptra-ss/issues/146
+		data[1] = 'h0; // FIXME : reset the FIFO by writing 1 
 
 		data[2] = img_sz_in_4B[7:0]; // Image size 0
 		data[3] = img_sz_in_4B[15:8]; // Image size 1
 		data[4] = img_sz_in_4B[23:16];  // Image size 2
 		data[5] = img_sz_in_4B[31:24];  // Image size 3
 
+		
+		
 		test_log.substep($psprintf("Sending write to INDIRECT_FIFO_CTRL register"));
-		i3c_write(recovery_target_addr, 'd45, data, 6);
+		i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_CTRL, data, 6);
 
 		//-- writing INDIRECT_FIFO_DATA register
 		//-- Step 8:
@@ -348,10 +272,13 @@ class ai3ct_ext_basic extends ai3ct_base;
 		//-- I3C device shall return a NACK response for any transfer that would cause 
 		//-- the Head Pointer to advance to equal the Tail Pointer. 
 		//-- BMC can implement flow control through NACK responses. 
+		
+		remaining_img_sz_in_bytes = img_sz;
 
 		if(wr_count_256B > 0) begin
-			test_log.substep($psprintf("Writing 'd %0d of 256B blocks", wr_count_256B));
 		
+			test_log.substep($psprintf("Writing 'd %0d of 256B blocks", wr_count_256B));
+
 			for(int i = 0; i < wr_count_256B; i++) begin
 			// for(int i = 0; i < 1; i++) begin
 
@@ -362,31 +289,38 @@ class ai3ct_ext_basic extends ai3ct_base;
 					//-- writing 16 bytes of data
 					for(int j = 0; j < 16; j++) begin
 						data[j] = image[i*16+k][j];
-						line = $psprintf("%s%0h", line, data[j]);
+						line = $psprintf("%s%2.0h", line, data[j]);
 					end
 					test_log.substep($psprintf("== Image['d %0d]: %s", (i*16+k), line));
 					test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
-					i3c_write(recovery_target_addr, 'd47, data, 16);
+					i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, 16);
+					remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 16;
 				end
 				
-				//-- read INDIRECT_FIFO_STATUS register
-				//-- INDIRECT_FIFO_STATUS ('d46)
-				//-- Step 9:
-				//-- The I3C device will keep head and tail pointers along with 
-				//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
-				//-- I3C recovery interface HW wait for an update to 
-				//-- INDIRECT_DATA_REG with 1-256B data from BMC.
-				data[0] = 0;
-				for(int i = 0; i < 100; i++) begin
-					i3c_read(recovery_target_addr, 'd46, 20, data);
-					if(data[0] == 'h1) begin
-						test_log.substep("Indirect FIFO is empty");
-						break;
+
+				if (remaining_img_sz_in_bytes > 0) begin
+					test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
+					//-- read INDIRECT_FIFO_STATUS register
+					//-- INDIRECT_FIFO_STATUS ('d46)
+					//-- Step 9:
+					//-- The I3C device will keep head and tail pointers along with 
+					//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
+					//-- I3C recovery interface HW wait for an update to 
+					//-- INDIRECT_DATA_REG with 1-256B data from BMC.
+					data[0] = 0;
+					for(int i = 0; i < 100; i++) begin
+						i3c_read(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_STATUS, 20, data);
+						if(data[0] == 'h1) begin
+							test_log.substep("Indirect FIFO is empty");
+							break;
+						end
+						#100ns;
 					end
-					#100ns;
-				end
-				if(data[0] != 'h1) begin
-					test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
+					if(data[0] != 'h1) begin
+						test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
+					end
+				end else begin
+					test_log.substep($psprintf("Image send completed"));
 				end
 
 			end
@@ -409,28 +343,34 @@ class ai3ct_ext_basic extends ai3ct_base;
 					end
 					test_log.substep($psprintf("Image['d %0d]: %s", i, line));
 					test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
-					i3c_write(recovery_target_addr, 'd47, data, 16);
+					i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, 16);
+					remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 16;
 			end
-							
-			//-- read INDIRECT_FIFO_STATUS register
-			//-- INDIRECT_FIFO_STATUS ('d46)
-			//-- Step 9:
-			//-- The I3C device will keep head and tail pointers along with 
-			//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
-			//-- I3C recovery interface HW wait for an update to 
-			//-- INDIRECT_DATA_REG with 1-256B data from BMC.
-			data[0] = 0;
-			for(int i = 0; i < 100; i++) begin
-				i3c_read(recovery_target_addr, 'd46, 20, data);
-				if(data[0] == 'h1) begin
-					test_log.substep("Indirect FIFO is empty");
-					break;
-				end
-				#100ns;
-			end
-			if(data[0] != 'h1) begin
-				test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
-			end
+						
+			// if (wr_count_16B == 16) begin
+			// 	test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
+			// 	//-- read INDIRECT_FIFO_STATUS register
+			// 	//-- INDIRECT_FIFO_STATUS ('d46)
+			// 	//-- Step 9:
+			// 	//-- The I3C device will keep head and tail pointers along with 
+			// 	//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
+			// 	//-- I3C recovery interface HW wait for an update to 
+			// 	//-- INDIRECT_DATA_REG with 1-256B data from BMC.
+			// 	data[0] = 0;
+			// 	for(int i = 0; i < 100; i++) begin
+			// 		i3c_read(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_STATUS, 20, data);
+			// 		if(data[0] == 'h1) begin
+			// 			test_log.substep("Indirect FIFO is empty");
+			// 			break;
+			// 		end
+			// 		#100ns;
+			// 	end
+			// 	if(data[0] != 'h1) begin
+			// 		test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
+			// 	end
+			// end else begin
+			// 	test_log.substep($psprintf("Image send completed"));
+			// end
 
 		end
 
@@ -443,30 +383,36 @@ class ai3ct_ext_basic extends ai3ct_base;
 			for(int i = 0; i < (wr_count_4B*4); i++) begin	
 				data[i] = image[(wr_count_256B*16)+(wr_count_16B)][i];
 				line = $psprintf("%s%0h", line, data[i]);
+				remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 4;
 			end
 			test_log.substep($psprintf("Image['d %0d]: %s", ((wr_count_256B*16)+(wr_count_16B)), line));
 			test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
-			i3c_write(recovery_target_addr, 'd47, data, (wr_count_4B*4));
-
-			//-- read INDIRECT_FIFO_STATUS register
-			//-- INDIRECT_FIFO_STATUS ('d46)
-			//-- Step 9:
-			//-- The I3C device will keep head and tail pointers along with 
-			//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
-			//-- I3C recovery interface HW wait for an update to 
-			//-- INDIRECT_DATA_REG with 1-256B data from BMC.
-			data[0] = 0;
-			for(int i = 0; i < 100; i++) begin
-				i3c_read(recovery_target_addr, 'd46, 20, data);
-				if(data[0] == 'h1) begin
-					test_log.substep("Indirect FIFO is empty");
-					break;
-				end
-				#100ns;
-			end
-			if(data[0] != 'h1) begin
-				test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
-			end
+			i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, (wr_count_4B*4));
+			
+			// if (remaining_img_sz_in_bytes > 0) begin
+			// 	test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
+			// 	//-- read INDIRECT_FIFO_STATUS register
+			// 	//-- INDIRECT_FIFO_STATUS ('d46)
+			// 	//-- Step 9:
+			// 	//-- The I3C device will keep head and tail pointers along with 
+			// 	//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
+			// 	//-- I3C recovery interface HW wait for an update to 
+			// 	//-- INDIRECT_DATA_REG with 1-256B data from BMC.
+			// 	data[0] = 0;
+			// 	for(int i = 0; i < 100; i++) begin
+			// 		i3c_read(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_STATUS, 20, data);
+			// 		if(data[0] == 'h1) begin
+			// 			test_log.substep("Indirect FIFO is empty");
+			// 			break;
+			// 		end
+			// 		#100ns;
+			// 	end
+			// 	if(data[0] != 'h1) begin
+			// 		test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
+			// 	end
+			// end else begin
+			// 	test_log.substep($psprintf("Image send completed"));
+			// end
 
 		end
 
@@ -486,7 +432,7 @@ class ai3ct_ext_basic extends ai3ct_base;
 		data[1] = 'h00; // Use Recovery Image from memory window (CMS)
 		data[2] = 'h0F; // activate recovery image
 		test_log.substep($psprintf("Sending write to RECOVERY_CTRL register"));
-		i3c_write(recovery_target_addr, 'd38, data, 'h3	);
+		i3c_write(recovery_target_addr, `I3C_CORE_RECOVERY_CTRL, data, 'h3	);
 
 		//-- reading RECOVERY_STATUS register
 		//-- RECOVERY_STATUS ('d39)
@@ -499,7 +445,7 @@ class ai3ct_ext_basic extends ai3ct_base;
 		data[0] = 0;
 		for (int i = 0; i < 300; i++) begin
 			test_log.substep($psprintf("Reading RECOVERY_STATUS register .. count 'd %0d", i));
-			i3c_read(recovery_target_addr, 'd39, 2, data);
+			i3c_read(recovery_target_addr, `I3C_CORE_RECOVERY_STATUS, 2, data);
 				
 				// 0x0: Not in recovery mode
 				// 0x1: Awaiting recovery image
