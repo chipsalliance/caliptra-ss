@@ -77,12 +77,11 @@ void mailbox_available() {
     //make tap mailbox available
     uint32_t status_reg ;
     VPRINTF(LOW, "CLP_CORE: detected MANUF DEBUG request...\n");
-    status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
+    status_reg = SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK;
     status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK;
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
     VPRINTF(LOW, "CLP_CORE: set MANUF_DBG_UNLOCK_IN_PROGRESS...\n");
     VPRINTF(LOW, "CLP_CORE: set MAILBOX_AVAILABLE...\n");
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK);
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
     return;
 }
 
@@ -127,7 +126,7 @@ void compare_token() {
     status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
     status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK;
     lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
-    VPRINTF(LOW, "CLP_CORE: set MANUF_DBG_UNLOCK_SUCCESS high...\n");
+    VPRINTF(LOW, "\n\nCLP_CORE: set MANUF_DBG_UNLOCK_SUCCESS high...\n\n");
     status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
     status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
     lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);

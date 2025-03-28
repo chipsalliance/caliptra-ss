@@ -96,7 +96,7 @@ puts "TAP: Polling MANUF DBG status: waiting for in-progress flag..."
 set status [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
 puts "TAP: Expected in-progress flag (bit 3) not set initially. Waiting."
 while {([expr {$status & 0x4}] == 0)} {    
-    after 5000
+    after 10    ;# Wait 10ms between polls to avoid busy looping.
     set status [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
 }
 
@@ -104,7 +104,7 @@ puts "TAP: In-progress flag set. Programming complete."
 
 # Now, continuously poll until the in-progress flag clears.
 while {($status & 0x4) != 0} {
-    after 1000    ;# Wait 1000ms between polls to avoid busy looping.
+    after 100    ;# Wait 100ms between polls to avoid busy looping.
     set status [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
 }
 
@@ -118,20 +118,14 @@ set success [expr {($rsp_val & 0x1) != 0}]
 
 if {$failure} {
     puts "TAP: MANUF DBG failed (failure bit set)."
-    # shutdown error
+    shutdown error
 } elseif {$success} {
     puts "TAP: MANUF DBG succeeded (success bit set)."
 } else {
     puts "TAP: MANUF DBG returned an unexpected status: $rsp_val"
-    # shutdown error
+    shutdown error
 } 
 
 puts "TAP: MANUF DBG completed successfully."
-
-puts "Put JTAG into a infinite loop!!!"
-while {([expr {$status & 0x4}] == 0)} {    
-    after 5000
-    set status [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
-}
 shutdown
 

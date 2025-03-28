@@ -88,6 +88,12 @@ void main (void) {
         cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
     }
 
+    VPRINTF(LOW, "MCU: Success done\n");
+    reset_fc_lcc_rtl();
+    for (uint32_t ii = 0; ii < 5000; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+
 
     SEND_STDOUT_CTRL(0xff);
 
