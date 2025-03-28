@@ -84,20 +84,23 @@ void mcu_mci_req_reset() {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_RESET_REQUEST, MCI_REG_RESET_REQUEST_MCU_REQ_MASK);
 }
 
-void mcu_cptra_fuse_init() {
-    enum boot_fsm_state_e boot_fsm_ps;
-
-    ////////////////////////////////////
-    // Fuse and Boot Bringup
-    //
+void mcu_cptra_wait_for_fuses() {
     // Wait for ready_for_fuses
+    VPRINTF(LOW, "MCU: Wait for CPTRA FLOW STATUS\n");
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
+    VPRINTF(LOW, "MCU: CPTRA FLOW STATUS COMPLETE\n");
 
-    // Initialize fuses
-    // TODO set actual fuse values
+}
+
+void mcu_cptra_set_fuse_done() {
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
+}
 
+void mcu_cptra_advance_brkpoint() {
+    enum boot_fsm_state_e boot_fsm_ps;
+    
+    VPRINTF(LOW, "MCU: Waiting for CPTRA BOOT_DONE or BOOT_WAIT\n");
     // Wait for Boot FSM to stall (on breakpoint) or finish bootup
     boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
     while(boot_fsm_ps != BOOT_DONE && boot_fsm_ps != BOOT_WAIT) {
@@ -107,9 +110,43 @@ void mcu_cptra_fuse_init() {
 
     // Advance from breakpoint, if set
     if (boot_fsm_ps == BOOT_WAIT) {
+        VPRINTF(LOW, "MCU: CPTRA BOOT_WAIT setting BootFSM GO\n");
         lsu_write_32(SOC_SOC_IFC_REG_CPTRA_BOOTFSM_GO, SOC_IFC_REG_CPTRA_BOOTFSM_GO_GO_MASK);
     }
-    VPRINTF(LOW, "MCU: Set BootFSM GO\n");
+
+    VPRINTF(LOW, "MCU: CPTRA FSM in BOOT_DONE\n");
+
+}
+
+void mcu_cptra_fuse_init_axi_user(uint32_t cptra_axi_user){
+    ////////////////////////////////////
+    // Fuse and Boot Bringup
+    //
+    mcu_cptra_wait_for_fuses();
+
+    lsu_write_32(SOC_SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER, cptra_axi_user);
+
+    // Initialize fuses
+    // TODO set actual fuse values
+    mcu_cptra_set_fuse_done();
+
+    mcu_cptra_advance_brkpoint();
+}
+
+void mcu_cptra_fuse_init() {
+    enum boot_fsm_state_e boot_fsm_ps;
+
+    ////////////////////////////////////
+    // Fuse and Boot Bringup
+    //
+    mcu_cptra_wait_for_fuses();
+
+
+    // Initialize fuses
+    // TODO set actual fuse values
+    mcu_cptra_set_fuse_done();
+
+    mcu_cptra_advance_brkpoint();
 
 }
 
