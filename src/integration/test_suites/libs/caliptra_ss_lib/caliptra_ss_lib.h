@@ -22,6 +22,10 @@ extern uint32_t state;
 uint32_t xorshift32(void);
 
 void reset_fc_lcc_rtl(void);
+void mcu_cptra_wait_for_fuses() ;
+void mcu_cptra_set_fuse_done() ;
+void mcu_cptra_advance_brkpoint() ;
+void mcu_cptra_fuse_init_axi_user(uint32_t cptra_axi_user);
 void mcu_mci_boot_go();
 void mcu_mci_poll_exec_lock();
 void mcu_mci_req_reset();
@@ -29,6 +33,7 @@ void mcu_cptra_fuse_init();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
 void mcu_cptra_mbox_cmd();
+void mcu_mbox_clear_lock_out_of_reset();
 
 #define FC_LCC_CMD_OFFSET 0xB0
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
