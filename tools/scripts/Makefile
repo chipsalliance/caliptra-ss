@@ -19,6 +19,7 @@ TEST_CFLAGS = -g -O3 -DMY_RANDOM_SEED=$(PLAYBOOK_RANDOM_SEED) $(BUILD_CFLAGS)
 VERILATOR = verilator
 GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
+I3C_CLK_BUILD_FREQ ?= 1000
 
 # Ensure that RISC-V toolchain is installed
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
@@ -73,6 +74,7 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
+		$(BUILD_DIR)/caliptra_ss_clk_freq.h \
 		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
 TEST_GEN_FILES := $(CALIPTRA_SS)/src/fuse_ctrl/data/otp-img.2048.vmem \
@@ -415,6 +417,9 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 %.o : %.c $(HEADER_FILES)
 	cp $(HEADER_FILES) $(BUILD_DIR)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
+
+$(BUILD_DIR)/caliptra_ss_clk_freq.h:
+	source $(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(I3C_CLK_BUILD_FREQ)
 
 endif
 
