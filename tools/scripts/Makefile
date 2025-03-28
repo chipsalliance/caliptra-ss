@@ -74,7 +74,6 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
-		$(BUILD_DIR)/caliptra_ss_clk_freq.h \
 		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
 TEST_GEN_FILES := $(CALIPTRA_SS)/src/fuse_ctrl/data/otp-img.2048.vmem \
@@ -411,15 +410,18 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 %.o : %.s $(HEADER_FILES)
 	@echo " !!! Executing *.s files !!"
 	cp $(HEADER_FILES) $(BUILD_DIR)
+	$(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(I3C_CLK_BUILD_FREQ)
 	$(GCC_PREFIX)-cpp -I${BUILD_DIR}  $<  > $*.cpp.s
 	$(GCC_PREFIX)-as $(ABI) $*.cpp.s -o $@
 
 %.o : %.c $(HEADER_FILES)
 	cp $(HEADER_FILES) $(BUILD_DIR)
+	$(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(I3C_CLK_BUILD_FREQ)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 
-$(BUILD_DIR)/caliptra_ss_clk_freq.h:
-	$(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(I3C_CLK_BUILD_FREQ)
+#%.h:
+#	echo "Copying $@ from $(dir $(filter %/$(notdir $@), $(HEADER_FILES))) to $(BUILD_DIR)"
+#	cp $(filter %/$(notdir $@), $(HEADER_FILES)) $(BUILD_DIR)
 
 endif
 
