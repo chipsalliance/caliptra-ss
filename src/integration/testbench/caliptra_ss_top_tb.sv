@@ -99,7 +99,6 @@ module caliptra_ss_top_tb
     logic                       rst_l;
     logic                       cptra_ss_mci_cptra_rst_b_o;
     logic                       porst_l;
-    logic [pt.PIC_TOTAL_INT:1]  ext_int;
 
     logic        [31:0]         trace_rv_i_insn_ip;
     logic        [31:0]         trace_rv_i_address_ip;
@@ -1693,6 +1692,7 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_sram_config_axi_user_i;
     logic [31:0]  cptra_ss_strap_mci_soc_config_axi_user_i;
+    logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int;
     logic         cptra_ss_mcu_jtag_tck_i;
     logic         cptra_ss_mcu_jtag_tms_i;
     logic         cptra_ss_mcu_jtag_tdi_i;
@@ -1722,6 +1722,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_mcu_ifu_axi_user_i    = CPTRA_SS_STRAP_MCU_IFU_AXI_USER;
     assign cptra_ss_strap_mcu_sram_config_axi_user_i        = cptra_ss_strap_caliptra_dma_axi_user_i;
     assign cptra_ss_strap_mci_soc_config_axi_user_i        = cptra_ss_strap_mcu_lsu_axi_user_i; // FIXME set to real value
+    assign cptra_ss_mcu_ext_int = '0;
     assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
@@ -1863,6 +1864,7 @@ module caliptra_ss_top_tb
         .cptra_ss_all_error_fatal_o,
         .cptra_ss_all_error_non_fatal_o,
 
+        .cptra_ss_mcu_ext_int,
         .cptra_ss_mcu_jtag_tck_i,
         .cptra_ss_mcu_jtag_tms_i,
         .cptra_ss_mcu_jtag_tdi_i,
