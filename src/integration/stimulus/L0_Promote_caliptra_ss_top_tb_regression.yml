@@ -23,4 +23,3 @@ contents:
         - ../test_suites/caliptra_ss_fuse_ctrl_test_unlocked0_prov.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_escalation.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_writeblank.yml
-

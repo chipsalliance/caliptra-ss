@@ -90,4 +90,20 @@ module caliptra_ss_top_sva
     otp_err_e'(`CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.error_o) == AccessError
   ) else $display("SVA ERROR: fuse ctrl filter discard does not result in DAI error");
 
+  // Zeroization broadcast
+  fc_zeroize_broadcast : assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    disable iff (~`CPTRA_SS_TOP_PATH.u_otp_ctrl.rst_ni)
+    ((`CPTRA_SS_TOP_PATH.u_otp_ctrl.FIPS_ZEROIZATION_CMD_i) || (`CPTRA_SS_TOP_PATH.u_otp_ctrl.lcc_is_in_SCRAP_mode))
+    |=> 
+    `CPTRA_SS_TOP_PATH.u_otp_ctrl.otp_broadcast_o == otp_broadcast_t'('0)
+  ) else $display("SVA ERROR: fuse ctrl broadcast data is not zeroized after cmd");
+  // fc_release_zeroize_broadcast : assert property (
+  //   @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+  //   disable iff (~`CPTRA_SS_TOP_PATH.u_otp_ctrl.rst_ni)
+  //   (!(`CPTRA_SS_TOP_PATH.u_otp_ctrl.FIPS_ZEROIZATION_CMD_i) && !(`CPTRA_SS_TOP_PATH.u_otp_ctrl.lcc_is_in_SCRAP_mode))
+  //   |-> ##5
+  //   `CPTRA_SS_TOP_PATH.u_otp_ctrl.otp_broadcast_o != otp_broadcast_t'('0)
+  // ) else $display("SVA ERROR: fuse ctrl broadcast data is not signaled after zeroization relesase");
+
 endmodule
