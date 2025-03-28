@@ -3127,7 +3127,7 @@ if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_11
 end // block: PACKED_1
 // end ICACHE TAG
 
-//Instnatiate coverage bind files
+//Instantiate coverage bind files
 `ifndef VERILATOR
 mci_top_cov_bind i_mci_top_cov_bind();
 `endif
