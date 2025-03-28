@@ -269,7 +269,11 @@ def main():
     else:
         # Generate random LC state index.
         num_cnts = len(lc_state_cfg['lc_cnt'])
-        lc_cnt = random.randint(0, num_cnts - 1)  
+        if lc_state_idx == 0:
+            lc_cnt = random.randint(0, num_cnts - 1)
+        else:
+            # Life cycle counter cannot be 0 for non RAW states.
+            lc_cnt = random.randint(1, num_cnts - 1)
 
     img_config = {}
     img_config['seed'] = 0 # Not used.

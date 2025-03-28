@@ -78,8 +78,18 @@ void main (void) {
     uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
     VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
 
-    lcc_initialization();
     uint32_t lc_state_curr = read_lc_state();
+
+    // Check if we can increment from the current state to the next.
+    // PROD_END (18) to RMA (19) not possible.
+    // SCRAP (20) is the last state.
+    if (lc_state_curr == 18 || lc_state_curr == 20) {
+        VPRINTF(LOW, "Info: Cannot increment state from current %d state. Exit test\n", lc_state_curr);
+        SEND_STDOUT_CTRL(0xff);
+    }
+
+    lcc_initialization();
+    lc_state_curr = read_lc_state();
     uint32_t lc_state_next = state_sequence[lc_state_curr + 1];
     uint32_t lc_cnt_curr = read_lc_counter();
     uint32_t lc_cnt_next = lc_cnt_curr + 1;
