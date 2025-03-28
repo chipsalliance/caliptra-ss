@@ -55,14 +55,10 @@ package tb_top_pkg;
   endfunction 
 
       typedef struct packed {
-        //  [3] - Double bit, DCCM Error Injection
-        //  [2] - Single bit, DCCM Error Injection
-        //  [1] - Double bit, ICCM Error Injection
-        //  [0] - Single bit, ICCM Error Injection
+        //  [1] - Double bit, DCCM Error Injection
+        //  [0] - Single bit, DCCM Error Injection
         logic dccm_double_bit_error;
         logic dccm_single_bit_error;
-        logic iccm_double_bit_error;
-        logic iccm_single_bit_error;
       } veer_sram_error_injection_mode_t;
 
 endpackage
