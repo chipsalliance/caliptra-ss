@@ -81,4 +81,13 @@ module caliptra_ss_top_sva
     `CPTRA_SS_TOP_PATH.u_otp_ctrl.lc_escalate_en_i == On |-> ##10 `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.state_q == `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.ErrorSt
   ) else $display("SVA ERROR: fuse ctrl dai is not in a terminal state");
 
+  // When the fuse controller filter signals an access error any DAI write must fail.
+  fc_access_control_error : assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    ((`CPTRA_SS_TOP_PATH.u_otp_ctrl.u_fuse_ctrl_filter.discard_fuse_write_o) &&
+    (`CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.state_q == `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.WriteSt))
+    |=> 
+    otp_err_e'(`CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.error_o) == AccessError
+  ) else $display("SVA ERROR: fuse ctrl filter discard does not result in DAI error");
+
 endmodule
