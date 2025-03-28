@@ -1756,6 +1756,7 @@ module caliptra_ss_top_tb
         master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
         master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
         master0.cfg_info.receive_all_txn = 0;
+        
 
         // --- I3C env ---
         i3c_env0 = new("i3c_env0");
@@ -1765,6 +1766,7 @@ module caliptra_ss_top_tb
         if($value$plusargs("AVY_TEST=%s", avy_test_name)) begin
             $display("Waiting for 150us before Running I3C test [%s]", avy_test_name);
             #150us;  // system boot delay
+            i3c_env0.sb.enable_sb=0;
             master0.set("start_bfm");
             ai3c_run_test(avy_test_name, i3c_env0); 
         end

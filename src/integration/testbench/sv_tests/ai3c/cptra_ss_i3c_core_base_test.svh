@@ -217,7 +217,8 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 
         if (pec != msg.data_bytes[2+len])
             test_log.substep("Received PEC mismatch!");
-
+			
+		chk_tr(tr);
 		test_log.step($psprintf("I3C rd txfer completed at.: addr = 'h %0h, len = 'd %0d", addr, len));
 
 	endtask
