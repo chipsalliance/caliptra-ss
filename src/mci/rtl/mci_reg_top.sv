@@ -338,7 +338,7 @@ always_comb begin
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
     mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
-                                                            (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
+                                                            (mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR));
     
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.we            =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
@@ -435,48 +435,48 @@ always_comb mcu_dmi_uncore_locked_wr_en         = (mcu_dmi_uncore_wr_en & mcu_dm
 
 //DMI unlocked register read mux
 // NOTE - must contain a super set of the uncore_locked_rdata_in
-always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_ADDR              )}}   &  mcu_sram_dmi_uncore_rdata                   )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_DATA              )}}   &  mcu_sram_dmi_uncore_rdata                   )  | 
+always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_ADDR              )}}   &  mcu_sram_dmi_uncore_rdata                        )  | 
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_DATA              )}}   &  mcu_sram_dmi_uncore_rdata                        )  | 
                                                     // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
                                                     // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  | 
                                                     // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_STATUS           )}}   &  mbox0_dmi_reg.MBOX_STATUS                   )  |
                                                     // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  | 
                                                     // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  | 
                                                     // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_STATUS           )}}   &  mcu_trace_buffer_dmi_reg.TRACE_STATUS       )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_CONFIG           )}}   &  mcu_trace_buffer_dmi_reg.TRACE_CONFIG       )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_WR_PTR           )}}   &  mcu_trace_buffer_dmi_reg.TRACE_WR_PTR       )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_RD_PTR           )}}   &  mcu_trace_buffer_dmi_reg.TRACE_RD_PTR       )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_DATA             )}}   &  mcu_trace_buffer_dmi_reg.TRACE_DATA         )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   &  mci_reg_hwif_out.HW_FLOW_STATUS             )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REASON               )}}   &  mci_reg_hwif_out.RESET_REASON               )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   &  mci_reg_hwif_out.RESET_STATUS               )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_FLOW_STATUS             )}}   &  mci_reg_hwif_out.FW_FLOW_STATUS             )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   &  mci_reg_hwif_out.HW_ERROR_FATAL             )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   &  mci_reg_hwif_out.AGG_ERROR_FATAL            )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_NON_FATAL         )}}   &  mci_reg_hwif_out.HW_ERROR_NON_FATAL         )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   &  mci_reg_hwif_out.AGG_ERROR_NON_FATAL        )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_FATAL             )}}   &  mci_reg_hwif_out.FW_ERROR_FATAL             )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_NON_FATAL         )}}   &  mci_reg_hwif_out.FW_ERROR_NON_FATAL         )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_ENC               )}}   &  mci_reg_hwif_out.HW_ERROR_ENC               )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_ENC               )}}   &  mci_reg_hwif_out.FW_ERROR_ENC               )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_0   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[0]  )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_1   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[1]  )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_2   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[2]  )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_3   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[3]  )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_4   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[4]  )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_5   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[5]  )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_6   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[6]  )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_7   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[7]  )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REQUEST              )}}   &  mci_reg_hwif_out.RESET_REQUEST              )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO             )}}   &  mci_reg_hwif_out.MCI_BOOTFSM_GO             )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_CPTRA_BOOT_GO              )}}   &  mci_reg_hwif_out.CPTRA_BOOT_GO              )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_SRAM_EXEC_REGION_SIZE   )}}   &  mci_reg_hwif_out.FW_SRAM_EXEC_REGION_SIZE   )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR           )}}   &  mci_reg_hwif_out.MCU_RESET_VECTOR           )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT            )}}   &  mci_reg_hwif_out.SS_DEBUG_INTENT            )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE             )}}   &  mci_reg_hwif_out.SS_CONFIG_DONE             )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE_STICKY      )}}   &  mci_reg_hwif_out.SS_CONFIG_DONE_STICKY      )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  mci_reg_hwif_out.MCU_NMI_VECTOR             )  ;
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_STATUS           )}}   &  mcu_trace_buffer_dmi_reg.TRACE_STATUS            )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_CONFIG           )}}   &  mcu_trace_buffer_dmi_reg.TRACE_CONFIG            )  | 
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_WR_PTR           )}}   &  mcu_trace_buffer_dmi_reg.TRACE_WR_PTR            )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_RD_PTR           )}}   &  mcu_trace_buffer_dmi_reg.TRACE_RD_PTR            )  | 
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_DATA             )}}   &  mcu_trace_buffer_dmi_reg.TRACE_DATA              )  | 
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   &  mci_reg_hwif_out.HW_FLOW_STATUS                  )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REASON               )}}   &  mci_reg_hwif_out.RESET_REASON                    )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   &  mci_reg_hwif_out.RESET_STATUS                    )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_FLOW_STATUS             )}}   &  mci_reg_hwif_out.FW_FLOW_STATUS                  )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   &  mci_reg_hwif_out.HW_ERROR_FATAL                  )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   &  mci_reg_hwif_out.AGG_ERROR_FATAL                 )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_NON_FATAL         )}}   &  mci_reg_hwif_out.HW_ERROR_NON_FATAL              )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   &  mci_reg_hwif_out.AGG_ERROR_NON_FATAL             )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_FATAL             )}}   &  mci_reg_hwif_out.FW_ERROR_FATAL                  )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_NON_FATAL         )}}   &  mci_reg_hwif_out.FW_ERROR_NON_FATAL              )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_ENC               )}}   &  mci_reg_hwif_out.HW_ERROR_ENC                    )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_ENC               )}}   &  mci_reg_hwif_out.FW_ERROR_ENC                    )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_0   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[0]       )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_1   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[1]       )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_2   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[2]       )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_3   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[3]       )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_4   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[4]       )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_5   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[5]       )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_6   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[6]       )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_7   )}}   &  mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[7]       )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REQUEST              )}}   &  mci_reg_hwif_out.RESET_REQUEST                   )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO             )}}   &  mci_reg_hwif_out.MCI_BOOTFSM_GO                  )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_CPTRA_BOOT_GO              )}}   &  mci_reg_hwif_out.CPTRA_BOOT_GO                   )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_SRAM_EXEC_REGION_SIZE   )}}   &  mci_reg_hwif_out.FW_SRAM_EXEC_REGION_SIZE        )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR           )}}   &  mci_reg_hwif_out.MCU_RESET_VECTOR                )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT            )}}   &  mci_reg_hwif_out.SS_DEBUG_INTENT                 )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE             )}}   &  mci_reg_hwif_out.SS_CONFIG_DONE.done.value       )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE_STICKY      )}}   &  mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value)  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  mci_reg_hwif_out.MCU_NMI_VECTOR                  )  ;
 
 
 // Registers accessable while in a locked state
