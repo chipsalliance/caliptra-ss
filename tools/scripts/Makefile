@@ -38,22 +38,22 @@ endif
 # Define test name
 TESTNAME ?= mcu_hello_world
 CALIPTRA_TESTNAME ?= cptra_hello_world
-TEST_DIR ?= $(CALIPTRA_SS)/src/integration/test_suites/$(TESTNAME)
-HEX_DIR = $(CALIPTRA_SS)/src/integration/test_suites/hex
-INCLUDES_DIR = $(CALIPTRA_SS)/src/integration/test_suites/includes
-RTL_DIR = $(CALIPTRA_SS)/src/integration/rtl
-TBDIR ?= $(CALIPTRA_SS)/src/integration/testbench
-RISCV_HW_IF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/riscv_hw_if
-#ISR_DIR    = $(CALIPTRA_SS)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
-PRINTF_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs/printf
-LIBS_DIR = $(CALIPTRA_SS)/src/integration/test_suites/libs
+TEST_DIR ?= $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(TESTNAME)
+HEX_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/hex
+INCLUDES_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/includes
+RTL_DIR = $(CALIPTRA_SS_ROOT)/src/integration/rtl
+TBDIR ?= $(CALIPTRA_SS_ROOT)/src/integration/testbench
+RISCV_HW_IF_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/riscv_hw_if
+#ISR_DIR    = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
+PRINTF_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/printf
+LIBS_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs
 
 
 DUT ?= caliptra_ss_top_tb
 
-CALIPTRA_DIR = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/test_suites
+CALIPTRA_DIR = $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites
 SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
-CALIPTRA_ROOT = $(CALIPTRA_SS)/third_party/caliptra-rtl
+CALIPTRA_ROOT = $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl
 CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
 
 # Determine test directory
@@ -75,13 +75,13 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(PRINTF_DIR)/printf.h \
 		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
-TEST_GEN_FILES := $(CALIPTRA_SS)/src/fuse_ctrl/data/otp-img.2048.vmem \
-	          $(CALIPTRA_SS)/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe \
-	          $(CALIPTRA_SS)/third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py \
-	          $(CALIPTRA_SS)/third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py \
-	          $(CALIPTRA_SS)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 \
-	          $(CALIPTRA_SS)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug \
-	          $(CALIPTRA_SS)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex
+TEST_GEN_FILES := $(CALIPTRA_SS_ROOT)/src/fuse_ctrl/data/otp-img.2048.vmem \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex
 
 # Separate OFILE variable since this is not used to build remote images
 # (i.e. FMC or RunTime)
@@ -184,8 +184,8 @@ VERILATOR_MAKE_FLAGS = OPT_FAST="-Os"
 TB_DPI_SRCS = jtagdpi/jtagdpi.c \
               tcp_server/tcp_server.c
 
-TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
-TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
+TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
+TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
 
 # Testbench sources
 TB_VERILATOR_SRCS = $(TBDIR)/test_$(DUT).cpp $(TB_DPI_SRCS)
@@ -233,7 +233,6 @@ VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
 VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+DIGITAL_IO_I3C=1
-VCS_COMP_OPTS += +define+CALIPTRA_MODE_SUBSYSTEM
 #VCS_COMP_OPTS += +define+AI3C_SKIP_DAA=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
