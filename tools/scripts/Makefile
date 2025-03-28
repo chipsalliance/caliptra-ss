@@ -308,9 +308,12 @@ vcs: cptra_program.hex mcu_program.hex vcs-build
 ifneq (,$(wildcard $(CALIPTRA_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME)))
 cptra_program.hex:
 	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=$(CALIPTRA_TESTNAME) program.hex
-else
+else ifneq (,$(wildcard $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME))) 
 cptra_program.hex:
-	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$(TEST_DIR) TESTNAME=$(CALIPTRA_TESTNAME) program.hex
+	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME) TESTNAME=$(CALIPTRA_TESTNAME) program.hex
+else 
+cptra_program.hex:
+	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$(TEST_DIR) TESTNAME=$(CALIPTRA_TESTNAME) program.hex	
 endif
 
 ############ MCU TEST build ###############################
