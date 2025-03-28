@@ -37,6 +37,8 @@ void boot_i3c_socmgmt_if(void);
 void boot_i3c_standby_ctrl_mode();
 void boot_i3c_reg(void);
 void mcu_mbox_clear_lock_out_of_reset();
+void mcu_mbox_update_status_complete();
+void mcu_mbox_wait_for_lock_and_execute();
 
 #define FC_LCC_CMD_OFFSET 0xB0
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
