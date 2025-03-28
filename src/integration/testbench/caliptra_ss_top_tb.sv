@@ -3205,6 +3205,11 @@ if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_11
 end // block: PACKED_1
 // end ICACHE TAG
 
+//Instantiate coverage bind files
+`ifndef VERILATOR
+mci_top_cov_bind i_mci_top_cov_bind();
+`endif
+
 /* verilator lint_off CASEINCOMPLETE */
 `include "dasm.svi"
 /* verilator lint_on CASEINCOMPLETE */
