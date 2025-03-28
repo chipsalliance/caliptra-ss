@@ -159,21 +159,22 @@ uint8_t caliptra_ss_mcu_mbox0_get_data() {
     uint32_t read_payload[16];
     uint32_t write_payload[16];
     uint32_t mcu_expected_data[] = { 0x00000000,
-                                    0x11111111,
-                                    0x22222222,
-                                    0x33333333,
-                                    0x44444444,
-                                    0x55555555,
-                                    0x66666666,
-                                    0x77777777,
-                                    0x88888888,
-                                    0x99999999,
-                                    0xaaaaaaaa,
-                                    0xbbbbbbbb,
-                                    0xcccccccc,
-                                    0xdddddddd,
-                                    0xeeeeeeee,
-                                    0xffffffff };
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000,
+                                    0x00000000 };
+
     
     fail = caliptra_ss_mcu_mbox0_wait_execute(300);
     
@@ -188,15 +189,11 @@ uint8_t caliptra_ss_mcu_mbox0_get_data() {
         soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii), 0, read_payload, 4, 0);
         VPRINTF(LOW, "CALIPTRA: MBOX Data[%d]: 0x%x\n", ii, read_payload[0]);
         if (read_payload[0] != mcu_expected_data[ii]) {
-            VPRINTF(FATAL, "Mbox0 SRAM data from MCU is not expected value - dword: %x\n", ii);
+            VPRINTF(FATAL, "Mbox0 SRAM data from MCU is not expected value - dword: %x, Expected: 0x%x Actual: 0x%x\n", ii, mcu_expected_data[ii], read_payload[0]);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
     }
-
-    VPRINTF(LOW, "CALIPTRA: Sending status complete\n");
-    write_payload[0] = 0x2;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0, write_payload, 4, 0);
     
     return fail;
 

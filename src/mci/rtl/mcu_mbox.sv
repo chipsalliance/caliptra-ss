@@ -305,7 +305,7 @@ assign valid_sram_addr = !invalid_sram_addr;
 // Only send request if the address is valid and proper user access
 assign mcu_mbox_sram_req_addr = {MCU_MBOX_SRAM_ADDR_W{(valid_requester_target_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.addr[MCU_MBOX_SRAM_ADDR_W-1:2];
 assign mcu_mbox_sram_req_cs = (valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req);
-assign mcu_mbox_sram_req_we = (valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req_is_wr);
+assign mcu_mbox_sram_req_we = (mcu_mbox_sram_req_cs & hwif_out.MBOX_SRAM.req_is_wr);
 
 
 /////
@@ -350,7 +350,7 @@ rvecc_decode ecc_decode (
 );
 
 // Only send data back if the address is valid
-assign hwif_in.MBOX_SRAM.rd_data = {MCU_MBOX_SRAM_DATA_W{valid_sram_addr}} & sram_rdata_cor; 
+assign hwif_in.MBOX_SRAM.rd_data = {MCU_MBOX_SRAM_DATA_W{sram_rd_ecc_en}} & {MCU_MBOX_SRAM_DATA_W{valid_sram_addr}} & sram_rdata_cor; 
 
 // No AXI error response to avoid NMI errors on ECC error
 // Clearing done in RDL generated code

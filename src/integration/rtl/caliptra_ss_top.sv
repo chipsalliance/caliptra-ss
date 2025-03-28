@@ -39,6 +39,8 @@ module caliptra_ss_top
     input logic cptra_ss_clk_i,
     input logic cptra_ss_pwrgood_i,
     input logic cptra_ss_rst_b_i,
+    input  logic cptra_ss_mci_cptra_rst_b_i,
+    output logic cptra_ss_mci_cptra_rst_b_o,
 
 // Caliptra Core AXI Sub Interface
     axi_if cptra_ss_cptra_core_s_axi_if,
@@ -86,6 +88,8 @@ module caliptra_ss_top
     output logic                       cptra_ss_cptra_core_jtag_tdo_o,    // JTAG TDO
     output logic                       cptra_ss_cptra_core_jtag_tdoEn_o,  // JTAG TDO enable
     output logic [124:0]               cptra_ss_cptra_generic_fw_exec_ctrl_o,
+    output logic cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o,
+    input  logic cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i,
 
 //LC controller JTAG
     input   jtag_pkg::jtag_req_t                       cptra_ss_lc_ctrl_jtag_i,
@@ -480,7 +484,6 @@ module caliptra_ss_top
 
     // ----------------- MCI Connections within Subsystem -----------------------
     logic mcu_rst_b;
-    logic mcu_cptra_rst_b;
 
 
     // ----------------- MCI Connections LCC Connections -----------------------
@@ -596,11 +599,12 @@ module caliptra_ss_top
     
     logic [127:0] cptra_ss_cptra_generic_fw_exec_ctrl_internal;
     assign cptra_ss_cptra_generic_fw_exec_ctrl_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[127:3];
+    assign cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[2];
 
     caliptra_top caliptra_top_dut (
         .clk                        (cptra_ss_clk_i),
         .cptra_pwrgood              (cptra_ss_pwrgood_i),
-        .cptra_rst_b                (mcu_cptra_rst_b),
+        .cptra_rst_b                (cptra_ss_mci_cptra_rst_b_i),
 
         .cptra_obf_key              (cptra_ss_cptra_obf_key_i),
         .cptra_obf_uds_seed_vld     (uds_field_entrpy_valid), //TODO
@@ -1155,7 +1159,7 @@ module caliptra_ss_top
         .ss_debug_intent         ( cptra_ss_debug_intent_i ),
 
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
-        .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_internal[2]),
+        .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i),
 
         .agg_error_fatal('0),       // FIXME connect to internal IPs
         .agg_error_non_fatal('0),   // FIXME connect to internal IPs
@@ -1185,7 +1189,7 @@ module caliptra_ss_top
         .mcu_nmi_vector(mci_mcu_nmi_vector),
 
         .mcu_rst_b(mcu_rst_b),
-        .cptra_rst_b(mcu_cptra_rst_b),
+        .cptra_rst_b(cptra_ss_mci_cptra_rst_b_o),
 
         // MBOX
         .soc_mcu_mbox0_data_avail(cptra_ss_soc_mcu_mbox0_data_avail),

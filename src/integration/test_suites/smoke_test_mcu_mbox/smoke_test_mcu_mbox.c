@@ -164,12 +164,6 @@ void main (void) {
     
     
     VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n")
-    // MBOX: Setup valid AXI
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0, 0x32);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1, 0x33);
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0, MCI_REG_MBOX0_AXI_USER_LOCK_0_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_1, MCI_REG_MBOX0_AXI_USER_LOCK_1_LOCK_MASK);
 
     VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
 
@@ -177,7 +171,10 @@ void main (void) {
 
     VPRINTF(LOW, "MCU: Caliptra bringup\n")
 
-    mcu_cptra_fuse_init();
+
+    // Setting Caliptra to DEFAULT user
+    mcu_cptra_fuse_init_axi_user(0xFFFFFFFF);
+
 
     mcu_mbox_clear_lock_out_of_reset();
 
@@ -193,9 +190,6 @@ void main (void) {
     // Acquire lock and send data to mailbox
     // Set execute
     mcu_mbox0_send_data_no_wait_status();
-
-    // Wait for status complete    
-    mcu_mbox0_wait_status_complete();
 
     mcu_mbox0_clear_execute();
 
