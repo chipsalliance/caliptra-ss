@@ -419,7 +419,7 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 
 $(BUILD_DIR)/caliptra_ss_clk_freq.h:
-	source $(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(I3C_CLK_BUILD_FREQ)
+	$(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(I3C_CLK_BUILD_FREQ)
 
 endif
 
