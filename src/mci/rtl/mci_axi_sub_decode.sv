@@ -145,7 +145,7 @@ always_comb soc_mci_reg_req   = soc_mci_reg_gnt;
 always_comb soc_mcu_mbox0_req = soc_mcu_mbox0_gnt;
 
 // MCI Mbox1
-always_comb soc_mcu_mbox1_req = soc_mcu_mbox0_gnt;
+always_comb soc_mcu_mbox1_req = soc_mcu_mbox1_gnt;
 
 
 ///////////////////////////////////////////////////////////

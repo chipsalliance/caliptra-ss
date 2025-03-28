@@ -165,6 +165,20 @@ void mcu_mbox_clear_lock_out_of_reset() {
     VPRINTF(LOW, "MCU: MBOX Lock out of reset cleared\n");
 }
 
+void mcu_mbox_update_status_complete() {
+    // MBOX: Write CMD
+    VPRINTF(LOW, "MCU: Writing to MBOX status 0x2\n"); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0x2 );
+}
+
+void mcu_mbox_wait_for_lock_and_execute() {
+    VPRINTF(LOW, "MCU: Waiting for caliptra to acquire the lock\n");
+    while(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER) == 0);
+
+    VPRINTF(LOW, "MCU: Waiting for caliptra to set execute\n");
+    while(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE) == 0);
+}
+
 void mcu_cptra_poll_mb_ready() {
     // MBOX: Wait for ready_for_mb_processing
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
