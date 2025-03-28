@@ -1333,12 +1333,12 @@ module caliptra_ss_top_tb
         .deassert_rst_flag_from_service(deassert_rst_flag_from_service)
 
     );
-        
+        /*
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag0"),
         .ListenPort     (5000)
-    ) jtagdpi (
+    ) jtagdpi_cptra_core (
         .clk_i          (core_clk),
         .rst_ni         (cptra_rst_b),
         .jtag_tck       (cptra_ss_cptra_core_jtag_tck_i),
@@ -1348,8 +1348,7 @@ module caliptra_ss_top_tb
         .jtag_trst_n    (cptra_ss_cptra_core_jtag_trst_n_i),
         .jtag_srst_n    ()
     );
-
-
+*/
 
 `ifdef CALIPTRA_INTERNAL_TRNG
     //=========================================================================-
@@ -1780,10 +1779,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_mcu_ifu_axi_user_i    = CPTRA_SS_STRAP_MCU_IFU_AXI_USER;
     assign cptra_ss_strap_mcu_sram_config_axi_user_i        = cptra_ss_strap_caliptra_dma_axi_user_i;
     assign cptra_ss_strap_mci_soc_config_axi_user_i        = cptra_ss_strap_mcu_lsu_axi_user_i; // FIXME set to real value
-    assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
-    assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
-    assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
-    assign cptra_ss_mcu_jtag_trst_n_i           = 1'b0;
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'hba5e_ba11;
     assign cptra_ss_strap_mci_base_addr_i       = 64'h0;
     assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
@@ -1797,6 +1792,21 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_generic_2_i           = 32'h0;
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
+
+    // JTAG DPI
+    jtagdpi #(
+        .Name           ("jtag1"),
+        .ListenPort     (6000)
+    ) jtagdpi_mcu (
+        .clk_i          (core_clk),
+        .rst_ni         (cptra_rst_b),
+        .jtag_tck       (cptra_ss_mcu_jtag_tck_i),
+        .jtag_tms       (cptra_ss_mcu_jtag_tms_i),
+        .jtag_tdi       (cptra_ss_mcu_jtag_tdi_i),
+        .jtag_tdo       (cptra_ss_mcu_jtag_tdo_o),
+        .jtag_trst_n    (cptra_ss_mcu_jtag_trst_n_i),
+        .jtag_srst_n    ()
+    );
 
     caliptra_ss_top #(
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),

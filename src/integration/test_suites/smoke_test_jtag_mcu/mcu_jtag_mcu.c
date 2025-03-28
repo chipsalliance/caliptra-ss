@@ -80,22 +80,25 @@ void main (void) {
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
 
-    for (uint16_t ii = 0; ii < 50; ii++) {
+    for (uint16_t ii = 0; ii < 1000; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
     
-    VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG UDS Prov TEST with ROM \n=================\n\n");
+    VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG MCU Smoke Test with ROM \n=================\n\n");
     
 
     cptra_boot_go = 0;
     VPRINTF(LOW, "MCU: waits in success loop\n");
-    while(cptra_boot_go != SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK){
-        cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
+    while(cptra_boot_go != 0xff){
+        cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_FW_FLOW_STATUS);
+        for (uint32_t ii = 0; ii < 500; ii++) {
+            __asm__ volatile ("nop"); // Sleep loop as "nop"
+        }
     }
 
-    cptra_boot_go = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm
+    reset_fc_lcc_rtl();
     VPRINTF(LOW, "LC&Fuse_CTRLis under reset!\n");
-    for (uint16_t ii = 0; ii < 5000; ii++) {
+    for (uint16_t ii = 0; ii < 2000; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
 
