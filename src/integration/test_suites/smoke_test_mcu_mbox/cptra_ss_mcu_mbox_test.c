@@ -174,6 +174,7 @@ uint8_t caliptra_ss_mcu_mbox0_get_data() {
                                     0x00000000,
                                     0x00000000,
                                     0x00000000 };
+
     
     fail = caliptra_ss_mcu_mbox0_wait_execute(300);
     
