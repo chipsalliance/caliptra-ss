@@ -190,12 +190,13 @@ global:
         #FIXME unique case violations in i3c_core
         - '-ignore unique_checks'
       sim:
-        # Uncomment for debug prints
+        # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
         #- '+ai3c_dbg_name=master'
         - '+vpi -lpthread'
         - '+CLP_BUS_LOGS=1'
-        # cmdline_img_sz in bytes in hex
-        # - '+cmdline_img_sz=10'
+        # Command line arg to spcify the I3C test 
         # - +AVY_TEST=ai3ct_ext_basic
+        # Command line arg to spcify the I3C test Runtime
+        # this is useful for production ROM test
         # - '+i3c_run_time=500us'
