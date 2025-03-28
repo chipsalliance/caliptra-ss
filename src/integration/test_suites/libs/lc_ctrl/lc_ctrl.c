@@ -243,6 +243,15 @@ void transition_state(uint32_t next_lc_state, uint32_t token_31_0, uint32_t toke
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in %d state!\n", next_lc_state);
 }
 
+void transition_state_check(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional) {
+    transition_state(next_lc_state, token_31_0, token_63_32, token_95_64, token_127_96, conditional);
+    wait_dai_op_idle(0);
+    uint32_t lc_state_curr = read_lc_state();
+    if (lc_state_curr != next_lc_state) {
+        VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act %d\n", next_lc_state, lc_state_curr);
+        exit(1);
+    }
+}
 
 void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
     
@@ -421,4 +430,59 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
 void force_PPD_pin(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_FORCE_RMA_SCRAP_PPD);
     VPRINTF(LOW, "MCU: RMA_SCRAP_PPD pin asserted high!\n");
+}
+
+uint32_t read_lc_state(void) {
+    for (uint32_t i = 0; i < 512; i++) {
+        __asm__ volatile ("nop");
+    }
+    // Read LC_CTRL_LC_STATE register and mask out the reserved bits (bits 31:30)
+    uint32_t reg_val = lsu_read_32(LC_CTRL_LC_STATE_OFFSET) & 0x3FFFFFFF;
+    const char *state_str;
+
+    // Decode the redundant encoding.  (The encoding is defined as six repeated 5-bit values.)
+    switch (reg_val) {
+        case 0x00000000: state_str = "RAW"; break;
+        case 0x02108421: state_str = "TEST_UNLOCKED0"; break;
+        case 0x04210842: state_str = "TEST_LOCKED0"; break;
+        case 0x06318c63: state_str = "TEST_UNLOCKED1"; break;
+        case 0x08421084: state_str = "TEST_LOCKED1"; break;
+        case 0x0a5294a5: state_str = "TEST_UNLOCKED2"; break;
+        case 0x0c6318c6: state_str = "TEST_LOCKED2"; break;
+        case 0x0e739ce7: state_str = "TEST_UNLOCKED3"; break;
+        case 0x10842108: state_str = "TEST_LOCKED3"; break;
+        case 0x1294a529: state_str = "TEST_UNLOCKED4"; break;
+        case 0x14a5294a: state_str = "TEST_LOCKED4"; break;
+        case 0x16b5ad6b: state_str = "TEST_UNLOCKED5"; break;
+        case 0x18c6318c: state_str = "TEST_LOCKED5"; break;
+        case 0x1ad6b5ad: state_str = "TEST_UNLOCKED6"; break;
+        case 0x1ce739ce: state_str = "TEST_LOCKED6"; break;
+        case 0x1ef7bdef: state_str = "TEST_UNLOCKED7"; break;
+        case 0x21084210: state_str = "DEV"; break;
+        case 0x2318c631: state_str = "PROD"; break;
+        case 0x25294a52: state_str = "PROD_END"; break;
+        case 0x2739ce73: state_str = "RMA"; break;
+        case 0x294a5294: state_str = "SCRAP"; break;
+        case 0x2b5ad6b5: state_str = "POST_TRANSITION"; break;
+        case 0x2d6b5ad6: state_str = "ESCALATE"; break;
+        case 0x2f7bdef7: state_str = "INVALID"; break;
+        default:         state_str = "UNKNOWN"; break;
+    }
+
+    VPRINTF(LOW, "LC_CTRL_LC_STATE register: 0x%08x, Decoded state: %s\n", reg_val, state_str);
+
+    // Return decoded LC state.
+    return reg_val & 0x1F;
+}
+
+uint32_t read_lc_counter(void) {
+    for (uint32_t i = 0; i < 512; i++) {
+        __asm__ volatile ("nop");
+    }
+    // Read LC_CTRL_LC_TRANSITION_CNT register and mask out the reserved bits (bits 31:5)
+    uint32_t reg_val = lsu_read_32(LC_CTRL_LC_TRANSITION_CNT_OFFSET) & 0x1F;
+
+    VPRINTF(LOW, "LC_CTRL_LC_TRANSITION_CNT register: 0x%08x\n", reg_val);
+
+    return reg_val;
 }

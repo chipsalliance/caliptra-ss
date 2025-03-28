@@ -59,6 +59,7 @@ void sw_transition_req(uint32_t next_lc_state,
                         
 uint32_t calc_lc_state_mnemonic(uint32_t state);
 void transition_state(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
+void transition_state_check(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
 void test_all_lc_transitions_no_RMA_no_SCRAP(void);
 void sw_transition_req_with_expec_error(uint32_t next_lc_state,
     uint32_t token_31_0,
@@ -68,5 +69,8 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
     uint32_t conditional);
 void force_PPD_pin(void);
 
+uint32_t read_lc_state(void);
+
+uint32_t read_lc_counter(void);
 
 #endif // LC_CTRL_H
