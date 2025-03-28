@@ -171,8 +171,10 @@ void main (void) {
 
     VPRINTF(LOW, "MCU: Caliptra bringup\n")
 
+
     // Setting Caliptra to DEFAULT user
     mcu_cptra_fuse_init_axi_user(0xFFFFFFFF);
+
 
     mcu_mbox_clear_lock_out_of_reset();
 

@@ -99,6 +99,7 @@
       - [MCU Mailbox MCU Access](#mcu-mailbox-mcu-access)
       - [MCU Mailbox Address Map](#mcu-mailbox-address-map)
     - [MCU SRAM](#mcu-sram-1)
+      - [MCU Hitless Update Handshake](#mcu-hitless-update-handshake)
     - [MCI AXI Subordinate](#mci-axi-subordinate)
     - [Interrupts](#interrupts)
     - [MCI Error handling](#mci-error-handling)
@@ -1028,13 +1029,13 @@ The registers can be split up into a few different categories:
 
 ### MCI Straps
 
-All MCI straps shall be static before mci_rst_b is deasserted.
+All MCI straps shall be static before mci_rst_b is deasserted. Some straps have further restrictions as described below.  
 
 MCI has the following types of straps:
 
 | **Strap Type**     | **Sampled or Direct Use**|**Description**     | 
 | :---------     | :---------| :---------| 
-| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These are not overridable by SW. | 
+| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These shall be constant non-configurable inputs to CSS/MCI. Inside MCI these are not overridable by SW.| 
 | **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
 | **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
 
@@ -1097,8 +1098,8 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here)
 13. MCU ROM will do a fuse_write_done write to Caliptra
 14. Caliptra ROM starts to execute from here on.
-15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
-16. CSS-BootFSM will wait for a confirmation from MCU ROM and assert the reset to MCU and deassert the reset to MCU after 10 cycles.
+15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU. MCU either needs to enable interrupts or poll on the appropriate bit to detect that Caliptra has requested a reset.
+16. CSS-BootFSM waits for MCU to request the reset. Then CSS-BootFSM will do a halt req/ack handshake with MCU and assert the MCU reset after the MCU reports that it has successfully halted.
 17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
 ![](images/Caliptra-SS-BootFSM.png)
@@ -1265,6 +1266,29 @@ The entire MCU SRAM has ECC protection with no ability to disable. Single bit er
 - HW_ERROR_FATAL asserted and sent to SOC
 
 MCU SRAM is accessible via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) for more details.
+
+#### MCU Hitless Update Handshake
+
+The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). This section is focused on the HW registers both Caliptra and MCU will used to complete the flow. 
+
+1. While MCU is waiting for Caliptra to verify the image. MCU should use ```notif_cptra_mcu_reset_req_sts``` interrupt to know when Caliptra has cleared the EXEC Lock bit. MCU can either poll or enable the interrupt. 
+2. Caliptra clears FW_EXEC_CTL[2]
+3. MCU sees request from Caliptra and should clear the interrupt status bit then set ```RESET_REQUEST.mcu_req``` in MCI.
+4. MCI does an MCU halt req/ack handshake to ensure the MCU is idle.
+5. MCI asserts MCU reset (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
+6. Caliptra will gain access to MCU SRAM Updatable Execution Region and update the FW image
+7. Caliptra sets FW_EXEC_CTL[2]
+8. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
+9. If it is a FW update MCU jumps to MCU SRAM for execution
+
+MCI tracks two different hitless update types in ```RESET_RESON```. 
+
+| Hitless update type    | Description     |
+|------------------|------------------|
+| ```FW_BOOT_UPD_RESET```      | First hitless update since MCI warm reset. MCU SRAM needs full initialization.      | 
+| ```FW_HITLESS_UPD_RESET```      | Second or greater hitless update since MCI warm reset. MCU SRAM can be partially initialized since valid content still exists in the MCU SRAM from previous firmware.| 
+
+
 ### MCI AXI Subordinate
 
 MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the appropriate submodule within MCI. 

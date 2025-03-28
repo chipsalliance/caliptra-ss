@@ -149,6 +149,7 @@ global:
         - '-assert svaext'
         - '-sverilog -full64'
         - '-debug_access+all'
+        - +define+CLP_ASSERT_ON
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
