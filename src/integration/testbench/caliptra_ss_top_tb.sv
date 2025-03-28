@@ -347,15 +347,15 @@ module caliptra_ss_top_tb
             end
         end
         // ECC error injection
-        if(mailbox_write && (mailbox_data[7:0] == 8'he2)) begin
+        if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM)) begin
             $display("Injecting single bit DCCM error");
             error_injection_mode.dccm_single_bit_error <= 1'b1;
         end
-        else if(mailbox_write && (mailbox_data[7:0] == 8'he3)) begin
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_ECC_ERROR_DOUBLE_DCCM)) begin
             $display("Injecting double bit DCCM error");
             error_injection_mode.dccm_double_bit_error <= 1'b1;
         end
-        else if(mailbox_write && (mailbox_data[7:0] == 8'he4)) begin
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_DISABLE_INJECT_ECC_ERROR)) begin
             $display("Disable ECC error injection");
             error_injection_mode <= '0;
         end
@@ -364,12 +364,12 @@ module caliptra_ss_top_tb
         error_injection_mode.dccm_double_bit_error <= 1'b0;
 
         // Memory signature dump
-        if(mailbox_write && (mailbox_data[7:0] == 8'hFF || mailbox_data[7:0] == 8'h01)) begin
+        if(mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) begin
             if (mem_signature_begin < mem_signature_end) begin
                 dump_signature();
             end
             // End Of test monitor
-            else if(mailbox_data[7:0] == 8'hff) begin
+            else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS) begin
                 $display("* TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
@@ -385,7 +385,7 @@ module caliptra_ss_top_tb
                 end
                 $finish;
             end
-            else if(mailbox_data[7:0] == 8'h1) begin
+            else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE) begin
                 $error("* TESTCASE FAILED");
                 $finish;
             end
