@@ -257,7 +257,7 @@ assign axi_mcu_sram_config_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.
 ///////////////////////////////////////////////
 // One target per transaction
 `CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_gnt, soc_mcu_trace_buffer_gnt, soc_mci_reg_gnt, soc_mcu_mbox0_gnt, soc_mcu_mbox1_gnt}, clk, !rst_b)
-`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_req, soc_mcu_trace_buffer_req, soc_mci_reg_req, soc_mcu_mbox0_req, soc_mcu_mbox1_req}, clk, !rst_b)
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_REQ_MUTEX, {soc_mcu_sram_req, soc_mcu_trace_buffer_req, soc_mci_reg_req, soc_mcu_mbox0_req, soc_mcu_mbox1_req}, clk, !rst_b)
 
 // Verify no overlapping address spaces. Only checking abutting address paces.
 `CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCI_REG, MCI_REG_END_ADDR < MCU_TRACE_BUFFER_START_ADDR)
