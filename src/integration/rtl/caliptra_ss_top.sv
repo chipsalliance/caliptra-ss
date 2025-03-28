@@ -154,6 +154,7 @@ module caliptra_ss_top
     output logic cptra_ss_all_error_fatal_o,
     output logic cptra_ss_all_error_non_fatal_o,
 
+    input logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int,
     input logic cptra_ss_mcu_jtag_tck_i,
     input logic cptra_ss_mcu_jtag_tms_i,
     input logic cptra_ss_mcu_jtag_tdi_i,
@@ -701,23 +702,12 @@ module caliptra_ss_top
 
     logic mci_intr;
 
-    //FIXME define these somewhere for integrators
-    // Interrupt Assignments
-    // NOTE Vector 0 is reserved by VeeR
-    `define VEER_INTR_VEC_MCI                 1
-    `define VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL 2
-    `define VEER_INTR_VEC_I3C                 3
-    `define VEER_INTR_VEC_FC                  4
-    
     //Interrupt connections
-    always_comb begin
-        ext_int = '0;
-        ext_int[`VEER_INTR_VEC_MCI]                 = mci_intr;
-        ext_int[`VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL] = mailbox_data_avail;
-        ext_int[`VEER_INTR_VEC_I3C]                 = 0;
-        ext_int[`VEER_INTR_VEC_FC]                  = intr_otp_operation_done;
-        //ext_int = ext_int_tb; //drive from tb if needed
-    end
+    assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
+    assign ext_int[`VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL]  = mailbox_data_avail;
+    assign ext_int[`VEER_INTR_VEC_I3C]                  = 0;
+    assign ext_int[`VEER_INTR_VEC_FC]                   = intr_otp_operation_done;
+    assign ext_int[pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] = cptra_ss_mcu_ext_int;
 
     //=========================================================================-
     // MCU instance
