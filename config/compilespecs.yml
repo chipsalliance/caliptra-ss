@@ -14,6 +14,7 @@ files:
   - src/mci/config/compile.yml
   - src/axi_mem/config/compile.yml
   - src/libs/config/compile.yml
+  # Caliptra Core
   - third_party/caliptra-rtl/src/libs/config/compile.yml
   - third_party/caliptra-rtl/src/ahb_lite_bus/config/compile.yml
   - third_party/caliptra-rtl/src/riscv_core/veer_el2/config/compile.yml
