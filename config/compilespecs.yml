@@ -79,3 +79,4 @@ files:
   # Please add your next file/folder above not below the line
   - third_party/caliptra-rtl/src/integration/config/compile.yml
   - src/integration/config/compile.yml
+  - src/integration/asserts/config/compile.yml

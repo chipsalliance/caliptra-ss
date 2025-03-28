@@ -91,32 +91,32 @@ addrmap caliptra_otp_ctrl {
 % for i, partition in enumerate(partitions):
         field {
             sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\nIf set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
+            desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
         } ${partition["name"]}_ERROR[${i}:${i}];
 % endfor
         field {
             sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\n If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
+            desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
         } DAI_ERROR[${len(partitions)+0}:${len(partitions)+0}];
         field {
             sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\n If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
+            desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
         } LCI_ERROR[${len(partitions)+1}:${len(partitions)+1}];
         field {
             sw = r;
-            desc = "Set to 1 if an error occurred in this partition.\n If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
+            desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
         } TIMEOUT_ERROR[${len(partitions)+2}:${len(partitions)+2}];
         field {
             sw = r;
-            desc = "Set to 1 if the LFSR timer FSM has reached an invalid state.\n This raises an fatal_check_error alert and is an unrecoverable error condition.";
+            desc = "Set to 1 if the LFSR timer FSM has reached an invalid state. This raises an fatal_check_error alert and is an unrecoverable error condition.";
         } LFSR_FSM_ERROR[${len(partitions)+3}:${len(partitions)+3}];
         field {
             sw = r;
-            desc = "Set to 1 if the scrambling datapath FSM has reached an invalid state.\n This raises an fatal_check_error alert and is an unrecoverable error condition.";
+            desc = "Set to 1 if the scrambling datapath FSM has reached an invalid state. This raises an fatal_check_error alert and is an unrecoverable error condition.";
         } SCRAMBLING_FSM_ERROR[${len(partitions)+4}:${len(partitions)+4}];
         field {
             sw = r;
-            desc = "This bit is set to 1 if a fatal bus integrity fault is detected.\n This error triggers a fatal_bus_integ_error alert.";
+            desc = "This bit is set to 1 if a fatal bus integrity fault is detected. This error triggers a fatal_bus_integ_error alert.";
         } BUS_INTEG_ERROR[${len(partitions)+5}:${len(partitions)+5}];
         field {
             sw = r;
@@ -157,16 +157,27 @@ addrmap caliptra_otp_ctrl {
             default sw = r; // field property
             default hw = w; // field property
 
-            field { desc = "No error condition has occurred.";} NO_error = 3'h0;
-            field { desc = "Returned if the OTP macr command was invalid or did not complete successfully
-                            due to a macr malfunction. This error should never occur during normal operation and is not recoverable.
-                            This error triggers an fatal_macr_error alert.";} MACr_error = 3'h1;
-            field { desc = "A correctable ECC error has occured during an OTP read operation.\nThe corresponding contrller automatically recovers frm this error when\nissuing a new command.";} MACr_ECC_CORR_error = 3'h2;
-            field { desc = "An uncorrectable ECC error has occurred during an OTP read operation.\nThis error should never occur during normal operation and is not recoverable.\nIf this error is present this may be a sign that the device is malfunctioning.\nThis error triggers an fatal_macr_error alert.";} MACr_ECC_UNCORR_error = 3'h3;
-            field { desc = "This error is returned if a prgramming operation attempted to clear a bit that has previously been prgrammed to 1.\nThe corresponding contrller automatically recovers frm this error when issuing a new command.\n\nNote however that the affected OTP word may be left in an inconsistent state if this error occurs.\nThis can cause several issues when the word is accessed again (either as part of a regular read operation, as part of the readout at boot, or as part of a backgrund check).\n\nIt is important that SW ensures that each word is only written once, since this can render the device useless.";} MACr_WRITE_BLANK_error = 3'h4;
-            field { desc = "This error indicates that a locked memory region has been accessed.\nThe corresponding contrller automatically recovers frm this error when issuing a new command.";} ACCESS_error = 3'h5;
-            field { desc = "An ECC, integrity or consistency mismatch has been detected in the buffer registers.\nThis error should never occur during normal operation and is not recoverable.\nThis error triggers an fatal_check_error alert.";} CHECK_FAIL_error = 3'h6;
-            field { desc = "The FSM of the corresponding contrller has reached an invalid state, or the FSM has\nbeen moved into a terminal error state due to an escalation action via lc_escalate_en_i.\nThis error should never occur during normal operation and is not recoverable.\nIf this error is present, this is a sign that the device has fallen victim to\nan invasive attack. This error triggers an fatal_check_error alert.";} FSM_STATE_error = 3'h7;
+            // 0x0 (NO_ERROR): No error condition has occurred.
+            // 0x1 (MACRO_ERROR): Returned if the OTP macro command was invalid or did not complete successfully due to a macro malfunction.
+            //   This error should never occur during normal operation and is not recoverable. This error triggers an fatal_macro_error alert.
+            // 0x2 (MACRO_ECC_CORR_ERROR): A correctable ECC error has occured during an OTP read operation. The corresponding controller
+            //   automatically recovers from this error when issuing a new command.
+            // 0x3 (MACRO_ECC_UNCORR_ERROR): An uncorrectable ECC error has occurred during an OTP read operation. This error should never occur
+            //   during normal operation and is not recoverable. If this error is present this may be a sign that the device is malfunctioning.
+            //   This error triggers an fatal_macro_error alert.
+            // 0x4 (MACRO_WRITE_BLANK_ERROR): This error is returned if a programming operation attempted to clear a bit that has previously been programmed to 1.
+            //   The corresponding controller automatically recovers from this error when issuing a new command. Note however that the affected OTP word may be left
+            //   in an inconsistent state if this error occurs. This can cause several issues when the word is accessed again (either as part of a regular read operation,
+            //   as part of the readout at boot, or as part of a background check). It is important that SW ensures that each word is only written once, since this can render the device useless.
+            // 0x5 (ACCESS_ERROR): This error indicates that a locked memory region has been accessed. The corresponding controller automatically recovers from this error when issuing a new command.
+            // 0x6 (CHECK_FAIL_ERROR): An ECC, integrity or consistency mismatch has been detected in the buffer registers. This error should never occur during normal
+            //   operation and is not recoverable. This error triggers an fatal_check_error alert.
+            // 0x7 (FSM_STATE_ERROR): The FSM of the corresponding controller has reached an invalid state, or the FSM has been moved into a terminal error state due to an
+            //   escalation action via lc_escalate_en_i. This error should never occur during normal operation and is not recoverable. If this error is present, this is a sign that
+            //   the device has fallen victim to an invasive attack. This error triggers an fatal_check_error alert.
+            field {
+                desc = "This register holds information about error conditions that occurred in the agents interacting with the OTP macro via the internal bus.";
+            } ERR_CODE [2:0];
         };
 
         /* ----------- Registers ------------*/
@@ -185,7 +196,7 @@ addrmap caliptra_otp_ctrl {
         default hw = rw;
         //default hwext = true;
         field {
-            desc = "This bit contrls whether the DAI registers can be written.\nWrite 0 to it in order to clear the bit.\n\nNote that the hardware also modulates this bit and sets it to 0 temporarily\nduring an OTP operation such that the corresponding address and data registers\ncannot be modified while an operation is pending. The !!DAI_IDLE status bit\nwill also be set to 0 in such a case.";
+            desc = "This bit contrls whether the DAI registers can be written.Write 0 to it in order to clear the bit.Note that the hardware also modulates this bit and sets it to 0 temporarilyduring an OTP operation such that the corresponding address and data registerscannot be modified while an operation is pending. The !!DAI_IDLE status bitwill also be set to 0 in such a case.";
             reset = 0x1;
         } REGWEN [0:0];
     } DIRECT_ACCESS_REGWEN @ ${"0x%X" % inc_ptr(0x14+((len(partitions)+2)*0x4))};
@@ -197,28 +208,34 @@ addrmap caliptra_otp_ctrl {
         default hw = r;
         //hwext = true;
         default reset = 0x0; 
-        default swwe = DIRECT_ACCESS_REGWEN;
+        //default swwe = DIRECT_ACCESS_REGWEN;
         field { 
-            desc = "Initiates a readout sequence that reads the location specified\nby !!DIRECT_ACCESS_ADDRESS. The command places the data read into\n!!DIRECT_ACCESS_RDATA_0 and !!DIRECT_ACCESS_RDATA_1 (for 64bit partitions).";
+            desc = "Initiates a readout sequence that reads the location specifiedby !!DIRECT_ACCESS_ADDRESS. The command places the data read into!!DIRECT_ACCESS_RDATA_0 and !!DIRECT_ACCESS_RDATA_1 (for 64bit partitions).";
         } RD [0:0];
         field { 
-            desc = "Initiates a prgramming sequence that writes the data in !!DIRECT_ACCESS_WDATA_0\nand !!DIRECT_ACCESS_WDATA_1 (for 64bit partitions) to the location specified by\n!!DIRECT_ACCESS_ADDRESS.";
+            desc = "Initiates a prgramming sequence that writes the data in !!DIRECT_ACCESS_WDATA_0and !!DIRECT_ACCESS_WDATA_1 (for 64bit partitions) to the location specified by!!DIRECT_ACCESS_ADDRESS.";
         } WR [1:1];
         field { 
-            desc = "Initiates the digest calculation and locking sequence for the partition specified by\n!!DIRECT_ACCESS_ADDRESS.";
+            desc = "Initiates the digest calculation and locking sequence for the partition specified by!!DIRECT_ACCESS_ADDRESS.";
         } DIGEST [2:2];
     } DIRECT_ACCESS_CMD @ ${"0x%X" % + inc_ptr(0x4)};
+
+    DIRECT_ACCESS_CMD.RD -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
+    DIRECT_ACCESS_CMD.WR -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
+    DIRECT_ACCESS_CMD.DIGEST -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
 
     reg {
         desc = "Address register for direct accesses.";
         default sw = rw;
         default hw = r;
         default reset = 0x0;
-        default swwe = DIRECT_ACCESS_REGWEN;
+        //default swwe = DIRECT_ACCESS_REGWEN;
         field {
-            desc = "This is the address for the OTP word to be read or written thrugh\nthe direct access interface. Note that the address is aligned to the access size\ninternally, hence bits 1:0 are ignored for 32bit accesses, and bits 2:0 are ignored\nfor 64bit accesses.\n\nFor the digest calculation command, set this register to the partition base offset.";
+            desc = "This is the address for the OTP word to be read or written thrughthe direct access interface. Note that the address is aligned to the access sizeinternally, hence bits 1:0 are ignored for 32bit accesses, and bits 2:0 are ignoredfor 64bit accesses.For the digest calculation command, set this register to the partition base offset.";
         } ADDRESS [11:0];
     } DIRECT_ACCESS_ADDRESS @ ${"0x%X" % + inc_ptr(0x4)};
+
+    DIRECT_ACCESS_ADDRESS.ADDRESS -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
 
     regfile dir_acc_wdata_t {
         /* -----------------------------------
@@ -229,7 +246,7 @@ addrmap caliptra_otp_ctrl {
         desc = "Set of registers to implement wdata functionality
                 for Fuse Contrller."; 
         default reset = 0x0; 
-        default swwe = DIRECT_ACCESS_REGWEN;
+        //default swwe = DIRECT_ACCESS_REGWEN;
         default regwidth = 32; // reg property
         default accesswidth = 32; // reg property
         default sw = r; // field property
@@ -244,7 +261,7 @@ addrmap caliptra_otp_ctrl {
                     Hardware automatically determines the access granule (32bit or 64bit) based on which 
                     partition is being written to.";
 
-            default sw = r; // field prperty
+            default sw = rw; // field prperty
             default hw = w; // field prperty
 
             field { desc = "wdata.";} WDATA [31:0];
@@ -257,6 +274,9 @@ addrmap caliptra_otp_ctrl {
     };
 
     dir_acc_wdata_t dai_wdata_rf @ ${"0x%X" % + inc_ptr(0x4)};
+
+    dai_wdata_rf.DIRECT_ACCESS_WDATA_0.WDATA -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
+    dai_wdata_rf.DIRECT_ACCESS_WDATA_1.WDATA -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
 
     regfile dir_acc_rdata_t {
         /* -----------------------------------
@@ -315,16 +335,19 @@ addrmap caliptra_otp_ctrl {
         default hw = r; // Needs to read 0
         //hwext = true;
         default reset = 0x0;
-        default swwe = CHECK_TRIGGER_REGWEN;
+        //default swwe = CHECK_TRIGGER_REGWEN;
         field {
             desc = "Writing 1 to this bit triggers an integrity check. SW should monitor !!STATUS.CHECK_PENDING 
                     and wait until the check has been completed. If there are any errors, those will be flagged 
                     in the !!STATUS and !!ERR_CODE registers, and via the interrupts and alerts.";
         } INTEGRITY[0:0];
         field {
-            desc = "Writing 1 to this bit triggers a consistency check. SW should monitor !!STATUS.CHECK_PENDING\nand wait until the check has been completed. If there are any errors, those will be flagged\nin the !!STATUS and !!ERR_CODE registers, and via interrupts and alerts.";
+            desc = "Writing 1 to this bit triggers a consistency check. SW should monitor !!STATUS.CHECK_PENDINGand wait until the check has been completed. If there are any errors, those will be flaggedin the !!STATUS and !!ERR_CODE registers, and via interrupts and alerts.";
         } CONSISTENCY[1:1];
     } CHECK_TRIGGER @ ${"0x%X" % + inc_ptr(0x4)};
+
+    CHECK_TRIGGER.INTEGRITY -> swwe = CHECK_TRIGGER_REGWEN.REGWEN;
+    CHECK_TRIGGER.CONSISTENCY -> swwe = CHECK_TRIGGER_REGWEN.REGWEN;
 
     reg {
         desc = "Register write enable for !!INTEGRITY_CHECK_PERIOD and !!CONSISTENCY_CHECK_PERIOD.";
@@ -332,7 +355,7 @@ addrmap caliptra_otp_ctrl {
         default onwrite = wzc;
         default hw = na;
         field {
-            desc = "When cleared to 0, !!INTEGRITY_CHECK_PERIOD and !!CONSISTENCY_CHECK_PERIOD registers cannot be written anymore.\nWrite 0 to clear this bit.";
+            desc = "When cleared to 0, !!INTEGRITY_CHECK_PERIOD and !!CONSISTENCY_CHECK_PERIOD registers cannot be written anymore.Write 0 to clear this bit.";
             reset = 0x1;
         } REGWEN [0:0];
     } CHECK_REGWEN @ ${"0x%X" % + inc_ptr(0x4)};
@@ -341,7 +364,7 @@ addrmap caliptra_otp_ctrl {
         desc = "Timeout value for the integrity and consistency checks.";
         default sw = rw;
         default hw = r;
-        default swwe = CHECK_REGWEN;
+        //default swwe = CHECK_REGWEN;
         field {
             desc = "Timeout value in cycles for the for the integrity and consistency checks. If an integrity or consistency
                     check does not complete within the timeout window, an error will be flagged in the !!STATUS register, 
@@ -354,11 +377,13 @@ addrmap caliptra_otp_ctrl {
         } TIMEOUT [31:0];
     } CHECK_TIMEOUT @ ${"0x%X" % + inc_ptr(0x4)};
 
+    CHECK_TIMEOUT.TIMEOUT -> swwe = CHECK_REGWEN.REGWEN;
+
     reg {
-        desc = "This value specifies the maximum period that can be generated pseudo-randomly.\nOnly applies to the HW_CFG* and SECRET* partitions once they are locked.";
+        desc = "This value specifies the maximum period that can be generated pseudo-randomly.Only applies to the HW_CFG* and SECRET* partitions once they are locked.";
         default sw = rw;
         default hw = r;
-        default swwe = CHECK_REGWEN;
+        //default swwe = CHECK_REGWEN;
         field {
             desc = "The pseudo-random period is generated using a 40bit LFSR internally, and this register defines 
             the bit mask to be applied to the LFSR output in order to limit its range. The value of this 
@@ -370,16 +395,20 @@ addrmap caliptra_otp_ctrl {
         } PERIOD [31:0];
     } INTEGRITY_CHECK_PERIOD @ ${"0x%X" % + inc_ptr(0x4)};
 
+    INTEGRITY_CHECK_PERIOD.PERIOD -> swwe = CHECK_REGWEN.REGWEN;
+
     reg {
-        desc = "This value specifies the maximum period that can be generated pseudo-randomly.\nThis applies to the LIFE_CYCLE partition and the HW_CFG* and SECRET* partitions once they are locked.";
+        desc = "This value specifies the maximum period that can be generated pseudo-randomly.This applies to the LIFE_CYCLE partition and the HW_CFG* and SECRET* partitions once they are locked.";
         default sw = rw;
         default hw = r;
-        default swwe = CHECK_REGWEN;
+        //default swwe = CHECK_REGWEN;
         field {
-            desc = "The pseudo-random period is generated using a 40bit LFSR internally, and this register defines\nthe bit mask to be applied to the LFSR output in order to limit its range. The value of this\nregister is left shifted by 8bits and the lower bits are set to 8'hFF in order to form the 40bit mask.\nA recommended value is 0x3FF_FFFF, corresponding to a maximum period of ~716s at 24MHz.\nA value of zer disables the timer (default). Note that a one-off check can always be triggered via\n!!CHECK_TRIGGER.CONSISTENCY.";
+            desc = "The pseudo-random period is generated using a 40bit LFSR internally, and this register definesthe bit mask to be applied to the LFSR output in order to limit its range. The value of thisregister is left shifted by 8bits and the lower bits are set to 8'hFF in order to form the 40bit mask.A recommended value is 0x3FF_FFFF, corresponding to a maximum period of ~716s at 24MHz.A value of zer disables the timer (default). Note that a one-off check can always be triggered via!!CHECK_TRIGGER.CONSISTENCY.";
             reset = 0x0;
         } PERIOD [31:0];
     } CONSISTENCY_CHECK_PERIOD @ ${"0x%X" % + inc_ptr(0x4)};
+
+    CONSISTENCY_CHECK_PERIOD.PERIOD -> swwe = CHECK_REGWEN.REGWEN;
 
 % for partition in partitions:
   % if partition["read_lock"] == "CSR":
@@ -388,12 +417,15 @@ addrmap caliptra_otp_ctrl {
         default sw = rw;
         default onwrite = wzc;
         default hw = r;
-        default swwe = DIRECT_ACCESS_REGWEN;
+        //default swwe = DIRECT_ACCESS_REGWEN;
         field {
-            desc = "When cleared to 0, read access to the ${partition["name"]} partition is locked.\nWrite 0 to clear this bit.";
+            desc = "When cleared to 0, read access to the ${partition["name"]} partition is locked.Write 0 to clear this bit.";
             reset = 0x1;
         } READ_LOCK [0:0];
     } ${partition["name"]}_READ_LOCK @${"0x%X" % + inc_ptr(0x4)};
+
+    ${partition["name"]}_READ_LOCK.READ_LOCK -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
+
   % endif
 % endfor
 
@@ -427,7 +459,7 @@ addrmap caliptra_otp_ctrl {
             desc = "Integrity digest for partition. 
             The integrity digest is 0 by default. Software must write this 
             digest value via the direct access interface in order to lock the partition. 
-            After a reset, write access to the VENDOR_TEST partition is locked and\n  the digest becomes visible in this CSR.";
+            After a reset, write access to the VENDOR_TEST partition is locked and  the digest becomes visible in this CSR.";
 
             default sw = r; // field prperty
             default hw = w; // field prperty
@@ -473,7 +505,7 @@ addrmap caliptra_otp_ctrl {
             sw = rw;
             hw = r;
         } field4[26:16] = 0x0;
-    } CSR0 @ ${"0x%X" % + inc_ptr(0x0)};
+    } CSR0 @ ${"0x%X" % + inc_ptr(0x8)};
 
     reg {
         field {
@@ -599,7 +631,7 @@ addrmap caliptra_otp_ctrl {
             desc = "";
             sw = r;
             hw = rw;
-        } field2[8] = 0x0;
+        } field2[8:8] = 0x0;
         field {
             desc = "";
             sw = r;
@@ -609,12 +641,12 @@ addrmap caliptra_otp_ctrl {
             desc = "";
             sw = r;
             hw = rw;
-        } field4[12] = 0x0;
+        } field4[12:12] = 0x0;
         field {
             desc = "";
             sw = r;
             hw = rw;
-        } field5[13] = 0x0;
+        } field5[13:13] = 0x0;
         field {
             desc = "";
             sw = rw;
