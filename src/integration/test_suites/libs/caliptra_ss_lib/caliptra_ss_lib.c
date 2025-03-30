@@ -23,6 +23,7 @@
 #include "stdint.h"
 #include "caliptra_ss_clk_freq.h"
 #include "caliptra_ss_lib.h"
+#include <stdbool.h>
 
 
 #ifdef MY_RANDOM_SEED
@@ -57,7 +58,6 @@ void mcu_mci_boot_go() {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , 100);
     VPRINTF(LOW, "MCU: Configure EXEC REGION Size\n");
     
-
     // writing SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO register of MCI for CPTRA Boot FSM to bring Caliptra out of reset
     uint32_t cptra_boot_go;
     VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
@@ -164,29 +164,84 @@ void mcu_cptra_user_init() {
 
 }
 
-void mcu_mbox_clear_lock_out_of_reset() {
+void mcu_mbox_clear_lock_out_of_reset(uint32_t mbox_num) {
     // MBOX: Write DLEN  (normally would be max SRAM size but using smaller size for test run time)
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, 32);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE*mbox_num, 32);
 
     // MBOX: Clear Execute
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0);
-    VPRINTF(LOW, "MCU: Mbox0 execute clear\n");
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE*mbox_num, 0);
+    VPRINTF(LOW, "MCU: Mbox%x execute clear\n", mbox_num);
     
-    VPRINTF(LOW, "MCU: MBOX Lock out of reset cleared\n");
+    VPRINTF(LOW, "MCU: Mbox%x Lock out of reset cleared\n", mbox_num);
 }
 
-void mcu_mbox_update_status_complete() {
+void mcu_mbox_update_status_complete(uint32_t mbox_num) {
     // MBOX: Write CMD
     VPRINTF(LOW, "MCU: Writing to MBOX status 0x2\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0x2 );
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE*mbox_num, 0x2 );
 }
 
-void mcu_mbox_wait_for_lock_and_execute() {
-    VPRINTF(LOW, "MCU: Waiting for caliptra to acquire the lock\n");
-    while(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER) == 0);
+bool mcu_mbox_wait_for_user_lock(uint32_t mbox_num, uint32_t user_axi, uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for caliptra to acquire the lock in mbox%x\n", mbox_num);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num) == user_axi){
+            VPRINTF(LOW, "MCU: Caliptra acquired Mbox%x lock\n", mbox_num);
+            return true;
+        }
+    } 
+    return false;
+}
 
-    VPRINTF(LOW, "MCU: Waiting for caliptra to set execute\n");
-    while(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE) == 0);
+bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for caliptra to set execute in mbox%x\n", mbox_num);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num)){
+            VPRINTF(LOW, "MCU: Caliptra set execute for Mbox%x\n", mbox_num);
+            return true;
+        }
+    }
+    return false;
+}
+
+void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id) {
+    
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[0]);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[1]);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_2 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[2]);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_3 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[3]);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_4 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[4]);
+
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_0_LOCK_MASK);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_1 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_1_LOCK_MASK);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_2 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_2_LOCK_MASK);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_3 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_3_LOCK_MASK);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_4 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_4_LOCK_MASK);
+
+    VPRINTF(LOW, "MCU: Configured Valid AXI USERs in Mbox%x:  0 - 0x%x; 1 - 0x%x; 2 - 0x%x; 3 - 0x%x; 4 - 0x%x;\n", mbox_num, axi_user_id[0], axi_user_id[1], axi_user_id[2], axi_user_id[3], axi_user_id[4]);
+}
+
+bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for Mbox%x lock acquired\n", mbox_num);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        if(!(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK)){
+            VPRINTF(LOW, "MCU: Mbox%x lock acquired\n", mbox_num);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count) {
+    // TODO: update with MCU Root Strap Value
+    uint32_t mbox_resp_data;
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num);
+        if(mbox_resp_data != 0){
+            VPRINTF(LOW, "MCU: MBOX%x USER = %x\n", mbox_num, mbox_resp_data);
+            return true;
+        }
+    }
+    return false;
 }
 
 void mcu_cptra_poll_mb_ready() {

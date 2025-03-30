@@ -31,7 +31,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 
-void mcu_mbox0_write_sram_and_csrs(){
+void mcu_mbox_write_sram_and_csrs(uint32_t mbox_num){
     uint32_t mbox_data[] = { 0x00000000,
                             0x11111111,
                             0x22222222,
@@ -55,109 +55,115 @@ void mcu_mbox0_write_sram_and_csrs(){
     // Do SRAM and CSRs write while user has lock
     //// MBOX: Write data
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        VPRINTF(LOW, "MCU: Writing to MBOX data: 0x%x\n", mbox_data[ii]); 
-        lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii), mbox_data[ii]);
+        VPRINTF(LOW, "MCU: Writing to MBOX%x data: 0x%x\n", mbox_num, mbox_data[ii]); 
+        lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_data[ii]);
     }
 
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii));
-        VPRINTF(LOW, "MCU: Reading data from MBOX SRAM: Data[%d] 0x%x\n", ii, mbox_resp_data);
+        mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num);
+        VPRINTF(LOW, "MCU: Reading data from MBOX%x SRAM: Data[%d] 0x%x\n", mbox_num, ii, mbox_resp_data);
         // Compare expected data
         if (mbox_resp_data != mbox_data[ii]) {
-            VPRINTF(FATAL, "MCU: Wasn't able to write Mbox0 SRAM data while user locked - dword: %x expected data: %x\n", ii, mbox_data[ii]);
+            VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x SRAM data while user locked - dword: %x expected data: %x\n", mbox_num, ii, mbox_data[ii]);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
     }
 
+    uint32_t test_data = xorshift32();
     //// MBOX: Write DLEN
-    VPRINTF(LOW, "MCU: Writing MBOX DLEN\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, 0xDEADBEEF);
+    VPRINTF(LOW, "MCU: Writing MBOX%x DLEN: 0x%x\n", mbox_num, test_data); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
 
     VPRINTF(LOW, "MCU: Reading MBOX DLEN\n"); 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN) != 0xDEADBEEF) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write DLEN during user MB lock\n");
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num) != test_data) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x DLEN during user MB lock\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     //// MBOX: Write CMD
-    VPRINTF(LOW, "MCU: Writing MBOX_CMD\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD, 0xDEADBEEF);
+    test_data = xorshift32();
+    VPRINTF(LOW, "MCU: Writing Mbox%x MBOX_CMD: 0x%x\n", mbox_num, test_data); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
 
     VPRINTF(LOW, "MCU: Reading MBOX DLEN\n"); 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD) != 0xDEADBEEF) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write CMD during user MB lock\n");
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num) != test_data) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x CMD during user MB lock\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     //// MBOX: Write CMD_STATUS
-    VPRINTF(LOW, "MCU: Writing MBOX_CMD_STATUS\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0xDEADBEEF);
+    test_data = xorshift32();
+    VPRINTF(LOW, "MCU: Writing Mbox%x MBOX_CMD_STATUS: 0x%x\n", mbox_num, test_data); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS) != (0xDEADBEEF & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK)) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write CMD_STATUS during user MB lock\n");
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num) != (test_data & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK)) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x CMD_STATUS during user MB lock\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     //// MBOX: Try writing MBOX_USER
-    VPRINTF(LOW, "MCU: Trying MBOX_USER Write\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER, 0xDEADBEEF);
+    test_data = xorshift32();
+    VPRINTF(LOW, "MCU: Trying Mbox%x MBOX_USER Write: 0x%x\n", mbox_num, test_data); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER) == 0xDEADBEEF) {
-        VPRINTF(FATAL, "MCU: Was able to change read-only MBOX_USER register\n");
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num) == test_data) {
+        VPRINTF(FATAL, "MCU: Was able to change read-only Mbox%x MBOX_USER register\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     //// MBOX: Try writing MBOX_LOCK
-    VPRINTF(LOW, "MCU: Trying MBOX_LOCK write\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK, 0x0);
+    VPRINTF(LOW, "MCU: Trying Mbox%x MBOX_LOCK write to 0\n", mbox_num); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num, 0x0);
 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK) != 0x1) {
-        VPRINTF(FATAL, "MCU: Was able to change read-only MBOX_LOCK register\n");
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num) != 0x1) {
+        VPRINTF(FATAL, "MCU: Was able to change read-only Mbox%x MBOX_LOCK register\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     //// MBOX: Try writing HW_STATUS
-    VPRINTF(LOW, "MCU: Trying HW_STATUS write\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS, MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK | MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK);
+    test_data = xorshift32();
+    VPRINTF(LOW, "MCU: Trying Mbox%x HW_STATUS write: 0%x\n", mbox_num, test_data); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK | MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK);
     
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS) != 0x0) {
-        VPRINTF(FATAL, "MCU: Was able to change read-only HW_STATUS register\n");
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num) != 0x0) {
+        VPRINTF(FATAL, "MCU: Was able to change read-only Mbox%x HW_STATUS register\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     //// MBOX: Write TARGET_USER
-    VPRINTF(LOW, "MCU: Writing TARGET_USER write\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER, 0xDEADBEEF);
+    test_data = xorshift32();
+    VPRINTF(LOW, "MCU: Writing Mbox%x TARGET_USER write: 0x%x\n", mbox_num, test_data); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER) != 0xDEADBEEF) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write TARGET_USER during user MB lock\n");
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num) != test_data) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%xTARGET_USER during user MB lock\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     //// MBOX: Write TARGET_USER_VALID
-    VPRINTF(LOW, "MCU: Writing TARGET_USER_VALID write\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID, MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK);
+    VPRINTF(LOW, "MCU: Writing Mbox%x TARGET_USER_VALID write to 0\n", mbox_num); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK);
 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID) != MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write TARGET_USER_VALID during user MB lock\n");
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num) != MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x TARGET_USER_VALID during user MB lock\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     //// MBOX: Clear execute
-    VPRINTF(LOW, "MCU: Clearing Execute\n");
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0x0);
+    VPRINTF(LOW, "MCU: Clearing Execute in Mbox%x\n", mbox_num);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x0);
 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE) != 0) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write EXECUTE during user MB lock\n");
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x EXECUTE during user MB lock\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -165,8 +171,8 @@ void mcu_mbox0_write_sram_and_csrs(){
 
 // Test (in conjuction with Caliptra uC C code) does a series of MCU mailbox writes and reads between MCU and Caliptra uC
 // 1. Caliptra uC acquires mailbox, writes data to SRAM, sets EXECUTE
-// 2. MCU waits for execute, writes SRAM and CSRs, reads them back to confirm write could occur
-// 3. Caliptra uC will clear execute
+// 2. MCU waits for execute
+// 3. MCU writes SRAM and CSRs reads them back to confirm writes could occur for RW registers (and not for RO)
 
 void main (void) {
     int argc=0;
@@ -177,6 +183,7 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;  
+    uint32_t mbox_num = 0;
     uint32_t axi_select = xorshift32() % 5;
 
     uint32_t axi_user_id[] = { xorshift32(), xorshift32(), xorshift32(), xorshift32(), xorshift32() };
@@ -187,17 +194,7 @@ void main (void) {
 
     VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n")
     // MBOX: Setup valid AXI
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0, axi_user_id[0]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1, axi_user_id[1]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_2, axi_user_id[2]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_3, axi_user_id[3]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_4, axi_user_id[4]);
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0, MCI_REG_MBOX0_AXI_USER_LOCK_0_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_1, MCI_REG_MBOX0_AXI_USER_LOCK_1_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_2, MCI_REG_MBOX0_AXI_USER_LOCK_2_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_3, MCI_REG_MBOX0_AXI_USER_LOCK_3_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_4, MCI_REG_MBOX0_AXI_USER_LOCK_4_LOCK_MASK);
+    mcu_mbox_configure_valid_axi(mbox_num, axi_user_id);
 
     mcu_mci_boot_go();
 
@@ -208,7 +205,7 @@ void main (void) {
 
     mcu_cptra_fuse_init();
 
-    mcu_mbox_clear_lock_out_of_reset();
+    mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
     ////////////////////////////////////
     // Mailbox command test
@@ -216,9 +213,15 @@ void main (void) {
 
     // Wait for Caliptra Core to acquire lock, write MBOX data, and set execute
     // Do writes to SRAM and CSRs and verify that write occured with reads.
-    mcu_mbox_wait_for_lock_and_execute();
+    if(!mcu_mbox_wait_for_user_lock(mbox_num, caliptra_uc_axi_id, 10000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not acquire lock and set execute\n", mbox_num);
+    }
+
+    if(!mcu_mbox_wait_for_user_execute(mbox_num, 10000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", mbox_num);
+    }
     
-    mcu_mbox0_write_sram_and_csrs();
+    mcu_mbox_write_sram_and_csrs(mbox_num);
 
     VPRINTF(LOW, "MCU: Sequence complete\n");
 

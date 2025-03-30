@@ -15,10 +15,12 @@
 #include "soc_address_map.h"
 #include "caliptra_defines.h"
 #include "caliptra_isr.h"
+#include "caliptra_ss_lib.h"
 #include "riscv-csr.h"
 #include "veer-csr.h"
 #include "riscv_hw_if.h"
 #include <string.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include "printf.h"
 #include "soc_ifc.h"
@@ -34,96 +36,89 @@ volatile uint32_t intr_count       = 0;
 
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
-uint8_t caliptra_ss_mcu_mbox0_acquire_lock(uint32_t attempt_count) {
+bool caliptra_ss_mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count) {
     uint32_t read_payload[1];
     uint32_t mbox_data;
     uint32_t mbox_lock_accuired;
     for(uint32_t ii=0; ii<attempt_count; ii++) {
-        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK, 0, read_payload, 4, 0);
+        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
         mbox_data = read_payload[0];
         mbox_lock_accuired = mbox_data & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK;
         if(mbox_lock_accuired == 0) {
-            return 0;
+            return true;
         }
     }
-    return 1;
+    return false;
 }
 
-
-uint8_t caliptra_ss_mcu_mbox0_wait_execute(uint32_t attempt_count) {
+bool caliptra_ss_mcu_mbox_wait_status_complete(uint32_t mbox_num, uint32_t attempt_count) {
     uint32_t read_payload[1];
     uint32_t mbox_data;
     uint32_t mbox_lock_accuired;
-    VPRINTF(LOW, "CALIPTRA: MCU MBOX0 WAIT FOR EXECUTE to be SET\n");
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x WAIT FOR COMPLETE\n", mbox_num);
     for(uint32_t ii=0; ii<attempt_count; ii++) {
-        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0, read_payload, 4, 0);
-        mbox_data = read_payload[0];
-        mbox_data = mbox_data & MCU_MBOX1_CSR_MBOX_EXECUTE_EXECUTE_MASK;
-        if( mbox_data) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-uint32_t caliptra_ss_mcu_mbox0_wait_status_complete(uint32_t attempt_count) {
-    uint32_t read_payload[1];
-    uint32_t mbox_data;
-    uint32_t mbox_lock_accuired;
-    VPRINTF(LOW, "CALIPTRA: MCU MBOX0 WAIT FOR COMPLETE\n");
-    for(uint32_t ii=0; ii<attempt_count; ii++) {
-        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0, read_payload, 4, 0);
+        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
         mbox_data = read_payload[0];
         mbox_data = mbox_data & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK;
-        VPRINTF(LOW, "CALIPTRA: MBOX STATUS: 0x%x\n", mbox_data);
+        VPRINTF(LOW, "CALIPTRA: MBOX%x STATUS: 0x%x\n", mbox_num, mbox_data);
         if (mbox_data == 0x2) {
-            return mbox_data;
+            return true;
         }
     }
-    return 1;
+    return false;
 }
-uint8_t caliptra_ss_mcu_mbox0_clear_execution() {
-    uint8_t fail = 0;
-    uint32_t data_length;
+
+void caliptra_ss_mcu_mbox_clear_execute(uint32_t mbox_num) {
     uint32_t read_payload[16];
     uint32_t write_payload[16];
     
-    VPRINTF(LOW, "CALIPTRA: MCU MBOX0 CLEARING EXECUTE\n");
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x CLEARING EXECUTE\n", mbox_num);
     write_payload[0] = 0x0;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0, write_payload, 4, 0) ;
-
-    return fail;
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0) ;
 }
-uint8_t caliptra_ss_mcu_mbox0_send_data_no_wait_status() {
-    uint8_t fail = 0;
+
+bool caliptra_ss_mcu_mbox_wait_execute(uint32_t mbox_num, uint32_t attempt_count) {
+    uint32_t read_payload[1];
+    uint32_t mbox_data;
+    uint32_t mbox_lock_accuired;
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x WAIT FOR EXECUTE to be SET\n", mbox_num);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
+        mbox_data = read_payload[0];
+        mbox_data = mbox_data & MCU_MBOX1_CSR_MBOX_EXECUTE_EXECUTE_MASK;
+        if( mbox_data) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void caliptra_ss_mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
     uint32_t data_length;
     uint32_t read_payload[16];
     uint32_t write_payload[16];
     uint32_t mbox_data[0];
-    VPRINTF(LOW, "CALIPTRA: Requesting MCU MBOX0 LOCK\n");
-    fail = caliptra_ss_mcu_mbox0_acquire_lock(32);
-    if (fail) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX0 Lock Not Acquired\n");
+    VPRINTF(LOW, "CALIPTRA: Requesting MCU MBOX%x LOCK\n", mbox_num);
+    if (!caliptra_ss_mcu_mbox_acquire_lock(mbox_num, 32)) {
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x Lock Not Acquired\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     // Checking MBOX USER INFO
-    if (!fail) {
-        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER, 0, read_payload, 4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
          
-    }
-    VPRINTF(LOW, "CALIPTRA: MCU MBOX0 USER: 0x%x\n", read_payload[0]);
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x USER: 0x%x\n", mbox_num, read_payload[0]);
 
-    VPRINTF(LOW, "CALIPTRA: MCU MBOX0 SETTING COMMAND\n");
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x SETTING COMMAND\n", mbox_num);
     write_payload[0] = 0xDEADBEEF;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
     
-    VPRINTF(LOW, "CALIPTRA: MCU MBOX0 SETTING DLEN\n");
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x SETTING DLEN\n", mbox_num);
     write_payload[0] = 16*4;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
-    VPRINTF(LOW, "CALIPTRA: MCU MBOX0 SETTING DATA\n");
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x SETTING DATA\n", mbox_num);
     write_payload[0] = 0x10101010;
     write_payload[1] = 0x20202020;
     write_payload[2] = 0x30303030;
@@ -143,59 +138,58 @@ uint8_t caliptra_ss_mcu_mbox0_send_data_no_wait_status() {
     
     for (uint32_t ii = 0; ii < 16; ii++) {
         mbox_data[0] = write_payload[ii];
-        VPRINTF(LOW, "CALIPTRA: Writing to MBOX data: 0x%x\n", write_payload[ii]); 
-        soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii), 0, mbox_data, 4, 0);
+        VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x data: 0x%x\n", mbox_num, write_payload[ii]); 
+        soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, 0, mbox_data, 4, 0);
     }
 
     // Attempt CMD_STATUS write
-    VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX0 CMD_STATUS write\n");
+    VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX%x CMD_STATUS write\n", mbox_num);
     write_payload[0] = 0x3;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0, read_payload, 4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     data_length = read_payload[0];
 
     if (data_length != 0) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX0 CMD_STATUS was able to be writen by USER: 0x%x \n", 0);
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x CMD_STATUS was able to be writen by USER: 0x%x \n", mbox_num, 0);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     // Attempt TARGET_USER write
-    VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX0 TARGET_USER write\n");
+    VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX%x TARGET_USER write\n", mbox_num);
     write_payload[0] = 0xdeadbeef;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER, 0, read_payload, 4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     data_length = read_payload[0];
 
     if (data_length == 0xdeadbeef) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX0 TARGET_USER was able to be writen by USER: 0x%x \n", 0);
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x TARGET_USER was able to be writen by USER: 0x%x \n", mbox_num, 0);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     // Attempt TARGET_USER_VALID write
-    VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX0 TARGET_USER_VALID write\n");
+    VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX%x TARGET_USER_VALID write\n", mbox_num);
     write_payload[0] = MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID, 0, read_payload, 4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     data_length = read_payload[0];
 
     if (data_length == MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX0 TARGET_USER was able to be writen by USER: 0x%x \n", 0);
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x TARGET_USER was able to be writen by USER: 0x%x \n", mbox_num, 0);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    VPRINTF(LOW, "CALIPTRA: MCU MBOX0 SETTING EXECUTE\n");
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x SETTING EXECUTE\n", mbox_num);
     write_payload[0] = 0x1;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0, write_payload, 4, 0);
-    return fail;
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 }
 
-uint8_t caliptra_ss_mcu_mbox0_get_data_and_attempt_writes() {
+void caliptra_ss_mcu_mbox_get_data_and_attempt_writes(uint32_t mbox_num) {
     uint8_t fail = 0;
     uint32_t data_length;
     const uint32_t mbox_dlen = 16*4;
@@ -222,22 +216,20 @@ uint8_t caliptra_ss_mcu_mbox0_get_data_and_attempt_writes() {
                                     0x00000000,
                                     0x00000000 };
     
-    fail = caliptra_ss_mcu_mbox0_wait_execute(300);
-    
 
-    VPRINTF(LOW, "CALIPTRA: Reading MBOX CMD\n");
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD, 0, read_payload, 4, 0);
+    VPRINTF(LOW, "CALIPTRA: Reading MBOX%x CMD\n", mbox_num);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     data_length = read_payload[0];
     VPRINTF(LOW, "CALIPTRA: CMD: 0x%x\n", data_length);
 
     if (data_length != mbox_cmd) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX0 CMD not expected value: 0x%x \n", mbox_cmd);
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x CMD not expected value: 0x%x \n", mbox_num, mbox_cmd);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    VPRINTF(LOW, "CALIPTRA: Checking MBOX USER\n");
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER, 0, read_payload, 4, 0);
+    VPRINTF(LOW, "CALIPTRA: Checking MBOX% USER\n", mbox_num);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     data_length = read_payload[0];
     VPRINTF(LOW, "CALIPTRA: MBOX0 USER = %x\n", data_length);
     
@@ -247,113 +239,110 @@ uint8_t caliptra_ss_mcu_mbox0_get_data_and_attempt_writes() {
         while(1);
     }
 
-    VPRINTF(LOW, "CALIPTRA: Reading MBOX DLEN\n");
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, 0, read_payload, 4, 0);
+    VPRINTF(LOW, "CALIPTRA: Reading MBOX%x DLEN\n", mbox_num);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     data_length = read_payload[0];
-    VPRINTF(LOW, "CALIPTRA: DLEN: 0x%x\n", data_length);
+    VPRINTF(LOW, "CALIPTRA: Mbox%x DLEN: 0x%x\n", mbox_num, data_length);
 
     if (data_length != mbox_dlen) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX0 DLEN not expected value: 0x%x \n", mbox_dlen);
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x DLEN not expected value: 0x%x \n", mbox_num, mbox_dlen);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     // Should be reading all 0's
-    VPRINTF(LOW, "CALIPTRA: Reading MBOX Data\n");
+    VPRINTF(LOW, "CALIPTRA: Reading MBOX%x Data\n", mbox_num);
     for (uint8_t ii = 0; ii < data_length/4; ii++) {
-        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii), 0, read_payload, 4, 0);
-        VPRINTF(LOW, "CALIPTRA: MBOX Data[%d]: 0x%x\n", ii, read_payload[0]);
+        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
+        VPRINTF(LOW, "CALIPTRA: MBOX%x Data[%d]: 0x%x\n", mbox_num, ii, read_payload[0]);
         if (read_payload[0] != mcu_expected_data[ii]) {
-            VPRINTF(FATAL, "Mbox0 SRAM data from MCU is not expected value - dword: %x expected_data: %x\n", ii, mcu_expected_data[ii]);
+            VPRINTF(FATAL, "Mbox%x SRAM data from MCU is not expected value - dword: %x expected_data: %x\n", mbox_num, ii, mcu_expected_data[ii]);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
     }
 
-    VPRINTF(LOW, "CALIPTRA: Checking CMD_STATUS USER\n");
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0, read_payload, 4, 0);
+    VPRINTF(LOW, "CALIPTRA: Checking Mbox%x CMD_STATUS USER\n", mbox_num);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     data_length = read_payload[0];
-    VPRINTF(LOW, "CALIPTRA: MBOX0 CMD STATUS = %x\n", data_length);
+    VPRINTF(LOW, "CALIPTRA: MBOX%x CMD STATUS = %x\n", mbox_num, data_length);
     
     if (data_length != 0x2) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX0 MBOX USER not expected value: 0x%x \n", 0x2);
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x MBOX USER not expected value: 0x%x \n", mbox_num, 0x2);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     // Attempting SRAM and CSRs write while MCU has lock
     // Check to see that writes are silently dropped and reads return 0
-    VPRINTF(LOW, "CALIPTRA: Attempting SRAM write\n");
+    VPRINTF(LOW, "CALIPTRA: Attempting Mbox%x SRAM write\n", mbox_num);
     write_payload[0] = 0xDEADBEEF;
     mbox_data[0] = write_payload[0];
-    VPRINTF(LOW, "CALIPTRA: Writing to MBOX data: 0x%x\n", mbox_data); 
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*5), 0, mbox_data, 4, 0);
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x data: 0x%x\n", mbox_num, mbox_data); 
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*5) + MCU_MBOX_NUM_STRIDE * mbox_num, 0, mbox_data, 4, 0);
 
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*5), 0, read_payload, 4, 0);
-    VPRINTF(LOW, "CALIPTRA: MBOX Data[%d]: 0x%x\n", 5, read_payload[0]);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*5) + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
+    VPRINTF(LOW, "CALIPTRA: MBOX%x Data[%d]: 0x%x\n", mbox_num, 5, read_payload[0]);
     if (read_payload[0] != 0) {
-        VPRINTF(FATAL, "Mbox0 SRAM data from MCU is not expected value - dword: %x expected_data: %x\n", 5, 0);
+        VPRINTF(FATAL, "Mbox%x SRAM data from MCU is not expected value - dword: %x expected_data: %x\n",mbox_num, 5, 0);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    VPRINTF(LOW, "CALIPTRA: Attempting MBOX Execute write\n");
+    VPRINTF(LOW, "CALIPTRA: Attempting MBOX%x Execute write\n", mbox_num);
     write_payload[0] = 0;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0, read_payload, 4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     if (read_payload[0] == 0) {
-        VPRINTF(FATAL, "Mbox0 MBOX EXECUTE was changed\n");
+        VPRINTF(FATAL, "Mbox%x MBOX EXECUTE was changed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    VPRINTF(LOW, "CALIPTRA: Attempting DLEN write\n");
+    VPRINTF(LOW, "CALIPTRA: Attempting Mbox%x DLEN write\n", mbox_num);
     write_payload[0] = 0xDEADBEEF;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, 0, read_payload, 4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     if (read_payload[0] == 0xDEADBEEF) {
-        VPRINTF(FATAL, "Mbox0 DLEN was changed\n");
+        VPRINTF(FATAL, "Mbox%x DLEN was changed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    VPRINTF(LOW, "CALIPTRA: Attempting MBOX CMD write\n");
+    VPRINTF(LOW, "CALIPTRA: Attempting MBOX%x CMD write\n", mbox_num);
     write_payload[0] = 0xDEADBEEF;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD, 0, read_payload, 4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     if (read_payload[0] == 0xDEADBEEF) {
-        VPRINTF(FATAL, "Mbox0 CMD was changed\n");
+        VPRINTF(FATAL, "Mbox%x CMD was changed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    VPRINTF(LOW, "CALIPTRA: Attempting MBOX CMD_STATUS write\n");
+    VPRINTF(LOW, "CALIPTRA: Attempting MBOX%x CMD_STATUS write\n", mbox_num);
     write_payload[0] = 0xDEADBEEF;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, 0, read_payload, 4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     if (read_payload[0] == (0xDEADBEEF & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK)) {
-        VPRINTF(FATAL, "Mbox0 CMD_STATUS was changed\n");
+        VPRINTF(FATAL, "Mbox%x CMD_STATUS was changed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    VPRINTF(LOW, "CALIPTRA: Attempting MBOX USER write\n");
+    VPRINTF(LOW, "CALIPTRA: Attempting MBOX%x USER write\n", mbox_num);
     write_payload[0] = 0xDEADBEEF;
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER, 0, write_payload, 4, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER, 0, read_payload, 4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
     if (read_payload[0] == (0xDEADBEEF & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK)) {
-        VPRINTF(FATAL, "Mbox0 MBOX USER was changed\n");
+        VPRINTF(FATAL, "Mbox%x MBOX USER was changed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
-    }
-    
-    return fail;
-
+    }   
 }
 
 
@@ -361,35 +350,30 @@ void main(void) {
         int argc=0;
         char *argv[1];
         uint32_t reg;
-        uint8_t fail = 0;
         uint32_t read_payload[16];
         uint32_t data_length;
         uint32_t write_payload[16];
+        uint32_t mbox_num = 0;  // TODO add randomization
 
-        VPRINTF(LOW, "----------------------------------\nSmoke Test MCI MBOX0  !!\n----------------------------------\n");
+        VPRINTF(LOW, "----------------------------------\nSmoke Test MCI MBOX%x  !!\n----------------------------------\n", mbox_num);
 
-        fail = caliptra_ss_mcu_mbox0_send_data_no_wait_status();
-        if (fail) {
-            VPRINTF(FATAL, "CALIPTRA: FAILED!\n");
-            SEND_STDOUT_CTRL(0x1);
-            while(1);
-        }
+        caliptra_ss_mcu_mbox_send_data_no_wait_status(mbox_num);
         
-        reg = caliptra_ss_mcu_mbox0_wait_status_complete(200);
-        if (reg == 2) {
-            caliptra_ss_mcu_mbox0_clear_execution();    
+        if (caliptra_ss_mcu_mbox_wait_status_complete(mbox_num, 200)) {
+            caliptra_ss_mcu_mbox_clear_execute(mbox_num);    
         } else {
-            VPRINTF(FATAL, "CALIPTRA: Timed out waiting for MBOX complete\n");
+            VPRINTF(FATAL, "CALIPTRA: Timed out waiting for MBOX%x complete\n", mbox_num);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
 
-        fail = caliptra_ss_mcu_mbox0_get_data_and_attempt_writes();
-        if (fail) {
-            VPRINTF(FATAL, "CALIPTRA: FAILED\n");
+        if(!caliptra_ss_mcu_mbox_wait_execute(mbox_num, 300)) {
+            VPRINTF(FATAL, "CALIPTRA: Timed out waiting for MBOX%x execute\n", mbox_num);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
+
+        caliptra_ss_mcu_mbox_get_data_and_attempt_writes(mbox_num);
 
         VPRINTF(LOW, "CALIPTRA: Sequence complete\n");
 

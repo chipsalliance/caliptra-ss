@@ -18,6 +18,7 @@
 #include "soc_ifc.h"
 #include "caliptra_ss_lib.h"
 #include <string.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
@@ -31,7 +32,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 
-void mcu_mbox0_get_data(){
+void mcu_mbox_get_data(uint32_t mbox_num){
     uint32_t clptra_expected_data[] = { 0x10101010,
                                         0x20202020,
                                         0x30303030,
@@ -52,15 +53,15 @@ void mcu_mbox0_get_data(){
     uint32_t mbox_resp_data;
     uint32_t mbox_dlen;
 
-    mbox_dlen = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN);
-    VPRINTF(LOW, "MCU: Caliptra data length: 0x%x\n", mbox_dlen);
+    mbox_dlen = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "MCU: Mbox%x Caliptra data length: 0x%x\n", mbox_num, mbox_dlen);
 
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii));
-        VPRINTF(LOW, "MCU: Reading Caliptra data from MBOX: Data[%d] 0x%x\n", ii, mbox_resp_data);
+        mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num);
+        VPRINTF(LOW, "MCU: Reading Caliptra data from MBOX%x: Data[%d] 0x%x\n", mbox_num, ii, mbox_resp_data);
         // Compare expected data from Caliptra uC
         if (mbox_resp_data != clptra_expected_data[ii]) {
-            VPRINTF(FATAL, "MCU: Mbox0 SRAM data from Caliptra is not expected value - dword: %x expected data: %x\n", ii, clptra_expected_data[ii]);
+            VPRINTF(FATAL, "MCU: Mbox%x SRAM data from Caliptra is not expected value - dword: %x expected data: %x\n", mbox_num, ii, clptra_expected_data[ii]);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
@@ -68,17 +69,7 @@ void mcu_mbox0_get_data(){
 
 }
 
-void mcu_mbox0_clear_execute() {
-    uint32_t mbox_resp_data;
-    VPRINTF(LOW, "MCU: Clearing Execute\n");
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0x0);
-    
-    mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER);
-    VPRINTF(LOW, "MCU: MBOX0 USER = %x\n", mbox_resp_data);
-
-}
-
-void mcu_mbox0_send_data_no_wait_status() {
+void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
     uint32_t mbox_resp_data;
     const uint32_t mbox_dlen = 16*4;
     uint32_t mbox_data[] = { 0x00000000,
@@ -100,42 +91,36 @@ void mcu_mbox0_send_data_no_wait_status() {
     uint32_t mbox_resp_dlen;
 
     // MBOX: Acquire lock
-    VPRINTF(LOW, "MCU: Waiting for Mbox lock acquired\n");
-    while((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK));
-    VPRINTF(LOW, "MCU: Mbox lock acquired\n");
+    if (!mcu_mbox_acquire_lock(mbox_num, 1000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x didn't acquire lock\n", mbox_num);
+    }
     
-    mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK);
-    VPRINTF(LOW, "MCU: MBOX0 Lock = %x\n", mbox_resp_data);
+    mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "MCU: MBOX%x Lock = %x\n", mbox_num, mbox_resp_data);
     
-
-    VPRINTF(LOW, "MCU: Checking MBOX USER\n");
-    while(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER) == 0);
-    mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER);
-    VPRINTF(LOW, "MCU: MBOX0 USER = %x\n", mbox_resp_data);
+    VPRINTF(LOW, "MCU: Wait for Lock to Reflect MBOX USER\n");
+    if(!mcu_mbox_wait_for_user_to_be_mcu(mbox_num, 1000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x didn't update mbox user appropriately\n", mbox_num);
+    }
 
     // MBOX: Write CMD
-    VPRINTF(LOW, "MCU: Writing to MBOX command\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD, 0xFADECAFE ); // Resp required
+    VPRINTF(LOW, "MCU: Writing to MBOX%x command\n", mbox_num); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, 0xFADECAFE );
 
     //// MBOX: Write DLEN
-    VPRINTF(LOW, "MCU: Writing to MBOX DLEN\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, mbox_dlen);
+    VPRINTF(LOW, "MCU: Writing to MBOX%x DLEN\n", mbox_num); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_dlen);
 
     //// MBOX: Write data
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        VPRINTF(LOW, "MCU: Writing to MBOX data: 0x%x\n", mbox_data[ii]); 
-        lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii), mbox_data[ii]);
+        VPRINTF(LOW, "MCU: Writing to MBOX%x data: 0x%x\n", mbox_num, mbox_data[ii]); 
+        lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_data[ii]);
     }
 
     //// MBOX: Execute
     VPRINTF(LOW, "MCU: Write Mbox execute\n");
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
-    VPRINTF(LOW, "MCU: Mbox execute\n");
-}
-
-void mcu_mbox0_wait_status_complete() {
-    VPRINTF(LOW, "MCU: Waiting status from Caliptra\n");
-    while((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK) != 0x2);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
+    VPRINTF(LOW, "MCU: Mbox%x execute\n", mbox_num);
 }
 
 // Test (in conjuction with Caliptra uC C code) does a series of MCU mailbox writes and reads between MCU and Caliptra uC
@@ -155,27 +140,17 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;  
+    uint32_t mbox_num = 0;  // TODO add randomization
     uint32_t axi_select = xorshift32() % 5;
 
     uint32_t axi_user_id[] = { xorshift32(), xorshift32(), xorshift32(), xorshift32(), xorshift32() };
-    VPRINTF(LOW, "MCU: Configured Valid AXI USERs: 0 - 0x%x; 1 - 0x%x; 2 - 0x%x; 3 - 0x%x; 4 - 0x%x;\n", axi_user_id[0], axi_user_id[1], axi_user_id[2], axi_user_id[3], axi_user_id[4]);
     
     uint32_t caliptra_uc_axi_id = axi_user_id[axi_select];
     VPRINTF(LOW, "MCU: Valid AXI USER for test AXI: 0x%x;\n", caliptra_uc_axi_id);
 
     VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n")
     // MBOX: Setup valid AXI
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0, axi_user_id[0]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1, axi_user_id[1]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_2, axi_user_id[2]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_3, axi_user_id[3]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_4, axi_user_id[4]);
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0, MCI_REG_MBOX0_AXI_USER_LOCK_0_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_1, MCI_REG_MBOX0_AXI_USER_LOCK_1_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_2, MCI_REG_MBOX0_AXI_USER_LOCK_2_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_3, MCI_REG_MBOX0_AXI_USER_LOCK_3_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_4, MCI_REG_MBOX0_AXI_USER_LOCK_4_LOCK_MASK);
+    mcu_mbox_configure_valid_axi(mbox_num, axi_user_id);
 
     mcu_mci_boot_go();
 
@@ -186,7 +161,7 @@ void main (void) {
 
     mcu_cptra_fuse_init();
 
-    mcu_mbox_clear_lock_out_of_reset();
+    mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
     ////////////////////////////////////
     // Mailbox command test
@@ -195,33 +170,39 @@ void main (void) {
     // Wait for Caliptra Core to acquire lock, write MBOX data, and set execute
     // Read MBOX data.  Check that data matches test expectation
     // Update status
-    mcu_mbox_wait_for_lock_and_execute();
+    if(!mcu_mbox_wait_for_user_lock(mbox_num, caliptra_uc_axi_id, 10000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not acquire lock and set execute\n", mbox_num);
+    }
+
+    if(!mcu_mbox_wait_for_user_execute(mbox_num, 10000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", mbox_num);
+    }
 
     // Check that Mailbox data available from SOC interrupt has been set
     if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
-                    MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK) == 0) {
-        VPRINTF(FATAL, "MCU: Mailbox data available from SoC interrupt not set\n");
+                    MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK << mbox_num) == 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x Mailbox data available from SoC interrupt not set\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
     
-    mcu_mbox0_get_data();
+    mcu_mbox_get_data(mbox_num);
 
     // Check that User CSR properly displays lock user
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER) != caliptra_uc_axi_id) {
-        VPRINTF(FATAL, "MCU: Caliptra AXI not reflected in MBOX_USER CSR\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num) != caliptra_uc_axi_id) {
+        VPRINTF(FATAL, "MCU: Mbox%x Caliptra AXI not reflected in MBOX_USER CSR\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    VPRINTF(LOW, "MCU: Caliptra AXI properly reflected in MBOX_USER CSR\n");
+    VPRINTF(LOW, "MCU: Mbox%x Caliptra AXI properly reflected in MBOX_USER CSR\n", mbox_num);
 
-    mcu_mbox_update_status_complete();
+    mcu_mbox_update_status_complete(mbox_num);
 
     // Acquire lock and send data to mailbox
     // Set execute
-    mcu_mbox0_send_data_no_wait_status();
+    mcu_mbox_send_data_no_wait_status(mbox_num);
 
-    mcu_mbox_update_status_complete();
+    mcu_mbox_update_status_complete(mbox_num);
 
     VPRINTF(LOW, "MCU: Sequence complete\n");
 
