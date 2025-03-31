@@ -1,0 +1,19 @@
+seed: 1
+testname: mcu_test_rom_i3c_rand_streaming_boot
+pre-exec: |
+  echo "Running pre_exec for test mcu_test_rom_i3c_rand_streaming_boot "
+  echo "FIXME: Test is running at 1000MHz"
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/cptra_test_rom_streaming_boot CALIPTRA_INTERNAL_TRNG=0 TESTNAME=cptra_test_rom_streaming_boot program.hex
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=mcu_test_rom_i3c_rand_streaming_boot CSS_CLK_BUILD_FREQ=1000 mcu_program.hex
+  cp $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_rand_streaming_boot/fw_update.hex .
+  cp $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_rand_streaming_boot/fw_update.size .
+plusargs:
+  - '+AVY_TEST=i3c_rand_streaming_boot'
+  # Image Size Control knobs value
+  # cmdline_img_sz in bytes in hex
+  - '+cmdline_img_sz=114'
+  # random_img_sz in bytes in hex
+  # - '+random_img_sz'
+
+
+

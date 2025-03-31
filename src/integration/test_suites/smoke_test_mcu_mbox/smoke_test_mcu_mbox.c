@@ -163,16 +163,18 @@ void main (void) {
     uint32_t sram_data;
     
     
-    VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n");
 
     VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
 
     mcu_mci_boot_go();
 
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
+    VPRINTF(LOW, "MCU: Caliptra bringup\n");
+
 
     // Setting Caliptra to DEFAULT user
     mcu_cptra_fuse_init_axi_user(0xFFFFFFFF);
+
 
     mcu_mbox_clear_lock_out_of_reset();
 
