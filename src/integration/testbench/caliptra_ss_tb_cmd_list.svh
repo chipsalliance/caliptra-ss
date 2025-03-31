@@ -50,6 +50,7 @@
 //         8'h2 : 8'h5  - Do nothing
 //         8'h6 : 8'h7E - WriteData is an ASCII character - dump to console.log
 //         8'h7F        - Do nothing
+//         --
 //         8'hb0        - FC/LCC Command Offset
 //         8'hb2        - FC/LCC CMD_FC_LCC_RESET              
 //         8'hb3        - FC/LCC CMD_FORCE_FC_AWUSER_CPTR_CORE 
@@ -60,7 +61,11 @@
 //         8'hb8        - FC/LCC CMD_RELEASE_ZEROIZATION       
 //         8'hb9        - FC/LCC CMD_FORCE_LC_TOKENS           
 //         8'hba        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD    
-//         8'he0        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD    
+//         --
+//         8'he0        - Disable ECC Error Injection
+//         8'he2        - Inject Single-bit ECC errors into MCU DCCM
+//         8'he3        - Inject Double-bit ECC errors into MCU DCCM
+//         --
 //         8'hff        - End the simulation with a Success status
 localparam TB_SERVICE_CMD_NOPE              = 8'h00;
 localparam TB_CMD_END_SIM_WITH_FAILURE      = 8'h01;
