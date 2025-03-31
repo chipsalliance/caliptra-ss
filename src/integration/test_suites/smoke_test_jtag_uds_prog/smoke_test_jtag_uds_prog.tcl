@@ -91,10 +91,5 @@ if {$failure} {
 
 puts "UDS programming completed successfully."
 
-puts "Put JTAG into a infinite loop!!!"
-while {([expr {$status & 0x100}] == 0)} {    
-    after 5000
-    set status [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
-}
 shutdown
 

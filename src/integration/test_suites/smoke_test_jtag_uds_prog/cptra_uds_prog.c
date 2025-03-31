@@ -144,8 +144,8 @@ void UDS_provision(uint32_t base_address) {
 
     // 0x580: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
     int i;
-    for (i=0;i<1;i++){
-        dai_wr(base_address, i*2, i*2+1, 64, 0);
+    for (i=0;i<8;i++){
+        dai_wr(base_address+i*8, i*2, i*2+1, 64, 0);
         VPRINTF(LOW, "CLP_CORE: programming %02d item in UDS partition with 0x%08X and 0x%08X...\n",i, i*2, i*2+1);
     }
 

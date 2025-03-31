@@ -30,7 +30,7 @@ proc compare {x y} {
     return 0
 }
 
-set STDOUT 0x300300cc
+set STDOUT 0x21000414
 
 set mbox_clk_gate_en 0xf2
 set mbox_lock_debug 0xf9

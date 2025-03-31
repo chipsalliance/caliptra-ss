@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
 #ifndef CALIPTRA_SS_LIB
 #define CALIPTRA_SS_LIB
 
@@ -22,6 +20,10 @@ extern uint32_t state;
 uint32_t xorshift32(void);
 
 void reset_fc_lcc_rtl(void);
+void mcu_cptra_wait_for_fuses() ;
+void mcu_cptra_set_fuse_done() ;
+void mcu_cptra_advance_brkpoint() ;
+void mcu_cptra_fuse_init_axi_user(uint32_t cptra_axi_user);
 void mcu_mci_boot_go();
 void mcu_mci_poll_exec_lock();
 void mcu_mci_req_reset();
@@ -29,6 +31,12 @@ void mcu_cptra_fuse_init();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
 void mcu_cptra_mbox_cmd();
+void boot_mcu();
+void boot_i3c_core(void);
+void boot_i3c_socmgmt_if(void);
+void boot_i3c_standby_ctrl_mode();
+void boot_i3c_reg(void);
+void mcu_mbox_clear_lock_out_of_reset();
 
 #define FC_LCC_CMD_OFFSET 0xB0
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
