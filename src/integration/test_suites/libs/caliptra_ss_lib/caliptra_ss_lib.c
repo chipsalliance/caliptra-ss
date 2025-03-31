@@ -205,17 +205,17 @@ bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t attempt_count) {
 
 void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id) {
     
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[0]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[1]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_2 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[2]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_3 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[3]);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_4 + MCU_MBOX_NUM_STRIDE*mbox_num, axi_user_id[4]);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[0]);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[1]);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_2 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[2]);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_3 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[3]);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_4 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[4]);
 
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_0_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_1 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_1_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_2 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_2_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_3 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_3_LOCK_MASK);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_4 + MCU_MBOX_NUM_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_4_LOCK_MASK);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_0_LOCK_MASK);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_1 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_1_LOCK_MASK);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_2 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_2_LOCK_MASK);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_3 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_3_LOCK_MASK);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_4 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_4_LOCK_MASK);
 
     VPRINTF(LOW, "MCU: Configured Valid AXI USERs in Mbox%x:  0 - 0x%x; 1 - 0x%x; 2 - 0x%x; 3 - 0x%x; 4 - 0x%x;\n", mbox_num, axi_user_id[0], axi_user_id[1], axi_user_id[2], axi_user_id[3], axi_user_id[4]);
 }
