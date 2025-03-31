@@ -18,25 +18,7 @@
 `ifndef CALIPTRA_SS_TB_CMD_LIST_SVH
 `define CALIPTRA_SS_TB_CMD_LIST_SVH
 
-
-`ifndef CPTRA_SS_TB_TOP_NAME
-  `define CPTRA_SS_TB_TOP_NAME caliptra_ss_top_tb
-`endif
-`ifndef CPTRA_SS_TOP_PATH
-  `define CPTRA_SS_TOP_PATH      `CPTRA_SS_TB_TOP_NAME.caliptra_ss_dut
-`endif
-`ifndef MCI_PATH
-  `define MCI_PATH      `CPTRA_SS_TOP_PATH.mci_top_i
-`endif
-`ifndef LCC_PATH
-  `define LCC_PATH      `CPTRA_SS_TOP_PATH.u_lc_ctrl
-`endif
-`ifndef FC_PATH
-  `define FC_PATH      `CPTRA_SS_TOP_PATH.u_otp_ctrl
-`endif
-`ifndef CPTRA_CORE_TOP_PATH
-  `define CPTRA_CORE_TOP_PATH      `CPTRA_SS_TOP_PATH.caliptra_top_dut
-`endif
+`include "caliptra_ss_top_tb_path_defines.svh"
 
 //=========================================================================-
 // STDOUT and Trace Logic
