@@ -1041,7 +1041,7 @@ module caliptra_ss_top_tb
         .deassert_rst_flag_from_service(deassert_rst_flag_from_service)
 
     );
-        /*
+    
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag0"),
@@ -1056,7 +1056,7 @@ module caliptra_ss_top_tb
         .jtag_trst_n    (cptra_ss_cptra_core_jtag_trst_n_i),
         .jtag_srst_n    ()
     );
-*/
+
 
 `ifdef CALIPTRA_INTERNAL_TRNG
     //=========================================================================-
