@@ -21,13 +21,12 @@
 #include "lc_ctrl.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
+
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
     enum printf_verbosity verbosity_g = LOW;
 #endif
-
-
 
 
 void main (void) {
@@ -54,8 +53,7 @@ void main (void) {
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
     uint32_t cptra_boot_go;
-    // VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
-    
+
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
     lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
@@ -70,11 +68,9 @@ void main (void) {
     // Wait for ready_for_fuses
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
 
-
-    
     lcc_initialization();
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    reset_fc_lcc_rtl();
+    //transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    //reset_fc_lcc_rtl();
 
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
@@ -84,25 +80,19 @@ void main (void) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
     
+    //Sync phrase for JTAG
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG MCU Smoke Test with ROM \n=================\n\n");
     
-
     cptra_boot_go = 0;
-    VPRINTF(LOW, "MCU: waits in success loop\n");
-    while(cptra_boot_go != 0xff){
-        cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_FW_FLOW_STATUS);
+    VPRINTF(LOW, "MCU: waits in loop until JTAG done\n");
+    while(cptra_boot_go != 0xB007FACE){
+        cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RESET_VECTOR);
         for (uint32_t ii = 0; ii < 500; ii++) {
             __asm__ volatile ("nop"); // Sleep loop as "nop"
         }
     }
 
-    reset_fc_lcc_rtl();
-    VPRINTF(LOW, "LC&Fuse_CTRLis under reset!\n");
-    for (uint16_t ii = 0; ii < 2000; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-
+    VPRINTF(LOW, "MCU: JTAG work is done\n");
     SEND_STDOUT_CTRL(0xff);
 
 }
