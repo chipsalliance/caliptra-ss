@@ -378,8 +378,9 @@ module caliptra_ss_top_tb
                         $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
                         #i3c_run_time;
                     end else begin
-                        $display("Waiting 500us for I3C tests to finish..\n", 1000);
-                        #500us;
+                        i3c_run_time = 500us;
+                        $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
+                        #i3c_run_time;
                     end
                 end
                 $finish;
