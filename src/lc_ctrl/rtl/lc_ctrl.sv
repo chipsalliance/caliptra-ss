@@ -188,6 +188,7 @@ module lc_ctrl
   assign axi_wr_rsp.awready = axi_if.awready;
   
   assign axi_if.wdata       = axi_wr_req.wdata;
+  assign axi_if.wuser       = '0; // FIXME
   assign axi_if.wstrb       = axi_wr_req.wstrb;
   assign axi_if.wlast       = axi_wr_req.wlast;
   assign axi_if.wvalid      = axi_wr_req.wvalid;
@@ -969,7 +970,6 @@ module lc_ctrl
   // Assertions //
   ////////////////
 
-  `CALIPTRA_ASSERT_KNOWN(TlOKnown,               tl_o                       )
   //`CALIPTRA_ASSERT_KNOWN(AlertTxKnown_A,         alert_tx_o                 ) // -> NOTE: Removed since we do not use this port anymore
   `CALIPTRA_ASSERT_KNOWN(PwrLcKnown_A,           pwr_lc_o                   )
   `CALIPTRA_ASSERT_KNOWN(LcOtpProgramKnown_A,    lc_otp_program_o           )

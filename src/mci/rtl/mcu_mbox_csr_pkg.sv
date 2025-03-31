@@ -23,6 +23,7 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic [31:0] next;
+        logic hwclr;
     } mcu_mbox_csr__mbox_user_user_70a5ffab__user_we_466f6a8b__in_t;
 
     typedef struct packed{
@@ -164,6 +165,7 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic value;
+        logic swmod;
     } mcu_mbox_csr__mbox_execute__execute__out_t;
 
     typedef struct packed{
