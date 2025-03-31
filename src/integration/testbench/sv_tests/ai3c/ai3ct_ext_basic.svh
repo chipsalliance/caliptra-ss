@@ -13,22 +13,6 @@
 // limitations under the License.
 //
 
-/*
-      .DUT type: slave 
-      .Checklist items:
-      .Spec section: 
-      5.1.4 Bus Initialization and Dynamic Address Assignment Mode
-      .Procedure: 
-            * Device State For Test: 
-            * Overview of Test Steps:
-      1. Wait for Dynamic Address Assignment and Bus Initialization done
-      2. Send random write transfer
-      3. Send random read transfer
-      4. Send random transfer
-      .Result:
-      1. Main Master can do read/write transfer to each slave
-*/
-
 class ai3ct_ext_basic extends ai3ct_base;
 
 	`avery_test_reg(ai3ct_ext_basic)
@@ -348,7 +332,7 @@ class ai3ct_ext_basic extends ai3ct_base;
 		//-- Image size byte 2 to 5 field to size of the image.
 		data = new[6];
 		data[0] = 'h0; // CMS set to 0
-		data[1] = 'h0; // FIFO reset -- FIXME should be 'h1
+		data[1] = 'h0; // FIFO reset -- FIXME should be 'h1. Tracking https://github.com/chipsalliance/caliptra-ss/issues/146
 
 		data[2] = img_sz_in_4B[7:0]; // Image size 0
 		data[3] = img_sz_in_4B[15:8]; // Image size 1

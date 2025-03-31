@@ -36,10 +36,20 @@ file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(mes
 logger.addHandler(file_handler)
 
 def generate_output_filename(csv_file_path, criteria):
-    parts = []
-    for key in ["L0", "L1", "Nightly|Weekly", "PromotePipeline", "Directed|Random", "DUT"]:
-        if criteria.get(key):
-            parts.append(criteria[key])
+    # Check if this is an L0 Promote yaml
+    if criteria.get("L0") == "L0" and criteria.get("PromotePipeline") == "Promote":
+        # Use only L0, PromotePipeline, and DUT for L0 Promote yaml
+        parts = []
+        for key in ["L0", "PromotePipeline", "DUT"]:
+            if criteria.get(key):
+                parts.append(criteria[key])
+    else:
+        # Use all criteria for non-L0 Promote yaml
+        parts = []
+        for key in ["L0", "L1", "Nightly|Weekly", "PromotePipeline", "Directed|Random", "DUT"]:
+            if criteria.get(key):
+                parts.append(criteria[key])
+    
     parent_directory = os.path.dirname(os.path.dirname(csv_file_path))
     filename = "_".join(parts) + "_regression.yml"
     return os.path.join(parent_directory, filename)
@@ -71,35 +81,26 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
     with open(csv_file_path, mode='r', encoding='utf-8') as csv_file:
         csv_reader = csv.DictReader(csv_file)
         logger.debug(f"Looking for rows that match criteria: {criteria}")
+        
         for row in csv_reader:
             # Strip spaces from keys and values in each row
             row = {key.strip(): value.strip() for key, value in row.items()}
 
-            # Debug: Log detailed comparison for L0 specifically
-            if criteria.get("L0") == "L0":
-                l0_match = (row["L0"] == criteria["L0"] or row["L0"] == "None")
-                logger.debug(f"L0 comparison: row[L0]={row['L0']} vs criteria[L0]={criteria['L0']}, match={l0_match}")
-            
-            # Matching logic
-            dir_rand_match = (row["Directed|Random"] == criteria["Directed|Random"] or row["Directed|Random"] == "None")
-            nw_match = (row["Nightly|Weekly"] == criteria["Nightly|Weekly"] or criteria["Nightly|Weekly"] is None or 
-                        criteria["Nightly|Weekly"] == "" or row["Nightly|Weekly"] == "None")
-            l0_match = (row["L0"] == criteria["L0"] or row["L0"] == "None")
-            l1_match = (row["L1"] == criteria["L1"] or row["L1"] == "None")
-            dut_match = (row["DUT"] == criteria["DUT"])
-            promote_match = (criteria["PromotePipeline"] == row["PromotePipeline"] or criteria["PromotePipeline"] is None)
-            
-            # Log the comparison results
-            logger.debug(f"Row: {row['TestName']}")
-            logger.debug(f"  Directed|Random: {row['Directed|Random']} vs {criteria['Directed|Random']} = {dir_rand_match}")
-            logger.debug(f"  Nightly|Weekly: {row['Nightly|Weekly']} vs {criteria['Nightly|Weekly']} = {nw_match}")
-            logger.debug(f"  L0: {row['L0']} vs {criteria['L0']} = {l0_match}")
-            logger.debug(f"  L1: {row['L1']} vs {criteria['L1']} = {l1_match}")
-            logger.debug(f"  DUT: {row['DUT']} vs {criteria['DUT']} = {dut_match}")
-            logger.debug(f"  PromotePipeline: {row['PromotePipeline']} vs {criteria['PromotePipeline']} = {promote_match}")
-
-            all_match = dir_rand_match and nw_match and l0_match and l1_match and dut_match and promote_match
-            
+            # Special handling for L0 Promote
+            # L0 Promote tests
+            if criteria.get("L0") == "L0" and criteria.get("PromotePipeline") == "Promote":
+                dut_match = (row["DUT"] == criteria["DUT"])
+                promote_match = (row["PromotePipeline"] == "Promote")
+                l0_match = (row["L0"] == "L0" or row["L0"] == "None" or row["L0"] == "")
+                all_match = dut_match and promote_match and l0_match
+            elif criteria.get("L1") == "L1":
+                dir_rand_match = (row["Directed|Random"] == criteria["Directed|Random"] or row["Directed|Random"] == "None")
+                nw_match = (row["Nightly|Weekly"] == criteria["Nightly|Weekly"] or row["Nightly|Weekly"] == "None")
+                l1_match = (row["L1"] == "L1")
+                not_l0_only = not (row["L0"] == "L0" and row["L1"] != "L1")
+                dut_match = (row["DUT"] == criteria["DUT"])
+                promote_match = (criteria["PromotePipeline"] == row["PromotePipeline"] or criteria["PromotePipeline"] is None)
+                all_match = dir_rand_match and nw_match and l1_match and not_l0_only and dut_match and promote_match
             if all_match:
                 logger.debug(f"✅ MATCHED: {row['TestName']}")
                 filtered_data.append(row)
@@ -397,10 +398,10 @@ def scan_test_suites(caliptra_ss):
 
 
 if __name__ == "__main__":
-    caliptra_ss = os.getenv('CALIPTRA_SS')
+    caliptra_ss = os.getenv('CALIPTRA_SS_ROOT')
 
     if not caliptra_ss:
-        logger.error("CALIPTRA_SS environment variable is not set. Please set it before running this script.")
+        logger.error("CALIPTRA_SS_ROOT environment variable is not set. Please set it before running this script.")
         exit(1)
     
     # Scan for all test suites first
