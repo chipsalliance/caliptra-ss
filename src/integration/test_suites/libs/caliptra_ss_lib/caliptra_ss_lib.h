@@ -29,6 +29,7 @@ void mcu_cptra_set_fuse_done() ;
 void mcu_cptra_advance_brkpoint() ;
 void mcu_cptra_fuse_init_axi_user(uint32_t cptra_axi_user);
 void mcu_mci_boot_go();
+void read_check(uintptr_t rdptr, uint32_t expected_rddata);
 void mcu_mci_poll_exec_lock();
 void mcu_mci_req_reset();
 void mcu_cptra_fuse_init();

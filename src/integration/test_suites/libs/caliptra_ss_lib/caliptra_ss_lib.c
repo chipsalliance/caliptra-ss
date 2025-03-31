@@ -52,6 +52,18 @@ void reset_fc_lcc_rtl(void) {
     mcu_sleep(160);
 }
 
+void read_check(uintptr_t rdptr, uint32_t expected_rddata){
+    uint32_t data;
+    data = lsu_read_32(rdptr);
+    VPRINTF(LOW, "read_check: Address: 0x%x -- Expected: 0x%x Actual: 0x%x\n", rdptr, expected_rddata, data);
+    if (expected_rddata != data) {
+        VPRINTF(FATAL, "MCU: FATAL - read_check: Data mismatch at address: 0x%x -- Expected: 0x%x Actual: 0x%x\n", rdptr, expected_rddata, data);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+}
+
+
 void mcu_mci_boot_go() {
  
     // Configure EXEC Region before initializing Caliptra
