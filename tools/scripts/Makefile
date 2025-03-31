@@ -19,7 +19,7 @@ TEST_CFLAGS = -g -O3 -DMY_RANDOM_SEED=$(PLAYBOOK_RANDOM_SEED) $(BUILD_CFLAGS)
 VERILATOR = verilator
 GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
-CSS_CLK_BUILD_FREQ ?= 1000
+CALIPTRA_SS_CLK_FREQ ?= 1000
 
 # Ensure that RISC-V toolchain is installed
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
@@ -418,7 +418,7 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 
 $(BUILD_DIR)/caliptra_ss_clk_freq.h: $(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh
-	$(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(CSS_CLK_BUILD_FREQ)
+	$(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(CALIPTRA_SS_CLK_FREQ)
 
 endif
 
