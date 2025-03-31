@@ -17,6 +17,43 @@
 //********************************************************************************
 package tb_top_pkg;
 
+    // -----------------------------------------------------------
+    // Parameters
+    // -----------------------------------------------------------
+    localparam MCU_SRAM_SIZE_KB = 512;
+    localparam MCU_SRAM_DATA_WIDTH   = 32;
+    localparam MCU_SRAM_DATA_WIDTH_BYTES = MCU_SRAM_DATA_WIDTH / 8;
+    localparam MCU_SRAM_ECC_WIDTH = 7;
+    localparam MCU_SRAM_DATA_TOTAL_WIDTH = MCU_SRAM_DATA_WIDTH + MCU_SRAM_ECC_WIDTH;
+    localparam MCU_SRAM_DEPTH   = (MCU_SRAM_SIZE_KB * 1024) / MCU_SRAM_DATA_WIDTH_BYTES;
+    localparam MCU_SRAM_ADDR_WIDTH = $clog2(MCU_SRAM_DEPTH);
+
+
+    localparam MCU_MBOX0_SIZE_KB = 256;
+    localparam MCU_MBOX0_DATA_W = 32;
+    localparam MCU_MBOX0_ECC_DATA_W = 7;
+    localparam MCU_MBOX0_SIZE_BYTES = MCU_MBOX0_SIZE_KB * 1024;
+    localparam MCU_MBOX0_SIZE_DWORDS = MCU_MBOX0_SIZE_BYTES/4;
+    localparam MCU_MBOX0_DATA_AND_ECC_W = MCU_MBOX0_DATA_W + MCU_MBOX0_ECC_DATA_W;
+    localparam MCU_MBOX0_DEPTH = (MCU_MBOX0_SIZE_KB * 1024 * 8) / MCU_MBOX0_DATA_W;
+    localparam MCU_MBOX0_ADDR_W = $clog2(MCU_MBOX0_DEPTH);
+    localparam MCU_MBOX0_DEPTH_LOG2 = $clog2(MCU_MBOX0_DEPTH);
+    localparam [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
+    localparam [4:0][31:0] MCU_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
+
+
+    localparam MCU_MBOX1_SIZE_KB = 256;
+    localparam MCU_MBOX1_DATA_W = 32;
+    localparam MCU_MBOX1_ECC_DATA_W = 7;
+    localparam MCU_MBOX1_SIZE_BYTES = MCU_MBOX1_SIZE_KB * 1024;
+    localparam MCU_MBOX1_SIZE_DWORDS = MCU_MBOX1_SIZE_BYTES/4;
+    localparam MCU_MBOX1_DATA_AND_ECC_W = MCU_MBOX1_DATA_W + MCU_MBOX1_ECC_DATA_W;
+    localparam MCU_MBOX1_DEPTH = (MCU_MBOX1_SIZE_KB * 1024 * 8) / MCU_MBOX1_DATA_W;
+    localparam MCU_MBOX1_ADDR_W = $clog2(MCU_MBOX1_DEPTH);
+    localparam MCU_MBOX1_DEPTH_LOG2 = $clog2(MCU_MBOX1_DEPTH);
+    localparam [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
+    localparam [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
+
     `ifndef VERILATOR
       class bitflip_mask_generator #(
           int DATA_AND_ECC_W = 39
