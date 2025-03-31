@@ -62,7 +62,14 @@ CALIPTRA_RTL = $(CALIPTRA_SS)/third_party/caliptra-rtl/src/integration/rtl
 # Libraries providing functionality for each peripheral component in Caliptra Subsystem
 COMP_LIB_NAMES := caliptra_ss_lib \
 		  fuse_ctrl \
-		  lc_ctrl
+		  lc_ctrl \
+			mci
+
+# Add mci to COMP_LIB_NAMES when TESTNAME is mci_reg_rand_test
+#ifeq ($(TESTNAME),mci_reg_rand_test)
+#    COMP_LIB_NAMES += mci
+#endif
+
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
