@@ -321,7 +321,8 @@ endif
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
 mcu_program.hex: $(BUILD_DIR)/defines.h
 	@echo " !!! No $(GCC_PREFIX)-gcc in path, using canned hex files !!"
-	cp $(HEX_DIR)/$(TESTNAME).hex mcu_program.hex
+	cp $(HEX_DIR)/$(TESTNAME).hex mcu_program_w_addr.hex
+	sed '/^@/d' mcu_program_w_addr.hex > mcu_program.hex
 else ifneq (,$(wildcard $(TEST_DIR)/$(TESTNAME).makefile))
 mcu_program.hex:
 	@echo Building $(TESTNAME) via $(TEST_DIR)/$(TESTNAME).makefile
@@ -331,7 +332,8 @@ else ifneq (,$(wildcard $(TEST_DIR)/$(TESTNAME)))
 # TODO update this if/when we have pre-built binaries to test
 mcu_program.hex:
 	@echo "Building mcu_program.hex from $(TESTNAME) using rules for pre-compiled RUST executables"
-	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .bss -R .sbss -R .iccm -R .dccm -R .eh_frame --pad-to 0xC000 --gap-fill 0xFF --no-change-warnings $(TEST_DIR)/$(TESTNAME) mcu_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .bss -R .sbss -R .iccm -R .dccm -R .eh_frame --pad-to 0xC000 --gap-fill 0xFF --no-change-warnings $(TEST_DIR)/$(TESTNAME) mcu_program_w_addr.hex
+	sed '/^@/d' mcu_program_w_addr.hex > mcu_program.hex
 	-$(GCC_PREFIX)-objcopy -O verilog -j .data -j .rodata -j .bss -j .sbss -j .dccm \
 			      --change-section-lma       .data-0x80000000 \
 			      --change-section-lma     .rodata-0x80000000 \
@@ -360,9 +362,11 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 			      --pad-to 0x4000 \
 			      --no-change-warnings \
 			      $(TESTNAME).exe mcu_dccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -R .dccm -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000  --change-section-lma .text-0x80000000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -R .dccm -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000  --change-section-lma .text-0x80000000 --no-change-warnings $(TESTNAME).exe mcu_program_w_addr.hex
+	sed '/^@/d' mcu_program_w_addr.hex > mcu_program.hex
 	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0xC000  --no-change-warnings $(TESTNAME).exe mcu_program.bin
-	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21C00000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21C00000 --no-change-warnings $(TESTNAME).exe mcu_lmem_w_addr.hex
+	sed '/^@/d' mcu_lmem_w_addr.hex > mcu_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
