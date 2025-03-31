@@ -35,8 +35,6 @@ import tb_top_pkg::*;
   input  logic                       clk,
   input  logic                       rst_l,
   input  int                         cycleCnt,
-  input  logic                       tb_service_cmd_valid,
-  input  logic [7:0]                 tb_service_cmd,
   css_mcu0_el2_mem_if                cptra_ss_mcu0_el2_mem_export,
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox0_sram_req_if,
@@ -46,7 +44,7 @@ import tb_top_pkg::*;
 
     `include "caliptra_ss_tb_cmd_list.svh"
 
-    `define MCU_TOP_PATH caliptra_ss_dut.rvtop_wrapper
+    `define MCU_TOP_PATH `CPTRA_SS_TOP_PATH.rvtop_wrapper
     `define MCU_DEC `MCU_TOP_PATH.rvtop.veer.dec
 
     int                         commit_count;
@@ -86,13 +84,13 @@ import tb_top_pkg::*;
     assign PROD_state = lc_ctrl_state_pkg::lc_state_t'(lc_ctrl_state_pkg::LcStProd);
     initial begin
         if ($test$plusargs("CALIPTRA_SS_UDS_PROG") || $test$plusargs("CALIPTRA_SS_MANUF_DBG") || $test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_REQ is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_REQ.UDS_PROGRAM_REQ.value);
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP IN PROGRESS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_IN_PROGRESS);
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_FAIL is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_FAIL);
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_SUCCESS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_SUCCESS);
-            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_GO is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_BOOTFSM_GO);
-            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_BrkPoint_Latched is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.BootFSM_BrkPoint_Latched);
-            $monitor("CALIPTRA_SS_UDS_PROG: CPTRA_FLOW_STATUS is %x\n",caliptra_ss_dut.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_FLOW_STATUS);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_REQ is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_REQ.UDS_PROGRAM_REQ.value);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP IN PROGRESS is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_IN_PROGRESS);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_FAIL is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_FAIL);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_SUCCESS is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_SUCCESS);
+            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_GO is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_BOOTFSM_GO);
+            $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_BrkPoint_Latched is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.BootFSM_BrkPoint_Latched);
+            $monitor("CALIPTRA_SS_UDS_PROG: CPTRA_FLOW_STATUS is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_FLOW_STATUS);
             // force `CPTRA_SS_TB_TOP_NAME.cptra_ss_cptra_core_m_axi_if.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
@@ -111,8 +109,8 @@ import tb_top_pkg::*;
         end 
     end
 
-    assign mailbox_write    = caliptra_ss_dut.mci_top_i.s_axi_w_if.awvalid && (caliptra_ss_dut.mci_top_i.s_axi_w_if.awaddr == mem_mailbox) && rst_l;
-    assign mailbox_data     = caliptra_ss_dut.mci_top_i.s_axi_w_if.wdata;
+    assign mailbox_write    = `CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.awvalid && (`CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.awaddr == mem_mailbox) && rst_l;
+    assign mailbox_data     = `CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.wdata;
 
     assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
 
