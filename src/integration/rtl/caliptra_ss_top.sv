@@ -1073,6 +1073,7 @@ module caliptra_ss_top
         .awburst_i  (cptra_ss_i3c_s_axi_if.awburst),
         .awlock_i   (cptra_ss_i3c_s_axi_if.awlock),
         .wvalid_i   (cptra_ss_i3c_s_axi_if.wvalid),
+        .wuser_i    (cptra_ss_i3c_s_axi_if.wuser),
         .wready_o   (cptra_ss_i3c_s_axi_if.wready),
         .wdata_i    (cptra_ss_i3c_s_axi_if.wdata),
         .wstrb_i    (cptra_ss_i3c_s_axi_if.wstrb),
