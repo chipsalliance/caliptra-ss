@@ -111,7 +111,8 @@ if {($val & 0x00000c00) == 0} {
 }
 puts ""
 
-riscv set_mem_access sysbus
+#sysbus access doesn't work on mcu
+#riscv set_mem_access sysbuf
 
 set golden5a {0x5a5a5a5a}
 set goldena5 {0xa5a5a5a5}
@@ -169,5 +170,7 @@ for {set i 0} {$i < $num_ro_regs} {incr i} {
 #}
 
 # Success
-write_memory $MCI_MEM_FW_FLOW_STATUS 32 0x000000FF phys
+puts "Writing unique value to sync test end"
+riscv dmi_write $MCI_DMI_MCU_RESET_VECTOR 0xB007FACE
+
 shutdown
