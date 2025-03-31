@@ -58,6 +58,7 @@ void mcu_mci_boot_go() {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , 100);
     VPRINTF(LOW, "MCU: Configure EXEC REGION Size\n");
     
+
     // writing SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO register of MCI for CPTRA Boot FSM to bring Caliptra out of reset
     uint32_t cptra_boot_go;
     VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
