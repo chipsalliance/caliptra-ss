@@ -198,10 +198,33 @@ bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t attempt_count) {
     for(uint32_t ii=0; ii<attempt_count; ii++) {
         if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num)){
             VPRINTF(LOW, "MCU: Caliptra set execute for Mbox%x\n", mbox_num);
+
+            // Check that Mailbox cmd available from SOC interrupt has been set
+            if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+                (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK << mbox_num)) == 0) {
+                VPRINTF(FATAL, "MCU: Mbox%x Mailbox cmd available from SoC interrupt not set\n", mbox_num);
+                SEND_STDOUT_CTRL(0x1);
+                while(1);
+                }
             return true;
         }
     }
     return false;
+}
+
+void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num) {
+    VPRINTF(LOW, "MCU: RW1C cmd available interrupt Mbox%x\n", mbox_num);
+    uint32_t internal_intr = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
+    internal_intr |= MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK << mbox_num;
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, internal_intr);
+
+    // Check that Mailbox cmd available from SOC interrupt has been cleared
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK << mbox_num)) == 1) {
+        VPRINTF(FATAL, "MCU: Mbox%x Mailbox cmd available from SoC interrupt not set\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
 }
 
 void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id) {

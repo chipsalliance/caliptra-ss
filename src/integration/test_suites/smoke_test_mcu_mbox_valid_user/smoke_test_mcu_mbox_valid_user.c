@@ -117,6 +117,10 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
         lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_data[ii]);
     }
 
+    // MBOX: Write CMD_STATUS for testing
+    VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS\n", mbox_num); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0x1 );    
+
     //// MBOX: Execute
     VPRINTF(LOW, "MCU: Write Mbox execute\n");
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
@@ -178,14 +182,6 @@ void main (void) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", mbox_num);
     }
 
-    // Check that Mailbox data available from SOC interrupt has been set
-    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
-                    MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK << mbox_num) == 0) {
-        VPRINTF(FATAL, "MCU: Mbox%x Mailbox data available from SoC interrupt not set\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-    
     mcu_mbox_get_data(mbox_num);
 
     // Check that User CSR properly displays lock user
@@ -198,11 +194,12 @@ void main (void) {
 
     mcu_mbox_update_status_complete(mbox_num);
 
+    // Clear the interrupt and check that it gets cleared
+    mcu_mbox_clear_mbox_cmd_avail_interrupt(mbox_num);
+
     // Acquire lock and send data to mailbox
     // Set execute
     mcu_mbox_send_data_no_wait_status(mbox_num);
-
-    mcu_mbox_update_status_complete(mbox_num);
 
     VPRINTF(LOW, "MCU: Sequence complete\n");
 
