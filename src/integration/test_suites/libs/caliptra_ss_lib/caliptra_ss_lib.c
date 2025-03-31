@@ -251,6 +251,7 @@ void boot_i3c_reg(void) {
     //-- PROT_CAP
     VPRINTF(LOW, "MCU: Updating I3C Recovery Registers..\n");
     
+    //-- writing ASCII Value for “OCP RECV”
     i3c_reg_data = 0x2050434f;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_0 with 'h %0x\n", i3c_reg_data);

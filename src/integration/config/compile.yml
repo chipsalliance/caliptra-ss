@@ -192,7 +192,8 @@ global:
         # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
         #- '+ai3c_dbg_name=master'
-        - '+vpi -lpthread'
+        - '+vpi'
+        # - -lpthread'
         - '+CLP_BUS_LOGS=1'
         # Command line arg to spcify the I3C test 
         # - +AVY_TEST=ai3ct_ext_basic

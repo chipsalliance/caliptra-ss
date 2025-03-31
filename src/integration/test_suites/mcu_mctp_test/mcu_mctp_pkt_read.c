@@ -81,8 +81,7 @@ void main (void) {
             __asm__ volatile ("nop");    
         }    
     }
-
-    VPRINTF(LOW, "MCU: INDIRECT_FIFO_CTRL_1 is not zero\n");   
+    
     VPRINTF(LOW, "MCU: End of I3C Reg Read Write Test\n");
     SEND_STDOUT_CTRL(0xff);
 }

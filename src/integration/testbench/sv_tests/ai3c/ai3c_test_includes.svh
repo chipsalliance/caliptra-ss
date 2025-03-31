@@ -18,4 +18,5 @@
 `include "i3c_reg_rd_wr.svh"
 `include "i3c_streaming_boot.svh"
 `include "i3c_rand_streaming_boot.svh"
+`include "i3c_mctp_pkt_wr.svh"
 `include "ai3ct_ext_basic.svh"

@@ -12,6 +12,7 @@ targets:
   rtl:
     directories:
       - $COMPILE_ROOT/../../third_party/i3c-core/src
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/libs
       - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi
     files:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/mem/prim_ram_1p_pkg.sv
