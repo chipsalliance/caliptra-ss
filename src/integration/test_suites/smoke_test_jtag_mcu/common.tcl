@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+set dmstatus_addr 0x11
+set dmcontrol_addr 0x10
+
 proc compare {x y} {
     puts "'$x' vs. '$y'"
 
@@ -28,6 +32,18 @@ proc compare {x y} {
     }
 
     return 0
+}
+proc halt_core {} {
+    puts "Halting the core..."
+    riscv dmi_write $dmcontrol_addr 0x80000001
+    puts "Read Debug Module Status Register..."
+    set val [riscv dmi_read $dmstatus_addr]
+    puts "dmstatus: $val"
+    while {($val & 0x00000300) == 0} {
+        puts "The hart is not halted yet!"
+        set val [riscv dmi_read $dmstatus_addr]
+    }
+    puts "The hart is halted!"
 }
 
 set STDOUT 0x300300cc
@@ -50,8 +66,6 @@ set mbox_unlock_mem_addr 0x30020020
 set mbox_dlen_dmi_addr 0x50
 set mbox_dout_dmi_addr 0x51
 set mbox_status_dmi_addr 0x52
-
-set dmstatus_addr 0x11
 
 #dmi register addresses
 set mbox_dlen_dmi_addr 0x50

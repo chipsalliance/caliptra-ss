@@ -112,7 +112,8 @@ if {($val & 0x00000c00) == 0} {
 puts ""
 
 #sysbus access doesn't work on mcu
-#riscv set_mem_access sysbuf
+#using abstract instead
+riscv set_mem_access abstract
 
 set golden5a {0x5a5a5a5a}
 set goldena5 {0xa5a5a5a5}
@@ -126,7 +127,7 @@ for {set i 1} {$i < $num_rw_regs} {incr i} {
     set expected [expr {$golden5a & $rw_reg_mask($i)}]
     if {[compare $actual $expected] != 0} {
         puts "mismatch in register $rw_regs($i)!"
-        #shutdown error
+        shutdown error
     }
     #write goldena5
     riscv dmi_write [set $rw_regs($i)] $goldena5
@@ -134,7 +135,7 @@ for {set i 1} {$i < $num_rw_regs} {incr i} {
     set expected [expr {$goldena5 & $rw_reg_mask($i)}]
     if {[compare $actual $expected] != 0} {
         puts "mismatch in register $rw_regs($i)!"
-        #shutdown error
+        shutdown error
     }
 }
 
@@ -148,29 +149,37 @@ for {set i 0} {$i < $num_ro_regs} {incr i} {
     set actual [riscv dmi_read [set $ro_regs($i)]]
     if {[compare $actual $expected] != 0} {
         puts "mismatch in register $ro_regs($i)!"
-        #shutdown error
+        shutdown error
     }
 }
 
-#Write RO from uc and read back on dmi
-#puts "Checking the read only registers..."
-#for {set i 0} {$i < $num_ro_regs_mem} {incr i} {
-#    #write golden5a
-#    write_memory [set $ro_regs_mem($i)] 32 $golden5a phys
-#    set actual [riscv dmi_read [set $ro_regs($i)]]
-#    if {[compare $actual $golden5a] != 0} {
-#        ##shutdown error
-#    }
-#    #write goldena5
-#    write_memory [set $ro_regs_mem($i)] 32 $goldena5 phys
-#    set actual [riscv dmi_read [set $ro_regs($i)]]
-#    if {[compare $actual $goldena5] != 0} {
-#        ##shutdown error
-#    }
-#}
+#Check MCU SRAM
+puts "Checking the SRAM interface writes..."
+for {set i 0} {$i < 16} {incr i} {
+    #Write data that is address inverted
+    puts "Writing SRAM addr $i"
+    set wr_addr $i
+    set wr_data [expr {$i ^ 0xffffffff}]
+    riscv dmi_write $MCI_DMI_MCU_SRAM_ADDR $wr_addr
+    riscv dmi_write $MCI_DMI_MCU_SRAM_DATA $wr_data
+}
+
+puts "Checking the SRAM interface reads..."
+for {set i 0} {$i < 16} {incr i} {
+    #Expected data that is address inverted
+    puts "Reading SRAM addr $i"
+    set rd_addr $i
+    set expected [expr {$i ^ 0xffffffff}]
+    riscv dmi_write $MCI_DMI_MCU_SRAM_ADDR $rd_addr
+    set actual [riscv dmi_read $MCI_DMI_MCU_SRAM_DATA]
+    if {[compare $actual $expected] != 0} {
+        puts "mismatch in SRAM address $rd_addr!"
+        shutdown error
+    }
+}
 
 # Success
-puts "Writing unique value to sync test end"
-riscv dmi_write $MCI_DMI_MCU_RESET_VECTOR 0xB007FACE
+puts "Setting unique value to get MCU to end test"
+riscv dmi_write  $MCI_DMI_MCU_RESET_VECTOR 0xB007FACE
 
 shutdown
