@@ -62,7 +62,7 @@ typedef struct {
 } partition_t;
 
 // XXX: Fuse addresses, eventually these should be generated automatically.
-static partition_t partitions[14] = {
+static partition_t partitions[13] = {
     // SECRET_TEST_UNLOCK_PARTITION
     { .address = 0x000, .granularity = 64, .is_software = false, .num_fuses = 1,  .fuse_addresses = _addr0, .digest_address = 0x040 },
      // SECRET_MANUF_PARTITION
