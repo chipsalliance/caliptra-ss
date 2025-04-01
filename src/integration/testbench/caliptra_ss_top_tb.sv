@@ -1624,9 +1624,9 @@ module caliptra_ss_top_tb
     
     // Instantiate caliptra_ss_top_tb_services
     caliptra_ss_top_tb_services u_caliptra_ss_top_tb_services (
-        .clk                    (core_clk),
-        .rst_l                  (rst_l),
-        .cycleCnt               (cycleCnt),
+        .clk                         (core_clk                    ),
+        .rst_l                       (rst_l                       ),
+        .cycleCnt                    (cycleCnt                    ),
         .cptra_ss_mcu0_el2_mem_export(cptra_ss_mcu0_el2_mem_export),
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
