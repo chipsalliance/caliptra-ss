@@ -42,7 +42,8 @@
 //         8'hb7        - FC/LCC CMD_FC_FORCE_ZEROIZATION_RESET
 //         8'hb8        - FC/LCC CMD_RELEASE_ZEROIZATION       
 //         8'hb9        - FC/LCC CMD_FORCE_LC_TOKENS           
-//         8'hba        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD    
+//         8'hba        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD      
+//         8'hbb        - FC/LCC CMD_FC_TRIGGER_ESCALATION   
 //         --
 //         8'he0        - Disable ECC Error Injection
 //         8'he2        - Inject Single-bit ECC errors into MCU DCCM
@@ -62,6 +63,7 @@ localparam CMD_FC_FORCE_ZEROIZATION_RESET   = FC_LCC_CMD_OFFSET + 8'h07;
 localparam CMD_RELEASE_ZEROIZATION          = FC_LCC_CMD_OFFSET + 8'h08;
 localparam CMD_FORCE_LC_TOKENS              = FC_LCC_CMD_OFFSET + 8'h09;
 localparam CMD_LC_FORCE_RMA_SCRAP_PPD       = FC_LCC_CMD_OFFSET + 8'h0a;
+localparam CMD_FC_TRIGGER_ESCALATION        = FC_LCC_CMD_OFFSET + 8'h0b;
 
 localparam TB_CMD_DISABLE_INJECT_ECC_ERROR     = 8'he0;
 localparam TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM = 8'he2;
