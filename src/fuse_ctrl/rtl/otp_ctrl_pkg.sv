@@ -351,8 +351,8 @@ package otp_ctrl_pkg;
   localparam int FC_TABLE_NUM_RANGES = 2;
   
   localparam access_control_entry_t access_control_table [FC_TABLE_NUM_RANGES] = '{
-    '{ lower_addr: 32'h00000000, upper_addr: 32'h0000FFFF}, // Caliptra core
-    '{ lower_addr: 32'h00000088, upper_addr: 32'h0000FFFF} // MCU core
+    '{ lower_addr: 32'h00000000, upper_addr: 32'h00000088}, // Caliptra core
+    '{ lower_addr: 32'h00000090, upper_addr: 32'h00000FD8}  // MCU core
   };
 
     //------------------------------------------------------------------
