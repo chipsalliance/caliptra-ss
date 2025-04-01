@@ -36,9 +36,9 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/coverage
++incdir+${CALIPTRA_SS_ROOT}/src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/asserts
 +incdir+${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl
-+incdir+${CALIPTRA_SS_ROOT}/src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design
 +incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines
@@ -238,12 +238,13 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/coverage/caliptra_t
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/coverage/caliptra_top_cov_props.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/coverage/caliptra_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/test_suites/libs/jtagdpi/jtagdpi.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_path_defines.svh
+${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map_defines.svh
+${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_includes.svh
 ${CALIPTRA_SS_ROOT}/src/integration/asserts/caliptra_ss_top_sva.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/jtag_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/alert_handler_reg_pkg.sv
-${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map_defines.svh
-${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_includes.svh
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem_if.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/testbench/rom.sv
@@ -293,6 +294,7 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench/fuse_ctrl_bfm.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/prim_generic_otp.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/lc_ctrl_bfm.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_tb_cmd_list.svh
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_veer_sram_export.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/fc_lcc_tb_services.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_services.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb.sv

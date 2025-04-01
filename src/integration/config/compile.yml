@@ -55,11 +55,13 @@ targets:
   tb:
     directories: [$COMPILE_ROOT/rtl]
     files:
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_path_defines.svh
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
   rtl:
     directories: [$COMPILE_ROOT/rtl]
     files:
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_path_defines.svh
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
 ---

@@ -14,8 +14,7 @@
 // limitations under the License.
 //
 
-`define CPTRA_SS_TB_TOP_NAME caliptra_ss_top_tb
-`define CPTRA_SS_TOP_PATH `CPTRA_SS_TB_TOP_NAME.caliptra_ss_dut
+`include "caliptra_ss_top_tb_path_defines.svh"
 
 module caliptra_ss_top_sva
   import otp_ctrl_pkg::*;

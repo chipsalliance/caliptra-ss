@@ -18,25 +18,7 @@
 `ifndef CALIPTRA_SS_TB_CMD_LIST_SVH
 `define CALIPTRA_SS_TB_CMD_LIST_SVH
 
-
-`ifndef CPTRA_SS_TB_TOP_NAME
-  `define CPTRA_SS_TB_TOP_NAME caliptra_ss_top_tb
-`endif
-`ifndef CPTRA_SS_TOP_PATH
-  `define CPTRA_SS_TOP_PATH      `CPTRA_SS_TB_TOP_NAME.caliptra_ss_dut
-`endif
-`ifndef MCI_PATH
-  `define MCI_PATH      `CPTRA_SS_TOP_PATH.mci_top_i
-`endif
-`ifndef LCC_PATH
-  `define LCC_PATH      `CPTRA_SS_TOP_PATH.u_lc_ctrl
-`endif
-`ifndef FC_PATH
-  `define FC_PATH      `CPTRA_SS_TOP_PATH.u_otp_ctrl
-`endif
-`ifndef CPTRA_CORE_TOP_PATH
-  `define CPTRA_CORE_TOP_PATH      `CPTRA_SS_TOP_PATH.caliptra_top_dut
-`endif
+`include "caliptra_ss_top_tb_path_defines.svh"
 
 //=========================================================================-
 // STDOUT and Trace Logic
@@ -50,6 +32,7 @@
 //         8'h2 : 8'h5  - Do nothing
 //         8'h6 : 8'h7E - WriteData is an ASCII character - dump to console.log
 //         8'h7F        - Do nothing
+//         --
 //         8'hb0        - FC/LCC Command Offset
 //         8'hb2        - FC/LCC CMD_FC_LCC_RESET              
 //         8'hb3        - FC/LCC CMD_FORCE_FC_AWUSER_CPTR_CORE 
@@ -59,9 +42,13 @@
 //         8'hb7        - FC/LCC CMD_FC_FORCE_ZEROIZATION_RESET
 //         8'hb8        - FC/LCC CMD_RELEASE_ZEROIZATION       
 //         8'hb9        - FC/LCC CMD_FORCE_LC_TOKENS           
-//         8'hba        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD    
-//         8'hba        - FC/LCC CMD_FC_TRIGGER_ESCALATION   
-//         8'he0        - FC/LCC TB_CMD_DISABLE_INJECT_ECC_ERROR    
+//         8'hba        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD      
+//         8'hbb        - FC/LCC CMD_FC_TRIGGER_ESCALATION   
+//         --
+//         8'he0        - Disable ECC Error Injection
+//         8'he2        - Inject Single-bit ECC errors into MCU DCCM
+//         8'he3        - Inject Double-bit ECC errors into MCU DCCM
+//         --
 //         8'hff        - End the simulation with a Success status
 localparam TB_SERVICE_CMD_NOPE              = 8'h00;
 localparam TB_CMD_END_SIM_WITH_FAILURE      = 8'h01;
