@@ -154,6 +154,7 @@ module caliptra_ss_top
     output logic cptra_ss_all_error_fatal_o,
     output logic cptra_ss_all_error_non_fatal_o,
 
+    input logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int,
     input logic cptra_ss_mcu_jtag_tck_i,
     input logic cptra_ss_mcu_jtag_tms_i,
     input logic cptra_ss_mcu_jtag_tdi_i,
@@ -533,23 +534,6 @@ module caliptra_ss_top
     logic payload_available_o;
     logic image_activated_o;
 
-    // MCU DMA AXI Interface - UNUSED
-    axi_if #(
-        .AW(32), //-- FIXME : Assign a common paramter
-        .DW(64), //-- FIXME : Assign a common paramter,
-        .IW(`CALIPTRA_AXI_ID_WIDTH),
-        .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) mcu_dma_s_axi_if (.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-
-    
-    // MCU ROM AXI Manager INF - UNUSED
-    axi_if #(
-        .AW(32), //-- FIXME : Assign a common paramter
-        .DW(64), //-- FIXME : Assign a common paramter,
-        .IW(`CALIPTRA_AXI_ID_WIDTH),
-        .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_mcu_rom_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-
     mci_mcu_sram_if cptra_ss_mcu_rom_mbox0_sram_req_if (
         .clk(cptra_ss_clk_i),
         .rst_b(cptra_ss_rst_b_i)
@@ -561,21 +545,41 @@ module caliptra_ss_top
     );
 
 
+    
+
+
+
      always_comb begin
-        cptra_ss_mcu_lsu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_lsu_axi_user_i;
-        cptra_ss_mcu_lsu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_lsu_axi_user_i;
+
+        ///////
+        // AXI USER assignments
+        ///////
+        // ARUSER
+        cptra_ss_mcu_lsu_m_axi_if.aruser = cptra_ss_strap_mcu_lsu_axi_user_i;
+        cptra_ss_mcu_ifu_m_axi_if.aruser = cptra_ss_strap_mcu_ifu_axi_user_i;
+        
+        // AWUSER
+        cptra_ss_mcu_lsu_m_axi_if.awuser = cptra_ss_strap_mcu_lsu_axi_user_i;
+        cptra_ss_mcu_ifu_m_axi_if.awuser = cptra_ss_strap_mcu_ifu_axi_user_i;
+        
+        // BUSER
+        cptra_ss_i3c_s_axi_if.buser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
+        
+        // RUSER
+        cptra_ss_i3c_s_axi_if.ruser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
+        
+        // WUSER
+        cptra_ss_mcu_lsu_m_axi_if.wuser = '0; // WUSER not used in Caliptra SS
+        cptra_ss_mcu_ifu_m_axi_if.wuser = '0; // WUSER not used in Caliptra SS
+
+        ///////
+        // AXI ID assignments
+        ///////
         cptra_ss_mcu_lsu_m_axi_if.arid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
         cptra_ss_mcu_lsu_m_axi_if.awid[CPTRA_SS_MCU_LSU_ARID_WIDTH-1:pt.LSU_BUS_TAG] = '0; 
-        cptra_ss_mcu_ifu_m_axi_if.awuser                                             = cptra_ss_strap_mcu_ifu_axi_user_i;
-        cptra_ss_mcu_ifu_m_axi_if.aruser                                             = cptra_ss_strap_mcu_ifu_axi_user_i;
         cptra_ss_mcu_ifu_m_axi_if.arid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
         cptra_ss_mcu_ifu_m_axi_if.awid[CPTRA_SS_MCU_IFU_ARID_WIDTH-1:pt.IFU_BUS_TAG] = '0;
       
-        mcu_dma_s_axi_if.awvalid = '0;
-        mcu_dma_s_axi_if.wvalid  = '0;
-        mcu_dma_s_axi_if.bready  = '0;
-        mcu_dma_s_axi_if.arvalid = '0;
-        mcu_dma_s_axi_if.rready  = '0;
 
     end
 
@@ -698,23 +702,12 @@ module caliptra_ss_top
 
     logic mci_intr;
 
-    //FIXME define these somewhere for integrators
-    // Interrupt Assignments
-    // NOTE Vector 0 is reserved by VeeR
-    `define VEER_INTR_VEC_MCI                 1
-    `define VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL 2
-    `define VEER_INTR_VEC_I3C                 3
-    `define VEER_INTR_VEC_FC                  4
-    
     //Interrupt connections
-    always_comb begin
-        ext_int = '0;
-        ext_int[`VEER_INTR_VEC_MCI]                 = mci_intr;
-        ext_int[`VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL] = mailbox_data_avail;
-        ext_int[`VEER_INTR_VEC_I3C]                 = 0;
-        ext_int[`VEER_INTR_VEC_FC]                  = intr_otp_operation_done;
-        //ext_int = ext_int_tb; //drive from tb if needed
-    end
+    assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
+    assign ext_int[`VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL]  = mailbox_data_avail;
+    assign ext_int[`VEER_INTR_VEC_I3C]                  = 0;
+    assign ext_int[`VEER_INTR_VEC_FC]                   = intr_otp_operation_done;
+    assign ext_int[pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] = cptra_ss_mcu_ext_int;
 
     //=========================================================================-
     // MCU instance
@@ -762,7 +755,7 @@ module caliptra_ss_top
         .lsu_axi_awlen          (cptra_ss_mcu_lsu_m_axi_if.awlen),
         .lsu_axi_awsize         (cptra_ss_mcu_lsu_m_axi_if.awsize),
         .lsu_axi_awburst        (cptra_ss_mcu_lsu_m_axi_if.awburst),
-        .lsu_axi_awlock         (),//(cptra_ss_mcu_lsu_m_axi_if.awlock),
+        .lsu_axi_awlock         (cptra_ss_mcu_lsu_m_axi_if.awlock),
         .lsu_axi_awcache        (),//(cptra_ss_mcu_lsu_m_axi_if.awcache),
         .lsu_axi_awprot         (),//(cptra_ss_mcu_lsu_m_axi_if.awprot),
         .lsu_axi_awqos          (),//(cptra_ss_mcu_lsu_m_axi_if.awqos),
@@ -786,7 +779,7 @@ module caliptra_ss_top
         .lsu_axi_arlen          (cptra_ss_mcu_lsu_m_axi_if.arlen),
         .lsu_axi_arsize         (cptra_ss_mcu_lsu_m_axi_if.arsize),
         .lsu_axi_arburst        (cptra_ss_mcu_lsu_m_axi_if.arburst),
-        .lsu_axi_arlock         (),//(cptra_ss_mcu_lsu_m_axi_if.arlock),
+        .lsu_axi_arlock         (cptra_ss_mcu_lsu_m_axi_if.arlock),
         .lsu_axi_arcache        (),//(cptra_ss_mcu_lsu_m_axi_if.arcache),
         .lsu_axi_arprot         (),//(cptra_ss_mcu_lsu_m_axi_if.arprot),
         .lsu_axi_arqos          (),//(cptra_ss_mcu_lsu_m_axi_if.arqos),
@@ -832,7 +825,7 @@ module caliptra_ss_top
         .ifu_axi_arlen          ( cptra_ss_mcu_ifu_m_axi_if.arlen   ),
         .ifu_axi_arsize         ( cptra_ss_mcu_ifu_m_axi_if.arsize  ),
         .ifu_axi_arburst        ( cptra_ss_mcu_ifu_m_axi_if.arburst ),
-        .ifu_axi_arlock         (),//( cptra_ss_mcu_ifu_m_axi_if.arlock  ),
+        .ifu_axi_arlock         ( cptra_ss_mcu_ifu_m_axi_if.arlock  ),
         .ifu_axi_arcache        (),//( cptra_ss_mcu_ifu_m_axi_if.arcache ),
         .ifu_axi_arprot         (),//( cptra_ss_mcu_ifu_m_axi_if.arprot  ),
         .ifu_axi_arqos          (),//( cptra_ss_mcu_ifu_m_axi_if.arqos   ),
@@ -893,41 +886,41 @@ module caliptra_ss_top
 
         //-------------------------- DMA AXI signals--------------------------
         // AXI Write Channels
-        .dma_axi_awvalid        (mcu_dma_s_axi_if.awvalid),
-        .dma_axi_awready        (mcu_dma_s_axi_if.awready),
-        .dma_axi_awid           (mcu_dma_s_axi_if.awid[pt.DMA_BUS_TAG-1:0]),
-        .dma_axi_awaddr         (mcu_dma_s_axi_if.awaddr[31:0]),
-        .dma_axi_awsize         (mcu_dma_s_axi_if.awsize),
-        .dma_axi_awprot         ('0),//(mcu_dma_s_axi_if.awprot),
-        .dma_axi_awlen          (mcu_dma_s_axi_if.awlen),
-        .dma_axi_awburst        (mcu_dma_s_axi_if.awburst),
+        .dma_axi_awvalid        ('0), // unused
+        .dma_axi_awready        (), // unused
+        .dma_axi_awid           ('0), // unused
+        .dma_axi_awaddr         ('0), // unused
+        .dma_axi_awsize         ('0), // unused
+        .dma_axi_awprot         ('0),//(), // unused
+        .dma_axi_awlen          ('0), // unused
+        .dma_axi_awburst        ('0), // unused
 
-        .dma_axi_wvalid         (mcu_dma_s_axi_if.wvalid),
-        .dma_axi_wready         (mcu_dma_s_axi_if.wready),
-        .dma_axi_wdata          (mcu_dma_s_axi_if.wdata),
-        .dma_axi_wstrb          (mcu_dma_s_axi_if.wstrb),
-        .dma_axi_wlast          (mcu_dma_s_axi_if.wlast),
+        .dma_axi_wvalid         ('0), // unused
+        .dma_axi_wready         (), // unused
+        .dma_axi_wdata          ('0), // unused
+        .dma_axi_wstrb          ('0), // unused
+        .dma_axi_wlast          ('0), // unused
 
-        .dma_axi_bvalid         (mcu_dma_s_axi_if.bvalid),
-        .dma_axi_bready         (mcu_dma_s_axi_if.bready),
-        .dma_axi_bresp          (mcu_dma_s_axi_if.bresp),
-        .dma_axi_bid            (mcu_dma_s_axi_if.bid[pt.DMA_BUS_TAG-1:0]),
+        .dma_axi_bvalid         (), // unused
+        .dma_axi_bready         ('0), // unused
+        .dma_axi_bresp          (), // unused
+        .dma_axi_bid            (), // unused
 
-        .dma_axi_arvalid        (mcu_dma_s_axi_if.arvalid),
-        .dma_axi_arready        (mcu_dma_s_axi_if.arready),
-        .dma_axi_arid           (mcu_dma_s_axi_if.arid[pt.DMA_BUS_TAG-1:0]),
-        .dma_axi_araddr         (mcu_dma_s_axi_if.araddr[31:0]),
-        .dma_axi_arsize         (mcu_dma_s_axi_if.arsize),
-        .dma_axi_arprot         ('0),//(mcu_dma_s_axi_if.arprot),
-        .dma_axi_arlen          (mcu_dma_s_axi_if.arlen),
-        .dma_axi_arburst        (mcu_dma_s_axi_if.arburst),
+        .dma_axi_arvalid        ('0), // unused
+        .dma_axi_arready        (), // unused
+        .dma_axi_arid           ('0), // unused
+        .dma_axi_araddr         ('0), // unused
+        .dma_axi_arsize         ('0), // unused
+        .dma_axi_arprot         ('0),//(), // unused
+        .dma_axi_arlen          ('0), // unused
+        .dma_axi_arburst        ('0), // unused
 
-        .dma_axi_rvalid         (mcu_dma_s_axi_if.rvalid),
-        .dma_axi_rready         (mcu_dma_s_axi_if.rready),
-        .dma_axi_rid            (mcu_dma_s_axi_if.rid[pt.DMA_BUS_TAG-1:0]),
-        .dma_axi_rdata          (mcu_dma_s_axi_if.rdata),
-        .dma_axi_rresp          (mcu_dma_s_axi_if.rresp),
-        .dma_axi_rlast          (mcu_dma_s_axi_if.rlast),
+        .dma_axi_rvalid         (), // unused
+        .dma_axi_rready         ('0), // unused
+        .dma_axi_rid            (), // unused
+        .dma_axi_rdata          (), // unused
+        .dma_axi_rresp          (), // unused
+        .dma_axi_rlast          (), // unused
 
         .timer_int              ( mci_mcu_timer_int ),
         .soft_int               ( 1'b0 ), // No multi-processor functionality, not expecting MSI from other HARTs
@@ -1070,6 +1063,7 @@ module caliptra_ss_top
         .awburst_i  (cptra_ss_i3c_s_axi_if.awburst),
         .awlock_i   (cptra_ss_i3c_s_axi_if.awlock),
         .wvalid_i   (cptra_ss_i3c_s_axi_if.wvalid),
+        .wuser_i    (cptra_ss_i3c_s_axi_if.wuser),
         .wready_o   (cptra_ss_i3c_s_axi_if.wready),
         .wdata_i    (cptra_ss_i3c_s_axi_if.wdata),
         .wstrb_i    (cptra_ss_i3c_s_axi_if.wstrb),

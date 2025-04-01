@@ -157,24 +157,27 @@ void main (void) {
     char *argv[1];
     enum boot_fsm_state_e boot_fsm_ps;
     const uint32_t mbox_dlen = 16*4;
+    uint32_t mbox_num = 0;
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;
     
     
-    VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n");
 
     VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
 
     mcu_mci_boot_go();
 
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
+    VPRINTF(LOW, "MCU: Caliptra bringup\n");
+
 
     // Setting Caliptra to DEFAULT user
     mcu_cptra_fuse_init_axi_user(0xFFFFFFFF);
 
-    mcu_mbox_clear_lock_out_of_reset();
+
+    mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
     ////////////////////////////////////
     // Mailbox command test
