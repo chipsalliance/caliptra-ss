@@ -38,6 +38,7 @@ void main (void) {
     enum boot_fsm_state_e boot_fsm_ps;
     const uint32_t mbox_dlen = 10000; // Program to large value to make sure zeroization is still in progress when read of lock arrives
 
+    uint32_t mbox_num = 0;
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
@@ -59,7 +60,7 @@ void main (void) {
     mcu_cptra_user_init();
 
     // MBOX: clear the lock on MBOX that is there from reset
-    mcu_mbox_clear_lock_out_of_reset();
+    mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
     VPRINTF(LOW, "=================\nMCU MBOX SRAM Testing\n=================\n\n")
 
