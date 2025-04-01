@@ -37,7 +37,7 @@ volatile uint32_t  intr_count;
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
 
-uint8_t debug_level;
+uint8_t debug_level = 3;
 uint32_t checksum, ii, lenght_challenge;
 uint32_t expected_unlock_req_payload[2];
 uint32_t expected_token_payload[0x753];
@@ -168,25 +168,25 @@ void wait_and_read_token() {
 }
 
 
-void read_pk_hash() {
-    uint32_t numOfPK = lsu_read_32(CLP_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES);
-    uint32_t offSet = lsu_read_32(CLP_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET);
+// void read_pk_hash() {
+//     uint32_t numOfPK = lsu_read_32(CLP_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES);
+//     uint32_t offSet = lsu_read_32(CLP_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET);
 
-    VPRINTF(LOW, "CLP_CORE: Number of debug PK hashes = %d\n", numOfPK);
-    VPRINTF(LOW, "CLP_CORE: PK hash register bank offset = 0x%08X\n", offSet);
+//     VPRINTF(LOW, "CLP_CORE: Number of debug PK hashes = 0x%02x\n", numOfPK);
+//     VPRINTF(LOW, "CLP_CORE: PK hash register bank offset = 0x%08X\n", offSet);
 
-    uint32_t pk_hash;
-    uint32_t base_address = offSet + 12 * (debug_level - 1) * 4;
+//     uint32_t pk_hash;
+//     uint32_t base_address = offSet + 12 * (debug_level) * 4;
 
-    for (int i = 0; i < 12; i++) {
-        uint32_t addr = base_address + (i * 4);
-        pk_hash = dma_read_from_lsu(addr);
-        VPRINTF(LOW, "CLP_CORE: reading PROD_dbg_pk[%02d] from address 0x%08X = 0x%08X\n", i, addr, pk_hash);
-        if (PROD_dbg_pk[i] != pk_hash) {
-            VPRINTF(LOW, "CLP_CORE: MISMATCH at index %02d! Expected: 0x%08X, Read: 0x%08X\n", i, PROD_dbg_pk[i], pk_hash);
-        }
-    }
-}
+//     for (int i = 0; i < 1; i++) {
+//         uint32_t addr = base_address + (i * 4);
+//         pk_hash = dma_read_from_lsu(addr);
+//         VPRINTF(LOW, "CLP_CORE: reading PROD_dbg_pk[%02d] from address 0x%08X = 0x%08X\n", i, addr, pk_hash);
+//         if (PROD_dbg_pk[i] != pk_hash) {
+//             VPRINTF(LOW, "CLP_CORE: MISMATCH at index %02d! Expected: 0x%08X, Read: 0x%08X\n", i, PROD_dbg_pk[i], pk_hash);
+//         }
+//     }
+// }
 
 
 
@@ -209,7 +209,7 @@ void main(void) {
         read_unlock_req_payload();
         send_challenge_response();
         wait_and_read_token();
-        read_pk_hash();
+        // read_pk_hash();
         uint32_t status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
         status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);

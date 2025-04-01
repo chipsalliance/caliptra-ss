@@ -105,15 +105,6 @@ void main (void) {
     //
     // Wait for ready_for_fuses
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
-    uint32_t base_address = SOC_SOC_IFC_REG_FUSE_MANUF_DBG_UNLOCK_TOKEN_0;
-    for (int i = 0; i < 2; i++) {
-        VPRINTF(LOW, "MCU: writing 0x%x to address of 0x%x\n", vector[i], base_address + (i * 4));
-        lsu_write_32(base_address + (i * 4), vector[i]);
-    }
-
-    for (uint32_t ii = 0; ii < 500; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
 
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG PROD DEBUG TEST with ROM \n=================\n\n");
 
@@ -122,9 +113,11 @@ void main (void) {
     reset_fc_lcc_rtl();
     lsu_write_32(SOC_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES, 8);
     VPRINTF(LOW, "MCU: Set number of PK hashes to 8\n");
+
     lsu_write_32(SOC_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET, PROD_DBG_PK_HASH_OFFSET);
     VPRINTF(LOW, "MCU: Set PK hash register bank offset to 0x%08X\n", PROD_DBG_PK_HASH_OFFSET);
-    base_address = PROD_DBG_PK_HASH_OFFSET + 12 * (debug_level - 1) * 4;
+    uint32_t base_address;
+    base_address = PROD_DBG_PK_HASH_OFFSET + 12 * (debug_level) * 4;
     for (int i = 0; i < 12; i++) {
         uint32_t addr = base_address + (i * 4);
         VPRINTF(LOW, "MCU: writing PROD_dbg_pk[%02d] to address 0x%08X = 0x%08X\n", i, addr, PROD_dbg_pk[i]);
