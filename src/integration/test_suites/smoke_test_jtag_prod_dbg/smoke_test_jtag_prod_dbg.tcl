@@ -37,7 +37,6 @@ set req_payload_dlen_bytes [expr {$req_payload_dlen_words * 4 + 4}]
 # This plus 4 is for checksum
 
 
-
 puts "TAP: Writing PROD DEBUG UNLOCK REQ"
 riscv dmi_write $CPTRA_DBG_MANUF_SERVICE_REQ_REG 0x2
 puts "TAP: Set BOOTFSM_GO to High..."
@@ -46,6 +45,12 @@ riscv dmi_write $DMI_REG_BOOTFSM_GO_ADDR 0x1
 puts "TAP: Waiting for MAILBOX_AVAILABLE..."
 set rsp [riscv dmi_read $CPTRA_DBG_MANUF_SERVICE_RSP_REG]
 while {($rsp & 0x200) == 0} {
+    after 100
+    set rsp [riscv dmi_read $CPTRA_DBG_MANUF_SERVICE_RSP_REG]
+}
+puts "TAP: Waiting for PROD_DBG_INPROGRESS..."
+set rsp [riscv dmi_read $CPTRA_DBG_MANUF_SERVICE_RSP_REG]
+while {($rsp & 0x20) == 0} {
     after 100
     set rsp [riscv dmi_read $CPTRA_DBG_MANUF_SERVICE_RSP_REG]
 }
@@ -79,19 +84,23 @@ while {($status & 0x0000000F) != 0x00000001} {
     after 100    ;# Wait 1000ms between polls to avoid busy looping.
     set status [riscv dmi_read $mbox_status_dmi_addr]
 }
-puts ""
-riscv dmi_write $mbox_execute_dmi_addr 0x0
-
 puts "TAP: Read mailbox dlen..."
 set set_dlen_bytes [riscv dmi_read $mbox_dlen_dmi_addr]
 puts "TAP: Read mailbox data..."
-# for {set i 0} {$i < 22} {incr i} {
-# checksum+first_data+second_data
-for {set i 0} {$i < 3} {incr i} {
+set actual [riscv dmi_read $mbox_dout_dmi_addr]
+puts "  TAP: Read the challenge chekcsum $actual"
+for {set i 0} {$i < 21} {incr i} {
     set actual [riscv dmi_read $mbox_dout_dmi_addr]
     puts "  TAP: Read the challenge $actual"
 }
-
+puts ""
+riscv dmi_write $mbox_execute_dmi_addr 0x0
+puts "TAP: Acquiring mailbox lock..."
+set lock [riscv dmi_read $mbox_lock_dmi_addr]
+while {($lock & 0x1) != 0} {
+    after 50
+    set lock [riscv dmi_read $mbox_lock_dmi_addr]
+}
 puts "TAP: Write auth resp to mailbox..."
 riscv dmi_write $mbox_cmd_dmi_addr 0x50445554
 riscv dmi_write $mbox_dlen_dmi_addr $auth_resp_dlen_bytes
@@ -105,7 +114,6 @@ riscv dmi_write $mbox_execute_dmi_addr 0x1
 puts ""
 
 puts "TAP: AUTH_DEBUG_UNLOCK_TOKEN sent. Waiting for result..."
-
 # Poll for in-progress clear and result
 set rsp [riscv dmi_read $CPTRA_DBG_MANUF_SERVICE_RSP_REG]
 puts "The first response value is $rsp"

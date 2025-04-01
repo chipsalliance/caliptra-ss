@@ -37,16 +37,52 @@ volatile uint32_t  intr_count;
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
 
-
-
+uint8_t debug_level;
 uint32_t checksum, ii, lenght_challenge;
 uint32_t expected_unlock_req_payload[2];
 uint32_t expected_token_payload[0x753];
-uint32_t challenge_payload[2];
-uint32_t uid[8];
-uint32_t challenge[12];
+uint32_t challenge_payload[] = {
+    4294966978,      // checksum
+    22,              // length
+    0, 0, 0, 0,      // unique_device_identifier[0..3]
+    0, 0, 0, 0,      // unique_device_identifier[4..7]
+    0x01020304,      // challenge[0]
+    0x05060708,      // challenge[1]
+    0x090A0B0C,      // challenge[2]
+    0x0D0E0F10,      // challenge[3]
+    0x11121314,      // challenge[4]
+    0x15161718,      // challenge[5]
+    0x191A1B1C,      // challenge[6]
+    0x1D1E1F20,      // challenge[7]
+    0x21222324,      // challenge[8]
+    0x25262728,      // challenge[9]
+    0x292A2B2C,      // challenge[10]
+    0x2D2E2F30       // challenge[11]
+};
+
+uint32_t PROD_dbg_pk[] = {
+    0x01020304,      // PROD_dbg_pk[0]
+    0x05060708,      // PROD_dbg_pk[1]
+    0x090A0B0C,      // PROD_dbg_pk[2]
+    0x0D0E0F10,      // PROD_dbg_pk[3]
+    0x11121314,      // PROD_dbg_pk[4]
+    0x15161718,      // PROD_dbg_pk[5]
+    0x191A1B1C,      // PROD_dbg_pk[6]
+    0x1D1E1F20,      // PROD_dbg_pk[7]
+    0x21222324,      // PROD_dbg_pk[8]
+    0x25262728,      // PROD_dbg_pk[9]
+    0x292A2B2C,      // PROD_dbg_pk[10]
+    0x2D2E2F30       // PROD_dbg_pk[11]
+};
+
 
 enum mbox_status_e status;
+
+uint32_t dma_read_from_lsu(uint32_t address){
+    uint32_t read_data;
+    soc_ifc_axi_dma_read_ahb_payload(address, 0, &read_data, 4, 0);
+    return read_data;
+}
 
 void wait_for_mailbox_cmd() {
     uint32_t status_reg ;
@@ -83,12 +119,12 @@ void read_unlock_req_payload() {
     }
 
     uint32_t length         = expected_unlock_req_payload[0];
-    uint8_t unlock_level    = expected_unlock_req_payload[1] & 0xFF;
+    debug_level    = expected_unlock_req_payload[1] & 0xFF;
 
     VPRINTF(LOW, "| Field         | Size (bytes) | Value     |\n");
     VPRINTF(LOW, "|---------------|--------------|-----------|\n");
     VPRINTF(LOW, "| Length        | 4            | 0x%08X |\n", length);
-    VPRINTF(LOW, "| Unlock Level  | 1            | 0x%02X     |\n", unlock_level);
+    VPRINTF(LOW, "| Unlock Level  | 1            | 0x%02X     |\n", debug_level);
 }
 
 void send_challenge_response() {
@@ -98,17 +134,11 @@ void send_challenge_response() {
 
     VPRINTF(LOW, "CLP_CORE: Writing %d bytes to mailbox\n", (21 + 1) * 4);
 
-    lsu_write_32(CLP_MBOX_CSR_MBOX_DATAIN, checksum);
-    VPRINTF(LOW, "CLP_CORE:  checksum: 0x%x\n", checksum);
-
-    lsu_write_32(CLP_MBOX_CSR_MBOX_DATAIN, lenght_challenge);
-    for (ii = 0; ii < 1/*8*/; ++ii) {
-        lsu_write_32(CLP_MBOX_CSR_MBOX_DATAIN, uid[ii]);
+    lsu_write_32(CLP_MBOX_CSR_MBOX_DATAIN, challenge_payload[0]);
+    VPRINTF(LOW, "CLP_CORE:  checksum: 0x%x\n", challenge_payload[0]);
+    for (ii = 0; ii < 21; ++ii) {
+        lsu_write_32(CLP_MBOX_CSR_MBOX_DATAIN, challenge_payload[ii]);
     }
-    for (ii = 0; ii < 1/*12*/; ++ii) {
-        lsu_write_32(CLP_MBOX_CSR_MBOX_DATAIN, challenge[ii]);
-    }
-
     // soc_ifc_clear_execute_reg();
     status = DATA_READY;
     soc_ifc_set_mbox_status_field(status);
@@ -138,6 +168,28 @@ void wait_and_read_token() {
 }
 
 
+void read_pk_hash() {
+    uint32_t numOfPK = lsu_read_32(CLP_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES);
+    uint32_t offSet = lsu_read_32(CLP_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET);
+
+    VPRINTF(LOW, "CLP_CORE: Number of debug PK hashes = %d\n", numOfPK);
+    VPRINTF(LOW, "CLP_CORE: PK hash register bank offset = 0x%08X\n", offSet);
+
+    uint32_t pk_hash;
+    uint32_t base_address = offSet + 12 * (debug_level - 1) * 4;
+
+    for (int i = 0; i < 12; i++) {
+        uint32_t addr = base_address + (i * 4);
+        pk_hash = dma_read_from_lsu(addr);
+        VPRINTF(LOW, "CLP_CORE: reading PROD_dbg_pk[%02d] from address 0x%08X = 0x%08X\n", i, addr, pk_hash);
+        if (PROD_dbg_pk[i] != pk_hash) {
+            VPRINTF(LOW, "CLP_CORE: MISMATCH at index %02d! Expected: 0x%08X, Read: 0x%08X\n", i, PROD_dbg_pk[i], pk_hash);
+        }
+    }
+}
+
+
+
 void main(void) {
     VPRINTF(LOW,"----------------------------------\nCaliptra: Mimicking ROM from Subsystem!!\n----------------------------------\n");
     
@@ -157,6 +209,7 @@ void main(void) {
         read_unlock_req_payload();
         send_challenge_response();
         wait_and_read_token();
+        read_pk_hash();
         uint32_t status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
         status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
@@ -165,7 +218,6 @@ void main(void) {
         status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
         lsu_write_32(CLP_MBOX_CSR_TAP_MODE,0);
-        soc_ifc_clear_execute_reg();
         VPRINTF(LOW, "CLP_CORE: Token received and test complete.\n");
         while(1); // Do not complete the execution, wait for MCU terminal cmd
     } else {
