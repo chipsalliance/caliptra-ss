@@ -1,4 +1,6 @@
 `include "caliptra_ss_includes.svh"
+`include "config_defines.svh"
+`include "caliptra_macros.svh"
 
 module caliptra_ss_top_w_stub();
 
@@ -6,7 +8,7 @@ module caliptra_ss_top_w_stub();
     import soc_ifc_pkg::*;
     import css_mcu0_el2_pkg::*;
     
-    `include "css_mcu0_el2_param.vh"
+    `include "css_mcu0_el2_param.vh" ;
     // Define the logic and interfaces
     logic cptra_ss_clk_i;
     logic cptra_ss_pwrgood_i;
@@ -69,10 +71,10 @@ module caliptra_ss_top_w_stub();
     logic cptra_ss_cptra_core_itrng_valid_i;
 `endif
 
-    logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i;
-    logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i;
-    logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_sram_config_axi_user_i;
-    logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mci_soc_config_axi_user_i;
+    logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i;
+    logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i;
+    logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i;
+    logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i;
     
     mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if(
         .clk(cptra_ss_clk_i),
