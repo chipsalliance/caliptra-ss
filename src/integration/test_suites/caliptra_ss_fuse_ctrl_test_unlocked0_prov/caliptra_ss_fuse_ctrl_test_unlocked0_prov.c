@@ -30,24 +30,23 @@ static uint32_t _addr4[] = { 0x0B0 };
 static uint32_t _addr5[] = { 0x0C0 };
 static uint32_t _addr6[] = { 0x0D0, 0x0D1, 0x131, 0x141, 0x143, 0x173, 0x1A3, 0x1D3, 0x203, 0x233, 0x263, 0x293 };
 static uint32_t _addr7[] = { 0x4C0, 0x4D0, 0x4E0, 0x4F0, 0x500, 0x510, 0x520, 0x530, 0x540, 0x550, 0x560 };
-static uint32_t _addr8[] = { 0x578, 0x57C, 0x58C, 0x59C };
-static uint32_t _addr9[] = { 0x5E0, 0x610 };
-static uint32_t _addr10[] = { 
+static uint32_t _addr8[] = { 0x5E0, 0x610 };
+static uint32_t _addr9[] = { 
     0x620, 0x650, 0x651, 0x681, 0x682, 0x6B2, 0x6B3, 0x6E3, 0x6E4, 0x714, 0x715, 0x745,
     0x746, 0x776, 0x777, 0x7A7, 0x7A8, 0x7D8, 0x7D9, 0x809, 0x80A, 0x83A, 0x83B, 0x86B,
     0x86C, 0x89C, 0x89D, 0x8CD, 0x8CE, 0x8FE, 0x8FF
 };
-static uint32_t _addr11[] = { 
+static uint32_t _addr10[] = { 
     0x910, 0x911, 0x915, 0x919, 0x91A, 0x91E, 0x922, 0x923, 0x927, 0x92B, 0x92C, 0x930,
     0x934, 0x935, 0x939, 0x93D, 0x942, 0x946, 0x947, 0x94B, 0x94F, 0x950, 0x954, 0x958,
     0x959, 0x95D, 0x961, 0x962, 0x966, 0x96A, 0x96B, 0x96F, 0x973, 0x974, 0x978, 0x97C,
     0x97D, 0x981, 0x985, 0x986, 0x98A, 0x98E, 0x98F, 0x993, 0x997, 0x998, 0x99C
 };
-static uint32_t _addr12[] = { 
+static uint32_t _addr11[] = { 
     0x9A8, 0x9C8, 0x9E8, 0xA08, 0xA28, 0xA48, 0xA68, 0xA88, 0xAA8, 0xAC8, 0xAE8, 0xB08,
     0xB28, 0xB48, 0xB68, 0xB88
 };
-static uint32_t _addr13[] = { 
+static uint32_t _addr12[] = { 
     0xBB0, 0xBD0, 0xBF0, 0xC10, 0xC30, 0xC50, 0xC70, 0xC90, 0xCB0, 0xCD0, 0xCF0, 0xD10,
     0xD30, 0xD50, 0xD70, 0xD90
 };
@@ -63,7 +62,7 @@ typedef struct {
 } partition_t;
 
 // XXX: Fuse addresses, eventually these should be generated automatically.
-static partition_t partitions[14] = {
+static partition_t partitions[13] = {
     // SECRET_TEST_UNLOCK_PARTITION
     { .address = 0x000, .granularity = 64, .is_software = false, .num_fuses = 1,  .fuse_addresses = _addr0, .digest_address = 0x040 },
      // SECRET_MANUF_PARTITION
@@ -79,19 +78,17 @@ static partition_t partitions[14] = {
     // SW_MANUF_PARTITION
     { .address = 0x0D0, .granularity = 32, .is_software = true,  .num_fuses = 5,  .fuse_addresses = _addr6, .digest_address = 0x4B8 }, 
     // SECRET_LC_TRANSITION_PARTITION
-    { .address = 0x4C0, .granularity = 64, .is_software = false, .num_fuses = 11, .fuse_addresses = _addr7, .digest_address = 0x570 },
-    // SVN_PARTITION
-    { .address = 0x578, .granularity = 64, .is_software = true,  .num_fuses = 4, .fuse_addresses = _addr8, .digest_address = 0x5D8 },  
+    { .address = 0x4C0, .granularity = 64, .is_software = false, .num_fuses = 11, .fuse_addresses = _addr7, .digest_address = 0x570 },  
     // VENDOR_HASHES_MANUF_PARTITION
-    { .address = 0x5E0, .granularity = 32, .is_software = true,  .num_fuses = 2,  .fuse_addresses = _addr9, .digest_address = 0x618 }, 
+    { .address = 0x5E0, .granularity = 32, .is_software = true,  .num_fuses = 2,  .fuse_addresses = _addr8, .digest_address = 0x618 }, 
     // VENDOR_HASHES_PROD_PARTITION
-    { .address = 0x620, .granularity = 32, .is_software = true,  .num_fuses = 31, .fuse_addresses = _addr10, .digest_address = 0x908 }, 
+    { .address = 0x620, .granularity = 32, .is_software = true,  .num_fuses = 31, .fuse_addresses = _addr9, .digest_address = 0x908 }, 
     // VENDOR_REVOCATIONS_PROD_PARTITION
-    { .address = 0x910, .granularity = 32, .is_software = true,  .num_fuses = 48, .fuse_addresses = _addr11, .digest_address = 0x9A0 }, 
+    { .address = 0x910, .granularity = 32, .is_software = true,  .num_fuses = 48, .fuse_addresses = _addr10, .digest_address = 0x9A0 }, 
     // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0x9A0, .granularity = 64, .is_software = false, .num_fuses = 16, .fuse_addresses = _addr12, .digest_address = 0xBA8 },
+    { .address = 0x9A8, .granularity = 64, .is_software = false, .num_fuses = 16, .fuse_addresses = _addr11, .digest_address = 0xBA8 },
     // VENDOR_NON_SECRET_PROD_PARTITION
-    { .address = 0xBB0, .granularity = 64, .is_software = true,  .num_fuses = 16, .fuse_addresses = _addr13, .digest_address = 0xFA0 }, 
+    { .address = 0xBB0, .granularity = 64, .is_software = true,  .num_fuses = 16, .fuse_addresses = _addr12, .digest_address = 0xFA0 }, 
 };
 
 void test_unlocked0_provision() {

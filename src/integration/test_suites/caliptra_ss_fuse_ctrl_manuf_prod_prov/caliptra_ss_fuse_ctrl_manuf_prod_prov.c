@@ -43,11 +43,11 @@ static const prod_manuf_partition_t partitions[12] = {
     { .address = 0x0B0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_2
     { .address = 0x0C0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_3
     { .address = 0x0D0, .granularity = 32, .lc_state = MANUF }, // SW_MANUF_PARTITION
-    { .address = 0x620, .granularity = 32, .lc_state = MANUF }, // VENDOR_HASHES_MANUF_PARTITION
-    { .address = 0x660, .granularity = 32, .lc_state = PROD },  // VENDOR_HASHES_PROD_PARTITION
-    { .address = 0x950, .granularity = 32, .lc_state = PROD },  // VENDOR_REVOCATIONS_PROD_PARTITION
-    { .address = 0x9E8, .granularity = 64, .lc_state = PROD },  // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0xBF0, .granularity = 64, .lc_state = PROD },  // VENDOR_NON_SECRET_PROD_PARTITION
+    { .address = 0x5E0, .granularity = 32, .lc_state = MANUF }, // VENDOR_HASHES_MANUF_PARTITION
+    { .address = 0x620, .granularity = 32, .lc_state = PROD },  // VENDOR_HASHES_PROD_PARTITION
+    { .address = 0x910, .granularity = 32, .lc_state = PROD },  // VENDOR_REVOCATIONS_PROD_PARTITION
+    { .address = 0x9A8, .granularity = 64, .lc_state = PROD },  // VENDOR_SECRET_PROD_PARTITION
+    { .address = 0xBB0, .granularity = 64, .lc_state = PROD },  // VENDOR_NON_SECRET_PROD_PARTITION
 };
 
 /**
