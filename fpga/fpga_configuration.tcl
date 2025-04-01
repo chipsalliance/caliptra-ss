@@ -148,6 +148,12 @@ set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells cptra_rom_bram_ctrl_1]
 
 # Create AXI I3C to act as external I3C
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_i3c:1.0 axi_i3c_0
+set_property -dict [list \
+  CONFIG.ENABLE_PEC {1} \
+  CONFIG.HJ_CAPABLE {1} \
+  CONFIG.IBI_CAPABLE {1} \
+  #CONFIG.SCL_CLK_FREQ {12500} \
+] [get_bd_cells axi_i3c_0]
 # Create CDC for AXI I3C
 create_bd_cell -type ip -vlnv xilinx.com:ip:xpm_cdc_gen:1.0 xpm_cdc_gen_0
 set_property CONFIG.CDC_TYPE {xpm_cdc_sync_rst} [get_bd_cells xpm_cdc_gen_0]
@@ -252,12 +258,7 @@ if {$FAST_I3C} {
     [get_bd_pins caliptra_package_top_0/i3c_clk] \
     [get_bd_pins axi_i3c_0/s_axi_aclk] \
     [get_bd_pins xpm_cdc_gen_0/dest_clk]
-  set_property -dict [list \
-    CONFIG.ENABLE_PEC {1} \
-    CONFIG.HJ_CAPABLE {1} \
-    CONFIG.IBI_CAPABLE {1} \
-    #CONFIG.SCL_CLK_FREQ {12500} \
-  ] [get_bd_cells axi_i3c_0]
+  set_property CONFIG.SCL_CLK_FREQ {12500} [get_bd_cells axi_i3c_0]
 } else {
   # Use regular clock for i3c to avoid timing problems
   connect_bd_net \
@@ -358,7 +359,8 @@ set_property STEPS.SYNTH_DESIGN.ARGS.GATED_CLOCK_CONVERSION $GATED_CLOCK_CONVERS
 # Add DDR pin placement constraints
 add_files -fileset constrs_1 $fpgaDir/src/ddr4_constraints.xdc
 
-add_files -fileset constrs_1 $fpgaDir/src/versal_i3c_constraints.xdc
+#add_files -fileset constrs_1 $fpgaDir/src/versal_i3c_constraints.xdc
+add_files -fileset constrs_1 $fpgaDir/debug.xdc
 
 # Consider constraint:
 # set_max_delay -from [get_clocks clk_pl_0] -to [get_clocks clk_pl_1] 25.0
