@@ -150,7 +150,7 @@ void cptra_mcu_mbox_acquire_lock_set_execute(uint32_t mbox_num, uint32_t attempt
 void cptra_mcu_mbox_wait_for_status_complete(uint32_t mbox_num, uint32_t attempt_count) {
     uint32_t status;
     uint64_t addr;
-    VPRINTF(LOW, "Caliptra: Waiting for Mbox%x Satus Complete\n", mbox_num);
+    VPRINTF(LOW, "Caliptra: Waiting for Mbox%x Status Complete\n", mbox_num);
     addr = SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num;
     for(uint32_t ii=0; ii<attempt_count; ii++) {
         status = cptra_axi_dword_read(addr) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK;
