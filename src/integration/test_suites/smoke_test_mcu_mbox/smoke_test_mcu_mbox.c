@@ -49,9 +49,17 @@ void mcu_mbox_get_data(uint32_t mbox_num, uint32_t user_axi_id){
     uint32_t mbox_resp_data;
     uint32_t mbox_dlen;
 
-    mcu_mbox_wait_for_user_lock(mbox_num, user_axi_id, 10000);
+    if(!mcu_mbox_wait_for_user_lock(mbox_num, user_axi_id, 10000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not acquire lock and set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
 
-    mcu_mbox_wait_for_user_lock(mbox_num, user_axi_id, 10000);
+    if(!mcu_mbox_wait_for_user_execute(mbox_num, 1, 10000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
 
     mbox_dlen = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Caliptra Mbox%x data length: 0x%x\n", mbox_num, mbox_dlen);

@@ -275,7 +275,11 @@ void main(void) {
 
         VPRINTF(LOW, "----------------------------------\nSmoke Test MCI MBOX%x  !!\n----------------------------------\n", mbox_num);
         // Just for test synchronization have caliptra uC acquire lock first
-        caliptra_ss_mcu_mbox_acquire_lock(mbox_num, 100);
+        if(!caliptra_ss_mcu_mbox_acquire_lock(mbox_num, 100)) {
+            VPRINTF(FATAL, "CALIPTRA: Failed to acquire MBOX%x lock\n", mbox_num);
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+        }
         caliptra_ss_mcu_mbox_write_execute(mbox_num, 1);
 
         if (caliptra_ss_mcu_mbox_wait_status_complete(mbox_num, 200)) {

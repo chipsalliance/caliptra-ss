@@ -215,10 +215,14 @@ void main (void) {
     // Do writes to SRAM and CSRs and verify that write occured with reads.
     if(!mcu_mbox_wait_for_user_lock(mbox_num, caliptra_uc_axi_id, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not acquire lock and set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
     }
 
     if(!mcu_mbox_wait_for_user_execute(mbox_num, 1, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
     }
     
     mcu_mbox_write_sram_and_csrs(mbox_num);

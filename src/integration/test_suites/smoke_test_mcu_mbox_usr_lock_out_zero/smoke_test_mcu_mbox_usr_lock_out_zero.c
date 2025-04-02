@@ -134,10 +134,14 @@ void main (void) {
     // Just for test synchronization have Caliptra uC acquire lock and release first (to make sure uC is up)
     if(!mcu_mbox_wait_for_user_lock(mbox_num, caliptra_uc_axi_id, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not acquire lock and set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
     }
 
     if(!mcu_mbox_wait_for_user_execute(mbox_num, 1, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
     }
     mcu_mbox_update_status_complete(mbox_num);
 
