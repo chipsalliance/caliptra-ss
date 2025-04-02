@@ -232,10 +232,13 @@ initial begin
         slave[3].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[3].cfg_info.base_address[0] = 64'h3000_0000;
-        slave[3].cfg_info.limit_address[0] = 64'h3FFF_FFFF;
-        slave[3].cfg_info.base_address[1]  = 64'h0003_0000;
-        slave[3].cfg_info.limit_address[1] = 64'h0003_FFFF;
+        slave[3].cfg_info.base_address[0] = 64'(`SOC_MBOX_CSR_BASE_ADDR);
+        slave[3].cfg_info.limit_address[0] = 64'(`SOC_MBOX_CSR_BASE_ADDR) + 64'h2_0000; // FIXME hardcoded to match the soc_ifc limit
+        slave[3].cfg_info.default_fifo_depth = 4096; // Reasonable cap at max AXI burst lengh of 4KiB
+        slave[3].cfg_info.fifo_address[0] = 64'(`SOC_MBOX_CSR_MBOX_DATAIN);
+        slave[3].cfg_info.fifo_limit[0] = 64'(`SOC_MBOX_CSR_MBOX_DATAOUT);
+        slave[3].cfg_info.fifo_address[1] = 64'(`SOC_SHA512_ACC_CSR_DATAIN);
+        slave[3].cfg_info.fifo_limit[1] = 64'(`SOC_SHA512_ACC_CSR_DATAIN);
         slave[3].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         slave[3].cfg_info.total_outstanding_depth = 4;
         slave[3].cfg_info.id_outstanding_depth = 4;
