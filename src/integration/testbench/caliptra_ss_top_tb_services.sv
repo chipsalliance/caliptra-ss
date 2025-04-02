@@ -549,6 +549,10 @@ task static preload_css_mcu0_dccm;
 endtask
 
 
+`ifndef VERILATOR
+    lc_ctrl_cov_bind i_lc_ctrl_cov_bind();
+`endif
+
 
     /* verilator lint_off CASEINCOMPLETE */
     `include "mcu_dasm.svi"

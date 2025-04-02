@@ -1,0 +1,7 @@
+jsonschema==4.5.1
+ruamel-yaml==0.17.32
+hjson==3.1.0
+importlib_resources==5.4.0
+Mako==1.0.6
+pycryptodome==3.21.0
+tabulate==0.8.10
