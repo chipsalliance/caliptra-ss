@@ -64,6 +64,7 @@ fc_lcc_tb_services u_fc_lcc_tb_services (
         end 
         if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
+            force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
         end 
     end

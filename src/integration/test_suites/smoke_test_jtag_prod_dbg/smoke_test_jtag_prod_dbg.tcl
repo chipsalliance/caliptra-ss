@@ -28,9 +28,9 @@ set DMI_REG_BOOTFSM_GO_ADDR             0x61
 
 # Req Payload
 array set REQ_PAYLOAD {
-    0 0xFFFFFFFD
+    0 0xFFFFFEC2
     1 0x00000002
-    2 0x01000000
+    2 0x00000001
 }
 set req_payload_dlen_words [array size REQ_PAYLOAD]
 set req_payload_dlen_bytes [expr {$req_payload_dlen_words * 4 + 4}]
