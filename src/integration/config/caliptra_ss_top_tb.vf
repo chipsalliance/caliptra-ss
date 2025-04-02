@@ -57,6 +57,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/dmi/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/mcu/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi
@@ -902,6 +903,8 @@ ${AVERY_I3C}/src/ai2c_intf.sv
 ${AVERY_I3C}/src.i3c/ai3c_intf.sv
 ${CALIPTRA_SS_ROOT}/src/mci/coverage/mci_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/mci/coverage/mci_top_cov_bind.sv
+${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_if.sv
+${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_props.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_bind.sv

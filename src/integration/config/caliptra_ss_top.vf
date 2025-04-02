@@ -18,6 +18,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/dmi/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/mcu/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src

@@ -108,6 +108,7 @@ schema_version: 2.4.0
 requires:
   - axi_dma_coverage
   - mci_coverage
+  - lc_ctrl_coverage
 targets:
   tb:
     directories:
