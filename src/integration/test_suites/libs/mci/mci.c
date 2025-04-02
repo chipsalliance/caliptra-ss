@@ -60,14 +60,14 @@ uint32_t get_fw_sram_exec_region_less_than_sram_size(uint32_t rnd){
 }
 
 bool get_is_sram_protected_region(){
-    return get_mcu_sram_protection_region_start() <= get_mcu_sram_end_addr();
+    return get_mcu_sram_protected_region_start() <= get_mcu_sram_end_addr();
 }
 
-uint32_t get_mcu_sram_protection_region_start() {
+uint32_t get_mcu_sram_protected_region_start() {
     return get_mcu_sram_execution_region_end() + 1;
 }
 
-uint32_t get_mcu_sram_protection_region_end() {
+uint32_t get_mcu_sram_protected_region_end() {
    return get_mcu_sram_end_addr();
 
 }

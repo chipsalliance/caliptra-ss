@@ -32,9 +32,9 @@ uint32_t get_mcu_sram_execution_region_start() ;
 
 uint32_t get_mcu_sram_execution_region_end() ;
 
-uint32_t get_mcu_sram_protection_region_start() ;
+uint32_t get_mcu_sram_protected_region_start() ;
 
-uint32_t get_mcu_sram_protection_region_end() ;
+uint32_t get_mcu_sram_protected_region_end() ;
 
 bool get_is_sram_protected_region();
 

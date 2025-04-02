@@ -34,9 +34,9 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 void main (void) {
-    uint32_t mcu_protection_region_start;
-    uint32_t mcu_protection_region_end; 
-    uint32_t mcu_protection_region_real_end;
+    uint32_t mcu_protected_region_start;
+    uint32_t mcu_protected_region_end; 
+    uint32_t mcu_protected_region_real_end;
     uint32_t rnd = xorshift32();
     uint32_t rnd_shift = rnd % 32;
     uint32_t rnd_num_writes = rnd % 64;
@@ -58,33 +58,33 @@ void main (void) {
     
 
 
-    mcu_protection_region_start = get_mcu_sram_protection_region_start();
-    mcu_protection_region_end = get_mcu_sram_last_dword(); // Default size
-    mcu_protection_region_real_end = get_mcu_sram_protection_region_end();
+    mcu_protected_region_start = get_mcu_sram_protected_region_start();
+    mcu_protected_region_end = get_mcu_sram_last_dword(); // Default size
+    mcu_protected_region_real_end = get_mcu_sram_protected_region_end();
 
-    VPRINTF(LOW, "MCU: Start Protected region: 0x%x\n", mcu_protection_region_start);
-    VPRINTF(LOW, "MCU: End Protected region: 0x%x\n", mcu_protection_region_real_end);
-    VPRINTF(LOW, "MCU: End DWORD Protected region: 0x%x\n", mcu_protection_region_end);
+    VPRINTF(LOW, "MCU: Start Protected region: 0x%x\n", mcu_protected_region_start);
+    VPRINTF(LOW, "MCU: End Protected region: 0x%x\n", mcu_protected_region_real_end);
+    VPRINTF(LOW, "MCU: End DWORD Protected region: 0x%x\n", mcu_protected_region_end);
     VPRINTF(LOW, "MCU: Is there a Protected region? 0x%x\n", get_is_sram_protected_region());
     
-    VPRINTF(LOW, "MCU: Writing start of protected region 0x%x with 0x%x\n", mcu_protection_region_start, rnd);
-    write_read_check(mcu_protection_region_start, rnd);
+    VPRINTF(LOW, "MCU: Writing start of protected region 0x%x with 0x%x\n", mcu_protected_region_start, rnd);
+    write_read_check(mcu_protected_region_start, rnd);
 
 
     rnd ^= rnd << rnd_shift; 
-    VPRINTF(LOW, "MCU: Writing end of protected region 0x%x with 0x%x\n", mcu_protection_region_end, rnd);
-    write_read_check(mcu_protection_region_end, rnd);
+    VPRINTF(LOW, "MCU: Writing end of protected region 0x%x with 0x%x\n", mcu_protected_region_end, rnd);
+    write_read_check(mcu_protected_region_end, rnd);
 
     rnd = xorshift32();
     VPRINTF(LOW, "MCU: Writing %d random addresses in MCU SRAM\n", rnd_num_writes);
     for(int i = 0; i < rnd_num_writes; i++) {
-        address = get_random_address(rnd + i*4, mcu_protection_region_start, mcu_protection_region_real_end);
+        address = get_random_address(rnd + i*4, mcu_protected_region_start, mcu_protected_region_real_end);
         VPRINTF(LOW, "MCU: Random Write Address 0x%x: 0x%x\n", address, rnd + i);
         lsu_write_32(address, rnd + i);
     }
     VPRINTF(LOW, "MCU: Checking Writing %d random addresses in MCU SRAM\n", rnd_num_writes);
     for(int i = 0; i < rnd_num_writes; i++) {
-        address = get_random_address(rnd + i*4, mcu_protection_region_start, mcu_protection_region_real_end);
+        address = get_random_address(rnd + i*4, mcu_protected_region_start, mcu_protected_region_real_end);
         read_check(address, rnd + i);
     }
     

@@ -45,61 +45,61 @@ void main(void) {
     // the Caliptra DMA AXI USER should be randomized by the TB
     // or MCU.
 
-    VPRINTF(LOW,"----------------------------------\nCaliptra MCU SRAM Protection Checks\n----------------------------------\n");
-    uint32_t mcu_protection_region_start = cptra_get_mcu_sram_protection_region_start();
-    uint32_t mcu_protection_region_end   = cptra_get_mcu_sram_last_dword(); // Default size
+    VPRINTF(LOW,"----------------------------------\nCaliptra MCU SRAM Protected Checks\n----------------------------------\n");
+    uint32_t mcu_protected_region_start = cptra_get_mcu_sram_protected_region_start();
+    uint32_t mcu_protected_region_end   = cptra_get_mcu_sram_last_dword(); // Default size
 
     if(cptra_is_sram_protected_region()) {
         wr_data = 0xFFFFFFFF;
-        VPRINTF(LOW,"Caliptra: Writing protected region START: 0x%x with 0x%x\n", mcu_protection_region_start, wr_data);
-        status = cptra_axi_dword_write_with_status(mcu_protection_region_start, wr_data);
+        VPRINTF(LOW,"Caliptra: Writing protected region START: 0x%x with 0x%x\n", mcu_protected_region_start, wr_data);
+        status = cptra_axi_dword_write_with_status(mcu_protected_region_start, wr_data);
         
         if(!status) {
-            VPRINTF(FATAL,"Caliptra: ERROR Expected DMA ERROR Writing protected region START: 0x%x with 0x%x\n", mcu_protection_region_start, wr_data);
+            VPRINTF(FATAL,"Caliptra: ERROR Expected DMA ERROR Writing protected region START: 0x%x with 0x%x\n", mcu_protected_region_start, wr_data);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
         
-        VPRINTF(LOW,"Caliptra: Writing protected region END: 0x%x with 0x%x\n", mcu_protection_region_end, wr_data);
-        status = cptra_axi_dword_write_with_status(mcu_protection_region_end, wr_data);
+        VPRINTF(LOW,"Caliptra: Writing protected region END: 0x%x with 0x%x\n", mcu_protected_region_end, wr_data);
+        status = cptra_axi_dword_write_with_status(mcu_protected_region_end, wr_data);
         
         if(!status) {
-            VPRINTF(FATAL,"Caliptra: ERROR Expected DMA ERROR Writing protected region END: 0x%x with 0x%x\n", mcu_protection_region_end, wr_data);
+            VPRINTF(FATAL,"Caliptra: ERROR Expected DMA ERROR Writing protected region END: 0x%x with 0x%x\n", mcu_protected_region_end, wr_data);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
         
 
-        VPRINTF(LOW,"Caliptra: Reading protected region START: 0x%x\n", mcu_protection_region_start);
-        status = cptra_axi_dword_read_with_status(mcu_protection_region_start, payload);
+        VPRINTF(LOW,"Caliptra: Reading protected region START: 0x%x\n", mcu_protected_region_start);
+        status = cptra_axi_dword_read_with_status(mcu_protected_region_start, payload);
         
         if(!status) {
-            VPRINTF(FATAL,"Caliptra: ERROR Expected DMA ERROR Reading protected region START: 0x%x with 0x%x\n", mcu_protection_region_start, wr_data);
+            VPRINTF(FATAL,"Caliptra: ERROR Expected DMA ERROR Reading protected region START: 0x%x with 0x%x\n", mcu_protected_region_start, wr_data);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
         if(payload[0]) {
-             VPRINTF(FATAL,"Caliptra: ERROR Expected DATA to be ZERO from rotected region START: 0x%x but got 0x%x\n", mcu_protection_region_start, payload[0]);
+             VPRINTF(FATAL,"Caliptra: ERROR Expected DATA to be ZERO from protected region START: 0x%x but got 0x%x\n", mcu_protected_region_start, payload[0]);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
         
-        VPRINTF(LOW,"Caliptra: Reading protected region END: 0x%x\n", mcu_protection_region_end);
-        status = cptra_axi_dword_read_with_status(mcu_protection_region_end, payload);
+        VPRINTF(LOW,"Caliptra: Reading protected region END: 0x%x\n", mcu_protected_region_end);
+        status = cptra_axi_dword_read_with_status(mcu_protected_region_end, payload);
         
         if(!status) {
-            VPRINTF(FATAL,"Caliptra: ERROR Expected DMA ERROR Reading protected region END: 0x%x with 0x%x\n", mcu_protection_region_end, wr_data);
+            VPRINTF(FATAL,"Caliptra: ERROR Expected DMA ERROR Reading protected region END: 0x%x with 0x%x\n", mcu_protected_region_end, wr_data);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
         if(payload[0]) {
-            VPRINTF(FATAL,"Caliptra: ERROR Expected DATA to be ZERO from rotected region END: 0x%x but got 0x%x\n", mcu_protection_region_end  , payload[0]);
+            VPRINTF(FATAL,"Caliptra: ERROR Expected DATA to be ZERO from protected region END: 0x%x but got 0x%x\n", mcu_protected_region_end  , payload[0]);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
     }
     else {
-       VPRINTF(LOW,"Caliptra: MCU SRAM Protection Region doesn't exist"); 
+       VPRINTF(LOW,"Caliptra: MCU SRAM Protected Region doesn't exist"); 
     }
 
     VPRINTF(LOW, "Caliptra: TEST PASSED handshake with MCU to finish test\n");

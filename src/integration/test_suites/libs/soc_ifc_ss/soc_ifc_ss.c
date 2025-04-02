@@ -105,14 +105,14 @@ uint32_t cptra_get_mcu_sram_execution_region_end() {
 }
 
 bool cptra_is_sram_protected_region(){
-    return cptra_get_mcu_sram_protection_region_start() <= cptra_get_mcu_sram_end_addr();
+    return cptra_get_mcu_sram_protected_region_start() <= cptra_get_mcu_sram_end_addr();
 }
 
-uint32_t cptra_get_mcu_sram_protection_region_start() {
+uint32_t cptra_get_mcu_sram_protected_region_start() {
     return cptra_get_mcu_sram_execution_region_end() + 1;
 }
 
-uint32_t cptra_get_mcu_sram_protection_region_end() {
+uint32_t cptra_get_mcu_sram_protected_region_end() {
    return cptra_get_mcu_sram_end_addr();
 
 }
