@@ -35,12 +35,26 @@ volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 // FIXME mci addr width is 24-bits, use a param here
 #define MCI_ADDR_WIDTH_MASK ((1 << 24) - 1)
 
+inline void cpt_sleep (const uint32_t cycles) {
+    for (uint8_t ii = 0; ii < cycles; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
+
 void sha_accel_acquire_lock(uint64_t base_addr) {
+    uint32_t cnt = 0;
     uint32_t data = 0;
     VPRINTF(MEDIUM, "FW: Acquire SHA Lock\n");
-    do {
+    soc_ifc_axi_dma_read_ahb_payload(base_addr + SHA512_ACC_CSR_LOCK, 0, &data, 4, 0);
+    while((data & SHA512_ACC_CSR_LOCK_LOCK_MASK) == 1) {
+        if (cnt++ > 100) {
+            VPRINTF(FATAL, "FW: Failed to acquire SHA Lock via AXI after 100 attempts!\n")
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+        }
+        cpt_sleep(32);
         soc_ifc_axi_dma_read_ahb_payload(base_addr + SHA512_ACC_CSR_LOCK, 0, &data, 4, 0);
-    } while((data & SHA512_ACC_CSR_LOCK_LOCK_MASK) == 1);
+    }
 }
 
 void sha_accel_set_cmd(uint64_t base_addr, enum sha_accel_mode_e mode, uint32_t dlen) {
@@ -67,11 +81,19 @@ void sha_accel_execute(uint64_t base_addr) {
 }
 
 void sha_accel_poll_status(uint64_t base_addr) {
+    uint32_t cnt = 0;
     uint32_t sts;
     VPRINTF(MEDIUM, "FW: Poll SHA status\n");
-    do {
+    soc_ifc_axi_dma_read_ahb_payload(base_addr + SHA512_ACC_CSR_STATUS, 0, &sts, 4, 0);
+    while ((sts & SHA512_ACC_CSR_STATUS_VALID_MASK) != SHA512_ACC_CSR_STATUS_VALID_MASK) {
+        if (cnt++ > 10000) {
+            VPRINTF(FATAL, "FW: SHA accel failed to report digest valid after 10000 attempts!\n")
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+        }
+        cpt_sleep(32);
         soc_ifc_axi_dma_read_ahb_payload(base_addr + SHA512_ACC_CSR_STATUS, 0, &sts, 4, 0);
-    } while ((sts & SHA512_ACC_CSR_STATUS_VALID_MASK) != SHA512_ACC_CSR_STATUS_VALID_MASK);
+    }
 }
 
 void sha_accel_read_result(uint64_t base_addr, uint8_t dw_cnt, uint32_t * digest) {
