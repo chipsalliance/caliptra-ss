@@ -140,6 +140,12 @@ void main(void) {
     recovery_ifc_start_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_RECOVERY_IFC_BASE_ADDR_L);
     VPRINTF(LOW, "CPTRA: Recovery Interface start Addr is 'h %0x\n", recovery_ifc_start_addr);
 
+    // Read Recovery Interface Offset
+    VPRINTF(LOW, "CPTRA: Reading Recovery Interface start Addr\n");
+    // read -- CLP_SOC_IFC_REG_SS_RECOVERY_IFC_BASE_ADDR_L
+    recovery_ifc_start_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_RECOVERY_IFC_BASE_ADDR_L);
+    VPRINTF(LOW, "CPTRA: Recovery Interface start Addr is 'h %0x\n", recovery_ifc_start_addr);
+
     // Read I3C registers
     wait_for_write_to_prot_cap_0(recovery_ifc_start_addr);
     read_i3c_registers(recovery_ifc_start_addr);

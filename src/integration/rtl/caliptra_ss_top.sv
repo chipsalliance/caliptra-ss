@@ -1098,6 +1098,7 @@ module caliptra_ss_top
     // TODO: Add interrupts
     );
 
+
     //=========================================================================
     // MCU ROM Interface Instance (Reuses MCI)
     //=========================================================================
@@ -1407,5 +1408,9 @@ module caliptra_ss_top
     // De-assert cptra_rst_b only after fuse_ctrl has initialized
     logic cptra_rst_b; //fixme resets
     assign cptra_rst_b = cptra_ss_rst_b_i;//fuse_ctrl_rdy ? cptra_soc_bfm_rst_b : 1'b0;
+
+
+    `CALIPTRA_ASSERT(i3c_payload_available, ($rise(payload_available_o) |-> [0:$] payload_available == 0))
+    `CALIPTRA_ASSERT(i3c_image_activated, ($rise(image_activated_o) |-> [0:$] image_activated == 0))
 
 endmodule

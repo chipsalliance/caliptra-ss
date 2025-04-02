@@ -81,7 +81,8 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 	virtual task i3c_write( input ai3c_addr_t addr,
 					input bit[7:0] cmd,
 					input bit[7:0] data[],
-					input int      len);
+					input int      len,
+					string wr_type = "RECOVERY");
 
 		ai3c_transaction tr;
        	ai3c_message    msg;
@@ -95,20 +96,32 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 		tr = new(`avery_strarg sys_agt.mgr);
        	tr.mhs[0].addr = addr;
        	tr.mhs[0].rw   = AI3C_write;
-       	tr.mhs[0].len  = len + 4; // added 4 bytes for cmd, legnth lsb, length msb, and pec
+
+		// for recovery added 4 bytes for cmd, legnth lsb, length msb, and pec
+		// for normal write added 1 byte for pec
+       	
+		tr.mhs[0].len  = len + (wr_type=="RECOVERY"? 4 : 1); 
        	tr.msgs[0]     = new(tr.mhs[0], tr);
        	msg            = tr.msgs[0];
 
         pec = crc8('{addr << 1, cmd, len, 0});
         pec = crc8(data, pec);
 
-		for(int i = 0; i < len + 4; i++) begin
-			if(i==0) 	  		msg.data_bytes[i] = cmd;        // cmd byte [0th byte]
-			else if(i==1) 		msg.data_bytes[i] = len;        // cmd lsb  [1st byte]
-			else if(i==2) 		msg.data_bytes[i] = 0;          // cmd msb  [2nd byte]
-			else if(i==len+3)   msg.data_bytes[i] = pec;        // pec byte [nth byte]
-			else 				msg.data_bytes[i] = data[i-3];  // data bytes [3rd to nth byte]
+		if(wr_type == "RECOVERY") begin
+			for(int i = 0; i < len + 4; i++) begin
+				if(i==0) 	  		msg.data_bytes[i] = cmd;        // cmd byte [0th byte]
+				else if(i==1) 		msg.data_bytes[i] = len;        // cmd lsb  [1st byte]
+				else if(i==2) 		msg.data_bytes[i] = 0;          // cmd msb  [2nd byte]
+				else if(i==len+3)   msg.data_bytes[i] = pec;        // pec byte [nth byte]
+				else 				msg.data_bytes[i] = data[i-3];  // data bytes [3rd to nth byte]
+			end
+		end else begin
+			for(int i = 0; i < len; i++) begin
+				if(i==len-1) 		msg.data_bytes[i] = pec;      // pec byte [nth byte]
+				else 				msg.data_bytes[i] = data[i];  // data bytes [3rd to nth byte]
+			end
 		end
+
 
 		test_log.substep($psprintf("Writing data:\n%s", tr.sprint(2)));
 

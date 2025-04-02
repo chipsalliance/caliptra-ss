@@ -507,8 +507,8 @@ module caliptra_ss_top_tb
                         $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
                         #i3c_run_time;
                     end else begin
-                        $display("Waiting 150us for I3C tests to finish..\n", 1000);
-                        #500us;
+                        $display("Waiting addtional 50us to allow I3C tests to finish..\n");
+                        #50us;
                     end
                 end
                 $finish;
@@ -605,7 +605,12 @@ module caliptra_ss_top_tb
 
         css_mcu0_dummy_dccm_preloader.ram = '{default:8'h0};
         hex_file_is_empty = $system("test -s mcu_dccm.hex");
-        if (!hex_file_is_empty) $readmemh("mcu_dccm.hex",css_mcu0_dummy_dccm_preloader.ram,0,32'h0001_FFFF);
+        if (!hex_file_is_empty) $readmemh("mcu_dccm.hex",css_mcu0_dummy_dccm_preloader.ram,0,32'h0001_EFFF);
+
+        if($test$plusargs("LOAD_REF_DATA_TO_DCCM")) begin
+            $display("Loading reference data to DCCM");
+            $readmemh("mctp_pkt.hex",css_mcu0_dummy_dccm_preloader.ram,32'h0001_F000);
+        end
 
         // preload_dccm();
         preload_css_mcu0_dccm();
@@ -658,6 +663,23 @@ module caliptra_ss_top_tb
     assign rst_l   = cycleCnt > 5 ? 1'b1 : 1'b0;
     assign porst_l = cycleCnt > 2;
 
+   //==========================================================================
+   // Caliptra SS Top Coverage
+   //==========================================================================
+
+   cptra_ss_coverage cptra_ss_coverage(
+       .clk     (core_clk),
+       .rst_l   (rst_l)
+   );
+
+    always @(posedge caliptra_ss_dut.payload_available_o or posedge caliptra_ss_dut.image_activated_o) begin
+        if (!rst_l) begin
+            cptra_ss_coverage.sample_i3c_sideband(
+                .payload_available(caliptra_ss_dut.payload_available_o),
+                .image_activated(caliptra_ss_dut.image_activated_o)
+            );
+        end
+    end
    //=========================================================================
    // AXI Interconnect
    //=========================================================================
@@ -1493,8 +1515,9 @@ module caliptra_ss_top_tb
     //     .bid            (axi_interconnect.sintf_arr[0].BID)
 
     // );
-    assign axi_interconnect.sintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-    assign axi_interconnect.sintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    // assign axi_interconnect.sintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    // assign axi_interconnect.sintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+
 
     assign cptra_ss_mcu_rom_s_axi_if.awvalid                      = axi_interconnect.sintf_arr[2].AWVALID;
     assign cptra_ss_mcu_rom_s_axi_if.awaddr                       = axi_interconnect.sintf_arr[2].AWADDR[31:0];
@@ -1823,7 +1846,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_jtag_trst_n_i           = 1'b0;
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'hba5e_ba11;
     assign cptra_ss_strap_mci_base_addr_i       = 64'h0;
-    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
+    assign cptra_ss_strap_recovery_ifc_base_addr_i = {`SOC_I3CCSR_I3C_EC_START+4'h4, `SOC_I3CCSR_I3C_EC_START};
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0000;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
