@@ -144,6 +144,9 @@ void main () {
         VPRINTF(HIGH, "FW: Exp Digest [%d]: 0x%x\n", 15, exp_digest[15]);
     }
 
+    // Release lock, as Caliptra comes out of reset with lock=1
+    soc_ifc_sha_accel_clr_lock();
+
     // Run SHA Accelerator protocol via AXI using DMA assist
                 sha_accel_acquire_lock(sha_acc_addr                                              );
                 sha_accel_set_cmd     (sha_acc_addr, mode ? SHA_STREAM_512 : SHA_STREAM_384, dlen);
