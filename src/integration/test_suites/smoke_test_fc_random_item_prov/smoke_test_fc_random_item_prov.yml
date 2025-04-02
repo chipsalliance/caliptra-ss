@@ -1,5 +1,5 @@
 ---
-seed: 1
+seed: ${PLAYBOOK_RANDOM_SEED}
 testname: smoke_test_fc_random_item_prov
 pre-exec: |
   echo "Running pre_exec for [smoke_test_fc_random_item_prov]"

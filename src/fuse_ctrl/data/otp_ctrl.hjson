@@ -1,7 +1,16 @@
-// Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 //
-// HJSON with partition metadata.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 {
   name:               "otp_ctrl",
@@ -408,7 +417,7 @@
     { name: "SwManufPartitionSize",
       desc: "Size of the SW_MANUF_PARTITION partition",
       type: "int",
-      default: "1072",
+      default: "1008",
       local: "true"
     },
     { name: "CptraCoreAntiRollbackDisableOffset",
@@ -459,22 +468,106 @@
       default: "2",
       local: "true"
     },
-    { name: "CptraSsProdDebugUnlockPksOffset",
-      desc: "Offset of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS",
+    { name: "CptraSsProdDebugUnlockPks0Offset",
+      desc: "Offset of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0",
       type: "int",
       default: "323",
       local: "true"
     },
-    { name: "CptraSsProdDebugUnlockPksSize",
-      desc: "Size of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS",
+    { name: "CptraSsProdDebugUnlockPks0Size",
+      desc: "Size of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0",
       type: "int",
-      default: "512",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks1Offset",
+      desc: "Offset of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_1",
+      type: "int",
+      default: "371",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks1Size",
+      desc: "Size of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_1",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks2Offset",
+      desc: "Offset of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_2",
+      type: "int",
+      default: "419",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks2Size",
+      desc: "Size of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_2",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks3Offset",
+      desc: "Offset of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_3",
+      type: "int",
+      default: "467",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks3Size",
+      desc: "Size of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_3",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks4Offset",
+      desc: "Offset of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_4",
+      type: "int",
+      default: "515",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks4Size",
+      desc: "Size of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_4",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks5Offset",
+      desc: "Offset of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_5",
+      type: "int",
+      default: "563",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks5Size",
+      desc: "Size of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_5",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks6Offset",
+      desc: "Offset of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_6",
+      type: "int",
+      default: "611",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks6Size",
+      desc: "Size of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_6",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks7Offset",
+      desc: "Offset of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_7",
+      type: "int",
+      default: "659",
+      local: "true"
+    },
+    { name: "CptraSsProdDebugUnlockPks7Size",
+      desc: "Size of CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_7",
+      type: "int",
+      default: "48",
       local: "true"
     },
     { name: "SwManufPartitionDigestOffset",
       desc: "Offset of SW_MANUF_PARTITION_DIGEST",
       type: "int",
-      default: "1272",
+      default: "1208",
       local: "true"
     },
     { name: "SwManufPartitionDigestSize",
@@ -486,7 +579,7 @@
     { name: "SecretLcTransitionPartitionOffset",
       desc: "Offset of the SECRET_LC_TRANSITION_PARTITION partition",
       type: "int",
-      default: "1280",
+      default: "1216",
       local: "true"
     },
     { name: "SecretLcTransitionPartitionSize",
@@ -498,7 +591,7 @@
     { name: "CptraSsTestUnlockToken0Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_0",
       type: "int",
-      default: "1280",
+      default: "1216",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken0Size",
@@ -510,7 +603,7 @@
     { name: "CptraSsTestUnlockToken1Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_1",
       type: "int",
-      default: "1296",
+      default: "1232",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken1Size",
@@ -522,7 +615,7 @@
     { name: "CptraSsTestUnlockToken2Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_2",
       type: "int",
-      default: "1312",
+      default: "1248",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken2Size",
@@ -534,7 +627,7 @@
     { name: "CptraSsTestUnlockToken3Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_3",
       type: "int",
-      default: "1328",
+      default: "1264",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken3Size",
@@ -546,7 +639,7 @@
     { name: "CptraSsTestUnlockToken4Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_4",
       type: "int",
-      default: "1344",
+      default: "1280",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken4Size",
@@ -558,7 +651,7 @@
     { name: "CptraSsTestUnlockToken5Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_5",
       type: "int",
-      default: "1360",
+      default: "1296",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken5Size",
@@ -570,7 +663,7 @@
     { name: "CptraSsTestUnlockToken6Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_6",
       type: "int",
-      default: "1376",
+      default: "1312",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken6Size",
@@ -582,7 +675,7 @@
     { name: "CptraSsTestUnlockToken7Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_7",
       type: "int",
-      default: "1392",
+      default: "1328",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken7Size",
@@ -594,7 +687,7 @@
     { name: "CptraSsTestExitToManufTokenOffset",
       desc: "Offset of CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN",
       type: "int",
-      default: "1408",
+      default: "1344",
       local: "true"
     },
     { name: "CptraSsTestExitToManufTokenSize",
@@ -606,7 +699,7 @@
     { name: "CptraSsManufToProdTokenOffset",
       desc: "Offset of CPTRA_SS_MANUF_TO_PROD_TOKEN",
       type: "int",
-      default: "1424",
+      default: "1360",
       local: "true"
     },
     { name: "CptraSsManufToProdTokenSize",
@@ -618,7 +711,7 @@
     { name: "CptraSsProdToProdEndTokenOffset",
       desc: "Offset of CPTRA_SS_PROD_TO_PROD_END_TOKEN",
       type: "int",
-      default: "1440",
+      default: "1376",
       local: "true"
     },
     { name: "CptraSsProdToProdEndTokenSize",
@@ -630,7 +723,7 @@
     { name: "SecretLcTransitionPartitionDigestOffset",
       desc: "Offset of SECRET_LC_TRANSITION_PARTITION_DIGEST",
       type: "int",
-      default: "1456",
+      default: "1392",
       local: "true"
     },
     { name: "SecretLcTransitionPartitionDigestSize",
@@ -642,7 +735,7 @@
     { name: "SvnPartitionOffset",
       desc: "Offset of the SVN_PARTITION partition",
       type: "int",
-      default: "1464",
+      default: "1400",
       local: "true"
     },
     { name: "SvnPartitionSize",
@@ -654,7 +747,7 @@
     { name: "CptraCoreFmcKeyManifestSvnOffset",
       desc: "Offset of CPTRA_CORE_FMC_KEY_MANIFEST_SVN",
       type: "int",
-      default: "1464",
+      default: "1400",
       local: "true"
     },
     { name: "CptraCoreFmcKeyManifestSvnSize",
@@ -666,7 +759,7 @@
     { name: "CptraCoreRuntimeSvnOffset",
       desc: "Offset of CPTRA_CORE_RUNTIME_SVN",
       type: "int",
-      default: "1468",
+      default: "1404",
       local: "true"
     },
     { name: "CptraCoreRuntimeSvnSize",
@@ -678,7 +771,7 @@
     { name: "CptraCoreSocManifestSvnOffset",
       desc: "Offset of CPTRA_CORE_SOC_MANIFEST_SVN",
       type: "int",
-      default: "1484",
+      default: "1420",
       local: "true"
     },
     { name: "CptraCoreSocManifestSvnSize",
@@ -690,7 +783,7 @@
     { name: "CptraCoreSocManifestMaxSvnOffset",
       desc: "Offset of CPTRA_CORE_SOC_MANIFEST_MAX_SVN",
       type: "int",
-      default: "1500",
+      default: "1436",
       local: "true"
     },
     { name: "CptraCoreSocManifestMaxSvnSize",
@@ -702,7 +795,7 @@
     { name: "VendorTestPartitionOffset",
       desc: "Offset of the VENDOR_TEST_PARTITION partition",
       type: "int",
-      default: "1504",
+      default: "1440",
       local: "true"
     },
     { name: "VendorTestPartitionSize",
@@ -714,7 +807,7 @@
     { name: "VendorTestOffset",
       desc: "Offset of VENDOR_TEST",
       type: "int",
-      default: "1504",
+      default: "1440",
       local: "true"
     },
     { name: "VendorTestSize",
@@ -726,7 +819,7 @@
     { name: "VendorTestPartitionDigestOffset",
       desc: "Offset of VENDOR_TEST_PARTITION_DIGEST",
       type: "int",
-      default: "1560",
+      default: "1496",
       local: "true"
     },
     { name: "VendorTestPartitionDigestSize",
@@ -738,7 +831,7 @@
     { name: "VendorHashesManufPartitionOffset",
       desc: "Offset of the VENDOR_HASHES_MANUF_PARTITION partition",
       type: "int",
-      default: "1568",
+      default: "1504",
       local: "true"
     },
     { name: "VendorHashesManufPartitionSize",
@@ -750,7 +843,7 @@
     { name: "CptraCoreVendorPkHash0Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_0",
       type: "int",
-      default: "1568",
+      default: "1504",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash0Size",
@@ -762,7 +855,7 @@
     { name: "CptraCorePqcKeyType0Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_0",
       type: "int",
-      default: "1616",
+      default: "1552",
       local: "true"
     },
     { name: "CptraCorePqcKeyType0Size",
@@ -774,7 +867,7 @@
     { name: "VendorHashesManufPartitionDigestOffset",
       desc: "Offset of VENDOR_HASHES_MANUF_PARTITION_DIGEST",
       type: "int",
-      default: "1624",
+      default: "1560",
       local: "true"
     },
     { name: "VendorHashesManufPartitionDigestSize",
@@ -786,7 +879,7 @@
     { name: "VendorHashesProdPartitionOffset",
       desc: "Offset of the VENDOR_HASHES_PROD_PARTITION partition",
       type: "int",
-      default: "1632",
+      default: "1568",
       local: "true"
     },
     { name: "VendorHashesProdPartitionSize",
@@ -798,7 +891,7 @@
     { name: "CptraCoreVendorPkHash1Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_1",
       type: "int",
-      default: "1632",
+      default: "1568",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash1Size",
@@ -810,7 +903,7 @@
     { name: "CptraCorePqcKeyType1Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_1",
       type: "int",
-      default: "1680",
+      default: "1616",
       local: "true"
     },
     { name: "CptraCorePqcKeyType1Size",
@@ -822,7 +915,7 @@
     { name: "CptraCoreVendorPkHash2Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_2",
       type: "int",
-      default: "1681",
+      default: "1617",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash2Size",
@@ -834,7 +927,7 @@
     { name: "CptraCorePqcKeyType2Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_2",
       type: "int",
-      default: "1729",
+      default: "1665",
       local: "true"
     },
     { name: "CptraCorePqcKeyType2Size",
@@ -846,7 +939,7 @@
     { name: "CptraCoreVendorPkHash3Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_3",
       type: "int",
-      default: "1730",
+      default: "1666",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash3Size",
@@ -858,7 +951,7 @@
     { name: "CptraCorePqcKeyType3Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_3",
       type: "int",
-      default: "1778",
+      default: "1714",
       local: "true"
     },
     { name: "CptraCorePqcKeyType3Size",
@@ -870,7 +963,7 @@
     { name: "CptraCoreVendorPkHash4Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_4",
       type: "int",
-      default: "1779",
+      default: "1715",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash4Size",
@@ -882,7 +975,7 @@
     { name: "CptraCorePqcKeyType4Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_4",
       type: "int",
-      default: "1827",
+      default: "1763",
       local: "true"
     },
     { name: "CptraCorePqcKeyType4Size",
@@ -894,7 +987,7 @@
     { name: "CptraCoreVendorPkHash5Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_5",
       type: "int",
-      default: "1828",
+      default: "1764",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash5Size",
@@ -906,7 +999,7 @@
     { name: "CptraCorePqcKeyType5Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_5",
       type: "int",
-      default: "1876",
+      default: "1812",
       local: "true"
     },
     { name: "CptraCorePqcKeyType5Size",
@@ -918,7 +1011,7 @@
     { name: "CptraCoreVendorPkHash6Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_6",
       type: "int",
-      default: "1877",
+      default: "1813",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash6Size",
@@ -930,7 +1023,7 @@
     { name: "CptraCorePqcKeyType6Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_6",
       type: "int",
-      default: "1925",
+      default: "1861",
       local: "true"
     },
     { name: "CptraCorePqcKeyType6Size",
@@ -942,7 +1035,7 @@
     { name: "CptraCoreVendorPkHash7Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_7",
       type: "int",
-      default: "1926",
+      default: "1862",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash7Size",
@@ -954,7 +1047,7 @@
     { name: "CptraCorePqcKeyType7Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_7",
       type: "int",
-      default: "1974",
+      default: "1910",
       local: "true"
     },
     { name: "CptraCorePqcKeyType7Size",
@@ -966,7 +1059,7 @@
     { name: "CptraCoreVendorPkHash8Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_8",
       type: "int",
-      default: "1975",
+      default: "1911",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash8Size",
@@ -978,7 +1071,7 @@
     { name: "CptraCorePqcKeyType8Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_8",
       type: "int",
-      default: "2023",
+      default: "1959",
       local: "true"
     },
     { name: "CptraCorePqcKeyType8Size",
@@ -990,7 +1083,7 @@
     { name: "CptraCoreVendorPkHash9Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_9",
       type: "int",
-      default: "2024",
+      default: "1960",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash9Size",
@@ -1002,7 +1095,7 @@
     { name: "CptraCorePqcKeyType9Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_9",
       type: "int",
-      default: "2072",
+      default: "2008",
       local: "true"
     },
     { name: "CptraCorePqcKeyType9Size",
@@ -1014,7 +1107,7 @@
     { name: "CptraCoreVendorPkHash10Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_10",
       type: "int",
-      default: "2073",
+      default: "2009",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash10Size",
@@ -1026,7 +1119,7 @@
     { name: "CptraCorePqcKeyType10Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_10",
       type: "int",
-      default: "2121",
+      default: "2057",
       local: "true"
     },
     { name: "CptraCorePqcKeyType10Size",
@@ -1038,7 +1131,7 @@
     { name: "CptraCoreVendorPkHash11Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_11",
       type: "int",
-      default: "2122",
+      default: "2058",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash11Size",
@@ -1050,7 +1143,7 @@
     { name: "CptraCorePqcKeyType11Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_11",
       type: "int",
-      default: "2170",
+      default: "2106",
       local: "true"
     },
     { name: "CptraCorePqcKeyType11Size",
@@ -1062,7 +1155,7 @@
     { name: "CptraCoreVendorPkHash12Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_12",
       type: "int",
-      default: "2171",
+      default: "2107",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash12Size",
@@ -1074,7 +1167,7 @@
     { name: "CptraCorePqcKeyType12Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_12",
       type: "int",
-      default: "2219",
+      default: "2155",
       local: "true"
     },
     { name: "CptraCorePqcKeyType12Size",
@@ -1086,7 +1179,7 @@
     { name: "CptraCoreVendorPkHash13Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_13",
       type: "int",
-      default: "2220",
+      default: "2156",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash13Size",
@@ -1098,7 +1191,7 @@
     { name: "CptraCorePqcKeyType13Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_13",
       type: "int",
-      default: "2268",
+      default: "2204",
       local: "true"
     },
     { name: "CptraCorePqcKeyType13Size",
@@ -1110,7 +1203,7 @@
     { name: "CptraCoreVendorPkHash14Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_14",
       type: "int",
-      default: "2269",
+      default: "2205",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash14Size",
@@ -1122,7 +1215,7 @@
     { name: "CptraCorePqcKeyType14Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_14",
       type: "int",
-      default: "2317",
+      default: "2253",
       local: "true"
     },
     { name: "CptraCorePqcKeyType14Size",
@@ -1134,7 +1227,7 @@
     { name: "CptraCoreVendorPkHash15Offset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_15",
       type: "int",
-      default: "2318",
+      default: "2254",
       local: "true"
     },
     { name: "CptraCoreVendorPkHash15Size",
@@ -1146,7 +1239,7 @@
     { name: "CptraCorePqcKeyType15Offset",
       desc: "Offset of CPTRA_CORE_PQC_KEY_TYPE_15",
       type: "int",
-      default: "2366",
+      default: "2302",
       local: "true"
     },
     { name: "CptraCorePqcKeyType15Size",
@@ -1158,7 +1251,7 @@
     { name: "CptraCoreVendorPkHashValidOffset",
       desc: "Offset of CPTRA_CORE_VENDOR_PK_HASH_VALID",
       type: "int",
-      default: "2367",
+      default: "2303",
       local: "true"
     },
     { name: "CptraCoreVendorPkHashValidSize",
@@ -1170,7 +1263,7 @@
     { name: "VendorHashesProdPartitionDigestOffset",
       desc: "Offset of VENDOR_HASHES_PROD_PARTITION_DIGEST",
       type: "int",
-      default: "2376",
+      default: "2312",
       local: "true"
     },
     { name: "VendorHashesProdPartitionDigestSize",
@@ -1182,7 +1275,7 @@
     { name: "VendorRevocationsProdPartitionOffset",
       desc: "Offset of the VENDOR_REVOCATIONS_PROD_PARTITION partition",
       type: "int",
-      default: "2384",
+      default: "2320",
       local: "true"
     },
     { name: "VendorRevocationsProdPartitionSize",
@@ -1194,7 +1287,7 @@
     { name: "CptraCoreEccRevocation0Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_0",
       type: "int",
-      default: "2384",
+      default: "2320",
       local: "true"
     },
     { name: "CptraCoreEccRevocation0Size",
@@ -1206,7 +1299,7 @@
     { name: "CptraCoreLmsRevocation0Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_0",
       type: "int",
-      default: "2385",
+      default: "2321",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation0Size",
@@ -1218,7 +1311,7 @@
     { name: "CptraCoreMldsaRevocation0Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_0",
       type: "int",
-      default: "2389",
+      default: "2325",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation0Size",
@@ -1230,7 +1323,7 @@
     { name: "CptraCoreEccRevocation1Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_1",
       type: "int",
-      default: "2393",
+      default: "2329",
       local: "true"
     },
     { name: "CptraCoreEccRevocation1Size",
@@ -1242,7 +1335,7 @@
     { name: "CptraCoreLmsRevocation1Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_1",
       type: "int",
-      default: "2394",
+      default: "2330",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation1Size",
@@ -1254,7 +1347,7 @@
     { name: "CptraCoreMldsaRevocation1Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_1",
       type: "int",
-      default: "2398",
+      default: "2334",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation1Size",
@@ -1266,7 +1359,7 @@
     { name: "CptraCoreEccRevocation2Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_2",
       type: "int",
-      default: "2402",
+      default: "2338",
       local: "true"
     },
     { name: "CptraCoreEccRevocation2Size",
@@ -1278,7 +1371,7 @@
     { name: "CptraCoreLmsRevocation2Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_2",
       type: "int",
-      default: "2403",
+      default: "2339",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation2Size",
@@ -1290,7 +1383,7 @@
     { name: "CptraCoreMldsaRevocation2Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_2",
       type: "int",
-      default: "2407",
+      default: "2343",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation2Size",
@@ -1302,7 +1395,7 @@
     { name: "CptraCoreEccRevocation3Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_3",
       type: "int",
-      default: "2411",
+      default: "2347",
       local: "true"
     },
     { name: "CptraCoreEccRevocation3Size",
@@ -1314,7 +1407,7 @@
     { name: "CptraCoreLmsRevocation3Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_3",
       type: "int",
-      default: "2412",
+      default: "2348",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation3Size",
@@ -1326,7 +1419,7 @@
     { name: "CptraCoreMldsaRevocation3Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_3",
       type: "int",
-      default: "2416",
+      default: "2352",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation3Size",
@@ -1338,7 +1431,7 @@
     { name: "CptraCoreEccRevocation4Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_4",
       type: "int",
-      default: "2420",
+      default: "2356",
       local: "true"
     },
     { name: "CptraCoreEccRevocation4Size",
@@ -1350,7 +1443,7 @@
     { name: "CptraCoreLmsRevocation4Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_4",
       type: "int",
-      default: "2421",
+      default: "2357",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation4Size",
@@ -1362,7 +1455,7 @@
     { name: "CptraCoreMldsaRevocation4Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_4",
       type: "int",
-      default: "2425",
+      default: "2361",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation4Size",
@@ -1374,7 +1467,7 @@
     { name: "CptraCoreEccRevocation5Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_5",
       type: "int",
-      default: "2429",
+      default: "2365",
       local: "true"
     },
     { name: "CptraCoreEccRevocation5Size",
@@ -1386,7 +1479,7 @@
     { name: "CptraCoreLmsRevocation5Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_5",
       type: "int",
-      default: "2430",
+      default: "2366",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation5Size",
@@ -1398,7 +1491,7 @@
     { name: "CptraCoreMldsaRevocation5Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_5",
       type: "int",
-      default: "2434",
+      default: "2370",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation5Size",
@@ -1410,7 +1503,7 @@
     { name: "CptraCoreEccRevocation6Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_6",
       type: "int",
-      default: "2438",
+      default: "2374",
       local: "true"
     },
     { name: "CptraCoreEccRevocation6Size",
@@ -1422,7 +1515,7 @@
     { name: "CptraCoreLmsRevocation6Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_6",
       type: "int",
-      default: "2439",
+      default: "2375",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation6Size",
@@ -1434,7 +1527,7 @@
     { name: "CptraCoreMldsaRevocation6Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_6",
       type: "int",
-      default: "2443",
+      default: "2379",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation6Size",
@@ -1446,7 +1539,7 @@
     { name: "CptraCoreEccRevocation7Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_7",
       type: "int",
-      default: "2447",
+      default: "2383",
       local: "true"
     },
     { name: "CptraCoreEccRevocation7Size",
@@ -1458,7 +1551,7 @@
     { name: "CptraCoreLmsRevocation7Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_7",
       type: "int",
-      default: "2448",
+      default: "2384",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation7Size",
@@ -1470,7 +1563,7 @@
     { name: "CptraCoreMldsaRevocation7Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_7",
       type: "int",
-      default: "2452",
+      default: "2388",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation7Size",
@@ -1482,7 +1575,7 @@
     { name: "CptraCoreEccRevocation8Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_8",
       type: "int",
-      default: "2456",
+      default: "2392",
       local: "true"
     },
     { name: "CptraCoreEccRevocation8Size",
@@ -1494,7 +1587,7 @@
     { name: "CptraCoreLmsRevocation8Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_8",
       type: "int",
-      default: "2457",
+      default: "2393",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation8Size",
@@ -1506,7 +1599,7 @@
     { name: "CptraCoreMldsaRevocation8Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_8",
       type: "int",
-      default: "2461",
+      default: "2397",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation8Size",
@@ -1518,7 +1611,7 @@
     { name: "CptraCoreEccRevocation9Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_9",
       type: "int",
-      default: "2465",
+      default: "2401",
       local: "true"
     },
     { name: "CptraCoreEccRevocation9Size",
@@ -1530,7 +1623,7 @@
     { name: "CptraCoreLmsRevocation9Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_9",
       type: "int",
-      default: "2466",
+      default: "2402",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation9Size",
@@ -1542,7 +1635,7 @@
     { name: "CptraCoreMldsaRevocation9Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_9",
       type: "int",
-      default: "2470",
+      default: "2406",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation9Size",
@@ -1554,7 +1647,7 @@
     { name: "CptraCoreEccRevocation10Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_10",
       type: "int",
-      default: "2474",
+      default: "2410",
       local: "true"
     },
     { name: "CptraCoreEccRevocation10Size",
@@ -1566,7 +1659,7 @@
     { name: "CptraCoreLmsRevocation10Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_10",
       type: "int",
-      default: "2475",
+      default: "2411",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation10Size",
@@ -1578,7 +1671,7 @@
     { name: "CptraCoreMldsaRevocation10Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_10",
       type: "int",
-      default: "2479",
+      default: "2415",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation10Size",
@@ -1590,7 +1683,7 @@
     { name: "CptraCoreEccRevocation11Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_11",
       type: "int",
-      default: "2483",
+      default: "2419",
       local: "true"
     },
     { name: "CptraCoreEccRevocation11Size",
@@ -1602,7 +1695,7 @@
     { name: "CptraCoreLmsRevocation11Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_11",
       type: "int",
-      default: "2484",
+      default: "2420",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation11Size",
@@ -1614,7 +1707,7 @@
     { name: "CptraCoreMldsaRevocation11Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_11",
       type: "int",
-      default: "2488",
+      default: "2424",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation11Size",
@@ -1626,7 +1719,7 @@
     { name: "CptraCoreEccRevocation12Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_12",
       type: "int",
-      default: "2492",
+      default: "2428",
       local: "true"
     },
     { name: "CptraCoreEccRevocation12Size",
@@ -1638,7 +1731,7 @@
     { name: "CptraCoreLmsRevocation12Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_12",
       type: "int",
-      default: "2493",
+      default: "2429",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation12Size",
@@ -1650,7 +1743,7 @@
     { name: "CptraCoreMldsaRevocation12Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_12",
       type: "int",
-      default: "2497",
+      default: "2433",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation12Size",
@@ -1662,7 +1755,7 @@
     { name: "CptraCoreEccRevocation13Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_13",
       type: "int",
-      default: "2501",
+      default: "2437",
       local: "true"
     },
     { name: "CptraCoreEccRevocation13Size",
@@ -1674,7 +1767,7 @@
     { name: "CptraCoreLmsRevocation13Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_13",
       type: "int",
-      default: "2502",
+      default: "2438",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation13Size",
@@ -1686,7 +1779,7 @@
     { name: "CptraCoreMldsaRevocation13Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_13",
       type: "int",
-      default: "2506",
+      default: "2442",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation13Size",
@@ -1698,7 +1791,7 @@
     { name: "CptraCoreEccRevocation14Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_14",
       type: "int",
-      default: "2510",
+      default: "2446",
       local: "true"
     },
     { name: "CptraCoreEccRevocation14Size",
@@ -1710,7 +1803,7 @@
     { name: "CptraCoreLmsRevocation14Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_14",
       type: "int",
-      default: "2511",
+      default: "2447",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation14Size",
@@ -1722,7 +1815,7 @@
     { name: "CptraCoreMldsaRevocation14Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_14",
       type: "int",
-      default: "2515",
+      default: "2451",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation14Size",
@@ -1734,7 +1827,7 @@
     { name: "CptraCoreEccRevocation15Offset",
       desc: "Offset of CPTRA_CORE_ECC_REVOCATION_15",
       type: "int",
-      default: "2519",
+      default: "2455",
       local: "true"
     },
     { name: "CptraCoreEccRevocation15Size",
@@ -1746,7 +1839,7 @@
     { name: "CptraCoreLmsRevocation15Offset",
       desc: "Offset of CPTRA_CORE_LMS_REVOCATION_15",
       type: "int",
-      default: "2520",
+      default: "2456",
       local: "true"
     },
     { name: "CptraCoreLmsRevocation15Size",
@@ -1758,7 +1851,7 @@
     { name: "CptraCoreMldsaRevocation15Offset",
       desc: "Offset of CPTRA_CORE_MLDSA_REVOCATION_15",
       type: "int",
-      default: "2524",
+      default: "2460",
       local: "true"
     },
     { name: "CptraCoreMldsaRevocation15Size",
@@ -1770,7 +1863,7 @@
     { name: "VendorRevocationsProdPartitionDigestOffset",
       desc: "Offset of VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST",
       type: "int",
-      default: "2528",
+      default: "2464",
       local: "true"
     },
     { name: "VendorRevocationsProdPartitionDigestSize",
@@ -1782,7 +1875,7 @@
     { name: "VendorSecretProdPartitionOffset",
       desc: "Offset of the VENDOR_SECRET_PROD_PARTITION partition",
       type: "int",
-      default: "2536",
+      default: "2472",
       local: "true"
     },
     { name: "VendorSecretProdPartitionSize",
@@ -1794,7 +1887,7 @@
     { name: "CptraSsVendorSpecificSecretFuse0Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_0",
       type: "int",
-      default: "2536",
+      default: "2472",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse0Size",
@@ -1806,7 +1899,7 @@
     { name: "CptraSsVendorSpecificSecretFuse1Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_1",
       type: "int",
-      default: "2568",
+      default: "2504",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse1Size",
@@ -1818,7 +1911,7 @@
     { name: "CptraSsVendorSpecificSecretFuse2Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_2",
       type: "int",
-      default: "2600",
+      default: "2536",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse2Size",
@@ -1830,7 +1923,7 @@
     { name: "CptraSsVendorSpecificSecretFuse3Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_3",
       type: "int",
-      default: "2632",
+      default: "2568",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse3Size",
@@ -1842,7 +1935,7 @@
     { name: "CptraSsVendorSpecificSecretFuse4Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_4",
       type: "int",
-      default: "2664",
+      default: "2600",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse4Size",
@@ -1854,7 +1947,7 @@
     { name: "CptraSsVendorSpecificSecretFuse5Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_5",
       type: "int",
-      default: "2696",
+      default: "2632",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse5Size",
@@ -1866,7 +1959,7 @@
     { name: "CptraSsVendorSpecificSecretFuse6Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_6",
       type: "int",
-      default: "2728",
+      default: "2664",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse6Size",
@@ -1878,7 +1971,7 @@
     { name: "CptraSsVendorSpecificSecretFuse7Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_7",
       type: "int",
-      default: "2760",
+      default: "2696",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse7Size",
@@ -1890,7 +1983,7 @@
     { name: "CptraSsVendorSpecificSecretFuse8Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_8",
       type: "int",
-      default: "2792",
+      default: "2728",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse8Size",
@@ -1902,7 +1995,7 @@
     { name: "CptraSsVendorSpecificSecretFuse9Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_9",
       type: "int",
-      default: "2824",
+      default: "2760",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse9Size",
@@ -1914,7 +2007,7 @@
     { name: "CptraSsVendorSpecificSecretFuse10Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_10",
       type: "int",
-      default: "2856",
+      default: "2792",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse10Size",
@@ -1926,7 +2019,7 @@
     { name: "CptraSsVendorSpecificSecretFuse11Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_11",
       type: "int",
-      default: "2888",
+      default: "2824",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse11Size",
@@ -1938,7 +2031,7 @@
     { name: "CptraSsVendorSpecificSecretFuse12Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_12",
       type: "int",
-      default: "2920",
+      default: "2856",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse12Size",
@@ -1950,7 +2043,7 @@
     { name: "CptraSsVendorSpecificSecretFuse13Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_13",
       type: "int",
-      default: "2952",
+      default: "2888",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse13Size",
@@ -1962,7 +2055,7 @@
     { name: "CptraSsVendorSpecificSecretFuse14Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_14",
       type: "int",
-      default: "2984",
+      default: "2920",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse14Size",
@@ -1974,7 +2067,7 @@
     { name: "CptraSsVendorSpecificSecretFuse15Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_15",
       type: "int",
-      default: "3016",
+      default: "2952",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse15Size",
@@ -1986,7 +2079,7 @@
     { name: "VendorSecretProdPartitionDigestOffset",
       desc: "Offset of VENDOR_SECRET_PROD_PARTITION_DIGEST",
       type: "int",
-      default: "3048",
+      default: "2984",
       local: "true"
     },
     { name: "VendorSecretProdPartitionDigestSize",
@@ -1998,19 +2091,19 @@
     { name: "VendorNonSecretProdPartitionOffset",
       desc: "Offset of the VENDOR_NON_SECRET_PROD_PARTITION partition",
       type: "int",
-      default: "3056",
+      default: "2992",
       local: "true"
     },
     { name: "VendorNonSecretProdPartitionSize",
       desc: "Size of the VENDOR_NON_SECRET_PROD_PARTITION partition",
       type: "int",
-      default: "952",
+      default: "1016",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse0Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_0",
       type: "int",
-      default: "3056",
+      default: "2992",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse0Size",
@@ -2022,7 +2115,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse1Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_1",
       type: "int",
-      default: "3088",
+      default: "3024",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse1Size",
@@ -2034,7 +2127,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse2Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_2",
       type: "int",
-      default: "3120",
+      default: "3056",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse2Size",
@@ -2046,7 +2139,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse3Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_3",
       type: "int",
-      default: "3152",
+      default: "3088",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse3Size",
@@ -2058,7 +2151,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse4Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_4",
       type: "int",
-      default: "3184",
+      default: "3120",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse4Size",
@@ -2070,7 +2163,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse5Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_5",
       type: "int",
-      default: "3216",
+      default: "3152",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse5Size",
@@ -2082,7 +2175,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse6Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_6",
       type: "int",
-      default: "3248",
+      default: "3184",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse6Size",
@@ -2094,7 +2187,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse7Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_7",
       type: "int",
-      default: "3280",
+      default: "3216",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse7Size",
@@ -2106,7 +2199,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse8Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_8",
       type: "int",
-      default: "3312",
+      default: "3248",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse8Size",
@@ -2118,7 +2211,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse9Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_9",
       type: "int",
-      default: "3344",
+      default: "3280",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse9Size",
@@ -2130,7 +2223,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse10Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_10",
       type: "int",
-      default: "3376",
+      default: "3312",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse10Size",
@@ -2142,7 +2235,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse11Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_11",
       type: "int",
-      default: "3408",
+      default: "3344",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse11Size",
@@ -2154,7 +2247,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse12Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_12",
       type: "int",
-      default: "3440",
+      default: "3376",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse12Size",
@@ -2166,7 +2259,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse13Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_13",
       type: "int",
-      default: "3472",
+      default: "3408",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse13Size",
@@ -2178,7 +2271,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse14Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_14",
       type: "int",
-      default: "3504",
+      default: "3440",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse14Size",
@@ -2190,7 +2283,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse15Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_15",
       type: "int",
-      default: "3536",
+      default: "3472",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse15Size",

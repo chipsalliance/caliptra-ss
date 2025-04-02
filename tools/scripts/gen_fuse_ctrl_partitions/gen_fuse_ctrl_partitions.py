@@ -32,6 +32,7 @@ DATA_OUTPUT_PATH = Path("src") / "fuse_ctrl" / "data"
 DOC_OUTPUT_PATH  = Path("src") / "fuse_ctrl" / "doc"
 RTL_OUTPUT_PATH  = Path("src") / "fuse_ctrl" / "rtl"
 C_OUTPUT_PATH    = Path("src") / "integration" / "rtl"
+RDL_OUTPUT_PATH    = Path("src") / "fuse_ctrl" / "rtl"
 
 ## Doc table files
 PARTITIONS_TABLE_FILE = "otp_ctrl_partitions.md"
@@ -154,7 +155,7 @@ def main():
     # Render RDL
     render_template(
         template=TEMPLATES_PATH / RDL_TEMPLATE,
-        target_path=DATA_OUTPUT_PATH / RDL_TEMPLATE.replace(".tpl", ""),
+        target_path=RDL_OUTPUT_PATH / RDL_TEMPLATE.replace(".tpl", ""),
         params={"partitions": otp_mmap.config["partitions"]}
     )
 
