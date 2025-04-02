@@ -93,122 +93,122 @@ module caliptra_ss_top_tb
 
     mldsa_mem_if mldsa_memory_export();
 
-`ifdef css_mcu0_RV_BUILD_AXI4
-   //-------------------------- LSU AXI signals--------------------------
-   // AXI Write Channels
-    wire                        lsu_axi_awvalid;
-    wire                        lsu_axi_awready;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_awid;
-    wire [31:0]                 lsu_axi_awaddr;
-    wire [3:0]                  lsu_axi_awregion;
-    wire [7:0]                  lsu_axi_awlen;
-    wire [2:0]                  lsu_axi_awsize;
-    wire [1:0]                  lsu_axi_awburst;
-    wire                        lsu_axi_awlock;
-    wire [3:0]                  lsu_axi_awcache;
-    wire [2:0]                  lsu_axi_awprot;
-    wire [3:0]                  lsu_axi_awqos;
+//`ifdef css_mcu0_RV_BUILD_AXI4
+//   //-------------------------- LSU AXI signals--------------------------
+//   // AXI Write Channels
+//    wire                        lsu_axi_awvalid;
+//    wire                        lsu_axi_awready;
+//    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_awid;
+//    wire [31:0]                 lsu_axi_awaddr;
+//    wire [3:0]                  lsu_axi_awregion;
+//    wire [7:0]                  lsu_axi_awlen;
+//    wire [2:0]                  lsu_axi_awsize;
+//    wire [1:0]                  lsu_axi_awburst;
+//    wire                        lsu_axi_awlock;
+//    wire [3:0]                  lsu_axi_awcache;
+//    wire [2:0]                  lsu_axi_awprot;
+//    wire [3:0]                  lsu_axi_awqos;
+//
+//    wire                        lsu_axi_wvalid;
+//    wire                        lsu_axi_wready;
+//    wire [63:0]                 lsu_axi_wdata;
+//    wire [7:0]                  lsu_axi_wstrb;
+//    wire                        lsu_axi_wlast;
+//
+//    wire                        lsu_axi_bvalid;
+//    wire                        lsu_axi_bready;
+//    wire [1:0]                  lsu_axi_bresp;
+//    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_bid;
+//
+//    // AXI Read Channels
+//    wire                        lsu_axi_arvalid;
+//    wire                        lsu_axi_arready;
+//    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_arid;
+//    wire [31:0]                 lsu_axi_araddr;
+//    wire [3:0]                  lsu_axi_arregion;
+//    wire [7:0]                  lsu_axi_arlen;
+//    wire [2:0]                  lsu_axi_arsize;
+//    wire [1:0]                  lsu_axi_arburst;
+//    wire                        lsu_axi_arlock;
+//    wire [3:0]                  lsu_axi_arcache;
+//    wire [2:0]                  lsu_axi_arprot;
+//    wire [3:0]                  lsu_axi_arqos;
+//
+//    wire                        lsu_axi_rvalid;
+//    wire                        lsu_axi_rready;
+//    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_rid;
+//    wire [63:0]                 lsu_axi_rdata;
+//    wire [1:0]                  lsu_axi_rresp;
+//    wire                        lsu_axi_rlast;
+//
+//    //-------------------------- IFU AXI signals--------------------------
+//    // AXI Write Channels
+//    wire                        ifu_axi_awvalid;
+//    wire                        ifu_axi_awready;
+//    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_awid;
+//    wire [31:0]                 ifu_axi_awaddr;
+//    wire [3:0]                  ifu_axi_awregion;
+//    wire [7:0]                  ifu_axi_awlen;
+//    wire [2:0]                  ifu_axi_awsize;
+//    wire [1:0]                  ifu_axi_awburst;
+//    wire                        ifu_axi_awlock;
+//    wire [3:0]                  ifu_axi_awcache;
+//    wire [2:0]                  ifu_axi_awprot;
+//    wire [3:0]                  ifu_axi_awqos;
+//
+//    wire                        ifu_axi_wvalid;
+//    wire                        ifu_axi_wready;
+//    wire [63:0]                 ifu_axi_wdata;
+//    wire [7:0]                  ifu_axi_wstrb;
+//    wire                        ifu_axi_wlast;
+//
+//    wire                        ifu_axi_bvalid;
+//    wire                        ifu_axi_bready;
+//    wire [1:0]                  ifu_axi_bresp;
+//    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_bid;
+//
+//    // AXI Read Channels
+//    wire                        ifu_axi_arvalid;
+//    wire                        ifu_axi_arready;
+//    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_arid;
+//    wire [31:0]                 ifu_axi_araddr;
+//    wire [3:0]                  ifu_axi_arregion;
+//    wire [7:0]                  ifu_axi_arlen;
+//    wire [2:0]                  ifu_axi_arsize;
+//    wire [1:0]                  ifu_axi_arburst;
+//    wire                        ifu_axi_arlock;
+//    wire [3:0]                  ifu_axi_arcache;
+//    wire [2:0]                  ifu_axi_arprot;
+//    wire [3:0]                  ifu_axi_arqos;
+//
+//    wire                        ifu_axi_rvalid;
+//    wire                        ifu_axi_rready;
+//    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_rid;
+//    wire [63:0]                 ifu_axi_rdata;
+//    wire [1:0]                  ifu_axi_rresp;
+//    wire                        ifu_axi_rlast;
 
-    wire                        lsu_axi_wvalid;
-    wire                        lsu_axi_wready;
-    wire [63:0]                 lsu_axi_wdata;
-    wire [7:0]                  lsu_axi_wstrb;
-    wire                        lsu_axi_wlast;
-
-    wire                        lsu_axi_bvalid;
-    wire                        lsu_axi_bready;
-    wire [1:0]                  lsu_axi_bresp;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_bid;
-
-    // AXI Read Channels
-    wire                        lsu_axi_arvalid;
-    wire                        lsu_axi_arready;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_arid;
-    wire [31:0]                 lsu_axi_araddr;
-    wire [3:0]                  lsu_axi_arregion;
-    wire [7:0]                  lsu_axi_arlen;
-    wire [2:0]                  lsu_axi_arsize;
-    wire [1:0]                  lsu_axi_arburst;
-    wire                        lsu_axi_arlock;
-    wire [3:0]                  lsu_axi_arcache;
-    wire [2:0]                  lsu_axi_arprot;
-    wire [3:0]                  lsu_axi_arqos;
-
-    wire                        lsu_axi_rvalid;
-    wire                        lsu_axi_rready;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_rid;
-    wire [63:0]                 lsu_axi_rdata;
-    wire [1:0]                  lsu_axi_rresp;
-    wire                        lsu_axi_rlast;
-
-    //-------------------------- IFU AXI signals--------------------------
-    // AXI Write Channels
-    wire                        ifu_axi_awvalid;
-    wire                        ifu_axi_awready;
-    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_awid;
-    wire [31:0]                 ifu_axi_awaddr;
-    wire [3:0]                  ifu_axi_awregion;
-    wire [7:0]                  ifu_axi_awlen;
-    wire [2:0]                  ifu_axi_awsize;
-    wire [1:0]                  ifu_axi_awburst;
-    wire                        ifu_axi_awlock;
-    wire [3:0]                  ifu_axi_awcache;
-    wire [2:0]                  ifu_axi_awprot;
-    wire [3:0]                  ifu_axi_awqos;
-
-    wire                        ifu_axi_wvalid;
-    wire                        ifu_axi_wready;
-    wire [63:0]                 ifu_axi_wdata;
-    wire [7:0]                  ifu_axi_wstrb;
-    wire                        ifu_axi_wlast;
-
-    wire                        ifu_axi_bvalid;
-    wire                        ifu_axi_bready;
-    wire [1:0]                  ifu_axi_bresp;
-    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_bid;
-
-    // AXI Read Channels
-    wire                        ifu_axi_arvalid;
-    wire                        ifu_axi_arready;
-    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_arid;
-    wire [31:0]                 ifu_axi_araddr;
-    wire [3:0]                  ifu_axi_arregion;
-    wire [7:0]                  ifu_axi_arlen;
-    wire [2:0]                  ifu_axi_arsize;
-    wire [1:0]                  ifu_axi_arburst;
-    wire                        ifu_axi_arlock;
-    wire [3:0]                  ifu_axi_arcache;
-    wire [2:0]                  ifu_axi_arprot;
-    wire [3:0]                  ifu_axi_arqos;
-
-    wire                        ifu_axi_rvalid;
-    wire                        ifu_axi_rready;
-    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_rid;
-    wire [63:0]                 ifu_axi_rdata;
-    wire [1:0]                  ifu_axi_rresp;
-    wire                        ifu_axi_rlast;
-
-    wire                        lmem_axi_arvalid;
-    wire                        lmem_axi_arready;
-
-    wire                        lmem_axi_rvalid;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lmem_axi_rid;
-    wire [1:0]                  lmem_axi_rresp;
-    wire [63:0]                 lmem_axi_rdata;
-    wire                        lmem_axi_rlast;
-    wire                        lmem_axi_rready;
-
-    wire                        lmem_axi_awvalid;
-    wire                        lmem_axi_awready;
-
-    wire                        lmem_axi_wvalid;
-    wire                        lmem_axi_wready;
-
-    wire [1:0]                  lmem_axi_bresp;
-    wire                        lmem_axi_bvalid;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lmem_axi_bid;
-    wire                        lmem_axi_bready;
-`endif
+//    wire                        lmem_axi_arvalid;
+//    wire                        lmem_axi_arready;
+//
+//    wire                        lmem_axi_rvalid;
+//    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lmem_axi_rid;
+//    wire [1:0]                  lmem_axi_rresp;
+//    wire [63:0]                 lmem_axi_rdata;
+//    wire                        lmem_axi_rlast;
+//    wire                        lmem_axi_rready;
+//
+//    wire                        lmem_axi_awvalid;
+//    wire                        lmem_axi_awready;
+//
+//    wire                        lmem_axi_wvalid;
+//    wire                        lmem_axi_wready;
+//
+//    wire [1:0]                  lmem_axi_bresp;
+//    wire                        lmem_axi_bvalid;
+//    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lmem_axi_bid;
+//    wire                        lmem_axi_bready;
+//`endif
 
 // ----------------- MCI Connections within Subsystem -----------------------
          logic                             mcu_rst_b;
@@ -463,33 +463,52 @@ module caliptra_ss_top_tb
             fuse_core_axi_rd_is_upper_dw_latched <= cptra_ss_otp_core_axi_rd_req_i.araddr[2] && (cptra_ss_otp_core_axi_rd_req_i.arsize < 3);
     `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT_OTP, (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready) -> (cptra_ss_otp_core_axi_rd_req_i.arsize < 3), core_clk, !rst_l)
 
-    // AXI Interconnect connections
-    always_comb begin
-        axi_interconnect.mintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-        axi_interconnect.mintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-        axi_interconnect.mintf_arr[1].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-        axi_interconnect.mintf_arr[1].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-        axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-        axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    // AXI Interconnect upper address tie to 0
+    assign axi_interconnect.mintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[1].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[1].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+//    assign axi_interconnect.mintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+//    assign axi_interconnect.mintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[3].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[3].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[4].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[4].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.sintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.sintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
 
-        // Slave port 0 disconnection.
-        axi_interconnect.sintf_arr[0].ARREADY = 1'b0;
-        axi_interconnect.sintf_arr[0].RVALID = 1'b0;
-        axi_interconnect.sintf_arr[0].RDATA = 64'h0;
-        axi_interconnect.sintf_arr[0].RRESP = 2'b0;
-        axi_interconnect.sintf_arr[0].RID = 8'h0;
-        axi_interconnect.sintf_arr[0].RLAST = 1'b0;
-        axi_interconnect.sintf_arr[0].RUSER = '0;
+    // Slave port 0 disconnection.
+    assign axi_interconnect.sintf_arr[0].ARREADY = 1'b0;
+    assign axi_interconnect.sintf_arr[0].RVALID = 1'b0;
+    assign axi_interconnect.sintf_arr[0].RDATA = 64'h0;
+    assign axi_interconnect.sintf_arr[0].RRESP = 2'b0;
+    assign axi_interconnect.sintf_arr[0].RID = 8'h0;
+    assign axi_interconnect.sintf_arr[0].RLAST = 1'b0;
+    assign axi_interconnect.sintf_arr[0].RUSER = '0;
 
-        axi_interconnect.sintf_arr[0].AWREADY = 1'b0;
-        axi_interconnect.sintf_arr[0].WREADY = 1'b0;
-        axi_interconnect.sintf_arr[0].BVALID = 1'b0;
-        axi_interconnect.sintf_arr[0].BRESP = 2'b0;
-        axi_interconnect.sintf_arr[0].BUSER = '0;
+    assign axi_interconnect.sintf_arr[0].AWREADY = 1'b0;
+    assign axi_interconnect.sintf_arr[0].WREADY = 1'b0;
+    assign axi_interconnect.sintf_arr[0].BVALID = 1'b0;
+    assign axi_interconnect.sintf_arr[0].BRESP = 2'b0;
+    assign axi_interconnect.sintf_arr[0].BUSER = '0;
 
-        axi_interconnect.sintf_arr[0].BID = 8'h0;
+    assign axi_interconnect.sintf_arr[0].BID = 8'h0;
 
-    end
+    genvar ii;
+    generate
+        // Undriven ports on all Managers
+        for(ii = 0; ii < AAXI_INTC_MASTER_CNT; ii++) begin
+            assign axi_interconnect.mintf_arr[ii].ARCACHE  = '0;
+            assign axi_interconnect.mintf_arr[ii].ARPROT   = '0;
+            assign axi_interconnect.mintf_arr[ii].ARQOS    = '0;
+            assign axi_interconnect.mintf_arr[ii].ARREGION = '0;
+            assign axi_interconnect.mintf_arr[ii].AWCACHE  = '0;
+            assign axi_interconnect.mintf_arr[ii].AWPROT   = '0;
+            assign axi_interconnect.mintf_arr[ii].AWQOS    = '0;
+            assign axi_interconnect.mintf_arr[ii].AWREGION = '0;
+        end
+    endgenerate
+
     
     //Interconnect 0 - MCU LSU
     assign axi_interconnect.mintf_arr[0].AWVALID = cptra_ss_mcu_lsu_m_axi_if.awvalid;
@@ -1428,8 +1447,8 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
     assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
     assign cptra_ss_mcu_jtag_trst_n_i           = 1'b0;
-    assign cptra_ss_strap_caliptra_base_addr_i  = 64'hba5e_ba11;
-    assign cptra_ss_strap_mci_base_addr_i       = 64'h0;
+    assign cptra_ss_strap_caliptra_base_addr_i  = 64'(`SOC_SOC_IFC_REG_BASE_ADDR - (`SOC_SOC_IFC_REG_BASE_ADDR & ((1<<SOC_IFC_ADDR_W)-1)));
+    assign cptra_ss_strap_mci_base_addr_i       = 64'(`SOC_MCI_TOP_BASE_ADDR);
     assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
@@ -1639,6 +1658,7 @@ module caliptra_ss_top_tb
 //Instantiate coverage bind files
 `ifndef VERILATOR
 mci_top_cov_bind i_mci_top_cov_bind();
+caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
 `endif
 
 endmodule
