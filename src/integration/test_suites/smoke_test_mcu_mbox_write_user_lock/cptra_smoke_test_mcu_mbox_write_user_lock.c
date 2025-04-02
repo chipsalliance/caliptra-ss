@@ -51,7 +51,7 @@ bool caliptra_ss_mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count
     return false;
 }
 
-void caliptra_ss_mcu_mbox_send_data_no_wait_status(mbox_num) {
+void caliptra_ss_mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
     uint32_t data_length;
     uint32_t read_payload[16];
     uint32_t write_payload[16];
@@ -111,7 +111,17 @@ void main(void) {
         uint32_t read_payload[16];
         uint32_t data_length;
         uint32_t write_payload[16];
-        uint32_t mbox_num = 0;  // TODO add randomization
+
+        #ifdef MCU_MBOX_VALID_VECTOR
+            int32_t mbox_instances = MCU_MBOX_VALID_VECTOR;
+        #else
+            uint32_t mbox_instances = 0;
+        #endif
+
+        uint32_t mbox_num = 0;
+        if (mbox_instances == 0x2) {
+            mbox_num = 1;
+        }
 
         VPRINTF(LOW, "----------------------------------\nSmoke Test MCI MBOX%x  !!\n----------------------------------\n", mbox_num);
 

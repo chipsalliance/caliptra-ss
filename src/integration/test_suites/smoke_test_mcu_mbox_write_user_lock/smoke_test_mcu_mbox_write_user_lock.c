@@ -183,7 +183,7 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;  
-    uint32_t mbox_num = 0;
+    uint32_t mbox_num = decode_single_valid_mbox();
     uint32_t axi_select = xorshift32() % 5;
 
     uint32_t axi_user_id[] = { xorshift32(), xorshift32(), xorshift32(), xorshift32(), xorshift32() };
