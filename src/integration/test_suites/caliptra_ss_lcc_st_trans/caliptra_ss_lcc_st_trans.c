@@ -100,7 +100,15 @@ void main (void) {
         // Transition to SCRAP require setting the PPD pin.
         force_PPD_pin();
     }
-    if (lc_state_curr == 0) {
+    if (lc_cnt_curr == 24) {
+        transition_state_req_with_expec_error(lc_state_next,
+                         raw_unlock_token[0],
+                         raw_unlock_token[1],
+                         raw_unlock_token[2],
+                         raw_unlock_token[3],
+                         1);
+    }
+    else if (lc_state_curr == 0) {
         transition_state(lc_state_next,
                          raw_unlock_token[0],
                          raw_unlock_token[1],
