@@ -217,6 +217,7 @@ CFLAGS += $(TB_DPI_INCS)
 VCS_COMP_OPTS += -debug_access+all
 VCS_COMP_OPTS += +define+CLP_ASSERT_ON
 VCS_COMP_OPTS += +define+AVERY_ASSERT_ON
+VCS_COMP_OPTS += +define+AVERY_MONITOR_ON
 # Used in caliptra_top_sva to find signals
 VCS_COMP_OPTS += +define+CPTRA_TB_TOP_NAME=$(DUT)
 VCS_COMP_OPTS += +define+CPTRA_TOP_PATH=$(DUT).caliptra_ss_dut.caliptra_top_dut
