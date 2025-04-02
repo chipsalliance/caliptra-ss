@@ -71,7 +71,7 @@ void no_PPD_from_Raw_to_SCRAP(void) {
 void main (void)
 {
     VPRINTF(LOW, "=================\nMCU: Caliptra Boot Go\n=================\n\n");    
-    mcu_mci_boot_go();
+    mcu_mci_boot_go(100);
     force_lcc_tokens();
     VPRINTF(LOW, "=========\nMCU: TESTING LCC STATE TRANS FROM ONE to SCRAP\n=================\n\n");   
     no_PPD_from_Raw_to_SCRAP();

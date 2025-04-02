@@ -36,5 +36,8 @@ uint32_t get_mcu_sram_protection_region_start() ;
 
 uint32_t get_mcu_sram_protection_region_end() ;
 
+bool get_is_sram_protected_region();
 
-#endif // CALIPTRA_SS_LIB
+uint32_t get_fw_sram_exec_region_less_than_sram_size(uint32_t rnd);
+
+#endif // MCI_LIB

@@ -168,7 +168,7 @@ void main (void) {
 
     VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
 
-    mcu_mci_boot_go();
+    mcu_mci_boot_go(100);
 
     VPRINTF(LOW, "MCU: Caliptra bringup\n");
 

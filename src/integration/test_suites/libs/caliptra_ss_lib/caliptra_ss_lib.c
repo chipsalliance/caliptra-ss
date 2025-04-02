@@ -52,6 +52,23 @@ void reset_fc_lcc_rtl(void) {
     mcu_sleep(160);
 }
 
+void write_read_check(uintptr_t rdptr, uint32_t data){
+    VPRINTF(LOW, "write_read_check: Address: 0x%x -- Data: 0x%x\n", rdptr, data);
+
+    lsu_write_32(rdptr, data);
+
+    read_check(rdptr, data);
+    
+}
+
+uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t end_address) {
+    // Return address that is DWORD aligned
+    uintptr_t range = end_address - start_address + 1;
+    uintptr_t offset = rnd % range;
+    uintptr_t address = (start_address + offset) & ~3;
+    return address;
+}
+
 void read_check(uintptr_t rdptr, uint32_t expected_rddata){
     uint32_t data;
     data = lsu_read_32(rdptr);
@@ -64,10 +81,10 @@ void read_check(uintptr_t rdptr, uint32_t expected_rddata){
 }
 
 
-void mcu_mci_boot_go() {
+void mcu_mci_boot_go(uint32_t mcu_sram_exec_size) {
  
     // Configure EXEC Region before initializing Caliptra
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , 100);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , mcu_sram_exec_size);
     VPRINTF(LOW, "MCU: Configure EXEC REGION Size\n");
     
 
@@ -144,6 +161,14 @@ void mcu_cptra_fuse_init_axi_user(uint32_t cptra_axi_user){
     mcu_cptra_set_fuse_done();
 
     mcu_cptra_advance_brkpoint();
+}
+
+void mcu_cptra_full_init(uint32_t mcu_sram_exec_size, uint32_t cptra_axi_user) {
+    
+    mcu_mci_boot_go(mcu_sram_exec_size);
+
+    mcu_cptra_fuse_init_axi_user(cptra_axi_user);
+
 }
 
 void mcu_cptra_fuse_init() {
@@ -482,7 +507,7 @@ void boot_mcu(){
     uint32_t cptra_boot_go;
     uint32_t reg_data_32;
     
-    mcu_mci_boot_go();
+    mcu_mci_boot_go(100);
 
     ////////////////////////////////////
     // Fuse and Boot Bringup

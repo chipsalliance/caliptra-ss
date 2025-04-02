@@ -46,7 +46,7 @@ void main (void) {
 
     VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
 
-    mcu_mci_boot_go();    
+    mcu_mci_boot_go(100);    
 
     VPRINTF(LOW, "MCU: Caliptra bringup\n")
 

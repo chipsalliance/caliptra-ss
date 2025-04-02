@@ -80,7 +80,7 @@ void main (void) {
         SEND_STDOUT_CTRL(0xff);
 
     } else {
-        mcu_mci_boot_go();
+        mcu_mci_boot_go(100);
 
         VPRINTF(LOW, "MCU: Caliptra bringup\n")
 

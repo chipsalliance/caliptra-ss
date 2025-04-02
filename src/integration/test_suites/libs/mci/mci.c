@@ -23,7 +23,7 @@
 #include <stdbool.h>
 
 uint32_t get_mcu_sram_size(){
-    return (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_CONFIG1)  &              MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_MASK) >> MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_LOW;
+    return (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_CONFIG1)  & MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_MASK) >> MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_LOW;
 }
 
 uint32_t get_mcu_sram_size_byte(){
@@ -50,6 +50,17 @@ uint32_t get_mcu_sram_execution_region_end() {
     
     return get_mcu_sram_execution_region_start() + (fw_exec_region * 4 * 1024) -1;
 
+}
+
+uint32_t get_fw_sram_exec_region_less_than_sram_size(uint32_t rnd){
+    uint32_t mask_rnd = rnd & MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_MASK;
+    uint32_t sram_size = get_mcu_sram_size();
+    uint32_t fw_sram_exec_region = (mask_rnd % sram_size) >> 4;
+    return fw_sram_exec_region;
+}
+
+bool get_is_sram_protected_region(){
+    return get_mcu_sram_protection_region_start() <= get_mcu_sram_end_addr();
 }
 
 uint32_t get_mcu_sram_protection_region_start() {

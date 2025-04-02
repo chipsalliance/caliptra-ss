@@ -37,7 +37,7 @@ void main (void) {
     uint32_t reg_data;
 
     VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
-    mcu_mci_boot_go();
+    mcu_mci_boot_go(100);
 
     VPRINTF(LOW, "MCU: Caliptra bringup\n")
     mcu_cptra_fuse_init();

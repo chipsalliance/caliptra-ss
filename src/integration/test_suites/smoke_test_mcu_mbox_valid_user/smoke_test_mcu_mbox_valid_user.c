@@ -156,7 +156,7 @@ void main (void) {
     // MBOX: Setup valid AXI
     mcu_mbox_configure_valid_axi(mbox_num, axi_user_id);
 
-    mcu_mci_boot_go();
+    mcu_mci_boot_go(100);
 
     VPRINTF(LOW, "MCU: Configured Caliptra as Valid AXI USER\n");
     lsu_write_32(SOC_SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER, caliptra_uc_axi_id);
