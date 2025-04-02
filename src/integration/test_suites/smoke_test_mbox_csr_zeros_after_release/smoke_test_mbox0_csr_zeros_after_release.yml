@@ -4,4 +4,4 @@ testname: smoke_test_mbox0_csr_zeros_after_release
 pre-exec: |
   echo "Running pre_exec for [smoke_test_mbox_csr_zeros_after_release]"
   CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile BUILD_CFLAGS="-DMCU_MBOX_VALID_VECTOR=0x1" CALIPTRA_INTERNAL_TRNG=0 TESTNAME=smoke_test_mbox program.hex
-  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_mbox_csr_zeros_after_release TEST_CMD_LINE_CFLAGS="-DMCU_MBOX_VALID_VECTOR=0x1" mcu_program.hex
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_mbox_csr_zeros_after_release BUILD_CFLAGS="-DMCU_MBOX_VALID_VECTOR=0x1" mcu_program.hex
