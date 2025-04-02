@@ -90,6 +90,8 @@ uint8_t sha_accel_check_result(uint8_t dw_cnt, uint32_t * digest, uint32_t * exp
         if (digest[ii] != exp_digest[ii]) {
             VPRINTF(ERROR, "DIGEST MISMATCH ERROR [%d]: Actual digest (0x%x) != expected (0x%x)\n", ii, digest[ii], exp_digest[ii]);
             match = 0;
+        } else {
+            VPRINTF(HIGH, "DIGEST [%d] MATCH: actual (0x%x) expected (0x%x)\n", ii, digest[ii], exp_digest[ii]);
         }
     }
     return match;
