@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env sh
+''':'
+exec /usr/bin/env python3w -r requirements.txt "$0" "$@"
+'''
 # SPDX-License-Identifier: Apache-2.0
 # 
 #
