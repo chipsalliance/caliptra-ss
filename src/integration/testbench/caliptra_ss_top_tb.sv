@@ -1539,12 +1539,6 @@ module caliptra_ss_top_tb
     );
     
 
-//Instantiate coverage bind files
-`ifndef VERILATOR
-mci_top_cov_bind i_mci_top_cov_bind();
-caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
-`endif
-
 endmodule
 
 // --- Avery I3C Test Case Bench ---

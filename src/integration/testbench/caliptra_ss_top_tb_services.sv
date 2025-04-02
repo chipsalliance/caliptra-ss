@@ -665,12 +665,14 @@ endtask
 
 `ifndef VERILATOR
     lc_ctrl_cov_bind i_lc_ctrl_cov_bind();
+    mci_top_cov_bind i_mci_top_cov_bind();
+    caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
 `endif
 
 
-    /* verilator lint_off CASEINCOMPLETE */
-    `include "mcu_dasm.svi"
-    /* verilator lint_on CASEINCOMPLETE */
+/* verilator lint_off CASEINCOMPLETE */
+`include "mcu_dasm.svi"
+/* verilator lint_on CASEINCOMPLETE */
 
 
 endmodule
