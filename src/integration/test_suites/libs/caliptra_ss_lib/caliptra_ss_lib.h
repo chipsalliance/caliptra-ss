@@ -18,10 +18,17 @@
 #define CALIPTRA_SS_LIB
 
 #include "soc_address_map.h"
+#include "stdint.h"
 #include <stdbool.h>
 
 extern uint32_t state;
 uint32_t xorshift32(void);
+
+inline void mcu_sleep (const uint32_t cycles) {
+    for (uint8_t ii = 0; ii < cycles; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
 
 void reset_fc_lcc_rtl(void);
 void mcu_cptra_wait_for_fuses() ;
