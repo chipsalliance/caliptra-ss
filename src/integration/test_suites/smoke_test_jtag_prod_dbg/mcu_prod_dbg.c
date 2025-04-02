@@ -45,19 +45,19 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 uint32_t PROD_DBG_PK_HASH_OFFSET = 0x21000480;
 uint32_t debug_level = 3;
 
-uint32_t PROD_dbg_pk[] = {
-    0x01020304,      // PROD_dbg_pk[0]
-    0x05060708,      // PROD_dbg_pk[1]
-    0x090A0B0C,      // PROD_dbg_pk[2]
-    0x0D0E0F10,      // PROD_dbg_pk[3]
-    0x11121314,      // PROD_dbg_pk[4]
-    0x15161718,      // PROD_dbg_pk[5]
-    0x191A1B1C,      // PROD_dbg_pk[6]
-    0x1D1E1F20,      // PROD_dbg_pk[7]
-    0x21222324,      // PROD_dbg_pk[8]
-    0x25262728,      // PROD_dbg_pk[9]
-    0x292A2B2C,      // PROD_dbg_pk[10]
-    0x2D2E2F30       // PROD_dbg_pk[11]
+uint32_t PROD_dbg_pk[] =  {
+    0x02E66222,
+    0xC1144ED7,
+    0x7F9E0293,
+    0xC99B43E2,
+    0x51741A91,
+    0xD6884787,
+    0x5A00F049,
+    0x443F97C0,
+    0xEF7B24B1,
+    0xDAEE7948,
+    0x97F03CF3,
+    0xD2369D51
 };
 
 
@@ -113,7 +113,6 @@ void main (void) {
     reset_fc_lcc_rtl();
     lsu_write_32(SOC_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES, 8);
     VPRINTF(LOW, "MCU: Set number of PK hashes to 8\n");
-
     lsu_write_32(SOC_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET, PROD_DBG_PK_HASH_OFFSET);
     VPRINTF(LOW, "MCU: Set PK hash register bank offset to 0x%08X\n", PROD_DBG_PK_HASH_OFFSET);
     uint32_t base_address;
@@ -123,12 +122,10 @@ void main (void) {
         VPRINTF(LOW, "MCU: writing PROD_dbg_pk[%02d] to address 0x%08X = 0x%08X\n", i, addr, PROD_dbg_pk[i]);
         lsu_write_32(addr, PROD_dbg_pk[i]);
     }
-
      
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
-    VPRINTF(LOW, "MCU: Set fuse wr done\n");
-    
+    VPRINTF(LOW, "MCU: Set fuse wr done\n");  
 
     cptra_boot_go = 0;
     VPRINTF(LOW, "MCU: waits in success loop\n");

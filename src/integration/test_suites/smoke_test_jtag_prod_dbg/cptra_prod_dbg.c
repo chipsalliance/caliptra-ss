@@ -60,19 +60,19 @@ uint32_t challenge_payload[] = {
     0x2D2E2F30       // challenge[11]
 };
 
-uint32_t PROD_dbg_pk[] = {
-    0x01020304,      // PROD_dbg_pk[0]
-    0x05060708,      // PROD_dbg_pk[1]
-    0x090A0B0C,      // PROD_dbg_pk[2]
-    0x0D0E0F10,      // PROD_dbg_pk[3]
-    0x11121314,      // PROD_dbg_pk[4]
-    0x15161718,      // PROD_dbg_pk[5]
-    0x191A1B1C,      // PROD_dbg_pk[6]
-    0x1D1E1F20,      // PROD_dbg_pk[7]
-    0x21222324,      // PROD_dbg_pk[8]
-    0x25262728,      // PROD_dbg_pk[9]
-    0x292A2B2C,      // PROD_dbg_pk[10]
-    0x2D2E2F30       // PROD_dbg_pk[11]
+uint32_t PROD_dbg_pk[] =  {
+    0x02E66222,
+    0xC1144ED7,
+    0x7F9E0293,
+    0xC99B43E2,
+    0x51741A91,
+    0xD6884787,
+    0x5A00F049,
+    0x443F97C0,
+    0xEF7B24B1,
+    0xDAEE7948,
+    0x97F03CF3,
+    0xD2369D51
 };
 
 
