@@ -56,6 +56,7 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;
+    uint32_t mbox_num = 0;
 
     VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
     mcu_mci_boot_go();
@@ -73,7 +74,7 @@ void main (void) {
     mcu_cptra_user_init();
 
     // MBOX: clear the lock on MBOX that is there from reset
-    mcu_mbox_clear_lock_out_of_reset();
+    mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
     VPRINTF(LOW, "=================\nMCU MBOX SRAM Testing\n=================\n\n")
 

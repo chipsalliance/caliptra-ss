@@ -230,13 +230,7 @@ class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 			end
 			#1us;
 		end
-		if(data[0] != 'h1) begin
-			test_log.substep("Recovery did not start");
-		end
-
-		test_log.step("=============================================================");
-		test_log.step("Step 3: Writing Recovery Image");
-		//-- writing RECOVERY_CTRL register
+		if(data[0test_log.substep("Reading DEVICE_ID register");ing RECOVERY_CTRL register
 		//-- RECOVERY_CTRL ('d38)
 		data = new[3];
 		data[0] = 'h0; // Component Memory Space (CMS)

@@ -55,11 +55,13 @@ targets:
   tb:
     directories: [$COMPILE_ROOT/rtl]
     files:
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_path_defines.svh
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
   rtl:
     directories: [$COMPILE_ROOT/rtl]
     files:
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_path_defines.svh
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
 ---
@@ -101,6 +103,7 @@ targets:
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0
 requires:
+  - ss_asserts
   - caliptra_ss_lc_ctrl_pkg
   - caliptra_ss_top_defines
   - axi_mem_pkg
@@ -130,6 +133,7 @@ targets:
       - $COMPILE_ROOT/testbench/prim_generic_otp.sv
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_tb_cmd_list.svh
+      - $COMPILE_ROOT/testbench/caliptra_ss_veer_sram_export.sv
       - $COMPILE_ROOT/testbench/fc_lcc_tb_services.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_services.sv
       - $COMPILE_ROOT/testbench/cptra_ss_coverage.sv
@@ -150,6 +154,7 @@ global:
         - '-assert svaext'
         - '-sverilog -full64'
         - '-debug_access+all'
+        - +define+CLP_ASSERT_ON
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
@@ -171,7 +176,6 @@ global:
         - +define+AAXI_INTC_SLAVE_CNT=8
         - +define+AI3C_LANE_NUM=1
         - +define+DIGITAL_IO_I3C=1
-        - +define+CALIPTRA_MODE_SUBSYSTEM
         # - +define+AI3C_SKIP_DAA=1
         - +define+AVERY_SV_TEST_CASE=1
         - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
