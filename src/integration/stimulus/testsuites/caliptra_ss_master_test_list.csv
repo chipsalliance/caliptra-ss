@@ -35,5 +35,5 @@ $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_write_user_loc
 $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_write_user_lock/smoke_test_mcu_mbox1_write_user_lock                  , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
 $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_usr_lock_out_zero/smoke_test_mcu_mbox0_usr_lock_out_zero              , Directed       , Nightly       , L0  , L1  , caliptra_ss_top_tb, Promote        , None     , 100
 $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_usr_lock_out_zero/smoke_test_mcu_mbox1_usr_lock_out_zero              , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
-
-
+$CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_kmac_kat/smoke_test_lcc_kmac_kat                                           , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, Promote        , None     , 100
+$CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans/caliptra_ss_lcc_st_trans                                         , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, Promote        , None     , 100
