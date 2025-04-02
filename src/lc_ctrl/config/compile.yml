@@ -55,7 +55,9 @@ requires:
   - dmi_jtag
 targets:
   rtl:
-    directories: [$COMPILE_ROOT/rtl]
+    directories:
+      - $COMPILE_ROOT/coverage
+      - $COMPILE_ROOT/rtl
     files:
       - $COMPILE_ROOT/rtl/caliptra_ss_keccak_2share.sv
       - $COMPILE_ROOT/rtl/caliptra_ss_keccak_round.sv

@@ -10,7 +10,6 @@
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_sva.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_macros.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_sram.sv
@@ -20,7 +19,13 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/ahb_slv_sif.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_icg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/clk_gate.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_2ff_sync.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/ahb_to_reg_adapter.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/skidbuffer.v
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_addr.v
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_rd.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_wr.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_arb.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/rtl/entropy_src_main_sm_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/rtl/entropy_src_ack_sm_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/rtl/entropy_src_reg_pkg.sv
@@ -45,12 +50,6 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/keymgr_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_assert_multiple.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_assert.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/ahb_to_reg_adapter.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_addr.v
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_rd.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_wr.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_arb.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_22_16_dec.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_22_16_enc.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_28_22_dec.sv
@@ -90,3 +89,5 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim
 ${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl/axi2tlul_cmd_intg_gen.sv
 ${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl/sub2tlul.sv
 ${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl/axi2tlul.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg_defines.svh
+${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_assert.sv
