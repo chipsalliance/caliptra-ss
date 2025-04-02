@@ -88,7 +88,7 @@ void main (void) {
         read_check(address, rnd + i);
     }
     
-     Disable MCU SRAM Assertions due to error testing in Caliptra
+    // Disable MCU SRAM Assertions due to error testing in Caliptra
     SEND_STDOUT_CTRL(0xc0);
 
     VPRINTF(LOW, "MCU: Bringing Caliptra out of Reset\n");

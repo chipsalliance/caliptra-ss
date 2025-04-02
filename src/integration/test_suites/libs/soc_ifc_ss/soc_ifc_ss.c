@@ -42,10 +42,10 @@ uint8_t soc_ifc_axi_dma_wait_idle_with_status(uint8_t clr_lock, uint8_t clr_erro
 
     // Check status
     if (reg & AXI_DMA_REG_STATUS0_ERROR_MASK) {
-        VPRINTF(LOW, "Caliptra: DMA Error Seen\n");
+        VPRINTF(LOW, "Caliptra: DMA Err Seen\n");
         error = 1;
         if(clr_error) {
-            VPRINTF(LOW, "Caliptra: Flushing DMA Error\n");
+            VPRINTF(LOW, "Caliptra: Flushing DMA Err\n");
             lsu_write_32(CLP_AXI_DMA_REG_CTRL, AXI_DMA_REG_CTRL_FLUSH_MASK);
         }
     }
