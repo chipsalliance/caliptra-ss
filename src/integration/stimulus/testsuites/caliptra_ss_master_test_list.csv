@@ -32,4 +32,7 @@ $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_valid_user/smo
 $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_valid_user/smoke_test_mcu_mbox1_valid_user                            , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
 $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_write_user_lock/smoke_test_mcu_mbox0_write_user_lock                  , Directed       , Nightly       , L0  , L1  , caliptra_ss_top_tb, Promote        , None     , 100
 $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_write_user_lock/smoke_test_mcu_mbox1_write_user_lock                  , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
+$CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_usr_lock_out_zero/smoke_test_mcu_mbox0_usr_lock_out_zero              , Directed       , Nightly       , L0  , L1  , caliptra_ss_top_tb, Promote        , None     , 100
+$CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_usr_lock_out_zero/smoke_test_mcu_mbox1_usr_lock_out_zero              , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
+
 

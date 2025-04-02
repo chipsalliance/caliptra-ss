@@ -217,7 +217,7 @@ void main (void) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not acquire lock and set execute\n", mbox_num);
     }
 
-    if(!mcu_mbox_wait_for_user_execute(mbox_num, 10000)) {
+    if(!mcu_mbox_wait_for_user_execute(mbox_num, 1, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", mbox_num);
     }
     

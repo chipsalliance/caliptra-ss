@@ -198,10 +198,10 @@ bool mcu_mbox_wait_for_user_lock(uint32_t mbox_num, uint32_t user_axi, uint32_t 
     return false;
 }
 
-bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t attempt_count) {
+bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t expected_value, uint32_t attempt_count) {
     VPRINTF(LOW, "MCU: Waiting for caliptra to set execute in mbox%x\n", mbox_num);
     for(uint32_t ii=0; ii<attempt_count; ii++) {
-        if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num)){
+        if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num) == expected_value){
             VPRINTF(LOW, "MCU: Caliptra set execute for Mbox%x\n", mbox_num);
 
             // Check that Mailbox cmd available from SOC interrupt has been set
