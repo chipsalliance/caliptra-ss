@@ -176,6 +176,9 @@ jobs:
             if [[ ${hash_orig} != ${hash} ]]; then
                 echo "Error, submitted hash [${hash_orig}] does not match calculated hash [${hash}]"
                 echo "If your internal testcase completed successfully and invoked .github/scripts/stamp_repo.sh to generate this hash, please open a support issue on the caliptra-ss repository"
+                git status -s
+                git diff
+                git submodule foreach bash -c "git status -s && git diff"
                 exit 1
             fi
             echo "Submitted hash [${hash_orig}] matches the calculated hash: [${hash}]"
