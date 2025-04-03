@@ -64,6 +64,9 @@ void mcu_mbox_clear_execute(uint32_t mbox_num);
 
 #define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
 
+
+#define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
+
 #define FC_LCC_CMD_OFFSET 0xB0
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
 #define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
