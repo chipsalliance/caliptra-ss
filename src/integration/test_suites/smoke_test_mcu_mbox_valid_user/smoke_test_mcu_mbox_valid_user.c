@@ -93,6 +93,8 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
     // MBOX: Acquire lock
     if (!mcu_mbox_acquire_lock(mbox_num, 1000)) {
         VPRINTF(FATAL, "MCU: Mbox%x didn't acquire lock\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);        
     }
     
     mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num);
