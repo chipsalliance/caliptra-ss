@@ -115,7 +115,7 @@ class i3c_mctp_pkt_wr extends cptra_ss_i3c_core_base_test;
 			foreach(mctp_data[i][j]) begin
 				line = $sformatf("%s %0x", line, mctp_data[i][j]);
 			end
-			test_log.substep($sformatf("mctp_data[%0d] = 'h %0x", i, line));
+			test_log.substep($sformatf("mctp_data[%0d] = 'h %s", i, line));
 		end
 	
 

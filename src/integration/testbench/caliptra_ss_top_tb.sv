@@ -304,23 +304,6 @@ module caliptra_ss_top_tb
     assign rst_l   = cycleCnt > 5 ? 1'b1 : 1'b0;
     assign porst_l = cycleCnt > 2;
 
-   //==========================================================================
-   // Caliptra SS Top Coverage
-   //==========================================================================
-
-   cptra_ss_coverage cptra_ss_coverage(
-       .clk     (core_clk),
-       .rst_l   (rst_l)
-   );
-
-    always @(posedge caliptra_ss_dut.payload_available_o or posedge caliptra_ss_dut.image_activated_o) begin
-        if (!rst_l) begin
-            cptra_ss_coverage.sample_i3c_sideband(
-                .payload_available(caliptra_ss_dut.payload_available_o),
-                .image_activated(caliptra_ss_dut.image_activated_o)
-            );
-        end
-    end
    //=========================================================================
    // AXI Interconnect
    //=========================================================================

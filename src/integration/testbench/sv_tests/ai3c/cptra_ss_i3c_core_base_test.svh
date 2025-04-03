@@ -116,8 +116,8 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 				else 				msg.data_bytes[i] = data[i-3];  // data bytes [3rd to nth byte]
 			end
 		end else begin
-			for(int i = 0; i < len; i++) begin
-				if(i==len-1) 		msg.data_bytes[i] = pec;      // pec byte [nth byte]
+			for(int i = 0; i < len + 1; i++) begin
+				if(i==len)   		msg.data_bytes[i] = pec;      // pec byte [nth byte]
 				else 				msg.data_bytes[i] = data[i];  // data bytes [3rd to nth byte]
 			end
 		end

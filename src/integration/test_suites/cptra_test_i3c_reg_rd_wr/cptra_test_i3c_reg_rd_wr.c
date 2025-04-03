@@ -46,18 +46,11 @@ void wait(uint32_t wait_time) {
     }
 }
 
-<<<<<<< HEAD
 void wait_for_write_to_prot_cap_0(){
-=======
-
-
-void wait_for_write_to_i3c_fifo(){
->>>>>>> 0c44cc9ffc795d225bbb87af1bef6624381f7207
     // reading INDIRECT_FIFO_STATUS
     uint32_t i3c_reg_data;
     while (1) {
         i3c_reg_data = 0x00000000;
-<<<<<<< HEAD
         soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, 0, &i3c_reg_data, 4, 0);
         VPRINTF(LOW, "CPTRA: INDIRECT_FIFO_STATUS is 'h %0x\n", i3c_reg_data);
         //-- check if FIFO is empty by reading bit 0 as 1'b1
@@ -66,17 +59,6 @@ void wait_for_write_to_i3c_fifo(){
             wait(100);
         } else {
             VPRINTF(LOW, "CPTRA: PROT_CAP_0 is updated\n");
-=======
-        soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0, 0, &i3c_reg_data, 4, 0);
-        VPRINTF(LOW, "CPTRA: INDIRECT_FIFO_STATUS is 'h %0x\n", i3c_reg_data);
-        //-- check if FIFO is empty by reading bit 0 as 1'b1
-        i3c_reg_data = i3c_reg_data & 0x00000001;
-        if (i3c_reg_data == 0x00000001) {
-            VPRINTF(LOW, "CPTRA: INDIRECT FIFO DATA is empty\n");
-            wait(100);
-        } else {
-            VPRINTF(LOW, "CPTRA: INDIRECT FIFO DATA is available\n");
->>>>>>> 0c44cc9ffc795d225bbb87af1bef6624381f7207
             break;
         }
     }
