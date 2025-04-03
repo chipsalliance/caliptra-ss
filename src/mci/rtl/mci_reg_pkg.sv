@@ -42,19 +42,10 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic next;
-    } mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t;
-
-    typedef struct packed{
-        logic next;
-    } mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t;
-
-    typedef struct packed{
-        logic next;
+        logic we;
     } mci_reg__RESET_REASON__WARM_RESET__in_t;
 
     typedef struct packed{
-        mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t FW_HITLESS_UPD_RESET;
-        mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t FW_BOOT_UPD_RESET;
         mci_reg__RESET_REASON__WARM_RESET__in_t WARM_RESET;
     } mci_reg__RESET_REASON__in_t;
 
@@ -846,19 +837,9 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
-    } mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__out_t;
-
-    typedef struct packed{
-        logic value;
-    } mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__out_t;
-
-    typedef struct packed{
-        logic value;
     } mci_reg__RESET_REASON__WARM_RESET__out_t;
 
     typedef struct packed{
-        mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__out_t FW_HITLESS_UPD_RESET;
-        mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__out_t FW_BOOT_UPD_RESET;
         mci_reg__RESET_REASON__WARM_RESET__out_t WARM_RESET;
     } mci_reg__RESET_REASON__out_t;
 

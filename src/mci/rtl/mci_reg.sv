@@ -6381,10 +6381,10 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value;
         load_next_c = '0;
-        
-        // HW Write
-        next_c = hwif_in.RESET_REASON.FW_HITLESS_UPD_RESET.next;
-        load_next_c = '1;
+        if(decoded_reg_strb.RESET_REASON && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end
         field_combo.RESET_REASON.FW_HITLESS_UPD_RESET.next = next_c;
         field_combo.RESET_REASON.FW_HITLESS_UPD_RESET.load_next = load_next_c;
     end
@@ -6395,17 +6395,16 @@ module mci_reg (
             field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value <= field_combo.RESET_REASON.FW_HITLESS_UPD_RESET.next;
         end
     end
-    assign hwif_out.RESET_REASON.FW_HITLESS_UPD_RESET.value = field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value;
     // Field: mci_reg.RESET_REASON.FW_BOOT_UPD_RESET
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value;
         load_next_c = '0;
-        
-        // HW Write
-        next_c = hwif_in.RESET_REASON.FW_BOOT_UPD_RESET.next;
-        load_next_c = '1;
+        if(decoded_reg_strb.RESET_REASON && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end
         field_combo.RESET_REASON.FW_BOOT_UPD_RESET.next = next_c;
         field_combo.RESET_REASON.FW_BOOT_UPD_RESET.load_next = load_next_c;
     end
@@ -6416,17 +6415,19 @@ module mci_reg (
             field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value <= field_combo.RESET_REASON.FW_BOOT_UPD_RESET.next;
         end
     end
-    assign hwif_out.RESET_REASON.FW_BOOT_UPD_RESET.value = field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value;
     // Field: mci_reg.RESET_REASON.WARM_RESET
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.RESET_REASON.WARM_RESET.value;
         load_next_c = '0;
-        
-        // HW Write
-        next_c = hwif_in.RESET_REASON.WARM_RESET.next;
-        load_next_c = '1;
+        if(decoded_reg_strb.RESET_REASON && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.RESET_REASON.WARM_RESET.value & ~decoded_wr_biten[2:2]) | (decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end else if(hwif_in.RESET_REASON.WARM_RESET.we) begin // HW Write - we
+            next_c = hwif_in.RESET_REASON.WARM_RESET.next;
+            load_next_c = '1;
+        end
         field_combo.RESET_REASON.WARM_RESET.next = next_c;
         field_combo.RESET_REASON.WARM_RESET.load_next = load_next_c;
     end

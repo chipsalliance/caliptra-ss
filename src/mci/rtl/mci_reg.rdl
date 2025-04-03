@@ -139,12 +139,12 @@ addrmap mci_reg {
     reg {
         name = "Reset Reason";
         desc = "Indicates to ROM the originating cause for the PC to be reset to 0.
-                Firmware Update Reset indicator is reset by the warm reset.
+                Firmware Update Reset indicator is reset by the warm reset and updated by SW applying MCU FW updated.
                 Warm Reset indicator is reset by the cold reset.
                 [br]TAP Access [with debug intent set]: RO";
-        field {desc = "FW update reset has been executed for the second+ time since MCI reset"; sw=r; hw=rw; resetsignal = mci_rst_b;  } FW_HITLESS_UPD_RESET=0;
-        field {desc = "FW update reset has been executed first time since MCI reset"; sw=r; hw=rw; resetsignal = mci_rst_b;  } FW_BOOT_UPD_RESET=0;
-        field {desc = "Warm reset has been executed";      sw=r; hw=rw;          resetsignal = mci_pwrgood;} WARM_RESET=0;
+        field {desc = "FW update reset has been executed for the second+ time since MCI reset"; swwe = axi_mcu_or_mci_soc_config_req; sw=rw; resetsignal = mci_rst_b;  } FW_HITLESS_UPD_RESET=0;
+        field {desc = "FW update reset has been executed first time since MCI reset";swwe = axi_mcu_or_mci_soc_config_req;  sw=rw; resetsignal = mci_rst_b;  } FW_BOOT_UPD_RESET=0;
+        field {desc = "Warm reset has been executed";  swwe = axi_mcu_or_mci_soc_config_req;    sw=rw; hw=rw; we;          resetsignal = mci_pwrgood;} WARM_RESET=0;
     } RESET_REASON;
 
     reg {
