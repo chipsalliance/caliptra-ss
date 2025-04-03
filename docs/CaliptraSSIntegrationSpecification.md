@@ -383,7 +383,7 @@ The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsys
      - The reset signal must be synchronized to the 200 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
-     - It is **illegal** to only toggle ```cptra_ss_reset_n``` until both Caliptra and MCU have received at least on FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
+     - It is **illegal** to only toggle ```cptra_ss_reset_n``` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
 
 ### Power Good Signal 
 
