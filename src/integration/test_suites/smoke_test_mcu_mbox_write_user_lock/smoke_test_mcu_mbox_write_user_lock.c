@@ -183,7 +183,7 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;  
-    uint32_t mbox_num = 0;
+    uint32_t mbox_num = decode_single_valid_mbox();
     uint32_t axi_select = xorshift32() % 5;
 
     uint32_t axi_user_id[] = { xorshift32(), xorshift32(), xorshift32(), xorshift32(), xorshift32() };
@@ -215,10 +215,14 @@ void main (void) {
     // Do writes to SRAM and CSRs and verify that write occured with reads.
     if(!mcu_mbox_wait_for_user_lock(mbox_num, caliptra_uc_axi_id, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not acquire lock and set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
     }
 
-    if(!mcu_mbox_wait_for_user_execute(mbox_num, 10000)) {
+    if(!mcu_mbox_wait_for_user_execute(mbox_num, 1, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
     }
     
     mcu_mbox_write_sram_and_csrs(mbox_num);
