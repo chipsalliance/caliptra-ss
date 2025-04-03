@@ -32,9 +32,9 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 void program_vendor_hashes_prod_partition(void) {
 
-    // 0x6C2: CPTRA_CORE_VENDOR_PK_HASH_3
-    // 0x724: CPTRA_CORE_VENDOR_PK_HASH_5
-    const uint32_t addresses[2] = {0x6C2, 0x724};
+    // 0x6C8: CPTRA_CORE_VENDOR_PK_HASH_3
+    // 0x6E4: CPTRA_CORE_VENDOR_PK_HASH_5
+    const uint32_t addresses[2] = {0x682, 0x6E4};
 
     const uint32_t data = 0xdeadbeef;
 

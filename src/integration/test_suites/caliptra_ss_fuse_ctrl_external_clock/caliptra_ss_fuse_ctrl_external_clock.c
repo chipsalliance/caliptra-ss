@@ -20,46 +20,31 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-/**
- * Most register accesses are covered by the other smoke tests. Here,
- * we check that reads to the various error registers are correct and
- * verify whether the read lock register actually locks a partition.
- * The test proceeds in the following steps:
- *
- *  1. Read out all the error registers.
- *  2. Write a value to a fuse in a software partition.
- *  3. Read back the same fuse and verify that the data is equal to
- *     the value written in Step 2.
- *  4. Clear the read enable bit in the partition's read lock register.
- *  5. Check that a read now results in an error.
- */
-void register_accesses() {
+void external_clock() {
+    const uint32_t claim_trans_val = 0x96;
 
-    // 0x910: CPTRA_CORE_ECC_REVOCATION_0
-    const uint32_t fuse_address = 0x910;
+    const uint32_t freqs[4] = {
+        CMD_FC_LCC_EXT_CLK_500MHZ,
+        CMD_FC_LCC_EXT_CLK_160MHZ,
+        CMD_FC_LCC_EXT_CLK_400MHZ,
+        CMD_FC_LCC_EXT_CLK_1000MHZ
+    };
 
-    const uint32_t data = 0xdeadbeef;
-    uint32_t read_data;
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, freqs[xorshift32() % 4]);
 
-    // Step 1
-    for (int i = 0; i < 18; i++) {
-        if (lsu_read_32(FUSE_CTRL_ERR_CODE_0+0x4*i)) {
-            VPRINTF(LOW, "ERROR: err register %d is not zero\n", i);
-            exit(1);
-        }
+    uint32_t reg_value, loop_ctrl;
+    while (loop_ctrl != claim_trans_val) {
+        lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, claim_trans_val);
+        reg_value = lsu_read_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET);
+        loop_ctrl = reg_value & claim_trans_val;
     }
 
-    // Step 2
-    dai_wr(fuse_address, data, 0, 32, 0);
+    lsu_write_32(LC_CTRL_TRANSITION_CTRL_OFFSET, 0x1);
+    wait_dai_op_idle(0);
 
-    // Step 3
-    dai_rd(fuse_address, &read_data, NULL, 32, 0);
+    grant_caliptra_core_for_fc_writes();
 
-    // Step 4
-    lsu_write_32(FUSE_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK, 0);
-
-    // Step 5
-    dai_rd(fuse_address, &read_data, NULL, 32, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(0x000, 0xFF, 0xFF, 64, 0);
 }
 
 void main (void) {
@@ -74,7 +59,6 @@ void main (void) {
     VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
       
     lcc_initialization();
-    // Set AXI user ID to MCU.
     grant_mcu_for_fc_writes(); 
 
     transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
@@ -82,7 +66,7 @@ void main (void) {
 
     initialize_otp_controller();
 
-    register_accesses();
+    external_clock();
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"

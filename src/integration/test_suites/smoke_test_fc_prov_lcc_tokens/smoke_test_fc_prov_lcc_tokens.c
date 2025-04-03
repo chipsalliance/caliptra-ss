@@ -41,9 +41,9 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 void program_secret_lc_transition_partition() {
 
-    // 0x500: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
-    const uint32_t base_address = 0x500;
-    const uint32_t fuse_address = 0x580;
+    // 0x4C0: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
+    const uint32_t base_address = 0x4C0;
+    const uint32_t fuse_address = 0x540;
 
     const uint32_t data[4] = {0xdeadbeef, 0xcafebabe, 0x12345678, 0xabababab};
     uint32_t read_data[4];

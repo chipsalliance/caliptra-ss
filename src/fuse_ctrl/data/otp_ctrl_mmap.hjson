@@ -277,11 +277,67 @@
                     '''
                 },
                 {
-                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS",
-                    size: "512",
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0",
+                    size: "48",
                     desc: '''
                     There are 8 different debug levels in production state.
-                    Thus, we need one 512-bit location for hash of each of public keys.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_1",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_2",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_3",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_4",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_5",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_6",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_7",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
                     '''
                 },
             ],

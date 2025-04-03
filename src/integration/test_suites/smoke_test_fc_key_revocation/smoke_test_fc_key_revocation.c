@@ -38,9 +38,9 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 void vendor_revocations_prod_partition() {
 
-    // 0x950: CPTRA_CORE_ECC_REVOCATION_0
-    const uint32_t base_address = 0x950;
-    const uint32_t digest_address = 0x9E0;
+    // 0x910: CPTRA_CORE_ECC_REVOCATION_0
+    const uint32_t base_address = 0x910;
+    const uint32_t digest_address = 0x9A0;
     const uint32_t fuse_address = base_address;
 
     const uint32_t data = 0xdeadbeef;
