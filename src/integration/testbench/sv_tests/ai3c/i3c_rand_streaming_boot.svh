@@ -174,10 +174,10 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 		test_log.substep("Reading PROT_CAP register");
 		
 		exp_data = new[15];
-		exp_data = '{'h20, 'h50, 'h43, 'h4f, 'h56, 'h43, 'h45, 'h52, 'h00, 'h00, 'h00, 'h00, 'h00, 'h00, 'h00};
-		exp_data[10] |= 1 << 7;
-		exp_data[11] |= 1 << (10 - 8);
-		exp_data[11] |= 1 << (11 - 8);
+		exp_data = '{'h4f, 'h43, 'h50, 'h20, 'h52, 'h45, 'h43, 'h56, 'h01, 'h01, 'h00, 'h00, 'h00, 'h00, 'h00};
+		exp_data[10] |= 1 << 7; //-- Push C-image support
+		exp_data[11] |= 1 << (11 - 8); //-- flashless boot (From RESET)
+		exp_data[11] |= 1 << (12 - 8); //-- FIFO CMS support (INDIRECT_FIFO_CTRL)
 		i3c_read(recovery_target_addr, `I3C_CORE_PROT_CAP, 15, data);
 		check_data(data, exp_data, 15);
 
@@ -188,7 +188,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 		i3c_read(recovery_target_addr, `I3C_CORE_HW_STATUS, 4, data);
 
 		test_log.substep("Reading DEVICE_STATUS register");
-		i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_STATUS, 4, data);
+		i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_STATUS, 7, data);
 
 		test_log.step("=============================================================");
 		test_log.step("Step 2: waiting for recovery start");
@@ -199,7 +199,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 		data[0] = 0;
 		test_log.substep($psprintf("Reading DEVICE_STATUS register"));
 		for(int i = 0; i < 1; i++) begin //-- FIXME : should be 100
-			i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_STATUS, 8, data);
+			i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_STATUS, 7, data);
 			if(data[0] == 'h3) begin
 				test_log.substep($psprintf("Recovery started : 'd %0d", data[0]));
 				break;

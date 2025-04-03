@@ -23,6 +23,7 @@
 #include "printf.h"
 #include "soc_ifc.h"
 #include "caliptra_reg.h"
+#include "recovery_ifc.h"
 #include "soc_address_map.h"
 
 volatile char* stdout = (char *)STDOUT;
@@ -46,12 +47,12 @@ void wait(uint32_t wait_time) {
     }
 }
 
-void wait_for_write_to_prot_cap_0(){
+void wait_for_write_to_prot_cap_0(uint32_t recovery_ifc_start_addr) {
     // reading INDIRECT_FIFO_STATUS
     uint32_t i3c_reg_data;
     while (1) {
         i3c_reg_data = 0x00000000;
-        soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, 0, &i3c_reg_data, 4, 0);
+        soc_ifc_axi_dma_read_ahb_payload(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_PROT_CAP_0 , 0, &i3c_reg_data, 4, 0);
         VPRINTF(LOW, "CPTRA: INDIRECT_FIFO_STATUS is 'h %0x\n", i3c_reg_data);
         //-- check if FIFO is empty by reading bit 0 as 1'b1
         if (i3c_reg_data == 0x00000000) {
@@ -70,38 +71,38 @@ void read_i3c_reg(uint32_t i3c_reg_addr, char *reg_name) {
     VPRINTF(LOW, "CPTRA: Read %s with 'h %0x\n", reg_name, i3c_reg_data);
 }
 
-void read_i3c_registers(){
+void read_i3c_registers(uint32_t recovery_ifc_start_addr) {
     uint32_t i3c_reg_data;
     // read PROT_CAP
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, "PROT_CAP_0");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, "PROT_CAP_1");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2, "PROT_CAP_2");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_3, "PROT_CAP_3");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_PROT_CAP_0, "PROT_CAP_0");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_PROT_CAP_1, "PROT_CAP_1");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_PROT_CAP_2, "PROT_CAP_2");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_PROT_CAP_3, "PROT_CAP_3");
     // Read DEVICE_ID
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0, "DEVICE_ID_0");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_1, "DEVICE_ID_1");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_2, "DEVICE_ID_2");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_3, "DEVICE_ID_3");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_4, "DEVICE_ID_4");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_5, "DEVICE_ID_5");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_DEVICE_ID_0, "DEVICE_ID_0");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_DEVICE_ID_1, "DEVICE_ID_1");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_DEVICE_ID_2, "DEVICE_ID_2");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_DEVICE_ID_3, "DEVICE_ID_3");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_DEVICE_ID_4, "DEVICE_ID_4");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_DEVICE_ID_5, "DEVICE_ID_5");
     // Read DEVICE_STATUS
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, "DEVICE_STATUS_0");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_1, "DEVICE_STATUS_1");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_DEVICE_STATUS_0, "DEVICE_STATUS_0");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_DEVICE_STATUS_1, "DEVICE_STATUS_1");
     // Read HW_STATUS
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS, "HW_STATUS");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_HW_STATUS, "HW_STATUS");
     // Read RECOVERY_CTRL
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_CTRL, "RECOVERY_CTRL");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_RECOVERY_CTRL, "RECOVERY_CTRL");
     // Read RECOVERY_STATUS
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS, "RECOVERY_STATUS");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_RECOVERY_STATUS, "RECOVERY_STATUS");
     // Read INDIRECT_FIFO_CTRL
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_0, "INDIRECT_FIFO_CTRL_0");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1, "INDIRECT_FIFO_CTRL_1");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_INDIRECT_FIFO_CTRL_0, "INDIRECT_FIFO_CTRL_0");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_INDIRECT_FIFO_CTRL_1, "INDIRECT_FIFO_CTRL_1");
     // Read INDIRECT_FIFO_STATUS
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0, "INDIRECT_FIFO_STATUS_0");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_1, "INDIRECT_FIFO_STATUS_1");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_2, "INDIRECT_FIFO_STATUS_2");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_3, "INDIRECT_FIFO_STATUS_3");
-    read_i3c_reg(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_4, "INDIRECT_FIFO_STATUS_4");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_INDIRECT_FIFO_STATUS_0, "INDIRECT_FIFO_STATUS_0");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_INDIRECT_FIFO_STATUS_1, "INDIRECT_FIFO_STATUS_1");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_INDIRECT_FIFO_STATUS_2, "INDIRECT_FIFO_STATUS_2");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_INDIRECT_FIFO_STATUS_3, "INDIRECT_FIFO_STATUS_3");
+    read_i3c_reg(recovery_ifc_start_addr + RECOVERY_IFC_OFFSET_INDIRECT_FIFO_STATUS_4, "INDIRECT_FIFO_STATUS_4");
 }
 
 void main(void) {
@@ -132,10 +133,22 @@ void main(void) {
     //set ready for FW so tb will push FW
     soc_ifc_set_flow_status_field(SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK);
 
-    // // Read I3C registers
-    // wait_for_write_to_prot_cap_0();
-    // read_i3c_registers();
-    // read_i3c_registers();
+    // Read Recovery Interface Offset
+    VPRINTF(LOW, "CPTRA: Reading Recovery Interface start Addr\n");
+    uint32_t recovery_ifc_start_addr = 0x00000000;
+    // read -- CLP_SOC_IFC_REG_SS_RECOVERY_IFC_BASE_ADDR_L
+    recovery_ifc_start_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_RECOVERY_IFC_BASE_ADDR_L);
+    VPRINTF(LOW, "CPTRA: Recovery Interface start Addr is 'h %0x\n", recovery_ifc_start_addr);
+
+    // Read Recovery Interface Offset
+    VPRINTF(LOW, "CPTRA: Reading Recovery Interface start Addr\n");
+    // read -- CLP_SOC_IFC_REG_SS_RECOVERY_IFC_BASE_ADDR_L
+    recovery_ifc_start_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_RECOVERY_IFC_BASE_ADDR_L);
+    VPRINTF(LOW, "CPTRA: Recovery Interface start Addr is 'h %0x\n", recovery_ifc_start_addr);
+
+    // Read I3C registers
+    wait_for_write_to_prot_cap_0(recovery_ifc_start_addr);
+    read_i3c_registers(recovery_ifc_start_addr);
     wait(100000);
 
     VPRINTF(LOW, "End of Caliptra Test\n");

@@ -1171,8 +1171,9 @@ module caliptra_ss_top_tb
     //     .bid            (axi_interconnect.sintf_arr[0].BID)
 
     // );
-    assign axi_interconnect.sintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-    assign axi_interconnect.sintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    // assign axi_interconnect.sintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    // assign axi_interconnect.sintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+
 
     assign cptra_ss_mcu_rom_s_axi_if.awvalid                      = axi_interconnect.sintf_arr[2].AWVALID;
     assign cptra_ss_mcu_rom_s_axi_if.awaddr                       = axi_interconnect.sintf_arr[2].AWADDR[31:0];
@@ -1430,7 +1431,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_jtag_trst_n_i           = 1'b0;
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'hba5e_ba11;
     assign cptra_ss_strap_mci_base_addr_i       = 64'h0;
-    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
+    assign cptra_ss_strap_recovery_ifc_base_addr_i = {`SOC_I3CCSR_I3C_EC_START+4'h4, `SOC_I3CCSR_I3C_EC_START};
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;

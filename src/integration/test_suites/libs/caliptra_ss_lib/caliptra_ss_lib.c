@@ -344,6 +344,7 @@ void boot_i3c_reg(void) {
     //-- PROT_CAP
     VPRINTF(LOW, "MCU: Updating I3C Recovery Registers..\n");
     
+    //-- writing ASCII Value for “OCP RECV”
     i3c_reg_data = 0x2050434f;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_0 with 'h %0x\n", i3c_reg_data);
@@ -408,11 +409,13 @@ void boot_i3c_socmgmt_if(void) {
     switch (clk_freq) {
         case 160:
             //-- for 160 MHz
-            write_i3c_socmgmtif_registers(0x00000002, 0x00000002, 0x00000003, 0x00000001);
+            // write_i3c_socmgmtif_registers(0x00000002, 0x00000002, 0x00000003, 0x00000001);
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
             break;
         case 400:
             //-- for 400 MHz
-            write_i3c_socmgmtif_registers(0x00000005, 0x00000005, 0x00000006, 0x00000002);
+            //-- updated
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
             break;
         case 500:
             //-- for 500 MHz
