@@ -35,67 +35,67 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 void main (void) {
-    uint32_t mcu_protection_region_start = get_mcu_sram_protection_region_start();
-    uint32_t mcu_protection_region_end = get_mcu_sram_last_dword(); // Default size
+    uint32_t mcu_protected_region_start = get_mcu_sram_protected_region_start();
+    uint32_t mcu_protected_region_end = get_mcu_sram_last_dword(); // Default size
 
 
     VPRINTF(LOW, "=================\nByte tesing to MCU SRAM\n=================\n\n");
     VPRINTF(LOW, "==\nByte Writes start of protected region\n==\n");
-    VPRINTF(LOW, "Start Protected region: 0x%x\n", mcu_protection_region_start);
-    lsu_write_32(mcu_protection_region_start, 0x0);
-    read_check(mcu_protection_region_start, 0x0); 
+    VPRINTF(LOW, "Start Protected region: 0x%x\n", mcu_protected_region_start);
+    lsu_write_32(mcu_protected_region_start, 0x0);
+    read_check(mcu_protected_region_start, 0x0); 
 
-    lsu_write_8(mcu_protection_region_start, 0xFF);
-    read_check(mcu_protection_region_start, 0xFF);
+    lsu_write_8(mcu_protected_region_start, 0xFF);
+    read_check(mcu_protected_region_start, 0xFF);
 
-    lsu_write_8(mcu_protection_region_start + 0x1, 0xFF);
-    read_check(mcu_protection_region_start, 0xFFFF);
+    lsu_write_8(mcu_protected_region_start + 0x1, 0xFF);
+    read_check(mcu_protected_region_start, 0xFFFF);
 
-    lsu_write_8(mcu_protection_region_start + 0x2, 0xFF);
-    read_check(mcu_protection_region_start, 0xFFFFFF); 
+    lsu_write_8(mcu_protected_region_start + 0x2, 0xFF);
+    read_check(mcu_protected_region_start, 0xFFFFFF); 
 
-    lsu_write_8(mcu_protection_region_start + 0x3, 0xFF);
-    read_check(mcu_protection_region_start, 0xFFFFFFFF);
+    lsu_write_8(mcu_protected_region_start + 0x3, 0xFF);
+    read_check(mcu_protected_region_start, 0xFFFFFFFF);
 
-    lsu_write_8(mcu_protection_region_start, 0x00);
-    read_check(mcu_protection_region_start, 0xFFFFFF00);
+    lsu_write_8(mcu_protected_region_start, 0x00);
+    read_check(mcu_protected_region_start, 0xFFFFFF00);
 
-    lsu_write_8(mcu_protection_region_start + 0x1, 0x00);
-    read_check(mcu_protection_region_start, 0xFFFF0000);
+    lsu_write_8(mcu_protected_region_start + 0x1, 0x00);
+    read_check(mcu_protected_region_start, 0xFFFF0000);
 
-    lsu_write_8(mcu_protection_region_start + 0x2, 0x00);
-    read_check(mcu_protection_region_start, 0xFF000000);
+    lsu_write_8(mcu_protected_region_start + 0x2, 0x00);
+    read_check(mcu_protected_region_start, 0xFF000000);
 
-    lsu_write_8(mcu_protection_region_start + 0x3, 0x00);
-    read_check(mcu_protection_region_start, 0x00);
+    lsu_write_8(mcu_protected_region_start + 0x3, 0x00);
+    read_check(mcu_protected_region_start, 0x00);
 
     VPRINTF(LOW, "==\nByte Writes end of protected region\n==\n");
-    lsu_write_32(mcu_protection_region_end, 0x0);
-    read_check(mcu_protection_region_end, 0x0);
+    lsu_write_32(mcu_protected_region_end, 0x0);
+    read_check(mcu_protected_region_end, 0x0);
 
-    lsu_write_8(mcu_protection_region_end, 0xFF);
-    read_check(mcu_protection_region_end, 0xFF);
+    lsu_write_8(mcu_protected_region_end, 0xFF);
+    read_check(mcu_protected_region_end, 0xFF);
 
-    lsu_write_8(mcu_protection_region_end + 0x1, 0xFF);
-    read_check(mcu_protection_region_end, 0xFFFF);
+    lsu_write_8(mcu_protected_region_end + 0x1, 0xFF);
+    read_check(mcu_protected_region_end, 0xFFFF);
 
-    lsu_write_8(mcu_protection_region_end + 0x2, 0xFF);
-    read_check(mcu_protection_region_end, 0xFFFFFF);
+    lsu_write_8(mcu_protected_region_end + 0x2, 0xFF);
+    read_check(mcu_protected_region_end, 0xFFFFFF);
 
-    lsu_write_8(mcu_protection_region_end + 0x3, 0xFF);
-    read_check(mcu_protection_region_end, 0xFFFFFFFF);
+    lsu_write_8(mcu_protected_region_end + 0x3, 0xFF);
+    read_check(mcu_protected_region_end, 0xFFFFFFFF);
 
-    lsu_write_8(mcu_protection_region_end, 0x00);
-    read_check(mcu_protection_region_end, 0xFFFFFF00);
+    lsu_write_8(mcu_protected_region_end, 0x00);
+    read_check(mcu_protected_region_end, 0xFFFFFF00);
 
-    lsu_write_8(mcu_protection_region_end + 0x1, 0x00);
-    read_check(mcu_protection_region_end, 0xFFFF0000);
+    lsu_write_8(mcu_protected_region_end + 0x1, 0x00);
+    read_check(mcu_protected_region_end, 0xFFFF0000);
 
-    lsu_write_8(mcu_protection_region_end + 0x2, 0x00);
-    read_check(mcu_protection_region_end, 0xFF000000);
+    lsu_write_8(mcu_protected_region_end + 0x2, 0x00);
+    read_check(mcu_protected_region_end, 0xFF000000);
 
-    lsu_write_8(mcu_protection_region_end + 0x3, 0x00);
-    read_check(mcu_protection_region_end, 0x00);
+    lsu_write_8(mcu_protected_region_end + 0x3, 0x00);
+    read_check(mcu_protected_region_end, 0x00);
 
     SEND_STDOUT_CTRL(0xff);
 
