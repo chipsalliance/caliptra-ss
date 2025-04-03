@@ -1397,8 +1397,7 @@ The following table defines the order in which resets can get asserted. A "\>\>"
 ### MCU FW Update Flows 
 The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). The [Caliptra SS HW Spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mcu-hitless-update-handshake) spec gives details about the registers used in theese flow. This section is meant to elaborate on how to use the given HW to meet the architectual spec.
 
-Registers relavent to these flow:
-
+Registers relevant to these flows:
 - Caliptra
    - ```SS_GENERIC_FW_EXEC_CTRL[0].go[2]```
 - MCI 
