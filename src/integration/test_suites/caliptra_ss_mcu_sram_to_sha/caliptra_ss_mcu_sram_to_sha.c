@@ -47,7 +47,10 @@ void main (void) {
 
     mcu_cptra_fuse_init();
 
-    // Wait for Caliptra to finish the test
-    while(1);
+    //Halt the core to wait for Caliptra to finish the test
+    __asm__ volatile ("csrwi    %0, %1" \
+                      : /* output: none */        \
+                      : "i" (0x7c6), "i" (0x03)  /* input : immediate  */ \
+                      : /* clobbers: none */);
 
 }

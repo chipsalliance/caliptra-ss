@@ -156,6 +156,13 @@ import tb_top_pkg::*;
             end
             // End Of test monitor
             else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS) begin
+                $display("Halting MCU");
+                force `MCI_PATH.mcu_cpu_halt_req_o = 1;
+                $display("Waiting for MCU to halt");
+                wait(`MCI_PATH.mcu_cpu_halt_ack_i);
+                $display("Waiting for MCU halt status");
+                wait(`MCI_PATH.mcu_cpu_halt_status_i);
+
                 $display("* TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
