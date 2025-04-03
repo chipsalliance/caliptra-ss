@@ -13,9 +13,9 @@
 // limitations under the License.
 
 
-module caliptra_mcu_top_cov_bind;
+module caliptra_ss_top_cov_bind;
     `ifdef FCOV
-    bind caliptra_mcu_top caliptra_mcu_top_cov_if i_caliptra_mcu_top_cov_if(.*);
-    bind caliptra_mcu_top caliptra_mcu_top_cov_props i_caliptra_mcu_top_cov_props(.*);
+    bind caliptra_ss_top caliptra_ss_top_cov_if i_caliptra_ss_top_cov_if(.*);
+    bind caliptra_ss_top caliptra_ss_top_cov_props i_caliptra_ss_top_cov_props(.*);
     `endif
 endmodule

@@ -144,7 +144,7 @@ import tb_top_pkg::*;
         error_injection_mode.dccm_single_bit_error <= 1'b0;
         error_injection_mode.dccm_double_bit_error <= 1'b0;
 
-        // Memory signature dump
+        // Memory signature dump and test END
         if(mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) begin
             if (mem_signature_begin < mem_signature_end) begin
                 dump_signature();
@@ -169,6 +169,120 @@ import tb_top_pkg::*;
             else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE) begin
                 $error("* TESTCASE FAILED");
                 $finish;
+            end
+        end
+    end
+
+    // Load SHA Test Vectors into MCU SRAM
+    initial begin
+        bit sha512_mode;
+        bit[MCU_SRAM_ECC_WIDTH-1:0] ecc;
+        bit[MCU_SRAM_DATA_WIDTH-1:0] data;
+        bit[MCU_SRAM_ADDR_WIDTH-1:0] addr;
+        int signed ii;
+        int fd_r;
+        int cnt_tmp = 0;
+        int line_skip;
+        int test_case;
+
+        string line_read;
+        string tmp_str1;
+        string tmp_str2;
+        string file_name;
+        int most_sig_dword;
+        reg [3199:0][31:0] sha_block_data;
+        reg [31:0] block_len;
+        reg [15:0][31:0] sha_digest;
+        reg [31:0] dlen;
+        reg [1:0] byte_shift;
+        forever begin
+            @(negedge clk);
+            if(mailbox_write && (mailbox_data[7:0] == TB_CMD_SHA_VECTOR_TO_MCU_SRAM)) begin
+                // ============= SHA test setup =============
+                // Randomize test parameters
+                if (!std::randomize(sha512_mode)) $fatal("Failed to randomize sha mode");
+                if (!std::randomize(test_case) with {test_case inside {[1:255]};}) $fatal("Failed to randomize test_case");
+                if (sha512_mode) begin
+                    case(test_case) inside
+                    [0:127]: begin
+                      file_name = "./SHA512ShortMsg.rsp";
+                      line_skip = test_case * 4 + 7;
+                    end
+                    [128:255]: begin
+                      file_name = "./SHA512LongMsg.rsp";
+                      line_skip = (test_case - 128) * 4 + 7;
+                    end
+                  endcase
+                end
+                else begin
+                    case(test_case) inside
+                    [0:127]: begin
+                        file_name = "./SHA384ShortMsg.rsp";
+                        line_skip = test_case * 4 + 7;
+                    end
+                    [128:255]: begin
+                      file_name = "./SHA384LongMsg.rsp";
+                      line_skip = (test_case - 128) * 4 + 7;
+                    end
+                  endcase
+                end
+                $display("[%t] TB: Populating SHA testcase (mode=%s, case=%d, fname=%s) to MCU SRAM", $time, sha512_mode?"SHA512":"SHA384", test_case, file_name);
+
+                // Parse appropriate test vector files
+                fd_r = $fopen(file_name,"r");
+
+                while (cnt_tmp <= line_skip) begin
+                    cnt_tmp = cnt_tmp + 1;
+                    void'($fgets(line_read,fd_r));
+                end
+
+                void'($sscanf( line_read, "%s %s %d", tmp_str1, tmp_str2, block_len));
+                void'($fgets(line_read,fd_r));
+                void'($sscanf( line_read, "%s %s %h", tmp_str1, tmp_str2, sha_block_data));
+                void'($fgets(line_read,fd_r));
+                void'($sscanf( line_read, "%s %s %h", tmp_str1, tmp_str2, sha_digest));
+                
+                $fclose(fd_r);
+
+                dlen = block_len >> 3; // in bytes
+                byte_shift = 'd4 - dlen[1:0];
+                sha_block_data = sha_block_data << (byte_shift * 8);
+
+                // ============= SHA test load to SRAM =============
+                // Set mode to dw0
+                data = MCU_SRAM_DATA_WIDTH'(sha512_mode);
+                ecc = |data ? riscv_ecc32(data) : 0;
+                lmem.ram[0] = {ecc,data};
+                // Set length (in bytes) to dw1
+                data = MCU_SRAM_DATA_WIDTH'(dlen);
+                ecc = |data ? riscv_ecc32(data) : 0;
+                lmem.ram[1] = {ecc,data};
+                // Set expected digest at byte offset 'h100 = dw offset 'h40
+                addr = 'h40;
+                for (ii=0; ii < (sha512_mode ? 16 : 12); ii++) begin
+                    data = sha_digest[(sha512_mode ? 16 : 12) - 1 - ii];
+                    $display("TB: [SHA Digest Iteration: %0d] Setting SRAM offset 0x%x with dword: 0x%x", ii, addr, data);
+                    ecc = |data ? riscv_ecc32(data) : 0;
+                    lmem.ram[addr] = {ecc,data};
+                    addr += 1; // Dword address
+                end
+
+                // Set message starting at byte offset 'h400 = dw offset 'h100
+                addr = 'h100;
+
+                //Divide the number of bytes by 4 to get the number of dwords.
+                //If the data is evenly divisible, the most significant dword is N-1. If it includes a partial dword it's already rounded down
+                most_sig_dword = (dlen[1:0] == 2'b00) ? (dlen >> 2) - 1 : (dlen >> 2);
+
+                if (dlen != 0) begin
+                    for (ii=most_sig_dword; ii >= 0 ; ii--) begin
+                        data = sha_block_data[ii];
+                        $display("TB: [SHA Message Iteration: %0d] Setting SRAM offset 0x%x with dword: 0x%x", ii, addr, data);
+                        ecc = |data ? riscv_ecc32(data) : 0;
+                        lmem.ram[addr] = {ecc,data};
+                        addr += 1; // Dword address
+                    end
+                end
             end
         end
     end
@@ -551,12 +665,14 @@ endtask
 
 `ifndef VERILATOR
     lc_ctrl_cov_bind i_lc_ctrl_cov_bind();
+    mci_top_cov_bind i_mci_top_cov_bind();
+    caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
 `endif
 
 
-    /* verilator lint_off CASEINCOMPLETE */
-    `include "mcu_dasm.svi"
-    /* verilator lint_on CASEINCOMPLETE */
+/* verilator lint_off CASEINCOMPLETE */
+`include "mcu_dasm.svi"
+/* verilator lint_on CASEINCOMPLETE */
 
 
 endmodule
