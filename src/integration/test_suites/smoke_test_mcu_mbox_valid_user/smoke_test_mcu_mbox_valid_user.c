@@ -103,6 +103,8 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
     VPRINTF(LOW, "MCU: Wait for Lock to Reflect MBOX USER\n");
     if(!mcu_mbox_wait_for_user_to_be_mcu(mbox_num, 1000)) {
         VPRINTF(FATAL, "MCU: Mbox%x didn't update mbox user appropriately\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);  
     }
 
     // MBOX: Write CMD
