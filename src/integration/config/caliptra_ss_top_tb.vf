@@ -103,6 +103,7 @@
 +incdir+${AVERY_I3C}/testsuite.i3c/dut_master_stby
 +incdir+${AVERY_I3C}/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/mci/coverage
++incdir+${CALIPTRA_SS_ROOT}/src/integration/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/ai3c
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
@@ -891,6 +892,9 @@ ${AVERY_SIM}/src/avery_pkg_test.sv
 ${AVERY_AXI}/src.axi/aaxi_pkg.sv
 ${AVERY_AXI}/src.axi/aaxi_pkg_xactor.sv
 ${AVERY_AXI}/src.axi/aaxi_class_pll.sv
+${AVERY_AXI}/checker/monitor_wrapper/BP063/aaxi_monitor_wrapper.sv
+${AVERY_AXI}/src.VCS/aaxi_busmonitor.v
+${AVERY_AXI}/src.axi/aaxi_coverage_metrics.sv
 ${AVERY_AXI}/src.axi/aaxi_pkg_test.sv
 ${AVERY_AXI}/src.axi/aaxi_intf.sv
 ${AVERY_I3C}/src/ai2c_pkg.sv
@@ -901,6 +905,9 @@ ${CALIPTRA_SS_ROOT}/src/mci/coverage/mci_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/mci/coverage/mci_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_bind.sv
+${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_if.sv
+${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_props.sv
+${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/tb_top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/axi_slv.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/mci_sram.sv

@@ -18,10 +18,17 @@
 #define CALIPTRA_SS_LIB
 
 #include "soc_address_map.h"
+#include "stdint.h"
 #include <stdbool.h>
 
 extern uint32_t state;
 uint32_t xorshift32(void);
+
+inline void mcu_sleep (const uint32_t cycles) {
+    for (uint8_t ii = 0; ii < cycles; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
 
 void reset_fc_lcc_rtl(void);
 void mcu_cptra_wait_for_fuses() ;
@@ -49,6 +56,9 @@ bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count);
 bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count);
 void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num);
 
+
+#define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
+
 #define FC_LCC_CMD_OFFSET 0xB0
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
 #define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
@@ -60,6 +70,10 @@ void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num);
 #define CMD_FORCE_LC_TOKENS             FC_LCC_CMD_OFFSET + 0x09
 #define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 0x0a
 #define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 0x0b
+
+#define TB_CMD_DISABLE_INJECT_ECC_ERROR     0xe0
+#define TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM 0xe2
+#define TB_CMD_INJECT_ECC_ERROR_DOUBLE_DCCM 0xe3
 
 
 #define MCU_MBOX_NUM_STRIDE             (SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR - SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR)
