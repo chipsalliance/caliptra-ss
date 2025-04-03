@@ -33,6 +33,8 @@
 //         8'h6 : 8'h7E - WriteData is an ASCII character - dump to console.log
 //         8'h7F        - Do nothing
 //         --
+//         8'h80        - Load SHA Test Vector into MCU SRAM
+//         --
 //         8'hb0        - FC/LCC Command Offset
 //         8'hb2        - FC/LCC CMD_FC_LCC_RESET              
 //         8'hb3        - FC/LCC CMD_FORCE_FC_AWUSER_CPTR_CORE 
@@ -42,7 +44,7 @@
 //         8'hb7        - FC/LCC CMD_FC_FORCE_ZEROIZATION_RESET
 //         8'hb8        - FC/LCC CMD_RELEASE_ZEROIZATION       
 //         8'hb9        - FC/LCC CMD_FORCE_LC_TOKENS           
-//         8'hba        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD      
+//         8'hba        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD    
 //         8'hbb        - FC/LCC CMD_FC_TRIGGER_ESCALATION   
 //         --
 //         8'hc0        - Disable ommand Offset
@@ -55,6 +57,8 @@
 //         8'hff        - End the simulation with a Success status
 localparam TB_SERVICE_CMD_NOPE              = 8'h00;
 localparam TB_CMD_END_SIM_WITH_FAILURE      = 8'h01;
+
+localparam TB_CMD_SHA_VECTOR_TO_MCU_SRAM    = 8'h80;
 
 localparam FC_LCC_CMD_OFFSET                = 8'hb0;
 localparam CMD_FC_LCC_RESET                 = FC_LCC_CMD_OFFSET + 8'h02;

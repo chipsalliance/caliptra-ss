@@ -18,6 +18,7 @@
 #define CALIPTRA_SS_LIB
 
 #include "soc_address_map.h"
+#include "stdint.h"
 #include <stdbool.h>
 
 extern uint32_t state;
@@ -44,12 +45,17 @@ typedef struct {
     bool cfg_skip_set_fuse_done;
 
 } mcu_cptra_init_args;
-
-uint32_t xorshift32(void);
-
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!
 void mcu_cptra_init(mcu_cptra_init_args args);
+
+uint32_t xorshift32(void);
+
+inline void mcu_sleep (const uint32_t cycles) {
+    for (uint8_t ii = 0; ii < cycles; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
 
 void reset_fc_lcc_rtl(void);
 void mcu_cptra_wait_for_fuses() ;
@@ -82,6 +88,9 @@ uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t en
 
 #define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){__VA_ARGS__});
 
+
+#define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
+
 #define FC_LCC_CMD_OFFSET 0xB0
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
 #define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
@@ -97,8 +106,9 @@ uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t en
 #define TB_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
 
 
-#define MCU_MBOX_NUM_STRIDE             (SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR - SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR)
-#define MCU_MBOX_AXI_CFG_STRIDE         (SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0 - SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0)
+#define TB_CMD_DISABLE_INJECT_ECC_ERROR     0xe0
+#define TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM 0xe2
+#define TB_CMD_INJECT_ECC_ERROR_DOUBLE_DCCM 0xe3
 
 #define MCU_MBOX_NUM_STRIDE             (SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR - SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR)
 #define MCU_MBOX_AXI_CFG_STRIDE         (SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0 - SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0)

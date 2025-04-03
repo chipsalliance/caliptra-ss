@@ -20,7 +20,6 @@
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "riscv_hw_if.h"
 #include "string.h"
-#include "stdint.h"
 #include "caliptra_ss_clk_freq.h"
 #include "caliptra_ss_lib.h"
 #include <stdbool.h>
@@ -38,12 +37,6 @@ uint32_t xorshift32(void)
     state ^= state >> 17;
     state ^= state << 5;
     return state;
-}
-
-inline void mcu_sleep (const uint32_t cycles) {
-    for (uint8_t ii = 0; ii < cycles; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
 }
 
 void reset_fc_lcc_rtl(void) {
