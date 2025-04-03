@@ -37,6 +37,9 @@ typedef struct {
     bool cfg_mcu_mbox1_valid_user;
     uint32_t *mcu_mbox1_valid_user;
 
+    // SOC_IFC MBOX
+    bool cfg_enable_cptra_mbox_user_init;
+
     // FUSE DONE
     bool cfg_skip_set_fuse_done;
 
@@ -58,6 +61,7 @@ void mcu_mci_boot_go();
 void read_check(uintptr_t rdptr, uint32_t expected_rddata);
 void mcu_mci_poll_exec_lock();
 void mcu_mci_req_reset();
+void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
 void mcu_cptra_mbox_cmd();
 void boot_mcu();

@@ -84,7 +84,7 @@ void main (void) {
 
         VPRINTF(LOW, "MCU: Caliptra bringup\n")
 
-        mcu_cptra_init_d(.cfg_mcu_mbox0_valid_user=true, .mcu_mbox0_valid_user=axi_user_id);
+        mcu_cptra_init_d(.cfg_enable_cptra_mbox_user_init=true);
 
         ////////////////////////////////////
         // Mailbox command test

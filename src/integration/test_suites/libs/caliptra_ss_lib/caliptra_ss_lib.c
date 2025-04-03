@@ -148,6 +148,20 @@ void mcu_cptra_advance_brkpoint() {
 
 }
 
+void mcu_cptra_user_init() {
+    // MBOX: Setup valid AXI USER
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0x1); // FIXME this should come from a param for LSU AxUSER
+//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_1, 1);
+//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_2, 2);
+//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_3, 3);
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0_LOCK_MASK);
+//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_1, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_1_LOCK_MASK);
+//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_2, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_2_LOCK_MASK);
+//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3_LOCK_MASK);
+    VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
+
+}
+
 void mcu_cptra_init(mcu_cptra_init_args args) {
     // DO NOT CALL DIRECTLY. USE THE mcu_cptra_init_d MACRO TO CALL THE FUNCTION
     
@@ -210,6 +224,10 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     /////////////////////////////////
     if (args.cfg_cptra_dma_axi_user){
         mcu_set_cptra_dma_axi_user(args.cptra_dma_axi_user);
+    }
+
+    if (args.cfg_enable_cptra_mbox_user_init){
+        mcu_cptra_user_init();
     }
 
     /////////////////////////////////
