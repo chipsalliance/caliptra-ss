@@ -145,6 +145,7 @@ void main (void) {
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;  
     uint32_t mbox_num = 0;  // TODO add randomization
+    bool     mbox0_sel = true;
     uint32_t axi_select = xorshift32() % 5;
 
     uint32_t axi_user_id[] = { xorshift32(), xorshift32(), xorshift32(), xorshift32(), xorshift32() };
@@ -153,17 +154,13 @@ void main (void) {
     VPRINTF(LOW, "MCU: Valid AXI USER for test AXI: 0x%x;\n", caliptra_uc_axi_id);
 
     VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n")
-    // MBOX: Setup valid AXI
-    mcu_mbox_configure_valid_axi(mbox_num, axi_user_id);
 
-    mcu_mci_boot_go(100);
+    if(mbox_num) {
+        mbox0_sel = false;
+    }
 
-    VPRINTF(LOW, "MCU: Configured Caliptra as Valid AXI USER\n");
-    lsu_write_32(SOC_SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER, caliptra_uc_axi_id);
 
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
-
-    mcu_cptra_fuse_init();
+    mcu_cptra_init_d(.cfg_cptra_dma_axi_user=true, .cptra_dma_axi_user=caliptra_uc_axi_id, .cfg_mcu_mbox0_valid_user=mbox0_sel, .mcu_mbox0_valid_user=axi_user_id, .cfg_mcu_mbox1_valid_user=!mbox0_sel, .mcu_mbox1_valid_user=axi_user_id);
 
     mcu_mbox_clear_lock_out_of_reset(mbox_num);
 

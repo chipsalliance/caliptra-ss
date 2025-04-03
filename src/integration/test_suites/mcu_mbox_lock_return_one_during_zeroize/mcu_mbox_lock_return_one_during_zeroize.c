@@ -44,20 +44,16 @@ void main (void) {
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;
 
-    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
+    uint32_t axi_user_id[] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x1 }; // FIXME don't hardcode
 
-    mcu_mci_boot_go(100);    
 
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
+    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n");
 
-    mcu_cptra_fuse_init();
+    mcu_cptra_init_d(.cfg_mcu_mbox0_valid_user=true, .mcu_mbox0_valid_user=axi_user_id);
     
     ////////////////////////////////////
     // Mailbox command test
     //
-
-    mcu_cptra_poll_mb_ready();
-    mcu_cptra_user_init();
 
     // MBOX: clear the lock on MBOX that is there from reset
     mcu_mbox_clear_lock_out_of_reset(mbox_num);

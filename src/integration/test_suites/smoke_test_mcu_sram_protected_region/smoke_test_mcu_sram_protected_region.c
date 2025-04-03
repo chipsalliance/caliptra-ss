@@ -51,7 +51,7 @@ void main (void) {
 
     mcu_mbox_clear_lock_out_of_reset(0);
 
-    VPRINTF(LOW, "=================\nMCU: Tesint Protected Region\n=================\n\n");
+    VPRINTF(LOW, "=================\nMCU: Testing Protected Region\n=================\n\n");
     
     VPRINTF(LOW, "MCU: Configuring MCU MBOX\n");
     mcu_mbox_configure_valid_axi(0, axi_user_id); 
@@ -89,10 +89,10 @@ void main (void) {
     }
     
     // Disable MCU SRAM Assertions due to error testing in Caliptra
-    SEND_STDOUT_CTRL(0xc0);
+    SEND_STDOUT_CTRL(TB_DISABLE_MCU_SRAM_PROT_ASSERTS);
 
     VPRINTF(LOW, "MCU: Bringing Caliptra out of Reset\n");
-    mcu_cptra_full_init(rnd_protected_region_size, caliptra_uc_axi_id);
+    mcu_cptra_init_d(.cfg_mcu_fw_sram_exec_reg_size=true, .mcu_fw_sram_exec_reg_size=rnd_protected_region_size, .cfg_cptra_dma_axi_user=true, .cptra_dma_axi_user=caliptra_uc_axi_id);
 
     VPRINTF(LOW, "MCU: Waiting on Caliptra to finish\n", rnd_num_writes);
     if(!mcu_mbox_wait_for_user_execute(0, 10000)) {

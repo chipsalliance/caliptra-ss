@@ -21,20 +21,43 @@
 #include <stdbool.h>
 
 extern uint32_t state;
+
+typedef struct {
+    // FW_SRAM_EXEC_REGION_SIZE
+    bool cfg_mcu_fw_sram_exec_reg_size;
+    uint32_t mcu_fw_sram_exec_reg_size;
+
+    // CPTRA DMA AXI USER 
+    bool cfg_cptra_dma_axi_user;
+    uint32_t cptra_dma_axi_user;
+    
+    // MCU MBOX VALID USER 
+    bool cfg_mcu_mbox0_valid_user;
+    uint32_t *mcu_mbox0_valid_user;
+    bool cfg_mcu_mbox1_valid_user;
+    uint32_t *mcu_mbox1_valid_user;
+
+    // FUSE DONE
+    bool cfg_skip_set_fuse_done;
+
+} mcu_cptra_init_args;
+
 uint32_t xorshift32(void);
+
+// MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
+// TO LOAD FUSES!!!
+void mcu_cptra_init(mcu_cptra_init_args args);
 
 void reset_fc_lcc_rtl(void);
 void mcu_cptra_wait_for_fuses() ;
 void mcu_cptra_set_fuse_done() ;
 void mcu_cptra_advance_brkpoint() ;
-void mcu_cptra_fuse_init_axi_user(uint32_t cptra_axi_user);
-void mcu_mci_boot_go(uint32_t mcu_sram_exec_size);
+void mcu_set_fw_sram_exec_region_size(uint32_t size);
+void mcu_set_cptra_dma_axi_user(uint32_t value);
+void mcu_mci_boot_go();
 void read_check(uintptr_t rdptr, uint32_t expected_rddata);
 void mcu_mci_poll_exec_lock();
 void mcu_mci_req_reset();
-void mcu_cptra_full_init(uint32_t mcu_sram_exec_size, uint32_t cptra_axi_user);
-void mcu_cptra_fuse_init();
-void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
 void mcu_cptra_mbox_cmd();
 void boot_mcu();
@@ -53,6 +76,7 @@ void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num);
 void write_read_check(uintptr_t rdptr, uint32_t data);
 uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t end_address);
 
+#define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){__VA_ARGS__});
 
 #define FC_LCC_CMD_OFFSET 0xB0
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
@@ -65,6 +89,8 @@ uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t en
 #define CMD_FORCE_LC_TOKENS             FC_LCC_CMD_OFFSET + 0x09
 #define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 0x0a
 #define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 0x0b
+
+#define TB_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
 
 
 #define MCU_MBOX_NUM_STRIDE             (SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR - SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR)

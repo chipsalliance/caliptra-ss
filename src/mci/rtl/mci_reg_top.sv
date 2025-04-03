@@ -559,7 +559,6 @@ assign mci_reg_hwif_in.axi_mcu_req              = axi_mcu_req;
 assign mci_reg_hwif_in.ss_config_unlock         = ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
 assign mci_reg_hwif_in.ss_config_unlock_sticky  = ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value;
 assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req                            = (axi_mcu_req | axi_mci_soc_config_req);
-assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req                            = (axi_mcu_req | axi_mci_soc_config_req);
 assign mci_reg_hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock            = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.CAP_LOCK.lock.value;
 assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock          = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
 assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky   = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value;

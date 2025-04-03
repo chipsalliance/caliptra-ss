@@ -115,7 +115,7 @@ void PPD_from_MANUF_DEV_to_RMA(int MANUF_not_DEV) {
 void main (void)
 {
     VPRINTF(LOW, "=================\nMCU: Caliptra Boot Go\n=================\n\n");    
-    mcu_mci_boot_go(100);
+    mcu_cptra_init_d(.cfg_skip_set_fuse_done=true);
     force_lcc_tokens();
     VPRINTF(LOW, "=========\nMCU: TESTING LCC STATE TRANS FROM ONE to RMA\n=================\n\n");   
     no_PPD_from_Raw_to_RMA();
