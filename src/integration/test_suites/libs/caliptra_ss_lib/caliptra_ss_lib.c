@@ -80,22 +80,22 @@ void read_check(uintptr_t rdptr, uint32_t expected_rddata){
     }
 }
 
+void mcu_set_fw_sram_exec_region_size(uint32_t size) {
+    VPRINTF(LOW, "MCU: Configure EXEC REGION Size 0x%x\n", size);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , size);
+}
 
-void mcu_mci_boot_go(uint32_t mcu_sram_exec_size) {
- 
-    // Configure EXEC Region before initializing Caliptra
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , mcu_sram_exec_size);
-    VPRINTF(LOW, "MCU: Configure EXEC REGION Size\n");
-    
 
+void mcu_set_cptra_dma_axi_user(uint32_t value) {
+    VPRINTF(LOW, "MCU: Configure CPTRA DMA AXI USER 0x%x\n", value);
+    lsu_write_32(SOC_SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER, value);
+}
+
+void mcu_mci_boot_go() {
     // writing SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO register of MCI for CPTRA Boot FSM to bring Caliptra out of reset
     uint32_t cptra_boot_go;
     VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO");
-    cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO set to %x\n", cptra_boot_go);
 }
 
 void mcu_mci_poll_exec_lock() {
@@ -148,59 +148,89 @@ void mcu_cptra_advance_brkpoint() {
 
 }
 
-void mcu_cptra_fuse_init_axi_user(uint32_t cptra_axi_user){
-    ////////////////////////////////////
-    // Fuse and Boot Bringup
-    //
-    mcu_cptra_wait_for_fuses();
-
-    lsu_write_32(SOC_SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER, cptra_axi_user);
-
-    // Initialize fuses
-    // TODO set actual fuse values
-    mcu_cptra_set_fuse_done();
-
-    mcu_cptra_advance_brkpoint();
-}
-
-void mcu_cptra_full_init(uint32_t mcu_sram_exec_size, uint32_t cptra_axi_user) {
+void mcu_cptra_init(mcu_cptra_init_args args) {
+    // DO NOT CALL DIRECTLY. USE THE mcu_cptra_init_d MACRO TO CALL THE FUNCTION
     
-    mcu_mci_boot_go(mcu_sram_exec_size);
-
-    mcu_cptra_fuse_init_axi_user(cptra_axi_user);
-
-}
-
-void mcu_cptra_fuse_init() {
-    enum boot_fsm_state_e boot_fsm_ps;
-
-    ////////////////////////////////////
-    // Fuse and Boot Bringup
+    // 4 MAIN OPTIONS:
     //
+    // 1. Always disabled unless a new value is specified:
+    //    - Add a boolean cfg_<feature>.
+    //    - Add a <type> <feature_value>.
+    //    - Skip configuration unless cfg_<feature> is set, then set the <feature_value>.
+    //    - Use for features that most tests don't care about and will have a set value.
+    //
+    // 2. Always disabled unless enabled:
+    //    - Add a boolean cfg_enable_<feature>.
+    //    - Skip configuration unless cfg_enable_<feature> is set, then enable the feature.
+    //    - Use for features that most tests don't care about and don't have an actual 
+    //      value but when enabled will initiate a configuration within the design.
+    //
+    // 3. Always enabled unless specified:
+    //    - Add a cfg_skip_<feature>.
+    //    - Always program the register unless the skip is set.
+    //    - Use when most tests want the feature
+    //    - Use for features that are either DO or SKIP.
+    //
+    // 4. Always enabled unless overridden:
+    //    - Add a cfg_override_<feature>.
+    //    - Add a <feature_value>.
+    //    - Use when most tests whant the feature.
+    //    - Always configure to a default value. If cfg_override_<feature> is set, 
+    //      write the <feature_value> into the register.
+
+    
+
+    VPRINTF(LOW, "MCU: INIT CONFIGURING START\n");
+    
+    /////////////////////////////////
+    // MCU CONFIGURATION
+    /////////////////////////////////
+    if (args.cfg_mcu_fw_sram_exec_reg_size) {
+        VPRINTF(LOW, "MCU: args.mcu_fw_sram_exec_reg_size 0x%x\n", args.mcu_fw_sram_exec_reg_size);
+        mcu_set_fw_sram_exec_region_size(args.mcu_fw_sram_exec_reg_size); 
+    }
+
+    if (args.cfg_mcu_mbox0_valid_user) {
+        mcu_mbox_configure_valid_axi(0, args.mcu_mbox0_valid_user);
+    }
+
+    if (args.cfg_mcu_mbox1_valid_user) {
+        mcu_mbox_configure_valid_axi(1, args.mcu_mbox1_valid_user);
+    }
+
+    /////////////////////////////////
+    // BRING CPTRA OUT OF RESET
+    /////////////////////////////////
+    mcu_mci_boot_go();
+
     mcu_cptra_wait_for_fuses();
 
+    /////////////////////////////////
+    // CPTRA FUSE CONFIGURATION
+    /////////////////////////////////
+    if (args.cfg_cptra_dma_axi_user){
+        mcu_set_cptra_dma_axi_user(args.cptra_dma_axi_user);
+    }
 
-    // Initialize fuses
-    // TODO set actual fuse values
-    mcu_cptra_set_fuse_done();
+    /////////////////////////////////
+    // CPTRA LOCK FUSE CONFIGURATION
+    /////////////////////////////////
+    if (!args.cfg_skip_set_fuse_done) {
+        mcu_cptra_set_fuse_done();
+    }
+    else{
+        VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip Set fuse done\n");
+        
+    }
 
+    /////////////////////////////////
+    // CPTRA ENSURE BREAKPOINT SET  
+    /////////////////////////////////
     mcu_cptra_advance_brkpoint();
 
+    VPRINTF(LOW, "MCU: INIT CONFIGURING END\n");
 }
 
-void mcu_cptra_user_init() {
-    // MBOX: Setup valid AXI USER
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0x1); // FIXME this should come from a param for LSU AxUSER
-//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_1, 1);
-//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_2, 2);
-//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_3, 3);
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0_LOCK_MASK);
-//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_1, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_1_LOCK_MASK);
-//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_2, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_2_LOCK_MASK);
-//    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_3_LOCK_MASK);
-    VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
-
-}
 
 void mcu_mbox_clear_lock_out_of_reset(uint32_t mbox_num) {
     // MBOX: Write DLEN  (normally would be max SRAM size but using smaller size for test run time)
@@ -266,6 +296,7 @@ void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num) {
 
 void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id) {
     
+    VPRINTF(LOW, "MCU: Configuring Valid AXI USERs in Mbox%x:  0 - 0x%x; 1 - 0x%x; 2 - 0x%x; 3 - 0x%x; 4 - 0x%x;\n", mbox_num, axi_user_id[0], axi_user_id[1], axi_user_id[2], axi_user_id[3], axi_user_id[4]);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[0]);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[1]);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_2 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[2]);
@@ -277,8 +308,8 @@ void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_2 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_2_LOCK_MASK);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_3 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_3_LOCK_MASK);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_4 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_4_LOCK_MASK);
+    VPRINTF(LOW, "MCU: DONE Configuring Valid AXI USERs in Mbox%x\n", mbox_num);
 
-    VPRINTF(LOW, "MCU: Configured Valid AXI USERs in Mbox%x:  0 - 0x%x; 1 - 0x%x; 2 - 0x%x; 3 - 0x%x; 4 - 0x%x;\n", mbox_num, axi_user_id[0], axi_user_id[1], axi_user_id[2], axi_user_id[3], axi_user_id[4]);
 }
 
 bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count) {
@@ -507,7 +538,7 @@ void boot_mcu(){
     uint32_t cptra_boot_go;
     uint32_t reg_data_32;
     
-    mcu_mci_boot_go(100);
+    mcu_mci_boot_go();
 
     ////////////////////////////////////
     // Fuse and Boot Bringup
