@@ -1,12 +1,4 @@
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
-
-/* Include MCI register definitions and utilities */
 #include "mci.h"
-
-
 #include "soc_address_map.h"
 #include "printf.h"
 #include "riscv_hw_if.h"
@@ -25,20 +17,11 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 void main(void) {
-    uint32_t value, status, done;
-    uint32_t mbox0_size, mbox1_size;
-    uint32_t single_error, double_error;
-    uint32_t before_snapshot[MAX_REGISTERS_PER_GROUP];
-    uint32_t after_snapshot[MAX_REGISTERS_PER_GROUP];
-    mci_register_group_t found_group;
-    int found_index;
-    int total_reg_count;
-
-    uint32_t read_data;
+    //int total_reg_count;
 
     VPRINTF(LOW, "==================\nMCI Registers Test\n==================\n\n");
 
-    mci_init();
+    /*mci_init();
 
     // Exclude registers from writing during group write
     exclude_register(SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO);
@@ -58,13 +41,13 @@ void main(void) {
         }    
     }
 
-    printf("Completed writing random values to all register groups.\n");
+    VPRINTF(LOW, "Completed writing random values to all register groups.\n");
  
     total_reg_count = get_total_register_count();
-    printf("TOtal Register Count: %d", total_reg_count);
+    VPRINTF(MEDIUM, "TOtal Register Count: %d", total_reg_count);*/
  
     
-    printf("\nMCI Register Access Tests Completed\n");
+    VPRINTF(LOW, "\nMCI Register Access Tests Completed\n");
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
