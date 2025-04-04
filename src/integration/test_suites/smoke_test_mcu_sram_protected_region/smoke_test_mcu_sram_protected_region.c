@@ -95,7 +95,7 @@ void main (void) {
     mcu_cptra_init_d(.cfg_mcu_fw_sram_exec_reg_size=true, .mcu_fw_sram_exec_reg_size=rnd_protected_region_size, .cfg_cptra_dma_axi_user=true, .cptra_dma_axi_user=caliptra_uc_axi_id);
 
     VPRINTF(LOW, "MCU: Waiting on Caliptra to finish\n", rnd_num_writes);
-    if(!mcu_mbox_wait_for_user_execute(0, 10000)) {
+    if(!mcu_mbox_wait_for_user_execute(0, 1, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", 0);
         SEND_STDOUT_CTRL(0x1);
         while(1);
