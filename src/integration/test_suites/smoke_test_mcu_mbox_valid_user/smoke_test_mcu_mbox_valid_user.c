@@ -93,6 +93,8 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
     // MBOX: Acquire lock
     if (!mcu_mbox_acquire_lock(mbox_num, 1000)) {
         VPRINTF(FATAL, "MCU: Mbox%x didn't acquire lock\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);        
     }
     
     mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num);
@@ -101,6 +103,8 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
     VPRINTF(LOW, "MCU: Wait for Lock to Reflect MBOX USER\n");
     if(!mcu_mbox_wait_for_user_to_be_mcu(mbox_num, 1000)) {
         VPRINTF(FATAL, "MCU: Mbox%x didn't update mbox user appropriately\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);  
     }
 
     // MBOX: Write CMD
@@ -144,7 +148,8 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;  
-    uint32_t mbox_num = 0;  // TODO add randomization
+    uint32_t mbox_num = decode_single_valid_mbox();
+    bool     mbox0_sel = true;
     uint32_t axi_select = xorshift32() % 5;
 
     uint32_t axi_user_id[] = { xorshift32(), xorshift32(), xorshift32(), xorshift32(), xorshift32() };
@@ -153,17 +158,13 @@ void main (void) {
     VPRINTF(LOW, "MCU: Valid AXI USER for test AXI: 0x%x;\n", caliptra_uc_axi_id);
 
     VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n")
-    // MBOX: Setup valid AXI
-    mcu_mbox_configure_valid_axi(mbox_num, axi_user_id);
 
-    mcu_mci_boot_go();
+    if(mbox_num) {
+        mbox0_sel = false;
+    }
 
-    VPRINTF(LOW, "MCU: Configured Caliptra as Valid AXI USER\n");
-    lsu_write_32(SOC_SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER, caliptra_uc_axi_id);
 
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
-
-    mcu_cptra_fuse_init();
+    mcu_cptra_init_d(.cfg_cptra_dma_axi_user=true, .cptra_dma_axi_user=caliptra_uc_axi_id, .cfg_mcu_mbox0_valid_user=mbox0_sel, .mcu_mbox0_valid_user=axi_user_id, .cfg_mcu_mbox1_valid_user=!mbox0_sel, .mcu_mbox1_valid_user=axi_user_id);
 
     mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
@@ -176,10 +177,14 @@ void main (void) {
     // Update status
     if(!mcu_mbox_wait_for_user_lock(mbox_num, caliptra_uc_axi_id, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not acquire lock and set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
     }
 
-    if(!mcu_mbox_wait_for_user_execute(mbox_num, 10000)) {
+    if(!mcu_mbox_wait_for_user_execute(mbox_num, 1, 10000)) {
         VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not set execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
     }
 
     mcu_mbox_get_data(mbox_num);
