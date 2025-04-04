@@ -42,4 +42,6 @@ void main (void) {
     mcu_cptra_init_d();
 
     mcu_cptra_poll_mb_ready();
+
+    SEND_STDOUT_CTRL(0xff);
 }
