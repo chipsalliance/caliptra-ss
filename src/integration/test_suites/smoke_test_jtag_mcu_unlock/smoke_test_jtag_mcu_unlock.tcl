@@ -160,7 +160,7 @@ for {set i 1} {$i < $num_ro_regs_mem} {incr i} {
     set expected [expr {$golden5a & $ro_reg_mask($i)}]
     if {[compare $actual $expected] != 0} {
         puts "mismatch in register $ro_regs($i)!"
-        #shutdown error
+        shutdown error
     }
     #write goldena5
     write_memory  [set $ro_regs_mem($i)] 32 $goldena5 phys
@@ -168,7 +168,7 @@ for {set i 1} {$i < $num_ro_regs_mem} {incr i} {
     set expected [expr {$goldena5 & $ro_reg_mask($i)}]
     if {[compare $actual $expected] != 0} {
         puts "mismatch in register $ro_regs($i)!"
-        #shutdown error
+        shutdown error
     }
 }
 

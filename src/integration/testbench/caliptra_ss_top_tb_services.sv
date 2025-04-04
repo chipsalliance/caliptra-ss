@@ -107,6 +107,10 @@ import tb_top_pkg::*;
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
         end 
+        if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
+            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
+            force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
+        end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_MCI_BRK")) begin
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
