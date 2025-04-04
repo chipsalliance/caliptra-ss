@@ -45,7 +45,7 @@ void main (void) {
 
     VPRINTF(LOW, "MCU: Caliptra bringup\n")
 
-    mcu_cptra_fuse_init();
+    mcu_cptra_init_d();
 
     //Halt the core to wait for Caliptra to finish the test
     __asm__ volatile ("csrwi    %0, %1" \

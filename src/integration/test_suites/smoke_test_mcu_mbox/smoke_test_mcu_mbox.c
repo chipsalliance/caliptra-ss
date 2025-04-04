@@ -161,16 +161,8 @@ void main (void) {
     uint32_t caliptra_uc_axi_id = 0xffffffff;
     
     VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n");
-
-    VPRINTF(LOW, "MCU: Configured MBOX%x Valid AXI USER\n", mbox_num);
-
-    mcu_mci_boot_go();
-
-    VPRINTF(LOW, "MCU: Caliptra bringup\n");
-
-
     // Setting Caliptra to DEFAULT user
-    mcu_cptra_fuse_init_axi_user(caliptra_uc_axi_id);
+    mcu_cptra_init_d(.cfg_cptra_dma_axi_user=true, .cptra_dma_axi_user=0xFFFFFFFF);
 
     mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
