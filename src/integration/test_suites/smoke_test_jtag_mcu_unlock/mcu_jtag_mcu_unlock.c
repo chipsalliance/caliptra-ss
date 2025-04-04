@@ -45,7 +45,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
 void main (void) {
 
-    uint32_t cptra_boot_go;
+    //uint32_t cptra_boot_go;
     uint32_t read_data;
 
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 

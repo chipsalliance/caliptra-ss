@@ -15,7 +15,7 @@
 
 /*
     Run this test with the following command
-    submit_i ss_build -tc smoke_test_jtag_mcu_intent -op -to 250000
+    submit_i ss_build -tc smoke_test_jtag_mcu_bp -op -to 250000
 */
 
 
@@ -73,26 +73,6 @@ void main (void) {
     for (uint16_t ii = 0; ii < 1000; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
-
-    //Write to the RO register to give them some value to read
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_FLOW_STATUS, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_AGG_ERROR_NON_FATAL, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_FATAL, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_ENC, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_ENC, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_0, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_1, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_2, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_3, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_4, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_5, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_6, 0x5a5a5a5a);
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_7, 0x5a5a5a5a);
-
 
     //Sync phrase for JTAG
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG MCU Smoke Test with ROM \n=================\n\n");

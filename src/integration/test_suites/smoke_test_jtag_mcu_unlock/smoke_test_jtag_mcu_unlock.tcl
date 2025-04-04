@@ -18,17 +18,6 @@ init
 set script_dir [file dirname [info script]]
 source [file join $script_dir .. libs jtag common.tcl]
 
-#dmi_reg_bootfsm_go  only 1 bit
-#dmi_reg_ss_debug_intent  only 1 bit
-#dmi_reg_ss_dbg_manuf_service_reg_req  special access
-#dmi_reg_ss_dbg_manuf_service_reg_rsp  read only
-
-#can't be written by FW to test
-# dmi_reg_ss_uds_seed_base_addr_l
-# dmi_reg_ss_uds_seed_base_addr_h
-# dmi_reg_hw_fatal_error
-# dmi_reg_hw_non_fatal_error
-
 array set rw_regs {
     0 MCI_DMI_RESET_REQUEST
     1 MCI_DMI_MCI_BOOTFSM_GO
