@@ -366,6 +366,7 @@ import tb_top_pkg::*;
         if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram); // FIXME - should there bit a limit like Caliptra has for iccm.hex?
 
 
+        imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
         tp = $fopen("mcu_trace_port.csv","w");
