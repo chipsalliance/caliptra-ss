@@ -24,7 +24,7 @@ SECTIONS {
   . = 0x50000000;
   .dccm : { *(.dccm) }
   _dccm_end = .;
-  .data : { *(.data) *(.data.*) }
+  .data : { *(.data) *(.data.*) *(.sdata) *(.sdata.*) }
   _data_end = .;
   .bss : { *(.bss) *(.sbss) }
   _bss_end = .;
