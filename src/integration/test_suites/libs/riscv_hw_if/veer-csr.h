@@ -23,10 +23,12 @@
 //////////////////////////////////////////////////////////////////////////////
 // Non-Standard VeeR CSR offset macros
 //
+#define VEER_CSR_MPMC     0x7C6
 #define VEER_CSR_MICECT   0x7F0
 #define VEER_CSR_MICCMECT 0x7F1
 #define VEER_CSR_MDCCMECT 0x7F2
 #define VEER_CSR_MSCAUSE  0x7FF
+#define VEER_CSR_MDEAU    0xBC0
 #define VEER_CSR_MEIVT    0xBC8
 #define VEER_CSR_MEIPT    0xBC9
 #define VEER_CSR_MEICPCT  0xBCA
@@ -89,25 +91,43 @@ enum {
 #define MCAUSE_NMI_CODE_FAST_INT_NONDCCM_VALUE  (MCAUSE_NMI_BIT_MASK | 0x1002)
 
 /*******************************************
+ * mpmc - MRW - Power Management Control Register
+ */
+static inline void csr_write_mpmc(uint_xlen_t value) {
+    __asm__ volatile ("csrw    %0, %1" \
+                : /* output: none */        \
+                : "i" (VEER_CSR_MPMC), "r" (value)  /* input : immediate  */ \
+                : /* clobbers: none */);
+}
+static inline void csr_write_mpmc_halt() {
+    //Halt the core
+    __asm__ volatile ("csrwi    %0, %1" \
+                : /* output: none */        \
+                : "i" (VEER_CSR_MPMC), "i" (0x03)  /* input : immediate  */ \
+                : /* clobbers: none */);
+}
+
+
+/*******************************************
  * mdeau - MRW - Data base register.
  */
 static inline uint_xlen_t csr_read_mdeau(void) {
     uint_xlen_t value;
-    __asm__ volatile ("csrr    %0, 0xbc0"
+    __asm__ volatile ("csrr    %0, VEER_CSR_MDEAU"
                       : "=r" (value)  /* output : register */
                       : /* input : none */
                       : /* clobbers: none */);
     return value;
 }
 static inline void csr_write_mdeau(uint_xlen_t value) {
-    __asm__ volatile ("csrw    0xbc0, %0"
+    __asm__ volatile ("csrw    VEER_CSR_MDEAU, %0"
                       : /* output: none */
                       : "r" (value) /* input : from register */
                       : /* clobbers: none */);
 }
 static inline uint_xlen_t csr_read_write_mdeau(uint_xlen_t new_value) {
     uint_xlen_t prev_value;
-    __asm__ volatile ("csrrw    %0, 0xbc0, %1"
+    __asm__ volatile ("csrrw    %0, VEER_CSR_MDEAU, %1"
                       : "=r" (prev_value) /* output: register %0 */
                       : "r" (new_value)  /* input : register */
                       : /* clobbers: none */);

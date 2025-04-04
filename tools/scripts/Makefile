@@ -71,6 +71,8 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
 		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
+		$(RISCV_HW_IF_DIR)/riscv-csr.h \
+		$(RISCV_HW_IF_DIR)/veer-csr.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
