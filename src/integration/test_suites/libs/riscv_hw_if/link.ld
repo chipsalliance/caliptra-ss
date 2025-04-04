@@ -23,16 +23,20 @@ SECTIONS {
   . = 0x50000000;
   .dccm : { *(.dccm) }
   _dccm_end = .;
-  .data : { *(.*data) *(.rodata*) *(.srodata*) }
+  .data : { *(.data) *(.data.*) }
   _data_end = .;
   .bss : { *(.bss) *(.sbss) }
   _bss_end = .;
 
   STACK = ALIGN(16) + 0x1000;
+  ASSERT( STACK < 0x50004000, "ERROR: STACK allocation exceeds DCCM size of 16KiB")
 
   . = 0x80000000;
   .text   : { *(.text*) }
   _text_end = .;
+  .rodata : { *(.rodata*) *(.srodata*) }
+  _rodata_end = .;
+  ASSERT( _rodata_end < 0x80040000, "ERROR: ROM size exceeds 256KiB")
 
   . = 0x21000414;
   .data.io : { *(.data.io) }

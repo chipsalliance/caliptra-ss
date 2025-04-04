@@ -425,7 +425,7 @@ import tb_top_pkg::*;
 
 
     rom #(
-        .DEPTH     (16'h7FFF), // 64KB
+        .DEPTH     (16'h8000), // 256KiB
         .DATA_WIDTH(64),
         .ADDR_WIDTH(22)
     ) imem (
