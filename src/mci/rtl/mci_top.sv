@@ -543,6 +543,7 @@ mci_reg_top #(
     
     // AXI Privileged requests
     .axi_mci_soc_config_req,
+    .axi_mcu_sram_config_req,
     .axi_mcu_req,
 
     // WDT specific signals

@@ -51,6 +51,7 @@ module mci_reg_top
 
     // AXI Privileged requests
     input logic axi_mci_soc_config_req,
+    input logic axi_mcu_sram_config_req,
     input logic axi_mcu_req,
 
     // WDT specific signals

@@ -3,5 +3,5 @@ seed: 1
 testname: mcu_cptra_bringup
 pre-exec: |
   echo "Running pre_exec for [mcu_cptra_bringup]"
-  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_cptra_bringup TESTNAME=cptra_bringup program.hex
   make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=mcu_cptra_bringup mcu_program.hex
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 AUX_LIB_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/libs/soc_ifc_ss AUX_OFILES=soc_ifc_ss.o AUX_HEADER_FILES=$CALIPTRA_SS_ROOT/src/integration/test_suites/libs/soc_ifc_ss/soc_ifc_ss.h TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_cptra_bringup TESTNAME=cptra_bringup program.hex
