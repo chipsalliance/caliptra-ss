@@ -454,7 +454,7 @@ assign cif_resp_if.error = exec_region_filter_error |
                            sram_double_ecc_error;  
 
 // SRAM is single port and cannot handle reads and writes in the same clock cycle
-`CALIPTRA_ASSERT_MUTEX(ERR_MCU_SRAM_MULTI_REQ, {sram_write_req, sram_write_req}, clk, !rst_b)
+`CALIPTRA_ASSERT_MUTEX(ERR_MCU_SRAM_MULTI_REQ, {sram_write_req, sram_read_req}, clk, !rst_b)
 
 // SRAM ECC Errors
 `CALIPTRA_ASSERT_NEVER(ERR_MCU_SRAM_ECC_DB_ERROR, sram_double_ecc_error, clk, !rst_b)

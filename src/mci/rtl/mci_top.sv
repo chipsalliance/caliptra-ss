@@ -88,6 +88,11 @@ module mci_top
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
     input  logic mcu_no_rom_config,                // Determines boot sequencer boot flow
 
+    // MCU Halt Signals
+    output logic mcu_cpu_halt_req_o,
+    input  logic mcu_cpu_halt_ack_i,
+    input  logic mcu_cpu_halt_status_i,
+
     // NMI Vector 
     output logic nmi_intr,
     output logic [31:0] mcu_nmi_vector,
@@ -367,6 +372,11 @@ mci_boot_seqr #(
     // Reset controls
     .mcu_rst_b,
     .cptra_rst_b,
+
+    // MCU Halt Signals
+    .mcu_cpu_halt_req_o,
+    .mcu_cpu_halt_ack_i,
+    .mcu_cpu_halt_status_i,
 
     // Internal signals
     .caliptra_boot_go(mci_reg_hwif_out.CPTRA_BOOT_GO.go),
@@ -758,7 +768,7 @@ mci_lcc_st_trans LCC_state_translator (
 // Assertions
 ///////////////////////////////////////
 
-`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_gnt, soc_mcu_trace_buffer_gnt, soc_mci_reg_gnt, soc_mcu_mbox0_gnt, soc_mcu_mbox1_gnt}, clk, !reset_n)
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {mci_reg_req_if.dv, mcu_sram_req_if.dv, mcu_trace_buffer_req_if.dv, mcu_mbox0_req_if.dv, mcu_mbox1_req_if.dv}, clk, !mci_rst_b)
 
 // Today we don't support anything other than 32 bits
 `CALIPTRA_ASSERT_INIT(ERR_AXI_DATA_WIDTH, AXI_DATA_WIDTH == 32)

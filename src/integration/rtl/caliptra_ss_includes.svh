@@ -15,18 +15,24 @@
 // limitations under the License.
 //********************************************************************************
 
-`ifndef CPTRA_SS_INCLUDES_SVH
-`define CPTRA_SS_INCLUDES_SVH
+`ifndef CALIPTRA_SS_INCLUDES_SVH
+`define CALIPTRA_SS_INCLUDES_SVH
 
 parameter CPTRA_SS_MCU_LSU_ARID_WIDTH = 8;
 parameter CPTRA_SS_MCU_LSU_AWID_WIDTH = 8;
-parameter CPTRA_SS_MCU_LSU_ARUSER_WIDTH = 8;
-parameter CPTRA_SS_MCU_LSU_AWUSER_WIDTH = 8;
 parameter CPTRA_SS_MCU_IFU_ARID_WIDTH = 8;
 parameter CPTRA_SS_MCU_IFU_AWID_WIDTH = 8;
-parameter CPTRA_SS_MCU_USER_WIDTH = 32;
 
-parameter CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER   = 32'hFFFF_FFFF;
-parameter CPTRA_SS_STRAP_MCU_LSU_AXI_USER       = 32'h1;
+parameter CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER   = 32'h3; // FIXME make these values modifiable at run-time for testing
+parameter CPTRA_SS_STRAP_MCU_LSU_AXI_USER       = 32'h1; // FIXME make these values modifiable at run-time for testing
+parameter CPTRA_SS_STRAP_MCU_IFU_AXI_USER       = 32'h2; // FIXME make these values modifiable at run-time for testing
 
+// Interrupt Assignments
+// NOTE Vector 0 is reserved by VeeR
+`define VEER_INTR_VEC_MCI                 1
+`define VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL 2
+`define VEER_INTR_VEC_I3C                 3
+`define VEER_INTR_VEC_FC                  4
+`define VEER_INTR_EXT_LSB                 5
+    
 `endif // CPTRA_SS_INCLUDES_SVH

@@ -52,9 +52,9 @@ aaxi_device_class slave[AAXI_INTC_SLAVE_CNT];
 
 // device interface
 // aaxi_pll_intf		ports_intf		(core_clk, rst_l, CACTIVE_PLL, CSYSREQ, CSYSACK_PLL);
-aaxi_interconnect_intf	ports			(core_clk, rst_l, CACTIVE, CSYSREQ, CSYSACK);
-aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))mintf_arr[AAXI_INTC_MASTER_CNT-1:0]	(core_clk, rst_l, CACTIVE, CSYSREQ, CSYSACK);
-aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))sintf_arr[AAXI_INTC_SLAVE_CNT-1:0]	(core_clk, rst_l, CACTIVE, CSYSREQ, CSYSACK);
+aaxi_interconnect_intf	ports			(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
+aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))mintf_arr[AAXI_INTC_MASTER_CNT-1:0]	(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
+aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))sintf_arr[AAXI_INTC_SLAVE_CNT-1:0]	(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
 
 /* When all CACTIVE signal of ports, mintf_arr[] and sintf_arr[] 
    are different from each other(some ports whose CACTIVE was 1,
@@ -69,22 +69,30 @@ assign CSYSACK_PLL = ((CSYSACK === 1'bx)? 1: CSYSACK);
 
 genvar i;
 generate
-    for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++ ) begin
+    for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++ ) begin : master_loop
 	initial begin
 	    master[i] = new($psprintf("master%0d" ,i), AAXI_MASTER, AAXI4, mintf_arr[i],, i);
 	    #1;	// wait to instantiate intc bfm 
 	    intc.master_ports[i].vers= master[i].vers;
 	    intc.master_ports[i].ports= mintf_arr[i];
 	end
+    assign mintf_arr[i].CACTIVE_m = 1'b0;
+    assign mintf_arr[i].CACTIVE_s = 1'b0;
+    assign mintf_arr[i].CSYSACK_m = 1'b0;
+    assign mintf_arr[i].CSYSACK_s = 1'b0;
     end
 
-    for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin
+    for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin: slave_loop
 	initial begin
 	    slave[i] = new($psprintf("slave%0d", i), AAXI_SLAVE_TO_INTERCONNECT, AAXI4, sintf_arr[i],, i);
 	    #1;	// wait to instantiate intc bfm 
 	    intc.slave_ports[i].vers= slave[i].vers;
 	    intc.slave_ports[i].ports= sintf_arr[i];
 	end
+    assign sintf_arr[i].CACTIVE_m = 1'b0;
+    assign sintf_arr[i].CACTIVE_s = 1'b0;
+    assign sintf_arr[i].CSYSACK_m = 1'b0;
+    assign sintf_arr[i].CSYSACK_s = 1'b0;
     end
 endgenerate 
 
@@ -115,6 +123,10 @@ generate
 endgenerate 
 
 // instantiates monitor/protocol checker0 for default slave interface
+assign ports.default_slave_intf.CACTIVE_m = 1'b0;
+assign ports.default_slave_intf.CACTIVE_s = 1'b0;
+assign ports.default_slave_intf.CSYSACK_m = 1'b0;
+assign ports.default_slave_intf.CSYSACK_s = 1'b0;
 aaxi_monitor_wrapper def_monitor(ports.default_slave_intf);
 defparam def_monitor.VER= "AXI4";
 defparam def_monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
@@ -142,6 +154,9 @@ initial begin
         master[i].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         master[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        master[i].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        master[i].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        master[i].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.passive_mode= 1;       //-- changed to put master to passive mode
         // master[i].cfg_info.id_width=3;
 `ifdef FOUR_OUTSTANDING
@@ -168,6 +183,9 @@ initial begin
         slave[i].cfg_info.passive_mode= 1; 
         slave[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[i].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[i].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[i].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         // slave[i].add_fifo(64'habcc+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'ha000_0000+i*64'h100_0000, 4);
         // slave[i].add_fifo(64'hb000_0001+i*64'h100_0000, 4);
@@ -194,7 +212,9 @@ initial begin
         //-- I3C
         slave[1].cfg_info.passive_mode = 1;
         slave[1].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[1].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[1].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[1].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[1].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[1].cfg_info.base_address[0] = 64'h2000_4000;
         slave[1].cfg_info.limit_address[0] = 64'h2000_4FFF;
         slave[1].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
@@ -208,11 +228,17 @@ initial begin
         //-- Caliptra SoC IFC Sub
         slave[3].cfg_info.passive_mode= 1; 
         slave[3].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[3].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[3].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[3].cfg_info.base_address[0] = 64'h3000_0000;
-        slave[3].cfg_info.limit_address[0] = 64'h3FFF_FFFF;
-        slave[3].cfg_info.base_address[1]  = 64'h0003_0000;
-        slave[3].cfg_info.limit_address[1] = 64'h0003_FFFF;
+        slave[3].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[3].cfg_info.base_address[0] = 64'(`SOC_MBOX_CSR_BASE_ADDR);
+        slave[3].cfg_info.limit_address[0] = 64'(`SOC_MBOX_CSR_BASE_ADDR) + 64'h2_0000; // FIXME hardcoded to match the soc_ifc limit
+        slave[3].cfg_info.default_fifo_depth = 4096; // Reasonable cap at max AXI burst lengh of 4KiB
+        slave[3].cfg_info.fifo_address[0] = 64'(`SOC_MBOX_CSR_MBOX_DATAIN);
+        slave[3].cfg_info.fifo_limit[0] = 64'(`SOC_MBOX_CSR_MBOX_DATAOUT);
+        slave[3].cfg_info.fifo_address[1] = 64'(`SOC_SHA512_ACC_CSR_DATAIN);
+        slave[3].cfg_info.fifo_limit[1] = 64'(`SOC_SHA512_ACC_CSR_DATAIN);
         slave[3].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         slave[3].cfg_info.total_outstanding_depth = 4;
         slave[3].cfg_info.id_outstanding_depth = 4;
@@ -221,6 +247,9 @@ initial begin
         slave[4].cfg_info.passive_mode= 1; 
         slave[4].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[4].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[4].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[4].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[4].cfg_info.base_address[0]  = {32'h0, `SOC_MCI_TOP_MCI_REG_BASE_ADDR}; //64'h2100_0000;
         slave[4].cfg_info.limit_address[0] = {32'h0, `SOC_MCI_TOP_MCU_SRAM_END_ADDR}; // Always the last address in MCU
         slave[4].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
@@ -231,6 +260,9 @@ initial begin
         slave[5].cfg_info.passive_mode = 1; 
         slave[5].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[5].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[5].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[5].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[5].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[5].cfg_info.base_address[0] = 64'h7000_0000;
         slave[5].cfg_info.limit_address[0] = 64'h7000_01FF;
         slave[5].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
@@ -241,6 +273,7 @@ initial begin
         slave[6].cfg_info.passive_mode = 1; 
         slave[6].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[6].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[6].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[6].cfg_info.base_address[0] = 64'h7000_0200;
         slave[6].cfg_info.limit_address[0] = 64'h7000_03FF;
         slave[6].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
@@ -251,6 +284,9 @@ initial begin
         slave[7].cfg_info.passive_mode = 1; 
         slave[7].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[7].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[7].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[7].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[7].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[7].cfg_info.base_address[0] = 64'h7000_0400;
         slave[7].cfg_info.limit_address[0] = 64'h7000_05FF;
         slave[7].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH

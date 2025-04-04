@@ -1,0 +1,18 @@
+---
+provides: [ss_asserts]
+schema_version: 2.4.0
+requires:
+  - fuse_ctrl_pkg
+  - caliptra_top_tb_pkg
+  - caliptra_ss_top_defines
+targets:
+  tb:
+    directories: [$COMPILE_ROOT]
+    files:
+      - $COMPILE_ROOT/caliptra_ss_top_sva.sv
+global:
+  tool:
+    vcs:
+      default:
+        - '-assert svaext'
+        - '-noinherit_timescale=1ns/1ps'

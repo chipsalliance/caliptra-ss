@@ -1,8 +1,17 @@
-// Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 //
-// Use the gen-otp-mmap.py script to update dependent files (like documentation
-// tables the comportable hjson and metadata SV package):
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 {
     // 256 bit seed to be used for generation of partition item default values.
@@ -70,16 +79,17 @@
     // Note that the digest items are added automatically to the address map.
     partitions: [
         {
-            name:       "SECRET_TEST_UNLOCK_PARTITION",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "SecretTestUnlockKey",
-            integrity:  true,
-            bkout_type: true,
+            name:         "SECRET_TEST_UNLOCK_PARTITION",
+            variant:      "Buffered",
+            secret:       true,
+            sw_digest:    false,
+            hw_digest:    true,
+            write_lock:   "Digest",
+            read_lock:    "Digest",
+            key_sel:      "SecretTestUnlockKey",
+            integrity:    true,
+            bkout_type:   true,
+            lc_phase:     "LcStDev",
             items: [
                 {
                     name: "CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN",
@@ -93,16 +103,17 @@
             '''
         },
         {
-            name:       "SECRET_MANUF_PARTITION",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "SecretManufKey",
-            integrity:  true,
-            bkout_type: true,
+            name:         "SECRET_MANUF_PARTITION",
+            variant:      "Buffered",
+            secret:       true,
+            sw_digest:    false,
+            hw_digest:    true,
+            write_lock:   "Digest",
+            read_lock:    "Digest",
+            key_sel:      "SecretManufKey",
+            integrity:    true,
+            bkout_type:   true,
+            lc_phase:     "LcStDev",
             items: [
                 {
                     name: "CPTRA_CORE_UDS_SEED",
@@ -118,16 +129,17 @@
             '''
         },
         {
-            name:       "SECRET_PROD_PARTITION_0",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "SecretProdKey0",
-            integrity:  true,
-            bkout_type: true,
+            name:         "SECRET_PROD_PARTITION_0",
+            variant:      "Buffered",
+            secret:       true,
+            sw_digest:    false,
+            hw_digest:    true,
+            write_lock:   "Digest",
+            read_lock:    "Digest",
+            key_sel:      "SecretProdKey0",
+            integrity:    true,
+            bkout_type:   true,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_0",
@@ -143,16 +155,17 @@
             '''
         },
         {
-            name:       "SECRET_PROD_PARTITION_1",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "SecretProdKey1",
-            integrity:  true,
-            bkout_type: true,
+            name:         "SECRET_PROD_PARTITION_1",
+            variant:      "Buffered",
+            secret:       true,
+            sw_digest:    false,
+            hw_digest:    true,
+            write_lock:   "Digest",
+            read_lock:    "Digest",
+            key_sel:      "SecretProdKey1",
+            integrity:    true,
+            bkout_type:   true,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_1",
@@ -168,16 +181,17 @@
             '''
         },
         {
-            name:       "SECRET_PROD_PARTITION_2",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "SecretProdKey2",
-            integrity:  true,
-            bkout_type: true,
+            name:         "SECRET_PROD_PARTITION_2",
+            variant:      "Buffered",
+            secret:       true,
+            sw_digest:    false,
+            hw_digest:    true,
+            write_lock:   "Digest",
+            read_lock:    "Digest",
+            key_sel:      "SecretProdKey2",
+            integrity:    true,
+            bkout_type:   true,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_2",
@@ -193,16 +207,17 @@
             '''
         },
         {
-            name:       "SECRET_PROD_PARTITION_3",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "SecretProdKey3",
-            integrity:  true,
-            bkout_type: true,
+            name:         "SECRET_PROD_PARTITION_3",
+            variant:      "Buffered",
+            secret:       true,
+            sw_digest:    false,
+            hw_digest:    true,
+            write_lock:   "Digest",
+            read_lock:    "Digest",
+            key_sel:      "SecretProdKey3",
+            integrity:    true,
+            bkout_type:   true,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_3",
@@ -218,17 +233,18 @@
             '''
         },
         {
-            name:       "SW_MANUF_PARTITION",
-            variant:    "Unbuffered",
-            absorb:     true,
-            secret:     false,
-            sw_digest:  true,
-            hw_digest:  false,
-            write_lock: "Digest",
-            read_lock:  "CSR",
-            key_sel:    "NoKey",
-            integrity:  true,
-            bkout_type: false,
+            name:         "SW_MANUF_PARTITION",
+            variant:      "Unbuffered",
+            absorb:       true,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStDev",
             items: [
                 {
                     name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
@@ -263,11 +279,67 @@
                     '''
                 },
                 {
-                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS",
-                    size: "512",
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0",
+                    size: "48",
                     desc: '''
                     There are 8 different debug levels in production state.
-                    Thus, we need one 512-bit location for hash of each of public keys.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_1",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_2",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_3",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_4",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_5",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_6",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    '''
+                },
+                {
+                    name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_7",
+                    size: "48",
+                    desc: '''
+                    There are 8 different debug levels in production state.
+                    Thus, we need eight 384-bit locations for the hash of each of public key.
                     '''
                 },
             ],
@@ -275,16 +347,17 @@
             '''
         },
         {
-            name:       "SECRET_LC_TRANSITION_PARTITION",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "SecretLifeCycleTransitionKey",
-            integrity:  true,
-            bkout_type: false,
+            name:         "SECRET_LC_TRANSITION_PARTITION",
+            variant:      "Buffered",
+            secret:       true,
+            sw_digest:    false,
+            hw_digest:    true,
+            write_lock:   "Digest",
+            read_lock:    "Digest",
+            key_sel:      "SecretLifeCycleTransitionKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStTestUnlocked0",
             items: [
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_0",
@@ -355,19 +428,20 @@
             '''
         },
         {
-            name:       "SVN_PARTITION",
-            variant:    "Unbuffered",
-            absorb:     false,
-            secret:     false,
-            sw_digest:  false,
-            hw_digest:  false,
-            write_lock: "None",
-            read_lock:  "CSR",
-            key_sel:    "NoKey",
+            name:         "SVN_PARTITION",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    false,
+            hw_digest:    false,
+            write_lock:   "None",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
             // This is a strike counter, hence we need to disable ECC integrity for this to work.
             // Integrity is handled at a higher level by SW as described below.
-            integrity:  false,
-            bkout_type: false,
+            integrity:    false,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "CPTRA_CORE_FMC_KEY_MANIFEST_SVN",
@@ -402,17 +476,18 @@
             '''
         },
         {
-            name:       "VENDOR_TEST_PARTITION",
-            variant:    "Unbuffered",
-            size:       "64", // in bytes
-            secret:     false,
-            sw_digest:  true,
-            hw_digest:  false,
-            write_lock: "Digest",
-            read_lock:  "CSR",
-            key_sel:    "NoKey",
-            integrity:  false, // Do not use integrity (ECC) on this partition.
-            bkout_type: false, // Do not generate a breakout type for this partition.
+            name:         "VENDOR_TEST_PARTITION",
+            variant:      "Unbuffered",
+            size:         "64", // in bytes
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    false, // Do not use integrity (ECC) on this partition.
+            bkout_type:   false, // Do not generate a breakout type for this partition.
+            lc_phase:     "LcStProd",
             items: [
                 {
                     name: "VENDOR_TEST",
@@ -431,16 +506,17 @@
 #############################################################
 % if num_vendor_pk_fuses > 0:
         {
-            name:       "VENDOR_HASHES_MANUF_PARTITION",
-            variant:    "Unbuffered",
-            secret:     false,
-            sw_digest:  true,
-            hw_digest:  false,
-            write_lock: "Digest",
-            read_lock:  "CSR",
-            key_sel:    "NoKey",
-            integrity:  false, // Do not use integrity (ECC) on this partition.
-            bkout_type: false, // Do not generate a breakout type for this partition.
+            name:         "VENDOR_HASHES_MANUF_PARTITION",
+            variant:      "Unbuffered",
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    false, // Do not use integrity (ECC) on this partition.
+            bkout_type:   false, // Do not generate a breakout type for this partition.
+            lc_phase:     "LcStDev",
             items: [
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_0",
@@ -461,16 +537,17 @@
             '''
         },
         {
-            name:       "VENDOR_HASHES_PROD_PARTITION",
-            variant:    "Unbuffered",
-            secret:     false,
-            sw_digest:  true,
-            hw_digest:  false,
-            write_lock: "Digest",
-            read_lock:  "CSR",
-            key_sel:    "NoKey",
-            integrity:  false, // Do not use integrity (ECC) on this partition.
-            bkout_type: false, // Do not generate a breakout type for this partition.
+            name:         "VENDOR_HASHES_PROD_PARTITION",
+            variant:      "Unbuffered",
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    false, // Do not use integrity (ECC) on this partition.
+            bkout_type:   false, // Do not generate a breakout type for this partition.
+            lc_phase:     "LcStProd",
             items: [    
     % for i in range(1, num_vendor_pk_fuses):               
                 {
@@ -501,16 +578,17 @@
             '''
         },
         {
-            name:       "VENDOR_REVOCATIONS_PROD_PARTITION",
-            variant:    "Unbuffered",
-            secret:     false,
-            sw_digest:  true,
-            hw_digest:  false,
-            write_lock: "Digest",
-            read_lock:  "CSR",
-            key_sel:    "NoKey",
-            integrity:  false, // Do not use integrity (ECC) on this partition.
-            bkout_type: false, // Do not generate a breakout type for this partition.
+            name:         "VENDOR_REVOCATIONS_PROD_PARTITION",
+            variant:      "Unbuffered",
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    false, // Do not use integrity (ECC) on this partition.
+            bkout_type:   false, // Do not generate a breakout type for this partition.
+            lc_phase:     "LcStProd",
             items: [
     % for i in range(num_vendor_pk_fuses):  
                 {
@@ -542,16 +620,17 @@
 % endif
 % if num_vendor_secret_fuses > 0:
         {
-            name:       "VENDOR_SECRET_PROD_PARTITION",
-            variant:    "Buffered",
-            secret:     true,
-            sw_digest:  false,
-            hw_digest:  true,
-            write_lock: "Digest",
-            read_lock:  "Digest",
-            key_sel:    "VendorSecretProdKey",
-            integrity:  true,
-            bkout_type: true,
+            name:         "VENDOR_SECRET_PROD_PARTITION",
+            variant:      "Buffered",
+            secret:       true,
+            sw_digest:    false,
+            hw_digest:    true,
+            write_lock:   "Digest",
+            read_lock:    "Digest",
+            key_sel:      "VendorSecretProdKey",
+            integrity:    true,
+            bkout_type:   true,
+            lc_phase:     "LcStProd",
             items: [
     % for i in range(num_vendor_secret_fuses):
                 {
@@ -569,17 +648,18 @@
 % endif
 % if num_vendor_non_secret_fuses > 0:
         {
-            name:       "VENDOR_NON_SECRET_PROD_PARTITION",
-            variant:    "Unbuffered",
-            absorb:     true,
-            secret:     false,
-            sw_digest:  true,
-            hw_digest:  false,
-            write_lock: "Digest",
-            read_lock:  "CSR",
-            key_sel:    "NoKey",
-            integrity:  true,
-            bkout_type: false,
+            name:         "VENDOR_NON_SECRET_PROD_PARTITION",
+            variant:      "Unbuffered",
+            absorb:       true,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
             items: [
     % for i in range(num_vendor_non_secret_fuses):
                {
@@ -598,16 +678,17 @@
 ## End vendor-specific fuses
 #############################################################      
         {
-            name:       "LIFE_CYCLE",
-            variant:    "LifeCycle",
-            secret:     false,
-            sw_digest:  false,
-            hw_digest:  false,
-            write_lock: "None",
-            read_lock:  "None",
-            key_sel:    "NoKey",
-            integrity:  true,
-            bkout_type: false,
+            name:         "LIFE_CYCLE",
+            variant:      "LifeCycle",
+            secret:       false,
+            sw_digest:    false,
+            hw_digest:    false,
+            write_lock:   "None",
+            read_lock:    "None",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStRaw",
             items: [
                 // The life cycle transition count is specified
                 // first such that any programming attempt of the life cycle

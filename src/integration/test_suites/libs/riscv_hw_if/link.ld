@@ -23,21 +23,17 @@ SECTIONS {
   . = 0x50000000;
   .dccm : { *(.dccm) }
   _dccm_end = .;
+  .data : { *(.*data) *(.rodata*) *(.srodata*) }
+  _data_end = .;
+  .bss : { *(.bss) *(.sbss) }
+  _bss_end = .;
+
+  STACK = ALIGN(16) + 0x1000;
 
   . = 0x80000000;
   .text   : { *(.text*) }
   _text_end = .;
 
-  . = 0x21C00000;
-  .data : { *(.*data) *(.rodata*) *(.srodata*) *(.sbss) }
-  _data_end = .;
-
-  . = 0x21C10000;
-  .bss : { *(.bss) }
-  _bss_end = .;
-
-  STACK = ALIGN(16) + 0x1000;
-  
-  . = 0x21000410;
+  . = 0x21000414;
   .data.io : { *(.data.io) }
 }
