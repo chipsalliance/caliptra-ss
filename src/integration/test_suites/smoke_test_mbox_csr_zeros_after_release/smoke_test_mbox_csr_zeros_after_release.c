@@ -42,11 +42,10 @@ void main (void) {
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;
     uint32_t mbox_num = decode_single_valid_mbox();
-    
+
     ////////////////////////////////////
     // Mailbox command test
     //
-
     VPRINTF(LOW, "=================\nMCU MBOX%x CSR Testing\n=================\n\n", mbox_num)
 
     // MBOX: Confim MCU already has lock out of reset

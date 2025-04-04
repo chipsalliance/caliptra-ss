@@ -90,7 +90,6 @@ bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count)
 void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num);
 void write_read_check(uintptr_t rdptr, uint32_t data);
 uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t end_address);
-
 void mcu_mbox_clear_execute(uint32_t mbox_num);
 
 
