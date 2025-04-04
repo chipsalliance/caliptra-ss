@@ -14,12 +14,12 @@
 #
 
 PLAYBOOK_RANDOM_SEED ?= $(shell date +%s)
-BUILD_CFLAGS ?= 
+BUILD_CFLAGS ?=
 TEST_CFLAGS = -g -O3 -DMY_RANDOM_SEED=$(PLAYBOOK_RANDOM_SEED) $(BUILD_CFLAGS)
 VERILATOR = verilator
 GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
-CSS_CLK_BUILD_FREQ ?= 1000
+CALIPTRA_SS_CLK_FREQ ?= 1000
 
 # Ensure that RISC-V toolchain is installed
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
@@ -31,7 +31,7 @@ $(info rv_gcc_version is $(rv_gcc_version))
 
 ifeq "12.2.0" "$(word 1, $(sort 12.2.0 $(rv_gcc_version)))"
 # ABI = -mabi=ilp32 -march=rv32imc_zicsr_zifencei_zba_zbb_zbc_zbs
-ABI = -mabi=ilp32 -march=rv32imc_zicsr_zifencei --verbose 
+ABI = -mabi=ilp32 -march=rv32imc_zicsr_zifencei --verbose
 else
 ABI = -mabi=ilp32 -march=rv32imc
 endif
@@ -88,6 +88,7 @@ TEST_GEN_FILES := $(CALIPTRA_SS_ROOT)/src/fuse_ctrl/data/otp-img.2048.vmem \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py \
+                  $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/tb/vectors/SHA*.rsp \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex
@@ -221,6 +222,9 @@ CFLAGS += $(TB_DPI_INCS)
 
 ############# VCS Compile options #############
 VCS_COMP_OPTS += -debug_access+all
+VCS_COMP_OPTS += +define+CLP_ASSERT_ON
+VCS_COMP_OPTS += +define+AVERY_ASSERT_ON
+VCS_COMP_OPTS += +define+AVERY_MONITOR_ON
 # Used in caliptra_top_sva to find signals
 VCS_COMP_OPTS += +define+CPTRA_TB_TOP_NAME=$(DUT)
 VCS_COMP_OPTS += +define+CPTRA_TOP_PATH=$(DUT).caliptra_ss_dut.caliptra_top_dut
@@ -316,12 +320,12 @@ vcs: cptra_program.hex mcu_program.hex vcs-build
 ifneq (,$(wildcard $(CALIPTRA_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME)))
 cptra_program.hex:
 	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=$(CALIPTRA_TESTNAME) program.hex
-else ifneq (,$(wildcard $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME))) 
+else ifneq (,$(wildcard $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME)))
 cptra_program.hex:
 	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME) TESTNAME=$(CALIPTRA_TESTNAME) program.hex
-else 
+else
 cptra_program.hex:
-	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$(TEST_DIR) TESTNAME=$(CALIPTRA_TESTNAME) program.hex	
+	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$(TEST_DIR) TESTNAME=$(CALIPTRA_TESTNAME) program.hex
 endif
 
 ############ MCU TEST build ###############################
@@ -358,17 +362,20 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
 	#-$(GCC_PREFIX)-objcopy --dump-section .dccm=dccm_section.bin $(TESTNAME).exe
 	#-$(GCC_PREFIX)-objcopy -O verilog -I binary dccm_section.bin mcu_dccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -j .dccm -j .data -j .rodata -j .srodata -j .bss -j .sbss \
+	-$(GCC_PREFIX)-objcopy -O verilog -j .dccm -j .data -j .bss -j .sbss \
 			      --change-section-lma       .dccm-0x50000000 \
 			      --change-section-lma       .data-0x50000000 \
-			      --change-section-lma     .rodata-0x50000000 \
-			      --change-section-lma    .srodata-0x50000000 \
 			      --change-section-lma        .bss-0x50000000 \
 			      --change-section-lma       .sbss-0x50000000 \
 			      --pad-to 0x4000 \
 			      --no-change-warnings \
 			      $(TESTNAME).exe mcu_dccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -R .dccm -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000  --change-section-lma .text-0x80000000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -R .dccm -R .data -R .bss -R .sbss -R .data.io -R .eh_frame \
+			      --change-section-lma       .text-0x80000000 \
+			      --change-section-lma     .rodata-0x80000000 \
+			      --change-section-lma    .srodata-0x80000000 \
+			      --pad-to 0x40000 \
+			      --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0xC000  --no-change-warnings $(TESTNAME).exe mcu_program.bin
 	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21C00000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
@@ -425,7 +432,7 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 
 $(BUILD_DIR)/caliptra_ss_clk_freq.h: $(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh
-	$(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(CSS_CLK_BUILD_FREQ)
+	$(CALIPTRA_SS_ROOT)/tools/scripts/gen_clk_freq_file.sh $(BUILD_DIR) $(CALIPTRA_SS_CLK_FREQ)
 
 endif
 

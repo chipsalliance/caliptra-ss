@@ -52,9 +52,9 @@ aaxi_device_class slave[AAXI_INTC_SLAVE_CNT];
 
 // device interface
 // aaxi_pll_intf		ports_intf		(core_clk, rst_l, CACTIVE_PLL, CSYSREQ, CSYSACK_PLL);
-aaxi_interconnect_intf	ports			(core_clk, rst_l, CACTIVE, CSYSREQ, CSYSACK);
-aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))mintf_arr[AAXI_INTC_MASTER_CNT-1:0]	(core_clk, rst_l, CACTIVE, CSYSREQ, CSYSACK);
-aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))sintf_arr[AAXI_INTC_SLAVE_CNT-1:0]	(core_clk, rst_l, CACTIVE, CSYSREQ, CSYSACK);
+aaxi_interconnect_intf	ports			(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
+aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))mintf_arr[AAXI_INTC_MASTER_CNT-1:0]	(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
+aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))sintf_arr[AAXI_INTC_SLAVE_CNT-1:0]	(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
 
 /* When all CACTIVE signal of ports, mintf_arr[] and sintf_arr[] 
    are different from each other(some ports whose CACTIVE was 1,
@@ -76,6 +76,10 @@ generate
 	    intc.master_ports[i].vers= master[i].vers;
 	    intc.master_ports[i].ports= mintf_arr[i];
 	end
+    assign mintf_arr[i].CACTIVE_m = 1'b0;
+    assign mintf_arr[i].CACTIVE_s = 1'b0;
+    assign mintf_arr[i].CSYSACK_m = 1'b0;
+    assign mintf_arr[i].CSYSACK_s = 1'b0;
     end
 
     for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin: slave_loop
@@ -85,6 +89,10 @@ generate
 	    intc.slave_ports[i].vers= slave[i].vers;
 	    intc.slave_ports[i].ports= sintf_arr[i];
 	end
+    assign sintf_arr[i].CACTIVE_m = 1'b0;
+    assign sintf_arr[i].CACTIVE_s = 1'b0;
+    assign sintf_arr[i].CSYSACK_m = 1'b0;
+    assign sintf_arr[i].CSYSACK_s = 1'b0;
     end
 endgenerate 
 
@@ -115,6 +123,10 @@ generate
 endgenerate 
 
 // instantiates monitor/protocol checker0 for default slave interface
+assign ports.default_slave_intf.CACTIVE_m = 1'b0;
+assign ports.default_slave_intf.CACTIVE_s = 1'b0;
+assign ports.default_slave_intf.CSYSACK_m = 1'b0;
+assign ports.default_slave_intf.CSYSACK_s = 1'b0;
 aaxi_monitor_wrapper def_monitor(ports.default_slave_intf);
 defparam def_monitor.VER= "AXI4";
 defparam def_monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
@@ -220,10 +232,13 @@ initial begin
         slave[3].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[3].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[3].cfg_info.base_address[0] = 64'h3000_0000;
-        slave[3].cfg_info.limit_address[0] = 64'h3FFF_FFFF;
-        slave[3].cfg_info.base_address[1]  = 64'h0003_0000;
-        slave[3].cfg_info.limit_address[1] = 64'h0003_FFFF;
+        slave[3].cfg_info.base_address[0] = 64'(`SOC_MBOX_CSR_BASE_ADDR);
+        slave[3].cfg_info.limit_address[0] = 64'(`SOC_MBOX_CSR_BASE_ADDR) + 64'h2_0000; // FIXME hardcoded to match the soc_ifc limit
+        slave[3].cfg_info.default_fifo_depth = 4096; // Reasonable cap at max AXI burst lengh of 4KiB
+        slave[3].cfg_info.fifo_address[0] = 64'(`SOC_MBOX_CSR_MBOX_DATAIN);
+        slave[3].cfg_info.fifo_limit[0] = 64'(`SOC_MBOX_CSR_MBOX_DATAOUT);
+        slave[3].cfg_info.fifo_address[1] = 64'(`SOC_SHA512_ACC_CSR_DATAIN);
+        slave[3].cfg_info.fifo_limit[1] = 64'(`SOC_SHA512_ACC_CSR_DATAIN);
         slave[3].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         slave[3].cfg_info.total_outstanding_depth = 4;
         slave[3].cfg_info.id_outstanding_depth = 4;

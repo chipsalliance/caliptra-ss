@@ -1,3 +1,4 @@
+
 #********************************************************************************
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020 Western Digital Corporation or its affiliates.
@@ -15,30 +16,29 @@
 # limitations under the License.
 #********************************************************************************
 
-OUTPUT_ARCH("riscv")
+OUTPUT_ARCH( "riscv" )
 ENTRY(_start)
+
 SECTIONS {
   
   . = 0x50000000;
   .dccm : { *(.dccm) }
-  __dccm_end = .;
-  
-  .data : { *(.data) *(.data.*) *(.rodata) *(.rodata.*) *(.srodata) *(.srodata.*) }
-  __data_end = .;
-  
-  .bss : { *(.bss) *(.sbss) *(.bss.*) *(.sbss.*) }
-  __bss_end = .;
-  
-  STACK = ALIGN(16) + 0x1000;
-  ASSERT((STACK < 0x50004000), "ERROR: Stack overflows the DCCM")
-  
-  . = 0x80000000;
-  .text : { *(.text) *(.text.*) }
-  __text_end = .;
+  _dccm_end = .;
+  .data : { *(.data) *(.data.*) }
+  _data_end = .;
+  .bss : { *(.bss) *(.sbss) }
+  _bss_end = .;
 
-  
-  ASSERT((__text_end < 0x80010000), "ERROR: Program overflows ROM")
-  
+  STACK = ALIGN(16) + 0x1000;
+  ASSERT( STACK < 0x50004000, "ERROR: STACK allocation exceeds DCCM size of 16KiB")
+
+  . = 0x80000000;
+  .text   : { *(.text*) }
+  _text_end = .;
+  .rodata : { *(.rodata*) *(.srodata*) }
+  _rodata_end = .;
+  ASSERT( _rodata_end < 0x80040000, "ERROR: ROM size exceeds 256KiB")
+
   . = 0x21000414;
   .data.io : { *(.data.io) }
 }
