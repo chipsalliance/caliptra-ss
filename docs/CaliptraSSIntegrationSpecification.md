@@ -383,7 +383,7 @@ The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsys
      - The reset signal must be synchronized to the 200 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
-     - It is **illegal** to only toggle ```cptra_ss_reset_n``` until both Caliptra and MCU have received at least on FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
+     - It is **illegal** to only toggle ```cptra_ss_reset_n``` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
 
 ### Power Good Signal 
 
@@ -1397,8 +1397,7 @@ The following table defines the order in which resets can get asserted. A "\>\>"
 ### MCU FW Update Flows 
 The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). The [Caliptra SS HW Spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mcu-hitless-update-handshake) spec gives details about the registers used in theese flow. This section is meant to elaborate on how to use the given HW to meet the architectual spec.
 
-Registers relavent to these flow:
-
+Registers relevant to these flows:
 - Caliptra
    - ```SS_GENERIC_FW_EXEC_CTRL[0].go[2]```
 - MCI 
@@ -1441,8 +1440,7 @@ Subsequenc MCU FW Update after FW Boot Update.
 
 Caliptra SS reset toggle without powergood toggle. 
 
-**IMORTANT** - Can only happen after both Caliptra Core and MCU have received at lease one FW update. Otherwise only Cold Reset is allowed.
-
+**IMPORTANT** - Can only happen after both Caliptra Core and MCU have received at least one FW update. Otherwise only Cold Reset is allowed.
 1. MCU ROM comes out of reset and sees ```WARM_RESET```. It cannot jump to MCU SRAM since it is locked and needs Caliptra to unlock.
 2. MCU ROM brings Caliptra out of reset
 3. Caliptra sees Warm Reset and starts executing from its ICCM (SRAM image)

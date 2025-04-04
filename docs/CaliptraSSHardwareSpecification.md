@@ -1271,8 +1271,7 @@ MCU SRAM is accessible via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) 
 
 The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). The [Caliptra SS Integration Spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSIntegrationSpecification.md#mci) contains all MCI warm reset and hitless update flows and restrictions. This section is focused on the HW registers both Caliptra and MCU will used to complete the flow. 
 
-MCI tracks three different ```RESET_RESION``` in its register bank:
-
+MCI tracks three different ```RESET_REASON``` in its register bank:
 | Reset type    | Description     |
 |------------------|------------------|
 |```WARM_RESET```| MCI reset cycle. MCU SRAM has FW image but need Caliptra interaction before jumping to the FW image.|
