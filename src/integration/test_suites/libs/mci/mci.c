@@ -13,6 +13,7 @@
 #include "mci.h"
 #include "riscv_hw_if.h"
 #include "caliptra_ss_lib.h"
+#include "printf.h"
 
 #define ADDRESS_BITS_FOR_INDEXING 12   // Using 12 bits gives us 4096 possible indices
 #define BITMAP_SIZE_WORDS ((1 << ADDRESS_BITS_FOR_INDEXING) / 32)
@@ -505,15 +506,6 @@ const mci_register_info_t* get_register_info(mci_register_group_t group, int ind
 }
 
 /**
- * Function to initialize registers with default values
- */
-void initialize_registers(void) {
-    printf("Initializing registers to default values\n");
-    
-    /* Add specific initialization logic here */
-}
-
-/**
  * Function to find a register by address (across all groups)
  * 
  * @param address Register address
@@ -715,7 +707,7 @@ void write_random_to_register_group_and_track(mci_register_group_t group, mci_re
                 // Generate a unique value for each register
                 uint32_t rand_value = xorshift32() & i;
             
-                printf("  Writing 0x%08x to %s (0x%08x)\n", rand_value, reg->name, reg->address);
+                VPRINTF(MEDIUM, "  Writing 0x%08x to %s (0x%08x)\n", rand_value, reg->name, reg->address);
                 mci_reg_write(reg->address, rand_value);
                 
                 /* Get mask for this register */
@@ -726,7 +718,7 @@ void write_random_to_register_group_and_track(mci_register_group_t group, mci_re
                     printf("  WARNING: Could not store expected data for %s\n", reg->name);
                 }
             } else {
-                printf("  Skipping excluded register %s (0x%08x)\n", reg->name, reg->address);
+                VPRINTF(MEDIUM, "  Skipping excluded register %s (0x%08x)\n", reg->name, reg->address);
             }
         }
     }
@@ -752,7 +744,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
         if (reg) {
             // Skip excluded registers with our efficient collision-aware check
             if (is_register_excluded(reg->address)) {
-                printf("  Skipping excluded register %s (0x%08x)\n", reg->name, reg->address);
+                VPRINTF(MEDIUM, "  Skipping excluded register %s (0x%08x)\n", reg->name, reg->address);
                 continue;
             }
             
@@ -764,8 +756,8 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
             if (get_reg_exp_data(dict, reg->address, &exp_data) == 0) {
                 // Compare and report
                 if (read_data == exp_data) {
-                    //printf("  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
-                    //       reg->name, reg->address, read_data, exp_data);
+                    VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
+                           reg->name, reg->address, read_data, exp_data);
                 } else {
                     printf("  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
                            reg->name, reg->address, read_data, exp_data);
