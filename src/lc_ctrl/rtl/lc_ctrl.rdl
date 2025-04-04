@@ -15,7 +15,7 @@
 
 // Life-Cycle Controller Registers
 
-addrmap caliptra_lc_ctrl {
+addrmap lc_ctrl {
     reg {
         field {
             sw = w;
