@@ -28,6 +28,16 @@ module caliptra_package_axi_top (
     input wire core_clk,
     input wire i3c_clk,
 
+    input wire axi_i3c_scl_t,
+    input wire axi_i3c_scl_o,
+    input wire axi_i3c_scl_pullup_en,
+    input wire axi_i3c_sda_t,
+    input wire axi_i3c_sda_o,
+    input wire axi_i3c_sda_pullup_en,
+    // I3C signals back to AXI I3C
+    output wire SCL,
+    output wire SDA,
+
     // Caliptra AXI Interface
     input  wire [31:0] S_AXI_CALIPTRA_AWADDR,
     input  wire [1:0] S_AXI_CALIPTRA_AWBURST,
@@ -474,22 +484,32 @@ module caliptra_package_axi_top (
     output	wire                      S_AXI_WRAPPER_RVALID,
     input	wire                      S_AXI_WRAPPER_RREADY,
     output	wire [31:0]               S_AXI_WRAPPER_RDATA,
-    output	wire [1:0]                S_AXI_WRAPPER_RRESP,
+    output	wire [1:0]                S_AXI_WRAPPER_RRESP
 
     // I3C
-    output SDA_UP,
-    output SDA_PUSH,
-    output SDA_PULL,
-    input  SDA,
-    output SCL_UP,
-    output SCL_PUSH,
-    output SCL_PULL,
-    input  SCL
+    //output SDA_UP,
+    //output SDA_PUSH,
+    //output SDA_PULL,
+    //input  SDA,
+    //output SCL_UP,
+    //output SCL_PUSH,
+    //output SCL_PULL,
+    //input  SCL
     );
 
 caliptra_wrapper_top cptra_wrapper (
     .core_clk(core_clk),
     .i3c_clk(i3c_clk),
+
+
+    .axi_i3c_scl_t(axi_i3c_scl_t),
+    .axi_i3c_scl_o(axi_i3c_scl_o),
+    .axi_i3c_scl_pullup_en(axi_i3c_scl_pullup_en),
+    .axi_i3c_sda_t(axi_i3c_sda_t),
+    .axi_i3c_sda_o(axi_i3c_sda_o),
+    .axi_i3c_sda_pullup_en(axi_i3c_sda_pullup_en),
+    .SCL(SCL),
+    .SDA(SDA),
 
     // Caliptra AXI Interface
     .S_AXI_CALIPTRA_AWADDR(S_AXI_CALIPTRA_AWADDR),
@@ -940,15 +960,15 @@ caliptra_wrapper_top cptra_wrapper (
     .S_AXI_WRAPPER_RVALID(S_AXI_WRAPPER_RVALID),
     .S_AXI_WRAPPER_RREADY(S_AXI_WRAPPER_RREADY),
     .S_AXI_WRAPPER_RDATA(S_AXI_WRAPPER_RDATA),
-    .S_AXI_WRAPPER_RRESP(S_AXI_WRAPPER_RRESP),
+    .S_AXI_WRAPPER_RRESP(S_AXI_WRAPPER_RRESP)
 
-    .SDA_UP(SDA_UP),
-    .SDA_PUSH(SDA_PUSH),
-    .SDA_PULL(SDA_PULL),
-    .SDA(SDA),
-    .SCL_UP(SCL_UP),
-    .SCL_PUSH(SCL_PUSH),
-    .SCL_PULL(SCL_PULL),
-    .SCL(SCL)
+    //.SDA_UP(SDA_UP),
+    //.SDA_PUSH(SDA_PUSH),
+    //.SDA_PULL(SDA_PULL),
+    //.SDA(SDA),
+    //.SCL_UP(SCL_UP),
+    //.SCL_PUSH(SCL_PUSH),
+    //.SCL_PULL(SCL_PULL),
+    //.SCL(SCL)
 );
 endmodule

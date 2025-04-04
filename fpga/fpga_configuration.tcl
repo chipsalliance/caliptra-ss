@@ -10,7 +10,7 @@ set BOARD VCK190
 set DISABLE_ECC FALSE
 set ENABLE_ADB TRUE
 set ITRNG TRUE
-set FAST_I3C FALSE
+set FAST_I3C TRUE
 
 set I3C_OUTSIDE FALSE
 set APB FALSE
@@ -123,7 +123,7 @@ close $xdc_fd
 # Add AXI Interconnect
 create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 axi_interconnect_0
 set_property -dict [list \
-  CONFIG.NUM_MI {10} \
+  CONFIG.NUM_MI {11} \
   CONFIG.NUM_SI {5} \
   CONFIG.NUM_CLKS {2} \
 ] [get_bd_cells axi_interconnect_0]
@@ -147,7 +147,16 @@ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 cptra_rom_bram_ctr
 set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells cptra_rom_bram_ctrl_1]
 
 # Create AXI I3C to act as external I3C
-#create_bd_cell -type ip -vlnv xilinx.com:ip:axi_i3c:1.0 axi_i3c_0
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_i3c:1.0 axi_i3c_0
+set_property -dict [list \
+  CONFIG.ENABLE_PEC {1} \
+  CONFIG.HJ_CAPABLE {1} \
+  CONFIG.IBI_CAPABLE {1} \
+  #CONFIG.SCL_CLK_FREQ {12500} \
+] [get_bd_cells axi_i3c_0]
+# Create CDC for AXI I3C
+create_bd_cell -type ip -vlnv xilinx.com:ip:xpm_cdc_gen:1.0 xpm_cdc_gen_0
+set_property CONFIG.CDC_TYPE {xpm_cdc_sync_rst} [get_bd_cells xpm_cdc_gen_0]
 
 # Create reset block
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset_0
@@ -215,6 +224,9 @@ connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/M08_AXI] [get_bd_intf_p
 connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/mcu_rom_backdoor] [get_bd_intf_pins cptra_rom_bram_ctrl_1/BRAM_PORTA]
 # MCU RAM
 connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M09_AXI] [get_bd_intf_pins mcu_imem_bram_ctrl_1/S_AXI]
+# AXI I3C
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M10_AXI] [get_bd_intf_pins axi_i3c_0/S_AXI]
+
 
 # Create reset connections
 connect_bd_net [get_bd_pins $ps_pl_resetn] [get_bd_pins proc_sys_reset_0/ext_reset_in]
@@ -241,35 +253,53 @@ if {$FAST_I3C} {
   connect_bd_net \
     [get_bd_pins ps_0/pl1_ref_clk] \
     [get_bd_pins axi_interconnect_0/aclk1] \
-    [get_bd_pins caliptra_package_top_0/i3c_clk]
-  #  [get_bd_pins axi_i3c_0/s_axi_aclk]
+    [get_bd_pins caliptra_package_top_0/i3c_clk] \
+    [get_bd_pins axi_i3c_0/s_axi_aclk] \
+    [get_bd_pins xpm_cdc_gen_0/dest_clk]
 } else {
   # Use regular clock for i3c to avoid timing problems
   connect_bd_net \
     [get_bd_pins $ps_pl_clk] \
     [get_bd_pins axi_interconnect_0/aclk1] \
-    [get_bd_pins caliptra_package_top_0/i3c_clk]
-  #  [get_bd_pins axi_i3c_0/s_axi_aclk]
+    [get_bd_pins caliptra_package_top_0/i3c_clk] \
+    [get_bd_pins axi_i3c_0/s_axi_aclk] \
+    [get_bd_pins xpm_cdc_gen_0/dest_clk]
 }
 
-# Connections to I3C driver board
-create_bd_port -dir O -type data SDA_UP
-create_bd_port -dir O -type data SDA_PUSH
-create_bd_port -dir O -type data SDA_PULL
-create_bd_port -dir I -type data SDA
-connect_bd_net [get_bd_pins /caliptra_package_top_0/SDA_UP]   [get_bd_ports SDA_UP]
-connect_bd_net [get_bd_pins /caliptra_package_top_0/SDA_PUSH] [get_bd_ports SDA_PUSH]
-connect_bd_net [get_bd_pins /caliptra_package_top_0/SDA_PULL] [get_bd_ports SDA_PULL]
-connect_bd_net [get_bd_pins /caliptra_package_top_0/SDA]      [get_bd_ports SDA]
+if {FALSE} {
+  # Connections to I3C driver board
+  create_bd_port -dir O -type data SDA_UP
+  create_bd_port -dir O -type data SDA_PUSH
+  create_bd_port -dir O -type data SDA_PULL
+  create_bd_port -dir I -type data SDA
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SDA_UP]   [get_bd_ports SDA_UP]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SDA_PUSH] [get_bd_ports SDA_PUSH]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SDA_PULL] [get_bd_ports SDA_PULL]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SDA]      [get_bd_ports SDA]
 
-create_bd_port -dir O -type data SCL_UP
-create_bd_port -dir O -type data SCL_PUSH
-create_bd_port -dir O -type data SCL_PULL
-create_bd_port -dir I -type data SCL
-connect_bd_net [get_bd_pins /caliptra_package_top_0/SCL_UP]   [get_bd_ports SCL_UP]
-connect_bd_net [get_bd_pins /caliptra_package_top_0/SCL_PUSH] [get_bd_ports SCL_PUSH]
-connect_bd_net [get_bd_pins /caliptra_package_top_0/SCL_PULL] [get_bd_ports SCL_PULL]
-connect_bd_net [get_bd_pins /caliptra_package_top_0/SCL]      [get_bd_ports SCL]
+  create_bd_port -dir O -type data SCL_UP
+  create_bd_port -dir O -type data SCL_PUSH
+  create_bd_port -dir O -type data SCL_PULL
+  create_bd_port -dir I -type data SCL
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SCL_UP]   [get_bd_ports SCL_UP]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SCL_PUSH] [get_bd_ports SCL_PUSH]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SCL_PULL] [get_bd_ports SCL_PULL]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SCL]      [get_bd_ports SCL]
+} else {
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SDA]                   [get_bd_pins axi_i3c_0/sda_i]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/axi_i3c_sda_o]         [get_bd_pins axi_i3c_0/sda_o]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/axi_i3c_sda_t]         [get_bd_pins axi_i3c_0/sda_t]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/axi_i3c_sda_pullup_en] [get_bd_pins axi_i3c_0/sda_pullup_en]
+
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/SCL]                   [get_bd_pins axi_i3c_0/scl_i]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/axi_i3c_scl_o]         [get_bd_pins axi_i3c_0/scl_o]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/axi_i3c_scl_t]         [get_bd_pins axi_i3c_0/scl_t]
+  connect_bd_net [get_bd_pins /caliptra_package_top_0/axi_i3c_scl_pullup_en] [get_bd_pins axi_i3c_0/scl_pullup_en]
+
+  connect_bd_net [get_bd_pins axi_i3c_0/s_axi_aresetn] [get_bd_pins xpm_cdc_gen_0/dest_rst_out]
+  connect_bd_net [get_bd_pins xpm_cdc_gen_0/src_rst] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
+  #connect_bd_net [get_bd_pins xpm_cdc_gen_0/dest_clk] [get_bd_pins ps_0/pl1_ref_clk]
+}
 
 # Create address segments for all AXI managers
 set managers {ps_0/M_AXI_FPD caliptra_package_top_0/M_AXI_MCU_IFU caliptra_package_top_0/M_AXI_MCU_LSU caliptra_package_top_0/M_AXI_CALIPTRA caliptra_package_top_0/M_AXI_MCI}
@@ -286,6 +316,8 @@ foreach manager $managers {
   assign_bd_address -offset 0xA4030000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_I3C/reg0] -force
   assign_bd_address -offset 0xA4040000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_LCC/reg0] -force
   assign_bd_address -offset 0xA4060000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_OTP/reg0] -force
+  # AXI I3C - TODO: FIgure out size
+  assign_bd_address -offset 0xA4080000 -range 0x00001000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs axi_i3c_0/S_AXI/Reg] -force
   # Caliptra Core
   if {$APB} {
     assign_bd_address -offset 0xA4100000 -range 0x00100000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/s_apb/Reg] -force
@@ -324,10 +356,14 @@ set_property STEPS.SYNTH_DESIGN.ARGS.GATED_CLOCK_CONVERSION $GATED_CLOCK_CONVERS
 # Add DDR pin placement constraints
 add_files -fileset constrs_1 $fpgaDir/src/ddr4_constraints.xdc
 
-add_files -fileset constrs_1 $fpgaDir/src/versal_i3c_constraints.xdc
+#add_files -fileset constrs_1 $fpgaDir/src/versal_i3c_constraints.xdc
+#add_files -fileset constrs_1 $fpgaDir/debug.xdc
 
 # Consider constraint:
 # set_max_delay -from [get_clocks clk_pl_0] -to [get_clocks clk_pl_1] 25.0
+
+# TODO: Weird why this couldn't be earlier
+set_property CONFIG.SCL_CLK_FREQ {12500} [get_bd_cells axi_i3c_0]
 
 # Start build
 if {$BUILD} {

@@ -108,6 +108,12 @@ if {$ENABLE_ADB} {
   remove_files $fpgaDir/src/mldsa_stub.sv
 }
 
+# TODO: Copy aes_clk_wrapper.sv to apply workaround
+file copy [ glob $caliptrartlDir/src/aes/rtl/aes_clp_wrapper.sv ] $outputDir/aes_clk_wrapper.sv
+exec sed -i {1i `include \"kv_macros.svh\"} $outputDir/aes_clk_wrapper.sv
+remove_files [ glob $caliptrartlDir/src/aes/rtl/aes_clp_wrapper.sv ]
+add_files $outputDir/aes_clk_wrapper.sv
+
 # Mark all Verilog sources as SystemVerilog because some of them have SystemVerilog syntax.
 set_property file_type SystemVerilog [get_files *.v]
 
