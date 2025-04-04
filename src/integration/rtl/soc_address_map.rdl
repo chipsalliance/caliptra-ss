@@ -40,5 +40,4 @@ addrmap soc {
     otp_ctrl otp_ctrl @ 0x7000_0000;
 
     lc_ctrl lc_ctrl @ 0x7000_0400;
-
 };
