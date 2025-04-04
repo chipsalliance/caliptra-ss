@@ -1,5 +1,5 @@
 ---
-seed: 1
+seed: ${PLAYBOOK_RANDOM_SEED}
 testname: caliptra_ss_fuse_ctrl_test_unlocked0_prov
 pre-exec: |
   echo "Running pre_exec for [caliptra_ss_fuse_ctrl_test_unlocked0_prov]"

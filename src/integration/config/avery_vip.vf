@@ -25,6 +25,9 @@ ${AVERY_SIM}/src/avery_pkg_test.sv
 ${AVERY_AXI}/src.axi/aaxi_pkg.sv
 ${AVERY_AXI}/src.axi/aaxi_pkg_xactor.sv
 ${AVERY_AXI}/src.axi/aaxi_class_pll.sv
+${AVERY_AXI}/checker/monitor_wrapper/BP063/aaxi_monitor_wrapper.sv
+${AVERY_AXI}/src.VCS/aaxi_busmonitor.v
+${AVERY_AXI}/src.axi/aaxi_coverage_metrics.sv
 ${AVERY_AXI}/src.axi/aaxi_pkg_test.sv
 ${AVERY_AXI}/src.axi/aaxi_intf.sv
 ${AVERY_I3C}/src/ai2c_pkg.sv

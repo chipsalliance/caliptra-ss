@@ -35,8 +35,8 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 void register_accesses() {
 
-    // 0x950: CPTRA_CORE_ECC_REVOCATION_0
-    const uint32_t fuse_address = 0x950;
+    // 0x910: CPTRA_CORE_ECC_REVOCATION_0
+    const uint32_t fuse_address = 0x910;
 
     const uint32_t data = 0xdeadbeef;
     uint32_t read_data;
