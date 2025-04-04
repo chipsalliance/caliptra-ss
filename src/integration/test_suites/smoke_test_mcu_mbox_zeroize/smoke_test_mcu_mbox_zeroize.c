@@ -56,7 +56,7 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;
-    uint32_t mbox_num = 0;
+    uint32_t mbox_num = decode_single_valid_mbox();
 
     VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
     mcu_mci_boot_go();
@@ -76,56 +76,58 @@ void main (void) {
     // MBOX: clear the lock on MBOX that is there from reset
     mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
-    VPRINTF(LOW, "=================\nMCU MBOX SRAM Testing\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU MBOX%x SRAM Testing\n=================\n\n", mbox_num)
 
     // MBOX: Acquire lock
-    while((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK));
-    VPRINTF(LOW, "MCU: Mbox0 lock acquired\n");
+    while((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK));
+    VPRINTF(LOW, "MCU: Mbox%x lock acquired\n", mbox_num);
     
     // MBOX: Write DLEN
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, mbox_dlen/2);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_dlen/2);
 
     // MBOX: Write SRAM
     for (uint32_t ii = 0; ii < (mbox_dlen/2)/4; ii++) {
-        lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii), mbox_data[ii]);
+        lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_data[ii]);
     }
 
     // MBOX: Write DLEN again to simulate increasing the max dlen while lock is in place
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, mbox_dlen);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_dlen);
+    VPRINTF(LOW, "MCU: Writing DLEN: 0x%x\n", mbox_dlen);
 
     // MBOX: Write SRAM
     for (uint32_t ii = (mbox_dlen/2)/4; ii < mbox_dlen/4; ii++) {
-        lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii), mbox_data[ii]);
+        lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_data[ii]);
     }
-    VPRINTF(LOW, "MCU: Write data to Mbox0\n");
+    VPRINTF(LOW, "MCU: Write data to Mbox%x\n", mbox_num);
 
     // MBOX: check that some non-zero data has been written to beyond max_dlen/2
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(mbox_dlen/2)) == 0) {
-        VPRINTF(FATAL, "MCU: Mbox0 should have valid non-zero data written here\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(mbox_dlen/2) + MCU_MBOX_NUM_STRIDE * mbox_num) == 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x should have valid non-zero data written here\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     // MBOX: Write DLEN again to simulate decreasing the dlen while lock is in place to ensure max is retained
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, mbox_dlen/2);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_dlen/2);
+    VPRINTF(LOW, "MCU: Writing DLEN again: 0x%x\n", mbox_num, mbox_dlen/2);
 
     // MBOX: Execute
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK);
-    VPRINTF(LOW, "MCU: Mbox0 execute\n");
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK);
+    VPRINTF(LOW, "MCU: Mbox%x execute\n", mbox_num);
 
     // MBOX: Clear Execute
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0);
-    VPRINTF(LOW, "MCU: Mbox0 execute clear\n");
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0);
+    VPRINTF(LOW, "MCU: Mbox%x execute clear\n", mbox_num);
 
     // MBOX: Re-acquire lock
-    while((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK));
-    VPRINTF(LOW, "MCU: Mbox0 lock acquired\n");
+    while((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK));
+    VPRINTF(LOW, "MCU: Mbox%x lock acquired\n", mbox_num);
 
     // MBOX: check that data has been zeroed
-    VPRINTF(LOW, "MCU: Checking that MCU Mbox0 up to max dlen had been zeroed \n");
+    VPRINTF(LOW, "MCU: Checking that MCU Mbox%x up to max dlen had been zeroed \n", mbox_num);
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii)) != 0) {
-            VPRINTF(FATAL, "MCU: Mbox0 SRAM data not zeroed out at dword: %x\n", ii);
+        if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
+            VPRINTF(FATAL, "MCU: Mbox%x SRAM data not zeroed out at dword: %x\n", mbox_num, ii);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }

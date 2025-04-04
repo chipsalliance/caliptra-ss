@@ -1072,9 +1072,9 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | :---- | :---- | 
 | CSRs | 0x0 |
 | MCU Trace Buffer | 0x10000 |
-| Mailbox 0 | 0x80000 |
-| Mailbox 1 | 0x90000 |
-| MCU SRAM | 0x200000 |
+| Mailbox 0 | 0x400000|
+| Mailbox 1 | 0x800000|
+| MCU SRAM | 0xC00000 |
 
 - MCU SRAM Memory Map
 
@@ -1119,21 +1119,21 @@ The two regions have different access protection. The size of the regions is dyn
 
       To calculate the base address alignment use the following calculation:
 
-        bits \= $clog2(MCU\_SRAM\_OFFSET \+ ((MCU\_SRAM\_SIZE\_KB-1) \* 1024))
+        bits = $clog2(MCU_SRAM_OFFSET + ((MCU\_SRAM\_SIZE\_KB * 1024) - 1))
 
       MCU\_SRAM\_OFFSET can be found in the MCI’s [Top Level Memory Map](#top-level-memory-map).
 
     *Example:*
 
-        MCU\_SRAM\_OFFSET \= 0x200000 (2097152 decimal)
+        MCU_SRAM_OFFSET = 0xC00000 (12582912 decimal)
         
-        MCU\_SRAM\_SIZE\_KB \= 1024 (1MB)
+        MCU_SRAM_SIZE_KB = 512 (512KB)
         
-        bits \= $clog2(2097152 \+ ((1024-1) \* 1024))
+        bits = $clog2(2097152 + ((512 * 1024) - 1)
         
-        bits \= 22
+        bits = 24
         
-        MCI base address would need to align to 0x20\_0000
+        MCI base address would need to align to 0x80_0000
 
   - **Reset Synchronization**
 

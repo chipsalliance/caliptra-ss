@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+#include <stdint.h>
+
+const uint32_t tokens[21][4] = {
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {3914953239, 2517376392, 3759608187, 1124178942}, // CPTRA_SS_TEST_UNLOCK_TOKEN_0
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {26694616, 3515641829, 1609117241, 3909368418}, // CPTRA_SS_TEST_UNLOCK_TOKEN_1
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {1554336376, 2379705728, 3808680106, 4075976105}, // CPTRA_SS_TEST_UNLOCK_TOKEN_2
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {136820198, 3813197318, 2145797616, 136091512}, // CPTRA_SS_TEST_UNLOCK_TOKEN_3
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {954404354, 3259671841, 3136424219, 2605462867}, // CPTRA_SS_TEST_UNLOCK_TOKEN_4
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {398259316, 1360521167, 3261186942, 3264960605}, // CPTRA_SS_TEST_UNLOCK_TOKEN_5
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {61892581, 200717996, 2904283566, 351893318}, // CPTRA_SS_TEST_UNLOCK_TOKEN_6
+    {1623814552, 1914408932, 3340816731, 388056785}, // CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
+    {1957095437, 4157734709, 3024194669, 1206912800}, // CPTRA_SS_MANUF_TO_PROD_TOKEN
+    {1530968703, 3855078099, 1836753557, 4198831886}, // CPTRA_SS_PROD_TO_PROD_END_TOKEN
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {0x00000000, 0x00000000, 0x00000000, 0x00000000}  // empty
+};

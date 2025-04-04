@@ -1,6 +1,5 @@
-+incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/testbench
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem_if.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/testbench/rom.sv
-${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem.sv

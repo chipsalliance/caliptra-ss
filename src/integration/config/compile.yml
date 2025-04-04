@@ -38,6 +38,9 @@ targets:
       - $AVERY_AXI/src.axi/aaxi_pkg.sv
       - $AVERY_AXI/src.axi/aaxi_pkg_xactor.sv
       - $AVERY_AXI/src.axi/aaxi_class_pll.sv
+      - $AVERY_AXI/checker/monitor_wrapper/BP063/aaxi_monitor_wrapper.sv
+      - $AVERY_AXI/src.VCS/aaxi_busmonitor.v
+      - $AVERY_AXI/src.axi/aaxi_coverage_metrics.sv 
       - $AVERY_AXI/src.axi/aaxi_pkg_test.sv
       - $AVERY_AXI/src.axi/aaxi_intf.sv
       #-- I3C VIP
@@ -100,6 +103,21 @@ targets:
       - $COMPILE_ROOT/rtl/caliptra_ss_top_w_stub.sv
     tops: [caliptra_ss_top_w_stub]
 --- 
+provides: [caliptra_ss_top_tb_coverage]
+schema_version: 2.4.0
+requires:
+  - axi_dma_coverage
+  - mci_coverage
+  - lc_ctrl_coverage
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/coverage
+    files:
+      - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_if.sv
+      - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_props.sv
+      - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_bind.sv
+--- 
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0
 requires:
@@ -113,7 +131,7 @@ requires:
   - fuse_ctrl_pkg
   - caliptra_top_tb_pkg
   - avery_vip
-  - mci_coverage
+  - caliptra_ss_top_tb_coverage
 targets:
   tb:
     directories:
@@ -142,6 +160,7 @@ targets:
     pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
                 && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py .
                 && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py .
+                && echo "[PRE-EXEC] Copying SHA512 Vectors to $(pwd)" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/integration/tb/vectors/SHA*.rsp .
                 && echo "[PRE-EXEC] Copying MLDSA vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 .
                 && echo "[PRE-EXEC] Copying MLDSA debug vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug .
                 && echo "[PRE-EXEC] Copying mldsa directed vector to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex .
@@ -154,6 +173,8 @@ global:
         - '-sverilog -full64'
         - '-debug_access+all'
         - +define+CLP_ASSERT_ON
+        - +define+AVERY_ASSERT_ON
+        - +define+AVERY_MONITOR_ON
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
