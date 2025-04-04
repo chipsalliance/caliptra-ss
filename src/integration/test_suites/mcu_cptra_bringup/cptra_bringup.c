@@ -102,6 +102,9 @@ void main () {
     VPRINTF(LOW, "FW: Wait for SoC to reset execute register\n");
     while((lsu_read_32(CLP_MBOX_CSR_MBOX_EXECUTE) & MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK) == 1);
 
+    VPRINTF(LOW, "FW: Setting MCI FW_BOOT_UPD\n");
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCI_REG_RESET_REASON, 0, MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK, 4,0);
+    
     // Set FW EXEC REGION LOCK to enable MCU SRAM check
     VPRINTF(LOW, "FW: Setting FW_EXEC_CTRL\n");
     lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, 0x4);
