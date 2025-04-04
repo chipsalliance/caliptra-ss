@@ -15,25 +15,30 @@
 # limitations under the License.
 #********************************************************************************
 
-OUTPUT_ARCH( "riscv" )
+OUTPUT_ARCH("riscv")
 ENTRY(_start)
-
 SECTIONS {
   
   . = 0x50000000;
   .dccm : { *(.dccm) }
-  _dccm_end = .;
-  .data : { *(.*data) *(.rodata*) *(.srodata*) }
-  _data_end = .;
-  .bss : { *(.bss) *(.sbss) }
-  _bss_end = .;
-
+  __dccm_end = .;
+  
+  .data : { *(.data) *(.data.*) *(.rodata) *(.rodata.*) *(.srodata) *(.srodata.*) }
+  __data_end = .;
+  
+  .bss : { *(.bss) *(.sbss) *(.bss.*) *(.sbss.*) }
+  __bss_end = .;
+  
   STACK = ALIGN(16) + 0x1000;
-
+  ASSERT((STACK < 0x50004000), "ERROR: Stack overflows the DCCM")
+  
   . = 0x80000000;
-  .text   : { *(.text*) }
-  _text_end = .;
+  .text : { *(.text) *(.text.*) }
+  __text_end = .;
 
+  
+  ASSERT((__text_end < 0x80010000), "ERROR: Program overflows ROM")
+  
   . = 0x21000414;
   .data.io : { *(.data.io) }
 }
