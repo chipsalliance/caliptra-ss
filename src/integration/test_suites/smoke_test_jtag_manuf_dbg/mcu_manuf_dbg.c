@@ -80,20 +80,17 @@ void main (void) {
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
-    mcu_mci_boot_go();
-    cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
+    mcu_cptra_init_d(.cfg_skip_set_fuse_done=true);
 
     ////////////////////////////////////
     // Fuse and Boot Bringup
     //
-    // Wait for ready_for_fuses
-    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
     uint32_t base_address = SOC_SOC_IFC_REG_FUSE_MANUF_DBG_UNLOCK_TOKEN_0;
     for (int i = 0; i < 2; i++) {
         VPRINTF(LOW, "MCU: writing 0x%x to address of 0x%x\n", vector[i], base_address + (i * 4));
         lsu_write_32(base_address + (i * 4), vector[i]);
     }
+
 
     for (uint32_t ii = 0; ii < 500; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"

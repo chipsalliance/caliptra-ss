@@ -64,6 +64,7 @@ CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
 
 # Libraries providing functionality for each peripheral component in Caliptra Subsystem
 COMP_LIB_NAMES := caliptra_ss_lib \
+		  mci \
 		  fuse_ctrl \
 		  lc_ctrl
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))

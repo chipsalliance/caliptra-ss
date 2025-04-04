@@ -56,6 +56,7 @@ import tb_top_pkg::*;
     logic                       mailbox_data_val;
     logic                       mailbox_write;
     logic        [63:0]         mailbox_data;
+    logic        [63:0]         prev_mailbox_data;
 
     string                      abi_reg[32]; // ABI register names
 
@@ -118,9 +119,25 @@ import tb_top_pkg::*;
 
     integer fd, tp, el;
 
+    always @(negedge clk or negedge rst_l) begin
+        if(!rst_l) begin
+            prev_mailbox_data <= '0;
+        end
+        else begin
+            if( mailbox_data_val & mailbox_write) begin
+                prev_mailbox_data <= mailbox_data;
+            end
+        end
+
+    end
+
     always @(negedge clk) begin
         // console Monitor
         if( mailbox_data_val & mailbox_write) begin
+            if (prev_mailbox_data[7:0] inside {8'h0A,8'h0D}) begin
+                $fwrite(fd,"%0t - ", $time);
+                $write("%0t - ", $time);
+            end
             $fwrite(fd,"%c", mailbox_data[7:0]);
             $write("%c", mailbox_data[7:0]);
             if (mailbox_data[7:0] inside {8'h0A,8'h0D}) begin // CR/LF
@@ -144,6 +161,10 @@ import tb_top_pkg::*;
         error_injection_mode.dccm_single_bit_error <= 1'b0;
         error_injection_mode.dccm_double_bit_error <= 1'b0;
 
+        // Disable MCU_SRAM assertions
+        if(mailbox_write && (mailbox_data[7:0] == TB_DISABLE_MCU_SRAM_PROT_ASSERTS)) begin
+            $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.mci_top_i.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
+        end
         // Memory signature dump and test END
         if(mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) begin
             if (mem_signature_begin < mem_signature_end) begin

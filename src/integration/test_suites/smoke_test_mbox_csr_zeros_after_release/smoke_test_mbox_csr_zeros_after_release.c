@@ -43,22 +43,9 @@ void main (void) {
     uint32_t sram_data;
     uint32_t mbox_num = decode_single_valid_mbox();
 
-    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
-
-    mcu_mci_boot_go();    
-
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
-
-    mcu_cptra_fuse_init();
-    
     ////////////////////////////////////
     // Mailbox command test
     //
-
-    mcu_cptra_poll_mb_ready();
-    mcu_cptra_user_init();
-
-
     VPRINTF(LOW, "=================\nMCU MBOX%x CSR Testing\n=================\n\n", mbox_num)
 
     // MBOX: Confim MCU already has lock out of reset

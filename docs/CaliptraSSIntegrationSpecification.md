@@ -75,7 +75,10 @@
     - [Mailbox FIXME waiting on Caliptra MBOX integration spec updates before doing this section](#mailbox-fixme-waiting-on-caliptra-mbox-integration-spec-updates-before-doing-this-section)
   - [Sequences : Reset, Boot,](#sequences--reset-boot)
     - [MCI Boot Sequencer](#mci-boot-sequencer)
-    - [MCU Hitless Patch Flow](#mcu-hitless-patch-flow)
+    - [MCU FW Update Flows](#mcu-fw-update-flows)
+      - [MCU FW Boot Update](#mcu-fw-boot-update)
+      - [MCU Hitless Update Update](#mcu-hitless-update-update)
+      - [MCU Warm Reset FW Update](#mcu-warm-reset-fw-update)
     - [Error Flows](#error-flows)
   - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
   - [Other requirements](#other-requirements)
@@ -380,6 +383,7 @@ The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsys
      - The reset signal must be synchronized to the 200 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
+     - It is **illegal** to only toggle ```cptra_ss_reset_n``` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
 
 ### Power Good Signal 
 
@@ -1389,20 +1393,66 @@ The following table defines the order in which resets can get asserted. A "\>\>"
 | **mcu\_rst\_b** |  |  | N/A |  |
 | **cptra\_rst\_b** |  |  |  | N/A |
 
-### MCU Hitless Patch Flow
 
-Once both MCU and Caliptra have been brought up the MCI Boot Sequencer is in a “listening” state waiting for a MCU reset request. 
+### MCU FW Update Flows 
+The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). The [Caliptra SS HW Spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mcu-hitless-update-handshake) spec gives details about the registers used in theese flow. This section is meant to elaborate on how to use the given HW to meet the architectual spec.
 
-To see the MCU Hitless Flow please see the following spec: [Caliptra Hitless Update Support](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates)
-
-MCI registers relevant to this flow are:
-
+Registers relevant to these flows:
 - Caliptra
-   - SS_GENERIC_FW_EXEC_CTRL[0].go[2]
+   - ```SS_GENERIC_FW_EXEC_CTRL[0].go[2]```
 - MCI 
-   - RESET_STATUS.mcu
-   - MCU_RESET_REQ
-   - RESET_REASON
+   - ```RESET_STATUS.mcu```
+   - ```MCU_RESET_REQ```
+   - ```RESET_REASON```
+   - ```notif_cptra_mcu_reset_req_sts```
+
+#### MCU FW Boot Update
+
+First MCU FW Update after a Cold Reset.
+
+1. Out of Cold Boot Caliptra has access to MCU SRAM since ```FW_EXEC_CTRL[2]``` is reset to 0.
+2. MCU ROM should use ```notif_cptra_mcu_reset_req_sts``` interrupt to know when Caliptra has a FW image for MCU. MCU ROM can either poll or enable the interrupt. 
+3. Caliptra sets MCI's ```RESET_REASON.FW_BOOT_UPD_RESET``` and Caliptra's ```FW_EXEC_CTRL[2]``` indicating a FW image is ready for MCU in MCU SRAM.
+4. MCU sees request from Caliptra and shall clear the interrupt status.
+5. MCU sets ```RESET_REQUEST.mcu_req``` in MCI to request a reset.
+6. MCI does an MCU halt req/ack handshake to ensure the MCU is idle
+7. MCI asserts MCU reset (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
+8. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
+9. MCU jumps to MCU SRAM
+
+#### MCU Hitless Update Update
+
+Subsequenc MCU FW Update after FW Boot Update.
+
+1. MCU FW should use ```notif_cptra_mcu_reset_req_sts``` interrupt to know when Caliptra has a FW image for MCU. MCU FW can either poll or enable the interrupt. 
+2. Caliptra clears ```FW_EXEC_CTRL[2]``` indicating a FW image is ready for MCU.
+3. MCU sees request from Caliptra and shall clear the interrupt status.
+4. MCU sets ```RESET_REQUEST.mcu_req``` in MCI to request a reset.
+5. MCI does an MCU halt req/ack handshake to ensure the MCU is idle
+6. MCI asserts MCU reset (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
+7. Caliptra will gain access to MCU SRAM Updatable Execution Region and update the FW image.
+8. Caliptra sets ```RESET_REASON.FW_HITLESS_UPD_RESET```
+9. Caliptra sets ```FW_EXEC_CTRL[2]```
+10. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
+11. MCU jumps to MCU SRAM
+
+#### MCU Warm Reset FW Update 
+
+Caliptra SS reset toggle without powergood toggle. 
+
+**IMPORTANT** - Can only happen after both Caliptra Core and MCU have received at least one FW update. Otherwise only Cold Reset is allowed.
+1. MCU ROM comes out of reset and sees ```WARM_RESET```. It cannot jump to MCU SRAM since it is locked and needs Caliptra to unlock.
+2. MCU ROM brings Caliptra out of reset
+3. Caliptra sees Warm Reset and starts executing from its ICCM (SRAM image)
+4. Caliptra clears MCI's ```RESET_REASON.WARM_RESET``` and sets ```RESET_REASON.FW_BOOT_UPD_RESET```
+5. Caliptra sets ```FW_EXEC_CTRL[2]```
+6. MCU sees request from Caliptra and shall clear the interrupt status.
+7. MCU sets ```RESET_REQUEST.mcu_req``` in MCI to request a reset.
+8. MCI does an MCU halt req/ack handshake to ensure the MCU is idle
+9. MCI asserts MCU reset (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
+10. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
+11. MCU jumps to MCU SRAM
+
 
 ### Error Flows
 
