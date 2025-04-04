@@ -263,7 +263,7 @@ initial begin
         slave[5].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[5].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[5].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[5].cfg_info.base_address[0] = 64'h7000_0000;
+        slave[5].cfg_info.base_address[0] = {32'h0, `SOC_OTP_CTRL_BASE_ADDR}; //64'h7000_0000;
         slave[5].cfg_info.limit_address[0] = 64'h7000_01FF;
         slave[5].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         slave[5].cfg_info.total_outstanding_depth = 4;
@@ -287,7 +287,7 @@ initial begin
         slave[7].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[7].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[7].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[7].cfg_info.base_address[0] = 64'h7000_0400;
+        slave[7].cfg_info.base_address[0] = {32'h0, `SOC_LC_CTRL_BASE_ADDR}; //64'h7000_0400;
         slave[7].cfg_info.limit_address[0] = 64'h7000_05FF;
         slave[7].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
         slave[7].cfg_info.total_outstanding_depth = 4;

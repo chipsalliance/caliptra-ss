@@ -22,6 +22,8 @@
 `include "../../../src/mci/rtl/mci_top.rdl"
 `include "../../../third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr.rdl"
 `include "../../../third_party/i3c-core/src/rdl/registers.rdl"
+`include "../../../src/fuse_ctrl/rtl/otp_ctrl.rdl"
+`include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
 
 addrmap soc {
 
@@ -34,9 +36,9 @@ addrmap soc {
     sha512_acc_csr sha512_acc_csr @ 0x3002_1000;
 
     soc_ifc_reg soc_ifc_reg @ 0x3003_0000;
-    
-    // fuse controller - FIXME
 
-    // life cycle controller - FIXME
+    otp_ctrl otp_ctrl @ 0x7000_0000;
+
+    lc_ctrl lc_ctrl @ 0x7000_0400;
 
 };
