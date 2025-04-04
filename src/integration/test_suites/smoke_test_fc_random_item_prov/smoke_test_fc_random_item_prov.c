@@ -43,10 +43,10 @@ void program_sw_manuf_partition(uint32_t seed) {
     // 0x0D1: CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR
     // 0x131: CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER
     // 0x141: CPTRA_CORE_SOC_STEPPING_ID
-    // 0x143: CPTRA_SS_PROD_DEBUG_UNLOCK_PKS
-    const uint32_t addresses[5] = {0x0D0, 0x0D1, 0x131, 0x141, 0x143};
-    const uint32_t digest_address = 0x4F8;
-    uint32_t fuse_address = addresses[seed % 5];
+    // 0x143: CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0
+    const uint32_t addresses[12] = {0x0D0, 0x0D1, 0x131, 0x141, 0x143, 0x173, 0x1A3, 0x1D3, 0x203, 0x233, 0x263, 0x293};
+    const uint32_t digest_address = 0x4B8;
+    uint32_t fuse_address = addresses[seed % 12];
 
     const uint32_t data = 0xAB;
     uint32_t read_data;
@@ -112,7 +112,7 @@ void program_vendor_secret_prod_partition(uint32_t seed) {
     uint32_t axi_conf;
     axi_conf = lsu_read_32(0x70000080);
 
-    const uint32_t base_address = 0x9E0;
+    const uint32_t base_address = 0x9A8;
     uint32_t fuse_address = base_address + 32*(seed % 15);
 
     const uint32_t data[2] = {0xdeadbeef, 0xcafebabe};
