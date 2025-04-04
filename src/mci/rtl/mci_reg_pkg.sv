@@ -776,6 +776,7 @@ package mci_reg_pkg;
         logic ss_config_unlock;
         logic ss_config_unlock_sticky;
         logic axi_mcu_req_or_mci_soc_config_req__cap_unlock;
+        logic axi_mcu_or_mcu_sram_config_req;
         logic axi_mcu_or_mci_soc_config_req;
         logic axi_mcu_or_mci_soc_config_req__ss_config_unlock;
         logic axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky;
