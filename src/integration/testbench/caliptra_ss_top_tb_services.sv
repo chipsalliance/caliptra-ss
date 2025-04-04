@@ -362,8 +362,8 @@ import tb_top_pkg::*;
         abi_reg[30] = "t5";
         abi_reg[31] = "t6";
 
-        hex_file_is_empty = $system("test -s mcu_lmem.hex");
-        if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram); // FIXME - should there bit a limit like Caliptra has for iccm.hex?
+        hex_file_is_empty = $system("test -s mcu_sram.hex");
+        if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram, 0, (MCU_SRAM_SIZE_KB*1024)-1);
 
 
         imem.ram = '{default:8'h0};
@@ -382,11 +382,6 @@ import tb_top_pkg::*;
         // preload_dccm();
         preload_css_mcu0_dccm();
         preload_mcu_sram();
-
-// `ifndef VERILATOR
-//         // if($test$plusargs("dumpon")) $dumpvars;
-//         // forever  ACLK     = #5 ~ACLK;
-// `endif
 
     end
 

@@ -373,7 +373,10 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 			      --pad-to 0x40000 \
 			      --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0x40000  --no-change-warnings $(TESTNAME).exe mcu_program.bin
-	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21C00000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -j .mcu_sram \
+			      --change-section-lma .mcu_sram-0x21C00000 \
+			      --pad-to 0x80000 \
+			      --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
