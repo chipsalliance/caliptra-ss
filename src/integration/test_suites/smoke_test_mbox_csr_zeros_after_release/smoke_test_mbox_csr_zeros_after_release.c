@@ -41,25 +41,17 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;
-    uint32_t axi_user_id[] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x1 };
-
-    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
-
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
-
-    mcu_cptra_init_d(.cfg_mcu_mbox0_valid_user=true, .mcu_mbox0_valid_user=axi_user_id);
+    uint32_t mbox_num = decode_single_valid_mbox();
     
     ////////////////////////////////////
     // Mailbox command test
     //
 
-
-
-    VPRINTF(LOW, "=================\nMCU MBOX SRAM Testing\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU MBOX%x CSR Testing\n=================\n\n", mbox_num)
 
     // MBOX: Confim MCU already has lock out of reset
-    if((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK) == 0) {
-        VPRINTF(FATAL, "MCU: Mbox0 lock should already be locked\n");
+    if((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK) == 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x lock should already be locked\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -72,97 +64,97 @@ void main (void) {
     uint32_t mbox_cmd_status = 0x1;
 
     // Write CSRs
-    VPRINTF(LOW, "MCU: Mbox0 writing CSRs\n");
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN, mbox_dlen);
+    VPRINTF(LOW, "MCU: Mbox%x writing CSRs\n", mbox_num);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_dlen);
 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER, mbox_target_user);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_target_user);
 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID, mbox_target_user_valid);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_target_user_valid);
 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD, mbox_cmd);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_cmd);
     
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS, mbox_target_status);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_target_status);
 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, mbox_cmd_status);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_cmd_status);
 
     // MBOX: Confirm CSRs writes took affect
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN) != mbox_dlen) {
-        VPRINTF(FATAL, "MCU: Mbox0 DLEN write failed\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num) != mbox_dlen) {
+        VPRINTF(FATAL, "MCU: Mbox%x DLEN write failed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER) != mbox_target_user) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User write failed\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num) != mbox_target_user) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User write failed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID) != mbox_target_user_valid) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User Valid write failed\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num) != mbox_target_user_valid) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User Valid write failed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD) != mbox_cmd) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User Valid write failed\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num) != mbox_cmd) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User Valid write failed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS) != mbox_target_status) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User Valid write failed\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num) != mbox_target_status) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User Valid write failed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS) != mbox_cmd_status) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User Valid write failed\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num) != mbox_cmd_status) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User Valid write failed\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     // MBOX: Execute
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK);
-    VPRINTF(LOW, "MCU: Mbox0 execute\n");
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK);
+    VPRINTF(LOW, "MCU: Mbox%x execute\n", mbox_num);
 
     // MBOX: Clear Execute
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, 0);
-    VPRINTF(LOW, "MCU: Mbox0 execute clear\n");
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0);
+    VPRINTF(LOW, "MCU: Mbox%x execute clear\n", mbox_num);
 
     // MBOX: Confirm CSRs are 0 after execute clear
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN) != 0) {
-        VPRINTF(FATAL, "MCU: Mbox0 DLEN should be 0\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x DLEN should be 0\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER) != 0) {
-        VPRINTF(FATAL, "MCU: Mbox0 Mbox User should be 0\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x Mbox User should be 0\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER) != 0) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User should be 0\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User should be 0\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID) != 0) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User Valid should be 0\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User Valid should be 0\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD) != 0) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User Valid should be 0\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User Valid should be 0\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS) != 0) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User Valid should be 0\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User Valid should be 0\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS) != 0) {
-        VPRINTF(FATAL, "MCU: Mbox0 Target User Valid should be 0\n");
+    if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target User Valid should be 0\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    VPRINTF(LOW, "MCU: Mbox0 CRS are cleared\n");
+    VPRINTF(LOW, "MCU: Mbox%x CRS are cleared\n", mbox_num);
 
     SEND_STDOUT_CTRL(0xff);
 }

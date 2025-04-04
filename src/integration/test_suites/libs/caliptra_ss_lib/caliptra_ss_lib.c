@@ -24,6 +24,11 @@
 #include "caliptra_ss_lib.h"
 #include <stdbool.h>
 
+#ifdef MCU_MBOX_VALID_VECTOR
+    uint32_t valid_mbox_instances = MCU_MBOX_VALID_VECTOR;
+#else
+    uint32_t valid_mbox_instances = 0;
+#endif
 
 #ifdef MY_RANDOM_SEED
     uint32_t state = (unsigned) MY_RANDOM_SEED;
@@ -231,13 +236,18 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     }
     else{
         VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip Set fuse done\n");
-        
     }
 
     /////////////////////////////////
     // CPTRA ENSURE BREAKPOINT SET  
     /////////////////////////////////
-    mcu_cptra_advance_brkpoint();
+    if (!args.cfg_skip_set_fuse_done) {
+        mcu_cptra_advance_brkpoint();
+    }
+    else{
+        VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip advance CPTRA advance breakpoint\n");
+    }
+
 
     VPRINTF(LOW, "MCU: INIT CONFIGURING END\n");
 }
@@ -271,10 +281,10 @@ bool mcu_mbox_wait_for_user_lock(uint32_t mbox_num, uint32_t user_axi, uint32_t 
     return false;
 }
 
-bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t attempt_count) {
+bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t expected_value, uint32_t attempt_count) {
     VPRINTF(LOW, "MCU: Waiting for caliptra to set execute in mbox%x\n", mbox_num);
     for(uint32_t ii=0; ii<attempt_count; ii++) {
-        if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num)){
+        if(lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num) == expected_value){
             VPRINTF(LOW, "MCU: Caliptra set execute for Mbox%x\n", mbox_num);
 
             // Check that Mailbox cmd available from SOC interrupt has been set
@@ -345,6 +355,27 @@ bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count)
         }
     }
     return false;
+}
+
+void mcu_mbox_clear_execute(uint32_t mbox_num) {
+    uint32_t mbox_resp_data;
+    VPRINTF(LOW, "MCU: Clearing MBOX%x Execute\n", mbox_num);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x0);
+    
+    mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "MCU: MBOX%x USER = %x\n", mbox_num, mbox_resp_data);
+}
+
+// Returns mbox number based on valid mbox instance bitfield
+// Assumes one-hot
+// Default to mbox0 if multiple selected
+uint32_t decode_single_valid_mbox(void) {
+    uint32_t mbox_num = 0;
+    VPRINTF(LOW, "MCU: Valid MBOX Vector: 0x%x\n", valid_mbox_instances);
+    if (valid_mbox_instances == 0x2) {
+        mbox_num = 1;
+    }
+    return mbox_num;
 }
 
 void mcu_cptra_poll_mb_ready() {

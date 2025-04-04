@@ -89,7 +89,7 @@ void main (void) {
     }
     
     // Disable MCU SRAM Assertions due to error testing in Caliptra
-    SEND_STDOUT_CTRL(TB_DISABLE_MCU_SRAM_PROT_ASSERTS);
+    SEND_STDOUT_CTRL(TB_CMD_DISABLE_MCU_SRAM_PROT_ASSERTS);
 
     VPRINTF(LOW, "MCU: Bringing Caliptra out of Reset\n");
     mcu_cptra_init_d(.cfg_mcu_fw_sram_exec_reg_size=true, .mcu_fw_sram_exec_reg_size=rnd_protected_region_size, .cfg_cptra_dma_axi_user=true, .cptra_dma_axi_user=caliptra_uc_axi_id);

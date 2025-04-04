@@ -148,7 +148,6 @@ import tb_top_pkg::*;
         if(mailbox_write && (mailbox_data[7:0] == TB_DISABLE_MCU_SRAM_PROT_ASSERTS)) begin
             $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.mci_top_i.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
         end
-
         // Memory signature dump and test END
         if(mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) begin
             if (mem_signature_begin < mem_signature_end) begin

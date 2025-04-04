@@ -48,8 +48,13 @@ typedef struct {
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!
 void mcu_cptra_init(mcu_cptra_init_args args);
+#define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){__VA_ARGS__});
 
 uint32_t xorshift32(void);
+
+// Bitfield indicating which MCU Mboxes are valid for the given test
+extern uint32_t valid_mbox_instances;
+uint32_t decode_single_valid_mbox(void);
 
 inline void mcu_sleep (const uint32_t cycles) {
     for (uint8_t ii = 0; ii < cycles; ii++) {
@@ -78,7 +83,7 @@ void boot_i3c_reg(void);
 void mcu_mbox_clear_lock_out_of_reset(uint32_t mbox_num);
 void mcu_mbox_update_status_complete(uint32_t mbox_num);
 bool mcu_mbox_wait_for_user_lock(uint32_t mbox_num, uint32_t user_axi, uint32_t attempt_count);
-bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t attempt_count);
+bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t expected_value, uint32_t attempt_count);
 void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id);
 bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count);
 bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count);
@@ -86,7 +91,7 @@ void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num);
 void write_read_check(uintptr_t rdptr, uint32_t data);
 uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t end_address);
 
-#define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){__VA_ARGS__});
+void mcu_mbox_clear_execute(uint32_t mbox_num);
 
 
 #define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
@@ -103,7 +108,7 @@ uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t en
 #define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 0x0a
 #define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 0x0b
 
-#define TB_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
+#define TB_CMD_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
 
 
 #define TB_CMD_DISABLE_INJECT_ECC_ERROR     0xe0
