@@ -14,7 +14,5 @@
 
 
 module lc_ctrl_cov_bind;
-    `ifdef FCOV
     bind lc_ctrl lc_ctrl_cov_if i_lc_ctrl_cov_if(.*);
-    `endif
 endmodule
