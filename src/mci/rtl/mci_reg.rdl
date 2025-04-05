@@ -792,10 +792,10 @@ addrmap mci_reg {
     } GENERIC_OUTPUT_WIRES[2];
     
     reg { 
-        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA=0;
+        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA[32]=32'h0;
     } DEBUG_IN; // i.e. stdin
     reg { 
-        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA=0;
+        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA[32]=32'h0;
     } DEBUG_OUT; // i.e. stdout
     
     reg {
