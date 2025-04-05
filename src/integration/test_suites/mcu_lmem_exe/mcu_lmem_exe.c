@@ -30,8 +30,10 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-static const char* mcu_sram_msg __attribute__ ((section(".mcu_sram"))) = "Hello World from MCU SRAM\n";
-void mcu_sram_print_msg (void) __attribute__ ((aligned(4),section (".mcu_sram"))) {
+static const char* mcu_sram_msg __attribute__ ((section(".mcu_sram.msg"))) = "Hello World from MCU SRAM\n";
+void mcu_sram_print_msg (void) __attribute__ ((aligned(4),section (".mcu_sram.print_msg")));
+
+void mcu_sram_print_msg (void) {
     VPRINTF(LOW, mcu_sram_msg);
 }
 
@@ -45,12 +47,10 @@ void main (void) {
     } else {
         VPRINTF(LOW, "=================\nMCU: MCU SRAM Exec Test\n=================\n\n")
 
-        mcu_mci_boot_go();
+        VPRINTF(LOW, "MCU: Bringing Caliptra out of Reset\n");
+        mcu_cptra_init_d(.cfg_mcu_fw_sram_exec_reg_size=true, .mcu_fw_sram_exec_reg_size=0x8000);
 
-        VPRINTF(LOW, "MCU: Caliptra bringup\n")
-
-        mcu_cptra_fuse_init();
-
+        VPRINTF(LOW, "MCU: Wait for Caliptra reset req...\n");
         mcu_mci_poll_exec_lock();
         VPRINTF(LOW, "MCU: Observed Caliptra reset req; issuing reset\n");
         mcu_mci_req_reset();
