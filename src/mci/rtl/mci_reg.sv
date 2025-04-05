@@ -688,123 +688,7 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } agg_error_fatal31;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal30;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal29;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal28;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal27;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal26;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal25;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal24;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal23;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal22;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal21;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal20;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal19;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal18;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal17;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal16;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal15;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal14;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal13;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal12;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal11;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal10;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal9;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal8;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal7;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal6;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal5;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal4;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal3;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal2;
+            } agg_error_fatal0;
             struct packed{
                 logic next;
                 logic load_next;
@@ -812,7 +696,123 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } agg_error_fatal0;
+            } agg_error_fatal2;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal3;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal4;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal5;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal6;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal7;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal8;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal9;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal10;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal11;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal12;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal13;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal14;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal15;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal16;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal17;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal18;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal19;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal20;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal21;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal22;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal23;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal24;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal25;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal26;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal27;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal28;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal29;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal30;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal31;
         } AGG_ERROR_FATAL;
         struct packed{
             struct packed{
@@ -828,123 +828,7 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } agg_error_non_fatal31;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal30;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal29;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal28;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal27;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal26;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal25;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal24;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal23;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal22;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal21;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal20;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal19;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal18;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal17;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal16;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal15;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal14;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal13;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal12;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal11;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal10;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal9;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal8;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal7;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal6;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal5;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal4;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal3;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal2;
+            } agg_error_non_fatal0;
             struct packed{
                 logic next;
                 logic load_next;
@@ -952,7 +836,123 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } agg_error_non_fatal0;
+            } agg_error_non_fatal2;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal3;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal4;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal5;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal6;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal7;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal8;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal9;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal10;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal11;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal12;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal13;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal14;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal15;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal16;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal17;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal18;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal19;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal20;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal21;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal22;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal23;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal24;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal25;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal26;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal27;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal28;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal29;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal30;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal31;
         } AGG_ERROR_NON_FATAL;
         struct packed{
             struct packed{
@@ -1012,123 +1012,7 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } mask_agg_error_fatal31;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal30;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal29;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal28;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal27;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal26;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal25;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal24;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal23;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal22;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal21;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal20;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal19;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal18;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal17;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal16;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal15;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal14;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal13;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal12;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal11;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal10;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal9;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal8;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal7;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal6;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal5;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal4;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal3;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_fatal2;
+            } mask_agg_error_fatal0;
             struct packed{
                 logic next;
                 logic load_next;
@@ -1136,129 +1020,129 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } mask_agg_error_fatal0;
+            } mask_agg_error_fatal2;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal3;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal4;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal5;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal6;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal7;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal8;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal9;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal10;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal11;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal12;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal13;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal14;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal15;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal16;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal17;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal18;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal19;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal20;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal21;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal22;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal23;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal24;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal25;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal26;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal27;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal28;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal29;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal30;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_fatal31;
         } internal_agg_error_fatal_mask;
         struct packed{
             struct packed{
                 logic next;
                 logic load_next;
-            } mask_agg_error_non_fatal31;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal30;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal29;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal28;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal27;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal26;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal25;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal24;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal23;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal22;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal21;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal20;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal19;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal18;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal17;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal16;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal15;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal14;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal13;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal12;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal11;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal10;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal9;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal8;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal7;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal6;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal5;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal4;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal3;
-            struct packed{
-                logic next;
-                logic load_next;
-            } mask_agg_error_non_fatal2;
+            } mask_agg_error_non_fatal0;
             struct packed{
                 logic next;
                 logic load_next;
@@ -1266,7 +1150,123 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } mask_agg_error_non_fatal0;
+            } mask_agg_error_non_fatal2;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal3;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal4;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal5;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal6;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal7;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal8;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal9;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal10;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal11;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal12;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal13;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal14;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal15;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal16;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal17;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal18;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal19;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal20;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal21;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal22;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal23;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal24;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal25;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal26;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal27;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal28;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal29;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal30;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_agg_error_non_fatal31;
         } internal_agg_error_non_fatal_mask;
         struct packed{
             struct packed{
@@ -3973,100 +3973,100 @@ module mci_reg (
         struct packed{
             struct packed{
                 logic value;
-            } agg_error_fatal31;
-            struct packed{
-                logic value;
-            } agg_error_fatal30;
-            struct packed{
-                logic value;
-            } agg_error_fatal29;
-            struct packed{
-                logic value;
-            } agg_error_fatal28;
-            struct packed{
-                logic value;
-            } agg_error_fatal27;
-            struct packed{
-                logic value;
-            } agg_error_fatal26;
-            struct packed{
-                logic value;
-            } agg_error_fatal25;
-            struct packed{
-                logic value;
-            } agg_error_fatal24;
-            struct packed{
-                logic value;
-            } agg_error_fatal23;
-            struct packed{
-                logic value;
-            } agg_error_fatal22;
-            struct packed{
-                logic value;
-            } agg_error_fatal21;
-            struct packed{
-                logic value;
-            } agg_error_fatal20;
-            struct packed{
-                logic value;
-            } agg_error_fatal19;
-            struct packed{
-                logic value;
-            } agg_error_fatal18;
-            struct packed{
-                logic value;
-            } agg_error_fatal17;
-            struct packed{
-                logic value;
-            } agg_error_fatal16;
-            struct packed{
-                logic value;
-            } agg_error_fatal15;
-            struct packed{
-                logic value;
-            } agg_error_fatal14;
-            struct packed{
-                logic value;
-            } agg_error_fatal13;
-            struct packed{
-                logic value;
-            } agg_error_fatal12;
-            struct packed{
-                logic value;
-            } agg_error_fatal11;
-            struct packed{
-                logic value;
-            } agg_error_fatal10;
-            struct packed{
-                logic value;
-            } agg_error_fatal9;
-            struct packed{
-                logic value;
-            } agg_error_fatal8;
-            struct packed{
-                logic value;
-            } agg_error_fatal7;
-            struct packed{
-                logic value;
-            } agg_error_fatal6;
-            struct packed{
-                logic value;
-            } agg_error_fatal5;
-            struct packed{
-                logic value;
-            } agg_error_fatal4;
-            struct packed{
-                logic value;
-            } agg_error_fatal3;
-            struct packed{
-                logic value;
-            } agg_error_fatal2;
+            } agg_error_fatal0;
             struct packed{
                 logic value;
             } agg_error_fatal1;
             struct packed{
                 logic value;
-            } agg_error_fatal0;
+            } agg_error_fatal2;
+            struct packed{
+                logic value;
+            } agg_error_fatal3;
+            struct packed{
+                logic value;
+            } agg_error_fatal4;
+            struct packed{
+                logic value;
+            } agg_error_fatal5;
+            struct packed{
+                logic value;
+            } agg_error_fatal6;
+            struct packed{
+                logic value;
+            } agg_error_fatal7;
+            struct packed{
+                logic value;
+            } agg_error_fatal8;
+            struct packed{
+                logic value;
+            } agg_error_fatal9;
+            struct packed{
+                logic value;
+            } agg_error_fatal10;
+            struct packed{
+                logic value;
+            } agg_error_fatal11;
+            struct packed{
+                logic value;
+            } agg_error_fatal12;
+            struct packed{
+                logic value;
+            } agg_error_fatal13;
+            struct packed{
+                logic value;
+            } agg_error_fatal14;
+            struct packed{
+                logic value;
+            } agg_error_fatal15;
+            struct packed{
+                logic value;
+            } agg_error_fatal16;
+            struct packed{
+                logic value;
+            } agg_error_fatal17;
+            struct packed{
+                logic value;
+            } agg_error_fatal18;
+            struct packed{
+                logic value;
+            } agg_error_fatal19;
+            struct packed{
+                logic value;
+            } agg_error_fatal20;
+            struct packed{
+                logic value;
+            } agg_error_fatal21;
+            struct packed{
+                logic value;
+            } agg_error_fatal22;
+            struct packed{
+                logic value;
+            } agg_error_fatal23;
+            struct packed{
+                logic value;
+            } agg_error_fatal24;
+            struct packed{
+                logic value;
+            } agg_error_fatal25;
+            struct packed{
+                logic value;
+            } agg_error_fatal26;
+            struct packed{
+                logic value;
+            } agg_error_fatal27;
+            struct packed{
+                logic value;
+            } agg_error_fatal28;
+            struct packed{
+                logic value;
+            } agg_error_fatal29;
+            struct packed{
+                logic value;
+            } agg_error_fatal30;
+            struct packed{
+                logic value;
+            } agg_error_fatal31;
         } AGG_ERROR_FATAL;
         struct packed{
             struct packed{
@@ -4079,100 +4079,100 @@ module mci_reg (
         struct packed{
             struct packed{
                 logic value;
-            } agg_error_non_fatal31;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal30;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal29;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal28;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal27;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal26;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal25;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal24;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal23;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal22;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal21;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal20;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal19;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal18;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal17;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal16;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal15;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal14;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal13;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal12;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal11;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal10;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal9;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal8;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal7;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal6;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal5;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal4;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal3;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal2;
+            } agg_error_non_fatal0;
             struct packed{
                 logic value;
             } agg_error_non_fatal1;
             struct packed{
                 logic value;
-            } agg_error_non_fatal0;
+            } agg_error_non_fatal2;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal3;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal4;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal5;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal6;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal7;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal8;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal9;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal10;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal11;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal12;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal13;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal14;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal15;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal16;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal17;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal18;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal19;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal20;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal21;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal22;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal23;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal24;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal25;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal26;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal27;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal28;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal29;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal30;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal31;
         } AGG_ERROR_NON_FATAL;
         struct packed{
             struct packed{
@@ -4221,198 +4221,198 @@ module mci_reg (
         struct packed{
             struct packed{
                 logic value;
-            } mask_agg_error_fatal31;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal30;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal29;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal28;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal27;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal26;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal25;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal24;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal23;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal22;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal21;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal20;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal19;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal18;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal17;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal16;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal15;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal14;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal13;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal12;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal11;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal10;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal9;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal8;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal7;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal6;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal5;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal4;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal3;
-            struct packed{
-                logic value;
-            } mask_agg_error_fatal2;
+            } mask_agg_error_fatal0;
             struct packed{
                 logic value;
             } mask_agg_error_fatal1;
             struct packed{
                 logic value;
-            } mask_agg_error_fatal0;
+            } mask_agg_error_fatal2;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal3;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal4;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal5;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal6;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal7;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal8;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal9;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal10;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal11;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal12;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal13;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal14;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal15;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal16;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal17;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal18;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal19;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal20;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal21;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal22;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal23;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal24;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal25;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal26;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal27;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal28;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal29;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal30;
+            struct packed{
+                logic value;
+            } mask_agg_error_fatal31;
         } internal_agg_error_fatal_mask;
         struct packed{
             struct packed{
                 logic value;
-            } mask_agg_error_non_fatal31;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal30;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal29;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal28;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal27;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal26;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal25;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal24;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal23;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal22;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal21;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal20;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal19;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal18;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal17;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal16;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal15;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal14;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal13;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal12;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal11;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal10;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal9;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal8;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal7;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal6;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal5;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal4;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal3;
-            struct packed{
-                logic value;
-            } mask_agg_error_non_fatal2;
+            } mask_agg_error_non_fatal0;
             struct packed{
                 logic value;
             } mask_agg_error_non_fatal1;
             struct packed{
                 logic value;
-            } mask_agg_error_non_fatal0;
+            } mask_agg_error_non_fatal2;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal3;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal4;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal5;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal6;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal7;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal8;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal9;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal10;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal11;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal12;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal13;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal14;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal15;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal16;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal17;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal18;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal19;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal20;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal21;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal22;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal23;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal24;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal25;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal26;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal27;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal28;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal29;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal30;
+            struct packed{
+                logic value;
+            } mask_agg_error_non_fatal31;
         } internal_agg_error_non_fatal_mask;
         struct packed{
             struct packed{
@@ -6552,750 +6552,6 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value = field_storage.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal31
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal31.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal31.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal31.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal31.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal31.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal30
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value & ~(decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal30.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal30.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal30.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal30.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal30.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal29
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value & ~(decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal29.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal29.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal29.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal29.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal29.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal28
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value & ~(decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal28.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal28.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal28.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal28.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal28.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal27
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal27.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal27.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal27.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal27.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal27.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal26
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value & ~(decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal26.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal26.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal26.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal26.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal26.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal25
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value & ~(decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal25.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal25.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal25.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal25.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal25.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal24
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value & ~(decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal24.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal24.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal24.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal24.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal24.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal23
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value & ~(decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal23.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal23.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal23.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal23.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal23.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal22
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value & ~(decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal22.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal22.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal22.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal22.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal22.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal21
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value & ~(decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal21.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal21.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal21.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal21.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal21.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal20
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value & ~(decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal20.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal20.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal20.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal20.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal20.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal19
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value & ~(decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal19.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal19.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal19.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal19.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal19.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal18
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value & ~(decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal18.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal18.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal18.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal18.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal18.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal17
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal17.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal17.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal17.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal17.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal17.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal16
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value & ~(decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal16.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal16.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal16.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal16.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal16.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal15
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value & ~(decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal15.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal15.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal15.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal15.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal15.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal14
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value & ~(decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal14.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal14.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal14.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal14.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal14.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal13
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value & ~(decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal13.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal13.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal13.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal13.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal13.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal12
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value & ~(decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal12.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal12.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal12.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal12.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal12.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal11
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value & ~(decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal11.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal11.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal11.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal11.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal11.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal10
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value & ~(decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal10.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal10.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal10.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal10.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal10.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal9
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value & ~(decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal9.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal9.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal9.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal9.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal9.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal8
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value & ~(decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal8.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal8.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal8.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal8.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal8.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal7
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value & ~(decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal7.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal7.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal7.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal7.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal7.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal6
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value & ~(decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal6.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal6.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal6.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal6.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal6.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal5
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value & ~(decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal5.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal5.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal5.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal5.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal5.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal4
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value & ~(decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal4.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal4.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal4.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal4.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal4.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal3
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value & ~(decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal3.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal3.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal3.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal3.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal3.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal2
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value & ~(decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal2.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal2.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal2.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal2.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal2.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal1
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value & ~(decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal1.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal1.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal1.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal1.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal1.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value;
     // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal0
     always_comb begin
         automatic logic [0:0] next_c;
@@ -7303,7 +6559,7 @@ module mci_reg (
         next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value;
         load_next_c = '0;
         if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value & ~(decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.we) begin // HW Write - we
             next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.next;
@@ -7320,6 +6576,750 @@ module mci_reg (
         end
     end
     assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal0.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal1
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value & ~(decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal1.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal1.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal1.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal1.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal1.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal2
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value & ~(decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal2.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal2.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal2.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal2.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal2.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal3
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value & ~(decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal3.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal3.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal3.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal3.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal3.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal4
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal4.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal4.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal4.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal4.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal4.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal5
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value & ~(decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal5.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal5.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal5.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal5.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal5.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal6
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value & ~(decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal6.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal6.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal6.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal6.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal6.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal7
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value & ~(decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal7.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal7.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal7.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal7.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal7.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal8
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value & ~(decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal8.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal8.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal8.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal8.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal8.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal9
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value & ~(decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal9.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal9.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal9.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal9.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal9.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal10
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value & ~(decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal10.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal10.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal10.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal10.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal10.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal11
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value & ~(decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal11.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal11.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal11.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal11.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal11.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal12
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value & ~(decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal12.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal12.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal12.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal12.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal12.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal13
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value & ~(decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal13.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal13.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal13.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal13.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal13.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal14
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal14.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal14.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal14.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal14.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal14.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal15
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value & ~(decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal15.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal15.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal15.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal15.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal15.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal16
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value & ~(decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal16.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal16.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal16.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal16.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal16.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal17
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value & ~(decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal17.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal17.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal17.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal17.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal17.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal18
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value & ~(decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal18.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal18.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal18.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal18.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal18.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal19
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value & ~(decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal19.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal19.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal19.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal19.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal19.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal20
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value & ~(decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal20.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal20.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal20.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal20.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal20.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal21
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value & ~(decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal21.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal21.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal21.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal21.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal21.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal22
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value & ~(decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal22.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal22.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal22.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal22.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal22.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal23
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value & ~(decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal23.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal23.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal23.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal23.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal23.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal24
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value & ~(decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal24.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal24.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal24.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal24.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal24.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal25
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value & ~(decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal25.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal25.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal25.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal25.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal25.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal26
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value & ~(decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal26.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal26.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal26.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal26.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal26.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal27
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value & ~(decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal27.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal27.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal27.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal27.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal27.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal28
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value & ~(decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal28.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal28.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal28.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal28.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal28.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal29
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value & ~(decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal29.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal29.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal29.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal29.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal29.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal30
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value & ~(decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal30.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal30.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal30.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal30.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal30.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal31
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value & ~(decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal31.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal31.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal31.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal31.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal31.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value;
     // Field: mci_reg.HW_ERROR_NON_FATAL.mbox0_ecc_unc
     always_comb begin
         automatic logic [0:0] next_c;
@@ -7368,750 +7368,6 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value = field_storage.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal31
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal30
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value & ~(decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal29
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value & ~(decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal28
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value & ~(decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal27
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal26
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value & ~(decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal25
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value & ~(decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal24
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value & ~(decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal23
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value & ~(decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal22
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value & ~(decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal21
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value & ~(decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal20
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value & ~(decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal19
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value & ~(decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal18
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value & ~(decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal17
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal16
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value & ~(decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal15
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value & ~(decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal14
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value & ~(decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal13
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value & ~(decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal12
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value & ~(decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal11
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value & ~(decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal10
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value & ~(decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal9
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value & ~(decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal8
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value & ~(decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal7
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value & ~(decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal6
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value & ~(decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal5
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value & ~(decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal4
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value & ~(decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal3
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value & ~(decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal2
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value & ~(decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal1
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value & ~(decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value;
     // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal0
     always_comb begin
         automatic logic [0:0] next_c;
@@ -8119,7 +7375,7 @@ module mci_reg (
         next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value;
         load_next_c = '0;
         if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value & ~(decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.we) begin // HW Write - we
             next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.next;
@@ -8136,6 +7392,750 @@ module mci_reg (
         end
     end
     assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal1
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value & ~(decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal2
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value & ~(decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal3
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value & ~(decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal4
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal5
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value & ~(decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal6
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value & ~(decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal7
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value & ~(decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal8
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value & ~(decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal9
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value & ~(decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal10
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value & ~(decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal11
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value & ~(decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal12
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value & ~(decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal13
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value & ~(decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal14
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal15
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value & ~(decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal16
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value & ~(decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal17
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value & ~(decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal18
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value & ~(decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal19
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value & ~(decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal20
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value & ~(decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal21
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value & ~(decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal22
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value & ~(decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal23
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value & ~(decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal24
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value & ~(decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal25
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value & ~(decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal26
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value & ~(decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal27
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value & ~(decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal28
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value & ~(decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal29
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value & ~(decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal30
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value & ~(decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal31
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value & ~(decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value;
     // Field: mci_reg.FW_ERROR_FATAL.error_code
     always_comb begin
         automatic logic [31:0] next_c;
@@ -8356,657 +8356,6 @@ module mci_reg (
         end
     end
     assign hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.value = field_storage.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal31
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal30
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal29
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value & ~decoded_wr_biten[2:2]) | (decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal28
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value & ~decoded_wr_biten[3:3]) | (decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal27
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value & ~decoded_wr_biten[4:4]) | (decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal26
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value & ~decoded_wr_biten[5:5]) | (decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal25
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value & ~decoded_wr_biten[6:6]) | (decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal24
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value & ~decoded_wr_biten[7:7]) | (decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal23
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value & ~decoded_wr_biten[8:8]) | (decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal22
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value & ~decoded_wr_biten[9:9]) | (decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal21
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value & ~decoded_wr_biten[10:10]) | (decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal20
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value & ~decoded_wr_biten[11:11]) | (decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal19
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value & ~decoded_wr_biten[12:12]) | (decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal18
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value & ~decoded_wr_biten[13:13]) | (decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal17
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value & ~decoded_wr_biten[14:14]) | (decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal16
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value & ~decoded_wr_biten[15:15]) | (decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal15
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value & ~decoded_wr_biten[16:16]) | (decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal14
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value & ~decoded_wr_biten[17:17]) | (decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal13
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value & ~decoded_wr_biten[18:18]) | (decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal12
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value & ~decoded_wr_biten[19:19]) | (decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal11
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value & ~decoded_wr_biten[20:20]) | (decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal10
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value & ~decoded_wr_biten[21:21]) | (decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal9
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value & ~decoded_wr_biten[22:22]) | (decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal8
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value & ~decoded_wr_biten[23:23]) | (decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal7
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value & ~decoded_wr_biten[24:24]) | (decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal6
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value & ~decoded_wr_biten[25:25]) | (decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal5
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value & ~decoded_wr_biten[26:26]) | (decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal4
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value & ~decoded_wr_biten[27:27]) | (decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal3
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value & ~decoded_wr_biten[28:28]) | (decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal2
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value & ~decoded_wr_biten[29:29]) | (decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value;
-    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal1
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value & ~decoded_wr_biten[30:30]) | (decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
-            load_next_c = '1;
-        end
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.next = next_c;
-        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.load_next) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.next;
-        end
-    end
-    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value;
     // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal0
     always_comb begin
         automatic logic [0:0] next_c;
@@ -9014,7 +8363,7 @@ module mci_reg (
         next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value;
         load_next_c = '0;
         if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value & ~decoded_wr_biten[31:31]) | (decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal0.next = next_c;
@@ -9028,657 +8377,657 @@ module mci_reg (
         end
     end
     assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal1
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal2
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value & ~decoded_wr_biten[2:2]) | (decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal3
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value & ~decoded_wr_biten[2:2]) | (decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value & ~decoded_wr_biten[3:3]) | (decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal4
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value & ~decoded_wr_biten[3:3]) | (decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value & ~decoded_wr_biten[4:4]) | (decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal5
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value & ~decoded_wr_biten[4:4]) | (decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value & ~decoded_wr_biten[5:5]) | (decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal6
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value & ~decoded_wr_biten[5:5]) | (decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value & ~decoded_wr_biten[6:6]) | (decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal7
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value & ~decoded_wr_biten[6:6]) | (decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value & ~decoded_wr_biten[7:7]) | (decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal8
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value & ~decoded_wr_biten[7:7]) | (decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value & ~decoded_wr_biten[8:8]) | (decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal9
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value & ~decoded_wr_biten[8:8]) | (decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value & ~decoded_wr_biten[9:9]) | (decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal10
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value & ~decoded_wr_biten[9:9]) | (decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value & ~decoded_wr_biten[10:10]) | (decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal11
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value & ~decoded_wr_biten[10:10]) | (decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value & ~decoded_wr_biten[11:11]) | (decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal12
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value & ~decoded_wr_biten[11:11]) | (decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value & ~decoded_wr_biten[12:12]) | (decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal13
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value & ~decoded_wr_biten[12:12]) | (decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value & ~decoded_wr_biten[13:13]) | (decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal14
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value & ~decoded_wr_biten[13:13]) | (decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value & ~decoded_wr_biten[14:14]) | (decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal15
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value & ~decoded_wr_biten[14:14]) | (decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value & ~decoded_wr_biten[15:15]) | (decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal16
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value & ~decoded_wr_biten[15:15]) | (decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value & ~decoded_wr_biten[16:16]) | (decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal17
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value & ~decoded_wr_biten[16:16]) | (decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value & ~decoded_wr_biten[17:17]) | (decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal18
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value & ~decoded_wr_biten[17:17]) | (decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value & ~decoded_wr_biten[18:18]) | (decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal19
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value & ~decoded_wr_biten[18:18]) | (decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value & ~decoded_wr_biten[19:19]) | (decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal20
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value & ~decoded_wr_biten[19:19]) | (decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value & ~decoded_wr_biten[20:20]) | (decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal21
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value & ~decoded_wr_biten[20:20]) | (decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value & ~decoded_wr_biten[21:21]) | (decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal22
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value & ~decoded_wr_biten[21:21]) | (decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value & ~decoded_wr_biten[22:22]) | (decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal23
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value & ~decoded_wr_biten[22:22]) | (decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value & ~decoded_wr_biten[23:23]) | (decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal24
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value & ~decoded_wr_biten[23:23]) | (decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value & ~decoded_wr_biten[24:24]) | (decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal25
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value & ~decoded_wr_biten[24:24]) | (decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value & ~decoded_wr_biten[25:25]) | (decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal26
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value & ~decoded_wr_biten[25:25]) | (decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value & ~decoded_wr_biten[26:26]) | (decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal27
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value & ~decoded_wr_biten[26:26]) | (decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value & ~decoded_wr_biten[27:27]) | (decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal28
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value & ~decoded_wr_biten[27:27]) | (decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value & ~decoded_wr_biten[28:28]) | (decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal29
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value & ~decoded_wr_biten[28:28]) | (decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value & ~decoded_wr_biten[29:29]) | (decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal30
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value & ~decoded_wr_biten[29:29]) | (decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value & ~decoded_wr_biten[30:30]) | (decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value;
-    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value;
+    // Field: mci_reg.internal_agg_error_fatal_mask.mask_agg_error_fatal31
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value;
+        next_c = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value;
         load_next_c = '0;
-        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value & ~decoded_wr_biten[30:30]) | (decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
+        if(decoded_reg_strb.internal_agg_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value & ~decoded_wr_biten[31:31]) | (decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
             load_next_c = '1;
         end
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.next = next_c;
-        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.load_next = load_next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.next = next_c;
+        field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value <= 1'h0;
-        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.load_next) begin
-            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.next;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.load_next) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.next;
         end
     end
-    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value;
+    assign hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value = field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value;
     // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0
     always_comb begin
         automatic logic [0:0] next_c;
@@ -9686,7 +9035,7 @@ module mci_reg (
         next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value;
         load_next_c = '0;
         if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
-            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value & ~decoded_wr_biten[31:31]) | (decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.next = next_c;
@@ -9700,6 +9049,657 @@ module mci_reg (
         end
     end
     assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value & ~decoded_wr_biten[2:2]) | (decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value & ~decoded_wr_biten[3:3]) | (decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value & ~decoded_wr_biten[4:4]) | (decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value & ~decoded_wr_biten[5:5]) | (decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value & ~decoded_wr_biten[6:6]) | (decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value & ~decoded_wr_biten[7:7]) | (decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value & ~decoded_wr_biten[8:8]) | (decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value & ~decoded_wr_biten[9:9]) | (decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value & ~decoded_wr_biten[10:10]) | (decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value & ~decoded_wr_biten[11:11]) | (decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value & ~decoded_wr_biten[12:12]) | (decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value & ~decoded_wr_biten[13:13]) | (decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value & ~decoded_wr_biten[14:14]) | (decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value & ~decoded_wr_biten[15:15]) | (decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value & ~decoded_wr_biten[16:16]) | (decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value & ~decoded_wr_biten[17:17]) | (decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value & ~decoded_wr_biten[18:18]) | (decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value & ~decoded_wr_biten[19:19]) | (decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value & ~decoded_wr_biten[20:20]) | (decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value & ~decoded_wr_biten[21:21]) | (decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value & ~decoded_wr_biten[22:22]) | (decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value & ~decoded_wr_biten[23:23]) | (decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value & ~decoded_wr_biten[24:24]) | (decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value & ~decoded_wr_biten[25:25]) | (decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value & ~decoded_wr_biten[26:26]) | (decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value & ~decoded_wr_biten[27:27]) | (decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value & ~decoded_wr_biten[28:28]) | (decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value & ~decoded_wr_biten[29:29]) | (decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value & ~decoded_wr_biten[30:30]) | (decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value;
+    // Field: mci_reg.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_agg_error_non_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value & ~decoded_wr_biten[31:31]) | (decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            load_next_c = '1;
+        end
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.next = next_c;
+        field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value <= 1'h0;
+        end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.load_next) begin
+            field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.next;
+        end
+    end
+    assign hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value = field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value;
     // Field: mci_reg.internal_fw_error_fatal_mask.mask
     always_comb begin
         automatic logic [31:0] next_c;
@@ -22099,73 +22099,73 @@ module mci_reg (
     assign readback_array[13][1:1] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.nmi_pin.value : '0;
     assign readback_array[13][2:2] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value : '0;
     assign readback_array[13][31:3] = '0;
-    assign readback_array[14][0:0] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value : '0;
-    assign readback_array[14][1:1] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value : '0;
-    assign readback_array[14][2:2] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value : '0;
-    assign readback_array[14][3:3] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value : '0;
-    assign readback_array[14][4:4] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value : '0;
-    assign readback_array[14][5:5] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value : '0;
-    assign readback_array[14][6:6] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value : '0;
-    assign readback_array[14][7:7] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value : '0;
-    assign readback_array[14][8:8] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value : '0;
-    assign readback_array[14][9:9] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value : '0;
-    assign readback_array[14][10:10] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value : '0;
-    assign readback_array[14][11:11] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value : '0;
-    assign readback_array[14][12:12] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value : '0;
-    assign readback_array[14][13:13] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value : '0;
-    assign readback_array[14][14:14] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value : '0;
-    assign readback_array[14][15:15] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value : '0;
-    assign readback_array[14][16:16] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value : '0;
-    assign readback_array[14][17:17] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value : '0;
-    assign readback_array[14][18:18] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value : '0;
-    assign readback_array[14][19:19] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value : '0;
-    assign readback_array[14][20:20] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value : '0;
-    assign readback_array[14][21:21] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value : '0;
-    assign readback_array[14][22:22] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value : '0;
-    assign readback_array[14][23:23] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value : '0;
-    assign readback_array[14][24:24] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value : '0;
-    assign readback_array[14][25:25] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value : '0;
-    assign readback_array[14][26:26] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value : '0;
-    assign readback_array[14][27:27] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value : '0;
-    assign readback_array[14][28:28] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value : '0;
-    assign readback_array[14][29:29] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value : '0;
-    assign readback_array[14][30:30] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value : '0;
-    assign readback_array[14][31:31] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value : '0;
+    assign readback_array[14][0:0] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value : '0;
+    assign readback_array[14][1:1] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value : '0;
+    assign readback_array[14][2:2] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value : '0;
+    assign readback_array[14][3:3] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value : '0;
+    assign readback_array[14][4:4] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value : '0;
+    assign readback_array[14][5:5] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value : '0;
+    assign readback_array[14][6:6] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value : '0;
+    assign readback_array[14][7:7] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value : '0;
+    assign readback_array[14][8:8] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value : '0;
+    assign readback_array[14][9:9] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value : '0;
+    assign readback_array[14][10:10] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value : '0;
+    assign readback_array[14][11:11] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value : '0;
+    assign readback_array[14][12:12] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value : '0;
+    assign readback_array[14][13:13] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value : '0;
+    assign readback_array[14][14:14] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value : '0;
+    assign readback_array[14][15:15] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value : '0;
+    assign readback_array[14][16:16] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value : '0;
+    assign readback_array[14][17:17] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value : '0;
+    assign readback_array[14][18:18] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value : '0;
+    assign readback_array[14][19:19] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value : '0;
+    assign readback_array[14][20:20] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value : '0;
+    assign readback_array[14][21:21] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value : '0;
+    assign readback_array[14][22:22] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value : '0;
+    assign readback_array[14][23:23] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value : '0;
+    assign readback_array[14][24:24] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value : '0;
+    assign readback_array[14][25:25] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value : '0;
+    assign readback_array[14][26:26] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value : '0;
+    assign readback_array[14][27:27] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value : '0;
+    assign readback_array[14][28:28] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value : '0;
+    assign readback_array[14][29:29] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value : '0;
+    assign readback_array[14][30:30] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value : '0;
+    assign readback_array[14][31:31] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value : '0;
     assign readback_array[15][0:0] = (decoded_reg_strb.HW_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_NON_FATAL.mbox0_ecc_unc.value : '0;
     assign readback_array[15][1:1] = (decoded_reg_strb.HW_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value : '0;
     assign readback_array[15][31:2] = '0;
-    assign readback_array[16][0:0] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value : '0;
-    assign readback_array[16][1:1] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value : '0;
-    assign readback_array[16][2:2] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value : '0;
-    assign readback_array[16][3:3] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value : '0;
-    assign readback_array[16][4:4] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value : '0;
-    assign readback_array[16][5:5] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value : '0;
-    assign readback_array[16][6:6] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value : '0;
-    assign readback_array[16][7:7] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value : '0;
-    assign readback_array[16][8:8] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value : '0;
-    assign readback_array[16][9:9] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value : '0;
-    assign readback_array[16][10:10] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value : '0;
-    assign readback_array[16][11:11] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value : '0;
-    assign readback_array[16][12:12] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value : '0;
-    assign readback_array[16][13:13] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value : '0;
-    assign readback_array[16][14:14] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value : '0;
-    assign readback_array[16][15:15] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value : '0;
-    assign readback_array[16][16:16] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value : '0;
-    assign readback_array[16][17:17] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value : '0;
-    assign readback_array[16][18:18] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value : '0;
-    assign readback_array[16][19:19] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value : '0;
-    assign readback_array[16][20:20] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value : '0;
-    assign readback_array[16][21:21] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value : '0;
-    assign readback_array[16][22:22] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value : '0;
-    assign readback_array[16][23:23] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value : '0;
-    assign readback_array[16][24:24] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value : '0;
-    assign readback_array[16][25:25] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value : '0;
-    assign readback_array[16][26:26] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value : '0;
-    assign readback_array[16][27:27] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value : '0;
-    assign readback_array[16][28:28] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value : '0;
-    assign readback_array[16][29:29] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value : '0;
-    assign readback_array[16][30:30] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value : '0;
-    assign readback_array[16][31:31] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value : '0;
+    assign readback_array[16][0:0] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value : '0;
+    assign readback_array[16][1:1] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value : '0;
+    assign readback_array[16][2:2] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value : '0;
+    assign readback_array[16][3:3] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value : '0;
+    assign readback_array[16][4:4] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value : '0;
+    assign readback_array[16][5:5] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value : '0;
+    assign readback_array[16][6:6] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value : '0;
+    assign readback_array[16][7:7] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value : '0;
+    assign readback_array[16][8:8] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value : '0;
+    assign readback_array[16][9:9] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value : '0;
+    assign readback_array[16][10:10] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value : '0;
+    assign readback_array[16][11:11] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value : '0;
+    assign readback_array[16][12:12] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value : '0;
+    assign readback_array[16][13:13] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value : '0;
+    assign readback_array[16][14:14] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value : '0;
+    assign readback_array[16][15:15] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value : '0;
+    assign readback_array[16][16:16] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value : '0;
+    assign readback_array[16][17:17] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value : '0;
+    assign readback_array[16][18:18] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value : '0;
+    assign readback_array[16][19:19] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value : '0;
+    assign readback_array[16][20:20] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value : '0;
+    assign readback_array[16][21:21] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value : '0;
+    assign readback_array[16][22:22] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value : '0;
+    assign readback_array[16][23:23] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value : '0;
+    assign readback_array[16][24:24] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value : '0;
+    assign readback_array[16][25:25] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value : '0;
+    assign readback_array[16][26:26] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value : '0;
+    assign readback_array[16][27:27] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value : '0;
+    assign readback_array[16][28:28] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value : '0;
+    assign readback_array[16][29:29] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value : '0;
+    assign readback_array[16][30:30] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value : '0;
+    assign readback_array[16][31:31] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value : '0;
     assign readback_array[17][31:0] = (decoded_reg_strb.FW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.FW_ERROR_FATAL.error_code.value : '0;
     assign readback_array[18][31:0] = (decoded_reg_strb.FW_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.FW_ERROR_NON_FATAL.error_code.value : '0;
     assign readback_array[19][31:0] = (decoded_reg_strb.HW_ERROR_ENC && !decoded_req_is_wr) ? field_storage.HW_ERROR_ENC.error_code.value : '0;
@@ -22180,70 +22180,70 @@ module mci_reg (
     assign readback_array[30][0:0] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.value : '0;
     assign readback_array[30][1:1] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.value : '0;
     assign readback_array[30][31:2] = '0;
-    assign readback_array[31][0:0] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value : '0;
-    assign readback_array[31][1:1] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value : '0;
-    assign readback_array[31][2:2] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value : '0;
-    assign readback_array[31][3:3] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value : '0;
-    assign readback_array[31][4:4] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value : '0;
-    assign readback_array[31][5:5] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value : '0;
-    assign readback_array[31][6:6] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value : '0;
-    assign readback_array[31][7:7] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value : '0;
-    assign readback_array[31][8:8] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value : '0;
-    assign readback_array[31][9:9] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value : '0;
-    assign readback_array[31][10:10] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value : '0;
-    assign readback_array[31][11:11] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value : '0;
-    assign readback_array[31][12:12] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value : '0;
-    assign readback_array[31][13:13] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value : '0;
-    assign readback_array[31][14:14] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value : '0;
-    assign readback_array[31][15:15] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value : '0;
-    assign readback_array[31][16:16] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value : '0;
-    assign readback_array[31][17:17] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value : '0;
-    assign readback_array[31][18:18] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value : '0;
-    assign readback_array[31][19:19] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value : '0;
-    assign readback_array[31][20:20] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value : '0;
-    assign readback_array[31][21:21] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value : '0;
-    assign readback_array[31][22:22] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value : '0;
-    assign readback_array[31][23:23] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value : '0;
-    assign readback_array[31][24:24] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value : '0;
-    assign readback_array[31][25:25] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value : '0;
-    assign readback_array[31][26:26] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value : '0;
-    assign readback_array[31][27:27] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value : '0;
-    assign readback_array[31][28:28] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value : '0;
-    assign readback_array[31][29:29] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value : '0;
-    assign readback_array[31][30:30] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value : '0;
-    assign readback_array[31][31:31] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value : '0;
-    assign readback_array[32][0:0] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value : '0;
-    assign readback_array[32][1:1] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value : '0;
-    assign readback_array[32][2:2] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value : '0;
-    assign readback_array[32][3:3] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value : '0;
-    assign readback_array[32][4:4] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value : '0;
-    assign readback_array[32][5:5] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value : '0;
-    assign readback_array[32][6:6] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value : '0;
-    assign readback_array[32][7:7] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value : '0;
-    assign readback_array[32][8:8] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value : '0;
-    assign readback_array[32][9:9] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value : '0;
-    assign readback_array[32][10:10] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value : '0;
-    assign readback_array[32][11:11] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value : '0;
-    assign readback_array[32][12:12] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value : '0;
-    assign readback_array[32][13:13] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value : '0;
-    assign readback_array[32][14:14] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value : '0;
-    assign readback_array[32][15:15] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value : '0;
-    assign readback_array[32][16:16] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value : '0;
-    assign readback_array[32][17:17] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value : '0;
-    assign readback_array[32][18:18] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value : '0;
-    assign readback_array[32][19:19] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value : '0;
-    assign readback_array[32][20:20] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value : '0;
-    assign readback_array[32][21:21] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value : '0;
-    assign readback_array[32][22:22] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value : '0;
-    assign readback_array[32][23:23] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value : '0;
-    assign readback_array[32][24:24] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value : '0;
-    assign readback_array[32][25:25] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value : '0;
-    assign readback_array[32][26:26] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value : '0;
-    assign readback_array[32][27:27] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value : '0;
-    assign readback_array[32][28:28] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value : '0;
-    assign readback_array[32][29:29] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value : '0;
-    assign readback_array[32][30:30] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value : '0;
-    assign readback_array[32][31:31] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value : '0;
+    assign readback_array[31][0:0] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value : '0;
+    assign readback_array[31][1:1] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value : '0;
+    assign readback_array[31][2:2] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value : '0;
+    assign readback_array[31][3:3] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value : '0;
+    assign readback_array[31][4:4] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value : '0;
+    assign readback_array[31][5:5] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value : '0;
+    assign readback_array[31][6:6] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value : '0;
+    assign readback_array[31][7:7] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value : '0;
+    assign readback_array[31][8:8] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value : '0;
+    assign readback_array[31][9:9] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value : '0;
+    assign readback_array[31][10:10] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value : '0;
+    assign readback_array[31][11:11] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value : '0;
+    assign readback_array[31][12:12] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value : '0;
+    assign readback_array[31][13:13] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value : '0;
+    assign readback_array[31][14:14] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value : '0;
+    assign readback_array[31][15:15] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value : '0;
+    assign readback_array[31][16:16] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value : '0;
+    assign readback_array[31][17:17] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value : '0;
+    assign readback_array[31][18:18] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value : '0;
+    assign readback_array[31][19:19] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value : '0;
+    assign readback_array[31][20:20] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value : '0;
+    assign readback_array[31][21:21] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value : '0;
+    assign readback_array[31][22:22] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value : '0;
+    assign readback_array[31][23:23] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value : '0;
+    assign readback_array[31][24:24] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value : '0;
+    assign readback_array[31][25:25] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value : '0;
+    assign readback_array[31][26:26] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value : '0;
+    assign readback_array[31][27:27] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value : '0;
+    assign readback_array[31][28:28] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value : '0;
+    assign readback_array[31][29:29] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value : '0;
+    assign readback_array[31][30:30] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value : '0;
+    assign readback_array[31][31:31] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value : '0;
+    assign readback_array[32][0:0] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value : '0;
+    assign readback_array[32][1:1] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value : '0;
+    assign readback_array[32][2:2] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value : '0;
+    assign readback_array[32][3:3] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value : '0;
+    assign readback_array[32][4:4] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value : '0;
+    assign readback_array[32][5:5] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value : '0;
+    assign readback_array[32][6:6] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value : '0;
+    assign readback_array[32][7:7] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value : '0;
+    assign readback_array[32][8:8] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value : '0;
+    assign readback_array[32][9:9] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value : '0;
+    assign readback_array[32][10:10] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value : '0;
+    assign readback_array[32][11:11] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value : '0;
+    assign readback_array[32][12:12] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value : '0;
+    assign readback_array[32][13:13] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value : '0;
+    assign readback_array[32][14:14] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value : '0;
+    assign readback_array[32][15:15] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value : '0;
+    assign readback_array[32][16:16] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value : '0;
+    assign readback_array[32][17:17] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value : '0;
+    assign readback_array[32][18:18] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value : '0;
+    assign readback_array[32][19:19] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value : '0;
+    assign readback_array[32][20:20] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value : '0;
+    assign readback_array[32][21:21] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value : '0;
+    assign readback_array[32][22:22] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value : '0;
+    assign readback_array[32][23:23] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value : '0;
+    assign readback_array[32][24:24] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value : '0;
+    assign readback_array[32][25:25] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value : '0;
+    assign readback_array[32][26:26] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value : '0;
+    assign readback_array[32][27:27] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value : '0;
+    assign readback_array[32][28:28] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value : '0;
+    assign readback_array[32][29:29] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value : '0;
+    assign readback_array[32][30:30] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value : '0;
+    assign readback_array[32][31:31] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value : '0;
     assign readback_array[33][31:0] = (decoded_reg_strb.internal_fw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_fw_error_fatal_mask.mask.value : '0;
     assign readback_array[34][31:0] = (decoded_reg_strb.internal_fw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_fw_error_non_fatal_mask.mask.value : '0;
     assign readback_array[35][0:0] = (decoded_reg_strb.WDT_TIMER1_EN && !decoded_req_is_wr) ? field_storage.WDT_TIMER1_EN.timer1_en.value : '0;

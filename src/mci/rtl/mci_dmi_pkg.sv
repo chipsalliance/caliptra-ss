@@ -76,5 +76,15 @@ package mci_dmi_pkg;
     parameter MCI_DMI_SS_CONFIG_DONE_STICKY     = 7'h7A;
     parameter MCI_DMI_MCU_NMI_VECTOR            = 7'h7B;
 
+    `define SS_DMI_AGG_ERR_CONCAT(_sig_name) \
+    {``_sig_name``31.value,``_sig_name``30.value,``_sig_name``29.value,``_sig_name``28.value,\
+     ``_sig_name``27.value,``_sig_name``26.value,``_sig_name``25.value,``_sig_name``24.value,\
+     ``_sig_name``23.value,``_sig_name``22.value,``_sig_name``21.value,``_sig_name``20.value,\
+     ``_sig_name``19.value,``_sig_name``18.value,``_sig_name``17.value,``_sig_name``16.value,\
+     ``_sig_name``15.value,``_sig_name``14.value,``_sig_name``13.value,``_sig_name``12.value,\
+     ``_sig_name``11.value,``_sig_name``10.value,``_sig_name``9.value, ``_sig_name``8.value,\
+     ``_sig_name``7.value, ``_sig_name``6.value, ``_sig_name``5.value, ``_sig_name``4.value,\
+     ``_sig_name``3.value, ``_sig_name``2.value, ``_sig_name``1.value, ``_sig_name``0.value}
+
 endpackage
 `endif

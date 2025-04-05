@@ -153,10 +153,13 @@ logic [MCU_SRAM_ECC_DATA_W-1:0] sram_rdata_ecc;
 logic mcu_sram_dmi_addr_req;
 logic mcu_sram_dmi_data_req;
 logic mcu_sram_dmi_addr_wr_req ;
+logic mcu_sram_dmi_addr_wr_req_f ;
 logic mcu_sram_dmi_data_wr_req ;
 logic mcu_sram_dmi_addr_rd_req ;
 logic mcu_sram_dmi_data_rd_req ;
-logic [MCU_SRAM_DATA_W-1:0] mcu_sram_dmi_addr_reg;
+logic mcu_sram_dmi_req;
+logic [MCU_SRAM_ADDR_W-1:0] mcu_sram_dmi_addr_reg;
+logic [MCU_SRAM_DATA_W-1:0] mcu_sram_dmi_data_reg;
 
 // MISC
 logic axi_debug_req_qual;
@@ -174,8 +177,10 @@ assign mcu_sram_dmi_addr_wr_req = mcu_sram_dmi_addr_req && dmi_uncore_wr_en;
 assign mcu_sram_dmi_data_wr_req = mcu_sram_dmi_data_req && dmi_uncore_wr_en;
 
 // Read request
-assign mcu_sram_dmi_addr_rd_req = mcu_sram_dmi_addr_req ;
-assign mcu_sram_dmi_data_rd_req = mcu_sram_dmi_data_req ;
+assign mcu_sram_dmi_addr_rd_req = mcu_sram_dmi_addr_req && ~dmi_uncore_wr_en ;
+assign mcu_sram_dmi_data_rd_req = mcu_sram_dmi_data_req && ~dmi_uncore_wr_en ;
+
+assign mcu_sram_dmi_req = mcu_sram_dmi_data_wr_req | mcu_sram_dmi_data_rd_req;
 
 // DMI ADDR Reg
 always_ff @ (posedge clk or negedge mci_pwrgood) begin
@@ -184,13 +189,29 @@ always_ff @ (posedge clk or negedge mci_pwrgood) begin
     end
     else begin
         if(mcu_sram_dmi_addr_wr_req) begin
-            mcu_sram_dmi_addr_reg <= dmi_uncore_wdata;
+            mcu_sram_dmi_addr_reg <= dmi_uncore_wdata[MCU_SRAM_ADDR_W-1:0];
         end
     end
 end
 
+// DMI Read regs
+always_ff @ (posedge clk or negedge mci_pwrgood) begin
+    if(!mci_pwrgood) begin
+        mcu_sram_dmi_addr_wr_req_f <= '0;
+        mcu_sram_dmi_data_reg <= '0;
+    end
+    else begin
+        mcu_sram_dmi_addr_wr_req_f <= mcu_sram_dmi_addr_wr_req;
+
+        if(mcu_sram_dmi_addr_wr_req_f) begin
+            mcu_sram_dmi_data_reg <= sram_rdata_cor;
+        end
+    end
+end
+
+
 assign dmi_uncore_rdata = mcu_sram_dmi_addr_rd_req ? mcu_sram_dmi_addr_reg : 
-                          mcu_sram_dmi_data_rd_req ? sram_rdata_cor : 
+                          mcu_sram_dmi_data_rd_req ? mcu_sram_dmi_data_reg : 
                           '0;
                           
 // Collision only if accessing DMI data since DMI addr doesn't send
@@ -337,10 +358,10 @@ end
 // At this point we are translating the MCU SRAM requests into actual SRAM requests for the SRAM interface
 // MCU SRAM read and write only have 1 request.
 // MCU SRAM RMW have 2 requests
-assign sram_req = ((mcu_sram_read_req | mcu_sram_write_req | mcu_sram_dmi_data_wr_req | mcu_sram_dmi_data_rd_req) & ~mcu_sram_req_second_cycle)  | (mcu_sram_rmw_req);
+assign sram_req = ((mcu_sram_read_req | mcu_sram_write_req | mcu_sram_dmi_data_wr_req | mcu_sram_dmi_addr_wr_req) & ~mcu_sram_req_second_cycle)  | (mcu_sram_rmw_req);
 
 assign sram_write_req = sram_req & (mcu_sram_write_req | mcu_sram_rmw_write_req | mcu_sram_dmi_data_wr_req);
-assign sram_read_req  = sram_req & (mcu_sram_read_req  | mcu_sram_rmw_read_req  | mcu_sram_dmi_data_rd_req);
+assign sram_read_req  = sram_req & (mcu_sram_read_req  | mcu_sram_rmw_read_req  | mcu_sram_dmi_addr_wr_req);
 
 
 // Assumption is that in order for there to be a second cycle 
@@ -357,8 +378,12 @@ assign sram_read_data_avail = mcu_sram_req_second_cycle;
 // trigger a second read to the SRAM.
 
 // All Txs we need to pass the address to the memory interface.
+// Speculatively read the SRAM whenever we write the addr reg
+// When writing the data reg, we use the latched address to write to the SRAM
 // Must shift the address to account for sram being more than 1 byte wide 
-assign mci_mcu_sram_req_if.req.addr = sram_req ? cif_resp_if.req_data.addr [MCU_SRAM_CIF_ADDR_W-1:2] : '0;
+assign mci_mcu_sram_req_if.req.addr = mcu_sram_dmi_addr_wr_req ? dmi_uncore_wdata[MCU_SRAM_ADDR_W-1:0] :
+                                      mcu_sram_dmi_data_wr_req ? mcu_sram_dmi_addr_reg :
+                                                      sram_req ? cif_resp_if.req_data.addr [MCU_SRAM_CIF_ADDR_W-1:2] : '0;
 
 // All requests assert CS
 assign mci_mcu_sram_req_if.req.cs = sram_req;
@@ -383,9 +408,11 @@ endgenerate
 always_comb begin
     mci_mcu_sram_req_if.req.wdata.data = '0;
     if(sram_write_req) begin
-
         if(mcu_sram_rmw_req) begin
             mci_mcu_sram_req_if.req.wdata.data = sram_rmw_wdata;
+        end
+        else if (mcu_sram_dmi_data_wr_req) begin
+            mci_mcu_sram_req_if.req.wdata.data = dmi_uncore_wdata;
         end
         else begin
             mci_mcu_sram_req_if.req.wdata.data = cif_resp_if.req_data.wdata;
