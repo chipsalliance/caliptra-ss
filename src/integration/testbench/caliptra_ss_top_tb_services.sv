@@ -51,7 +51,6 @@ import tb_top_pkg::*;
 
     bit          [31:0]         mem_signature_begin = 32'd0; // TODO:
     bit          [31:0]         mem_signature_end   = 32'd0;
-    bit          [31:0]         mem_mailbox         = `SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
     logic                       mailbox_data_val;
     logic                       mailbox_write;
@@ -109,8 +108,8 @@ import tb_top_pkg::*;
         end 
     end
 
-    assign mailbox_write    = `CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.awvalid && (`CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.awaddr == mem_mailbox) && rst_l;
-    assign mailbox_data     = `CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.wdata;
+    assign mailbox_write    = `CPTRA_SS_TOP_PATH.mci_top_i.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.load_next && rst_l;
+    assign mailbox_data     = `CPTRA_SS_TOP_PATH.mci_top_i.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.next;
 
     assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
 
