@@ -92,8 +92,8 @@ logic min_mcu_rst_count_elapsed_nxt;
 /////////////////////////////////////////////////
 // DFT                                 
 /////////////////////////////////////////////////
-assign mcu_rst_b   = scan_mode ? mcu_rst_b   :  mcu_rst_b_ff;
-assign cptra_rst_b = scan_mode ? cptra_rst_b :  cptra_rst_b_ff;
+assign mcu_rst_b   = /*scan_mode ? mcu_rst_b   :  */  mcu_rst_b_ff;
+assign cptra_rst_b = /*scan_mode ? cptra_rst_b :  */  cptra_rst_b_ff;
 
 /////////////////////////////////////////////////
 // Sync signals into local clock domain
