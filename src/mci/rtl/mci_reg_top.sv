@@ -51,6 +51,7 @@ module mci_reg_top
 
     // AXI Privileged requests
     input logic axi_mci_soc_config_req,
+    input logic axi_mcu_sram_config_req,
     input logic axi_mcu_req,
 
     // WDT specific signals
@@ -146,8 +147,6 @@ module mci_reg_top
 
     // Boot status
     input  logic mcu_reset_once,
-    input  logic fw_boot_upd_reset,     // First MCU reset request
-    input  logic fw_hitless_upd_reset,  // Other MCU reset requests
     input  mci_boot_fsm_state_e boot_fsm, 
 
     
@@ -574,6 +573,8 @@ assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req                            
 assign mci_reg_hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock            = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.CAP_LOCK.lock.value;
 assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock          = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
 assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky   = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value;
+assign mci_reg_hwif_in.axi_mcu_or_mcu_sram_config_req                           = (axi_mcu_req | axi_mcu_sram_config_req);
+
 
 
 ///////////////////////////////////////////////
@@ -688,9 +689,6 @@ assign mci_reg_hwif_in.RESET_STATUS.mcu_reset_sts.next   = ~mcu_rst_b;
 
 assign mci_reg_hwif_in.HW_FLOW_STATUS.boot_fsm.next = boot_fsm;
 
-assign mci_reg_hwif_in.RESET_REASON.FW_BOOT_UPD_RESET.next = fw_boot_upd_reset; 
-
-assign mci_reg_hwif_in.RESET_REASON.FW_HITLESS_UPD_RESET.next = fw_hitless_upd_reset; 
 
 // pwrgood_hint informs if the powergood toggled
 always_ff @(posedge clk or negedge mci_pwrgood) begin
@@ -713,19 +711,17 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
 end
 
 // PwrGood is used to decide if the warm reset toggle happened due to pwrgood or
-// only due to warm reset. We also need to clear this bit when its
-// FW_*_UPD_RESET only path
+// only due to warm reset.
 always_comb begin
     if (!Warm_Reset_Capture_Flag) begin
-         mci_reg_hwif_in.RESET_REASON.WARM_RESET.next = ~pwrgood_toggle_hint;
+         mci_reg_hwif_in.RESET_REASON.WARM_RESET.we = ~pwrgood_toggle_hint;
     end
-    else if (mci_reg_hwif_out.RESET_REASON.FW_BOOT_UPD_RESET.value || mci_reg_hwif_out.RESET_REASON.FW_HITLESS_UPD_RESET.value) begin
-         mci_reg_hwif_in.RESET_REASON.WARM_RESET.next = 1'b0;
-    end 
     else begin
-         mci_reg_hwif_in.RESET_REASON.WARM_RESET.next = mci_reg_hwif_out.RESET_REASON.WARM_RESET.value;
+        mci_reg_hwif_in.RESET_REASON.WARM_RESET.we = '0;
     end
 end
+
+assign mci_reg_hwif_in.RESET_REASON.WARM_RESET.next = 1'b1;
 
 
 ////////////////////////////////////////////////////////
