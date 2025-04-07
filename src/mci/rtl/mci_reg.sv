@@ -6395,6 +6395,7 @@ module mci_reg (
             field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value <= field_combo.RESET_REASON.FW_HITLESS_UPD_RESET.next;
         end
     end
+    assign hwif_out.RESET_REASON.FW_HITLESS_UPD_RESET.value = field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value;
     // Field: mci_reg.RESET_REASON.FW_BOOT_UPD_RESET
     always_comb begin
         automatic logic [0:0] next_c;
@@ -6415,6 +6416,7 @@ module mci_reg (
             field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value <= field_combo.RESET_REASON.FW_BOOT_UPD_RESET.next;
         end
     end
+    assign hwif_out.RESET_REASON.FW_BOOT_UPD_RESET.value = field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value;
     // Field: mci_reg.RESET_REASON.WARM_RESET
     always_comb begin
         automatic logic [0:0] next_c;

@@ -66,7 +66,7 @@ array set ro_regs {
 
 array set ro_reg_mask {
     0 0xf
-    1 0x0
+    1 0x7
     2 0x0
     3 0xffffffff
     4 0x0
