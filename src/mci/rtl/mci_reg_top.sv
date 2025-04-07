@@ -564,6 +564,7 @@ assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky   
 assign mci_reg_hwif_in.axi_mcu_or_mcu_sram_config_req                           = (axi_mcu_req | axi_mcu_sram_config_req);
 
 
+
 ///////////////////////////////////////////////
 // MTIME                       
 ///////////////////////////////////////////////
