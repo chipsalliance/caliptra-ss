@@ -35,6 +35,8 @@
 #define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 0x0a
 #define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 0x0b
 
+#define TB_CMD_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
+
 #define TB_CMD_DISABLE_INJECT_ECC_ERROR     0xe0
 #define TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM 0xe2
 #define TB_CMD_INJECT_ECC_ERROR_DOUBLE_DCCM 0xe3
@@ -43,6 +45,34 @@
 #define MCU_MBOX_AXI_CFG_STRIDE         (SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0 - SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0)
 
 extern uint32_t state;
+
+typedef struct {
+    // FW_SRAM_EXEC_REGION_SIZE
+    bool cfg_mcu_fw_sram_exec_reg_size;
+    uint32_t mcu_fw_sram_exec_reg_size;
+
+    // CPTRA DMA AXI USER 
+    bool cfg_cptra_dma_axi_user;
+    uint32_t cptra_dma_axi_user;
+    
+    // MCU MBOX VALID USER 
+    bool cfg_mcu_mbox0_valid_user;
+    uint32_t *mcu_mbox0_valid_user;
+    bool cfg_mcu_mbox1_valid_user;
+    uint32_t *mcu_mbox1_valid_user;
+
+    // SOC_IFC MBOX
+    bool cfg_enable_cptra_mbox_user_init;
+
+    // FUSE DONE
+    bool cfg_skip_set_fuse_done;
+
+} mcu_cptra_init_args;
+// MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
+// TO LOAD FUSES!!!
+void mcu_cptra_init(mcu_cptra_init_args args);
+#define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){__VA_ARGS__});
+
 uint32_t xorshift32(void);
 
 // Bitfield indicating which MCU Mboxes are valid for the given test
@@ -72,11 +102,12 @@ void reset_fc_lcc_rtl(void);
 void mcu_cptra_wait_for_fuses() ;
 void mcu_cptra_set_fuse_done() ;
 void mcu_cptra_advance_brkpoint() ;
-void mcu_cptra_fuse_init_axi_user(uint32_t cptra_axi_user);
+void mcu_set_fw_sram_exec_region_size(uint32_t size);
+void mcu_set_cptra_dma_axi_user(uint32_t value);
 void mcu_mci_boot_go();
+void read_check(uintptr_t rdptr, uint32_t expected_rddata);
 void mcu_mci_poll_exec_lock();
 void mcu_mci_req_reset();
-void mcu_cptra_fuse_init();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
 void mcu_cptra_mbox_cmd();
@@ -93,6 +124,8 @@ void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id);
 bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count);
 bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count);
 void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num);
+void write_read_check(uintptr_t rdptr, uint32_t data);
+uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t end_address);
 void mcu_mbox_clear_soc_req_while_mcu_lock_interrupt(uint32_t mbox_num);
 bool is_mcu_mbox_clear_soc_req_while_mcu_lock_interrupt_set(uint32_t mbox_num);
 bool mcu_mbox_wait_for_soc_req_while_mcu_lock_interrupt(uint32_t mbox_num, uint32_t attempt_count);
@@ -119,13 +152,11 @@ inline void mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t cmd) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x command: 0%x\n", mbox_num, cmd); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, cmd);
 }
-
 inline uint32_t mcu_mbox_read_cmd(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading CMD: 0x%x\n", mbox_num, rd_data); 
     return rd_data;
 }
-
 inline void mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t dlen) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x DLEN: 0x%x\n", mbox_num, dlen); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, dlen);
@@ -136,7 +167,6 @@ inline uint32_t mcu_mbox_read_dlen(uint32_t mbox_num) {
     VPRINTF(LOW, "MCU: Mbox%x Reading DLEN: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }
-
 inline void mcu_mbox_write_cmd_status(uint32_t mbox_num, enum mcu_mbox_cmd_status cmd_status) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS: 0%x\n", mbox_num, cmd_status); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, (cmd_status & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK));    

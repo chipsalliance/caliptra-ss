@@ -1,6 +1,4 @@
-//********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,35 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//********************************************************************************
-
-#include "soc_address_map.h"
-#include "printf.h"
-#include "riscv_hw_if.h"
+//
+#include "caliptra_defines.h"
+#include "caliptra_isr.h"
+#include "riscv-csr.h"
 #include "soc_ifc.h"
-#include "caliptra_ss_lib.h"
+#include "riscv_hw_if.h"
 #include <string.h>
 #include <stdint.h>
+#include "printf.h"
 
-volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
+volatile uint32_t* stdout           = (uint32_t *)STDOUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void main (void) {
+volatile uint32_t  intr_count;
+volatile caliptra_intr_received_s cptra_intr_rcv = {0};
+
+void main(void) {
     int argc=0;
     char *argv[1];
-    uint32_t reg_data;
 
-    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
+    VPRINTF(LOW,"----------------------------------\nCaliptra: Hello World from Subsystem!!\n----------------------------------\n");
 
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
-    mcu_cptra_init_d();
+    while(1);
 
-    mcu_cptra_poll_mb_ready();
-
-    SEND_STDOUT_CTRL(0xff);
 }
