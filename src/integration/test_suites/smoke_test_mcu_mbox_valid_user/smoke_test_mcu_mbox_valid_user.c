@@ -123,12 +123,13 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
 
     // MBOX: Write CMD_STATUS for testing
     VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS\n", mbox_num); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0x1 );    
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX_DATA_READY );    
 
     //// MBOX: Execute
     VPRINTF(LOW, "MCU: Write Mbox execute\n");
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
     VPRINTF(LOW, "MCU: Mbox%x execute\n", mbox_num);
+    
 }
 
 // Test (in conjuction with Caliptra uC C code) does a series of MCU mailbox writes and reads between MCU and Caliptra uC
@@ -202,14 +203,26 @@ void main (void) {
 
     mcu_mbox_update_status_complete(mbox_num);
 
-    // Clear the interrupt and check that it gets cleared
+    // Clear the CMD_AVAIL interrupt and check that it gets cleared
     mcu_mbox_clear_mbox_cmd_avail_interrupt(mbox_num);
 
     // Acquire lock and send data to mailbox
     // Set execute
     mcu_mbox_send_data_no_wait_status(mbox_num);
 
+    // Wait for SoC requested lock while MCU lock interrupt is set
+    // Caliptra uC will attempt to grab lock after MCU sets execute
+    if (!mcu_mbox_wait_for_soc_req_while_mcu_lock_interrupt(mbox_num, 10000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x SoC req while MCU lock interrupt not set\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+
+    mcu_mbox_clear_soc_req_while_mcu_lock_interrupt(mbox_num);
+
     VPRINTF(LOW, "MCU: Sequence complete\n");
+    
+    SEND_STDOUT_CTRL(0xff);
 
     while(1);
 }

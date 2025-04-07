@@ -85,7 +85,7 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
 
     // MBOX: Write CMD_STATUS for testing
     VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS\n", mbox_num); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0x1 );    
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX_DATA_READY );    
 
     //// MBOX: Execute
     VPRINTF(LOW, "MCU: Write Mbox execute\n");

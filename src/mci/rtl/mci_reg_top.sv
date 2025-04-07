@@ -762,11 +762,11 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         mcu_mbox1_target_user_done_d <= '0;
     end  
     else begin
-        mcu_mbox1_target_user_done_d <= mcu_mbox0_target_user_done;
+        mcu_mbox1_target_user_done_d <= mcu_mbox1_target_user_done;
     end  
 end
 
-always_comb mcu_mbox1_target_user_done_p = mcu_mbox1_target_user_done & !mcu_mbox0_target_user_done_d;
+always_comb mcu_mbox1_target_user_done_p = mcu_mbox1_target_user_done & !mcu_mbox1_target_user_done_d;
 always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox1_target_done_sts.hwset   = mcu_mbox1_target_user_done_p;
 
 always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts.hwset       = soc_req_mbox0_lock;
