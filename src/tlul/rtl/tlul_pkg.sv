@@ -4,6 +4,8 @@
 //
 
 import caliptra_prim_pkg::*;
+import caliptra_prim_mubi_pkg::*;
+import caliptra_prim_secded_pkg::*;
 `ifndef TLUL_PKG_DEFINE
 `define TLUL_PKG_DEFINE
 
