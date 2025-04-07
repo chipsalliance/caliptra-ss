@@ -74,7 +74,7 @@ extern uint32_t valid_mbox_instances;
 uint32_t decode_single_valid_mbox(void);
 
 inline void mcu_sleep (const uint32_t cycles) {
-    for (uint8_t ii = 0; ii < cycles; ii++) {
+    for (uint32_t ii = 0; ii < cycles; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
 }
