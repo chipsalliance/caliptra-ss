@@ -1,0 +1,7 @@
+---
+seed: 1
+testname: smoke_test_mcu_mbox1_target_user
+pre-exec: |
+  echo "Running pre_exec for [smoke_test_mcu_mbox_target_user]"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_mcu_mbox_target_user BUILD_CFLAGS="-DMCU_MBOX_VALID_VECTOR=0x2" mcu_program.hex
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile BUILD_CFLAGS=-DMCU_MBOX_VALID_VECTOR=0x2 AUX_LIB_DIR="$CALIPTRA_SS_ROOT/src/integration/test_suites/libs/caliptra_ss_lib $CALIPTRA_SS_ROOT/src/integration/test_suites/libs/soc_ifc_ss" AUX_OFILES="caliptra_ss_lib.o soc_ifc_ss.o" AUX_HEADER_FILES="$CALIPTRA_SS_ROOT/src/integration/test_suites/libs/caliptra_ss_lib/caliptra_ss_lib.h $CALIPTRA_SS_ROOT/src/integration/test_suites/libs/soc_ifc_ss/soc_ifc_ss.h" CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_target_user TESTNAME=cptra_smoke_test_mcu_mbox_target_user program.hex

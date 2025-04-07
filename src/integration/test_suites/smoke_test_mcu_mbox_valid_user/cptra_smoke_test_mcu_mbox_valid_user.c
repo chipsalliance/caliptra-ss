@@ -144,7 +144,7 @@ void caliptra_ss_mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
 
     // Attempt CMD_STATUS write
     VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX%x CMD_STATUS write\n", mbox_num);
-    write_payload[0] = 0x3;
+    write_payload[0] = MCU_MBOX_CMD_FAILURE;
     soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
     soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
@@ -267,7 +267,7 @@ void caliptra_ss_mcu_mbox_get_data_and_attempt_writes(uint32_t mbox_num) {
     data_length = read_payload[0];
     VPRINTF(LOW, "CALIPTRA: MBOX%x CMD STATUS = %x\n", mbox_num, data_length);
     
-    if (data_length != 0x1) {
+    if (data_length != MCU_MBOX_DATA_READY) {
         VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x CMD_STATUS not expected value: 0x%x \n", mbox_num, 0x1);
         SEND_STDOUT_CTRL(0x1);
         while(1);
@@ -343,6 +343,10 @@ void caliptra_ss_mcu_mbox_get_data_and_attempt_writes(uint32_t mbox_num) {
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }   
+
+    // Attempt to acquire lock even though MCU has the lock (will be checked on MCU side that interrupt is set)
+    VPRINTF(LOW, "CALIPTRA: Requesting MCU MBOX%x LOCK\n", mbox_num);
+    caliptra_ss_mcu_mbox_acquire_lock(mbox_num, 1);
 }
 
 
@@ -386,5 +390,5 @@ void main(void) {
 
         VPRINTF(LOW, "CALIPTRA: Sequence complete\n");
 
-        SEND_STDOUT_CTRL(0xff);
+        while(1);
 }
