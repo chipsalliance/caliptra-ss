@@ -120,7 +120,7 @@ import tb_top_pkg::*;
 
     always @(negedge clk or negedge rst_l) begin
         if(!rst_l) begin
-            prev_mailbox_data <= '0;
+            prev_mailbox_data <= 'hA; // Initialize with newline character so timestamp is printed to console for the first line
         end
         else begin
             if( mailbox_data_val & mailbox_write) begin
