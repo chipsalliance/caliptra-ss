@@ -16,6 +16,7 @@
 #include "riscv_hw_if.h"
 #include "veer-csr.h"
 #include "soc_ifc.h"
+#include "soc_address_map.h"
 #include <stdint.h>
 #include "printf.h"
 #include "caliptra_isr.h"
@@ -33,6 +34,7 @@ volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 void main () {
 
     uint32_t ii;
+    uint64_t mci_base_addr;
     uint32_t data;
 
     // Message
@@ -46,7 +48,12 @@ void main () {
     // Sleep
     for (uint16_t slp = 0; slp < 33; slp++);
 
-    // Set FW EXEC REGION LOCK to enable MCU SRAM check
+    // Set RESET_REASON, then FW EXEC REGION LOCK to enable MCU SRAM check
+    VPRINTF(LOW, "FW: Setting MCI RESET_REASON to FW_UPD\n");
+    mci_base_addr = ((uint64_t) lsu_read_32(CLP_SOC_IFC_REG_SS_MCI_BASE_ADDR_L)) |
+                    ((uint64_t) lsu_read_32(CLP_SOC_IFC_REG_SS_MCI_BASE_ADDR_H) << 32);
+    data = MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK;
+    soc_ifc_axi_dma_send_ahb_payload(mci_base_addr + MCI_REG_RESET_REASON, 0, &data, 4, 0);
     VPRINTF(LOW, "FW: Setting FW_EXEC_CTRL\n");
     lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, 0x4);
 
