@@ -36,6 +36,7 @@ void main (void) {
     char *argv[1];
     uint32_t reg_data;
     uint32_t sram_data;
+    uint32_t axi_user_id[] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x1 }; // FIXME doen't hardcode
 
     VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
 
@@ -80,18 +81,16 @@ void main (void) {
         SEND_STDOUT_CTRL(0xff);
 
     } else {
-        mcu_mci_boot_go();
 
         VPRINTF(LOW, "MCU: Caliptra bringup\n")
 
-        mcu_cptra_fuse_init();
+        mcu_cptra_init_d(.cfg_enable_cptra_mbox_user_init=true);
 
         ////////////////////////////////////
         // Mailbox command test
         //
 
         mcu_cptra_poll_mb_ready();
-        mcu_cptra_user_init();
         mcu_cptra_mbox_cmd();
         
         reg_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_REV_ID);
