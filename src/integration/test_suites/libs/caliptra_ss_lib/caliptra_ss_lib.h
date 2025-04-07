@@ -16,6 +16,7 @@
 
 #ifndef CALIPTRA_SS_LIB
 #define CALIPTRA_SS_LIB
+#include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_address_map.h"
 #include "stdint.h"
@@ -137,13 +138,11 @@ void mcu_mbox_clear_target_done_interrupt(uint32_t mbox_num);
 // MCU Mbox Read/Write SRAM and CSR functions
 ////////////////////////////////////////////////////
 inline void mcu_mbox_clear_execute(uint32_t mbox_num) {
-    uint32_t mbox_resp_data;
     VPRINTF(LOW, "MCU: Clearing MBOX%x Execute\n", mbox_num);
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x0);
 }
 
 inline void mcu_mbox_set_execute(uint32_t mbox_num) {
-    uint32_t mbox_resp_data;
     VPRINTF(LOW, "MCU: Setting MBOX%x Execute\n", mbox_num);
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x1);
 }

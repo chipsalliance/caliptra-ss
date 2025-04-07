@@ -437,7 +437,7 @@ void mcu_mbox_clear_target_done_interrupt(uint32_t mbox_num) {
 // Default to mbox0 if multiple selected
 uint32_t decode_single_valid_mbox(void) {
     uint32_t mbox_num = 0;
-    VPRINTF(LOW, "MCU: Valid MBOX Vector: 0x%x\n", valid_mbox_instances);
+    VPRINTF(LOW, "Valid MBOX Vector: 0x%x\n", valid_mbox_instances);
     if (valid_mbox_instances == 0x2) {
         mbox_num = 1;
     }
