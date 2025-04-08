@@ -8,7 +8,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -29,7 +28,7 @@ void writeblank() {
 
     // Overwriting set bits in a fuse should result in an error.
     dai_wr(fuse_address, 0xFFFFFFFF, 0, 32, 0);
-    dai_wr(fuse_address, 0, 0, 32, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(fuse_address, 0, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 }
 
 void main (void) {

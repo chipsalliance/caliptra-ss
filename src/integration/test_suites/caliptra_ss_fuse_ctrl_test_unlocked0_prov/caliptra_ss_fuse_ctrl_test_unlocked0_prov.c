@@ -8,7 +8,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -137,7 +136,7 @@ void test_unlocked0_provision() {
             grant_mcu_for_fc_writes(); 
         }
 
-        dai_wr(rnd_fuse_addresses[i], sentinel, 0, partitions[i].granularity, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+        dai_wr(rnd_fuse_addresses[i], sentinel, 0, partitions[i].granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
         
         if (partitions[i].is_software) {
             dai_rd(rnd_fuse_addresses[i], &read_value, &zero, partitions[i].granularity, 0);

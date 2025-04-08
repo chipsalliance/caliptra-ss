@@ -7,7 +7,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -62,8 +61,8 @@ void program_secret_lc_transition_partition() {
 
     // Step 3
     uint32_t digest[2];
-    digest[0] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_0);
-    digest[1] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_1);
+    digest[0] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0);
+    digest[1] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1);
     if (digest[0] != 0 || digest[1] != 0) {
         VPRINTF(LOW, "ERROR: digest is not 0\n");
         exit(1);
@@ -77,14 +76,14 @@ void program_secret_lc_transition_partition() {
     wait_dai_op_idle(0);
 
     // Step 6
-    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 7
-    dai_wr(fuse_address, data[0], data[1], 64, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(fuse_address, data[0], data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 8
-    digest[0] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_0);
-    digest[1] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_1);
+    digest[0] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0);
+    digest[1] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1);
     if (digest[0] == 0 && digest[1] == 0) {
         VPRINTF(LOW, "ERROR: digest is 0\n");
         exit(1);

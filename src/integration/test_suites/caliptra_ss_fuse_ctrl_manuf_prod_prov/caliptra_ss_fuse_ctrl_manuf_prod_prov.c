@@ -7,7 +7,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -111,7 +110,7 @@ void manuf_prod_provision() {
         } else {
             grant_mcu_for_fc_writes(); 
         }
-        dai_wr(partitions[i].address, i, 0, partitions[i].granularity, partitions[i].lc_state == MANUF ? FUSE_CTRL_STATUS_DAI_ERROR_MASK : 0);
+        dai_wr(partitions[i].address, i, 0, partitions[i].granularity, partitions[i].lc_state == MANUF ? OTP_CTRL_STATUS_DAI_ERROR_MASK : 0);
     }
 }
 

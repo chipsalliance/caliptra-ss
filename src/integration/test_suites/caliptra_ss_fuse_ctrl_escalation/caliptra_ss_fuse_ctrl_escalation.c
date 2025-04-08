@@ -7,7 +7,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -33,7 +32,7 @@ void trigger_escalation() {
     // checking that their corresponding error registers signal a `FSM_STATE_ERROR`.
     const uint32_t fsm_state_error = 0x7;
     for (uint32_t i = 0; i < 18; i++) {
-        uint32_t err_code = lsu_read_32(FUSE_CTRL_ERR_CODE_0 + 0x4*i);
+        uint32_t err_code = lsu_read_32(SOC_OTP_CTRL_ERR_CODE_RF_ERR_CODE_0 + 0x4*i);
         if (err_code != fsm_state_error) {
             VPRINTF(LOW, "incorrectvalue in error register %d for : exp: %08X: act: %08X\n", i, fsm_state_error, err_code);
             exit(1);

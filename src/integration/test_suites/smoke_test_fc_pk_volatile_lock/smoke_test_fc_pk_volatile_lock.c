@@ -7,7 +7,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -45,10 +44,10 @@ void program_vendor_hashes_prod_partition(void) {
     dai_wr(addresses[1], data+1, 0, 32, 0);
 
     // Step 3
-    lsu_write_32(FUSE_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 4); // Lock all hashes starting from index 5.
+    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 4); // Lock all hashes starting from index 5.
 
     // Step 4
-    dai_wr(addresses[1], data+2, 0, 32, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(addresses[1], data+2, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 }
 
 void main (void) {

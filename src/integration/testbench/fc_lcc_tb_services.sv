@@ -102,6 +102,10 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: fault the transition tokens partition digest");
             force `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[696] = '0;
           end
+          CMD_FC_LCC_FAULT_BUS_ECC: begin
+            $display("fc_lcc_tb_services: fault one bit in axi write request");
+            force `FC_PATH.core_tl_i.a_data = 32'h1234_5678;
+          end
           default: begin
             // No action for unrecognized commands.
           end

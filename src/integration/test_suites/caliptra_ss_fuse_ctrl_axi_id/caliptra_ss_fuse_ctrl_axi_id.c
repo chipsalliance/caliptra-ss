@@ -7,7 +7,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -31,8 +30,8 @@ void axi_id() {
     // Both CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN and CPTRA_CORE_UDS_SEED must not
     // be modified by the AXI requests stemming from the MCU.
     grant_mcu_for_fc_writes(); 
-    dai_wr(0x000, sentinel, sentinel, granularity, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
-    dai_wr(0x048, sentinel, sentinel, granularity, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(0x000, sentinel, sentinel, granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(0x048, sentinel, sentinel, granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
     dai_wr(0x090, sentinel, sentinel, granularity, 0 /* Should work */);
 
     // All fuses should be writable by the Caliptra core.

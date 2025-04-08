@@ -76,6 +76,7 @@ localparam CMD_FC_LCC_EXT_CLK_160MHZ        = FC_LCC_CMD_OFFSET + 8'h0d;
 localparam CMD_FC_LCC_EXT_CLK_400MHZ        = FC_LCC_CMD_OFFSET + 8'h0e;
 localparam CMD_FC_LCC_EXT_CLK_1000MHZ       = FC_LCC_CMD_OFFSET + 8'h0f;
 localparam CMD_FC_LCC_FAULT_DIGEST          = FC_LCC_CMD_OFFSET + 8'h10;
+localparam CMD_FC_LCC_FAULT_BUS_ECC         = FC_LCC_CMD_OFFSET + 8'h11;
 
 
 localparam TB_DISABLE_MCU_SRAM_PROT_ASSERTS = 8'hc0;

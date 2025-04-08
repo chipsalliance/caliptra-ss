@@ -7,7 +7,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -43,7 +42,7 @@ void register_accesses() {
 
     // Step 1
     for (int i = 0; i < 18; i++) {
-        if (lsu_read_32(FUSE_CTRL_ERR_CODE_0+0x4*i)) {
+        if (lsu_read_32(SOC_OTP_CTRL_ERR_CODE_RF_ERR_CODE_0+0x4*i)) {
             VPRINTF(LOW, "ERROR: err register %d is not zero\n", i);
             exit(1);
         }
@@ -56,10 +55,10 @@ void register_accesses() {
     dai_rd(fuse_address, &read_data, NULL, 32, 0);
 
     // Step 4
-    lsu_write_32(FUSE_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK, 0);
+    lsu_write_32(SOC_OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK, 0);
 
     // Step 5
-    dai_rd(fuse_address, &read_data, NULL, 32, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_rd(fuse_address, &read_data, NULL, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 }
 
 void main (void) {

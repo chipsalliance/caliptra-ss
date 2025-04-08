@@ -8,7 +8,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -49,8 +48,7 @@ static partition_t partitions[15] = {
  * a reset when no locking command has been issued.
  */
 void unexpected_reset() {
-    const uint32_t sentinel0 = 0x01;
-    const uint32_t sentinel1 = 0x03;
+    const uint32_t sentinel = 0x01;
 
     partition_t partition = partitions[xorshift32() % 15];
     uint32_t granularity = partition.is_software ? 32 : 64;
@@ -61,7 +59,7 @@ void unexpected_reset() {
         grant_mcu_for_fc_writes(); 
     }
 
-    dai_wr(partition.address, sentinel0, 0x0, granularity, 0);
+    dai_wr(partition.address, sentinel, 0x0, granularity, 0);
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
@@ -70,7 +68,7 @@ void unexpected_reset() {
     // For software partitions are write should succeed while for
     // hardware partitions a read should go through.
     if (partition.is_software) {
-        dai_wr(partition.address, sentinel1, 0x0, granularity, 0);
+        dai_wr(partition.address, sentinel, 0x0, granularity, 0);
     } else {
         uint32_t read_data[2];
         dai_rd(partition.address, &read_data[0], &read_data[1], granularity, 0);
