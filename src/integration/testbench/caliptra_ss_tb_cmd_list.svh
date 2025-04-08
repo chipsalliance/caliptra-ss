@@ -46,6 +46,8 @@
 //         8'hb9        - FC/LCC CMD_FORCE_LC_TOKENS           
 //         8'hba        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD    
 //         8'hbb        - FC/LCC CMD_FC_TRIGGER_ESCALATION   
+//         8'hbc        - FC/LCC CMD_LC_TRIGGER_ESCALATION0
+//         8'hbd        - FC/LCC CMD_LC_TRIGGER_ESCALATION1
 //         --
 //         8'hc0        - Disable ommand Offset
 //
@@ -77,7 +79,8 @@ localparam CMD_FC_LCC_EXT_CLK_400MHZ        = FC_LCC_CMD_OFFSET + 8'h0e;
 localparam CMD_FC_LCC_EXT_CLK_1000MHZ       = FC_LCC_CMD_OFFSET + 8'h0f;
 localparam CMD_FC_LCC_FAULT_DIGEST          = FC_LCC_CMD_OFFSET + 8'h10;
 localparam CMD_FC_LCC_FAULT_BUS_ECC         = FC_LCC_CMD_OFFSET + 8'h11;
-
+localparam CMD_LC_TRIGGER_ESCALATION0       = FC_LCC_CMD_OFFSET + 8'h12;
+localparam CMD_LC_TRIGGER_ESCALATION1       = FC_LCC_CMD_OFFSET + 8'h13;
 
 localparam TB_DISABLE_MCU_SRAM_PROT_ASSERTS = 8'hc0;
 
