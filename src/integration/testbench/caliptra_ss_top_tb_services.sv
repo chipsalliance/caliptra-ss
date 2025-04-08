@@ -391,8 +391,9 @@ import tb_top_pkg::*;
         abi_reg[30] = "t5";
         abi_reg[31] = "t6";
 
-        hex_file_is_empty = $system("test -s mcu_sram.hex");
-        if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram, 0, (MCU_SRAM_SIZE_KB*1024)-1);
+        lmem_dummy_preloader.ram = '{default:8'h0};
+        hex_file_is_empty = $system("test -s mcu_lmem.hex");
+        if (!hex_file_is_empty) begin $display("SS TB: got %d for 'test -s mcu_sram.hex'", hex_file_is_empty); $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram, 0, (MCU_SRAM_SIZE_KB*1024)-1); end
 
 
         imem.ram = '{default:8'h0};
