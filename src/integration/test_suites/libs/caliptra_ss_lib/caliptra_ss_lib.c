@@ -369,6 +369,24 @@ void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id) {
 
 }
 
+// Generate AXI that is guaranteed to not be in axi_user_id
+uint32_t mcu_mbox_generate_invalid_axi(uint32_t *axi_user_id) {
+    bool is_unique;
+    uint32_t caliptra_uc_axi_id;
+    do {
+        is_unique = true;
+        caliptra_uc_axi_id = xorshift32(); // Generate a new value
+
+        // Check if the generated value matches any in axi_user_id
+        for (size_t i = 0; i < sizeof(axi_user_id) / sizeof(axi_user_id[0]); i++) {
+            if (caliptra_uc_axi_id == axi_user_id[i]) {
+                is_unique = false; // Not unique, try again
+                return caliptra_uc_axi_id;
+            }
+        }
+    } while (!is_unique);
+}
+
 bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count) {
     VPRINTF(LOW, "MCU: Waiting for Mbox%x lock acquired\n", mbox_num);
     for(uint32_t ii=0; ii<attempt_count; ii++) {
@@ -442,6 +460,21 @@ uint32_t decode_single_valid_mbox(void) {
         mbox_num = 1;
     }
     return mbox_num;
+}
+
+uint32_t mcu_mbox_get_sram_size_kb(uint32_t mbox_num) {
+    uint32_t data;
+    uint32_t mask = MCI_REG_HW_CONFIG0_MCU_MBOX1_SRAM_SIZE_MASK << ((MCU_MBOX_MAX_NUM-1 - mbox_num) * MCI_REG_HW_CONFIG0_MCU_MBOX0_SRAM_SIZE_LOW);
+    data = lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_CONFIG0) & mask;
+    data = data >> ((MCU_MBOX_MAX_NUM-1 - mbox_num) * MCI_REG_HW_CONFIG0_MCU_MBOX0_SRAM_SIZE_LOW);
+    return data;
+}
+
+uint32_t mcu_mbox_gen_rand_dword_addr(uint32_t mbox_num, uint32_t min_kb, uint32_t max_kb) {
+    uint32_t min_size = min_kb * 1024/4;
+    uint32_t max_size = max_kb * 1024/4;
+    uint32_t rand_addr = ((xorshift32() % (max_size - min_size)) + min_size);
+    return rand_addr;
 }
 
 void mcu_cptra_poll_mb_ready() {

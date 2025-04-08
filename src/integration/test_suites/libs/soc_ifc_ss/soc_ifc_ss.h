@@ -48,16 +48,18 @@ void cptra_mcu_mbox_wait_target_user_valid(uint32_t mbox_num, uint32_t attempt_c
 
 void cptra_mcu_mbox_set_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status targ_status);
 
+uint32_t cptra_mcu_mbox_get_sram_size_kb(uint32_t mbox_num);
+
 uint32_t cptra_mcu_mbox_read_cmd(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_mbox_user(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_dlen(uint32_t mbox_num);
-uint32_t cptra_mcu_mbox_read_sram(uint32_t mbox_num, uint32_t addr);
+uint32_t cptra_mcu_mbox_read_dword_sram(uint32_t mbox_num, uint32_t dword_addr);
 uint32_t cptra_mcu_mbox_read_cmd_status(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_execute(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_target_user(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_target_user_valid(uint32_t mbox_num);
 
-void cptra_mcu_mbox_write_sram(uint32_t mbox_num, uint32_t addr, uint32_t data);
+void cptra_mcu_mbox_write_dword_sram(uint32_t mbox_num, uint32_t dword_addr, uint32_t data);
 void cptra_mcu_mbox_write_execute(uint32_t mbox_num, uint32_t data);
 void cptra_mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t data);
 void cptra_mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t data);

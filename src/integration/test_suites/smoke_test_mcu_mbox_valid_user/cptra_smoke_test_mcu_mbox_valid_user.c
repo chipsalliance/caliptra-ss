@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include "printf.h"
 #include "soc_ifc.h"
+#include "soc_ifc_ss.h"
 #include "caliptra_reg.h"
 
 volatile char* stdout = (char *)STDOUT;
@@ -138,9 +139,31 @@ void caliptra_ss_mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
     
     for (uint32_t ii = 0; ii < 16; ii++) {
         mbox_data[0] = write_payload[ii];
-        VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x data: 0x%x\n", mbox_num, write_payload[ii]); 
+        VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x SRAM[%d]: 0x%x\n", mbox_num, ii, write_payload[ii]); 
         soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, 0, mbox_data, 4, 0);
     }
+
+    // If SRAM is <2MB, write and read to a handful of random locations in invalid addresses
+    // and check that writes don't take affect/reads return 0
+    uint32_t sram_size_kb = cptra_mcu_mbox_get_sram_size_kb(mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Mbox SRAM size in KB: %d\n", sram_size_kb);
+    if (sram_size_kb < MCU_MBOX_MAX_SIZE_KB) {
+        for (uint32_t j = 0; j < 5; j++) {
+            uint32_t rand_addr = mcu_mbox_gen_rand_dword_addr(mbox_num, sram_size_kb, MCU_MBOX_MAX_SIZE_KB);
+
+            VPRINTF(LOW, "CALIPTRA: Attempting to write to invalid SRAM[%d]\n", rand_addr);
+            cptra_mcu_mbox_write_dword_sram(mbox_num, rand_addr, xorshift32());
+
+            uint32_t data = cptra_mcu_mbox_read_dword_sram(mbox_num, rand_addr);
+
+            if (data != 0) {
+                VPRINTF(FATAL, "MCU: Invalid access to SRAM[%d] did not return 0: 0x%x \n", rand_addr, data);
+                SEND_STDOUT_CTRL(0x1);
+                while(1);
+            }
+        }
+    }
+
 
     // Attempt CMD_STATUS write
     VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX%x CMD_STATUS write\n", mbox_num);

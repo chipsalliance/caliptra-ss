@@ -209,6 +209,14 @@ void cptra_mcu_mbox_wait_target_user_valid(uint32_t mbox_num, uint32_t attempt_c
     while(1);
 }
 
+uint32_t cptra_mcu_mbox_get_sram_size_kb(uint32_t mbox_num) {
+    uint32_t data;
+    uint32_t mask = MCI_REG_HW_CONFIG0_MCU_MBOX1_SRAM_SIZE_MASK << ((MCU_MBOX_MAX_NUM-1 - mbox_num) * MCI_REG_HW_CONFIG0_MCU_MBOX0_SRAM_SIZE_LOW);
+    data = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_HW_CONFIG0) & mask;
+    data = data >> ((MCU_MBOX_MAX_NUM-1 - mbox_num) * MCI_REG_HW_CONFIG0_MCU_MBOX0_SRAM_SIZE_LOW);
+    return data;
+}
+
 void cptra_mcu_mbox_set_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status targ_status) {
     VPRINTF(LOW, "CALIPTRA: Set TARGET_USER_STATUS Done in MBOX%x with CMD: 0x%x\n", mbox_num, targ_status);
     uint32_t write_data = MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK |
@@ -250,14 +258,14 @@ uint32_t cptra_mcu_mbox_read_dlen(uint32_t mbox_num) {
     return data;
 }
 
-void cptra_mcu_mbox_write_dword_sram(uint32_t mbox_num, uint32_t addr, uint32_t data) {
-    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x SRAM[%d]: 0x%x\n", mbox_num, addr, data); 
-    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*addr + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+void cptra_mcu_mbox_write_dword_sram(uint32_t mbox_num, uint32_t dword_addr, uint32_t data) {
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x SRAM[%d]: 0x%x\n", mbox_num, dword_addr, data); 
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num, data);
 }
 
-uint32_t cptra_mcu_mbox_read_dword_sram(uint32_t mbox_num, uint32_t addr) {
-    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*addr + MCU_MBOX_NUM_STRIDE * mbox_num);
-    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x SRAM[%d]: 0x%x\n", mbox_num, addr, data);
+uint32_t cptra_mcu_mbox_read_dword_sram(uint32_t mbox_num, uint32_t dword_addr) {
+    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x SRAM[%d]: 0x%x\n", mbox_num, dword_addr, data);
     return data;
 }
 
