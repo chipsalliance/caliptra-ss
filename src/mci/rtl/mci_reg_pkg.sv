@@ -838,9 +838,19 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
+    } mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__out_t;
+
+    typedef struct packed{
+        logic value;
+    } mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__out_t;
+
+    typedef struct packed{
+        logic value;
     } mci_reg__RESET_REASON__WARM_RESET__out_t;
 
     typedef struct packed{
+        mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__out_t FW_HITLESS_UPD_RESET;
+        mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__out_t FW_BOOT_UPD_RESET;
         mci_reg__RESET_REASON__WARM_RESET__out_t WARM_RESET;
     } mci_reg__RESET_REASON__out_t;
 
