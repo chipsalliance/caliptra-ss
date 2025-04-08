@@ -42,11 +42,22 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
+static const char* mcu_sram_msg __attribute__ ((section(".mcu_sram.msg"))) = "=================\nHello World from MCU SRAM\n=================\n";
+void mcu_sram_print_msg (void) __attribute__ ((aligned(4),section (".mcu_sram.print_msg")));
+
+void mcu_sram_print_msg (void) {
+    VPRINTF(LOW, mcu_sram_msg);
+    VPRINTF(LOW, "MCU: JTAG work is done\n");
+    SEND_STDOUT_CTRL(0xff);
+}
 
 void main (void) {
 
+    VPRINTF(LOW, "MCU: Bringing Caliptra out of Reset\n");
+    mcu_cptra_init_d(.cfg_mcu_fw_sram_exec_reg_size=true, .mcu_fw_sram_exec_reg_size=0x8000);
+/*
+
     uint32_t cptra_boot_go;
-    uint32_t read_data;
 
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
@@ -69,7 +80,7 @@ void main (void) {
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
-
+*/
     for (uint16_t ii = 0; ii < 1000; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
@@ -77,16 +88,7 @@ void main (void) {
     //Sync phrase for JTAG
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG MCU Smoke Test with ROM \n=================\n\n");
     
-    read_data = 0;
-    VPRINTF(LOW, "MCU: waits in loop until JTAG done\n");
-    while(read_data != 0xB007FACE){
-        read_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RESET_VECTOR);
-        for (uint32_t ii = 0; ii < 500; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
-    }
-
-    VPRINTF(LOW, "MCU: JTAG work is done\n");
-    SEND_STDOUT_CTRL(0xff);
+    VPRINTF(LOW, "MCU: waits until JTAG done\n");
+    while(1);
 
 }

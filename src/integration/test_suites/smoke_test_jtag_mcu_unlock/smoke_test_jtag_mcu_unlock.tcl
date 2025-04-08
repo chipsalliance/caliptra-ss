@@ -188,7 +188,7 @@ for {set i 0} {$i < $num_ro_regs} {incr i} {
 
 #Check MCU SRAM
 puts "Checking the SRAM interface writes..."
-for {set i 0} {$i < 16} {incr i} {
+for {set i 0x1FFF0} {$i < 0x20000} {incr i} {
     #Write data that is address inverted
     puts "Writing SRAM addr $i"
     set wr_addr $i
@@ -198,7 +198,7 @@ for {set i 0} {$i < 16} {incr i} {
 }
 
 puts "Checking the SRAM interface reads..."
-for {set i 0} {$i < 16} {incr i} {
+for {set i 0x1FFF0} {$i < 0x20000} {incr i} {
     #Expected data that is address inverted
     puts "Reading SRAM addr $i"
     set rd_addr $i
@@ -240,7 +240,9 @@ if {[compare $actual 0] == 0} {
 }
 
 # Success
-#puts "Setting unique value to get MCU to end test"
-riscv dmi_write  $MCI_DMI_MCU_RESET_VECTOR 0xB007FACE
+puts "Setting reset vector to MCU SRAM"
+riscv dmi_write $MCI_DMI_MCU_RESET_VECTOR 0x21c00000
+puts "Setting reset request"
+riscv dmi_write $MCI_DMI_RESET_REQUEST 0x1
 
 shutdown
