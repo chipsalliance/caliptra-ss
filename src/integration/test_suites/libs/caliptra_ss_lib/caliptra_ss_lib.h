@@ -44,6 +44,8 @@
 
 #define MCU_MBOX_NUM_STRIDE             (SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR - SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR)
 #define MCU_MBOX_AXI_CFG_STRIDE         (SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0 - SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0)
+#define MCU_MBOX_MAX_SIZE_KB            2048
+#define MCU_MBOX_MAX_NUM                2
 
 extern uint32_t state;
 
@@ -139,6 +141,7 @@ void mcu_mbox_update_status_complete(uint32_t mbox_num);
 bool mcu_mbox_wait_for_user_lock(uint32_t mbox_num, uint32_t user_axi, uint32_t attempt_count);
 bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t expected_value, uint32_t attempt_count);
 void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id);
+uint32_t mcu_mbox_generate_invalid_axi(uint32_t *axi_user_id);
 bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count);
 bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count);
 void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num);
@@ -150,6 +153,8 @@ bool mcu_mbox_wait_for_soc_req_while_mcu_lock_interrupt(uint32_t mbox_num, uint3
 bool mcu_mbox_wait_for_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status status, uint32_t attempt_count);
 bool is_mcu_mbox_target_done_interrupt_set(uint32_t mbox_num);
 void mcu_mbox_clear_target_done_interrupt(uint32_t mbox_num);
+uint32_t mcu_mbox_get_sram_size_kb(uint32_t mbox_num);
+uint32_t mcu_mbox_gen_rand_dword_addr(uint32_t mbox_num, uint32_t sram_size_kb, uint32_t max_size_kb);
 
 ///////////////////////////////////////////////////
 // MCU Mbox Read/Write SRAM and CSR functions
@@ -229,13 +234,13 @@ inline uint32_t mcu_mbox_read_hw_status(uint32_t mbox_num) {
     return rd_data;
 }
 
-inline void mcu_mbox_write_sram(uint32_t mbox_num, uint32_t dword_addr, uint32_t data) {
+inline void mcu_mbox_write_sram_dword(uint32_t mbox_num, uint32_t dword_addr, uint32_t data) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x data: 0x%x\n", mbox_num, data); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+ dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num, data);
 }
 
-inline uint32_t mcu_mbox_read_sram(uint32_t mbox_num, uint32_t dword_addr) {
-    uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+ dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num);
+inline uint32_t mcu_mbox_read_sram_dword(uint32_t mbox_num, uint32_t dword_addr) {
+    uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading SRAM: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }

@@ -44,7 +44,7 @@ void mcu_mbox_get_and_check_sram_data(uint32_t mbox_num, uint32_t expected_dlen,
     }
 
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        mbox_resp_data = mcu_mbox_read_sram(mbox_num, 4*ii);
+        mbox_resp_data = mcu_mbox_read_sram_dword(mbox_num, ii);
         // Compare expected data from Caliptra uC
         if (mbox_resp_data != clptra_expected_data[ii]) {
             VPRINTF(FATAL, "MCU: Mbox%x SRAM data from Caliptra is not expected value - dword: %x expected data: %x\n", mbox_num, ii, clptra_expected_data[ii]);
@@ -108,7 +108,7 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num, uint32_t mbox_dlen, ui
 
     //// MBOX: Write SRAM data
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        mcu_mbox_write_sram(mbox_num, 4*ii, mbox_data[ii]);
+        mcu_mbox_write_sram_dword(mbox_num, ii, mbox_data[ii]);
     }
 
     // MBOX: Write CMD_STATUS for testing
