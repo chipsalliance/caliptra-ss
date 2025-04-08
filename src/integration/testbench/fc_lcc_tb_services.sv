@@ -98,6 +98,10 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: setting ext clock frequency to 1000 mhz");
             force freq_sel = 2'b11;
           end
+          CMD_FC_LCC_FAULT_DIGEST: begin
+            $display("fc_lcc_tb_services: fault the transition tokens partition digest");
+            force `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[696] = '0;
+          end
           default: begin
             // No action for unrecognized commands.
           end

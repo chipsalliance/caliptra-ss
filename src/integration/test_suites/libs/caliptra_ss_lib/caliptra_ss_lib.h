@@ -202,6 +202,7 @@ inline void mcu_mbox_write_cmd_status(uint32_t mbox_num, enum mcu_mbox_cmd_statu
 #define CMD_FC_LCC_EXT_CLK_160MHZ       FC_LCC_CMD_OFFSET + 0x0d
 #define CMD_FC_LCC_EXT_CLK_400MHZ       FC_LCC_CMD_OFFSET + 0x0e
 #define CMD_FC_LCC_EXT_CLK_1000MHZ      FC_LCC_CMD_OFFSET + 0x0f
+#define CMD_FC_LCC_FAULT_DIGEST         FC_LCC_CMD_OFFSET + 0x10
 
 inline uint32_t mcu_mbox_read_cmd_status(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);

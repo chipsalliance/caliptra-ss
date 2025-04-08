@@ -43,10 +43,15 @@ void grant_caliptra_core_for_fc_writes(void) {
 
 void wait_dai_op_idle(uint32_t status_mask) {
     uint32_t status;
+    uint32_t dai_idle;
+    uint32_t check_pending;
     VPRINTF(LOW, "DEBUG: Waiting for DAI to become idle...\n");
     do {
         status = lsu_read_32(FUSE_CTRL_STATUS);
-    } while (((status >> FUSE_CTRL_STATUS_DAI_IDLE_OFFSET) & 0x1) == 0);
+        dai_idle = (status >> FUSE_CTRL_STATUS_DAI_IDLE_OFFSET) & 0x1;
+        check_pending = (status >> FUSE_CTRL_STATUS_CHECK_PENDING_OFFSET) & 0x1;
+    } while ((!dai_idle || check_pending) && (status != 0x1BFFFF));
+
     // Clear the IDLE bit from the status value
     status &= ((((uint32_t)1) << (FUSE_CTRL_STATUS_DAI_IDLE_OFFSET - 1)) - 1);
     if (status != status_mask) {

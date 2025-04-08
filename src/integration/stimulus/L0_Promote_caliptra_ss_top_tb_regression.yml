@@ -35,3 +35,5 @@ contents:
         - ../test_suites/smoke_test_lcc_kmac_kat/smoke_test_lcc_kmac_kat.yml
         - ../test_suites/caliptra_ss_lcc_st_trans/caliptra_ss_lcc_st_trans.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_axi_id/caliptra_ss_fuse_ctrl_axi_id.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_axi_id/caliptra_ss_fuse_ctrl_external_clock.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_axi_id/caliptra_ss_fuse_ctrl_integrity_check.yml
