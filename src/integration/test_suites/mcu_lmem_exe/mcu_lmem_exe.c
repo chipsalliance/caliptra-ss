@@ -14,7 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //********************************************************************************
-
 #include "soc_address_map.h"
 #include "printf.h"
 #include "riscv_hw_if.h"
@@ -31,23 +30,32 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-// Global variable allocated to DCCM explicitly, to test DCCM access
-static const char* dccm_msg __attribute__ ((section(".dccm"))) = "=================\nHello World from MCU DCCM\n=================\n\n";
+static const char* mcu_sram_msg __attribute__ ((section(".mcu_sram.msg"))) = "=================\nHello World from MCU SRAM\n=================\n";
+void mcu_sram_print_msg (void) __attribute__ ((aligned(4),section (".mcu_sram.print_msg")));
+
+void mcu_sram_print_msg (void) {
+    VPRINTF(LOW, mcu_sram_msg);
+}
 
 void main (void) {
     int argc=0;
     char *argv[1];
     uint32_t reg_data;
 
-    // Print message from DCCM memory
-    if (dccm_msg[0] != '=') {
-        VPRINTF(FATAL, "MCU: DCCM does not contain expected message!\nExpected: '=', saw '%c'\n", dccm_msg[0]);
+    if (lsu_read_32(SOC_MCI_TOP_MCI_REG_RESET_REASON) & MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK) {
+        mcu_sram_print_msg();
+        SEND_STDOUT_CTRL(0xFF);
+        while(1);
     } else {
-        VPRINTF(LOW, dccm_msg)
+        VPRINTF(LOW, "=================\nMCU: MCU SRAM Exec Test\n=================\n\n")
+
+        VPRINTF(LOW, "MCU: Bringing Caliptra out of Reset\n");
+        mcu_cptra_init_d(.cfg_mcu_fw_sram_exec_reg_size=true, .mcu_fw_sram_exec_reg_size=0x8000);
+
+        VPRINTF(LOW, "\nMCU: Wait for Caliptra reset req...\n");
+        mcu_mci_poll_exec_lock();
+        VPRINTF(LOW, "MCU: Observed Caliptra reset req; issuing reset\n\n");
+        mcu_mci_req_reset();
+        while(1);
     }
-
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
-    mcu_cptra_init_d();
-
-    mcu_cptra_poll_mb_ready();
 }

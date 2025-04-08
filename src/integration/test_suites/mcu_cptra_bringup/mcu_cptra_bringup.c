@@ -101,24 +101,5 @@ void main (void) {
         mcu_mci_req_reset();
         while(1);
     }
-    // lsu_write_32(0x21200000, 0x12345678);
-    // VPRINTF(LOW, "MCU: I3C 0x2120_0000 write completed\n");
-    // lsu_write_32(0x21200004, 0xABCDABCD);
-    // VPRINTF(LOW, "MCU: I3C 0x2120_0004 write completed\n");
-    // lsu_write_32(0x21203FFC, 0xDEADDEAD);
-    // VPRINTF(LOW, "MCU: I3C 0x2120_03FC write completed\n");
-
-    // mbox_resp_data = lsu_read_32(0x21200000);
-    // VPRINTF(LOW, "MCU: I3C 0x2120_0000 %x\n", mbox_resp_data);
-    // mbox_resp_data = lsu_read_32(0x21200004);
-    // VPRINTF(LOW, "MCU: I3C 0x2120_0004 %x\n", mbox_resp_data);
-    // mbox_resp_data = lsu_read_32(0x21203FFC);
-    // VPRINTF(LOW, "MCU: I3C 0x2120_03FC %x\n", mbox_resp_data);
-
-    // mbox_resp_dlen = lsu_read_32(I3CCSR_I3CBASE_CONTROLLER_DEVICE_ADDR);
-    // VPRINTF(LOW, "MCU: I3C I3CCSR_I3CBASE_CONTROLLER_DEVICE_ADDR %x\n", mbox_resp_dlen);
-
-    // lsu_write_32(SOC_I3CCSR_I3CBASE_HC_CONTROL, 0x12345678);
-    // VPRINTF(LOW, "MCU: I3C SOC_I3CCSR_I3CBASE_HC_CONTROL write completed\n");
 
 }

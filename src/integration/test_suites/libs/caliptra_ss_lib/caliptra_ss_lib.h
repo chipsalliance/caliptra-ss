@@ -69,10 +69,27 @@ typedef struct {
     bool cfg_skip_set_fuse_done;
 
 } mcu_cptra_init_args;
+#define mcu_cptra_init_arg_defaults           \
+    /* FW_SRAM_EXEC_REGION_SIZE */            \
+    .cfg_mcu_fw_sram_exec_reg_size   = false, \
+    .mcu_fw_sram_exec_reg_size       = 0,     \
+    /* CPTRA DMA AXI USER */                  \
+    .cfg_cptra_dma_axi_user          = false, \
+    .cptra_dma_axi_user              = 0,     \
+    /* MCU MBOX VALID USER */                 \
+    .cfg_mcu_mbox0_valid_user        = false, \
+    .mcu_mbox0_valid_user            = 0,     \
+    .cfg_mcu_mbox1_valid_user        = false, \
+    .mcu_mbox1_valid_user            = 0,     \
+    /* SOC_IFC MBOX */                        \
+    .cfg_enable_cptra_mbox_user_init = false, \
+    /* FUSE DONE */                           \
+    .cfg_skip_set_fuse_done          = false
+
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!
 void mcu_cptra_init(mcu_cptra_init_args args);
-#define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){__VA_ARGS__});
+#define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){mcu_cptra_init_arg_defaults __VA_OPT__(,) __VA_ARGS__});
 
 uint32_t xorshift32(void);
 
@@ -81,7 +98,7 @@ extern uint32_t valid_mbox_instances;
 uint32_t decode_single_valid_mbox(void);
 
 inline void mcu_sleep (const uint32_t cycles) {
-    for (uint8_t ii = 0; ii < cycles; ii++) {
+    for (uint32_t ii = 0; ii < cycles; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
 }

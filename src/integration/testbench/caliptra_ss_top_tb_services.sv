@@ -51,7 +51,6 @@ import tb_top_pkg::*;
 
     bit          [31:0]         mem_signature_begin = 32'd0; // TODO:
     bit          [31:0]         mem_signature_end   = 32'd0;
-    bit          [31:0]         mem_mailbox         = `SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
     logic                       mailbox_data_val;
     logic                       mailbox_write;
@@ -119,8 +118,8 @@ import tb_top_pkg::*;
         end 
     end
 
-    assign mailbox_write    = `CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.awvalid && (`CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.awaddr == mem_mailbox) && rst_l;
-    assign mailbox_data     = `CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.wdata;
+    assign mailbox_write    = `CPTRA_SS_TOP_PATH.mci_top_i.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.load_next && rst_l;
+    assign mailbox_data     = `CPTRA_SS_TOP_PATH.mci_top_i.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.next;
 
     assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
 
@@ -130,7 +129,7 @@ import tb_top_pkg::*;
 
     always @(negedge clk or negedge rst_l) begin
         if(!rst_l) begin
-            prev_mailbox_data <= '0;
+            prev_mailbox_data <= 'hA; // Initialize with newline character so timestamp is printed to console for the first line
         end
         else begin
             if( mailbox_data_val & mailbox_write) begin
@@ -392,10 +391,12 @@ import tb_top_pkg::*;
         abi_reg[30] = "t5";
         abi_reg[31] = "t6";
 
+        lmem_dummy_preloader.ram = '{default:8'h0};
         hex_file_is_empty = $system("test -s mcu_lmem.hex");
-        if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram); // FIXME - should there bit a limit like Caliptra has for iccm.hex?
+        if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram, 0, (MCU_SRAM_SIZE_KB*1024)-1);
 
 
+        imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
         tp = $fopen("mcu_trace_port.csv","w");
@@ -411,11 +412,6 @@ import tb_top_pkg::*;
         // preload_dccm();
         preload_css_mcu0_dccm();
         preload_mcu_sram();
-
-// `ifndef VERILATOR
-//         // if($test$plusargs("dumpon")) $dumpvars;
-//         // forever  ACLK     = #5 ~ACLK;
-// `endif
 
     end
 
@@ -455,7 +451,7 @@ import tb_top_pkg::*;
 
 
     rom #(
-        .DEPTH     (16'h7FFF), // 64KB
+        .DEPTH     (16'h8000), // 256KiB
         .DATA_WIDTH(64),
         .ADDR_WIDTH(22)
     ) imem (
