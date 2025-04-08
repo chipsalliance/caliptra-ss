@@ -1821,7 +1821,6 @@ I think this is the one that isn't used
         default: SDA = 1'b1;
         endcase
     end
-/*
 
 
 // Looping back cptra_rst_b
@@ -1940,7 +1939,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     // Caliptra SS MCU 
     .cptra_ss_strap_mcu_lsu_axi_user_i(hwif_out.interface_regs.lsu_user.lsu_user.value),
     .cptra_ss_strap_mcu_ifu_axi_user_i(hwif_out.interface_regs.ifu_user.ifu_user.value),
-    .cptra_ss_strap_cptra_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value),
+    //.cptra_ss_strap_cptra_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value), TODO
     .cptra_ss_strap_mcu_sram_config_axi_user_i(hwif_out.interface_regs.sram_config_user.sram_config_user.value),
     .cptra_ss_strap_mci_soc_config_axi_user_i(hwif_out.interface_regs.soc_config_user.soc_config_user.value),
 
@@ -2004,8 +2003,6 @@ caliptra_ss_top caliptra_ss_top_0 (
     /*output wire*/ .cptra_ss_soc_hw_debug_en_o(),
     
     // Caliptra SS Fuse Controller Interface (Fuse Macros)
-    /*input  tlul_pkg::tl_h2d_t*/ .cptra_ss_fuse_macro_prim_tl_i('0),
-    /*output tlul_pkg::tl_d2h_t*/ .cptra_ss_fuse_macro_prim_tl_o(),
     .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
     .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
 

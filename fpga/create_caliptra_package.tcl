@@ -58,9 +58,13 @@ add_files [ glob $ssrtlDir/src/riscv_core/veer_el2/tb/icache_macros.svh ]
 add_files [ glob $ssrtlDir/src/riscv_core/veer_el2/rtl/design/*.sv ]
 add_files [ glob $ssrtlDir/src/riscv_core/veer_el2/rtl/design/*/*.sv ]
 add_files [ glob $ssrtlDir/src/riscv_core/veer_el2/rtl/design/*/*.v ]
+# OTP
+add_files [ glob $ssrtlDir/src/fuse_ctrl/rtl/*.sv ]
 # OTP memory
 add_files $ssrtlDir/src/fuse_ctrl/data/otp-img.2048.vmem
 set_property file_type {Memory Initialization Files} [get_files $ssrtlDir/src/fuse_ctrl/data/otp-img.2048.vmem]
+# OTP from testbench
+add_files $ssrtlDir/src/integration/testbench/prim_generic_otp.sv
 # SS IPs
 add_files [ glob $ssrtlDir/src/*/rtl/*.svh ]
 add_files [ glob $ssrtlDir/src/*/rtl/*.sv ]

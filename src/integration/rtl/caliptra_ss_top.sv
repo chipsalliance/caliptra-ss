@@ -23,6 +23,8 @@
 `include "i3c_defines.svh"
 `include "caliptra_ss_includes.svh"
 
+`include "css_mcu0_common_defines.vh"
+
 module caliptra_ss_top
     import axi_pkg::*;
     import soc_ifc_pkg::*;
