@@ -19,26 +19,31 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-/**
- * This test performs DAI writes over the AXI bus on the boundaries of the
- * fuse controller access table entries.
- */
-void axi_id() {
-    const uint32_t sentinel = 0xAB;
-    const uint32_t granularity = 64;
+void external_clock() {
+    const uint32_t claim_trans_val = 0x96;
 
-    // Both CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN and CPTRA_CORE_UDS_SEED must not
-    // be modified by the AXI requests stemming from the MCU.
-    grant_mcu_for_fc_writes(); 
-    dai_wr(0x000, sentinel, sentinel, granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-    dai_wr(0x048, sentinel, sentinel, granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-    dai_wr(0x090, sentinel, sentinel, granularity, 0 /* Should work */);
+    const uint32_t freqs[4] = {
+        CMD_FC_LCC_EXT_CLK_500MHZ,
+        CMD_FC_LCC_EXT_CLK_160MHZ,
+        CMD_FC_LCC_EXT_CLK_400MHZ,
+        CMD_FC_LCC_EXT_CLK_1000MHZ
+    };
 
-    // All fuses should be writable by the Caliptra core.
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, freqs[xorshift32() % 4]);
+
+    uint32_t reg_value, loop_ctrl;
+    while (loop_ctrl != claim_trans_val) {
+        lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, claim_trans_val);
+        reg_value = lsu_read_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET);
+        loop_ctrl = reg_value & claim_trans_val;
+    }
+
+    lsu_write_32(LC_CTRL_TRANSITION_CTRL_OFFSET, 0x1);
+    wait_dai_op_idle(0);
+
     grant_caliptra_core_for_fc_writes();
-    dai_wr(0x000, sentinel, sentinel, granularity, 0);
-    dai_wr(0x048, sentinel, sentinel, granularity, 0);
-    dai_wr(0x090, sentinel, sentinel, granularity, 0);
+
+    dai_wr(0x000, 0xFF, 0xFF, 64, 0);
 }
 
 void main (void) {
@@ -55,7 +60,7 @@ void main (void) {
 
     initialize_otp_controller();
 
-    axi_id();
+    external_clock();
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"

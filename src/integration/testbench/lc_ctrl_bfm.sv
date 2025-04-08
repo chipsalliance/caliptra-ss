@@ -111,7 +111,7 @@ module lc_ctrl_bfm
         if (!reset_n) begin
             lc_clk_byp_ack_internal <= lc_tx_t'(Off);
         end else begin
-            if (lc_clk_byp_req_o == lc_tx_t'(On) && !lc_clk_byp_ack_internal) begin
+            if (lc_clk_byp_req_o == lc_tx_t'(On)) begin
                 lc_clk_byp_ack_internal <= lc_tx_t'(On);
             end else begin
                 lc_clk_byp_ack_internal <= lc_tx_t'(Off);
