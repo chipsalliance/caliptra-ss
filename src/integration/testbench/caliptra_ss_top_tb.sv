@@ -55,10 +55,11 @@ module caliptra_ss_top_tb
 `endif
 
 
-    bit                         core_clk;
-    logic                       rst_l;
+    bit                         core_clk;    
+    logic                       cptra_ss_pwrgood_i;
+    logic                       cptra_ss_rst_b_i;
+    logic                       cptra_rst_b;
     logic                       cptra_ss_mci_cptra_rst_b_o;
-    logic                       porst_l;
 
     logic        [31:0]         trace_rv_i_insn_ip;
     logic        [31:0]         trace_rv_i_address_ip;
@@ -185,8 +186,7 @@ module caliptra_ss_top_tb
         endcase
     end
 
-    assign rst_l   = cycleCnt > 5 ? 1'b1 : 1'b0;
-    assign porst_l = cycleCnt > 2;
+    assign cptra_rst_b = cptra_ss_rst_b_i;
 
    //=========================================================================
    // AXI Interconnect
@@ -194,7 +194,7 @@ module caliptra_ss_top_tb
 
     aaxi4_interconnect axi_interconnect(
         .core_clk (core_clk),
-        .rst_l    (rst_l)
+        .rst_l    (cptra_ss_rst_b_i)
     );
 
     // AXI Interface
@@ -203,7 +203,7 @@ module caliptra_ss_top_tb
         .DW(`CALIPTRA_AXI_DATA_WIDTH),
         .IW(`CALIPTRA_AXI_ID_WIDTH - 3),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) m_axi_bfm_if (.clk(core_clk), .rst_n(rst_l));
+    ) m_axi_bfm_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     // Cptra Mgr Axi Interface
     axi_if #(
@@ -211,7 +211,7 @@ module caliptra_ss_top_tb
         .DW(CPTRA_AXI_DMA_DATA_WIDTH),
         .IW(CPTRA_AXI_DMA_ID_WIDTH),
         .UW(CPTRA_AXI_DMA_USER_WIDTH)
-    ) cptra_ss_cptra_core_m_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_cptra_core_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     // Cptra Sub AXI Interface
     axi_if #(
@@ -219,7 +219,7 @@ module caliptra_ss_top_tb
         .DW(`CALIPTRA_AXI_DATA_WIDTH),
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_cptra_core_s_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_cptra_core_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     // MCI Sub AXI Interface
     axi_if #(
@@ -227,7 +227,7 @@ module caliptra_ss_top_tb
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_mci_s_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_mci_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     // MCU ROM Sub AXI Interface
     axi_if #(
@@ -235,7 +235,7 @@ module caliptra_ss_top_tb
         .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_mcu_rom_s_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_mcu_rom_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     // MCU LSU AXI Interface
     axi_if #(
@@ -243,7 +243,15 @@ module caliptra_ss_top_tb
         .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_mcu_lsu_m_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_mcu_lsu_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+
+    // MCU LSU AXI Interface
+    axi_if #(
+        .AW(32), //-- FIXME : Assign a common paramter
+        .DW(64), //-- FIXME : Assign a common paramter,
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_mcu_sb_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     // MCU IFU AXI Interface
     axi_if #(
@@ -251,7 +259,7 @@ module caliptra_ss_top_tb
         .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_mcu_ifu_m_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_mcu_ifu_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     // // MCU DMA AXI Interface
     // axi_if #(
@@ -259,7 +267,7 @@ module caliptra_ss_top_tb
     //     .DW(64), //-- FIXME : Assign a common paramter,
     //     .IW(`CALIPTRA_AXI_ID_WIDTH),
     //     .UW(`CALIPTRA_AXI_USER_WIDTH)
-    // ) mcu_dma_s_axi_if (.clk(core_clk), .rst_n(rst_l));
+    // ) mcu_dma_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     // I3C AXI Interface
     axi_if #(
@@ -267,7 +275,7 @@ module caliptra_ss_top_tb
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_i3c_s_axi_if (.clk(core_clk), .rst_n(rst_l));
+    ) cptra_ss_i3c_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i;
     axi_struct_pkg::axi_wr_rsp_t cptra_ss_lc_axi_wr_rsp_o;
@@ -295,19 +303,19 @@ module caliptra_ss_top_tb
     `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_mcu_rom_s_axi_if)
     `SS_DATA_WIDTH_HACK_LOGIC_DEFINE(cptra_ss_i3c_s_axi_if)
 
-    `define SS_DATA_WIDTH_HACK(inf_name, core_clk = core_clk, rst_l = rst_l)\
-    always@(posedge core_clk or negedge rst_l)\
-        if (!rst_l)\
+    `define SS_DATA_WIDTH_HACK(inf_name, core_clk = core_clk, cptra_ss_rst_b_i = cptra_ss_rst_b_i)\
+    always@(posedge core_clk or negedge cptra_ss_rst_b_i)\
+        if (!cptra_ss_rst_b_i)\
             ``inf_name``_wr_is_upper_dw_latched <= 0;\
         else if (``inf_name``.awvalid && ``inf_name``.awready)\
             ``inf_name``_wr_is_upper_dw_latched <= ``inf_name``.awaddr[2] && (``inf_name``.awsize < 3);\
-    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT``inf_name``, (``inf_name``.awvalid && ``inf_name``.awready) -> (``inf_name``.awsize < 3), core_clk, !rst_l)\
-    always@(posedge core_clk or negedge rst_l)\
-        if (!rst_l)\
+    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT``inf_name``, (``inf_name``.awvalid && ``inf_name``.awready) -> (``inf_name``.awsize < 3), core_clk, !cptra_ss_rst_b_i)\
+    always@(posedge core_clk or negedge cptra_ss_rst_b_i)\
+        if (!cptra_ss_rst_b_i)\
             ``inf_name``_rd_is_upper_dw_latched <= 0;\
         else if (``inf_name``.arvalid && ``inf_name``.arready)\
             ``inf_name``_rd_is_upper_dw_latched <= ``inf_name``.araddr[2] && (``inf_name``.arsize < 3);\
-    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT``inf_name``, (``inf_name``.arvalid && ``inf_name``.arready) -> (``inf_name``.arsize < 3), core_clk, !rst_l)
+    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT``inf_name``, (``inf_name``.arvalid && ``inf_name``.arready) -> (``inf_name``.arsize < 3), core_clk, !cptra_ss_rst_b_i)
     
 
     `SS_DATA_WIDTH_HACK(cptra_ss_cptra_core_m_axi_if)
@@ -319,41 +327,41 @@ module caliptra_ss_top_tb
         
     //These don't fit the macro FIXME LATER
     // FIXME this is a gross hack for data width conversion
-    always@(posedge core_clk or negedge rst_l)
-    if (!rst_l)
+    always@(posedge core_clk or negedge cptra_ss_rst_b_i)
+    if (!cptra_ss_rst_b_i)
         lc_axi_wr_is_upper_dw_latched <= 0;
     else if (cptra_ss_lc_axi_wr_req_i.awvalid && cptra_ss_lc_axi_wr_rsp_o.awready)
         lc_axi_wr_is_upper_dw_latched <= cptra_ss_lc_axi_wr_req_i.awaddr[2] && (cptra_ss_lc_axi_wr_req_i.awsize < 3);
-    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT_LC, (cptra_ss_lc_axi_wr_req_i.awvalid && cptra_ss_lc_axi_wr_rsp_o.awready) -> (cptra_ss_lc_axi_wr_req_i.awsize < 3), core_clk, !rst_l)
+    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT_LC, (cptra_ss_lc_axi_wr_req_i.awvalid && cptra_ss_lc_axi_wr_rsp_o.awready) -> (cptra_ss_lc_axi_wr_req_i.awsize < 3), core_clk, !cptra_ss_rst_b_i)
     // FIXME this is a gross hack for data width conversion
-    always@(posedge core_clk or negedge rst_l)
-        if (!rst_l)
+    always@(posedge core_clk or negedge cptra_ss_rst_b_i)
+        if (!cptra_ss_rst_b_i)
             lc_axi_rd_is_upper_dw_latched <= 0;
         else if (cptra_ss_lc_axi_rd_req_i.arvalid && cptra_ss_lc_axi_rd_rsp_o.arready)
             lc_axi_rd_is_upper_dw_latched <= cptra_ss_lc_axi_rd_req_i.araddr[2] && (cptra_ss_lc_axi_rd_req_i.arsize < 3);
-    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT_LC, (cptra_ss_lc_axi_rd_req_i.arvalid && cptra_ss_lc_axi_rd_rsp_o.arready) -> (cptra_ss_lc_axi_rd_req_i.arsize < 3), core_clk, !rst_l)
+    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT_LC, (cptra_ss_lc_axi_rd_req_i.arvalid && cptra_ss_lc_axi_rd_rsp_o.arready) -> (cptra_ss_lc_axi_rd_req_i.arsize < 3), core_clk, !cptra_ss_rst_b_i)
     // FIXME this is a gross hack for data width conversion
-    always@(posedge core_clk or negedge rst_l)
-        if (!rst_l)
+    always@(posedge core_clk or negedge cptra_ss_rst_b_i)
+        if (!cptra_ss_rst_b_i)
             fuse_core_axi_wr_is_upper_dw_latched <= 0;
         else if (cptra_ss_otp_core_axi_wr_req_i.awvalid && cptra_ss_otp_core_axi_wr_rsp_o.awready)
             fuse_core_axi_wr_is_upper_dw_latched <= cptra_ss_otp_core_axi_wr_req_i.awaddr[2] && (cptra_ss_otp_core_axi_wr_req_i.awsize < 3);
-    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT_OTP, (cptra_ss_otp_core_axi_wr_req_i.awvalid && cptra_ss_otp_core_axi_wr_rsp_o.awready) -> (cptra_ss_otp_core_axi_wr_req_i.awsize < 3), core_clk, !rst_l)
+    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BIT_OTP, (cptra_ss_otp_core_axi_wr_req_i.awvalid && cptra_ss_otp_core_axi_wr_rsp_o.awready) -> (cptra_ss_otp_core_axi_wr_req_i.awsize < 3), core_clk, !cptra_ss_rst_b_i)
     // FIXME this is a gross hack for data width conversion
-    always@(posedge core_clk or negedge rst_l)
-        if (!rst_l)
+    always@(posedge core_clk or negedge cptra_ss_rst_b_i)
+        if (!cptra_ss_rst_b_i)
             fuse_core_axi_rd_is_upper_dw_latched <= 0;
         else if (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready)
             fuse_core_axi_rd_is_upper_dw_latched <= cptra_ss_otp_core_axi_rd_req_i.araddr[2] && (cptra_ss_otp_core_axi_rd_req_i.arsize < 3);
-    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT_OTP, (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready) -> (cptra_ss_otp_core_axi_rd_req_i.arsize < 3), core_clk, !rst_l)
+    `CALIPTRA_ASSERT(CPTRA_AXI_RD_32BIT_OTP, (cptra_ss_otp_core_axi_rd_req_i.arvalid && cptra_ss_otp_core_axi_rd_rsp_o.arready) -> (cptra_ss_otp_core_axi_rd_req_i.arsize < 3), core_clk, !cptra_ss_rst_b_i)
 
     // AXI Interconnect upper address tie to 0
     assign axi_interconnect.mintf_arr[0].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[0].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[1].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[1].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-//    assign axi_interconnect.mintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-//    assign axi_interconnect.mintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[2].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[2].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[3].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[3].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[4].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
@@ -470,32 +478,43 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_ifu_m_axi_if.rlast                  = axi_interconnect.mintf_arr[1].RLAST;
     assign axi_interconnect.mintf_arr[1].RREADY  = cptra_ss_mcu_ifu_m_axi_if.rready;
 
-    //Interconnect 2 MGR - Tie Off
-    assign axi_interconnect.mintf_arr[2].AWVALID = '0;
-    assign axi_interconnect.mintf_arr[2].AWADDR  = '0;
-    assign axi_interconnect.mintf_arr[2].AWID    = '0;
-    assign axi_interconnect.mintf_arr[2].AWLEN   = '0;
-    assign axi_interconnect.mintf_arr[2].AWSIZE  = '0;
-    assign axi_interconnect.mintf_arr[2].AWBURST = '0;
-    assign axi_interconnect.mintf_arr[2].AWLOCK  = '0;
-    assign axi_interconnect.mintf_arr[2].AWUSER  = '0;
-    
-    assign axi_interconnect.mintf_arr[2].WVALID = '0;
-    assign axi_interconnect.mintf_arr[2].WUSER  = '0;
-    assign axi_interconnect.mintf_arr[2].WDATA  = '0;
-    assign axi_interconnect.mintf_arr[2].WSTRB  = '0;
-    assign axi_interconnect.mintf_arr[2].WLAST  = '0;
-    assign axi_interconnect.mintf_arr[2].BREADY = '0;
-
-    assign axi_interconnect.mintf_arr[2].ARVALID = '0;
-    assign axi_interconnect.mintf_arr[2].ARADDR  = '0;
-    assign axi_interconnect.mintf_arr[2].ARID    = '0;
-    assign axi_interconnect.mintf_arr[2].ARLEN   = '0;
-    assign axi_interconnect.mintf_arr[2].ARSIZE  = '0;
-    assign axi_interconnect.mintf_arr[2].ARBURST = '0;
-    assign axi_interconnect.mintf_arr[2].ARLOCK  = '0;
-    assign axi_interconnect.mintf_arr[2].ARUSER  = '0;
-    assign axi_interconnect.mintf_arr[2].RREADY = '0;
+    //Interconnect 2 - SysBus
+    assign axi_interconnect.mintf_arr[2].AWVALID = cptra_ss_mcu_sb_m_axi_if.awvalid;
+    assign axi_interconnect.mintf_arr[2].AWADDR[31:0]  = cptra_ss_mcu_sb_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[2].AWID    = cptra_ss_mcu_sb_m_axi_if.awid;
+    assign axi_interconnect.mintf_arr[2].AWLEN   = cptra_ss_mcu_sb_m_axi_if.awlen;
+    assign axi_interconnect.mintf_arr[2].AWSIZE  = cptra_ss_mcu_sb_m_axi_if.awsize;
+    assign axi_interconnect.mintf_arr[2].AWBURST = cptra_ss_mcu_sb_m_axi_if.awburst;
+    assign axi_interconnect.mintf_arr[2].AWLOCK  = cptra_ss_mcu_sb_m_axi_if.awlock;
+    assign axi_interconnect.mintf_arr[2].AWUSER  = cptra_ss_mcu_sb_m_axi_if.awuser;
+    assign cptra_ss_mcu_sb_m_axi_if.awready              = axi_interconnect.mintf_arr[2].AWREADY;
+    assign axi_interconnect.mintf_arr[2].WVALID  = cptra_ss_mcu_sb_m_axi_if.wvalid;
+    assign axi_interconnect.mintf_arr[2].WDATA   = cptra_ss_mcu_sb_m_axi_if.wdata;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[2].WSTRB   = cptra_ss_mcu_sb_m_axi_if.wstrb;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[2].WLAST   = cptra_ss_mcu_sb_m_axi_if.wlast;
+    assign axi_interconnect.mintf_arr[2].WUSER  = cptra_ss_mcu_sb_m_axi_if.wuser;
+    assign cptra_ss_mcu_sb_m_axi_if.wready               = axi_interconnect.mintf_arr[2].WREADY;
+    assign cptra_ss_mcu_sb_m_axi_if.bvalid               = axi_interconnect.mintf_arr[2].BVALID;
+    assign cptra_ss_mcu_sb_m_axi_if.bresp                = axi_interconnect.mintf_arr[2].BRESP;
+    assign cptra_ss_mcu_sb_m_axi_if.buser                = axi_interconnect.mintf_arr[2].BUSER;
+    assign cptra_ss_mcu_sb_m_axi_if.bid                  = axi_interconnect.mintf_arr[2].BID;
+    assign axi_interconnect.mintf_arr[2].BREADY  = cptra_ss_mcu_sb_m_axi_if.bready;
+    assign axi_interconnect.mintf_arr[2].ARVALID = cptra_ss_mcu_sb_m_axi_if.arvalid;
+    assign axi_interconnect.mintf_arr[2].ARADDR[31:0]  = cptra_ss_mcu_sb_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[2].ARID    = cptra_ss_mcu_sb_m_axi_if.arid;
+    assign axi_interconnect.mintf_arr[2].ARLEN   = cptra_ss_mcu_sb_m_axi_if.arlen;
+    assign axi_interconnect.mintf_arr[2].ARSIZE  = cptra_ss_mcu_sb_m_axi_if.arsize;
+    assign axi_interconnect.mintf_arr[2].ARBURST = cptra_ss_mcu_sb_m_axi_if.arburst;
+    assign axi_interconnect.mintf_arr[2].ARLOCK  = cptra_ss_mcu_sb_m_axi_if.arlock;
+    assign axi_interconnect.mintf_arr[2].ARUSER  = cptra_ss_mcu_sb_m_axi_if.aruser;
+    assign cptra_ss_mcu_sb_m_axi_if.arready              = axi_interconnect.mintf_arr[2].ARREADY;
+    assign cptra_ss_mcu_sb_m_axi_if.rvalid               = axi_interconnect.mintf_arr[2].RVALID;
+    assign cptra_ss_mcu_sb_m_axi_if.rdata                = axi_interconnect.mintf_arr[2].RDATA;// Native 64-bit width, no dwidth conversion
+    assign cptra_ss_mcu_sb_m_axi_if.rresp                = axi_interconnect.mintf_arr[2].RRESP;
+    assign cptra_ss_mcu_sb_m_axi_if.ruser                = axi_interconnect.mintf_arr[2].RUSER;
+    assign cptra_ss_mcu_sb_m_axi_if.rid                  = axi_interconnect.mintf_arr[2].RID;
+    assign cptra_ss_mcu_sb_m_axi_if.rlast                = axi_interconnect.mintf_arr[2].RLAST;
+    assign axi_interconnect.mintf_arr[2].RREADY  = cptra_ss_mcu_sb_m_axi_if.rready;
 
     // //Interconnect 2 Sub - MCU DMA
     // // assign mcu_dma_s_axi_if.awvalid                = axi_interconnect.sintf_arr[2].AWVALID;
@@ -814,7 +833,7 @@ module caliptra_ss_top_tb
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
     ) cptra_ss_mci_mcu_sram_req_if (
         .clk(core_clk),
-        .rst_b(rst_l)
+        .rst_b(cptra_ss_rst_b_i)
     );
 
     mci_mcu_sram_if #(
@@ -824,7 +843,7 @@ module caliptra_ss_top_tb
     )
     cptra_ss_mcu_mbox0_sram_req_if (
         .clk(core_clk),
-        .rst_b(rst_l)
+        .rst_b(cptra_ss_rst_b_i)
     );
     
     mci_mcu_sram_if #(
@@ -834,7 +853,7 @@ module caliptra_ss_top_tb
     )
     cptra_ss_mcu_mbox1_sram_req_if (
         .clk(core_clk),
-        .rst_b(rst_l)
+        .rst_b(cptra_ss_rst_b_i)
     );
 
     axi_mem_if #(
@@ -842,12 +861,10 @@ module caliptra_ss_top_tb
         .DATA_WIDTH(64)
     ) mcu_rom_mem_export_if (
         .clk(core_clk),
-        .rst_b(rst_l)
+        .rst_b(cptra_ss_rst_b_i)
     );
 
     //=================== BEGIN CALIPTRA_TOP_TB ========================
-    logic                       cptra_ss_pwrgood_i;
-    logic                       cptra_rst_b;
     logic                       cptra_ss_cptra_core_bootfsm_bp_i;
     logic                       cptra_ss_cptra_core_scan_mode_i;
 
@@ -899,7 +916,6 @@ module caliptra_ss_top_tb
     logic assert_rst_flag_from_service;
     logic deassert_rst_flag_from_service;
 
-    logic cptra_soc_bfm_rst_b;
 
 
     caliptra_top_tb_soc_bfm #(
@@ -908,7 +924,7 @@ module caliptra_ss_top_tb
         .core_clk        (core_clk        ),
 
         .cptra_pwrgood   (cptra_ss_pwrgood_i   ),
-        .cptra_rst_b     (cptra_soc_bfm_rst_b     ),
+        .cptra_rst_b     (cptra_ss_rst_b_i     ),
 
         .BootFSM_BrkPoint(cptra_ss_cptra_core_bootfsm_bp_i),
         .cycleCnt        (cycleCnt        ),
@@ -944,14 +960,14 @@ module caliptra_ss_top_tb
         .deassert_rst_flag_from_service(deassert_rst_flag_from_service)
 
     );
-        
+    
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag0"),
         .ListenPort     (5000)
-    ) jtagdpi (
+    ) jtagdpi_cptra_core (
         .clk_i          (core_clk),
-        .rst_ni         (cptra_rst_b),
+        .rst_ni         (cptra_ss_rst_b_i),
         .jtag_tck       (cptra_ss_cptra_core_jtag_tck_i),
         .jtag_tms       (cptra_ss_cptra_core_jtag_tms_i),
         .jtag_tdi       (cptra_ss_cptra_core_jtag_tdi_i),
@@ -959,7 +975,6 @@ module caliptra_ss_top_tb
         .jtag_trst_n    (cptra_ss_cptra_core_jtag_trst_n_i),
         .jtag_srst_n    ()
     );
-
 
 
 `ifdef CALIPTRA_INTERNAL_TRNG
@@ -982,7 +997,7 @@ module caliptra_ss_top_tb
     ) tb_services_i (
         .clk(core_clk),
 
-        .cptra_rst_b(cptra_rst_b),
+        .cptra_rst_b(cptra_ss_rst_b_i),
 
         // Caliptra Memory Export Interface
         .el2_mem_export (cptra_ss_cptra_core_el2_mem_export.veer_sram_sink),
@@ -1038,7 +1053,7 @@ module caliptra_ss_top_tb
     // axi_slv #(.TAGW(8)) imem(
 
     //     .aclk           (core_clk),
-    //     .rst_l          (rst_l),
+    //     .rst_l          (cptra_ss_rst_b_i),
 
     //     .arvalid        (axi_interconnect.sintf_arr[0].ARVALID),
     //     .arready        (axi_interconnect.sintf_arr[0].ARREADY),
@@ -1138,7 +1153,7 @@ module caliptra_ss_top_tb
 
     lc_ctrl_bfm u_lc_ctrl_bfm (
         .clk(core_clk),
-        .reset_n(rst_l),
+        .reset_n(cptra_ss_rst_b_i),
 
         .lc_axi_rd_req(cptra_ss_lc_axi_rd_req_i),
         .lc_axi_rd_rsp(cptra_ss_lc_axi_rd_rsp_o),
@@ -1327,10 +1342,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_mcu_sram_config_axi_user_i        = cptra_ss_strap_caliptra_dma_axi_user_i;
     assign cptra_ss_strap_mci_soc_config_axi_user_i        = cptra_ss_strap_mcu_lsu_axi_user_i; // FIXME set to real value
     assign cptra_ss_mcu_ext_int = '0;
-    assign cptra_ss_mcu_jtag_tck_i              = 1'b0;
-    assign cptra_ss_mcu_jtag_tms_i              = 1'b0;
-    assign cptra_ss_mcu_jtag_tdi_i              = 1'b0;
-    assign cptra_ss_mcu_jtag_trst_n_i           = 1'b0;
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'(`SOC_SOC_IFC_REG_BASE_ADDR - (`SOC_SOC_IFC_REG_BASE_ADDR & ((1<<SOC_IFC_ADDR_W)-1)));
     assign cptra_ss_strap_mci_base_addr_i       = 64'(`SOC_MCI_TOP_BASE_ADDR);
     assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
@@ -1345,6 +1356,21 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
 
+    // JTAG DPI
+    jtagdpi #(
+        .Name           ("jtag1"),
+        .ListenPort     (6000)
+    ) jtagdpi_mcu (
+        .clk_i          (core_clk),
+        .rst_ni         (cptra_ss_rst_b_i),
+        .jtag_tck       (cptra_ss_mcu_jtag_tck_i),
+        .jtag_tms       (cptra_ss_mcu_jtag_tms_i),
+        .jtag_tdi       (cptra_ss_mcu_jtag_tdi_i),
+        .jtag_tdo       (cptra_ss_mcu_jtag_tdo_o),
+        .jtag_trst_n    (cptra_ss_mcu_jtag_trst_n_i),
+        .jtag_srst_n    ()
+    );
+
     caliptra_ss_top #(
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
         .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),
@@ -1357,8 +1383,8 @@ module caliptra_ss_top_tb
     caliptra_ss_dut (
 
         .cptra_ss_clk_i(core_clk),
-        .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i), //fixme
-        .cptra_ss_rst_b_i(rst_l),
+        .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i),
+        .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o,
     
@@ -1379,6 +1405,7 @@ module caliptra_ss_top_tb
     
         .cptra_ss_mcu_lsu_m_axi_if,
         .cptra_ss_mcu_ifu_m_axi_if,
+        .cptra_ss_mcu_sb_m_axi_if,
         // .mcu_dma_s_axi_if,
         .cptra_ss_i3c_s_axi_if,
     
@@ -1529,7 +1556,7 @@ module caliptra_ss_top_tb
     // Instantiate caliptra_ss_top_tb_services
     caliptra_ss_top_tb_services u_caliptra_ss_top_tb_services (
         .clk                         (core_clk                    ),
-        .rst_l                       (rst_l                       ),
+        .rst_l                       (cptra_ss_rst_b_i            ),
         .cycleCnt                    (cycleCnt                    ),
         .cptra_ss_mcu0_el2_mem_export(cptra_ss_mcu0_el2_mem_export),
         .cptra_ss_mci_mcu_sram_req_if,

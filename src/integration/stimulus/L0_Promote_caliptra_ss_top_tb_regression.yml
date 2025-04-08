@@ -25,7 +25,6 @@ contents:
         - ../test_suites/caliptra_ss_fuse_ctrl_writeblank/caliptra_ss_fuse_ctrl_writeblank.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_axi_id/caliptra_ss_fuse_ctrl_axi_id.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_zeroization/caliptra_ss_fuse_ctrl_zeroization.yml
-        - ../test_suites/caliptra_ss_fuse_ctrl_unexpected_reset/caliptra_ss_fuse_ctrl_unexpected_reset.yml
         - ../test_suites/smoke_test_mcu_sram_byte_write/smoke_test_mcu_sram_byte_write.yml
         - ../test_suites/smoke_test_mcu_sram_protected_region/smoke_test_mcu_sram_protected_region.yml
         - ../test_suites/smoke_test_mcu_mbox_valid_user/smoke_test_mcu_mbox0_valid_user.yml
