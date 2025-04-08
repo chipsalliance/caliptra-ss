@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -20,32 +19,25 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void writeblank() {
-    grant_mcu_for_fc_writes();
-
-    // 0x578: CPTRA_CORE_FMC_KEY_MANIFEST_SVN
-    const uint32_t fuse_address = 0x578;
-
-    // Overwriting set bits in a fuse should result in an error.
-    dai_wr(fuse_address, 0xFFFFFFFF, 0, 32, 0);
-    dai_wr(fuse_address, 0, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-}
-
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+
+    /*
+     * The transition tokens partitions is initialized with random data
+     * but a valid digest. The initial integrity check should then pass.
+     * Afterwards, the digest is manually altered which then should transfer
+     * the fuse controller into a terminal state after triggering a new
+     * integrity check by setting the period and timeout registers.
+     */
     
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    wait_dai_op_idle(0);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_FAULT_DIGEST);
 
     initialize_otp_controller();
 
-    writeblank();
+    wait_dai_op_idle(0x1BFFFF);
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
