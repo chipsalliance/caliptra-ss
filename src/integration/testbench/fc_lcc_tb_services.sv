@@ -106,6 +106,14 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: fault one bit in axi write request");
             force `FC_PATH.core_tl_i.a_data = 32'h1234_5678;
           end
+          CMD_LC_TRIGGER_ESCALATION0: begin
+            $display("fc_lcc_tb_services: triggering esc_scrap_state0 escalation");
+            force `LCC_PATH.esc_scrap_state0 = 1'b1;
+          end
+          CMD_LC_TRIGGER_ESCALATION1: begin
+            $display("fc_lcc_tb_services: triggering esc_scrap_state1 escalation");
+            force `LCC_PATH.esc_scrap_state1 = 1'b1;
+          end
           default: begin
             // No action for unrecognized commands.
           end
