@@ -367,7 +367,7 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 			      --pad-to 0x4000 \
 			      --no-change-warnings \
 			      $(TESTNAME).exe mcu_dccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -R .dccm -R .data -R .bss -R .sbss -R .data.io -R .eh_frame \
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .rodata -j .srodata \
 			      --change-section-lma       .text-0x80000000 \
 			      --change-section-lma     .rodata-0x80000000 \
 			      --change-section-lma    .srodata-0x80000000 \
