@@ -123,7 +123,7 @@ import tb_top_pkg::*;
 
     assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
 
-    bit    hex_file_is_empty;
+    int    hex_file_is_empty;
 
     integer fd, tp, el;
 
