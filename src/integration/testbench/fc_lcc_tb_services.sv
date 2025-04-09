@@ -112,6 +112,14 @@ module fc_lcc_tb_services (
             // This manually pulls the signal down to allow for program continuation.
             force `FC_PATH.core_axi_wr_rsp.bresp = '0;
           end
+          CMD_LC_TRIGGER_ESCALATION0: begin
+            $display("fc_lcc_tb_services: triggering esc_scrap_state0 escalation");
+            force `LCC_PATH.esc_scrap_state0 = 1'b1;
+          end
+          CMD_LC_TRIGGER_ESCALATION1: begin
+            $display("fc_lcc_tb_services: triggering esc_scrap_state1 escalation");
+            force `LCC_PATH.esc_scrap_state1 = 1'b1;
+          end
           default: begin
             // No action for unrecognized commands.
           end

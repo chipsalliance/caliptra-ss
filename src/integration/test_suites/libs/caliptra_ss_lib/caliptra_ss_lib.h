@@ -192,7 +192,7 @@ inline void mcu_mbox_write_cmd_status(uint32_t mbox_num, enum mcu_mbox_cmd_statu
     VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS: 0%x\n", mbox_num, cmd_status); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, (cmd_status & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK));    
 }
-#define FC_LCC_CMD_OFFSET 0xB0
+#define FC_LCC_CMD_OFFSET 0x90
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
 #define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
 #define CMD_FORCE_FC_AWUSER_MCU         FC_LCC_CMD_OFFSET + 0x04
@@ -209,6 +209,8 @@ inline void mcu_mbox_write_cmd_status(uint32_t mbox_num, enum mcu_mbox_cmd_statu
 #define CMD_FC_LCC_EXT_CLK_1000MHZ      FC_LCC_CMD_OFFSET + 0x0f
 #define CMD_FC_LCC_FAULT_DIGEST         FC_LCC_CMD_OFFSET + 0x10
 #define CMD_FC_LCC_FAULT_BUS_ECC        FC_LCC_CMD_OFFSET + 0x11
+#define CMD_LC_TRIGGER_ESCALATION0      FC_LCC_CMD_OFFSET + 0x12
+#define CMD_LC_TRIGGER_ESCALATION1      FC_LCC_CMD_OFFSET + 0x13
 
 inline uint32_t mcu_mbox_read_cmd_status(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
