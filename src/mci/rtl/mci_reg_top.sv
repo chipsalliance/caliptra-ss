@@ -123,6 +123,13 @@ module mci_reg_top
     input logic ss_debug_intent,
     output logic mci_ss_debug_intent,
 
+    // AXI Straps
+    input logic [AXI_USER_WIDTH-1:0] strap_mcu_lsu_axi_user,
+    input logic [AXI_USER_WIDTH-1:0] strap_mcu_ifu_axi_user,
+    input logic [AXI_USER_WIDTH-1:0] strap_mcu_sram_config_axi_user,
+    input logic [AXI_USER_WIDTH-1:0] strap_mci_soc_config_axi_user,
+
+
     // MCU Reset vector
     input  logic [31:0] strap_mcu_reset_vector, // default reset vector
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
@@ -330,6 +337,13 @@ always_comb begin
     mci_reg_hwif_in.SS_CONFIG_DONE_STICKY.done.next     = mcu_dmi_uncore_wdata[0] ; 
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.next  = mcu_dmi_uncore_wdata[15:0] ; 
     mci_reg_hwif_in.MCU_NMI_VECTOR.vec.next             = mcu_dmi_uncore_wdata ; 
+
+    // Straps with no override
+    assign mci_reg_hwif_in.MCU_IFU_AXI_USER.value.next = { {(32-$bits(strap_mcu_ifu_axi_user)){1'b0}}, strap_mcu_ifu_axi_user};
+    assign mci_reg_hwif_in.MCU_LSU_AXI_USER.value.next = { {(32-$bits(strap_mcu_lsu_axi_user)){1'b0}}, strap_mcu_lsu_axi_user};
+    assign mci_reg_hwif_in.MCU_SRAM_CONFIG_AXI_USER.value.next = { {(32-$bits(strap_mcu_sram_config_axi_user)){1'b0}}, strap_mcu_sram_config_axi_user} ;
+    assign mci_reg_hwif_in.MCI_SOC_CONFIG_AXI_USER.value.next  = { {(32-$bits(strap_mci_soc_config_axi_user )){1'b0}}, strap_mci_soc_config_axi_user} ;
+
 end
 
 // Write enable
