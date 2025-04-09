@@ -106,6 +106,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/ai3c
++incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/mci
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_sva.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_macros.svh
@@ -921,4 +922,5 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_tb_cmd_list.svh
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_veer_sram_export.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/fc_lcc_tb_services.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_services.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_soc_bfm.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb.sv
