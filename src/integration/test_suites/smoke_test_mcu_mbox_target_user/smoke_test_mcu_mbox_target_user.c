@@ -66,7 +66,7 @@ void mcu_mbox_check_target_non_accessible_regs(uint32_t mbox_num, uint32_t calip
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if (mcu_mbox_read_mbox_user(mbox_num) != lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER)_) {
+    if (mcu_mbox_read_mbox_user(mbox_num) != lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER)) {
         VPRINTF(FATAL, "MCU: Mbox%x MBOX_USER was changed by Target User\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
