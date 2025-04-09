@@ -57,23 +57,23 @@ interface caliptra_ss_top_cov_if
             bins b2b_axi_txn = (1 [*5]); //5 txns in a row
         }
 
-        axi_rd_mci_regs: coverpoint cptra_ss_cptra_core_m_axi_if_ar_hshake && cptra_ss_cptra_core_m_axi_if.arraddr inside {[`SOC_MCI_TOP_BASE_ADDR:`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_BASE_ADDR-4]} {
+        axi_rd_mci_regs: coverpoint cptra_ss_cptra_core_m_axi_if_ar_hshake && cptra_ss_cptra_core_m_axi_if.araddr inside {[`SOC_MCI_TOP_BASE_ADDR:`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_BASE_ADDR-4]} {
             bins axi_rd_req = {1'b1};
         }
-        axi_wr_mci_regs: coverpoint cptra_ss_cptra_core_m_axi_if_aw_hshake && cptra_ss_cptra_core_m_axi_if.awraddr inside {[`SOC_MCI_TOP_BASE_ADDR:`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_BASE_ADDR-4]} {
+        axi_wr_mci_regs: coverpoint cptra_ss_cptra_core_m_axi_if_aw_hshake && cptra_ss_cptra_core_m_axi_if.awaddr inside {[`SOC_MCI_TOP_BASE_ADDR:`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_BASE_ADDR-4]} {
             bins axi_wr_req = {1'b1};
         }
-        axi_rd_mcu_sram: coverpoint cptra_ss_cptra_core_m_axi_if_ar_hshake && cptra_ss_cptra_core_m_axi_if.arraddr inside {[`SOC_MCI_TOP_MCU_SRAM_BASE_ADDR:`SOC_MCI_TOP_MCU_SRAM_END_ADDR]} {
+        axi_rd_mcu_sram: coverpoint cptra_ss_cptra_core_m_axi_if_ar_hshake && cptra_ss_cptra_core_m_axi_if.araddr inside {[`SOC_MCI_TOP_MCU_SRAM_BASE_ADDR:`SOC_MCI_TOP_MCU_SRAM_END_ADDR]} {
             bins axi_rd_req = {1'b1};
         }
-        axi_wr_mcu_sram: coverpoint cptra_ss_cptra_core_m_axi_if_aw_hshake && cptra_ss_cptra_core_m_axi_if.awraddr inside {[`SOC_MCI_TOP_MCU_SRAM_BASE_ADDR:`SOC_MCI_TOP_MCU_SRAM_END_ADDR]} {
+        axi_wr_mcu_sram: coverpoint cptra_ss_cptra_core_m_axi_if_aw_hshake && cptra_ss_cptra_core_m_axi_if.awaddr inside {[`SOC_MCI_TOP_MCU_SRAM_BASE_ADDR:`SOC_MCI_TOP_MCU_SRAM_END_ADDR]} {
             bins axi_wr_req = {1'b1};
         }
         // FIXME replace these magic numbers with some macro once soc_address_map is updated
-        axi_rd_fc_regs: coverpoint cptra_ss_cptra_core_m_axi_if_ar_hshake && cptra_ss_cptra_core_m_axi_if.arraddr inside {[64'h7000_0000:64'h7000_03FF]} {
+        axi_rd_fc_regs: coverpoint cptra_ss_cptra_core_m_axi_if_ar_hshake && cptra_ss_cptra_core_m_axi_if.araddr inside {[64'h7000_0000:64'h7000_03FF]} {
             bins axi_rd_req = {1'b1};
         }
-        axi_wr_fc_regs: coverpoint cptra_ss_cptra_core_m_axi_if_aw_hshake && cptra_ss_cptra_core_m_axi_if.awraddr inside {[64'h7000_0000:64'h7000_03FF]} {
+        axi_wr_fc_regs: coverpoint cptra_ss_cptra_core_m_axi_if_aw_hshake && cptra_ss_cptra_core_m_axi_if.awaddr inside {[64'h7000_0000:64'h7000_03FF]} {
             bins axi_wr_req = {1'b1};
         }
     endgroup

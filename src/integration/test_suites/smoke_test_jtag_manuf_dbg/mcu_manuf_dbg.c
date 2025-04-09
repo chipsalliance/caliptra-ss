@@ -99,7 +99,7 @@ void main (void) {
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG MANUF DEBUG TEST with ROM \n=================\n\n");
 
     lcc_initialization();
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
     reset_fc_lcc_rtl();
 
     // Initialize fuses

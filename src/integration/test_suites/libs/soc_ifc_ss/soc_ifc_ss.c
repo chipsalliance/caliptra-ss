@@ -118,7 +118,7 @@ uint32_t cptra_get_mcu_sram_protected_region_end() {
 }
 
 
-void cptra_mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count) {
+void cptra_mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count, bool fail_on_timeout) {
     uint32_t lock;
     uint64_t addr;
     VPRINTF(LOW, "Caliptra: Waiting for Mbox%x lock acquired\n", mbox_num);
@@ -132,14 +132,17 @@ void cptra_mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count) {
             return;
         }
     }   
-    VPRINTF(FATAL, "Caliptra: Failed to aquire MCU MBOX%x after %d attempts", mbox_num, attempt_count);
-    SEND_STDOUT_CTRL(0x1);
-    while(1);
+    if (fail_on_timeout) {
+        VPRINTF(FATAL, "Caliptra: Failed to aquire MCU MBOX%x after %d attempts", mbox_num, attempt_count);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    } 
+    return;
 }
 
 void cptra_mcu_mbox_acquire_lock_set_execute(uint32_t mbox_num, uint32_t attempt_count) {
     uint64_t addr;
-    cptra_mcu_mbox_acquire_lock(mbox_num, attempt_count);
+    cptra_mcu_mbox_acquire_lock(mbox_num, attempt_count, true);
 
     VPRINTF(LOW, "Caliptra: Setting MBOX%x EXECUTE\n", mbox_num);
     addr = SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num;
@@ -169,4 +172,143 @@ void cptra_mcu_mbox_wait_for_status_complete(uint32_t mbox_num, uint32_t attempt
     VPRINTF(FATAL, "Caliptra: Failed to get a status from MCU MBOX%x after %d attempts", mbox_num, attempt_count);
     SEND_STDOUT_CTRL(0x1);
     while(1);
+}
+
+void cptra_mcu_mbox_wait_execute(uint32_t mbox_num, uint32_t attempt_count) {
+    uint32_t read_payload[1];
+    uint32_t mbox_data;
+    uint32_t mbox_lock_accuired;
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x WAIT FOR EXECUTE to be SET\n", mbox_num);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
+        mbox_data = read_payload[0];
+        mbox_data = mbox_data & MCU_MBOX1_CSR_MBOX_EXECUTE_EXECUTE_MASK;
+        if(mbox_data) {
+            return;
+        }
+    }
+    VPRINTF(FATAL, "Caliptra: Failed waiting for execute to be set in MCU MBOX%x after %d attempts", mbox_num, attempt_count);
+    SEND_STDOUT_CTRL(0x1);
+    while(1);
+}
+
+void cptra_mcu_mbox_wait_target_user_valid(uint32_t mbox_num, uint32_t attempt_count) {
+    uint32_t read_payload[1];
+    uint32_t mbox_data;
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x WAIT FOR TARGET USER VALID\n", mbox_num);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
+        mbox_data = read_payload[0];
+        mbox_data = mbox_data & MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK;
+        if(mbox_data) {
+            return;
+        }
+    }
+    VPRINTF(FATAL, "Caliptra: Failed waiting for TARGET_USER_VALID MCU MBOX%x after %d attempts", mbox_num, attempt_count);
+    SEND_STDOUT_CTRL(0x1);
+    while(1);
+}
+
+uint32_t cptra_mcu_mbox_get_sram_size_kb(uint32_t mbox_num) {
+    uint32_t data;
+    uint32_t mask = MCI_REG_HW_CONFIG0_MCU_MBOX1_SRAM_SIZE_MASK << ((MCU_MBOX_MAX_NUM-1 - mbox_num) * MCI_REG_HW_CONFIG0_MCU_MBOX0_SRAM_SIZE_LOW);
+    data = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_HW_CONFIG0) & mask;
+    data = data >> ((MCU_MBOX_MAX_NUM-1 - mbox_num) * MCI_REG_HW_CONFIG0_MCU_MBOX0_SRAM_SIZE_LOW);
+    return data;
+}
+
+void cptra_mcu_mbox_set_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status targ_status) {
+    VPRINTF(LOW, "CALIPTRA: Set TARGET_USER_STATUS Done in MBOX%x with CMD: 0x%x\n", mbox_num, targ_status);
+    uint32_t write_data = MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK |
+                                (targ_status >> MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW);
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, write_data);
+
+}
+    
+void cptra_mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t data) {
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x CMD: 0x%x\n", mbox_num, data); 
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+}
+
+uint32_t cptra_mcu_mbox_read_cmd(uint32_t mbox_num) {
+    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x CMD: 0x%x\n", mbox_num, data);
+    return data;
+}
+
+void cptra_mcu_mbox_write_mbox_user(uint32_t mbox_num, uint32_t data) {
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x USER: 0x%x\n", mbox_num, data); 
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+}
+
+uint32_t cptra_mcu_mbox_read_mbox_user(uint32_t mbox_num) {
+    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x USER: 0x%x\n", mbox_num, data);
+    return data;
+}
+
+void cptra_mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t data) {
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x DLEN: 0x%x\n", mbox_num, data); 
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+}
+
+uint32_t cptra_mcu_mbox_read_dlen(uint32_t mbox_num) {
+    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x DLEN: 0x%x\n", mbox_num, data);
+    return data;
+}
+
+void cptra_mcu_mbox_write_dword_sram(uint32_t mbox_num, uint32_t dword_addr, uint32_t data) {
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x SRAM[%d]: 0x%x\n", mbox_num, dword_addr, data); 
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+}
+
+uint32_t cptra_mcu_mbox_read_dword_sram(uint32_t mbox_num, uint32_t dword_addr) {
+    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x SRAM[%d]: 0x%x\n", mbox_num, dword_addr, data);
+    return data;
+}
+
+void cptra_mcu_mbox_write_cmd_status(uint32_t mbox_num, uint32_t data) {
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x CMD_STATUS: 0x%x\n", mbox_num, data); 
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+}
+
+uint32_t cptra_mcu_mbox_read_cmd_status(uint32_t mbox_num) {
+    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x CMD_STATUS: 0x%x\n", mbox_num, data);
+    return data;
+}
+
+void cptra_mcu_mbox_write_execute(uint32_t mbox_num, uint32_t data) {
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x EXECUTE: 0x%x\n", mbox_num, data); 
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+}
+
+uint32_t cptra_mcu_mbox_read_execute(uint32_t mbox_num) {
+    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x EXECUTE: 0x%x\n", mbox_num, data);
+    return data;
+}
+
+void cptra_mcu_mbox_write_target_user(uint32_t mbox_num, uint32_t data) {
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x TARGET_USER: 0x%x\n", mbox_num, data); 
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+}
+
+uint32_t cptra_mcu_mbox_read_target_user(uint32_t mbox_num) {
+    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x TARGET_USER: 0x%x\n", mbox_num, data);
+    return data;
+}
+
+void cptra_mcu_mbox_write_target_user_valid(uint32_t mbox_num, uint32_t data) {
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x TARGET_USER_VALID: 0x%x\n", mbox_num, data); 
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+}
+
+uint32_t cptra_mcu_mbox_read_target_user_valid(uint32_t mbox_num) {
+    uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Reading Mbox%x TARGET_USER_VALID: 0x%x\n", mbox_num, data);
+    return data;
 }

@@ -47,6 +47,10 @@ addrmap mci_reg {
         desc = "Indicates when there is a valid AXI request from MCU or SoC Config Agent AND the CAP_LOCK register is not set";
     } axi_mcu_req_or_mci_soc_config_req__cap_unlock;
     
+    signal {
+        desc = "Indicates when there is a valid AXI request from MCU or the SoC Config Agent.";
+    } axi_mcu_or_mcu_sram_config_req;
+    
     // AXI Request + SS_CONFIG_DONE Signals
     signal {
         desc = "Indicates when there is a valid AXI request from MCU or the SoC Config Agent.";
@@ -167,12 +171,12 @@ addrmap mci_reg {
     reg {
         name = "Reset Reason";
         desc = "Indicates to ROM the originating cause for the PC to be reset to 0.
-                Firmware Update Reset indicator is reset by the warm reset.
+                Firmware Update Reset indicator is reset by the warm reset and updated by SW applying MCU FW updated.
                 Warm Reset indicator is reset by the cold reset.
                 [br]TAP Access [with debug intent set]: RO";
-        field {desc = "FW update reset has been executed for the second+ time since MCI reset"; sw=r; hw=rw; resetsignal = mci_rst_b;  } FW_HITLESS_UPD_RESET=0;
-        field {desc = "FW update reset has been executed first time since MCI reset"; sw=r; hw=rw; resetsignal = mci_rst_b;  } FW_BOOT_UPD_RESET=0;
-        field {desc = "Warm reset has been executed";      sw=r; hw=rw;          resetsignal = mci_pwrgood;} WARM_RESET=0;
+        field {desc = "FW update reset has been executed for the second+ time since MCI reset"; swwe = axi_mcu_or_mcu_sram_config_req; sw=rw; hw=r; resetsignal = mci_rst_b;  } FW_HITLESS_UPD_RESET=0;
+        field {desc = "FW update reset has been executed first time since MCI reset";swwe = axi_mcu_or_mcu_sram_config_req;  sw=rw; hw=r; resetsignal = mci_rst_b;  } FW_BOOT_UPD_RESET=0;
+        field {desc = "Warm reset has been executed";  swwe = axi_mcu_or_mcu_sram_config_req;    sw=rw; hw=rw; we;          resetsignal = mci_pwrgood;} WARM_RESET=0;
     } RESET_REASON;
 
     reg {
@@ -820,10 +824,10 @@ addrmap mci_reg {
     } GENERIC_OUTPUT_WIRES[2];
     
     reg { 
-        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA=0;
+        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA[32]=32'h0;
     } DEBUG_IN; // i.e. stdin
     reg { 
-        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA=0;
+        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA[32]=32'h0;
     } DEBUG_OUT; // i.e. stdout
     
     reg {

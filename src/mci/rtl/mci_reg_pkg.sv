@@ -74,19 +74,10 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic next;
-    } mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t;
-
-    typedef struct packed{
-        logic next;
-    } mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t;
-
-    typedef struct packed{
-        logic next;
+        logic we;
     } mci_reg__RESET_REASON__WARM_RESET__in_t;
 
     typedef struct packed{
-        mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t FW_HITLESS_UPD_RESET;
-        mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t FW_BOOT_UPD_RESET;
         mci_reg__RESET_REASON__WARM_RESET__in_t WARM_RESET;
     } mci_reg__RESET_REASON__in_t;
 
@@ -817,6 +808,7 @@ package mci_reg_pkg;
         logic ss_config_unlock;
         logic ss_config_unlock_sticky;
         logic axi_mcu_req_or_mci_soc_config_req__cap_unlock;
+        logic axi_mcu_or_mcu_sram_config_req;
         logic axi_mcu_or_mci_soc_config_req;
         logic axi_mcu_or_mci_soc_config_req__ss_config_unlock;
         logic axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky;

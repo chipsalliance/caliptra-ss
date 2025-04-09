@@ -1,5 +1,6 @@
 #ifndef SOC_IFC_SS 
 #define SOC_IFC_SS 
+#include "caliptra_ss_lib.h"
 #include "stdint.h"
 #include <stdbool.h>
 
@@ -35,12 +36,37 @@ void cptra_mcu_mbox_wait_for_status_complete(uint32_t mbox_num, uint32_t attempt
 
 void cptra_mcu_mbox_acquire_lock_set_execute(uint32_t mbox_num, uint32_t attempt_count);
 
-void cptra_mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count);
+void cptra_mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count, bool fail_on_timeout);
 
 uint8_t soc_ifc_axi_dma_send_ahb_payload_with_status(uint64_t dst_addr, uint8_t fixed, uint32_t * payload, uint32_t byte_count, uint16_t block_size);
 
 uint8_t soc_ifc_axi_dma_wait_idle_with_status(uint8_t clr_lock, uint8_t clr_error);
 
+void cptra_mcu_mbox_wait_execute(uint32_t mbox_num, uint32_t attempt_count);
+
+void cptra_mcu_mbox_wait_target_user_valid(uint32_t mbox_num, uint32_t attempt_count);
+
+void cptra_mcu_mbox_set_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status targ_status);
+
+uint32_t cptra_mcu_mbox_get_sram_size_kb(uint32_t mbox_num);
+
+uint32_t cptra_mcu_mbox_read_cmd(uint32_t mbox_num);
+uint32_t cptra_mcu_mbox_read_mbox_user(uint32_t mbox_num);
+uint32_t cptra_mcu_mbox_read_dlen(uint32_t mbox_num);
+uint32_t cptra_mcu_mbox_read_dword_sram(uint32_t mbox_num, uint32_t dword_addr);
+uint32_t cptra_mcu_mbox_read_cmd_status(uint32_t mbox_num);
+uint32_t cptra_mcu_mbox_read_execute(uint32_t mbox_num);
+uint32_t cptra_mcu_mbox_read_target_user(uint32_t mbox_num);
+uint32_t cptra_mcu_mbox_read_target_user_valid(uint32_t mbox_num);
+
+void cptra_mcu_mbox_write_dword_sram(uint32_t mbox_num, uint32_t dword_addr, uint32_t data);
+void cptra_mcu_mbox_write_execute(uint32_t mbox_num, uint32_t data);
+void cptra_mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t data);
+void cptra_mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t data);
+void cptra_mcu_mbox_write_cmd_status(uint32_t mbox_num, uint32_t data);
+void cptra_mcu_mbox_write_mbox_user(uint32_t mbox_num, uint32_t data);
+void cptra_mcu_mbox_write_target_user(uint32_t mbox_num, uint32_t data);
+void cptra_mcu_mbox_write_target_user_valid(uint32_t mbox_num, uint32_t data);
 
 #endif // SOC_IFC_SS
 

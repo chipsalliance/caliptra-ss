@@ -1472,13 +1472,13 @@ module mci_reg (
         } [2-1:0]GENERIC_OUTPUT_WIRES;
         struct packed{
             struct packed{
-                logic next;
+                logic [31:0] next;
                 logic load_next;
             } DATA;
         } DEBUG_IN;
         struct packed{
             struct packed{
-                logic next;
+                logic [31:0] next;
                 logic load_next;
             } DATA;
         } DEBUG_OUT;
@@ -4582,12 +4582,12 @@ module mci_reg (
         } [2-1:0]GENERIC_OUTPUT_WIRES;
         struct packed{
             struct packed{
-                logic value;
+                logic [31:0] value;
             } DATA;
         } DEBUG_IN;
         struct packed{
             struct packed{
-                logic value;
+                logic [31:0] value;
             } DATA;
         } DEBUG_OUT;
         struct packed{
@@ -6389,10 +6389,10 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value;
         load_next_c = '0;
-        
-        // HW Write
-        next_c = hwif_in.RESET_REASON.FW_HITLESS_UPD_RESET.next;
-        load_next_c = '1;
+        if(decoded_reg_strb.RESET_REASON && decoded_req_is_wr && hwif_in.axi_mcu_or_mcu_sram_config_req) begin // SW write
+            next_c = (field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end
         field_combo.RESET_REASON.FW_HITLESS_UPD_RESET.next = next_c;
         field_combo.RESET_REASON.FW_HITLESS_UPD_RESET.load_next = load_next_c;
     end
@@ -6410,10 +6410,10 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value;
         load_next_c = '0;
-        
-        // HW Write
-        next_c = hwif_in.RESET_REASON.FW_BOOT_UPD_RESET.next;
-        load_next_c = '1;
+        if(decoded_reg_strb.RESET_REASON && decoded_req_is_wr && hwif_in.axi_mcu_or_mcu_sram_config_req) begin // SW write
+            next_c = (field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end
         field_combo.RESET_REASON.FW_BOOT_UPD_RESET.next = next_c;
         field_combo.RESET_REASON.FW_BOOT_UPD_RESET.load_next = load_next_c;
     end
@@ -6431,10 +6431,13 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.RESET_REASON.WARM_RESET.value;
         load_next_c = '0;
-        
-        // HW Write
-        next_c = hwif_in.RESET_REASON.WARM_RESET.next;
-        load_next_c = '1;
+        if(decoded_reg_strb.RESET_REASON && decoded_req_is_wr && hwif_in.axi_mcu_or_mcu_sram_config_req) begin // SW write
+            next_c = (field_storage.RESET_REASON.WARM_RESET.value & ~decoded_wr_biten[2:2]) | (decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end else if(hwif_in.RESET_REASON.WARM_RESET.we) begin // HW Write - we
+            next_c = hwif_in.RESET_REASON.WARM_RESET.next;
+            load_next_c = '1;
+        end
         field_combo.RESET_REASON.WARM_RESET.next = next_c;
         field_combo.RESET_REASON.WARM_RESET.load_next = load_next_c;
     end
@@ -10450,12 +10453,12 @@ module mci_reg (
     end
     // Field: mci_reg.DEBUG_IN.DATA
     always_comb begin
-        automatic logic [0:0] next_c;
+        automatic logic [31:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.DEBUG_IN.DATA.value;
         load_next_c = '0;
         if(decoded_reg_strb.DEBUG_IN && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.DEBUG_IN.DATA.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            next_c = (field_storage.DEBUG_IN.DATA.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
         field_combo.DEBUG_IN.DATA.next = next_c;
@@ -10463,19 +10466,19 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.DEBUG_IN.DATA.value <= 1'h0;
+            field_storage.DEBUG_IN.DATA.value <= 32'h0;
         end else if(field_combo.DEBUG_IN.DATA.load_next) begin
             field_storage.DEBUG_IN.DATA.value <= field_combo.DEBUG_IN.DATA.next;
         end
     end
     // Field: mci_reg.DEBUG_OUT.DATA
     always_comb begin
-        automatic logic [0:0] next_c;
+        automatic logic [31:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.DEBUG_OUT.DATA.value;
         load_next_c = '0;
         if(decoded_reg_strb.DEBUG_OUT && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.DEBUG_OUT.DATA.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            next_c = (field_storage.DEBUG_OUT.DATA.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
         field_combo.DEBUG_OUT.DATA.next = next_c;
@@ -10483,7 +10486,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.DEBUG_OUT.DATA.value <= 1'h0;
+            field_storage.DEBUG_OUT.DATA.value <= 32'h0;
         end else if(field_combo.DEBUG_OUT.DATA.load_next) begin
             field_storage.DEBUG_OUT.DATA.value <= field_combo.DEBUG_OUT.DATA.next;
         end
@@ -22323,10 +22326,8 @@ module mci_reg (
     for(genvar i0=0; i0<2; i0++) begin
         assign readback_array[i0*1 + 90][31:0] = (decoded_reg_strb.GENERIC_OUTPUT_WIRES[i0] && !decoded_req_is_wr) ? field_storage.GENERIC_OUTPUT_WIRES[i0].wires.value : '0;
     end
-    assign readback_array[92][0:0] = (decoded_reg_strb.DEBUG_IN && !decoded_req_is_wr) ? field_storage.DEBUG_IN.DATA.value : '0;
-    assign readback_array[92][31:1] = '0;
-    assign readback_array[93][0:0] = (decoded_reg_strb.DEBUG_OUT && !decoded_req_is_wr) ? field_storage.DEBUG_OUT.DATA.value : '0;
-    assign readback_array[93][31:1] = '0;
+    assign readback_array[92][31:0] = (decoded_reg_strb.DEBUG_IN && !decoded_req_is_wr) ? field_storage.DEBUG_IN.DATA.value : '0;
+    assign readback_array[93][31:0] = (decoded_reg_strb.DEBUG_OUT && !decoded_req_is_wr) ? field_storage.DEBUG_OUT.DATA.value : '0;
     assign readback_array[94][0:0] = (decoded_reg_strb.SS_DEBUG_INTENT && !decoded_req_is_wr) ? field_storage.SS_DEBUG_INTENT.debug_intent.value : '0;
     assign readback_array[94][31:1] = '0;
     assign readback_array[95][0:0] = (decoded_reg_strb.SS_CONFIG_DONE_STICKY && !decoded_req_is_wr) ? field_storage.SS_CONFIG_DONE_STICKY.done.value : '0;

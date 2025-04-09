@@ -429,11 +429,11 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.FW_HITLESS_UPD_RESET = new("FW_HITLESS_UPD_RESET");
-            this.FW_HITLESS_UPD_RESET.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.FW_HITLESS_UPD_RESET.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
             this.FW_BOOT_UPD_RESET = new("FW_BOOT_UPD_RESET");
-            this.FW_BOOT_UPD_RESET.configure(this, 1, 1, "RO", 1, 'h0, 1, 1, 0);
+            this.FW_BOOT_UPD_RESET.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
             this.WARM_RESET = new("WARM_RESET");
-            this.WARM_RESET.configure(this, 1, 2, "RO", 1, 'h0, 1, 1, 0);
+            this.WARM_RESET.configure(this, 1, 2, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(FW_HITLESS_UPD_RESET_bit_cg[bt]) FW_HITLESS_UPD_RESET_bit_cg[bt] = new();
                 foreach(FW_BOOT_UPD_RESET_bit_cg[bt]) FW_BOOT_UPD_RESET_bit_cg[bt] = new();
@@ -2500,7 +2500,7 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__DEBUG_IN_bit_cg DATA_bit_cg[1];
+        mci_reg__DEBUG_IN_bit_cg DATA_bit_cg[32];
         mci_reg__DEBUG_IN_fld_cg fld_cg;
         rand uvm_reg_field DATA;
 
@@ -2515,7 +2515,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.DATA = new("DATA");
-            this.DATA.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.DATA.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(DATA_bit_cg[bt]) DATA_bit_cg[bt] = new();
             end
@@ -2530,7 +2530,7 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__DEBUG_OUT_bit_cg DATA_bit_cg[1];
+        mci_reg__DEBUG_OUT_bit_cg DATA_bit_cg[32];
         mci_reg__DEBUG_OUT_fld_cg fld_cg;
         rand uvm_reg_field DATA;
 
@@ -2545,7 +2545,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.DATA = new("DATA");
-            this.DATA.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.DATA.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(DATA_bit_cg[bt]) DATA_bit_cg[bt] = new();
             end

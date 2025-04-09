@@ -7,7 +7,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -62,8 +61,8 @@ void program_secret_lc_transition_partition() {
 
     // Step 3
     uint32_t digest[2];
-    digest[0] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_0);
-    digest[1] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_1);
+    digest[0] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0);
+    digest[1] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1);
     if (digest[0] != 0 || digest[1] != 0) {
         VPRINTF(LOW, "ERROR: digest is not 0\n");
         exit(1);
@@ -77,14 +76,14 @@ void program_secret_lc_transition_partition() {
     wait_dai_op_idle(0);
 
     // Step 6
-    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 7
-    dai_wr(fuse_address, data[0], data[1], 64, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(fuse_address, data[0], data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 8
-    digest[0] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_0);
-    digest[1] = lsu_read_32(FUSE_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_1);
+    digest[0] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0);
+    digest[1] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1);
     if (digest[0] == 0 && digest[1] == 0) {
         VPRINTF(LOW, "ERROR: digest is 0\n");
         exit(1);
@@ -97,20 +96,14 @@ void program_secret_lc_transition_partition() {
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
-    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
-    // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
-
-    uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
     
     lcc_initialization();
     // Set AXI user ID to MCU.
     grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    wait_dai_op_idle(0);
+    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
 
     initialize_otp_controller();
 

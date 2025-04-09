@@ -6768,13 +6768,9 @@
 `endif
 `ifndef MCI_REG_DEBUG_IN
 `define MCI_REG_DEBUG_IN                                                                            (32'h410)
-`define MCI_REG_DEBUG_IN_DATA_LOW                                                                   (0)
-`define MCI_REG_DEBUG_IN_DATA_MASK                                                                  (32'h1)
 `endif
 `ifndef MCI_REG_DEBUG_OUT
 `define MCI_REG_DEBUG_OUT                                                                           (32'h414)
-`define MCI_REG_DEBUG_OUT_DATA_LOW                                                                  (0)
-`define MCI_REG_DEBUG_OUT_DATA_MASK                                                                 (32'h1)
 `endif
 `ifndef MCI_REG_SS_DEBUG_INTENT
 `define MCI_REG_SS_DEBUG_INTENT                                                                     (32'h418)
