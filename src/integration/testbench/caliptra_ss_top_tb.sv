@@ -211,7 +211,7 @@ module caliptra_ss_top_tb
         .DW(`CALIPTRA_AXI_DATA_WIDTH),
         .IW(`CALIPTRA_AXI_ID_WIDTH - 3),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) m_axi_bfm_if_FIXME (.clk(core_clk), .rst_n(rst_l));
+    ) m_axi_bfm_if_FIXME (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
     // Cptra Mgr Axi Interface
     axi_if #(
         .AW(`CALIPTRA_AXI_DMA_ADDR_WIDTH),
@@ -1575,7 +1575,7 @@ module caliptra_ss_top_tb
     )u_caliptra_ss_top_tb_soc_bfm (
         .core_clk,
         .cptra_pwrgood (cptra_ss_pwrgood_i),
-        .cptra_rst_b(rst_l),
+        .cptra_rst_b(cptra_ss_rst_b_i),
         .cycleCnt,
 
         .cptra_ss_strap_mcu_lsu_axi_user_i,
