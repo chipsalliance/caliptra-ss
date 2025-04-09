@@ -35,19 +35,19 @@
 //         --
 //         8'h80        - Load SHA Test Vector into MCU SRAM
 //         --
-//         8'hb0        - FC/LCC Command Offset
-//         8'hb2        - FC/LCC CMD_FC_LCC_RESET              
-//         8'hb3        - FC/LCC CMD_FORCE_FC_AWUSER_CPTR_CORE 
-//         8'hb4        - FC/LCC CMD_FORCE_FC_AWUSER_MCU       
-//         8'hb5        - FC/LCC CMD_RELEASE_AWUSER            
-//         8'hb6        - FC/LCC CMD_FC_FORCE_ZEROIZATION      
-//         8'hb7        - FC/LCC CMD_FC_FORCE_ZEROIZATION_RESET
-//         8'hb8        - FC/LCC CMD_RELEASE_ZEROIZATION       
-//         8'hb9        - FC/LCC CMD_FORCE_LC_TOKENS           
-//         8'hba        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD    
-//         8'hbb        - FC/LCC CMD_FC_TRIGGER_ESCALATION   
-//         8'hbc        - FC/LCC CMD_LC_TRIGGER_ESCALATION0
-//         8'hbd        - FC/LCC CMD_LC_TRIGGER_ESCALATION1
+//         8'h90        - FC/LCC Command Offset
+//         8'h92        - FC/LCC CMD_FC_LCC_RESET
+//         8'h93        - FC/LCC CMD_FORCE_FC_AWUSER_CPTR_CORE
+//         8'h94        - FC/LCC CMD_FORCE_FC_AWUSER_MCU
+//         8'h95        - FC/LCC CMD_RELEASE_AWUSER
+//         8'h96        - FC/LCC CMD_FC_FORCE_ZEROIZATION
+//         8'h97        - FC/LCC CMD_FC_FORCE_ZEROIZATION_RESET
+//         8'h98        - FC/LCC CMD_RELEASE_ZEROIZATION
+//         8'h99        - FC/LCC CMD_FORCE_LC_TOKENS
+//         8'h9a        - FC/LCC CMD_LC_FORCE_RMA_SCRAP_PPD
+//         8'h9b        - FC/LCC CMD_FC_TRIGGER_ESCALATION
+//         8'ha2        - FC/LCC CMD_LC_TRIGGER_ESCALATION0
+//         8'ha3        - FC/LCC CMD_LC_TRIGGER_ESCALATION1
 //         --
 //         8'hc0        - Disable ommand Offset
 //
@@ -62,7 +62,7 @@ localparam TB_CMD_END_SIM_WITH_FAILURE      = 8'h01;
 
 localparam TB_CMD_SHA_VECTOR_TO_MCU_SRAM    = 8'h80;
 
-localparam FC_LCC_CMD_OFFSET                = 8'hb0;
+localparam FC_LCC_CMD_OFFSET                = 8'h90;
 localparam CMD_FC_LCC_RESET                 = FC_LCC_CMD_OFFSET + 8'h02;
 localparam CMD_FORCE_FC_AWUSER_CPTR_CORE    = FC_LCC_CMD_OFFSET + 8'h03;
 localparam CMD_FORCE_FC_AWUSER_MCU          = FC_LCC_CMD_OFFSET + 8'h04;
