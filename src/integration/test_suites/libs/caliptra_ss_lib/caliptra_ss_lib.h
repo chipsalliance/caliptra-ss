@@ -210,8 +210,6 @@ static inline void mcu_mbox_write_cmd_status(uint32_t mbox_num, enum mcu_mbox_cm
     VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS: 0%x\n", mbox_num, cmd_status); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, (cmd_status & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK));    
 }
-#define CMD_LC_TRIGGER_ESCALATION0      FC_LCC_CMD_OFFSET + 0x12
-#define CMD_LC_TRIGGER_ESCALATION1      FC_LCC_CMD_OFFSET + 0x13
 
 static inline uint32_t mcu_mbox_read_cmd_status(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
