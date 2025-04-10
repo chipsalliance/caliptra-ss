@@ -35,6 +35,7 @@ import tb_top_pkg::*;
   input  logic                       clk,
   input  logic                       rst_l,
   input  int                         cycleCnt,
+  caliptra_ss_bfm_services_if.tb_services soc_bfm_if,
   css_mcu0_el2_mem_if                cptra_ss_mcu0_el2_mem_export,
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox0_sram_req_if,
@@ -43,9 +44,6 @@ import tb_top_pkg::*;
 );
 
     `include "caliptra_ss_tb_cmd_list.svh"
-
-    `define MCU_TOP_PATH `CPTRA_SS_TOP_PATH.rvtop_wrapper
-    `define MCU_DEC `MCU_TOP_PATH.rvtop.veer.dec
 
     int                         commit_count;
 
@@ -56,6 +54,12 @@ import tb_top_pkg::*;
     logic                       mailbox_write;
     logic        [63:0]         mailbox_data;
     logic        [63:0]         prev_mailbox_data;
+
+
+    logic                       cold_rst;
+    logic                       warm_rst;
+    logic                       clr_cold_rst;
+    logic                       clr_warm_rst;
 
     string                      abi_reg[32]; // ABI register names
 
@@ -181,18 +185,20 @@ import tb_top_pkg::*;
             $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.mci_top_i.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
         end
         // Memory signature dump and test END
-        if(mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) begin
+        if((mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) || soc_bfm_if.end_test_success) begin
             if (mem_signature_begin < mem_signature_end) begin
                 dump_signature();
             end
             // End Of test monitor
-            else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS) begin
-                $display("Halting MCU");
-                force `MCI_PATH.mcu_cpu_halt_req_o = 1;
-                $display("Waiting for MCU to halt");
-                wait(`MCI_PATH.mcu_cpu_halt_ack_i);
-                $display("Waiting for MCU halt status");
-                wait(`MCI_PATH.mcu_cpu_halt_status_i);
+            else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || soc_bfm_if.end_test_success ) begin
+                if(`MCU_PATH.rst_l) begin
+                    $display("Halting MCU");
+                    force `MCI_PATH.mcu_cpu_halt_req_o = 1;
+                    $display("Waiting for MCU to halt");
+                    wait(`MCI_PATH.mcu_cpu_halt_ack_i);
+                    $display("Waiting for MCU halt status");
+                    wait(`MCI_PATH.mcu_cpu_halt_status_i);
+                end
 
                 $display("* TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
@@ -357,6 +363,99 @@ import tb_top_pkg::*;
         end
     end
 
+///////////////////////////////////////////////
+// Time controls 
+//////////////////////////////////////////////
+
+///////////////////////////////////////////////
+// Reset controls
+//////////////////////////////////////////////
+
+    always@(negedge clk) begin
+        if((mailbox_data[7:0] == TB_CMD_COLD_RESET) && mailbox_write) begin 
+            $display("[%t] COLD RESET REQUESTED", $time);
+            cold_rst <= 1'b1; 
+            warm_rst <= 1'b0;
+        end
+        else if((mailbox_data[7:0] == TB_CMD_WARM_RESET) && mailbox_write) begin
+            $display("[%t] WARM RESET REQUESTED", $time);
+            warm_rst <= 1'b1;
+            cold_rst <= 1'b0;
+        end
+        else if(clr_cold_rst) begin
+            cold_rst <= 1'b0;
+        end
+        else if(clr_warm_rst) begin
+            warm_rst <= 1'b0;
+        end
+
+    end
+
+initial begin
+    soc_bfm_if.deassert_hard_rst_flag = 1'b0;
+    soc_bfm_if.deassert_rst_flag      = 1'b0;
+    soc_bfm_if.assert_hard_rst_flag   = 1'b0;
+    soc_bfm_if.assert_rst_flag        = 1'b0;
+    clr_cold_rst                      = 1'b0;
+    clr_warm_rst                      = 1'b0;
+
+    forever begin
+        @(posedge clk);
+        if(cold_rst) begin
+            @(posedge clk);
+            $display("[%t] COLD RESET: Resets asserting", $time);
+            soc_bfm_if.assert_rst_flag <= 1'b1;
+            clr_cold_rst               <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.assert_rst_flag <= 1'b0;
+            clr_cold_rst               <= 1'b0;
+            wait(soc_bfm_if.assert_rst_flag_done);
+            $display("[%t] COLD RESET: Powergood Reset asserting", $time);
+            soc_bfm_if.assert_hard_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.assert_hard_rst_flag <= 1'b0;
+            wait(soc_bfm_if.assert_hard_rst_flag_done);
+            $display("[%t] COLD RESET: Hold", $time);
+            repeat(20) begin
+                @(posedge clk);
+            end
+            $display("[%t] COLD RESET: Powergood Reset deasserting", $time);
+            soc_bfm_if.deassert_hard_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.deassert_hard_rst_flag <= 1'b0;
+            wait(soc_bfm_if.deassert_hard_rst_flag_done);
+            $display("[%t] COLD RESET: Resets deasserting", $time);
+            soc_bfm_if.deassert_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.deassert_rst_flag <= 1'b0;
+            wait(soc_bfm_if.deassert_rst_flag_done);
+
+            $display("[%t] COLD RESET: COMPLETE", $time);
+        end
+        else if(warm_rst) begin
+            @(posedge clk);
+            $display("[%t] WARM RESET: Resets asserting", $time);
+            soc_bfm_if.assert_rst_flag <= 1'b1;
+            clr_warm_rst               <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.assert_rst_flag <= 1'b0;
+            clr_warm_rst               <= 1'b0;
+            wait(soc_bfm_if.assert_rst_flag_done);
+            $display("[%t] WARM RESET: Hold", $time);
+            repeat(10) begin
+                @(posedge clk);
+            end
+            $display("[%t] WARM RESET: Resets deasserting", $time);
+            soc_bfm_if.deassert_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.deassert_rst_flag <= 1'b0;
+            wait(soc_bfm_if.deassert_rst_flag_done);
+            $display("[%t] WARM RESET: COMPLETE", $time);
+        end
+    end
+end
+
+
 
     // trace monitor
     always @(posedge clk) begin
@@ -366,18 +465,18 @@ import tb_top_pkg::*;
         wb_csr_valid  <= `MCU_DEC.dec_csr_wen_r;
         wb_csr_dest   <= `MCU_DEC.dec_csr_wraddr_r;
         wb_csr_data   <= `MCU_DEC.dec_csr_wrdata_r;
-        if (`MCU_TOP_PATH.trace_rv_i_valid_ip) begin
-           $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", `MCU_TOP_PATH.trace_rv_i_valid_ip, 0, `MCU_TOP_PATH.trace_rv_i_address_ip,
-                  0, `MCU_TOP_PATH.trace_rv_i_insn_ip,`MCU_TOP_PATH.trace_rv_i_exception_ip,`MCU_TOP_PATH.trace_rv_i_ecause_ip,
-                  `MCU_TOP_PATH.trace_rv_i_tval_ip,`MCU_TOP_PATH.trace_rv_i_interrupt_ip);
+        if (`MCU_PATH.trace_rv_i_valid_ip) begin
+           $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", `MCU_PATH.trace_rv_i_valid_ip, 0, `MCU_PATH.trace_rv_i_address_ip,
+                  0, `MCU_PATH.trace_rv_i_insn_ip,`MCU_PATH.trace_rv_i_exception_ip,`MCU_PATH.trace_rv_i_ecause_ip,
+                  `MCU_PATH.trace_rv_i_tval_ip,`MCU_PATH.trace_rv_i_interrupt_ip);
            // Basic trace - no exception register updates
            // #1 0 ee000000 b0201073 c 0b02       00000000
            commit_count++;
            $fwrite (el, "%10d : %8s 0 %h %h%13s %14s ; %s\n", cycleCnt, $sformatf("#%0d",commit_count),
-                        `MCU_TOP_PATH.trace_rv_i_address_ip, `MCU_TOP_PATH.trace_rv_i_insn_ip,
+                        `MCU_PATH.trace_rv_i_address_ip, `MCU_PATH.trace_rv_i_insn_ip,
                         (wb_dest !=0 && wb_valid)?  $sformatf("%s=%h", abi_reg[wb_dest], wb_data) : "            ",
                         (wb_csr_valid)? $sformatf("c%h=%h", wb_csr_dest, wb_csr_data) : "             ",
-                        dasm(`MCU_TOP_PATH.trace_rv_i_insn_ip, `MCU_TOP_PATH.trace_rv_i_address_ip, wb_dest & {5{wb_valid}}, wb_data)
+                        dasm(`MCU_PATH.trace_rv_i_insn_ip, `MCU_PATH.trace_rv_i_address_ip, wb_dest & {5{wb_valid}}, wb_data)
                    );
         end
         if(`MCU_DEC.dec_nonblock_load_wen) begin

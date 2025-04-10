@@ -92,6 +92,9 @@ localparam TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR = 8'he5;
 localparam TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION = 8'he6;
 localparam TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION = 8'he7;
 
+localparam TB_CMD_COLD_RESET                  = 8'hF5;
+localparam TB_CMD_WARM_RESET                  = 8'hF6;
+
 localparam TB_CMD_END_SIM_WITH_SUCCESS         = 8'hFF;
 
 `endif // CALIPTRA_SS_TB_CMD_LIST_SVH
