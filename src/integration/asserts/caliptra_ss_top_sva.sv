@@ -15,6 +15,8 @@
 //
 
 `include "caliptra_ss_top_tb_path_defines.svh"
+`include "caliptra_ss_includes.svh"
+`include "caliptra_prim_assert.sv"
 
 module caliptra_ss_top_sva
   import otp_ctrl_pkg::*;
@@ -65,16 +67,6 @@ module caliptra_ss_top_sva
   end
   endgenerate
 
-  // Assert that an escalation moves the fuse controller into an terminal unresponsive state.
-  // generate
-  // for (genvar i = 0; i < NumPart; i++) begin
-  //   fc_partition_escalation_lock : assert property (
-  //     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-  //     `CPTRA_SS_TOP_PATH.u_otp_ctrl.lc_escalate_en_i == On |-> ##10 otp_err_e'(`CPTRA_SS_TOP_PATH.u_otp_ctrl.part_error[i]) == FsmStateError
-  //   )
-  //   else $display("SVA ERROR: partition %d is not locked after escalation", i);
-  // end
-  // endgenerate
   fc_partition_escalation_dai_lock : assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     `CPTRA_SS_TOP_PATH.u_otp_ctrl.lc_escalate_en_i == On |-> ##10 `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.state_q == `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.ErrorSt
@@ -97,13 +89,35 @@ module caliptra_ss_top_sva
     |=> 
     `CPTRA_SS_TOP_PATH.u_otp_ctrl.otp_broadcast_o == otp_broadcast_t'('0)
   ) else $display("SVA ERROR: fuse ctrl broadcast data is not zeroized after cmd");
-  // fc_release_zeroize_broadcast : assert property (
-  //   @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-  //   disable iff (~`CPTRA_SS_TOP_PATH.u_otp_ctrl.rst_ni)
-  //   (!(`CPTRA_SS_TOP_PATH.u_otp_ctrl.FIPS_ZEROIZATION_CMD_i) && !(`CPTRA_SS_TOP_PATH.u_otp_ctrl.lcc_is_in_SCRAP_mode))
-  //   |-> ##5
-  //   `CPTRA_SS_TOP_PATH.u_otp_ctrl.otp_broadcast_o != otp_broadcast_t'('0)
-  // ) else $display("SVA ERROR: fuse ctrl broadcast data is not signaled after zeroization relesase");
+
+`ifdef CALIPTRA_ASSERT_DEFAULT_CLK
+`undef CALIPTRA_ASSERT_DEFAULT_CLK
+`define CALIPTRA_ASSERT_DEFAULT_CLK `CPTRA_SS_TOP_PATH.u_otp_ctrl.clk_i
+`endif
+
+`ifdef CALIPTRA_ASSERT_DEFAULT_RST
+`undef CALIPTRA_ASSERT_DEFAULT_RST
+`define CALIPTRA_ASSERT_DEFAULT_RST !`CPTRA_SS_TOP_PATH.u_otp_ctrl.rst_ni
+`endif
+
+  ////////////////////////////////////////////////////
+  // fuse_ctrl_filter
+  ////////////////////////////////////////////////////
+
+  // The fuse_ctrl access control filter must discard an AXI write request when
+  // the access control policy is violated.
+  `CALIPTRA_ASSERT(FcAxiFilterDiscard_A,
+    ((`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) && 
+     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr == 32'h7000_0060) &&
+     (`FC_PATH.dai_addr < 12'h090) &&
+     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser == CPTRA_SS_STRAP_MCU_LSU_AXI_USER))
+     |-> ##2
+     `FC_PATH.discard_fuse_write)
+
+  // When the fuse_ctrl access control filter discards an AXI write request, the DAI
+  // must signal a recoverable AccessError.
+  `CALIPTRA_ASSERT(FcAxiFilterDaiAccessError_A,
+    ($fell(`FC_PATH.discard_fuse_write)) |-> otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError)
 
   //WDT checks:
   cascade_wdt_t1_pet: assert property (
