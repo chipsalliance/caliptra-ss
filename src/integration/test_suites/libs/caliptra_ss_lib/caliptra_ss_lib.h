@@ -173,9 +173,9 @@ bool is_mcu_mbox_target_done_interrupt_set(uint32_t mbox_num);
 void mcu_mbox_clear_target_done_interrupt(uint32_t mbox_num);
 uint32_t mcu_mbox_get_sram_size_kb(uint32_t mbox_num);
 uint32_t mcu_mbox_gen_rand_dword_addr(uint32_t mbox_num, uint32_t sram_size_kb, uint32_t max_size_kb);
-bool is_mcu_mbox_sb_ecc_interrupt_set(uint32_t mbox_num);
+bool is_only_mcu_mbox_sb_ecc_interrupt_set(uint32_t mbox_num);
 void clear_mcu_mbox_clear_sb_ecc_interrupt(uint32_t mbox_num);
-bool is_mcu_mbox_db_ecc_interrupt_set(uint32_t mbox_num);
+bool is_only_mcu_mbox_db_ecc_interrupt_set(uint32_t mbox_num);
 void clear_mcu_mbox_clear_db_ecc_interrupt(uint32_t mbox_num);
 
 

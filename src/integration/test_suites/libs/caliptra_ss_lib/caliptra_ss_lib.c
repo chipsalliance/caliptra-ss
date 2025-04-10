@@ -352,20 +352,20 @@ bool is_mcu_mbox_clear_soc_req_while_mcu_lock_interrupt_set(uint32_t mbox_num) {
     return false;
 }
 
-bool is_mcu_mbox_sb_ecc_interrupt_set(uint32_t mbox_num) {
+bool is_only_mcu_mbox_sb_ecc_interrupt_set(uint32_t mbox_num) {
     // Check that Mailbox SB ECC interrupt has been set
-    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
-        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_MASK << mbox_num)) != 0) {
+    if(lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) ==
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_MASK << mbox_num)) {
             VPRINTF(LOW, "MCU: Mbox%x SB ECC interrupt set\n", mbox_num);
             return true;
     }
     return false;
 }
 
-bool is_mcu_mbox_db_ecc_interrupt_set(uint32_t mbox_num) {
+bool is_only_mcu_mbox_db_ecc_interrupt_set(uint32_t mbox_num) {
     // Check that Mailbox DB ECC interrupt has been set
-    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & 
-        (MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK << mbox_num)) != 0) {
+    if(lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) == 
+        (MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK << mbox_num)) {
             VPRINTF(LOW, "MCU: Mbox%x DB ECC interrupt set\n", mbox_num);
             return true;
     }

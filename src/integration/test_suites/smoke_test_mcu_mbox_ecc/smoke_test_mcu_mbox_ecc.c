@@ -60,6 +60,10 @@ void main (void) {
     // MBOX: clear the lock on MBOX that is there from reset
     mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
+    // Clear interrupts.  Test does checking in some cases that only ECC interrupts are set
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R, 0xffffffff);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, 0xffffffff);
+
     VPRINTF(LOW, "=================\nMCU MBOX%x ECC Test\n=================\n", mbox_num);
 
     // MBOX: Acquire lock
@@ -99,7 +103,7 @@ void main (void) {
 
         // Check if SB ECC interrupt has been logged
         // R1WC to clear interrupt
-        if (!is_mcu_mbox_sb_ecc_interrupt_set(mbox_num)) {
+        if (!is_only_mcu_mbox_sb_ecc_interrupt_set(mbox_num)) {
             VPRINTF(FATAL, "MCU: Mbox%x SB ECC interrupt not set\n", mbox_num);
             SEND_STDOUT_CTRL(0x1);
             while(1);
@@ -108,10 +112,10 @@ void main (void) {
     }
 
     // Check if SB ECC status has been logged
-    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK) {
+    if (mcu_mbox_read_hw_status(mbox_num) == MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK) {
         VPRINTF(LOW, "MCU: Mbox%x SB ECC detected\n", mbox_num);
     } else {
-        VPRINTF(FATAL, "MCU: Mbox%x No SB ECC detected\n", mbox_num);
+        VPRINTF(FATAL, "MCU: Mbox%x No SB ECC detected or DB ECC also set\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -120,7 +124,7 @@ void main (void) {
     mcu_mbox_clear_execute(mbox_num);
     
     // Check that ECC status registers are cleared
-    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK) {
+    if (mcu_mbox_read_hw_status(mbox_num) != 0) {
         VPRINTF(FATAL, "MCU: Mbox%x SB ECC status not cleared\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
@@ -160,7 +164,7 @@ void main (void) {
 
         // Check if DB ECC interrupt has been logged
         // R1WC to clear interrupt
-        if (!is_mcu_mbox_db_ecc_interrupt_set(mbox_num)) {
+        if (!is_only_mcu_mbox_db_ecc_interrupt_set(mbox_num)) {
             VPRINTF(FATAL, "MCU: Mbox%x DB ECC interrupt not set\n", mbox_num);
             SEND_STDOUT_CTRL(0x1);
             while(1);
@@ -169,20 +173,20 @@ void main (void) {
     }
 
     // Check if DB ECC status has been logged
-    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK) {
+    if (mcu_mbox_read_hw_status(mbox_num) == MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK) {
         VPRINTF(LOW, "MCU: Mbox%x DB ECC detected\n", mbox_num);
     } else {
-        VPRINTF(FATAL, "MCU: Mbox%x No DB ECC detected\n", mbox_num);
+        VPRINTF(FATAL, "MCU: Mbox%x No DB ECC detected or SB ECC also set\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
     // Check HW_ERROR_NON_FATAL register
-    if (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL) & 
-        MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_MASK << mbox_num) {
+    if (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL) == 
+        (MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_MASK << mbox_num)) {
         VPRINTF(LOW, "MCU: Mbox%x DB ECC detected in HW_ERROR_NON_FATAL\n", mbox_num);
     } else {
-        VPRINTF(FATAL, "MCU: Mbox%x No DB ECC detected in HW_ERROR_NON_FATAL\n", mbox_num);
+        VPRINTF(FATAL, "MCU: Mbox%x No DB ECC detected (or other unexpected bits were set) in HW_ERROR_NON_FATAL\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -190,8 +194,7 @@ void main (void) {
     // Try clearing HW_ERROR_NON_FATAL
     lsu_write_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL, MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_MASK << mbox_num);
     // Check that HW_ERROR_NON_FATAL register is cleared
-    if (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL) & 
-        MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_MASK << mbox_num) {
+    if (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL) != 0) {
         VPRINTF(FATAL, "MCU: Mbox%x HW_ERROR_NON_FATAL not cleared\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
