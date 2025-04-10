@@ -43,21 +43,22 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 uint32_t PROD_DBG_PK_HASH_OFFSET = 0x21000480;
-uint32_t debug_level = 3;
+uint32_t debug_level = 5;
 
 uint32_t PROD_dbg_pk[] =  {
-    0x02E66222,
-    0xC1144ED7,
-    0x7F9E0293,
-    0xC99B43E2,
-    0x51741A91,
-    0xD6884787,
-    0x5A00F049,
-    0x443F97C0,
-    0xEF7B24B1,
-    0xDAEE7948,
-    0x97F03CF3,
-    0xD2369D51
+
+    0x035278d8, 
+    0x2e967ec5,
+    0x3e0b23d0,
+    0xe90e4d75,
+    0xda2baa9a,
+    0xf512c60b,
+    0xea89133c,
+    0x12b300da,
+    0xfcc5d451,
+    0x192f449f,
+    0x13e16fe9,
+    0x392db0f2
 };
 
 
@@ -97,14 +98,15 @@ void main (void) {
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
     mcu_mci_boot_go();
-    cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
-
     ////////////////////////////////////
     // Fuse and Boot Bringup
     //
     // Wait for ready_for_fuses
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
+
+    for (uint32_t ii = 0; ii < 400; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
 
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG PROD DEBUG TEST with ROM \n=================\n\n");
 
@@ -116,7 +118,7 @@ void main (void) {
     lsu_write_32(SOC_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET, PROD_DBG_PK_HASH_OFFSET);
     VPRINTF(LOW, "MCU: Set PK hash register bank offset to 0x%08X\n", PROD_DBG_PK_HASH_OFFSET);
     uint32_t base_address;
-    base_address = PROD_DBG_PK_HASH_OFFSET + 12 * (debug_level) * 4;
+    base_address = PROD_DBG_PK_HASH_OFFSET + 12 * (debug_level-1) * 4;
     for (int i = 0; i < 12; i++) {
         uint32_t addr = base_address + (i * 4);
         VPRINTF(LOW, "MCU: writing PROD_dbg_pk[%02d] to address 0x%08X = 0x%08X\n", i, addr, PROD_dbg_pk[i]);

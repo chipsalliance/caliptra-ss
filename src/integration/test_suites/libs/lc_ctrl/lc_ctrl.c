@@ -88,8 +88,9 @@ void lcc_initialization(void) {
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
 
     // Initialize fuses
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
-    VPRINTF(LOW, "MCU: Set fuse wr done\n");
+    // bspillilli: Check with Emre why we need this here
+    // lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
+    // VPRINTF(LOW, "MCU: Set fuse wr done\n");
     uint32_t reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
     uint32_t loop_ctrl = reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK; 
     while(!loop_ctrl){

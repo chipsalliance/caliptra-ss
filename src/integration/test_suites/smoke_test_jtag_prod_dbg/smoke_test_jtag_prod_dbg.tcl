@@ -30,10 +30,10 @@ set DMI_REG_BOOTFSM_GO_ADDR             0x61
 array set REQ_PAYLOAD {
     0 0xFFFFFEC2
     1 0x00000002
-    2 0x00000001
+    2 0x00000005
 }
 set req_payload_dlen_words [array size REQ_PAYLOAD]
-set req_payload_dlen_bytes [expr {$req_payload_dlen_words * 4 + 4}]
+set req_payload_dlen_bytes [expr {$req_payload_dlen_words * 4}]
 # This plus 4 is for checksum
 
 
@@ -106,7 +106,7 @@ riscv dmi_write $mbox_cmd_dmi_addr 0x50445554
 riscv dmi_write $mbox_dlen_dmi_addr $auth_resp_dlen_bytes
 # for {set i 0} {$i < $auth_resp_dlen_words} {incr i} {
 # checksum+first_data
-for {set i 0} {$i < 2} {incr i} {
+for {set i 0} {$i < 0x753} {incr i} {
     riscv dmi_write $mbox_din_dmi_addr $Auth_resp_array($i)
 }
 puts "TAP: Set execute..."
