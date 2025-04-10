@@ -23,11 +23,17 @@ import mci_pkg::*;
 (
     input logic clk,
     input logic mci_rst_b,
+    input logic mci_pwrgood,
+
+    // Clock Controls
+    output logic rdc_clk_dis,
+    output logic fw_update_rdc_clk_dis,
 
     // DFT
     input scan_mode,
 
     // Reset controls
+    output logic cptra_ss_rst_b_o,
     output logic mcu_rst_b,
     output logic cptra_rst_b,
 
@@ -74,8 +80,19 @@ logic mcu_no_rom_config_sync;
 
 logic mcu_rst_b_ff  ;
 logic cptra_rst_b_ff;
+logic cptra_ss_rst_b_o_ff;
 logic mcu_rst_b_nxt;
 logic cptra_rst_b_nxt;
+logic cptra_ss_rst_b_o_nxt;
+
+logic mci_rst_window;
+logic mci_rst_window_sync;
+logic mci_rst_window_sync_f;
+logic mci_rst_window_sync_2f;
+logic fw_update_rst_window;
+logic fw_update_rst_window_f;
+logic fw_update_rst_window_2f;
+logic warm_reset;
 
 logic mcu_reset_once_nxt;
 
@@ -88,8 +105,59 @@ logic min_mcu_rst_count_elapsed_nxt;
 /////////////////////////////////////////////////
 // DFT                                 
 /////////////////////////////////////////////////
-assign mcu_rst_b   = scan_mode ? mcu_rst_b   :  mcu_rst_b_ff;
-assign cptra_rst_b = scan_mode ? cptra_rst_b :  cptra_rst_b_ff;
+assign cptra_ss_rst_b_o   = scan_mode ? mci_rst_b           :  cptra_ss_rst_b_o_ff;
+assign mcu_rst_b          = scan_mode ? mci_rst_b           :  mcu_rst_b_ff;
+assign cptra_rst_b        = scan_mode ? mci_rst_b           :  cptra_rst_b_ff;
+
+/////////////////////////////////////////////////
+// Reset Window                        
+/////////////////////////////////////////////////
+
+//uC reset generation
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        mci_rst_window <= '1;
+    end
+    else begin
+        mci_rst_window <= 0;
+    end
+end
+
+caliptra_2ff_sync #(.WIDTH(1), .RST_VAL('d1)) i_rst_window_sync (.clk(clk), .rst_b(mci_pwrgood), .din(mci_rst_window), .       dout(mci_rst_window_sync));
+
+//clock gate all flops on warm reset to prevent RDC metastability issues
+//cover 2 clocks after synchronized reset assertion (cptra_rst_window_sync) to handle bootfsm transitions
+always_comb rdc_clk_dis = mci_rst_window_sync | mci_rst_window_sync_f | mci_rst_window_sync_2f;
+
+//next state -> present state
+//reset boot fsm to idle on cptra_pwrgood
+always_ff @(posedge clk or negedge mci_pwrgood) begin
+    if (~mci_pwrgood) begin
+        mci_rst_window_sync_f <= '1;
+        mci_rst_window_sync_2f <= '1;
+    end
+    else begin
+        mci_rst_window_sync_f <= mci_rst_window_sync;
+        mci_rst_window_sync_2f <= mci_rst_window_sync_f;
+    end
+end
+
+assign warm_reset = mci_rst_window_sync;
+
+assign fw_update_rst_window = (boot_fsm_nxt == BOOT_RST_MCU) | (boot_fsm != BOOT_RST_MCU); 
+
+assign fw_update_rdc_clk_dis = fw_update_rst_window | fw_update_rst_window_f | fw_update_rst_window_2f; 
+
+always_ff @(posedge clk or negedge mci_pwrgood) begin
+    if (~mci_pwrgood) begin
+        fw_update_rst_window_f <= '1;
+        fw_update_rst_window_2f <= '1;
+    end
+    else begin
+        fw_update_rst_window_f <= fw_update_rst_window;
+        fw_update_rst_window_2f <= fw_update_rst_window_f;
+    end
+end
 
 /////////////////////////////////////////////////
 // Sync signals into local clock domain
@@ -129,12 +197,13 @@ caliptra_prim_flop_2sync #(
 /////////////////////////////////////////////////
 // Boot FSM
 /////////////////////////////////////////////////
-always_ff @(posedge clk or negedge mci_rst_b) begin
-    if(!mci_rst_b) begin
+always_ff @(posedge clk or negedge mci_pwrgood) begin
+    if(!mci_pwrgood) begin
         boot_fsm                    <= BOOT_IDLE;
         boot_fsm_prev               <= BOOT_IDLE;
         fc_opt_init                 <= '0;
         lc_init                     <= '0;
+        cptra_ss_rst_b_o_ff         <= '0;
         mcu_rst_b_ff                <= '0;
         cptra_rst_b_ff              <= '0;
         mcu_reset_once              <= '0;
@@ -142,35 +211,41 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         min_mcu_rst_count           <= '0;
     end
     else begin
-        boot_fsm        <= boot_fsm_nxt;
-        boot_fsm_prev   <= (boot_fsm != boot_fsm_nxt) ? boot_fsm : boot_fsm_prev; // Capture where FSM came from
-        fc_opt_init     <= fc_opt_init_nxt;
-        lc_init         <= lc_init_nxt;
-        mcu_rst_b_ff    <= mcu_rst_b_nxt;
-        cptra_rst_b_ff  <= cptra_rst_b_nxt;
-        mcu_reset_once  <= mcu_reset_once_nxt;
-        min_mcu_rst_count_elapsed <= min_mcu_rst_count_elapsed_nxt;
-        min_mcu_rst_count <= min_mcu_rst_count_nxt;       
+        boot_fsm                    <= warm_reset ? BOOT_IDLE : boot_fsm_nxt;
+        boot_fsm_prev               <= (boot_fsm != boot_fsm_nxt) ? boot_fsm : boot_fsm_prev; // Capture where FSM came from
+        fc_opt_init                 <= fc_opt_init_nxt;
+        lc_init                     <= lc_init_nxt;
+        cptra_ss_rst_b_o_ff         <= cptra_ss_rst_b_o_nxt;
+        mcu_rst_b_ff                <= mcu_rst_b_nxt;
+        cptra_rst_b_ff              <= cptra_rst_b_nxt;
+        mcu_reset_once              <= mcu_reset_once_nxt;
+        min_mcu_rst_count_elapsed   <= min_mcu_rst_count_elapsed_nxt;
+        min_mcu_rst_count           <= min_mcu_rst_count_nxt;       
     end
 end
 
 
 always_comb begin
-    boot_fsm_nxt    = boot_fsm;
-    fc_opt_init_nxt = fc_opt_init;
-    lc_init_nxt     = lc_init;
-    mcu_rst_b_nxt   = mcu_rst_b_ff;
-    cptra_rst_b_nxt = cptra_rst_b_ff;
-    mcu_reset_once_nxt  = mcu_reset_once;
-    mcu_cpu_halt_req_nxt = 1'b0;
+    boot_fsm_nxt            = boot_fsm;
+    fc_opt_init_nxt         = fc_opt_init;
+    lc_init_nxt             = lc_init;
+    cptra_ss_rst_b_o_nxt    = cptra_ss_rst_b_o_ff;
+    mcu_rst_b_nxt           = mcu_rst_b_ff;
+    cptra_rst_b_nxt         = cptra_rst_b_ff;
+    mcu_reset_once_nxt      = mcu_reset_once;
+    mcu_cpu_halt_req_nxt    = 1'b0;
     unique case(boot_fsm)
         BOOT_IDLE: begin
             // Can only transition into IDLE on MCI reset
             // If this changes we need to add init signal values
             // for FC, LCC, MCU, CPTRA
-            boot_fsm_nxt = BOOT_OTP_FC; 
+            boot_fsm_nxt            = BOOT_OTP_FC; 
+            cptra_ss_rst_b_o_nxt    = 1'b0;
+            mcu_rst_b_nxt           = 1'b0;
+            cptra_rst_b_nxt         = 1'b0;
         end
         BOOT_OTP_FC: begin
+            cptra_ss_rst_b_o_nxt    = 1'b1;
             fc_opt_init_nxt = 1'b1;
             if (fc_opt_done_sync) begin
                 boot_fsm_nxt = BOOT_LCC; 

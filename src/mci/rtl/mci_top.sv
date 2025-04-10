@@ -358,16 +358,25 @@ mci_axi_sub_top #(
     .strap_mcu_sram_config_axi_user
 );
 
+logic rdc_clk_dis;
+logic fw_update_rdc_clk_dis;
+logic cptra_ss_rst_b_o;
+
 mci_boot_seqr #(
     .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH)
 )i_boot_seqr (
     .clk,
     .mci_rst_b, // FIXME RDC?
 
+    // Clock Controls
+    .rdc_clk_dis,
+    .fw_update_rdc_clk_dis,
+
     // DFT
     .scan_mode,
 
     // Reset controls
+    .cptra_ss_rst_b_o,
     .mcu_rst_b,
     .cptra_rst_b,
 
