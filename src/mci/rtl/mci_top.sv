@@ -221,8 +221,6 @@ module mci_top
 
     // Boot Sequencer
     logic mcu_reset_once;
-    logic fw_boot_upd_reset;     // First MCU reset request
-    logic fw_hitless_upd_reset;  // Other MCU reset requests
     mci_boot_fsm_state_e boot_fsm;
 
     // MBOX
@@ -382,8 +380,6 @@ mci_boot_seqr #(
     .caliptra_boot_go(mci_reg_hwif_out.CPTRA_BOOT_GO.go),
     .mci_bootfsm_go(mci_reg_hwif_out.MCI_BOOTFSM_GO.go),
     .mcu_rst_req(mci_reg_hwif_out.RESET_REQUEST.mcu_req),
-    .fw_boot_upd_reset,     // First MCU reset request
-    .fw_hitless_upd_reset,  // Other MCU reset requests
     .mcu_reset_once,
     .boot_fsm,
 
@@ -527,9 +523,11 @@ mci_wdt_top #(
 mci_reg_top #(
     .AXI_USER_WIDTH(AXI_USER_WIDTH),   
     .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),  
-    .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),    
+    .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),   
+    .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
     .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),  
-    .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER)    
+    .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER),
+    .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB)
 )i_mci_reg_top (
     .clk,
 
@@ -547,6 +545,7 @@ mci_reg_top #(
     
     // AXI Privileged requests
     .axi_mci_soc_config_req,
+    .axi_mcu_sram_config_req,
     .axi_mcu_req,
 
     // WDT specific signals
@@ -634,8 +633,6 @@ mci_reg_top #(
 
     // Boot status
     .mcu_reset_once,
-    .fw_boot_upd_reset,     // First MCU reset request
-    .fw_hitless_upd_reset,  // Other MCU reset requests
     .boot_fsm,
     
     // Caliptra internal fabric response interface

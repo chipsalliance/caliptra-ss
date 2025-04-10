@@ -7,7 +7,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -31,8 +30,8 @@ void axi_id() {
     // Both CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN and CPTRA_CORE_UDS_SEED must not
     // be modified by the AXI requests stemming from the MCU.
     grant_mcu_for_fc_writes(); 
-    dai_wr(0x000, sentinel, sentinel, granularity, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
-    dai_wr(0x048, sentinel, sentinel, granularity, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(0x000, sentinel, sentinel, granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(0x048, sentinel, sentinel, granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
     dai_wr(0x090, sentinel, sentinel, granularity, 0 /* Should work */);
 
     // All fuses should be writable by the Caliptra core.
@@ -45,19 +44,13 @@ void axi_id() {
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
-    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
-    // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
-
-    uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
       
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    wait_dai_op_idle(0);
+    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
 
     initialize_otp_controller();
 

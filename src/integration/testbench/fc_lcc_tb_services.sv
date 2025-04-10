@@ -27,6 +27,11 @@ module fc_lcc_tb_services (
   `include "caliptra_ss_tb_cmd_list.svh"
   `include "caliptra_ss_includes.svh"
 
+  logic [1:0] freq_sel;
+  assign freq_sel = '0;
+
+  logic ecc_fault_en;
+  assign ecc_fault_en = 1'b0;
  
   always_ff @(posedge clk or negedge cptra_rst_b) begin
     if (cptra_rst_b) begin
@@ -80,6 +85,41 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: triggering an escalation");
             force `FC_PATH.lc_escalate_en_i = lc_ctrl_pkg::On;     
           end
+          CMD_FC_LCC_EXT_CLK_500MHZ: begin
+            $display("fc_lcc_tb_services: setting ext clock frequency to 500 mhz");
+            force freq_sel = 2'b00;
+          end
+          CMD_FC_LCC_EXT_CLK_160MHZ: begin
+            $display("fc_lcc_tb_services: setting ext clock frequency to 160 mhz");
+            force freq_sel = 2'b01;
+          end
+          CMD_FC_LCC_EXT_CLK_400MHZ: begin
+            $display("fc_lcc_tb_services: setting ext clock frequency to 400 mhz");
+            force freq_sel = 2'b10;
+          end
+          CMD_FC_LCC_EXT_CLK_1000MHZ: begin
+            $display("fc_lcc_tb_services: setting ext clock frequency to 1000 mhz");
+            force freq_sel = 2'b11;
+          end
+          CMD_FC_LCC_FAULT_DIGEST: begin
+            $display("fc_lcc_tb_services: fault the transition tokens partition digest");
+            force `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[696] = '0;
+          end
+          CMD_FC_LCC_FAULT_BUS_ECC: begin
+            $display("fc_lcc_tb_services: fault one bit in axi write request");
+            force ecc_fault_en = 1'b1;
+            // XXX: The AXI controller blocks when observing a write response error.
+            // This manually pulls the signal down to allow for program continuation.
+            force `FC_PATH.core_axi_wr_rsp.bresp = '0;
+          end
+          CMD_LC_TRIGGER_ESCALATION0: begin
+            $display("fc_lcc_tb_services: triggering esc_scrap_state0 escalation");
+            force `LCC_PATH.esc_scrap_state0 = 1'b1;
+          end
+          CMD_LC_TRIGGER_ESCALATION1: begin
+            $display("fc_lcc_tb_services: triggering esc_scrap_state1 escalation");
+            force `LCC_PATH.esc_scrap_state1 = 1'b1;
+          end
           default: begin
             // No action for unrecognized commands.
           end
@@ -88,6 +128,53 @@ module fc_lcc_tb_services (
     end
   end
 
+  // Toggle a bit when observing a fuse_ctrl DAI write.
+  always_comb begin
+    if (ecc_fault_en == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.write == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.addr == 32'h7000_0068) begin
+      force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0] = ~`FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0];
+    end else begin
+      force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data = `FC_PATH.u_core_axi2tlul.i_sub2tlul.wdata;
+    end
+  end
+
+  bit clk_160;
+  bit clk_400;
+  bit clk_500;
+  bit clk_1000;
+
+  initial begin
+    clk_500 = 0;
+    forever clk_500 = #(1.00) ~clk_500;
+  end
+
+  initial begin
+    clk_400 = 0;
+    forever clk_400 = #(1.25) ~clk_400;
+  end
+
+  initial begin
+    clk_160 = 0;
+    forever clk_160 = #(3.125) ~clk_160;
+  end
+
+  initial begin
+    clk_1000 = 0;
+    forever clk_1000 = #(0.5) ~clk_1000;
+  end
+
+  bit clk_sel;
+  assign clk_sel = freq_sel == 2'b00 ? clk_500 :
+                   freq_sel == 2'b01 ? clk_160 :
+                   freq_sel == 2'b10 ? clk_400 : 
+                   freq_sel == 2'b11 ? clk_1000 : clk_500;
+
+  always_comb begin
+    if (`LCC_PATH.lc_clk_byp_ack_i == lc_ctrl_pkg::On) begin
+      force `CPTRA_SS_TB_TOP_NAME.core_clk = clk_sel;
+    end else begin
+      force `CPTRA_SS_TB_TOP_NAME.core_clk = clk_500;
+    end
+  end
 
   //-------------------------------------------------------------------------
   // Top-level service: Force FC, LCC reset for 10 cycles then release it.

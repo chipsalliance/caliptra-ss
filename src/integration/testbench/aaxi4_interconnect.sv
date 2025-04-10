@@ -19,6 +19,7 @@
 `timescale 1ps/1ps
 
 `include "soc_address_map_defines.svh"
+`include "caliptra_ss_top_tb_intc_includes.svh"
 
 module aaxi4_interconnect(
     input logic		core_clk,	
@@ -52,9 +53,9 @@ aaxi_device_class slave[AAXI_INTC_SLAVE_CNT];
 
 // device interface
 // aaxi_pll_intf		ports_intf		(core_clk, rst_l, CACTIVE_PLL, CSYSREQ, CSYSACK_PLL);
-aaxi_interconnect_intf	ports			(core_clk, rst_l, CACTIVE, CSYSREQ, CSYSACK);
-aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))mintf_arr[AAXI_INTC_MASTER_CNT-1:0]	(core_clk, rst_l, CACTIVE, CSYSREQ, CSYSACK);
-aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))sintf_arr[AAXI_INTC_SLAVE_CNT-1:0]	(core_clk, rst_l, CACTIVE, CSYSREQ, CSYSACK);
+aaxi_interconnect_intf	ports			(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
+aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))mintf_arr[AAXI_INTC_MASTER_CNT-1:0]	(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
+aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))sintf_arr[AAXI_INTC_SLAVE_CNT-1:0]	(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
 
 /* When all CACTIVE signal of ports, mintf_arr[] and sintf_arr[] 
    are different from each other(some ports whose CACTIVE was 1,
@@ -76,6 +77,10 @@ generate
 	    intc.master_ports[i].vers= master[i].vers;
 	    intc.master_ports[i].ports= mintf_arr[i];
 	end
+    assign mintf_arr[i].CACTIVE_m = 1'b0;
+    assign mintf_arr[i].CACTIVE_s = 1'b0;
+    assign mintf_arr[i].CSYSACK_m = 1'b0;
+    assign mintf_arr[i].CSYSACK_s = 1'b0;
     end
 
     for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin: slave_loop
@@ -85,6 +90,10 @@ generate
 	    intc.slave_ports[i].vers= slave[i].vers;
 	    intc.slave_ports[i].ports= sintf_arr[i];
 	end
+    assign sintf_arr[i].CACTIVE_m = 1'b0;
+    assign sintf_arr[i].CACTIVE_s = 1'b0;
+    assign sintf_arr[i].CSYSACK_m = 1'b0;
+    assign sintf_arr[i].CSYSACK_s = 1'b0;
     end
 endgenerate 
 
@@ -95,26 +104,46 @@ endgenerate
 generate 
     // interfaces between Master BFMs and Interconnect slave ports
     for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++ ) begin: master_mon
-	aaxi_monitor_wrapper monitor(mintf_arr[i]);
-	defparam monitor.VER= "AXI4";
-	defparam monitor.ID_WIDTH= AAXI_ID_WIDTH;
-	defparam monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH;	    // set DATA BUS WIDTH
-	defparam monitor.monitor.FNAME_TRACK= {"m0"+i,"_intf.txt"};
+        aaxi_monitor_wrapper monitor(mintf_arr[i]);
+        defparam monitor.VER= "AXI4";
+        defparam monitor.ID_WIDTH= AAXI_ID_WIDTH;
+        defparam monitor.monitor.FNAME_TRACK= {"m0"+i,"_intf.txt"};
         defparam monitor.checker0.MAXWAITS= 60;
     end
+    // MCU IFU, LSU, SB i/fs
+    defparam master_mon[`CSS_INTC_MINTF_MCU_LSU_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+    defparam master_mon[`CSS_INTC_MINTF_MCU_IFU_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+    defparam master_mon[`CSS_INTC_MINTF_MCU_SB_IDX ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+    // Caliptra AXI DMA, SoC BFM i/fs
+    defparam master_mon[`CSS_INTC_MINTF_CPTRA_DMA_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam master_mon[`CSS_INTC_MINTF_SOC_BFM_IDX  ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
 
     // interfaces between Slave BFMs and Interconnect master ports
     for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin: slave_mon
-	aaxi_monitor_wrapper monitor(sintf_arr[i]);
-	defparam monitor.VER= "AXI4";
-	defparam monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
-	defparam monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH;	    // set DATA BUS WIDTH
-	defparam monitor.monitor.FNAME_TRACK= {"s0"+i,"_intf.txt"};
+        aaxi_monitor_wrapper monitor(sintf_arr[i]);
+        defparam monitor.VER= "AXI4";
+        defparam monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
+        defparam monitor.monitor.FNAME_TRACK= {"s0"+i,"_intf.txt"};
         defparam monitor.checker0.MAXWAITS= 60;
     end
+    // NC, MCU ROM, FC PRIM (NC)
+    defparam slave_mon[`CSS_INTC_SINTF_NC0_IDX    ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+    defparam slave_mon[`CSS_INTC_SINTF_MCU_ROM_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+    defparam slave_mon[`CSS_INTC_SINTF_NC1_IDX    ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+    // I3C, Caliptra SoC IFC, MCI, FC, LCC
+    defparam slave_mon[`CSS_INTC_SINTF_I3C_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_MCI_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_FC_IDX           ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_LCC_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        
 endgenerate 
 
 // instantiates monitor/protocol checker0 for default slave interface
+assign ports.default_slave_intf.CACTIVE_m = 1'b0;
+assign ports.default_slave_intf.CACTIVE_s = 1'b0;
+assign ports.default_slave_intf.CSYSACK_m = 1'b0;
+assign ports.default_slave_intf.CSYSACK_s = 1'b0;
 aaxi_monitor_wrapper def_monitor(ports.default_slave_intf);
 defparam def_monitor.VER= "AXI4";
 defparam def_monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
@@ -138,8 +167,7 @@ initial begin
     #0;
 
     for (int i = 0; i < AAXI_INTC_MASTER_CNT; i++) begin
-	// instantiates Master BFMs
-        master[i].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
+        // instantiates Master BFMs
         master[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         master[i].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
@@ -148,26 +176,31 @@ initial begin
         master[i].cfg_info.passive_mode= 1;       //-- changed to put master to passive mode
         // master[i].cfg_info.id_width=3;
 `ifdef FOUR_OUTSTANDING
-	master[i].cfg_info.total_outstanding_depth = 4;
-	master[i].cfg_info.id_outstanding_depth = 4;
+        master[i].cfg_info.total_outstanding_depth = 4;
+        master[i].cfg_info.id_outstanding_depth = 4;
 `else
-	master[i].cfg_info.total_outstanding_depth = 1;
-	master[i].cfg_info.id_outstanding_depth = 1;
+        master[i].cfg_info.total_outstanding_depth = 1;
+        master[i].cfg_info.id_outstanding_depth = 1;
 `endif
-	master[i].cfg_info.no_overlap_allow = 0;
+        master[i].cfg_info.no_overlap_allow = 0;
 `ifdef UNALIGNED_WSTRB_ONLY
-	master[i].cfg_info.unaligned_transfer_addr = 1;
+        master[i].cfg_info.unaligned_transfer_addr = 1;
 `endif
 `ifdef DEFAULT_HIGH
-	master[i].cfg_info.bready_default = 1;
-	master[i].cfg_info.rready_default = 1;
+        master[i].cfg_info.bready_default = 1;
+        master[i].cfg_info.rready_default = 1;
 `endif
+    end
 
-	end
+    master[`CSS_INTC_MINTF_MCU_LSU_IDX].  cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+    master[`CSS_INTC_MINTF_MCU_IFU_IDX].  cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+    master[`CSS_INTC_MINTF_MCU_SB_IDX].   cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+    master[`CSS_INTC_MINTF_CPTRA_DMA_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    master[`CSS_INTC_MINTF_SOC_BFM_IDX].  cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
 
     wait (slave[0] != null);
     for (int i=0; i<AAXI_INTC_SLAVE_CNT; i++) begin
-	    // instantiates Slave BFMs
+        // instantiates Slave BFMs
         slave[i].cfg_info.passive_mode= 1; 
         slave[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
@@ -179,104 +212,108 @@ initial begin
         // slave[i].add_fifo(64'hb000_0001+i*64'h100_0000, 4);
         // slave[i].cfg_info.fifo_address[0] = 64'hc000_0000;
         // slave[i].cfg_info.fifo_limit[0] = 64'hc000_1000;
-        slave[i].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
 `ifdef FOUR_OUTSTANDING
-	slave[i].cfg_info.total_outstanding_depth = 4;
-	slave[i].cfg_info.id_outstanding_depth = 4;
+        slave[i].cfg_info.total_outstanding_depth = 4;
+        slave[i].cfg_info.id_outstanding_depth = 4;
 `else
-	slave[i].cfg_info.total_outstanding_depth = 1;
-	slave[i].cfg_info.id_outstanding_depth = 1;
+        slave[i].cfg_info.total_outstanding_depth = 1;
+        slave[i].cfg_info.id_outstanding_depth = 1;
 `endif
 `ifdef DEFAULT_HIGH
-	slave[i].cfg_info.awready_default = 1;
-	slave[i].cfg_info.dwready_default = 1;
-	slave[i].cfg_info.arready_default = 1;
+        slave[i].cfg_info.awready_default = 1;
+        slave[i].cfg_info.dwready_default = 1;
+        slave[i].cfg_info.arready_default = 1;
 `endif
-	end
-        //-- imem
-        slave[0].cfg_info.base_address[0]  = 64'h1000_0000;
-        slave[0].cfg_info.limit_address[0] = 64'h1000_FFFF;
+    end
+        //-- Not Connected
+        slave[`CSS_INTC_SINTF_NC0_IDX].cfg_info.base_address[0]  = 64'h1000_0000;
+        slave[`CSS_INTC_SINTF_NC0_IDX].cfg_info.limit_address[0] = 64'h1000_FFFF;
+        slave[`CSS_INTC_SINTF_NC0_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
 
         //-- I3C
-        slave[1].cfg_info.passive_mode = 1;
-        slave[1].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[1].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[1].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[1].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[1].cfg_info.base_address[0] = 64'h2000_4000;
-        slave[1].cfg_info.limit_address[0] = 64'h2000_4FFF;
-        slave[1].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
-        slave[1].cfg_info.total_outstanding_depth = 4;
-        slave[1].cfg_info.id_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.passive_mode = 1;
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.base_address[0] = 64'h2000_4000;
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.limit_address[0] = 64'h2000_4FFF;
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- MCU ROM MACRO / MCI_TOP 2nd instance
-        slave[2].cfg_info.base_address[0] = {32'h0, 32'h8000_0000};
-        slave[2].cfg_info.limit_address[0] = {32'h0, 32'h80FF_FFFF};
+        slave[`CSS_INTC_SINTF_MCU_ROM_IDX].cfg_info.base_address[0] = {32'h0, 32'h8000_0000};
+        slave[`CSS_INTC_SINTF_MCU_ROM_IDX].cfg_info.limit_address[0] = {32'h0, 32'h80FF_FFFF};
+        slave[`CSS_INTC_SINTF_MCU_ROM_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
 
         //-- Caliptra SoC IFC Sub
-        slave[3].cfg_info.passive_mode= 1; 
-        slave[3].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[3].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[3].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[3].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[3].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[3].cfg_info.base_address[0] = 64'h3000_0000;
-        slave[3].cfg_info.limit_address[0] = 64'h3FFF_FFFF;
-        slave[3].cfg_info.base_address[1]  = 64'h0003_0000;
-        slave[3].cfg_info.limit_address[1] = 64'h0003_FFFF;
-        slave[3].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
-        slave[3].cfg_info.total_outstanding_depth = 4;
-        slave[3].cfg_info.id_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.passive_mode= 1; 
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.base_address[0] = 64'(`SOC_MBOX_CSR_BASE_ADDR);
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.limit_address[0] = 64'(`SOC_MBOX_CSR_BASE_ADDR) + 64'h2_0000; // FIXME hardcoded to match the soc_ifc limit
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.default_fifo_depth = 4096; // Reasonable cap at max AXI burst lengh of 4KiB
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.fifo_address[0] = 64'(`SOC_MBOX_CSR_MBOX_DATAIN);
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.fifo_limit[0] = 64'(`SOC_MBOX_CSR_MBOX_DATAOUT);
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.fifo_address[1] = 64'(`SOC_SHA512_ACC_CSR_DATAIN);
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.fifo_limit[1] = 64'(`SOC_SHA512_ACC_CSR_DATAIN);
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- MCI
-        slave[4].cfg_info.passive_mode= 1; 
-        slave[4].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[4].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[4].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[4].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[4].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[4].cfg_info.base_address[0]  = {32'h0, `SOC_MCI_TOP_MCI_REG_BASE_ADDR}; //64'h2100_0000;
-        slave[4].cfg_info.limit_address[0] = {32'h0, `SOC_MCI_TOP_MCU_SRAM_END_ADDR}; // Always the last address in MCU
-        slave[4].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
-        slave[4].cfg_info.total_outstanding_depth = 4;
-        slave[4].cfg_info.id_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.passive_mode= 1; 
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.base_address[0]  = {32'h0, `SOC_MCI_TOP_MCI_REG_BASE_ADDR}; //64'h2100_0000;
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.limit_address[0] = {32'h0, `SOC_MCI_TOP_MCU_SRAM_END_ADDR}; // Always the last address in MCU
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- Fuse Controller Core AXI 
-        slave[5].cfg_info.passive_mode = 1; 
-        slave[5].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[5].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[5].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[5].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[5].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[5].cfg_info.base_address[0] = 64'h7000_0000;
-        slave[5].cfg_info.limit_address[0] = 64'h7000_01FF;
-        slave[5].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
-        slave[5].cfg_info.total_outstanding_depth = 4;
-        slave[5].cfg_info.id_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.passive_mode = 1; 
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.base_address[0] = {32'h0, `SOC_OTP_CTRL_BASE_ADDR}; //64'h7000_0000;
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.limit_address[0] = {32'h0, `SOC_OTP_CTRL_BASE_ADDR} + 'h1FF; //64'h7000_01FF;
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.id_outstanding_depth = 4;
 
-        //-- Fuse Controller Prim AXI 
-        slave[6].cfg_info.passive_mode = 1; 
-        slave[6].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[6].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[6].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[6].cfg_info.base_address[0] = 64'h7000_0200;
-        slave[6].cfg_info.limit_address[0] = 64'h7000_03FF;
-        slave[6].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
-        slave[6].cfg_info.total_outstanding_depth = 4;
-        slave[6].cfg_info.id_outstanding_depth = 4;
+        //-- Fuse Controller Prim AXI (not connected)
+        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.passive_mode = 1; 
+        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.base_address[0] = 64'h7000_0200;
+        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.limit_address[0] = 64'h7000_03FF;
+        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- Life-cycle Controller Core AXI 
-        slave[7].cfg_info.passive_mode = 1; 
-        slave[7].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[7].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[7].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[7].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[7].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[7].cfg_info.base_address[0] = 64'h7000_0400;
-        slave[7].cfg_info.limit_address[0] = 64'h7000_05FF;
-        slave[7].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH
-        slave[7].cfg_info.total_outstanding_depth = 4;
-        slave[7].cfg_info.id_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.passive_mode = 1; 
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.base_address[0] = {32'h0, `SOC_LC_CTRL_BASE_ADDR}; //64'h7000_0400;
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.limit_address[0] = {32'h0, `SOC_LC_CTRL_BASE_ADDR} + 'h5FF;// 64'h7000_05FF;
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.id_outstanding_depth = 4;
 
 
 

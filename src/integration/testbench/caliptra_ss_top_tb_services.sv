@@ -51,11 +51,11 @@ import tb_top_pkg::*;
 
     bit          [31:0]         mem_signature_begin = 32'd0; // TODO:
     bit          [31:0]         mem_signature_end   = 32'd0;
-    bit          [31:0]         mem_mailbox         = `SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
     logic                       mailbox_data_val;
     logic                       mailbox_write;
     logic        [63:0]         mailbox_data;
+    logic        [63:0]         prev_mailbox_data;
 
     string                      abi_reg[32]; // ABI register names
 
@@ -108,20 +108,45 @@ import tb_top_pkg::*;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
         end 
+        if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
+            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
+            force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
+        end 
+        if ($test$plusargs("CALIPTRA_SS_JTAG_MCI_BRK")) begin
+            force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
+            force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
+            force `CPTRA_SS_TB_TOP_NAME.cptra_ss_mci_boot_seq_brkpoint_i = 1'b1;
+        end 
     end
 
-    assign mailbox_write    = `CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.awvalid && (`CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.awaddr == mem_mailbox) && rst_l;
-    assign mailbox_data     = `CPTRA_SS_TOP_PATH.mci_top_i.s_axi_w_if.wdata;
+    assign mailbox_write    = `CPTRA_SS_TOP_PATH.mci_top_i.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.load_next && rst_l;
+    assign mailbox_data     = `CPTRA_SS_TOP_PATH.mci_top_i.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.next;
 
     assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
 
-    bit    hex_file_is_empty;
+    int    hex_file_is_empty;
 
     integer fd, tp, el;
+
+    always @(negedge clk or negedge rst_l) begin
+        if(!rst_l) begin
+            prev_mailbox_data <= 'hA; // Initialize with newline character so timestamp is printed to console for the first line
+        end
+        else begin
+            if( mailbox_data_val & mailbox_write) begin
+                prev_mailbox_data <= mailbox_data;
+            end
+        end
+
+    end
 
     always @(negedge clk) begin
         // console Monitor
         if( mailbox_data_val & mailbox_write) begin
+            if (prev_mailbox_data[7:0] inside {8'h0A,8'h0D}) begin
+                $fwrite(fd,"%0t - ", $time);
+                $write("%0t - ", $time);
+            end
             $fwrite(fd,"%c", mailbox_data[7:0]);
             $write("%c", mailbox_data[7:0]);
             if (mailbox_data[7:0] inside {8'h0A,8'h0D}) begin // CR/LF
@@ -145,13 +170,24 @@ import tb_top_pkg::*;
         error_injection_mode.dccm_single_bit_error <= 1'b0;
         error_injection_mode.dccm_double_bit_error <= 1'b0;
 
-        // Memory signature dump
+        // Disable MCU_SRAM assertions
+        if(mailbox_write && (mailbox_data[7:0] == TB_DISABLE_MCU_SRAM_PROT_ASSERTS)) begin
+            $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.mci_top_i.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
+        end
+        // Memory signature dump and test END
         if(mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) begin
             if (mem_signature_begin < mem_signature_end) begin
                 dump_signature();
             end
             // End Of test monitor
             else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS) begin
+                $display("Halting MCU");
+                force `MCI_PATH.mcu_cpu_halt_req_o = 1;
+                $display("Waiting for MCU to halt");
+                wait(`MCI_PATH.mcu_cpu_halt_ack_i);
+                $display("Waiting for MCU halt status");
+                wait(`MCI_PATH.mcu_cpu_halt_status_i);
+
                 $display("* TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
@@ -170,6 +206,120 @@ import tb_top_pkg::*;
             else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE) begin
                 $error("* TESTCASE FAILED");
                 $finish;
+            end
+        end
+    end
+
+    // Load SHA Test Vectors into MCU SRAM
+    initial begin
+        bit sha512_mode;
+        bit[MCU_SRAM_ECC_WIDTH-1:0] ecc;
+        bit[MCU_SRAM_DATA_WIDTH-1:0] data;
+        bit[MCU_SRAM_ADDR_WIDTH-1:0] addr;
+        int signed ii;
+        int fd_r;
+        int cnt_tmp = 0;
+        int line_skip;
+        int test_case;
+
+        string line_read;
+        string tmp_str1;
+        string tmp_str2;
+        string file_name;
+        int most_sig_dword;
+        reg [3199:0][31:0] sha_block_data;
+        reg [31:0] block_len;
+        reg [15:0][31:0] sha_digest;
+        reg [31:0] dlen;
+        reg [1:0] byte_shift;
+        forever begin
+            @(negedge clk);
+            if(mailbox_write && (mailbox_data[7:0] == TB_CMD_SHA_VECTOR_TO_MCU_SRAM)) begin
+                // ============= SHA test setup =============
+                // Randomize test parameters
+                if (!std::randomize(sha512_mode)) $fatal("Failed to randomize sha mode");
+                if (!std::randomize(test_case) with {test_case inside {[1:255]};}) $fatal("Failed to randomize test_case");
+                if (sha512_mode) begin
+                    case(test_case) inside
+                    [0:127]: begin
+                      file_name = "./SHA512ShortMsg.rsp";
+                      line_skip = test_case * 4 + 7;
+                    end
+                    [128:255]: begin
+                      file_name = "./SHA512LongMsg.rsp";
+                      line_skip = (test_case - 128) * 4 + 7;
+                    end
+                  endcase
+                end
+                else begin
+                    case(test_case) inside
+                    [0:127]: begin
+                        file_name = "./SHA384ShortMsg.rsp";
+                        line_skip = test_case * 4 + 7;
+                    end
+                    [128:255]: begin
+                      file_name = "./SHA384LongMsg.rsp";
+                      line_skip = (test_case - 128) * 4 + 7;
+                    end
+                  endcase
+                end
+                $display("[%t] TB: Populating SHA testcase (mode=%s, case=%d, fname=%s) to MCU SRAM", $time, sha512_mode?"SHA512":"SHA384", test_case, file_name);
+
+                // Parse appropriate test vector files
+                fd_r = $fopen(file_name,"r");
+
+                while (cnt_tmp <= line_skip) begin
+                    cnt_tmp = cnt_tmp + 1;
+                    void'($fgets(line_read,fd_r));
+                end
+
+                void'($sscanf( line_read, "%s %s %d", tmp_str1, tmp_str2, block_len));
+                void'($fgets(line_read,fd_r));
+                void'($sscanf( line_read, "%s %s %h", tmp_str1, tmp_str2, sha_block_data));
+                void'($fgets(line_read,fd_r));
+                void'($sscanf( line_read, "%s %s %h", tmp_str1, tmp_str2, sha_digest));
+                
+                $fclose(fd_r);
+
+                dlen = block_len >> 3; // in bytes
+                byte_shift = 'd4 - dlen[1:0];
+                sha_block_data = sha_block_data << (byte_shift * 8);
+
+                // ============= SHA test load to SRAM =============
+                // Set mode to dw0
+                data = MCU_SRAM_DATA_WIDTH'(sha512_mode);
+                ecc = |data ? riscv_ecc32(data) : 0;
+                lmem.ram[0] = {ecc,data};
+                // Set length (in bytes) to dw1
+                data = MCU_SRAM_DATA_WIDTH'(dlen);
+                ecc = |data ? riscv_ecc32(data) : 0;
+                lmem.ram[1] = {ecc,data};
+                // Set expected digest at byte offset 'h100 = dw offset 'h40
+                addr = 'h40;
+                for (ii=0; ii < (sha512_mode ? 16 : 12); ii++) begin
+                    data = sha_digest[(sha512_mode ? 16 : 12) - 1 - ii];
+                    $display("TB: [SHA Digest Iteration: %0d] Setting SRAM offset 0x%x with dword: 0x%x", ii, addr, data);
+                    ecc = |data ? riscv_ecc32(data) : 0;
+                    lmem.ram[addr] = {ecc,data};
+                    addr += 1; // Dword address
+                end
+
+                // Set message starting at byte offset 'h400 = dw offset 'h100
+                addr = 'h100;
+
+                //Divide the number of bytes by 4 to get the number of dwords.
+                //If the data is evenly divisible, the most significant dword is N-1. If it includes a partial dword it's already rounded down
+                most_sig_dword = (dlen[1:0] == 2'b00) ? (dlen >> 2) - 1 : (dlen >> 2);
+
+                if (dlen != 0) begin
+                    for (ii=most_sig_dword; ii >= 0 ; ii--) begin
+                        data = sha_block_data[ii];
+                        $display("TB: [SHA Message Iteration: %0d] Setting SRAM offset 0x%x with dword: 0x%x", ii, addr, data);
+                        ecc = |data ? riscv_ecc32(data) : 0;
+                        lmem.ram[addr] = {ecc,data};
+                        addr += 1; // Dword address
+                    end
+                end
             end
         end
     end
@@ -242,10 +392,12 @@ import tb_top_pkg::*;
         abi_reg[30] = "t5";
         abi_reg[31] = "t6";
 
+        lmem_dummy_preloader.ram = '{default:8'h0};
         hex_file_is_empty = $system("test -s mcu_lmem.hex");
-        if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram); // FIXME - should there bit a limit like Caliptra has for iccm.hex?
+        if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram, 0, (MCU_SRAM_SIZE_KB*1024)-1);
 
 
+        imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
         tp = $fopen("mcu_trace_port.csv","w");
@@ -261,11 +413,6 @@ import tb_top_pkg::*;
         // preload_dccm();
         preload_css_mcu0_dccm();
         preload_mcu_sram();
-
-// `ifndef VERILATOR
-//         // if($test$plusargs("dumpon")) $dumpvars;
-//         // forever  ACLK     = #5 ~ACLK;
-// `endif
 
     end
 
@@ -305,7 +452,7 @@ import tb_top_pkg::*;
 
 
     rom #(
-        .DEPTH     (16'h7FFF), // 64KB
+        .DEPTH     (16'h8000), // 256KiB
         .DATA_WIDTH(64),
         .ADDR_WIDTH(22)
     ) imem (
@@ -550,10 +697,16 @@ task static preload_css_mcu0_dccm;
 endtask
 
 
+`ifndef VERILATOR
+    lc_ctrl_cov_bind i_lc_ctrl_cov_bind();
+    mci_top_cov_bind i_mci_top_cov_bind();
+    caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
+`endif
 
-    /* verilator lint_off CASEINCOMPLETE */
-    `include "mcu_dasm.svi"
-    /* verilator lint_on CASEINCOMPLETE */
+
+/* verilator lint_off CASEINCOMPLETE */
+`include "mcu_dasm.svi"
+/* verilator lint_on CASEINCOMPLETE */
 
 
 endmodule
