@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -20,31 +19,30 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void writeblank() {
-    grant_mcu_for_fc_writes();
-
-    // 0x578: CPTRA_CORE_FMC_KEY_MANIFEST_SVN
-    const uint32_t fuse_address = 0x578;
-
-    // Overwriting set bits in a fuse should result in an error.
-    dai_wr(fuse_address, 0xFFFFFFFF, 0, 32, 0);
-    dai_wr(fuse_address, 0, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-}
-
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
-    
+
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
       
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    wait_dai_op_idle(0);
 
     initialize_otp_controller();
 
-    writeblank();
+    // The next DAI write will be faulted.
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_FAULT_BUS_ECC);
+
+    grant_caliptra_core_for_fc_writes();
+    dai_wr(0x00, 0x18, 0x19, 64, 0);
+
+    uint32_t status = lsu_read_32(SOC_OTP_CTRL_STATUS);
+    if (!((status >> OTP_CTRL_STATUS_BUS_INTEG_ERROR_LOW) & 0x1)) {
+        VPRINTF(LOW, "ERROR: bus integrity erros is not set\n");
+    }
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
