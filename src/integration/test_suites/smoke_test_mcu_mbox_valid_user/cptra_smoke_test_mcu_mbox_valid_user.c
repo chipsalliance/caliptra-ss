@@ -217,7 +217,7 @@ void caliptra_ss_mcu_mbox_get_data_and_attempt_writes(uint32_t mbox_num) {
     uint32_t data_length;
     const uint32_t mbox_dlen = 16*4;
     const uint32_t mbox_cmd = 0xFADECAFE;
-    const uint32_t mbox_user = 0x1;  // TODO should be MCU strap
+    const uint32_t mbox_user = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER);
     uint32_t read_payload[16];
     uint32_t write_payload[16];
     uint32_t mbox_data[0];

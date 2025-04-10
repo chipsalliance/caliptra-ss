@@ -122,6 +122,34 @@ addrmap mci_reg {
         field {desc = "Size of MCU reset counter"; hw=w; sw=r;} MIN_MCU_RST_COUNTER_WIDTH[5];
         field {desc = "MCU SRAM Size KB"; hw=w; sw=r;} MCU_SRAM_SIZE[12];
     } HW_CONFIG1;
+    
+    reg {
+        name = "MCU IFU AXI USER";
+        desc = "MCU IFU AXI USER Strap";
+        // No storage, i.e. no resetsignal
+        field {hw=w; sw=r;} value[32];
+    } MCU_IFU_AXI_USER;
+    
+    reg {
+        name = "MCU LSU AXI USER";
+        desc = "MCU LSU AXI USER Strap";
+        // No storage, i.e. no resetsignal
+        field { hw=w; sw=r;} value[32];
+    } MCU_LSU_AXI_USER;
+    
+    reg {
+        name = "MCU SRAM CONFIG AGENT AXI USER";
+        desc = "Agent with access to MCU SRAM Execution region. Typically Caliptra Core";
+        // No storage, i.e. no resetsignal
+        field { hw=w; sw=r;} value[32];
+    } MCU_SRAM_CONFIG_AXI_USER;
+    
+    reg {
+        name = "MCI SOC CONFIG AGENT AXI USER";
+        desc = "SOC agent with special access to MCI register bank";
+        // No storage, i.e. no resetsignal
+        field { hw=w; sw=r;} value[32];
+    } MCI_SOC_CONFIG_AXI_USER;
 
     // ----------------------------------------
     // ---------------- STATUS ----------------
@@ -130,7 +158,7 @@ addrmap mci_reg {
         desc = "Reports the status of the firmware flows.
                 [br]TAP Access [with debug intent set]: RO";
         field {swwe = axi_mcu_or_mci_soc_config_req; hw=r; resetsignal = mci_rst_b;} status[32]=0;
-    } FW_FLOW_STATUS @0x20;
+    } FW_FLOW_STATUS @0x30;
     reg {
         name = "Flow Status";
         desc = "Reports the status of HW FSMs and other flows.
@@ -196,7 +224,7 @@ addrmap mci_reg {
         rw_rw_sticky_hw mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
         rw_rw_sticky_hw nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
         rw_rw_sticky_hw mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
-    } HW_ERROR_FATAL @0x40;
+    } HW_ERROR_FATAL @0x50;
     reg {
         name = "Aggregate Error Fatal";
         desc = "Indicates fatal error from another IP within Caliptra SS. Assertion of any bit in this
@@ -590,7 +618,7 @@ addrmap mci_reg {
         name = "WDT Timer1 EN register";
         desc = "Watchdog timer1 enable register";
         field {desc = "WDT timer1 enable"; hw = r; sw = rw; swwe = axi_mcu_or_mci_soc_config_req; resetsignal = mci_rst_b;} timer1_en = 1'b0;
-    } WDT_TIMER1_EN @0xA0;
+    } WDT_TIMER1_EN @0xB0;
 
     reg {
         name = "WDT Timer1 CTRL register";
@@ -636,7 +664,7 @@ addrmap mci_reg {
         name = "WDT1 Config";
         desc = "SOC provided count in cycles for WDT1 timeout.";
         field {sw=rw; hw=na; resetsignal = mci_pwrgood;} TIMEOUT[32]=0;
-    } WDT_CFG[2] @0xD0;
+    } WDT_CFG[2];
 
     // ----------------------------------------
     // ---------------- TIMER -----------------

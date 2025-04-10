@@ -563,6 +563,13 @@ mci_reg_top #(
     // Debug intent
     .ss_debug_intent,
     .mci_ss_debug_intent,
+
+    // AXI Straps
+    .strap_mcu_lsu_axi_user,
+    .strap_mcu_ifu_axi_user,
+    .strap_mcu_sram_config_axi_user,
+    .strap_mci_soc_config_axi_user,
+
     
     // MCU Reset vector
     .strap_mcu_reset_vector, // default reset vector
