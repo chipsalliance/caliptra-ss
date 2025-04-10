@@ -69,6 +69,7 @@ add_files [ glob $ssrtlDir/src/*/rtl/*.sv ]
 set i3cDir $fpgaDir/../third_party/i3c-core
 # Include headers and packages first
 add_files [ glob $i3cDir/src/*.svh ]
+add_files [ glob $i3cDir/src/libs/*.svh ]
 add_files [ glob $i3cDir/src/*/*/*_pkg.sv ]
 add_files [ glob $i3cDir/src/*/*_pkg.sv ]
 add_files [ glob $i3cDir/src/*_pkg.sv ]
@@ -78,7 +79,8 @@ add_files [ glob $i3cDir/src/*/*/*.sv ]
 add_files [ glob $i3cDir/src/*/*.sv ]
 add_files [ glob $i3cDir/src/*.sv ]
 # Remove the i3c-core versions of the AXI modules, so that it uses the caliptra-rtl versions instead
-#remove_files [ glob $i3cDir/src/libs/axi/*.sv ]
+#remove_files [ glob $i3cDir/src/libs/*.svh ]
+#remove_files [ glob $i3cDir/src/libs/axi_sub/*.sv ]
 
 # Remove spi_host files that aren't used yet and are flagged as having syntax errors
 # TODO: Re-include these files when spi_host is used.
@@ -107,6 +109,12 @@ if {$ENABLE_ADB} {
   # Remove MLDSA stub
   remove_files $fpgaDir/src/mldsa_stub.sv
 }
+
+# TODO: Copy aes_clk_wrapper.sv to apply workaround
+file copy [ glob $caliptrartlDir/src/aes/rtl/aes_clp_wrapper.sv ] $outputDir/aes_clk_wrapper.sv
+exec sed -i {1i `include \"kv_macros.svh\"} $outputDir/aes_clk_wrapper.sv
+remove_files [ glob $caliptrartlDir/src/aes/rtl/aes_clp_wrapper.sv ]
+add_files $outputDir/aes_clk_wrapper.sv
 
 # Mark all Verilog sources as SystemVerilog because some of them have SystemVerilog syntax.
 set_property file_type SystemVerilog [get_files *.v]

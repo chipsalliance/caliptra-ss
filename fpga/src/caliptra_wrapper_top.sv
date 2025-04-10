@@ -1777,68 +1777,7 @@ I think this is the one that isn't used
         default: SDA = 1'b1;
         endcase
     end
-/*
 
-  i3c #(
-      .CsrDataWidth(32),
-      .CsrAddrWidth(32),
-      .DatAw(32),
-      .DctAw(32)
-  ) i3c (
-      .clk_i(i3c_clk),
-      .rst_ni(hwif_out.interface_regs.control.cptra_ss_rst_b.value),
-
-      // AXI Read Channels
-      .araddr_i(S_AXI_I3C_ARADDR),
-      .arburst_i(S_AXI_I3C_ARBURST),
-      .arsize_i(S_AXI_I3C_ARSIZE),
-      .arlen_i(S_AXI_I3C_ARLEN),
-      .aruser_i(S_AXI_I3C_ARUSER),
-      .arid_i(S_AXI_I3C_ARID),
-      .arlock_i(S_AXI_I3C_ARLOCK),
-      .arvalid_i(S_AXI_I3C_ARVALID),
-      .arready_o(S_AXI_I3C_ARREADY),
-
-      .rdata_o(S_AXI_I3C_RDATA),
-      .rresp_o(S_AXI_I3C_RRESP),
-      .rid_o(S_AXI_I3C_RID),
-      .rlast_o(S_AXI_I3C_RLAST),
-      .rvalid_o(S_AXI_I3C_RVALID),
-      .rready_i(S_AXI_I3C_RREADY),
-
-      // AXI Write Channels
-      .awaddr_i(S_AXI_I3C_AWADDR),
-      .awburst_i(S_AXI_I3C_AWBURST),
-      .awsize_i(S_AXI_I3C_AWSIZE),
-      .awlen_i(S_AXI_I3C_AWLEN),
-      .awuser_i(S_AXI_I3C_AWUSER),
-      .awid_i(S_AXI_I3C_AWID),
-      .awlock_i(S_AXI_I3C_AWLOCK),
-      .awvalid_i(S_AXI_I3C_AWVALID),
-      .awready_o(S_AXI_I3C_AWREADY),
-
-      .wdata_i (S_AXI_I3C_WDATA),
-      .wstrb_i (S_AXI_I3C_WSTRB),
-      .wlast_i (S_AXI_I3C_WLAST),
-      .wvalid_i(S_AXI_I3C_WVALID),
-      .wready_o(S_AXI_I3C_WREADY),
-
-      .bresp_o(S_AXI_I3C_BRESP),
-      .bid_o(S_AXI_I3C_BID),
-      .bvalid_o(S_AXI_I3C_BVALID),
-      .bready_i(S_AXI_I3C_BREADY),
-
-
-      .dat_mem_src_i (dat_mem_src),
-      .dat_mem_sink_o(dat_mem_sink),
-
-      .dct_mem_src_i (dct_mem_src),
-      .dct_mem_sink_o(dct_mem_sink),
-
-      .recovery_payload_available_o(),
-      .recovery_image_activated_o  ()
-  );
-*/
 caliptra_ss_top caliptra_ss_top_0 (
 
     // TODO: I can't figure out the LCC and debug interactions right now. Try forcing these bits
