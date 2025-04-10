@@ -92,7 +92,7 @@ void cptra_mcu_mbox_target_write_sram_and_csrs(uint32_t mbox_num, uint32_t mbox_
     bool error;
     uint32_t data_length;
     const uint32_t mbox_cmd = 0xFADECAFE;
-    const uint32_t mbox_user = 0x1;  // TODO should be MCU strap
+    const uint32_t mbox_user = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER);
     uint32_t mbox_wr_data;
     uint32_t mbox_rd_data;
     uint32_t expected_data;
