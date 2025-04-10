@@ -120,7 +120,7 @@ void main (void) {
     mcu_mbox_clear_execute(mbox_num);
     
     // Check that ECC status registers are cleared
-    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK << mbox_num) {
+    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK) {
         VPRINTF(FATAL, "MCU: Mbox%x SB ECC status not cleared\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
@@ -169,7 +169,7 @@ void main (void) {
     }
 
     // Check if DB ECC status has been logged
-    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK << mbox_num) {
+    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK) {
         VPRINTF(LOW, "MCU: Mbox%x DB ECC error detected\n", mbox_num);
     } else {
         VPRINTF(FATAL, "MCU: Mbox%x No DB ECC detected\n", mbox_num);
@@ -201,12 +201,12 @@ void main (void) {
     mcu_mbox_clear_execute(mbox_num);
 
     // Check that ECC status registers are cleared
-    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK << mbox_num) {
+    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK) {
         VPRINTF(FATAL, "MCU: Mbox%x DB ECC status not cleared\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK << mbox_num) {
+    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK) {
         VPRINTF(FATAL, "MCU: Mbox%x SB ECC status not cleared\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
