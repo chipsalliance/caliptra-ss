@@ -55,6 +55,12 @@ import tb_top_pkg::*;
     logic        [63:0]         mailbox_data;
     logic        [63:0]         prev_mailbox_data;
 
+
+    logic                       cold_rst;
+    logic                       warm_rst;
+    logic                       clr_cold_rst;
+    logic                       clr_warm_rst;
+
     string                      abi_reg[32]; // ABI register names
 
     tb_top_pkg::veer_sram_error_injection_mode_t error_injection_mode;
@@ -75,11 +81,6 @@ import tb_top_pkg::*;
         .tb_service_cmd_valid   (mailbox_write),
         .tb_service_cmd         (mailbox_data[7:0])
     );
-
-    assign soc_bfm_if.deassert_hard_rst_flag = 1'b0;
-    assign soc_bfm_if.assert_hard_rst_flag = 1'b0;
-    assign soc_bfm_if.deassert_rst_flag = 1'b0;
-    assign soc_bfm_if.assert_rst_flag = 1'b0;
 
     logic [$bits(lc_ctrl_state_pkg::lc_state_t)-1:0] MANUF_state;
     logic [$bits(lc_ctrl_state_pkg::lc_state_t)-1:0] PROD_state;
@@ -327,6 +328,99 @@ import tb_top_pkg::*;
             end
         end
     end
+
+///////////////////////////////////////////////
+// Time controls 
+//////////////////////////////////////////////
+
+///////////////////////////////////////////////
+// Reset controls
+//////////////////////////////////////////////
+
+    always@(negedge clk) begin
+        if((mailbox_data[7:0] == TB_CMD_COLD_RESET) && mailbox_write) begin 
+            $display("[%t] COLD RESET REQUESTED", $time);
+            cold_rst <= 1'b1; 
+            warm_rst <= 1'b0;
+        end
+        else if((mailbox_data[7:0] == TB_CMD_WARM_RESET) && mailbox_write) begin
+            $display("[%t] WARM RESET REQUESTED", $time);
+            warm_rst <= 1'b1;
+            cold_rst <= 1'b0;
+        end
+        else if(clr_cold_rst) begin
+            cold_rst <= 1'b0;
+        end
+        else if(clr_warm_rst) begin
+            warm_rst <= 1'b0;
+        end
+
+    end
+
+initial begin
+    soc_bfm_if.deassert_hard_rst_flag = 1'b0;
+    soc_bfm_if.deassert_rst_flag      = 1'b0;
+    soc_bfm_if.assert_hard_rst_flag   = 1'b0;
+    soc_bfm_if.assert_rst_flag        = 1'b0;
+    clr_cold_rst                      = 1'b0;
+    clr_warm_rst                      = 1'b0;
+
+    forever begin
+        @(posedge clk);
+        if(cold_rst) begin
+            @(posedge clk);
+            $display("[%t] COLD RESET: Resets asserting", $time);
+            soc_bfm_if.assert_rst_flag <= 1'b1;
+            clr_cold_rst               <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.assert_rst_flag <= 1'b0;
+            clr_cold_rst               <= 1'b0;
+            wait(soc_bfm_if.assert_rst_flag_done);
+            $display("[%t] COLD RESET: Powergood Reset asserting", $time);
+            soc_bfm_if.assert_hard_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.assert_hard_rst_flag <= 1'b0;
+            wait(soc_bfm_if.assert_hard_rst_flag_done);
+            $display("[%t] COLD RESET: Hold", $time);
+            repeat(20) begin
+                @(posedge clk);
+            end
+            $display("[%t] COLD RESET: Powergood Reset deasserting", $time);
+            soc_bfm_if.deassert_hard_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.deassert_hard_rst_flag <= 1'b0;
+            wait(soc_bfm_if.deassert_hard_rst_flag_done);
+            $display("[%t] COLD RESET: Resets deasserting", $time);
+            soc_bfm_if.deassert_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.deassert_rst_flag <= 1'b0;
+            wait(soc_bfm_if.deassert_rst_flag_done);
+
+            $display("[%t] COLD RESET: COMPLETE", $time);
+        end
+        else if(warm_rst) begin
+            @(posedge clk);
+            $display("[%t] WARM RESET: Resets asserting", $time);
+            soc_bfm_if.assert_rst_flag <= 1'b1;
+            clr_warm_rst               <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.assert_rst_flag <= 1'b0;
+            clr_warm_rst               <= 1'b0;
+            wait(soc_bfm_if.assert_rst_flag_done);
+            $display("[%t] WARM RESET: Hold", $time);
+            repeat(10) begin
+                @(posedge clk);
+            end
+            $display("[%t] WARM RESET: Resets deasserting", $time);
+            soc_bfm_if.deassert_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.deassert_rst_flag <= 1'b0;
+            wait(soc_bfm_if.deassert_rst_flag_done);
+            $display("[%t] WARM RESET: COMPLETE", $time);
+        end
+    end
+end
+
 
 
     // trace monitor

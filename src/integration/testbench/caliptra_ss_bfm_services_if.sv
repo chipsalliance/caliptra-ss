@@ -21,6 +21,10 @@ interface caliptra_ss_bfm_services_if (
     logic assert_hard_rst_flag;
     logic deassert_rst_flag;
     logic assert_rst_flag;
+    logic deassert_hard_rst_flag_done;
+    logic assert_hard_rst_flag_done;
+    logic deassert_rst_flag_done;
+    logic assert_rst_flag_done;
     
     logic end_test_success;
 
@@ -30,7 +34,11 @@ interface caliptra_ss_bfm_services_if (
         input  deassert_hard_rst_flag,
         input  assert_hard_rst_flag,
         input  deassert_rst_flag,
-        input  assert_rst_flag
+        input  assert_rst_flag,
+        output deassert_hard_rst_flag_done,
+        output assert_hard_rst_flag_done,
+        output deassert_rst_flag_done,
+        output assert_rst_flag_done
     );
 
     modport tb_services (
@@ -38,7 +46,11 @@ interface caliptra_ss_bfm_services_if (
         output deassert_hard_rst_flag,
         output assert_hard_rst_flag,
         output deassert_rst_flag,
-        output assert_rst_flag
+        output assert_rst_flag,
+        input  deassert_hard_rst_flag_done,
+        input  assert_hard_rst_flag_done,
+        input  deassert_rst_flag_done,
+        input  assert_rst_flag_done
     );
 endinterface
 
