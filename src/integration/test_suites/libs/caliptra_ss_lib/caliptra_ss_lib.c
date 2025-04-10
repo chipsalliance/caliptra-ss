@@ -147,8 +147,9 @@ void mcu_cptra_advance_brkpoint() {
 }
 
 void mcu_cptra_user_init() {
+    uint32_t mcu_lsu_axi_user = lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER);
     // MBOX: Setup valid AXI USER
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0x1); // FIXME this should come from a param for LSU AxUSER
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, mcu_lsu_axi_user);
 //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_1, 1);
 //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_2, 2);
 //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_3, 3);

@@ -16,12 +16,14 @@
 //********************************************************************************
 
 #include "soc_address_map.h"
+#include "mci.h"
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
 #include "caliptra_ss_lib.h"
 #include <string.h>
 #include <stdint.h>
+
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -32,23 +34,10 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 void main (void) {
-    int argc=0;
-    char *argv[1];
-    uint32_t reg_data;
-    uint32_t sram_data;
 
-    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup\n=================\n\n")
-    VPRINTF(LOW, "MCU: Load SHA vector to MCU SRAM for testing\n")
-    SEND_STDOUT_CTRL(TB_CMD_SHA_VECTOR_TO_MCU_SRAM);
 
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
+    VPRINTF(LOW, "=================\nMCU: Testing Protected Region\n=================\n\n");
+    // Test is ended by the SOC BFM.
 
-    mcu_cptra_init_d(.mcu_fw_sram_exec_reg_size=32, .cfg_mcu_fw_sram_exec_reg_size=true); // Set to 128KB 
-
-    //Halt the core to wait for Caliptra to finish the test
-    __asm__ volatile ("csrwi    %0, %1" \
-                      : /* output: none */        \
-                      : "i" (0x7c6), "i" (0x03)  /* input : immediate  */ \
-                      : /* clobbers: none */);
-
+    while(1);
 }

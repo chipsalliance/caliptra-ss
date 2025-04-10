@@ -88,6 +88,9 @@ localparam TB_CMD_DISABLE_INJECT_ECC_ERROR     = 8'he0;
 localparam TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM = 8'he2;
 localparam TB_CMD_INJECT_ECC_ERROR_DOUBLE_DCCM = 8'he3;
 
+localparam TB_CMD_COLD_RESET                  = 8'hF5;
+localparam TB_CMD_WARM_RESET                  = 8'hF6;
+
 localparam TB_CMD_END_SIM_WITH_SUCCESS         = 8'hFF;
 
 `endif // CALIPTRA_SS_TB_CMD_LIST_SVH
