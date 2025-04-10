@@ -38,14 +38,12 @@ void main (void) {
     uint32_t sram_data;
 
     VPRINTF(LOW, "=================\nMCU: Subsytem Bringup\n=================\n\n")
-    mcu_mci_boot_go();
-
     VPRINTF(LOW, "MCU: Load SHA vector to MCU SRAM for testing\n")
     SEND_STDOUT_CTRL(TB_CMD_SHA_VECTOR_TO_MCU_SRAM);
 
     VPRINTF(LOW, "MCU: Caliptra bringup\n")
 
-    mcu_cptra_init_d();
+    mcu_cptra_init_d(.mcu_fw_sram_exec_reg_size=32, .cfg_mcu_fw_sram_exec_reg_size=true); // Set to 128KB 
 
     //Halt the core to wait for Caliptra to finish the test
     __asm__ volatile ("csrwi    %0, %1" \
