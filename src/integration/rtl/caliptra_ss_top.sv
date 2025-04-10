@@ -221,7 +221,15 @@ module caliptra_ss_top
 );
 
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
+    logic        [31:0]         agg_error_fatal;
+    logic        [31:0]         agg_error_non_fatal;
     logic                       timer_int;
+
+    logic                       mcu_dccm_ecc_single_error;
+    logic                       mcu_dccm_ecc_double_error;
+
+    logic                       i3c_peripheral_reset;
+    logic                       i3c_escalated_reset;
 
     logic        [31:0]         reset_vector;
 
@@ -715,6 +723,21 @@ module caliptra_ss_top
     assign ext_int[`VEER_INTR_VEC_FC]                   = intr_otp_operation_done;
     assign ext_int[pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] = cptra_ss_mcu_ext_int;
 
+    //Aggregate error connections
+    assign agg_error_fatal[5:0]   = {5'b0, cptra_error_fatal}; //CPTRA
+    assign agg_error_fatal[11:6]  = {5'b0, mcu_dccm_ecc_double_error}; //MCU
+    assign agg_error_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
+    assign agg_error_fatal[23:18] = {{6-otp_ctrl_reg_pkg::NumAlerts{1'b0}}, fc_alerts}; //FC
+    assign agg_error_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C
+    assign agg_error_fatal[31:30] = '0; //spare
+
+    assign agg_error_non_fatal[5:0]   = {5'b0, cptra_error_non_fatal}; //CPTRA
+    assign agg_error_non_fatal[11:6]  = {5'b0, mcu_dccm_ecc_single_error}; //MCU
+    assign agg_error_non_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
+    assign agg_error_non_fatal[23:18] = {{6-otp_ctrl_reg_pkg::NumAlerts{1'b0}}, fc_alerts}; //FC
+    assign agg_error_non_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C
+    assign agg_error_non_fatal[31:30] = '0; //spare
+
     //=========================================================================-
     // MCU instance
     //=========================================================================-
@@ -990,8 +1013,8 @@ module caliptra_ss_top
 
         .iccm_ecc_single_error  (),
         .iccm_ecc_double_error  (),
-        .dccm_ecc_single_error  (),
-        .dccm_ecc_double_error  (),
+        .dccm_ecc_single_error  (mcu_dccm_ecc_single_error),
+        .dccm_ecc_double_error  (mcu_dccm_ecc_double_error),
 
         .core_id                ('0),
         .scan_mode              ( 1'b0 ),        // To enable scan mode
@@ -1067,9 +1090,9 @@ module caliptra_ss_top
 `endif
         .recovery_payload_available_o(payload_available_o),
         .recovery_image_activated_o(image_activated_o),
-        .peripheral_reset_o(),
+        .peripheral_reset_o(i3c_peripheral_reset),
         .peripheral_reset_done_i(1'b1),
-        .escalated_reset_o(),
+        .escalated_reset_o(i3c_escalated_reset),
         .irq_o()
 
     // TODO: Add interrupts
@@ -1135,8 +1158,8 @@ module caliptra_ss_top
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
         .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i),
 
-        .agg_error_fatal('0),       // FIXME connect to internal IPs
-        .agg_error_non_fatal('0),   // FIXME connect to internal IPs
+        .agg_error_fatal(agg_error_fatal),
+        .agg_error_non_fatal(agg_error_non_fatal),
 
         .all_error_fatal(cptra_ss_all_error_fatal_o),
         .all_error_non_fatal(cptra_ss_all_error_non_fatal_o),

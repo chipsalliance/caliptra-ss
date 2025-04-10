@@ -8416,7 +8416,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.next;
         end
@@ -8437,7 +8437,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.next;
         end
@@ -8458,7 +8458,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.next;
         end
@@ -8479,7 +8479,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.next;
         end
@@ -8500,7 +8500,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.next;
         end
@@ -8521,7 +8521,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.next;
         end
@@ -8542,7 +8542,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.next;
         end
@@ -8563,7 +8563,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.next;
         end
@@ -8584,7 +8584,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.next;
         end
@@ -8605,7 +8605,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.next;
         end
@@ -8626,7 +8626,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.next;
         end
@@ -8647,7 +8647,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.next;
         end
@@ -8668,7 +8668,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.next;
         end
@@ -8689,7 +8689,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.next;
         end
@@ -8710,7 +8710,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.next;
         end
@@ -8731,7 +8731,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.next;
         end
@@ -8752,7 +8752,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.next;
         end
@@ -8773,7 +8773,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= 1'h0;
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.next;
         end

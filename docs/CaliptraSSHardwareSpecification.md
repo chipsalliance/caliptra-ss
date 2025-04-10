@@ -1321,6 +1321,22 @@ MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any
 
 ![](images/MCI-error-agg.png)
 
+Aggregate error register assignments are documented in the register specification: **TODO:** Add a link to rdl -> html file
+
+Regions of 6 bits in the aggregate error registers are reserved for each component.
+MCU and Caliptra errors are connected to appropriate severity levels.
+Lifecycle controller, fuse controller and I3C are connected to both severities. 
+Masks are used to set the severity of each error for these components. These can be configured by integrators, ROM, or runtime firmware.
+
+| **Error Register Bits** | **Component**         | **Default Error Severity** |
+| :---------              | :---------            | :---------                 |
+| Aggregate error[5:0]    | Caliptra core         | Both                       |
+| Aggregate error[11:6]   | MCU                   | Both                       |
+| Aggregate error[17:12]  | Life cycle controller | Fatal                      |
+| Aggregate error[23:18]  | OTP Fuse controller   | Fatal                      |
+| Aggregate error[29:24]  | I3C                   | Non-Fatal                  |
+| Aggregate error[31:30]  | Spare bits            | None                       |
+
 MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
 
 ![](images/MCI-internal-error.png)
