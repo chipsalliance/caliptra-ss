@@ -170,7 +170,7 @@ void main (void) {
 
     // Check if DB ECC status has been logged
     if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK) {
-        VPRINTF(LOW, "MCU: Mbox%x DB ECC error detected\n", mbox_num);
+        VPRINTF(LOW, "MCU: Mbox%x DB ECC detected\n", mbox_num);
     } else {
         VPRINTF(FATAL, "MCU: Mbox%x No DB ECC detected\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
@@ -180,7 +180,7 @@ void main (void) {
     // Check HW_ERROR_NON_FATAL register
     if (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL) & 
         MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_MASK << mbox_num) {
-        VPRINTF(LOW, "MCU: Mbox%x DB ECC error detected in HW_ERROR_NON_FATAL\n", mbox_num);
+        VPRINTF(LOW, "MCU: Mbox%x DB ECC detected in HW_ERROR_NON_FATAL\n", mbox_num);
     } else {
         VPRINTF(FATAL, "MCU: Mbox%x No DB ECC detected in HW_ERROR_NON_FATAL\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);

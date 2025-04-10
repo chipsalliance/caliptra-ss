@@ -222,22 +222,22 @@ import tb_top_pkg::*;
             mbox1_sram_error_injection_mode <= '{default: 1'b0};
         end
         else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MBOX_SRAM_SINGLE_ECC_ERROR)) begin
-            $display("Injecting single bit MCU SRAM errors");
+            $display("Injecting single bit MCU Mbox SRAM errors");
             mbox0_sram_error_injection_mode.single_bit_error <= 1'b1;
             mbox1_sram_error_injection_mode.single_bit_error <= 1'b1;
         end
         else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR)) begin
-            $display("Injecting double bit MCU SRAM errors");
+            $display("Injecting double bit MCU Mbox SRAM errors");
             mbox0_sram_error_injection_mode.double_bit_error <= 1'b1;
             mbox1_sram_error_injection_mode.double_bit_error <= 1'b1;
         end
         else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION)) begin
-            $display("Randomizing MCU SRAM error injection");
+            $display("Randomizing MCU SRAM Mbox error injection");
             mbox0_sram_error_injection_mode.randomize <= 1'b1;
             mbox1_sram_error_injection_mode.randomize <= 1'b1;
         end
         else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION)) begin
-            $display("Disabling MCU SRAM error injection");
+            $display("Disabling MCU SRAM Mbox injection");
             mbox0_sram_error_injection_mode <= '{default: 1'b0};
             mbox1_sram_error_injection_mode <= '{default: 1'b0};
         end
