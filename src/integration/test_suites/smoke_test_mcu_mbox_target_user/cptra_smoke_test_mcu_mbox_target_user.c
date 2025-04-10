@@ -41,7 +41,7 @@ volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 void cptra_mcu_mbox_get_and_check_sram_data_and_csrs(uint32_t mbox_num, uint32_t expected_mbox_dlen, uint32_t *mcu_expected_data) {
     uint32_t data_length;
     const uint32_t mbox_cmd = 0xFADECAFE;
-    const uint32_t mbox_user = 0x1;  // TODO should be MCU strap
+    const uint32_t mbox_user = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER); 
     uint32_t read_payload[16];
     uint32_t write_payload[16];
     uint32_t mbox_data[0];
@@ -56,7 +56,7 @@ void cptra_mcu_mbox_get_and_check_sram_data_and_csrs(uint32_t mbox_num, uint32_t
 
     mbox_rd_data =  cptra_mcu_mbox_read_mbox_user(mbox_num);
     if (mbox_rd_data != mbox_user) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x MBOX USER not expected value: 0x%x \n", mbox_num, mbox_user);
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x MBOX USER not expected value: 0x%x Actual value: 0x%x\n", mbox_num, mbox_user, mbox_rd_data);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -92,7 +92,7 @@ void cptra_mcu_mbox_target_write_sram_and_csrs(uint32_t mbox_num, uint32_t mbox_
     bool error;
     uint32_t data_length;
     const uint32_t mbox_cmd = 0xFADECAFE;
-    const uint32_t mbox_user = 0x1;  // TODO should be MCU strap
+    const uint32_t mbox_user = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER);
     uint32_t mbox_wr_data;
     uint32_t mbox_rd_data;
     uint32_t expected_data;
