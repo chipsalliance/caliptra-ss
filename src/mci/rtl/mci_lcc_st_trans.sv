@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+`include "caliptra_prim_assert.sv"
+`include "caliptra_sva.svh"
+
 module mci_lcc_st_trans 
     import mci_pkg::*;
     import lc_ctrl_state_pkg::*;
     import soc_ifc_pkg::*;
  (
-    input logic clk,
-    input logic rst_n,
+    input logic clk_i,
+    input logic rst_ni,
     // Inputs from top level of MCI
     input logic                                         state_error, // That represents any invalid state errors
     // Inputs from LCC
@@ -71,8 +74,8 @@ assign CLPTR_PROD_DEBUG_UNLOCK_AND  = |(ss_soc_dbg_unlock_level_i & ss_soc_dbg_u
 assign lcc_valid_SCRAP_req          = (lc_alive_state ==  LcStScrap && lc_otp_prog_req);
 assign MCU_ROM_zeroization_AND      = (&ss_soc_MCU_ROM_zeroization_mask_reg) & FIPS_ZEROIZATION_PPD_i;
 
-always_ff @(posedge clk or negedge rst_n) begin
-    if(!rst_n) begin
+always_ff @(posedge clk_i or negedge rst_ni) begin
+    if(!rst_ni) begin
         mci_trans_st_current            <= TRANSLATOR_RESET;
         security_state_o                <= '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
         otp_static_state                <=  LcStRaw; // This is all zeros
@@ -234,6 +237,160 @@ always_comb begin: state_branch
     endcase
 
 end
+
+
+//-----------------------------------------------------
+// RAW -> Non-Debug
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(RawToNonDebug_A,
+  (otp_static_state == LcStRaw) && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+);
+
+//-----------------------------------------------------
+// TEST_LOCKED -> Non-Debug
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(TestLockedToNonDebug_A,
+  (otp_static_state inside {LcStTestLocked0, LcStTestLocked1, LcStTestLocked2, LcStTestLocked3, 
+                             LcStTestLocked4, LcStTestLocked5, LcStTestLocked6})  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+);
+
+//-----------------------------------------------------
+// TEST_UNLOCKED -> Unprovisioned Debug
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(TestUnlockedToUnprovisionedDebug_A,
+  (otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUnlocked2, LcStTestUnlocked3, 
+                             LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7})  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.device_lifecycle == DEVICE_UNPROVISIONED)
+);
+
+//-----------------------------------------------------
+// MANUF -> Manuf Non-Debug
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(ManufToManufNonDebug_A,
+  (otp_static_state == LcStDev)  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.device_lifecycle == DEVICE_MANUFACTURING)
+);
+
+//-----------------------------------------------------
+// PROD -> Prod Non-Debug
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(ProdToProdNonDebug_A,
+  (otp_static_state == LcStProd)  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+);
+
+//-----------------------------------------------------
+// PROD_END -> Prod Non-Debug
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(ProdEndToProdNonDebug_A,
+  (otp_static_state == LcStProdEnd)  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+);
+
+//-----------------------------------------------------
+// RMA -> Prod Debug
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(RmaToProdDebug_A,
+  (otp_static_state == LcStRma)  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+);
+
+//-----------------------------------------------------
+// SCRAP -> Non-Debug
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(ScrapToNonDebug_A,
+  (otp_static_state == LcStScrap)  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+);
+
+`CALIPTRA_ASSERT(DebugUnlockedCheck_MANUF_A,
+  (ss_dbg_manuf_enable_i && (otp_static_state == LcStDev))  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.debug_locked == 1'b0)
+);
+
+`CALIPTRA_ASSERT(DebugUnlockedCheck_PROD_A,
+  ((CLPTR_PROD_DEBUG_UNLOCK_AND) && (otp_static_state == LcStProd))  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.debug_locked == 1'b0)
+);
+
+`CALIPTRA_ASSERT(NonDebugUnlockedCheck_A,
+  ( ! ((CLPTR_PROD_DEBUG_UNLOCK_AND) && (otp_static_state == LcStProd))
+    || ! (ss_dbg_manuf_enable_i && (otp_static_state == LcStDev))
+    || ! (otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUnlocked2, LcStTestUnlocked3,
+    LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7})
+  )  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.debug_locked == 1'b1)
+);
+
+//-----------------------------------------------------
+// Debug Locked Check: Debug should be locked when ss_dbg_manuf_enable_i is low,
+// ss_soc_dbg_unlock_level_i is all low, and otp_static_state is not any TEST_UNLOCKED.
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(DebugLockedCheck_A,
+  (!ss_dbg_manuf_enable_i 
+   && !(|ss_soc_dbg_unlock_level_i)
+   && !(otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUnlocked2, LcStTestUnlocked3,
+                                  LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7}))  && (mci_trans_st_current != TRANSLATOR_RESET)
+  |=> ##1 (security_state_o.debug_locked == 1'b1)
+);
+
+
+//  | **LCC State vs Decoder Output** 	| **DFT_EN** 	    | **SOC_DFT_EN** 	        | **SOC_HW_DEBUG_EN**           | **Caliptra “Core” Security States**  |
+//  | :--------- 	      			    | :--------- 	    | :--------- 	            | :--------- 	         	    | :---------                           |
+//  | RAW 					            | Low 		        | Low 		                | Low 			                | Prod Non-Debug                       |
+//  | TEST_LOCKED 				        | Low 		        | Low 		                | Low 			                | Prod Non-Debug                       |
+//  | TEST_UNLOCKED  			        | High  	        | High  	                | High	 		                | Unprovisioned Debug                  |
+//  | MANUF 				            | Low 		        | Low 		                | High 			                | Manuf Non-Debug                      |
+//  | MANUF* 				            | Low 		        | Low 		                | High 			                | Manuf Debug                          |
+//  | PROD 					            | Low 		        | Low 		                | Low 			                | Prod Non-Debug                       |
+//  | PROD* 				            | Low 	      	    | High**                    | High** 		                | Prod Debug                           |
+//  | PROD_END 				            | Low 		        | Low 		                | Low 			                | Prod Non-Debug                       |
+//  | RMA 					            | High 		        | High 		                | High 			                | Prod Debug                           |
+//  | SCRAP 				            | Low 		        | Low 		                | Low 			                | Prod Non-Debug                       |
+
+//-----------------------------------------------------
+// 1. If SOC_DFT_EN is Low and SOC_HW_DEBUG_EN is Low,
+//    then the core security must be Prod Non‑Debug:
+//    DEVICE_PRODUCTION with debug_locked == 1.
+//-----------------------------------------------------
+`CALIPTRA_ASSERT(ProdSIGNAL_Decoding_A,
+    ((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+        &&  (security_state_o.debug_locked == 1))  && (mci_trans_st_current != TRANSLATOR_RESET)
+    |=> ##1 
+    ((SOC_DFT_EN == 0) && (SOC_HW_DEBUG_EN == 0))
+);
+
+`CALIPTRA_ASSERT(MANUF_HW_EN_A,
+    ((security_state_o.device_lifecycle == DEVICE_MANUFACTURING)  && (mci_trans_st_current != TRANSLATOR_RESET) |=> ##1  (SOC_HW_DEBUG_EN == 1))
+);
+
+
+`CALIPTRA_ASSERT(UnProvSIGNAL_Decoding_A,
+    (security_state_o.device_lifecycle == DEVICE_UNPROVISIONED)  && (mci_trans_st_current != TRANSLATOR_RESET)
+    |=> ##1 
+    ((SOC_DFT_EN == 1) && (SOC_HW_DEBUG_EN == 1) && (security_state_o.debug_locked == 1'b0))
+);
+
+`CALIPTRA_ASSERT(ProdSIGNAL_Decoding_DebugHigh_DFT_A,
+    ((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+        &&  (security_state_o.debug_locked == 0)
+        &&  SOC_DFT_EN_AND)  && (mci_trans_st_current != TRANSLATOR_RESET)
+    |=> ##1 
+    ((SOC_DFT_EN == 1) )
+);
+
+`CALIPTRA_ASSERT(ProdSIGNAL_Decoding_DebugHigh_HW_EN_A,
+    ((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+        &&  (security_state_o.debug_locked == 0)
+        &&  SOC_HW_DEBUG_EN_AND)  && (mci_trans_st_current != TRANSLATOR_RESET)
+    |=> ##1 
+    ((SOC_HW_DEBUG_EN == 1) )
+);
+
+
+
 
 endmodule
 

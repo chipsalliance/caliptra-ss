@@ -189,9 +189,11 @@ module fc_lcc_tb_services (
     if(fc_lcc_reset_active) begin
       force `LCC_PATH.rst_ni  = 1'b0;
       force `FC_PATH.rst_ni  = 1'b0;
+      force `MCI_PATH.LCC_state_translator.rst_ni  = 1'b0;
     end else begin
       release `LCC_PATH.rst_ni;
       release `FC_PATH.rst_ni;
+      release `MCI_PATH.LCC_state_translator.rst_ni;
     end
   end
 

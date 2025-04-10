@@ -190,6 +190,51 @@ interface mci_top_cov_if
         end
     end
 
+
+    covergroup port_lcc_st_trans_toggle_coverage @(posedge clk);
+        // Single-bit ports toggle coverage
+        coverpoint lc_dft_en_i {
+            bins toggled = {1'b0, 1'b1};
+        }
+        coverpoint lc_hw_debug_en_i {
+            bins toggled = {1'b0, 1'b1};
+        }
+        coverpoint ss_dbg_manuf_enable_i {
+            bins toggled = {1'b0, 1'b1};
+        }
+        coverpoint FIPS_ZEROIZATION_PPD_i {
+            bins toggled = {1'b0, 1'b1};
+        }
+        coverpoint FIPS_ZEROIZATION_CMD_o {
+            bins toggled = {1'b0, 1'b1};
+        }
+        coverpoint SOC_DFT_EN {
+            bins toggled = {1'b0, 1'b1};
+        }
+        coverpoint SOC_HW_DEBUG_EN {
+            bins toggled = {1'b0, 1'b1};
+        }
+    endgroup
+
+    // Coverage for multi-bit ports using toggle_cg
+    covergroup multi_bit_toggle_cg with function sample(bit eachbit);
+        option.per_instance = 0;
+        type_option.merge_instances = 1;
+        coverpoint eachbit {
+            bins toggle = (0 => 1);
+        }
+    endgroup
+
+    // Instantiate coverage groups
+    port_lcc_st_trans_toggle_coverage lcc_st_trans_single_bit_cov = new();
+    multi_bit_toggle_cg prod_unlock_level[64]; // Maximum size for multi-bit ports
+
+    initial begin
+        foreach (prod_unlock_level[ii]) begin
+            prod_unlock_level[ii] = new();
+        end
+    end
+
 endinterface
 
 `endif
