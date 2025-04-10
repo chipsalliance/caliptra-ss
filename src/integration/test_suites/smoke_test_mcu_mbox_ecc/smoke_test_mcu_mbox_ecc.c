@@ -108,7 +108,7 @@ void main (void) {
     }
 
     // Check if SB ECC status has been logged
-    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK << mbox_num) {
+    if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK) {
         VPRINTF(LOW, "MCU: Mbox%x SB ECC detected\n", mbox_num);
     } else {
         VPRINTF(FATAL, "MCU: Mbox%x No SB ECC detected\n", mbox_num);
