@@ -153,6 +153,7 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_tb_cmd_list.svh
       - $COMPILE_ROOT/testbench/caliptra_ss_veer_sram_export.sv
       - $COMPILE_ROOT/testbench/fc_lcc_tb_services.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_axi_64_to_32_downsizer.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_services.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]
