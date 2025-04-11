@@ -494,7 +494,10 @@ end
         hex_file_is_empty = $system("test -s mcu_lmem.hex");
         if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram, 0, (MCU_SRAM_SIZE_KB*1024)-1);
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> main
         imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
