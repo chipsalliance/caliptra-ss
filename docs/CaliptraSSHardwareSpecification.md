@@ -1328,14 +1328,18 @@ MCU and Caliptra errors are connected to appropriate severity levels.
 Lifecycle controller, fuse controller and I3C are connected to both severities. 
 Masks are used to set the severity of each error for these components. These can be configured by integrators, ROM, or runtime firmware.
 
-| **Error Register Bits** | **Component**         | **Default Error Severity** |
-| :---------              | :---------            | :---------                 |
-| Aggregate error[5:0]    | Caliptra core         | Both                       |
-| Aggregate error[11:6]   | MCU                   | Both                       |
-| Aggregate error[17:12]  | Life cycle controller | Fatal                      |
-| Aggregate error[23:18]  | OTP Fuse controller   | Fatal                      |
-| Aggregate error[29:24]  | I3C                   | Non-Fatal                  |
-| Aggregate error[31:30]  | Spare bits            | None                       |
+| **Error Register Bits** | **Component**         | **Default Error Severity** | **Description**          |
+| :---------              | :---------            | :---------                 |:---------                |
+| Aggregate error[5:0]    | Caliptra core         | Both                       | 
+[Fatal Errors](https://chipsalliance.github.io/caliptra-rtl/main/internal-regs/?p=clp.soc_ifc_reg.CPTRA_HW_ERROR_FATAL) 
+[Non-Fatal Errors](https://chipsalliance.github.io/caliptra-rtl/main/internal-regs/?p=clp.soc_ifc_reg.CPTRA_HW_ERROR_NON_FATAL) |
+| Aggregate error[11:6]   | MCU                   | Both                       | DCCM double bit ECC error is fatal 
+                                                                                 DCCM single bit ECC error is non-fatal |
+| Aggregate error[17:12]  | Life cycle controller | Fatal                      | [Alerts](https://opentitan.org/book/hw/ip/lc_ctrl/doc/interfaces.html#security-alerts) |
+| Aggregate error[23:18]  | OTP Fuse controller   | Fatal                      | [Alerts](https://opentitan.org/book/hw/top_earlgrey/ip_autogen/otp_ctrl/doc/interfaces.html#security-alerts) |
+| Aggregate error[29:24]  | I3C                   | Non-Fatal                  | Peripheral reset and escalated reset pins from I3C
+                                                                                 **TODO:** Add a link to I3C doc |
+| Aggregate error[31:30]  | Spare bits            | None                       | Spare bits for integrator use |
 
 MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
 
