@@ -399,4 +399,124 @@ module lc_ctrl_signal_decode
       |=>
       lc_tx_test_true_strict(lc_escalate_en_o))
 
+
+
+
+    //-----------------------------------------------------
+    // RAW state: Both outputs must be Low.
+    //-----------------------------------------------------
+    `CALIPTRA_ASSERT(Decoder_RAW_A,
+      (!fsm_state_i inside {ScrapSt,
+                          PostTransSt,
+                          EscalateSt,
+                          InvalidSt}
+      && lc_state_valid_i
+      && (lc_state_i == LcStRaw))
+      |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
+           lc_tx_test_false_strict(lc_hw_debug_en_o))
+    );
+    
+    //-----------------------------------------------------
+    // TEST_LOCKED states: Both outputs must be Low.
+    //-----------------------------------------------------
+    `CALIPTRA_ASSERT(Decoder_TEST_LOCKED_A,
+    (!fsm_state_i inside {ScrapSt,
+                        PostTransSt,
+                        EscalateSt,
+                        InvalidSt}
+    && lc_state_valid_i
+    && (lc_state_i inside {LcStTestLocked0, LcStTestLocked1, LcStTestLocked2,
+                          LcStTestLocked3, LcStTestLocked4, LcStTestLocked5,
+                          LcStTestLocked6}))
+      |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
+           lc_tx_test_false_strict(lc_hw_debug_en_o))
+    );
+    
+    //-----------------------------------------------------
+    // TEST_UNLOCKED states: Both outputs must be High.
+    //-----------------------------------------------------
+    `CALIPTRA_ASSERT(Decoder_TEST_UNLOCKED_A,
+    (!fsm_state_i inside {ScrapSt,
+                        PostTransSt,
+                        EscalateSt,
+                        InvalidSt}
+    && lc_state_valid_i
+    && (lc_state_i inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUnlocked2,
+                          LcStTestUnlocked3, LcStTestUnlocked4, LcStTestUnlocked5,
+                          LcStTestUnlocked6, LcStTestUnlocked7}))
+      |=> (lc_tx_test_true_strict(lc_dft_en_o) &&
+           lc_tx_test_true_strict(lc_hw_debug_en_o))
+    );
+    
+    //-----------------------------------------------------
+    // MANUF state (represented by LcStDev): 
+    // Expected: lc_dft_en_o = Low, lc_hw_debug_en_o = High.
+    //-----------------------------------------------------
+    `CALIPTRA_ASSERT(Decoder_MANUF_A,
+    (!fsm_state_i inside {ScrapSt,
+                        PostTransSt,
+                        EscalateSt,
+                        InvalidSt}
+    && lc_state_valid_i
+    &&(lc_state_i == LcStDev))
+      |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
+           lc_tx_test_true_strict(lc_hw_debug_en_o))
+    );
+    
+    //-----------------------------------------------------
+    // PROD_END state: Both outputs must be Low.
+    //-----------------------------------------------------
+    `CALIPTRA_ASSERT(Decoder_PROD_END_A,
+    (!fsm_state_i inside {ScrapSt,
+                        PostTransSt,
+                        EscalateSt,
+                        InvalidSt}
+    && lc_state_valid_i
+    && (lc_state_i == LcStProdEnd))
+      |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
+           lc_tx_test_false_strict(lc_hw_debug_en_o))
+    );
+    
+    //-----------------------------------------------------
+    // RMA state: Both outputs must be High.
+    //-----------------------------------------------------
+    `CALIPTRA_ASSERT(Decoder_RMA_A,
+    (!fsm_state_i inside {ScrapSt,
+                        PostTransSt,
+                        EscalateSt,
+                        InvalidSt}
+    && lc_state_valid_i
+    && (lc_state_i == LcStRma))
+      |=> (lc_tx_test_true_strict(lc_dft_en_o) &&
+           lc_tx_test_true_strict(lc_hw_debug_en_o))
+    );
+    
+    //-----------------------------------------------------
+    // SCRAP state: Both outputs must be Low.
+    //-----------------------------------------------------
+    `CALIPTRA_ASSERT(Decoder_SCRAP_A,
+    (!fsm_state_i inside {PostTransSt,
+                        EscalateSt,
+                        InvalidSt}
+    && lc_state_valid_i
+    && (lc_state_i == LcStScrap))
+      |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
+           lc_tx_test_false_strict(lc_hw_debug_en_o))
+    );
+       
+
+    //-----------------------------------------------------
+    // INVALID: All outputs must be Low.
+    //-----------------------------------------------------
+      `CALIPTRA_ASSERT(Decoder_INVALID_A,
+      (fsm_state_i inside {ScrapSt,
+                          EscalateSt,
+                          InvalidSt})
+        |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
+              lc_tx_test_false_strict(lc_hw_debug_en_o))
+    );
+
+
+
+
 endmodule : lc_ctrl_signal_decode
