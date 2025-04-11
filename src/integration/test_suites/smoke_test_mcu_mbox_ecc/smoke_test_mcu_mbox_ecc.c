@@ -94,7 +94,7 @@ void main (void) {
     // Write short Dlen for test run time
     mcu_mbox_write_dlen(mbox_num, 200);
 
-    // Setting execute (ECC reads are only checked during execute/transfer sessions)
+    // Setting execute
     mcu_mbox_set_execute(mbox_num);
 
     for (uint32_t i = 0; i < (sizeof(mbox_addr)/sizeof(uint32_t)); i++) {
@@ -122,7 +122,14 @@ void main (void) {
 
     // Clear execute
     mcu_mbox_clear_execute(mbox_num);
-    
+
+    // Re-acquire lock before checking that status is cleared (need zeroization to complete)
+    if (!mcu_mbox_acquire_lock(mbox_num, 1000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x didn't acquire lock\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);        
+    }
+
     // Check that ECC status registers are cleared
     if (mcu_mbox_read_hw_status(mbox_num) != 0) {
         VPRINTF(FATAL, "MCU: Mbox%x SB ECC status not cleared\n", mbox_num);
@@ -134,14 +141,7 @@ void main (void) {
     SEND_STDOUT_CTRL(TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION);
     SEND_STDOUT_CTRL(TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR);
  
-    // MBOX: Acquire lock
-    if (!mcu_mbox_acquire_lock(mbox_num, 1000)) {
-        VPRINTF(FATAL, "MCU: Mbox%x didn't acquire lock\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);        
-    }
-
-    // Single write to SRAM (Due to timing, ECC injector won't inject error on first write)
+     // Single write to SRAM (Due to timing, ECC injector won't inject error on first write)
     mcu_mbox_write_sram_dword(mbox_num, xorshift32() % (sram_size_kb * 256), xorshift32());
 
     // Write random SRAM data to random addreses and read them back
@@ -154,9 +154,6 @@ void main (void) {
 
     // Write short Dlen for test run time
     mcu_mbox_write_dlen(mbox_num, 100);
-
-    // Setting execute (ECC reads are only checked during execute/transfer sessions)
-    mcu_mbox_set_execute(mbox_num);
 
     for (uint32_t i = 0; i < (sizeof(mbox_addr)/sizeof(uint32_t)); i++) {
         rand_dword_addr = mbox_addr[i];
@@ -200,8 +197,16 @@ void main (void) {
         while(1);
     }
 
-    // Clear execute
+    // Set and clear execute (set is done later in DB case to test that hw_status still is reflected during lock)
+    mcu_mbox_set_execute(mbox_num);
     mcu_mbox_clear_execute(mbox_num);
+
+    // Re-acquire lock before checking that status is cleared (need to wait until zeroization to complete)
+    if (!mcu_mbox_acquire_lock(mbox_num, 1000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x didn't acquire lock\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);        
+    }
 
     // Check that ECC status registers are cleared
     if (mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK) {

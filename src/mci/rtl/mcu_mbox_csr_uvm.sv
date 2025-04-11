@@ -295,19 +295,19 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_cmd_status
 
-    // Reg - mcu_mbox_csr::mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760
-    class mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760 extends uvm_reg;
+    // Reg - mcu_mbox_csr::mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5
+    class mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760_bit_cg ecc_single_error_bit_cg[1];
-        mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760_bit_cg ecc_double_error_bit_cg[1];
-        mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760_fld_cg fld_cg;
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5_bit_cg ecc_single_error_bit_cg[1];
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5_bit_cg ecc_double_error_bit_cg[1];
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5_fld_cg fld_cg;
         rand uvm_reg_field ecc_single_error;
         rand uvm_reg_field ecc_double_error;
 
-        function new(string name = "mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760");
+        function new(string name = "mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -328,7 +328,7 @@ package mcu_mbox_csr_uvm;
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760
+    endclass : mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5
 
     // Addrmap - mcu_mbox_csr
     class mcu_mbox_csr extends uvm_reg_block;
@@ -342,7 +342,7 @@ package mcu_mbox_csr_uvm;
         rand mcu_mbox_csr__mbox_execute mbox_execute;
         rand mcu_mbox_csr__mbox_target_status mbox_target_status;
         rand mcu_mbox_csr__mbox_cmd_status mbox_cmd_status;
-        rand mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760 mbox_hw_status;
+        rand mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5 mbox_hw_status;
 
         function new(string name = "mcu_mbox_csr");
             super.new(name);
