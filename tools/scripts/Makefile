@@ -64,6 +64,7 @@ CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
 
 # Libraries providing functionality for each peripheral component in Caliptra Subsystem
 COMP_LIB_NAMES := caliptra_ss_lib \
+		  mci \
 		  fuse_ctrl \
 		  lc_ctrl \
 			mci
@@ -78,6 +79,8 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
 		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
+		$(RISCV_HW_IF_DIR)/riscv-csr.h \
+		$(RISCV_HW_IF_DIR)/veer-csr.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
@@ -371,14 +374,25 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 			      --pad-to 0x4000 \
 			      --no-change-warnings \
 			      $(TESTNAME).exe mcu_dccm.hex
+<<<<<<< HEAD
 	-$(GCC_PREFIX)-objcopy -O verilog -R .dccm -R .data -R .bss -R .sbss -R .data.io -R .eh_frame \
+=======
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .rodata -j .srodata \
+>>>>>>> main
 			      --change-section-lma       .text-0x80000000 \
 			      --change-section-lma     .rodata-0x80000000 \
 			      --change-section-lma    .srodata-0x80000000 \
 			      --pad-to 0x40000 \
 			      --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0x40000  --no-change-warnings $(TESTNAME).exe mcu_program.bin
+<<<<<<< HEAD
 	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21C00000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+=======
+	-$(GCC_PREFIX)-objcopy -O verilog -j .mcu_sram \
+			      --change-section-lma .mcu_sram-0x21C00000 \
+			      --pad-to 0x80000 \
+			      --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+>>>>>>> main
 	# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis

@@ -25,6 +25,12 @@
     `ifndef MCI_PATH
       `define MCI_PATH      `CPTRA_SS_TOP_PATH.mci_top_i
     `endif
+    `ifndef MCU_PATH
+      `define MCU_PATH      `CPTRA_SS_TOP_PATH.rvtop_wrapper
+    `endif
+    `ifndef MCU_DEC 
+      `define MCU_DEC       `MCU_PATH.rvtop.veer.dec
+    `endif
     `ifndef LCC_PATH
       `define LCC_PATH      `CPTRA_SS_TOP_PATH.u_lc_ctrl
     `endif

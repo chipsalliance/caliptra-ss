@@ -181,6 +181,27 @@ interface mci_top_cov_if
         fc_opt_init_cp: coverpoint  fc_opt_init;
     endgroup
 
+    // Each state in MCI Boot Sequencer
+    covergroup mci_boot_seqr_cg @(posedge clk iff mci_rst_b);
+        option.per_instance = 1;
+
+        // Each state entered
+        boot_states: coverpoint i_boot_seqr.boot_fsm {
+            illegal_bins bin_unknown = {BOOT_UNKNOWN};
+        }
+        // Explicitly cover transitions where boot_fsm could take several branches
+        boot_state_transition: coverpoint i_boot_seqr.boot_fsm {
+            bins bin_bp_chk_bp = (BOOT_BREAKPOINT_CHECK => BOOT_BREAKPOINT);
+            bins bin_bp_chk_cptra = (BOOT_BREAKPOINT_CHECK => BOOT_WAIT_CPTRA_GO);
+            bins bin_bp_chk_mcu = (BOOT_BREAKPOINT_CHECK => BOOT_MCU);
+            bins bin_bp_cptra = (BOOT_BREAKPOINT => BOOT_WAIT_CPTRA_GO);
+            bins bin_bp_mcu = (BOOT_BREAKPOINT => BOOT_MCU);
+            bins bin_mcu_rst = (BOOT_MCU => BOOT_WAIT_MCU_RST_REQ);
+            bins bin_mcu_cptra = (BOOT_MCU => BOOT_WAIT_CPTRA_GO);
+            bins bin_rst_mcu = (BOOT_RST_MCU => BOOT_MCU);
+        }
+    endgroup
+
     //Check toggles of generic wires
     covergroup generic_wires_cg(input logic generic_bit) @(posedge clk);
         option.per_instance = 1;
@@ -215,6 +236,7 @@ interface mci_top_cov_if
   // ------------------------------------------------------------------- 
 
 
+<<<<<<< HEAD
   // ------------------- COVERGROUP related signals & assigns -------------------
 
     logic          hit_HW_CAPABILITIES;
@@ -5823,3 +5845,6 @@ interface mci_top_cov_if
   `endif
   
   
+=======
+`endif
+>>>>>>> main
