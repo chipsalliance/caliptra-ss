@@ -40,5 +40,8 @@
     `ifndef CPTRA_CORE_TOP_PATH
       `define CPTRA_CORE_TOP_PATH      `CPTRA_SS_TOP_PATH.caliptra_top_dut
     `endif
+    `ifndef MCI_WDT_PATH
+      `define MCI_WDT_PATH  `MCI_PATH.i_mci_wdt_top
+    `endif
 
 `endif
