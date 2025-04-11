@@ -44,10 +44,13 @@ module mci_top
     )
     (
     input logic clk,
+    output logic mcu_clk_cg, // Gated when MCU reset or warm reset
+    output logic cptra_ss_rdc_clk_cg, // Gated during warm reset. 
 
-    // MCI Resets
+    // Resets
     input logic mci_rst_b,
     input logic mci_pwrgood,
+    output logic cptra_ss_rst_b_o,
 
     // DFT
     input scan_mode,
@@ -105,7 +108,7 @@ module mci_top
     input  logic [ 6:0] mcu_dmi_uncore_addr,
     input  logic [31:0] mcu_dmi_uncore_wdata,
     output logic [31:0] mcu_dmi_uncore_rdata,
-    input  logic        mcu_dmi_active, // FIXME: This is not used in the design
+    input  logic        mcu_dmi_active, // Unused - only use if we start using functional CG
 
     // MCU Trace
     input logic [31:0] mcu_trace_rv_i_insn_ip,
@@ -238,6 +241,32 @@ module mci_top
     // Other
     logic mci_ss_debug_intent;
 
+    // RDC
+
+    logic rdc_clk_dis;
+    logic fw_update_rdc_clk_dis;
+
+
+
+// Clock gating only using RDC clock gating functionality
+clk_gate cg ( 
+    .clk(clk),
+    .cptra_rst_b(cptra_ss_rst_b_o),
+    .psel('0),
+    .clk_gate_en('0),
+    .cpu_halt_status('0),
+    .rdc_clk_dis(rdc_clk_dis),
+    .rdc_clk_dis_uc (fw_update_rdc_clk_dis),
+    .clk_cg (),
+    .soc_ifc_clk_cg (),
+    .rdc_clk_cg (cptra_ss_rdc_clk_cg),
+    .uc_clk_cg (mcu_clk_cg),
+    .generic_input_wires('0),
+    .cptra_error_fatal('0),
+    .cptra_in_debug_scan_mode('0),
+    .cptra_dmi_reg_en_preQ('0)
+);
+
 // Caliptra internal fabric interface for MCU SRAM 
 // Address width is set to AXI_ADDR_WIDTH and MCU SRAM
 // will mask out upper bits that are "don't care"
@@ -247,8 +276,8 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mcu_sram_req_if(
-    .clk, 
-    .rst_b(mci_rst_b));
+    .clk(cptra_ss_rdc_clk_cg), 
+    .rst_b(cptra_ss_rst_b_o));
 
 // Caliptra internal fabric interface for MCI REG 
 // Address width is set to AXI_ADDR_WIDTH and MCI REG
@@ -259,8 +288,8 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mci_reg_req_if(
-    .clk, 
-    .rst_b(mci_rst_b));
+    .clk(cptra_ss_rdc_clk_cg), 
+    .rst_b(cptra_ss_rst_b_o));
 
 // Caliptra internal fabric interface for TRACE BUFFER
 // Address width is set to AXI_ADDR_WIDTH and MCI REG
@@ -271,14 +300,14 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mcu_trace_buffer_req_if(
-    .clk, 
-    .rst_b(mci_rst_b));
+    .clk(cptra_ss_rdc_clk_cg), 
+    .rst_b(cptra_ss_rst_b_o));
 
 caliptra_prim_flop_2sync #(
   .Width(1)
 ) u_prim_flop_2sync_mcu_sram_fw_exec_region_lock (
   .clk_i(clk),
-  .rst_ni(mci_rst_b),
+  .rst_ni(cptra_ss_rst_b_o),
   .d_i(mcu_sram_fw_exec_region_lock),
   .q_o(mcu_sram_fw_exec_region_lock_sync));
   
@@ -291,8 +320,8 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mcu_mbox0_req_if(
-    .clk, 
-    .rst_b(mci_rst_b));
+    .clk(cptra_ss_rdc_clk_cg), 
+    .rst_b(cptra_ss_rst_b_o));
 
 // Caliptra internal fabric interface for MCI Mbox0
 // Address width is set to AXI_ADDR_WIDTH and Mbox0
@@ -303,8 +332,8 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mcu_mbox1_req_if(
-    .clk, 
-    .rst_b(mci_rst_b));
+    .clk(cptra_ss_rdc_clk_cg), 
+    .rst_b(cptra_ss_rst_b_o));
 
 //AXI Interface
 //This module contains the logic for interfacing with the SoC over the AXI Interface
@@ -319,10 +348,10 @@ mci_axi_sub_top #(
     .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
 ) i_mci_axi_sub_top (
     // MCI clk
-    .clk  (clk     ),
+    .clk  (cptra_ss_rdc_clk_cg), 
 
     // MCI Resets
-    .rst_b(mci_rst_b), // FIXME: Need to sync reset
+    .rst_b(cptra_ss_rst_b_o), 
 
     // AXI INF
     .s_axi_w_if(s_axi_w_if),
@@ -358,15 +387,12 @@ mci_axi_sub_top #(
     .strap_mcu_sram_config_axi_user
 );
 
-logic rdc_clk_dis;
-logic fw_update_rdc_clk_dis;
-logic cptra_ss_rst_b_o;
-
 mci_boot_seqr #(
     .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH)
 )i_boot_seqr (
     .clk,
-    .mci_rst_b, // FIXME RDC?
+    .mci_rst_b, 
+    .mci_pwrgood,
 
     // Clock Controls
     .rdc_clk_dis,
@@ -411,10 +437,10 @@ mci_mcu_trace_buffer #(
     .DMI_REG_TRACE_RD_PTR_ADDR(MCI_DMI_MCU_TRACE_RD_PTR)
 ) i_mci_mcu_trace_buffer 
     (
-    .clk,
+    .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b(mci_rst_b), // FIXME: Need to sync reset
+    .rst_b(cptra_ss_rst_b_o), 
 
     .debug_en(!security_state_o.debug_locked),
     
@@ -444,11 +470,11 @@ mci_mcu_sram_ctrl #(
     .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
 ) i_mci_mcu_sram_ctrl (
     // MCI clk
-    .clk,
+    .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b (mci_rst_b), // FIXME: Need to sync reset
-    .mci_pwrgood (mci_pwrgood), // FIXME: Need to sync reset
+    .rst_b (cptra_ss_rst_b_o), 
+    .mci_pwrgood (mci_pwrgood), 
 
     
     // MCU Reset
@@ -503,10 +529,10 @@ end
 mci_wdt_top #(
     .WDT_TIMEOUT_PERIOD_NUM_DWORDS(MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS)
 ) i_mci_wdt_top (
-    .clk,
+    .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b (mci_rst_b), // FIXME: Need to sync reset
+    .rst_b (cptra_ss_rst_b_o), 
 
     //Timer inputs
     .timer1_en,
@@ -538,13 +564,13 @@ mci_reg_top #(
     .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER),
     .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB)
 )i_mci_reg_top (
-    .clk,
+    .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .mci_rst_b      (mci_rst_b),    // FIXME: Need to sync reset
-    .mcu_rst_b      (mcu_rst_b),    // FIXME: Need to sync reset
-    .cptra_rst_b    (cptra_rst_b),  // FIXME: Need to sync reset
-    .mci_pwrgood    (mci_pwrgood),  // FIXME: Need to sync
+    .mci_rst_b      (cptra_ss_rst_b_o),    
+    .mcu_rst_b      (mcu_rst_b),   
+    .cptra_rst_b    (cptra_rst_b), 
+    .mci_pwrgood    (mci_pwrgood),
 
     // REG HWIF signals
     .mci_reg_hwif_out,
@@ -573,12 +599,11 @@ mci_reg_top #(
     .ss_debug_intent,
     .mci_ss_debug_intent,
 
-    // AXI Straps
     .strap_mcu_lsu_axi_user,
     .strap_mcu_ifu_axi_user,
     .strap_mcu_sram_config_axi_user,
     .strap_mci_soc_config_axi_user,
-
+    
     
     // MCU Reset vector
     .strap_mcu_reset_vector, // default reset vector
@@ -676,10 +701,10 @@ mcu_mbox
     ,.DEF_MBOX_VALID_AXI_USER(MCU_DEF_MBOX_VALID_AXI_USER)
 )
 mcu_mbox0 (
-    .clk,
+    .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b(mci_rst_b), // FIXME: Need to sync reset,
+    .rst_b(cptra_ss_rst_b_o), 
 
     // Caliptra internal fabric response interface
     .cif_resp_if(mcu_mbox0_req_if.response),
@@ -725,10 +750,10 @@ mcu_mbox
     ,.DEF_MBOX_VALID_AXI_USER(MCU_DEF_MBOX_VALID_AXI_USER)
 )
 mcu_mbox1 (
-    .clk,
+    .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b(mci_rst_b), // FIXME: Need to sync reset,
+    .rst_b(cptra_ss_rst_b_o), 
 
     // Caliptra internal fabric response interface
     .cif_resp_if(mcu_mbox1_req_if.response),
@@ -758,7 +783,7 @@ endgenerate
  // DUT instantiation
 mci_lcc_st_trans LCC_state_translator (
     .clk(clk),
-    .rst_n(mci_rst_b),
+    .rst_n(cptra_ss_rst_b_o),
     .state_error(lc_fatal_state_error_i),  
     .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
     .lc_dft_en_i(lc_dft_en_i),
@@ -781,7 +806,7 @@ mci_lcc_st_trans LCC_state_translator (
 // Assertions
 ///////////////////////////////////////
 
-`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {mci_reg_req_if.dv, mcu_sram_req_if.dv, mcu_trace_buffer_req_if.dv, mcu_mbox0_req_if.dv, mcu_mbox1_req_if.dv}, clk, !mci_rst_b)
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {mci_reg_req_if.dv, mcu_sram_req_if.dv, mcu_trace_buffer_req_if.dv, mcu_mbox0_req_if.dv, mcu_mbox1_req_if.dv}, clk, !cptra_ss_rst_b_o)
 
 // Today we don't support anything other than 32 bits
 `CALIPTRA_ASSERT_INIT(ERR_AXI_DATA_WIDTH, AXI_DATA_WIDTH == 32)
