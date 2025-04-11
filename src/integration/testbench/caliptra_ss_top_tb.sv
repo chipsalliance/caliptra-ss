@@ -148,6 +148,8 @@ module caliptra_ss_top_tb
     css_mcu0_el2_mem_if         cptra_ss_mcu0_el2_mem_export ();
     el2_mem_if                  cptra_ss_cptra_core_el2_mem_export ();        
 
+    caliptra_ss_bfm_services_if i_caliptra_ss_bfm_services_if();
+
     logic fuse_ctrl_rdy;
     
     // -- Read clock frequency from file and set the clock accordingly using a case statement
@@ -187,7 +189,6 @@ module caliptra_ss_top_tb
         endcase
     end
 
-    assign cptra_rst_b = cptra_ss_rst_b_i;
 
    //=========================================================================
    // AXI Interconnect
@@ -200,12 +201,18 @@ module caliptra_ss_top_tb
 
     // AXI Interface
     axi_if #(
-        .AW(`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+        .AW(`CALIPTRA_AXI_DMA_ADDR_WIDTH),
         .DW(`CALIPTRA_AXI_DATA_WIDTH),
         .IW(`CALIPTRA_AXI_ID_WIDTH - 3),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) m_axi_bfm_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
+    axi_if #(
+        .AW(`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+        .DW(`CALIPTRA_AXI_DATA_WIDTH),
+        .IW(`CALIPTRA_AXI_ID_WIDTH - 3),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) m_axi_bfm_if_FIXME (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
     // Cptra Mgr Axi Interface
     axi_if #(
         .AW(`CALIPTRA_AXI_DMA_ADDR_WIDTH),
@@ -647,6 +654,19 @@ module caliptra_ss_top_tb
     assign cptra_ss_cptra_core_m_axi_if.rlast             = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_CPTRA_DMA_IDX].RLAST;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_CPTRA_DMA_IDX].RREADY  = cptra_ss_cptra_core_m_axi_if.rready;
 
+    assign m_axi_bfm_if_FIXME.awready                   = '0;
+    assign m_axi_bfm_if_FIXME.wready                    = '0;
+    assign m_axi_bfm_if_FIXME.bvalid                    = '0;
+    assign m_axi_bfm_if_FIXME.bresp                     = '0;
+    assign m_axi_bfm_if_FIXME.bid                       = '0;
+    assign m_axi_bfm_if_FIXME.buser                     = '0;
+    assign m_axi_bfm_if_FIXME.arready                   = '0;
+    assign m_axi_bfm_if_FIXME.rvalid                    = '0;
+    assign m_axi_bfm_if_FIXME.rdata                     = '0;
+    assign m_axi_bfm_if_FIXME.rresp                     = '0;
+    assign m_axi_bfm_if_FIXME.rid                       = '0;
+    assign m_axi_bfm_if_FIXME.rlast                     = '0;
+    assign m_axi_bfm_if_FIXME.ruser                     = '0;
     //Interconnect 4 - master bfm
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_SOC_BFM_IDX].AWVALID  = m_axi_bfm_if.awvalid;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_SOC_BFM_IDX].AWADDR[31:0]   = m_axi_bfm_if.awaddr;
@@ -955,8 +975,8 @@ module caliptra_ss_top_tb
     ) soc_bfm_inst (
         .core_clk        (core_clk        ),
 
-        .cptra_pwrgood   (cptra_ss_pwrgood_i   ),
-        .cptra_rst_b     (cptra_ss_rst_b_i     ),
+        .cptra_pwrgood (),
+        .cptra_rst_b     (     ),
 
         .BootFSM_BrkPoint(cptra_ss_cptra_core_bootfsm_bp_i),
         .cycleCnt        (cycleCnt        ),
@@ -969,7 +989,7 @@ module caliptra_ss_top_tb
         .cptra_fe_rand   (cptra_fe_rand   ),
         .cptra_obf_key_tb(cptra_obf_key_tb),
 
-        .m_axi_bfm_if(m_axi_bfm_if),
+        .m_axi_bfm_if(m_axi_bfm_if_FIXME),
 
         .ready_for_fuses         (ready_for_fuses         ),
         .ready_for_mb_processing (ready_for_mb_processing ),
@@ -1363,10 +1383,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_no_rom_config_i         = 1'b0;
     assign cptra_ss_strap_mcu_reset_vector_i    = `css_mcu0_RV_RESET_VEC;
     assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
-    assign cptra_ss_strap_mcu_lsu_axi_user_i    = CPTRA_SS_STRAP_MCU_LSU_AXI_USER;
-    assign cptra_ss_strap_mcu_ifu_axi_user_i    = CPTRA_SS_STRAP_MCU_IFU_AXI_USER;
-    assign cptra_ss_strap_mcu_sram_config_axi_user_i        = cptra_ss_strap_caliptra_dma_axi_user_i;
-    assign cptra_ss_strap_mci_soc_config_axi_user_i        = cptra_ss_strap_mcu_lsu_axi_user_i; // FIXME set to real value
     assign cptra_ss_mcu_ext_int = '0;
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'(`SOC_SOC_IFC_REG_BASE_ADDR - (`SOC_SOC_IFC_REG_BASE_ADDR & ((1<<SOC_IFC_ADDR_W)-1)));
     assign cptra_ss_strap_mci_base_addr_i       = 64'(`SOC_MCI_TOP_BASE_ADDR);
@@ -1375,7 +1391,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
     assign cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i        = 32'h0;
-    assign cptra_ss_strap_caliptra_dma_axi_user_i = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
     assign cptra_ss_strap_generic_0_i           = 32'h0;
     assign cptra_ss_strap_generic_1_i           = 32'h0;
     assign cptra_ss_strap_generic_2_i           = 32'h0;
@@ -1398,6 +1413,7 @@ module caliptra_ss_top_tb
     );
 
     caliptra_ss_top #(
+        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
         .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),
         .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),
@@ -1602,6 +1618,27 @@ module caliptra_ss_top_tb
         .mailbox_data_avail
 
     );
+
+    // Instantiate caliptra_ss_top_tb_soc_bfm
+    caliptra_ss_top_tb_soc_bfm #(
+        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
+    )u_caliptra_ss_top_tb_soc_bfm (
+        .core_clk,
+        .cptra_pwrgood (cptra_ss_pwrgood_i),
+        .cptra_rst_b(cptra_ss_rst_b_i),
+        .cycleCnt,
+
+        .cptra_ss_strap_mcu_lsu_axi_user_i,
+        .cptra_ss_strap_mcu_ifu_axi_user_i,
+        .cptra_ss_strap_mcu_sram_config_axi_user_i,
+        .cptra_ss_strap_mci_soc_config_axi_user_i,
+        .cptra_ss_strap_caliptra_dma_axi_user_i,
+
+
+        .m_axi_bfm_if,
+        .tb_services_if(i_caliptra_ss_bfm_services_if.bfm)
+
+    );
     
     // Instantiate caliptra_ss_top_tb_services
     caliptra_ss_top_tb_services u_caliptra_ss_top_tb_services (
@@ -1609,6 +1646,7 @@ module caliptra_ss_top_tb
         .rst_l                       (cptra_ss_rst_b_i            ),
         .cycleCnt                    (cycleCnt                    ),
         .cptra_ss_mcu0_el2_mem_export(cptra_ss_mcu0_el2_mem_export),
+        .soc_bfm_if(i_caliptra_ss_bfm_services_if.tb_services),
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
