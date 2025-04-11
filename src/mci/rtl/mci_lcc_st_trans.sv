@@ -316,11 +316,11 @@ end
 );
 
 `CALIPTRA_ASSERT(NonDebugUnlockedCheck_A,
-  ( ! ((CLPTR_PROD_DEBUG_UNLOCK_AND) && (otp_static_state == LcStProd))
-    || ! (ss_dbg_manuf_enable_i && (otp_static_state == LcStDev))
-    || ! (otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUnlocked2, LcStTestUnlocked3,
-    LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7})
-  )  && (mci_trans_st_current != TRANSLATOR_RESET)
+  ( ! (CLPTR_PROD_DEBUG_UNLOCK_AND && (otp_static_state == LcStProd))
+    && !(ss_dbg_manuf_enable_i && (otp_static_state == LcStDev))
+    && !((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUnlocked2, LcStTestUnlocked3,
+    LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7}) && (mci_trans_st_current != TRANSLATOR_RESET))
+  ) 
   |=> ##1 (security_state_o.debug_locked == 1'b1)
 );
 
@@ -356,37 +356,47 @@ end
 //    DEVICE_PRODUCTION with debug_locked == 1.
 //-----------------------------------------------------
 `CALIPTRA_ASSERT(ProdSIGNAL_Decoding_A,
-    ((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-        &&  (security_state_o.debug_locked == 1))  && (mci_trans_st_current != TRANSLATOR_RESET)
-    |=> ##1 
-    ((SOC_DFT_EN == 0) && (SOC_HW_DEBUG_EN == 0))
+    (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
+        && (security_state_o.debug_locked == 1)
+        && (mci_trans_st_current != TRANSLATOR_RESET)
+    |=> 
+    (((SOC_DFT_EN == 0) && (SOC_HW_DEBUG_EN == 0)) || !((security_state_o.device_lifecycle == DEVICE_PRODUCTION) && (security_state_o.debug_locked == 1)))
 );
 
 `CALIPTRA_ASSERT(MANUF_HW_EN_A,
-    ((security_state_o.device_lifecycle == DEVICE_MANUFACTURING)  && (mci_trans_st_current != TRANSLATOR_RESET) |=> ##1  (SOC_HW_DEBUG_EN == 1))
+    ((security_state_o.device_lifecycle == DEVICE_MANUFACTURING)  && (mci_trans_st_current != TRANSLATOR_RESET)
+    |=> 
+    (SOC_HW_DEBUG_EN == 1) || !((security_state_o.device_lifecycle == DEVICE_MANUFACTURING) && (security_state_o.debug_locked == 1)) || ((lc_dft_en_i == lc_ctrl_pkg::Off)))
 );
 
 
 `CALIPTRA_ASSERT(UnProvSIGNAL_Decoding_A,
     (security_state_o.device_lifecycle == DEVICE_UNPROVISIONED)  && (mci_trans_st_current != TRANSLATOR_RESET)
-    |=> ##1 
-    ((SOC_DFT_EN == 1) && (SOC_HW_DEBUG_EN == 1) && (security_state_o.debug_locked == 1'b0))
+    |=>
+    ((SOC_DFT_EN == 1) && (SOC_HW_DEBUG_EN == 1) 
+        && (security_state_o.debug_locked == 1'b0)) 
+        || (security_state_o.device_lifecycle != DEVICE_UNPROVISIONED)
+        || ((lc_dft_en_i == lc_ctrl_pkg::Off) && (lc_hw_debug_en_i == lc_ctrl_pkg::Off))
 );
 
 `CALIPTRA_ASSERT(ProdSIGNAL_Decoding_DebugHigh_DFT_A,
     ((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
         &&  (security_state_o.debug_locked == 0)
         &&  SOC_DFT_EN_AND)  && (mci_trans_st_current != TRANSLATOR_RESET)
-    |=> ##1 
+    |=>
     ((SOC_DFT_EN == 1) )
+        || !((security_state_o.device_lifecycle == DEVICE_PRODUCTION) && (security_state_o.debug_locked == 1'b0))
+        || (lc_dft_en_i == lc_ctrl_pkg::Off)
 );
 
 `CALIPTRA_ASSERT(ProdSIGNAL_Decoding_DebugHigh_HW_EN_A,
     ((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
         &&  (security_state_o.debug_locked == 0)
         &&  SOC_HW_DEBUG_EN_AND)  && (mci_trans_st_current != TRANSLATOR_RESET)
-    |=> ##1 
+    |=>
     ((SOC_HW_DEBUG_EN == 1) )
+        || !((security_state_o.device_lifecycle == DEVICE_PRODUCTION) && (security_state_o.debug_locked == 1'b0))
+        || (lc_hw_debug_en_i == lc_ctrl_pkg::Off)
 );
 
 
