@@ -98,4 +98,13 @@ package tb_top_pkg;
         logic dccm_single_bit_error;
     } veer_sram_error_injection_mode_t;
 
+    typedef struct packed {
+        //  [2] - Randomize when writes are injected
+        //  [1] - Double bit, Mbox SRAM Error Injection
+        //  [0] - Single bit, Mbox SRAM Error Injection
+        logic randomize;
+        logic double_bit_error;
+        logic single_bit_error;
+    } mcu_mbox_sram_error_injection_mode_t;
+
 endpackage
