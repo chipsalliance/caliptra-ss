@@ -109,6 +109,7 @@ requires:
   - axi_dma_coverage
   - mci_coverage
   - lc_ctrl_coverage
+  - fuse_ctrl_coverage
 targets:
   tb:
     directories:

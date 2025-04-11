@@ -27,59 +27,10 @@ module caliptra_ss_top_sva
   import caliptra_prim_mubi_pkg::*;
   ();
   
-  // XXX: Maybe put this in a life-cycle package.
-  function dec_lc_state_e decode_lc_state(lc_state_e lc_state);
-    unique case (lc_state)
-      LcStRaw:           return DecLcStRaw;
-      LcStTestUnlocked0: return DecLcStTestUnlocked0;
-      LcStTestLocked0:   return DecLcStTestLocked0;
-      LcStTestUnlocked1: return DecLcStTestUnlocked1;
-      LcStTestLocked1:   return DecLcStTestLocked1;
-      LcStTestUnlocked2: return DecLcStTestUnlocked2;
-      LcStTestLocked2:   return DecLcStTestLocked2;
-      LcStTestUnlocked3: return DecLcStTestUnlocked3;
-      LcStTestLocked3:   return DecLcStTestLocked3;
-      LcStTestUnlocked4: return DecLcStTestUnlocked4;
-      LcStTestLocked4:   return DecLcStTestLocked4;
-      LcStTestUnlocked5: return DecLcStTestUnlocked5;
-      LcStTestLocked5:   return DecLcStTestLocked5;
-      LcStTestUnlocked6: return DecLcStTestUnlocked6;
-      LcStTestLocked6:   return DecLcStTestLocked6;
-      LcStTestUnlocked7: return DecLcStTestUnlocked7;
-      LcStDev:           return DecLcStDev;
-      LcStProd:          return DecLcStProd;
-      LcStProdEnd:       return DecLcStProdEnd;
-      LcStRma:           return DecLcStRma;
-      default:           return DecLcStScrap;
-    endcase
-  endfunction
-
-  // Assert that a partition is write-locked once its corresponding life-cycle phase has expired.
-  generate
-  dec_lc_state_e dec_lc_state;
-  assign dec_lc_state = decode_lc_state(lc_state_e'(`CPTRA_SS_TOP_PATH.u_otp_ctrl.otp_lc_data_o.state));
-  for (genvar i = 0; i < NumPart-1; i++) begin
-    fc_partition_lc_phase_write_lock: assert property (
-      @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-      dec_lc_state > PartInfo[i].lc_phase |-> mubi8_t'(`CPTRA_SS_TOP_PATH.u_otp_ctrl.part_access[i].write_lock) == MuBi8True
-    )
-    else $display("SVA ERROR: partition %d is not write-locked for life-cycle state %d", i, dec_lc_state);
-  end
-  endgenerate
-
   fc_partition_escalation_dai_lock : assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     `CPTRA_SS_TOP_PATH.u_otp_ctrl.lc_escalate_en_i == On |-> ##10 `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.state_q == `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.ErrorSt
-  ) else $display("SVA ERROR: fuse ctrl dai is not in a terminal state");
-
-  // When the fuse controller filter signals an access error any DAI write must fail.
-  fc_access_control_error : assert property (
-    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    ((`CPTRA_SS_TOP_PATH.u_otp_ctrl.u_fuse_ctrl_filter.discard_fuse_write_o) &&
-    (`CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.state_q == `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.WriteSt))
-    |=> 
-    otp_err_e'(`CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.error_o) == AccessError
-  ) else $display("SVA ERROR: fuse ctrl filter discard does not result in DAI error");
+  ) else $display("SVA ERROR");
 
   // Zeroization broadcast
   fc_zeroize_broadcast : assert property (
@@ -225,4 +176,54 @@ module caliptra_ss_top_sva
     
 
       
+  ////////////////////////////////////////////////////
+  // fuse_ctrl provisioning
+  ////////////////////////////////////////////////////
+
+  // XXX: Maybe put this in a life-cycle package.
+  function dec_lc_state_e decode_lc_state(lc_state_e lc_state);
+    unique case (lc_state)
+      LcStRaw:           return DecLcStRaw;
+      LcStTestUnlocked0: return DecLcStTestUnlocked0;
+      LcStTestLocked0:   return DecLcStTestLocked0;
+      LcStTestUnlocked1: return DecLcStTestUnlocked1;
+      LcStTestLocked1:   return DecLcStTestLocked1;
+      LcStTestUnlocked2: return DecLcStTestUnlocked2;
+      LcStTestLocked2:   return DecLcStTestLocked2;
+      LcStTestUnlocked3: return DecLcStTestUnlocked3;
+      LcStTestLocked3:   return DecLcStTestLocked3;
+      LcStTestUnlocked4: return DecLcStTestUnlocked4;
+      LcStTestLocked4:   return DecLcStTestLocked4;
+      LcStTestUnlocked5: return DecLcStTestUnlocked5;
+      LcStTestLocked5:   return DecLcStTestLocked5;
+      LcStTestUnlocked6: return DecLcStTestUnlocked6;
+      LcStTestLocked6:   return DecLcStTestLocked6;
+      LcStTestUnlocked7: return DecLcStTestUnlocked7;
+      LcStDev:           return DecLcStDev;
+      LcStProd:          return DecLcStProd;
+      LcStProdEnd:       return DecLcStProdEnd;
+      LcStRma:           return DecLcStRma;
+      default:           return DecLcStScrap;
+    endcase
+  endfunction
+
+  // Assert that a partition is write-locked once its corresponding life-cycle phase has expired.
+  generate
+  dec_lc_state_e dec_lc_state;
+  assign dec_lc_state = decode_lc_state(lc_state_e'(`FC_PATH.otp_lc_data_o.state));
+  for (genvar i = 0; i < NumPart-1; i++) begin
+    `CALIPTRA_ASSERT(FcPartitionLcPhaseWriteLock_A,
+      dec_lc_state > PartInfo[i].lc_phase |-> mubi8_t'(`FC_PATH.part_access[i].write_lock) == MuBi8True
+    )
+  end
+  endgenerate
+
+  // Assert that an DAI write to a partition whose life-cycle phase has expired will result in an error.
+  `CALIPTRA_ASSERT(FcPartitionLcPhaseWriteLock_A,
+    `FC_PATH.dai_req &&
+    dec_lc_state > PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].lc_phase
+    |-> ##10
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+  )
+
 endmodule

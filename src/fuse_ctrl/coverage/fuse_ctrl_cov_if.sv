@@ -15,6 +15,7 @@
 `ifndef VERILATOR
 
 `include "caliptra_ss_includes.svh"
+`include "caliptra_ss_top_tb_path_defines.svh"
 
 interface fuse_ctrl_cov_if
 (
@@ -55,6 +56,34 @@ interface fuse_ctrl_cov_if
 
         fuser_ctrl_filter_cr: cross fuse_ctrl_filter_awaddr_cp, fuse_ctrl_filter_awuser_cp;
     endgroup
+
+    /** fuse_ctrl fuses:
+     *
+     * Verify that all fuses are provisioned alongside their digest fields if available.
+     */
+
+    logic [21:0] fc_mem [0:2047];
+    assign fc_mem = `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem;
+
+    `define FUSE_CG(ADDR, SIZE)                                                             \
+      covergroup fuse_``ADDR``_cg @(posedge clk_i);                                         \
+        option.per_instance = 1;                                                            \
+        fuse_``ADDR``_cp: coverpoint ((16+6)*(SIZE/2))'(fc_mem[(ADDR/2):((ADDR+SIZE)/2)-1]) \
+        {                                                                                   \
+            bins Fuse = { [1:] };                                                           \
+        }                                                                                   \
+      endgroup
+
+    // SECRET_TEST_UNLOCK_PARTITION
+    `FUSE_CG(CptraCoreManufDebugUnlockTokenOffset, CptraCoreManufDebugUnlockTokenSize)
+    `FUSE_CG(SecretTestUnlockPartitionDigestOffset, SecretTestUnlockPartitionDigestSize)
+    // SECRET_MANUF_PARTITION
+    `FUSE_CG(CptraCoreUdsSeedOffset, CptraCoreUdsSeedSize)
+    `FUSE_CG(SecretManufPartitionDigestOffset, SecretManufPartitionDigestSize)
+    // SECRET_PROD_PARTITION_0
+    `FUSE_CG(CptraCoreFieldEntropy0Offset, CptraCoreFieldEntropy0Size)
+    `FUSE_CG(SecretProdPartition0DigestOffset, SecretProdPartition0DigestSize)
+    // TODO: fill all fuses
 
 endinterface
 

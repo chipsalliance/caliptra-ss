@@ -13,8 +13,8 @@
 // limitations under the License.
 
 
-module lc_ctrl_cov_bind;
+module fuse_ctrl_cov_bind;
     `ifdef FCOV
-    bind lc_ctrl lc_ctrl_cov_if i_lc_ctrl_cov_if(.*);
+    bind fuse_ctrl fuse_ctrl_cov_if i_fuse_ctrl_cov_if(.*);
     `endif
 endmodule
