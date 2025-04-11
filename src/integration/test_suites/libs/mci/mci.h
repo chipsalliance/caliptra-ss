@@ -33,10 +33,13 @@ uint32_t get_register_mask(uint32_t address);
 const char* get_group_name(mci_register_group_t group);
 int add_mask_entry(uint32_t address, uint32_t mask);
 void write_random_to_register_group_and_track(mci_register_group_t group, mci_reg_exp_dict_t *dict);  
+void write_to_register_group_and_track(mci_register_group_t group, uint32_t write_data, mci_reg_exp_dict_t *dict); 
 int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_t *dict); 
+void read_register_group_and_track(mci_register_group_t group, mci_reg_exp_dict_t *dict);
 static void address_to_bitmap_position(uint32_t reg_addr, uint32_t *word_index, uint32_t *bit_position);
 int exclude_register(uint32_t reg_addr);
 int is_register_excluded(uint32_t reg_addr);
+uint32_t get_known_register_value(uint32_t reg_addr);
 void init_excluded_registers(void);                                                                       
 
 /* Initialization */

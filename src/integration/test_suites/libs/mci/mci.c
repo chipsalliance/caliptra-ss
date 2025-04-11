@@ -52,29 +52,44 @@ void mci_reg_write(uint32_t reg_addr, uint32_t value) {
 
 /* Array of register infos by group */
 const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
-    /* REG_GROUP_CAPABILITIES */
+    // REG_GROUP_KNOWN_VALUES
+    {
+        { SOC_MCI_TOP_MCI_REG_HW_REV_ID, "HW_REV_ID", "Hardware Revision ID" },
+        { 0, NULL, NULL }  // End marker
+    },
+    
+    // REG_GROUP_CAPABILITIES
     {
         { SOC_MCI_TOP_MCI_REG_HW_CAPABILITIES, "HW_CAPABILITIES", "Hardware Capabilities" },
         { SOC_MCI_TOP_MCI_REG_FW_CAPABILITIES, "FW_CAPABILITIES", "Firmware Capabilities" },
         { SOC_MCI_TOP_MCI_REG_CAP_LOCK, "CAP_LOCK", "Capability Lock" },
-        { SOC_MCI_TOP_MCI_REG_HW_REV_ID, "HW_REV_ID", "Hardware Revision ID" },
         { SOC_MCI_TOP_MCI_REG_FW_REV_ID_0, "FW_REV_ID_0", "Firmware Revision ID 0" },
         { SOC_MCI_TOP_MCI_REG_FW_REV_ID_1, "FW_REV_ID_1", "Firmware Revision ID 1" },
+        { 0, NULL, NULL }  // End marker  
+    },
+
+    // REG_GROUP_CAPABILITIES_RO
+    {
         { SOC_MCI_TOP_MCI_REG_HW_CONFIG0, "HW_CONFIG0", "Hardware Configuration 0" },
         { SOC_MCI_TOP_MCI_REG_HW_CONFIG1, "HW_CONFIG1", "Hardware Configuration 1" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
     
-    /* REG_GROUP_HARDWARE_STATUS */
+    // REG_GROUP_STATUS
     {
         { SOC_MCI_TOP_MCI_REG_FW_FLOW_STATUS, "FW_FLOW_STATUS", "Firmware Flow Status" },
+        { 0, NULL, NULL }  // End marker
+    },
+
+    // REG_GROUP_STATUS_RO
+    {
         { SOC_MCI_TOP_MCI_REG_HW_FLOW_STATUS, "HW_FLOW_STATUS", "Hardware Flow Status" },
         { SOC_MCI_TOP_MCI_REG_RESET_REASON, "RESET_REASON", "Reset Reason" },
         { SOC_MCI_TOP_MCI_REG_RESET_STATUS, "RESET_STATUS", "Reset Status" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
     
-    /* REG_GROUP_ERROR */
+    // REG_GROUP_ERROR
     {
         { SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL, "HW_ERROR_FATAL", "Hardware Fatal Error" },
         { SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL, "AGG_ERROR_FATAL", "Aggregated Fatal Error" },
@@ -92,16 +107,16 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_5, "FW_EXTENDED_ERROR_INFO_5", "Firmware Extended Error Info 5"},
         { SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_6, "FW_EXTENDED_ERROR_INFO_6", "Firmware Extended Error Info 6"},
         { SOC_MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_7, "FW_EXTENDED_ERROR_INFO_7", "Firmware Extended Error Info 7"},
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
     
-    /* REG_GROUP_SECURITY */
+    // REG_GROUP_SECURITY_RO
     {
         { SOC_MCI_TOP_MCI_REG_SECURITY_STATE, "SECURITY_STATE", "Security State" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
     
-    /* REG_GROUP_WATCHDOG */
+    // REG_GROUP_WATCHDOG
     {
         { SOC_MCI_TOP_MCI_REG_WDT_TIMER1_EN, "WDT_TIMER1_EN", "Watchdog Timer 1 Enable" },
         { SOC_MCI_TOP_MCI_REG_WDT_TIMER1_CTRL, "WDT_TIMER1_CTRL", "Watchdog Timer 1 Control" },
@@ -111,23 +126,28 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_WDT_TIMER2_CTRL, "WDT_TIMER2_CTRL", "Watchdog Timer 2 Control" },
         { SOC_MCI_TOP_MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0, "WDT_TIMER2_TIMEOUT_PERIOD_0", "Watchdog Timer 2 Timeout Period 0" },
         { SOC_MCI_TOP_MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1, "WDT_TIMER2_TIMEOUT_PERIOD_1", "Watchdog Timer 2 Timeout Period 1" },
-        { SOC_MCI_TOP_MCI_REG_WDT_STATUS, "WDT_STATUS", "Watchdog Status" },
         { SOC_MCI_TOP_MCI_REG_WDT_CFG_0, "WDT_CFG_0", "Watchdog Timer 0 Config" },
         { SOC_MCI_TOP_MCI_REG_WDT_CFG_1, "WDT_CFG_1", "Watchdog Timer 1 Config" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_MCU */
+    // REG_GROUP_WATCHDOG_RO
+    {
+        { SOC_MCI_TOP_MCI_REG_WDT_STATUS, "WDT_STATUS", "Watchdog Status" },
+        { 0, NULL, NULL }  // End marker
+    },
+
+    // REG_GROUP_MCU
     {
         { SOC_MCI_TOP_MCI_REG_MCU_TIMER_CONFIG, "MCU_TIMER_CONFIG", "MCU Timer Config" },
         { SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_L, "MCU_RV_MTIME_L", "MCU RiscV MTime Low" },
         { SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_H, "MCU_RV_MTIME_H", "MCU RiscV MTime High" },
         { SOC_MCI_TOP_MCI_REG_MCU_RV_MTIMECMP_L, "MCU_RV_MTIMECMP_L", "MCU RiscV MTimeCmp Low" },
         { SOC_MCI_TOP_MCI_REG_MCU_RV_MTIMECMP_H, "MCU_RV_MTIMECMP_H", "MCU RiscV MTimeCmp High" }, 
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_CONTROL */
+    // REG_GROUP_CONTROL
     {
         { SOC_MCI_TOP_MCI_REG_RESET_REQUEST, "RESET_REQUEST", "Reset Request" },
         { SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO, "MCI_BOOTFSM_GO", "MCI BootFSM Go" },
@@ -135,10 +155,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE, "FW_SRAM_EXEC_REGION_SIZE", "Firmware SRAM Execution Size" },
         { SOC_MCI_TOP_MCI_REG_MCU_NMI_VECTOR, "MCU_NMI_VECTOR", "MCI Non Maskable Interrupt Vector" }, 
         { SOC_MCI_TOP_MCI_REG_MCU_RESET_VECTOR, "MCU_RESET_VECTOR", "MCI Reset Vector" }, 
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
     
-    /* REG_GROUP_MCI_MBOX0 */
+    // REG_GROUP_MCI_MBOX0
     {
         { SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0, "MBOX0_VALID_AXI_USER_0", "Mailbox 0 Valid AXI User 0" },
         { SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1, "MBOX0_VALID_AXI_USER_1", "Mailbox 0 Valid AXI User 1" },
@@ -150,13 +170,11 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_2, "MBOX0_AXI_USER_LOCK_2", "Mailbox 0 Valid AXI Lock 2" },
         { SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_3, "MBOX0_AXI_USER_LOCK_3", "Mailbox 0 Valid AXI Lock 3" },
         { SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_4, "MBOX0_AXI_USER_LOCK_4", "Mailbox 0 Valid AXI Lock 4" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_MCU_MBOX0 */
+    // REG_GROUP_MCU_MBOX0
     {
-        { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK, "MBOX0_LOCK", "Mailbox 0 Lock" },
-        { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER, "MBOX0_USER", "Mailbox 0 User" },
         { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER, "MBOX0_TARGET_USER", "Mailbox 0 Target User" },
         { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID, "MBOX0_TARGET_USER_VALID", "Mailbox 0 Target User Valid" },
         { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD, "MBOX0_CMD", "Mailbox 0 Command" },
@@ -164,11 +182,18 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE, "MBOX0_EXECUTE", "Mailbox 0 Execute" },
         { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS, "MBOX0_TARGET_STATUS", "Mailbox 0 Target Status" },
         { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS, "MBOX0_CMD_STATUS", "Mailbox 0 Command Status" },
+        { 0, NULL, NULL }  // End marker
+    },
+
+    // REG_GROUP_MCU_MBOX0_RO
+    {
+        { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK, "MBOX0_LOCK", "Mailbox 0 Lock" },
+        { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER, "MBOX0_USER", "Mailbox 0 User" },
         { SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS, "MBOX0_HW_STATUS", "Mailbox 0 Hardware Status" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
     
-    /* REG_GROUP_MCI_MBOX1 */
+    // REG_GROUP_MCI_MBOX1
     {
         { SOC_MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_0, "MBOX1_VALID_AXI_USER_0", "Mailbox 1 Valid AXI User 0" },
         { SOC_MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_1, "MBOX1_VALID_AXI_USER_1", "Mailbox 1 Valid AXI User 1" },
@@ -180,13 +205,11 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_2, "MBOX1_AXI_USER_LOCK_2", "Mailbox 1 Valid AXI Lock 2" },
         { SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_3, "MBOX1_AXI_USER_LOCK_3", "Mailbox 1 Valid AXI Lock 3" },
         { SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_4, "MBOX1_AXI_USER_LOCK_4", "Mailbox 1 Valid AXI Lock 4" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_MCU_MBOX1 */
+    // REG_GROUP_MCU_MBOX1
     {
-        { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_LOCK, "MBOX1_LOCK", "Mailbox 1 Lock" },
-        { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_USER, "MBOX1_USER", "Mailbox 1 User" },
         { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER, "MBOX1_TARGET_USER", "Mailbox 1 Target User" },
         { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID, "MBOX1_TARGET_USER_VALID", "Mailbox 1 Target User Valid" },
         { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD, "MBOX1_CMD", "Mailbox 1 Command" },
@@ -194,45 +217,62 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_EXECUTE, "MBOX1_EXECUTE", "Mailbox 1 Execute" },
         { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_STATUS, "MBOX1_TARGET_STATUS", "Mailbox 1 Target Status" },
         { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD_STATUS, "MBOX1_CMD_STATUS", "Mailbox 1 Command Status" },
-        { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_HW_STATUS, "MBOX1_HW_STATUS", "Mailbox 1 Hardware Status" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_DFT */
+    // REG_GROUP_MCU_MBOX1_RO
+    {
+        { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_LOCK, "MBOX1_LOCK", "Mailbox 1 Lock" },
+        { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_USER, "MBOX1_USER", "Mailbox 1 User" },
+        { SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_HW_STATUS, "MBOX1_HW_STATUS", "Mailbox 1 Hardware Status" },
+        { 0, NULL, NULL }  // End marker
+    },
+
+    // REG_GROUP_DFT
     {
         { SOC_MCI_TOP_MCI_REG_SOC_DFT_EN_0, "SOC_DFT_EN_0", "SoC DFT Enable 0" },
         { SOC_MCI_TOP_MCI_REG_SOC_DFT_EN_1, "SOC_DFT_EN_1", "SoC DFT Enable 1" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_DEBUG */
+    // REG_GROUP_DEBUG
     {
         { SOC_MCI_TOP_MCI_REG_SOC_HW_DEBUG_EN_0, "HW_DEBUG_EN_0", "Hardware Debug Enable 0" },
         { SOC_MCI_TOP_MCI_REG_SOC_HW_DEBUG_EN_1, "HW_DEBUG_EN_1", "Hardware Debug Enable 1" },
         { SOC_MCI_TOP_MCI_REG_SOC_PROD_DEBUG_STATE_0, "PROD_DEBUG_STATE_0", "Production Debug State 0" },
         { SOC_MCI_TOP_MCI_REG_SOC_PROD_DEBUG_STATE_1, "PROD_DEBUG_STATE_1", "Production Debug State 1" },
         { SOC_MCI_TOP_MCI_REG_FC_FIPS_ZEROZATION, "FC_FIPS_ZEROZATION", "Fuse Controller FIPS Zeroization" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_GENERIC_WIRES */
+    // REG_GROUP_GENERIC_WIRES
+    { 
+        { SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0, "GENERIC_OUTPUT_WIRES_0", "Generic Output Wires 0" },
+        { SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1, "GENERIC_OUTPUT_WIRES_1", "Generic Output Wires 1" },
+        { 0, NULL, NULL }  // End marker
+    },
+
+    // REG_GROUP_GENERIC_WIRES_RO
     { 
         { SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0, "GENERIC_INPUT_WIRES_0", "Generic Input Wires 0" },
         { SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1, "GENERIC_INPUT_WIRES_1", "Generic Input Wires 1" },
-        { SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0, "GENERIC_OUTPUT_WIRES_0", "Generic Output Wires 0" },
-        { SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1, "GENERIC_OUTPUT_WIRES_1", "Generic Output Wires 1" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_SS */
+    // REG_GROUP_SS
     { 
-        { SOC_MCI_TOP_MCI_REG_SS_DEBUG_INTENT, "SS_DEBUG_INTENT", "Subsystem Debug Intent" },
         { SOC_MCI_TOP_MCI_REG_SS_CONFIG_DONE_STICKY, "SS_DCONFIG_DONE_STICKY", "Subsystem Config done sticky" },
         { SOC_MCI_TOP_MCI_REG_SS_CONFIG_DONE, "SS_CONFIG_DONE", "Subsystem Config Done" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
+    },
+
+    // REG_GROUP_SS_RO
+    { 
+        { SOC_MCI_TOP_MCI_REG_SS_DEBUG_INTENT, "SS_DEBUG_INTENT", "Subsystem Debug Intent" },
+        { 0, NULL, NULL }  // End marker
     },
     
-    /* REG_GROUP_DEBUG_UNLOCK_PK_HASH_0 */
+    // REG_GROUP_DEBUG_UNLOCK_PK_HASH_0
     {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_0, "PROD_DEBUG_UNLOCK_PK_HASH_REG_0_0", "Debug Unlock PK Hash 0_0" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_1, "PROD_DEBUG_UNLOCK_PK_HASH_REG_0_1", "Debug Unlock PK Hash 0_1" },
@@ -246,10 +286,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_9, "PROD_DEBUG_UNLOCK_PK_HASH_REG_0_9", "Debug Unlock PK Hash 0_9" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_10, "PROD_DEBUG_UNLOCK_PK_HASH_REG_0_10", "Debug Unlock PK Hash 0_10" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_11, "PROD_DEBUG_UNLOCK_PK_HASH_REG_0_11", "Debug Unlock PK Hash 0_11" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_DEBUG_UNLOCK_PK_HASH_1 */
+    // REG_GROUP_DEBUG_UNLOCK_PK_HASH_1
     {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_0, "PROD_DEBUG_UNLOCK_PK_HASH_REG_1_0", "Debug Unlock PK Hash 1_0" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_1, "PROD_DEBUG_UNLOCK_PK_HASH_REG_1_1", "Debug Unlock PK Hash 1_1" },
@@ -263,10 +303,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_9, "PROD_DEBUG_UNLOCK_PK_HASH_REG_1_9", "Debug Unlock PK Hash 1_9" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_10, "PROD_DEBUG_UNLOCK_PK_HASH_REG_1_10", "Debug Unlock PK Hash 1_10" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_1_11, "PROD_DEBUG_UNLOCK_PK_HASH_REG_1_11", "Debug Unlock PK Hash 1_11" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_DEBUG_UNLOCK_PK_HASH_2 */
+    // REG_GROUP_DEBUG_UNLOCK_PK_HASH_2
     {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_0, "PROD_DEBUG_UNLOCK_PK_HASH_REG_2_0", "Debug Unlock PK Hash 2_0" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_1, "PROD_DEBUG_UNLOCK_PK_HASH_REG_2_1", "Debug Unlock PK Hash 2_1" },
@@ -280,10 +320,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_9, "PROD_DEBUG_UNLOCK_PK_HASH_REG_2_9", "Debug Unlock PK Hash 2_9" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_10, "PROD_DEBUG_UNLOCK_PK_HASH_REG_2_10", "Debug Unlock PK Hash 2_10" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_2_11, "PROD_DEBUG_UNLOCK_PK_HASH_REG_2_11", "Debug Unlock PK Hash 2_11" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_DEBUG_UNLOCK_PK_HASH_3 */
+    // REG_GROUP_DEBUG_UNLOCK_PK_HASH_3
     {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_0, "PROD_DEBUG_UNLOCK_PK_HASH_REG_3_0", "Debug Unlock PK Hash 3_0" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_1, "PROD_DEBUG_UNLOCK_PK_HASH_REG_3_1", "Debug Unlock PK Hash 3_1" },
@@ -297,10 +337,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_9, "PROD_DEBUG_UNLOCK_PK_HASH_REG_3_9", "Debug Unlock PK Hash 3_9" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_10, "PROD_DEBUG_UNLOCK_PK_HASH_REG_3_10", "Debug Unlock PK Hash 3_10" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_3_11, "PROD_DEBUG_UNLOCK_PK_HASH_REG_3_11", "Debug Unlock PK Hash 3_11" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_DEBUG_UNLOCK_PK_HASH_4 */
+    // REG_GROUP_DEBUG_UNLOCK_PK_HASH_4
     {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_0, "PROD_DEBUG_UNLOCK_PK_HASH_REG_4_0", "Debug Unlock PK Hash 4_0" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_1, "PROD_DEBUG_UNLOCK_PK_HASH_REG_4_1", "Debug Unlock PK Hash 4_1" },
@@ -314,10 +354,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_9, "PROD_DEBUG_UNLOCK_PK_HASH_REG_4_9", "Debug Unlock PK Hash 4_9" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_10, "PROD_DEBUG_UNLOCK_PK_HASH_REG_4_10", "Debug Unlock PK Hash 4_10" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_4_11, "PROD_DEBUG_UNLOCK_PK_HASH_REG_4_11", "Debug Unlock PK Hash 4_11" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
       },
 
-    /* REG_GROUP_DEBUG_UNLOCK_PK_HASH_5 */
+    // REG_GROUP_DEBUG_UNLOCK_PK_HASH_5
     {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_0, "PROD_DEBUG_UNLOCK_PK_HASH_REG_5_0", "Debug Unlock PK Hash 5_0" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_1, "PROD_DEBUG_UNLOCK_PK_HASH_REG_5_1", "Debug Unlock PK Hash 5_1" },
@@ -331,10 +371,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_9, "PROD_DEBUG_UNLOCK_PK_HASH_REG_5_9", "Debug Unlock PK Hash 5_9" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_10, "PROD_DEBUG_UNLOCK_PK_HASH_REG_5_10", "Debug Unlock PK Hash 5_10" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_5_11, "PROD_DEBUG_UNLOCK_PK_HASH_REG_5_11", "Debug Unlock PK Hash 5_11" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_DEBUG_UNLOCK_PK_HASH_6 */
+    // REG_GROUP_DEBUG_UNLOCK_PK_HASH_6
     {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_0, "PROD_DEBUG_UNLOCK_PK_HASH_REG_6_0", "Debug Unlock PK Hash 6_0" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_1, "PROD_DEBUG_UNLOCK_PK_HASH_REG_6_1", "Debug Unlock PK Hash 6_1" },
@@ -348,10 +388,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_9, "PROD_DEBUG_UNLOCK_PK_HASH_REG_6_9", "Debug Unlock PK Hash 6_9" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_10, "PROD_DEBUG_UNLOCK_PK_HASH_REG_6_10", "Debug Unlock PK Hash 6_10" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_6_11, "PROD_DEBUG_UNLOCK_PK_HASH_REG_6_11", "Debug Unlock PK Hash 6_11" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_DEBUG_UNLOCK_PK_HASH_7 */
+    // REG_GROUP_DEBUG_UNLOCK_PK_HASH_7
     {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_0, "PROD_DEBUG_UNLOCK_PK_HASH_REG_7_0", "Debug Unlock PK Hash 7_0" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_1, "PROD_DEBUG_UNLOCK_PK_HASH_REG_7_1", "Debug Unlock PK Hash 7_1" },
@@ -365,10 +405,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_9, "PROD_DEBUG_UNLOCK_PK_HASH_REG_7_9", "Debug Unlock PK Hash 7_9" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_10, "PROD_DEBUG_UNLOCK_PK_HASH_REG_7_10", "Debug Unlock PK Hash 7_10" },
         { SOC_MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_7_11, "PROD_DEBUG_UNLOCK_PK_HASH_REG_7_11", "Debug Unlock PK Hash 7_11" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
         
-    /* REG_GROUP_INTERRUPT */
+    // REG_GROUP_INTERRUPT
     {
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R, "GLOBAL_INTR_EN_R", "Global Interrupt Enable" },
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R, "ERROR0_INTR_EN_R", "Error 0 Interrupt Enable" },
@@ -385,10 +425,10 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R, "ERROR1_INTR_TRIG_R", "Error 1 Internal Trigger" },
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R, "NOTIF0_INTR_TRIG_R", "Notification 0 Internal Trigger" },
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R, "NOTIF1_INTR_TRIG_R", "Notification 1 Internal Trigger" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_INTERRUPT_COUNTERS */
+    // REG_GROUP_INTERRUPT_COUNTERS
     {
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_R, "ERROR_INTERNAL_INTR_COUNT_R", "Error Internal Interrupt Count" },
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_R, "ERROR_MBOX0_ECC_UNC_INTR_COUNT_R", "Error MBOX0 ECC Uncorrectable Interrupt Count" },
@@ -410,20 +450,25 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R, "NOTIF_SCAN_MODE_INTR_COUNT_R", "Notification Scan Mode Interrupt Count" },
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R, "NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R", "Notification MBOX0 SOC Request Lock Interrupt Count" },
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R, "NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R", "Notification MBOX1 SOC Request Lock Interrupt Count" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_TRACE */
+    // REG_GROUP_TRACE
+    {
+        { SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_READ_PTR, "MCU_TRACE_BUFFER_CSR_READ_PTR", "Trace Buffer Read Pointer" },
+        { 0, NULL, NULL }  // End marker
+    },
+
+    // REG_GROUP_TRACE_RO
     {
         { SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_STATUS, "MCU_TRACE_BUFFER_CSR_STATUS", "Trace Buffer Status" },
         { SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_CONFIG, "MCU_TRACE_BUFFER_CSR_CONFIG", "Trace Buffer Configuration" },
         { SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_DATA, "MCU_TRACE_BUFFER_CSR_DATA", "Trace Buffer Data" },
-        //{ SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_WRITE_PTR, "MCU_TRACE_BUFFER_CSR_WRITE_PTR", "Trace Buffer Write Pointer" },
-        //{ SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_READ_PTR, "MCU_TRACE_BUFFER_CSR_READ_PTR", "Trace Buffer Read Pointer" },
-        { 0, NULL, NULL }  /* End marker */
+        { SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_WRITE_PTR, "MCU_TRACE_BUFFER_CSR_WRITE_PTR", "Trace Buffer Write Pointer" },
+        { 0, NULL, NULL }  // End marker
     },
 
-    /* REG_GROUP_SOC_MBOX_CSR */
+    // REG_GROUP_SOC_MBOX_CSR
     {
         { SOC_MBOX_CSR_MBOX_LOCK, "MBOX_LOCK", "Mailbox Lock" },
         { SOC_MBOX_CSR_MBOX_USER, "MBOX_USER", "Mailbox User" },
@@ -435,28 +480,36 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MBOX_CSR_MBOX_STATUS, "MBOX_STATUS", "Mailbox Status" },
         { SOC_MBOX_CSR_MBOX_UNLOCK, "MBOX_UNLOCK", "Mailbox Unlock" },
         { SOC_MBOX_CSR_TAP_MODE, "TAP_MODE", "TAP Mode" },
-        { 0, NULL, NULL }  /* End marker */
+        { 0, NULL, NULL }  // End marker
     }
 };
 
 /* Function to get a string representation of a register group */
 const char* get_group_name(mci_register_group_t group) {
     switch(group) {
+        case REG_GROUP_KNOWN_VALUES: return "Hardcoded Values";
         case REG_GROUP_CAPABILITIES: return "Capabilities";
-        case REG_GROUP_HARDWARE_STATUS: return "Hardware Status";
+        case REG_GROUP_CAPABILITIES_RO: return "Capabilities-RO";
+        case REG_GROUP_STATUS: return "Status";
+        case REG_GROUP_STATUS_RO: return "Status-RO";
         case REG_GROUP_ERROR: return "Fatal/Non-Fatal Error";
-        case REG_GROUP_SECURITY: return "Security";
+        case REG_GROUP_SECURITY_RO: return "Security-RO";
         case REG_GROUP_WATCHDOG: return "Watchdog";
+        case REG_GROUP_WATCHDOG_RO: return "Watchdog-RO";
         case REG_GROUP_MCU: return "MCU";
         case REG_GROUP_CONTROL: return "Control";
         case REG_GROUP_MCI_MBOX0: return "MCI Mailbox 0";
         case REG_GROUP_MCU_MBOX0: return "MCU Mailbox 0";
+        case REG_GROUP_MCU_MBOX0_RO: return "MCU Mailbox 0 - RO";
         case REG_GROUP_MCI_MBOX1: return "MCI Mailbox 1";
         case REG_GROUP_MCU_MBOX1: return "MCU Mailbox 1";
+        case REG_GROUP_MCU_MBOX1_RO: return "MCU Mailbox 1 - RO";
         case REG_GROUP_DFT: return "DFT";
         case REG_GROUP_DEBUG: return "Debug";
         case REG_GROUP_GENERIC_WIRES: return "Generic Wires";
+        case REG_GROUP_GENERIC_WIRES_RO: return "Generic Wires - RO";
         case REG_GROUP_SS: return "Subsystem";
+        case REG_GROUP_SS_RO: return "Subsystem_RO";
         case REG_GROUP_DEBUG_UNLOCK_PK_HASH_0: return "Debug Unlock PK Hash 0";
         case REG_GROUP_DEBUG_UNLOCK_PK_HASH_1: return "Debug Unlock PK Hash 1";
         case REG_GROUP_DEBUG_UNLOCK_PK_HASH_2: return "Debug Unlock PK Hash 2";
@@ -468,6 +521,7 @@ const char* get_group_name(mci_register_group_t group) {
         case REG_GROUP_INTERRUPT: return "Interrupt";
         case REG_GROUP_INTERRUPT_COUNTERS: return "Interrupt Counters";
         case REG_GROUP_TRACE: return "Trace";
+        case REG_GROUP_TRACE_RO: return "Trace-RO";
         case REG_GROUP_SOC_MBOX_CSR: return "SOC Mailbox CSR";
         default: return "Unknown";
     }
@@ -553,7 +607,34 @@ int get_total_register_count(void) {
  * @param dict Pointer to dictionary to initialize
  */
 void init_reg_exp_dict(mci_reg_exp_dict_t *dict) {
+    VPRINTF(LOW, "Initializing expected data dict\n");
     dict->count = 0;
+
+    // Add new entry if space available
+    for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
+        int count = get_register_count(group);
+
+        VPRINTF(MEDIUM, "Initializing %d registers in group %s\n", count, get_group_name(group) );
+
+        if (group == REG_GROUP_KNOWN_VALUES) {
+            for (int i = 0; i < count; i++) {
+                const mci_register_info_t *reg = get_register_info(group, i);
+                VPRINTF(MEDIUM, "Init reg 0x%08x\n", reg->address);
+                uint32_t known_value = get_known_register_value(reg->address);
+                dict->entries[dict->count].address = reg->address;
+                dict->entries[dict->count].expected_data = known_value;
+                dict->count++;
+            }
+        } else {
+            for (int i = 0; i < count; i++) {
+                const mci_register_info_t *reg = get_register_info(group, i);
+                VPRINTF(MEDIUM, "Init reg 0x%08x\n", reg->address);
+                dict->entries[dict->count].address = reg->address;
+                dict->entries[dict->count].expected_data = 0;
+                dict->count++;
+            }
+        }
+    }
 }
 
 /**
@@ -563,9 +644,11 @@ void init_reg_exp_dict(mci_reg_exp_dict_t *dict) {
  * @param address Register address (key)
  * @param name Register name
  * @param value Expected data value
+ * @param mask Mask to apply to the value
  * @return 0 on success, -1 if dictionary is full
  */
 int set_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, const char *name, uint32_t value, uint32_t mask) {
+ 
     // First check if entry already exists
     for (int i = 0; i < dict->count; i++) {
         if (dict->entries[i].address == address) {
@@ -605,6 +688,19 @@ int get_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t *value
     }
     
     return -1; // Not found
+}
+
+/**
+ * Get known value for a register with REG_ACCESS_KNOWN type
+ */
+uint32_t get_known_register_value(uint32_t reg_addr) {
+    switch (reg_addr) {
+        case SOC_MCI_TOP_MCI_REG_HW_REV_ID:
+            return 0x00001000;  // SS Version 1.0
+            
+        default:
+            return 0x00000000;
+    }
 }
 
 /**
@@ -678,6 +774,8 @@ int is_register_excluded(uint32_t reg_addr) {
  * Initialize the excluded registers bitmap
  */
 void init_excluded_registers(void) {
+
+    VPRINTF(LOW, "Initialize excluded registers\n");
     // Clear the bitmap and collision table
     memset(excluded_registers_bitmap, 0, sizeof(excluded_registers_bitmap));
     memset(collision_table, 0, sizeof(collision_table));
@@ -724,6 +822,34 @@ void write_random_to_register_group_and_track(mci_register_group_t group, mci_re
     }
 }
 
+void write_to_register_group_and_track(mci_register_group_t group, uint32_t write_data, mci_reg_exp_dict_t *dict) {
+    int count = get_register_count(group);
+    printf("Writing fixed value to all %s registers (%d total):\n", get_group_name(group), count);
+    
+    for (int i = 0; i < count; i++) {
+        const mci_register_info_t *reg = get_register_info(group, i);
+        
+        if (reg) {
+            // Check if this register should be excluded using our efficient method
+            if (!is_register_excluded(reg->address)) {
+                           
+                VPRINTF(MEDIUM, "  Writing 0x%08x to %s (0x%08x)\n", write_data, reg->name, reg->address);
+                mci_reg_write(reg->address, write_data);
+                
+                /* Get mask for this register */
+                uint32_t mask = get_register_mask(reg->address);
+                
+                // Store in dictionary
+                if (set_reg_exp_data(dict, reg->address, reg->name, write_data, mask) != 0) {
+                    printf("  WARNING: Could not store expected data for %s\n", reg->name);
+                }
+            } else {
+                VPRINTF(MEDIUM, "  Skipping excluded register %s (0x%08x)\n", reg->name, reg->address);
+            }
+        }
+    }
+}
+
 /**
  * Function to read all registers in a group and verify their values against expected data
  * 
@@ -736,7 +862,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
     int count = get_register_count(group);
     int mismatch_count = 0;
     
-    printf("Reading and verifying %s registers (%d total):\n", get_group_name(group), count);
+    VPRINTF(LOW, "Reading and verifying %s registers (%d total):\n", get_group_name(group), count);
     
     for (int i = 0; i < count; i++) {
         const mci_register_info_t *reg = get_register_info(group, i);
@@ -756,31 +882,70 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
             if (get_reg_exp_data(dict, reg->address, &exp_data) == 0) {
                 // Compare and report
                 if (read_data == exp_data) {
-                    VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
+                    VPRINTF(LOW,"  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
                            reg->name, reg->address, read_data, exp_data);
                 } else {
-                    printf("  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
+                    VPRINTF(LOW, "  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
                            reg->name, reg->address, read_data, exp_data);
                     mismatch_count++;
                 }
             } else {
-                printf("  ! %s (0x%08x): Read 0x%08x, No expected data in dictionary\n", 
+                VPRINTF(LOW, "  ! %s (0x%08x): Read 0x%08x, No expected data in dictionary\n", 
                        reg->name, reg->address, read_data);
             }
         } else {
-            printf("  ! Register index %d not found in group\n", i);
+            VPRINTF(LOW, "  ! Register index %d not found in group\n", i);
         }
     }
     
-    printf("Verification complete: %d register(s) matched, %d register(s) mismatched\n", 
+    VPRINTF(LOW, "Verification complete: %d register(s) matched, %d register(s) mismatched\n", 
            count - mismatch_count, mismatch_count);
     
     return mismatch_count;
 }
 
+/**
+ * Function to read all registers in a group and track their values in a dictionary
+ * 
+ * @param group Register group
+ * @param dict Dictionary to store register values
+ */
+void read_register_group_and_track(mci_register_group_t group, mci_reg_exp_dict_t *dict) {
+    uint32_t read_data;
+    int count = get_register_count(group);
+    
+    VPRINTF(LOW, "Reading and tracking %s registers (%d total):\n", get_group_name(group), count);
+    
+    for (int i = 0; i < count; i++) {
+        const mci_register_info_t *reg = get_register_info(group, i);
+        
+        if (reg) {
+            // Check if this register should be excluded
+            if (!is_register_excluded(reg->address)) {
+                // Read the register value
+                read_data = mci_reg_read(reg->address);
+                
+                VPRINTF(LOW, "  Reading 0x%08x from %s (0x%08x)\n", read_data, reg->name, reg->address);
+                
+                /* Get mask for this register */
+                uint32_t mask = get_register_mask(reg->address);
+                
+                // Store in dictionary
+                if (set_reg_exp_data(dict, reg->address, reg->name, read_data, mask) != 0) {
+                    VPRINTF(LOW, "  WARNING: Could not store read data for %s\n", reg->name);
+                }
+            } else {
+                VPRINTF(MEDIUM, "  Skipping excluded register %s (0x%08x)\n", reg->name, reg->address);
+            }
+        }
+    }
+    
+    VPRINTF(LOW, "Register tracking complete: %d register(s) read and tracked\n", count);
+}
 
 
 void init_mask_dict(void) {
+    VPRINTF(LOW, "Initializing mask dict\n");
     g_mask_dict.count = 0;
     
     // SOC_MCI_TOP_MCI_REG_CAP_LOCK
@@ -1382,6 +1547,8 @@ uint32_t get_register_mask(uint32_t address) {
  */
 void mci_init(void) {
     // Initialize register mask dictionary if not already done
+
+    VPRINTF(LOW, "Initializing mask dict and expected data dict\n");
     static int masks_initialized = 0;
     if (!masks_initialized) {
         init_mask_dict();
@@ -1395,6 +1562,6 @@ void mci_init(void) {
     init_excluded_registers();
     
     // Perform other MCI initialization
-    printf("MCI module initialized\n");
+    VPRINTF(LOW, "MCI module initialized\n");
     
 }
