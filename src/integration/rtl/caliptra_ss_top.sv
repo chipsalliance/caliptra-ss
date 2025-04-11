@@ -290,6 +290,10 @@ module caliptra_ss_top
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
 
+    logic cptra_ss_rst_b_o;
+
+    logic mcu_clk_cg;
+
     logic        mcu_dmi_core_enable;
     logic        mcu_dmi_uncore_enable;
     logic        mcu_dmi_uncore_en;
@@ -569,12 +573,12 @@ module caliptra_ss_top
 
     mci_mcu_sram_if cptra_ss_mcu_rom_mbox0_sram_req_if (
         .clk(cptra_ss_clk_i),
-        .rst_b(cptra_ss_rst_b_i)
+        .rst_b(cptra_ss_rst_b_o)
     );
     
     mci_mcu_sram_if cptra_ss_mcu_rom_mbox1_sram_req_if (
         .clk(cptra_ss_clk_i),
-        .rst_b(cptra_ss_rst_b_i)
+        .rst_b(cptra_ss_rst_b_o)
     );
 
 
@@ -778,7 +782,7 @@ module caliptra_ss_top
     mcu_top rvtop_wrapper (
         .rst_l                  ( mcu_rst_b ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ), //FIXME same as caliptra?
-        .clk                    ( cptra_ss_clk_i ),
+        .clk                    ( mcu_clk_cg ),
         .rst_vec                ( reset_vector[31:1]),
         .nmi_int                ( mci_mcu_nmi_int),
         .nmi_vec                ( mci_mcu_nmi_vector[31:1]),
@@ -1075,7 +1079,7 @@ module caliptra_ss_top
         .AxiIdWidth  (`AXI_ID_WIDTH  )
     ) i3c (
         .clk_i (cptra_ss_clk_i),
-        .rst_ni(cptra_ss_rst_b_i),
+        .rst_ni(cptra_ss_rst_b_o),
 
         .arvalid_i  (cptra_ss_i3c_s_axi_if.arvalid),
         .arready_o  (cptra_ss_i3c_s_axi_if.arready),
@@ -1141,7 +1145,7 @@ module caliptra_ss_top
       .IW(8)
     ) mcu_rom_i (
       .clk(cptra_ss_clk_i),
-      .rst_n(cptra_ss_rst_b_i),
+      .rst_n(cptra_ss_rst_b_o),
 
       .s_axi_r_if(cptra_ss_mcu_rom_s_axi_if.r_sub),
       .s_axi_w_if(cptra_ss_mcu_rom_s_axi_if.w_sub),
@@ -1172,8 +1176,13 @@ module caliptra_ss_top
     ) mci_top_i (
 
         .clk(cptra_ss_clk_i),
+        .mcu_clk_cg(mcu_clk_cg),
+        .cptra_ss_rdc_clk_cg(), // Unused since no IPs on warm reset. MCU has different clock and Cptra has its own RDC.
+
+
         .mci_rst_b(cptra_ss_rst_b_i),
         .mci_pwrgood(cptra_ss_pwrgood_i),
+        .cptra_ss_rst_b_o(cptra_ss_rst_b_o),
         
         // DFT
         .scan_mode     (cptra_ss_cptra_core_scan_mode_i),
@@ -1316,7 +1325,7 @@ module caliptra_ss_top
 
     lc_ctrl u_lc_ctrl (
             .clk_i(cptra_ss_clk_i),
-            .rst_ni(cptra_ss_rst_b_i),
+            .rst_ni(cptra_ss_rst_b_o),
             .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
             .axi_wr_req(cptra_ss_lc_axi_wr_req_i),
             .axi_wr_rsp(cptra_ss_lc_axi_wr_rsp_o),
@@ -1384,7 +1393,7 @@ module caliptra_ss_top
         .MemInitFile ("otp-img.2048.vmem")
     ) u_otp_ctrl (
         .clk_i                      (cptra_ss_clk_i),
-        .rst_ni                     (cptra_ss_rst_b_i),
+        .rst_ni                     (cptra_ss_rst_b_o),
         .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
 
         .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
@@ -1435,10 +1444,5 @@ module caliptra_ss_top
         .cio_test_o                 (),    //TODO: Needs to be checked
         .cio_test_en_o              ()    //TODO: Needs to be checked
 	); 
-
-    // assign fuse_ctrl_rdy = 1;
-    // De-assert cptra_rst_b only after fuse_ctrl has initialized
-    logic cptra_rst_b; //fixme resets
-    assign cptra_rst_b = cptra_ss_rst_b_i;//fuse_ctrl_rdy ? cptra_soc_bfm_rst_b : 1'b0;
 
 endmodule

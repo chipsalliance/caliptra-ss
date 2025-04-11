@@ -68,13 +68,13 @@ import mci_pkg::*;
 mci_boot_fsm_state_e boot_fsm_nxt;
 mci_boot_fsm_state_e boot_fsm_prev;
 
-logic lc_done_sync;
 logic lc_init_nxt;
 
-logic fc_opt_done_sync;
 logic fc_opt_init_nxt;
 
 logic mci_boot_seq_brkpoint_sync;
+logic mcu_cpu_halt_ack_i_sync;
+logic mcu_cpu_halt_status_i_sync;
 
 logic mcu_no_rom_config_sync;
 
@@ -87,11 +87,7 @@ logic cptra_ss_rst_b_o_nxt;
 
 logic mci_rst_window;
 logic mci_rst_window_sync;
-logic mci_rst_window_sync_f;
-logic mci_rst_window_sync_2f;
 logic fw_update_rst_window;
-logic fw_update_rst_window_f;
-logic fw_update_rst_window_2f;
 logic warm_reset;
 
 logic mcu_reset_once_nxt;
@@ -126,63 +122,24 @@ end
 caliptra_2ff_sync #(.WIDTH(1), .RST_VAL('d1)) i_rst_window_sync (.clk(clk), .rst_b(mci_pwrgood), .din(mci_rst_window), .       dout(mci_rst_window_sync));
 
 //clock gate all flops on warm reset to prevent RDC metastability issues
-//cover 2 clocks after synchronized reset assertion (cptra_rst_window_sync) to handle bootfsm transitions
-always_comb rdc_clk_dis = mci_rst_window_sync | mci_rst_window_sync_f | mci_rst_window_sync_2f;
+always_comb rdc_clk_dis = mci_rst_window_sync;
 
-//next state -> present state
-//reset boot fsm to idle on cptra_pwrgood
-always_ff @(posedge clk or negedge mci_pwrgood) begin
-    if (~mci_pwrgood) begin
-        mci_rst_window_sync_f <= '1;
-        mci_rst_window_sync_2f <= '1;
-    end
-    else begin
-        mci_rst_window_sync_f <= mci_rst_window_sync;
-        mci_rst_window_sync_2f <= mci_rst_window_sync_f;
-    end
-end
 
 assign warm_reset = mci_rst_window_sync;
 
-assign fw_update_rst_window = (boot_fsm_nxt == BOOT_RST_MCU) | (boot_fsm != BOOT_RST_MCU); 
+assign fw_update_rst_window = (boot_fsm_nxt == BOOT_RST_MCU) || (boot_fsm == BOOT_RST_MCU); 
 
-assign fw_update_rdc_clk_dis = fw_update_rst_window | fw_update_rst_window_f | fw_update_rst_window_2f; 
-
-always_ff @(posedge clk or negedge mci_pwrgood) begin
-    if (~mci_pwrgood) begin
-        fw_update_rst_window_f <= '1;
-        fw_update_rst_window_2f <= '1;
-    end
-    else begin
-        fw_update_rst_window_f <= fw_update_rst_window;
-        fw_update_rst_window_2f <= fw_update_rst_window_f;
-    end
-end
+//clock gate all flops on MCU FW update
+assign fw_update_rdc_clk_dis = fw_update_rst_window; 
 
 /////////////////////////////////////////////////
 // Sync signals into local clock domain
 /////////////////////////////////////////////////
 caliptra_prim_flop_2sync #(
   .Width(1)
-) u_prim_flop_2sync_lc_done (
-  .clk_i(clk),
-  .rst_ni(mci_rst_b),
-  .d_i(lc_done),
-  .q_o(lc_done_sync));
-
-caliptra_prim_flop_2sync #(
-  .Width(1)
-) u_prim_flop_2sync_fc_opt_done (
-  .clk_i(clk),
-  .rst_ni(mci_rst_b),
-  .d_i(fc_opt_done),
-  .q_o(fc_opt_done_sync));
-
-caliptra_prim_flop_2sync #(
-  .Width(1)
 ) u_prim_flop_2sync_mci_boot_seq_brkpoint (
   .clk_i(clk),
-  .rst_ni(mci_rst_b),
+  .rst_ni(mci_pwrgood),
   .d_i(mci_boot_seq_brkpoint),
   .q_o(mci_boot_seq_brkpoint_sync));
 
@@ -190,9 +147,27 @@ caliptra_prim_flop_2sync #(
   .Width(1)
 ) u_prim_flop_2sync_mcu_no_rom_config (
   .clk_i(clk),
-  .rst_ni(mci_rst_b),
+  .rst_ni(mci_pwrgood),
   .d_i(mcu_no_rom_config),
   .q_o(mcu_no_rom_config_sync));
+
+
+caliptra_prim_flop_2sync #(
+  .Width(1)
+) u_prim_flop_2sync_mcu_cpu_halt_ack_i (
+  .clk_i(clk),
+  .rst_ni(mci_pwrgood),
+  .d_i(mcu_cpu_halt_ack_i),
+  .q_o(mcu_cpu_halt_ack_i_sync));
+
+caliptra_prim_flop_2sync #(
+  .Width(1)
+) u_prim_flop_2sync_mcu_cpu_halt_status_i (
+  .clk_i(clk),
+  .rst_ni(mci_pwrgood),
+  .d_i(mcu_cpu_halt_status_i),
+  .q_o(mcu_cpu_halt_status_i_sync));
+
 
 /////////////////////////////////////////////////
 // Boot FSM
@@ -247,13 +222,13 @@ always_comb begin
         BOOT_OTP_FC: begin
             cptra_ss_rst_b_o_nxt    = 1'b1;
             fc_opt_init_nxt = 1'b1;
-            if (fc_opt_done_sync) begin
+            if (fc_opt_done) begin
                 boot_fsm_nxt = BOOT_LCC; 
             end
         end
         BOOT_LCC: begin
             lc_init_nxt = 1'b1;
-            if(lc_done_sync) begin
+            if(lc_done) begin
                 boot_fsm_nxt = BOOT_BREAKPOINT_CHECK;
             end
         end
@@ -302,13 +277,13 @@ always_comb begin
             end
         end
         BOOT_HALT_MCU: begin
-            if(mcu_cpu_halt_ack_i) begin
+            if(mcu_cpu_halt_ack_i_sync) begin
                 boot_fsm_nxt        = BOOT_WAIT_MCU_HALTED;
             end
             mcu_cpu_halt_req_nxt = 1'b1;
         end
         BOOT_WAIT_MCU_HALTED: begin
-            if (mcu_cpu_halt_status_i) begin
+            if (mcu_cpu_halt_status_i_sync) begin
                 boot_fsm_nxt        = BOOT_RST_MCU;
             end
         end
@@ -329,8 +304,8 @@ always_comb begin
     endcase
 end
 
-always_ff@(posedge clk or negedge mci_rst_b) begin
-    if (!mci_rst_b) begin
+always_ff@(posedge clk or negedge mci_pwrgood) begin
+    if (!mci_pwrgood) begin
         mcu_cpu_halt_req_o <= 1'b0;
     end
     else begin
