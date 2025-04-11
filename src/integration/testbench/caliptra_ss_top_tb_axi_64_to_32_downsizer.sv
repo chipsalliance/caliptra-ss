@@ -85,6 +85,12 @@ logic r_fifo_wvalid;
 logic r_fifo_wready;
 logic r_fifo_rvalid;
 logic r_fifo_rready;
+struct packed {
+    logic [63:0] data;
+    logic [$bits(m_axi_if.rresp)-1:0] resp;
+    logic [$bits(m_axi_if.rid)-1:0]   rid;
+    logic                             last;
+} r_fifo_wdata, r_fifo_rdata;
 logic r_fifo_full, r_fifo_error;
 logic [caliptra_prim_util_pkg::vbits(FIFO_DEPTH+1)-1:0] r_fifo_depth;
 
@@ -102,6 +108,11 @@ logic w_fifo_wvalid;
 logic w_fifo_wready;
 logic w_fifo_rvalid;
 logic w_fifo_rready;
+struct packed {
+    logic [63:0]                      data;
+    logic [$bits(m_axi_if.wstrb)-1:0] strb;
+    logic                             last;
+} w_fifo_wdata, w_fifo_rdata;
 logic w_fifo_full, w_fifo_error;
 logic [caliptra_prim_util_pkg::vbits(FIFO_DEPTH+1)-1:0] w_fifo_depth;
 
@@ -256,9 +267,19 @@ end
 
 assign r_fifo_wvalid = rd_ds_bypass ? 1'b0 : (s_r_hshake && rd_beat_upper);
 
+assign r_fifo_wdata.data = {s_axi_if.rdata[63:32],rd_low_word};
+assign r_fifo_wdata.resp = (s_axi_if.rresp | rd_low_resp);
+assign r_fifo_wdata.rid  = s_axi_if.rid;
+assign r_fifo_wdata.last = s_axi_if.rlast;
+
+assign rd_qword = r_fifo_rdata.data;
+assign rd_resp  = r_fifo_rdata.resp;
+assign rd_rid   = r_fifo_rdata.rid;
+assign rd_last  = r_fifo_rdata.last;
+
 // --------- Read Data FIFO --------- //
 caliptra_prim_fifo_sync #(
-  .Width            (64+$bits(axi_resp_e)+$bits(m_axi_if.rid)+1),
+  .Width            ($bits(r_fifo_wdata)),
   .Pass             (1'b0), // if == 1 allow requests to pass through empty FIFO
   .Depth            (FIFO_DEPTH),
   .OutputZeroIfEmpty(1'b1), // if == 1 always output 0 when FIFO is empty
@@ -271,11 +292,11 @@ caliptra_prim_fifo_sync #(
   // write port
   .wvalid_i(r_fifo_wvalid),
   .wready_o(r_fifo_wready),
-  .wdata_i ({s_axi_if.rdata[63:32],rd_low_word,(s_axi_if.rresp | rd_low_resp),s_axi_if.rid,s_axi_if.rlast}),
+  .wdata_i (r_fifo_wdata),
   // read port
   .rvalid_o(r_fifo_rvalid),
   .rready_i(r_fifo_rready),
-  .rdata_o ({rd_qword,rd_resp,rd_rid,rd_last}),
+  .rdata_o (r_fifo_rdata),
   // occupancy
   .full_o  (r_fifo_full ),
   .depth_o (r_fifo_depth),
@@ -421,10 +442,17 @@ always_comb begin
     w_fifo_rready   = (wr_ds_bypass             ) ? 1'b0            : wr_beat_upper ? s_axi_if.wready           : 1'b0;
 end
 
+assign w_fifo_wdata.data = m_axi_if.wdata;
+assign w_fifo_wdata.strb = m_axi_if.wstrb;
+assign w_fifo_wdata.last = m_axi_if.wlast;
+
+assign wr_qword      = w_fifo_rdata.data;
+assign wr_qword_strb = w_fifo_rdata.strb;
+assign wr_last       = w_fifo_rdata.last;
 
 // --------- Write Data FIFO --------- //
 caliptra_prim_fifo_sync #(
-  .Width            (64+$bits(m_axi_if.wstrb)+1),
+  .Width            ($bits(w_fifo_wdata)),
   .Pass             (1'b0), // if == 1 allow requests to pass through empty FIFO
   .Depth            (FIFO_DEPTH),
   .OutputZeroIfEmpty(1'b1), // if == 1 always output 0 when FIFO is empty
@@ -437,11 +465,11 @@ caliptra_prim_fifo_sync #(
   // write port
   .wvalid_i(w_fifo_wvalid),
   .wready_o(w_fifo_wready),
-  .wdata_i ({m_axi_if.wdata,m_axi_if.wstrb,m_axi_if.wlast}),
+  .wdata_i (w_fifo_wdata),
   // read port
   .rvalid_o(w_fifo_rvalid),
   .rready_i(w_fifo_rready),
-  .rdata_o ({wr_qword,wr_qword_strb,wr_last}),
+  .rdata_o (w_fifo_rdata ),
   // occupancy
   .full_o  (w_fifo_full ),
   .depth_o (w_fifo_depth),
