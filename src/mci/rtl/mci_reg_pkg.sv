@@ -33,6 +33,38 @@ package mci_reg_pkg;
     } mci_reg__HW_CONFIG1__in_t;
 
     typedef struct packed{
+        logic [31:0] next;
+    } mci_reg__MCU_IFU_AXI_USER__value__in_t;
+
+    typedef struct packed{
+        mci_reg__MCU_IFU_AXI_USER__value__in_t value;
+    } mci_reg__MCU_IFU_AXI_USER__in_t;
+
+    typedef struct packed{
+        logic [31:0] next;
+    } mci_reg__MCU_LSU_AXI_USER__value__in_t;
+
+    typedef struct packed{
+        mci_reg__MCU_LSU_AXI_USER__value__in_t value;
+    } mci_reg__MCU_LSU_AXI_USER__in_t;
+
+    typedef struct packed{
+        logic [31:0] next;
+    } mci_reg__MCU_SRAM_CONFIG_AXI_USER__value__in_t;
+
+    typedef struct packed{
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER__value__in_t value;
+    } mci_reg__MCU_SRAM_CONFIG_AXI_USER__in_t;
+
+    typedef struct packed{
+        logic [31:0] next;
+    } mci_reg__MCI_SOC_CONFIG_AXI_USER__value__in_t;
+
+    typedef struct packed{
+        mci_reg__MCI_SOC_CONFIG_AXI_USER__value__in_t value;
+    } mci_reg__MCI_SOC_CONFIG_AXI_USER__in_t;
+
+    typedef struct packed{
         logic [3:0] next;
     } mci_reg__HW_FLOW_STATUS__boot_fsm__in_t;
 
@@ -42,19 +74,10 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic next;
-    } mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t;
-
-    typedef struct packed{
-        logic next;
-    } mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t;
-
-    typedef struct packed{
-        logic next;
+        logic we;
     } mci_reg__RESET_REASON__WARM_RESET__in_t;
 
     typedef struct packed{
-        mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t FW_HITLESS_UPD_RESET;
-        mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t FW_BOOT_UPD_RESET;
         mci_reg__RESET_REASON__WARM_RESET__in_t WARM_RESET;
     } mci_reg__RESET_REASON__in_t;
 
@@ -785,11 +808,16 @@ package mci_reg_pkg;
         logic ss_config_unlock;
         logic ss_config_unlock_sticky;
         logic axi_mcu_req_or_mci_soc_config_req__cap_unlock;
+        logic axi_mcu_or_mcu_sram_config_req;
         logic axi_mcu_or_mci_soc_config_req;
         logic axi_mcu_or_mci_soc_config_req__ss_config_unlock;
         logic axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky;
         mci_reg__HW_CONFIG0__in_t HW_CONFIG0;
         mci_reg__HW_CONFIG1__in_t HW_CONFIG1;
+        mci_reg__MCU_IFU_AXI_USER__in_t MCU_IFU_AXI_USER;
+        mci_reg__MCU_LSU_AXI_USER__in_t MCU_LSU_AXI_USER;
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER__in_t MCU_SRAM_CONFIG_AXI_USER;
+        mci_reg__MCI_SOC_CONFIG_AXI_USER__in_t MCI_SOC_CONFIG_AXI_USER;
         mci_reg__HW_FLOW_STATUS__in_t HW_FLOW_STATUS;
         mci_reg__RESET_REASON__in_t RESET_REASON;
         mci_reg__RESET_STATUS__in_t RESET_STATUS;

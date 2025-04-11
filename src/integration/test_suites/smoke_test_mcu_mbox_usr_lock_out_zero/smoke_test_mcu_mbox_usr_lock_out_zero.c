@@ -85,7 +85,7 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
 
     // MBOX: Write CMD_STATUS for testing
     VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS\n", mbox_num); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0x1 );    
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX_DATA_READY );    
 
     //// MBOX: Execute
     VPRINTF(LOW, "MCU: Write Mbox execute\n");
@@ -109,6 +109,7 @@ void main (void) {
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;  
     uint32_t mbox_num = decode_single_valid_mbox();
+    bool     mbox0_sel = true;
     uint32_t axi_select = xorshift32() % 5;
 
     uint32_t axi_user_id[] = { xorshift32(), xorshift32(), xorshift32(), xorshift32(), xorshift32() };
@@ -118,16 +119,13 @@ void main (void) {
 
     VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n")
     // MBOX: Setup valid AXI
+   
+    if(mbox_num) {
+        mbox0_sel = false;
+    }
+        
+    mcu_cptra_init_d(.cfg_cptra_dma_axi_user=true, .cptra_dma_axi_user=caliptra_uc_axi_id, .cfg_mcu_mbox0_valid_user=mbox0_sel, .mcu_mbox0_valid_user=axi_user_id, .cfg_mcu_mbox1_valid_user=!mbox0_sel, .mcu_mbox1_valid_user=axi_user_id);
     mcu_mbox_configure_valid_axi(mbox_num, axi_user_id);
-
-    mcu_mci_boot_go();
-
-    VPRINTF(LOW, "MCU: Configured Caliptra as Valid AXI USER\n");
-    lsu_write_32(SOC_SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER, caliptra_uc_axi_id);
-
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
-
-    mcu_cptra_fuse_init();
 
     mcu_mbox_clear_lock_out_of_reset(mbox_num);
 

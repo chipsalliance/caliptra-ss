@@ -71,15 +71,15 @@ void main (void) {
     i3c_reg_data = 0x00000000;
     i3c_reg_data = 90 << 0  | i3c_reg_data;
     i3c_reg_data = 1  << 15 | i3c_reg_data;
-    lsu_write_32( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_DEVICE_ADDR, i3c_reg_data);
-    VPRINTF(LOW, "MCU: I3C Device Address set to 0x5A\n");
+    lsu_write_32( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
+    VPRINTF(LOW, "MCU: I3C Virtual Device Address set to 0x5A\n");
 
     //setting virtual device address to 0x5B
     i3c_reg_data = 0x00000000;
     i3c_reg_data = 91 << 0  | i3c_reg_data; //0x5B
     i3c_reg_data = 1  << 15 | i3c_reg_data;   
-    lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
-    VPRINTF(LOW, "MCU: I3C Virtual Device Address set to 0x5B\n");
+    lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_DEVICE_ADDR, i3c_reg_data);
+    VPRINTF(LOW, "MCU: I3C Device Address set to 0x5B\n");
 
     //-- Enable I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE 
     i3c_reg_data = 0xFFFFFFFF;

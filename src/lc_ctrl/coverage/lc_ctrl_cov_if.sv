@@ -18,17 +18,17 @@ interface lc_ctrl_cov_if
     import lc_ctrl_pkg::*;
     import lc_ctrl_state_pkg::*;
 (
-    input logic clk,
+    input logic clk_i,
     input logic rst_ni
 );
 
     ext_dec_lc_state_t dec_lc_state;
     dec_lc_cnt_t       dec_lc_cnt;
 
-    assign dec_lc_state = lc_ctrl.dec_lc_state;
-    assign dec_lc_cnt = lc_ctrl.dec_lc_cnt;
+    assign dec_lc_state = ext_dec_lc_state_t'(lc_ctrl.dec_lc_state);
+    assign dec_lc_cnt = dec_lc_cnt_t'(lc_ctrl.dec_lc_cnt);
 
-    covergroup lc_ctrl_cg @(posedge clk);
+    covergroup lc_ctrl_cg @(posedge clk_i);
         option.per_instance = 1;
 
         lc_state_cp: coverpoint dec_lc_state

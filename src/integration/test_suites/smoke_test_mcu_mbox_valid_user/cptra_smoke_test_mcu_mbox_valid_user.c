@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include "printf.h"
 #include "soc_ifc.h"
+#include "soc_ifc_ss.h"
 #include "caliptra_reg.h"
 
 volatile char* stdout = (char *)STDOUT;
@@ -138,13 +139,35 @@ void caliptra_ss_mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
     
     for (uint32_t ii = 0; ii < 16; ii++) {
         mbox_data[0] = write_payload[ii];
-        VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x data: 0x%x\n", mbox_num, write_payload[ii]); 
+        VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x SRAM[%d]: 0x%x\n", mbox_num, ii, write_payload[ii]); 
         soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, 0, mbox_data, 4, 0);
     }
 
+    // If SRAM is <2MB, write and read to a handful of random locations in invalid addresses
+    // and check that writes don't take affect/reads return 0
+    uint32_t sram_size_kb = cptra_mcu_mbox_get_sram_size_kb(mbox_num);
+    VPRINTF(LOW, "CALIPTRA: Mbox SRAM size in KB: %d\n", sram_size_kb);
+    if (sram_size_kb < MCU_MBOX_MAX_SIZE_KB) {
+        for (uint32_t j = 0; j < 5; j++) {
+            uint32_t rand_addr = mcu_mbox_gen_rand_dword_addr(mbox_num, sram_size_kb, MCU_MBOX_MAX_SIZE_KB);
+
+            VPRINTF(LOW, "CALIPTRA: Attempting to write to invalid SRAM[%d]\n", rand_addr);
+            cptra_mcu_mbox_write_dword_sram(mbox_num, rand_addr, xorshift32());
+
+            uint32_t data = cptra_mcu_mbox_read_dword_sram(mbox_num, rand_addr);
+
+            if (data != 0) {
+                VPRINTF(FATAL, "MCU: Invalid access to SRAM[%d] did not return 0: 0x%x \n", rand_addr, data);
+                SEND_STDOUT_CTRL(0x1);
+                while(1);
+            }
+        }
+    }
+
+
     // Attempt CMD_STATUS write
     VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX%x CMD_STATUS write\n", mbox_num);
-    write_payload[0] = 0x3;
+    write_payload[0] = MCU_MBOX_CMD_FAILURE;
     soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
 
     soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
@@ -194,7 +217,7 @@ void caliptra_ss_mcu_mbox_get_data_and_attempt_writes(uint32_t mbox_num) {
     uint32_t data_length;
     const uint32_t mbox_dlen = 16*4;
     const uint32_t mbox_cmd = 0xFADECAFE;
-    const uint32_t mbox_user = 0x1;  // TODO should be MCU strap
+    const uint32_t mbox_user = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER);
     uint32_t read_payload[16];
     uint32_t write_payload[16];
     uint32_t mbox_data[0];
@@ -267,7 +290,7 @@ void caliptra_ss_mcu_mbox_get_data_and_attempt_writes(uint32_t mbox_num) {
     data_length = read_payload[0];
     VPRINTF(LOW, "CALIPTRA: MBOX%x CMD STATUS = %x\n", mbox_num, data_length);
     
-    if (data_length != 0x1) {
+    if (data_length != MCU_MBOX_DATA_READY) {
         VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x CMD_STATUS not expected value: 0x%x \n", mbox_num, 0x1);
         SEND_STDOUT_CTRL(0x1);
         while(1);
@@ -343,6 +366,10 @@ void caliptra_ss_mcu_mbox_get_data_and_attempt_writes(uint32_t mbox_num) {
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }   
+
+    // Attempt to acquire lock even though MCU has the lock (will be checked on MCU side that interrupt is set)
+    VPRINTF(LOW, "CALIPTRA: Requesting MCU MBOX%x LOCK\n", mbox_num);
+    caliptra_ss_mcu_mbox_acquire_lock(mbox_num, 1);
 }
 
 
@@ -386,5 +413,5 @@ void main(void) {
 
         VPRINTF(LOW, "CALIPTRA: Sequence complete\n");
 
-        SEND_STDOUT_CTRL(0xff);
+        while(1);
 }

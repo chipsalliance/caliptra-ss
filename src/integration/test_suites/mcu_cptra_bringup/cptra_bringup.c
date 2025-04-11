@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include "soc_address_map.h"
 #include "caliptra_defines.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
+#include "soc_ifc_ss.h"
 #include <stdint.h>
 #include "printf.h"
 #include "caliptra_isr.h"
@@ -102,6 +104,9 @@ void main () {
     VPRINTF(LOW, "FW: Wait for SoC to reset execute register\n");
     while((lsu_read_32(CLP_MBOX_CSR_MBOX_EXECUTE) & MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK) == 1);
 
+    VPRINTF(LOW, "FW: Setting MCI FW_BOOT_UPD\n");
+    cptra_axi_dword_write(SOC_MCI_TOP_MCI_REG_RESET_REASON, MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK);
+    
     // Set FW EXEC REGION LOCK to enable MCU SRAM check
     VPRINTF(LOW, "FW: Setting FW_EXEC_CTRL\n");
     lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, 0x4);

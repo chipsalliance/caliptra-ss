@@ -50,21 +50,50 @@ void reset_fc_lcc_rtl(void) {
     mcu_sleep(160);
 }
 
-void mcu_mci_boot_go() {
- 
-    // Configure EXEC Region before initializing Caliptra
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , 100);
-    VPRINTF(LOW, "MCU: Configure EXEC REGION Size\n");
-    
+void write_read_check(uintptr_t rdptr, uint32_t data){
+    VPRINTF(LOW, "write_read_check: Address: 0x%x -- Data: 0x%x\n", rdptr, data);
 
+    lsu_write_32(rdptr, data);
+
+    read_check(rdptr, data);
+    
+}
+
+uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t end_address) {
+    // Return address that is DWORD aligned
+    uintptr_t range = end_address - start_address + 1;
+    uintptr_t offset = rnd % range;
+    uintptr_t address = (start_address + offset) & ~3;
+    return address;
+}
+
+void read_check(uintptr_t rdptr, uint32_t expected_rddata){
+    uint32_t data;
+    data = lsu_read_32(rdptr);
+    VPRINTF(LOW, "read_check: Address: 0x%x -- Expected: 0x%x Actual: 0x%x\n", rdptr, expected_rddata, data);
+    if (expected_rddata != data) {
+        VPRINTF(FATAL, "MCU: FATAL - read_check: Data mismatch at address: 0x%x -- Expected: 0x%x Actual: 0x%x\n", rdptr, expected_rddata, data);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+}
+
+void mcu_set_fw_sram_exec_region_size(uint32_t size) {
+    VPRINTF(LOW, "MCU: Configure EXEC REGION Size 0x%x\n", size);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE , size);
+}
+
+
+void mcu_set_cptra_dma_axi_user(uint32_t value) {
+    VPRINTF(LOW, "MCU: Configure CPTRA DMA AXI USER 0x%x\n", value);
+    lsu_write_32(SOC_SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER, value);
+}
+
+void mcu_mci_boot_go() {
     // writing SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO register of MCI for CPTRA Boot FSM to bring Caliptra out of reset
     uint32_t cptra_boot_go;
     VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO");
-    cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO set to %x\n", cptra_boot_go);
 }
 
 void mcu_mci_poll_exec_lock() {
@@ -117,41 +146,10 @@ void mcu_cptra_advance_brkpoint() {
 
 }
 
-void mcu_cptra_fuse_init_axi_user(uint32_t cptra_axi_user){
-    ////////////////////////////////////
-    // Fuse and Boot Bringup
-    //
-    mcu_cptra_wait_for_fuses();
-
-    lsu_write_32(SOC_SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER, cptra_axi_user);
-
-    // Initialize fuses
-    // TODO set actual fuse values
-    mcu_cptra_set_fuse_done();
-
-    mcu_cptra_advance_brkpoint();
-}
-
-void mcu_cptra_fuse_init() {
-    enum boot_fsm_state_e boot_fsm_ps;
-
-    ////////////////////////////////////
-    // Fuse and Boot Bringup
-    //
-    mcu_cptra_wait_for_fuses();
-
-
-    // Initialize fuses
-    // TODO set actual fuse values
-    mcu_cptra_set_fuse_done();
-
-    mcu_cptra_advance_brkpoint();
-
-}
-
 void mcu_cptra_user_init() {
+    uint32_t mcu_lsu_axi_user = lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER);
     // MBOX: Setup valid AXI USER
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0x1); // FIXME this should come from a param for LSU AxUSER
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, mcu_lsu_axi_user);
 //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_1, 1);
 //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_2, 2);
 //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_3, 3);
@@ -162,6 +160,99 @@ void mcu_cptra_user_init() {
     VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
 
 }
+
+void mcu_cptra_init(mcu_cptra_init_args args) {
+    // DO NOT CALL DIRECTLY. USE THE mcu_cptra_init_d MACRO TO CALL THE FUNCTION
+    
+    // 4 MAIN OPTIONS:
+    //
+    // 1. Always disabled unless a new value is specified:
+    //    - Add a boolean cfg_<feature>.
+    //    - Add a <type> <feature_value>.
+    //    - Skip configuration unless cfg_<feature> is set, then set the <feature_value>.
+    //    - Use for features that most tests don't care about and will have a set value.
+    //
+    // 2. Always disabled unless enabled:
+    //    - Add a boolean cfg_enable_<feature>.
+    //    - Skip configuration unless cfg_enable_<feature> is set, then enable the feature.
+    //    - Use for features that most tests don't care about and don't have an actual 
+    //      value but when enabled will initiate a configuration within the design.
+    //
+    // 3. Always enabled unless specified:
+    //    - Add a cfg_skip_<feature>.
+    //    - Always program the register unless the skip is set.
+    //    - Use when most tests want the feature
+    //    - Use for features that are either DO or SKIP.
+    //
+    // 4. Always enabled unless overridden:
+    //    - Add a cfg_override_<feature>.
+    //    - Add a <feature_value>.
+    //    - Use when most tests whant the feature.
+    //    - Always configure to a default value. If cfg_override_<feature> is set, 
+    //      write the <feature_value> into the register.
+
+    
+
+    VPRINTF(LOW, "MCU: INIT CONFIGURING START\n");
+    
+    /////////////////////////////////
+    // MCU CONFIGURATION
+    /////////////////////////////////
+    if (args.cfg_mcu_fw_sram_exec_reg_size) {
+        VPRINTF(LOW, "MCU: args.mcu_fw_sram_exec_reg_size 0x%x\n", args.mcu_fw_sram_exec_reg_size);
+        mcu_set_fw_sram_exec_region_size(args.mcu_fw_sram_exec_reg_size); 
+    }
+
+    if (args.cfg_mcu_mbox0_valid_user) {
+        mcu_mbox_configure_valid_axi(0, args.mcu_mbox0_valid_user);
+    }
+
+    if (args.cfg_mcu_mbox1_valid_user) {
+        mcu_mbox_configure_valid_axi(1, args.mcu_mbox1_valid_user);
+    }
+
+    /////////////////////////////////
+    // BRING CPTRA OUT OF RESET
+    /////////////////////////////////
+    mcu_mci_boot_go();
+
+    mcu_cptra_wait_for_fuses();
+
+    /////////////////////////////////
+    // CPTRA FUSE CONFIGURATION
+    /////////////////////////////////
+    if (args.cfg_cptra_dma_axi_user){
+        mcu_set_cptra_dma_axi_user(args.cptra_dma_axi_user);
+    }
+
+    if (args.cfg_enable_cptra_mbox_user_init){
+        mcu_cptra_user_init();
+    }
+
+    /////////////////////////////////
+    // CPTRA LOCK FUSE CONFIGURATION
+    /////////////////////////////////
+    if (!args.cfg_skip_set_fuse_done) {
+        mcu_cptra_set_fuse_done();
+    }
+    else{
+        VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip Set fuse done\n");
+    }
+
+    /////////////////////////////////
+    // CPTRA ENSURE BREAKPOINT SET  
+    /////////////////////////////////
+    if (!args.cfg_skip_set_fuse_done) {
+        mcu_cptra_advance_brkpoint();
+    }
+    else{
+        VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip advance CPTRA advance breakpoint\n");
+    }
+
+
+    VPRINTF(LOW, "MCU: INIT CONFIGURING END\n");
+}
+
 
 void mcu_mbox_clear_lock_out_of_reset(uint32_t mbox_num) {
     // MBOX: Write DLEN  (normally would be max SRAM size but using smaller size for test run time)
@@ -176,8 +267,8 @@ void mcu_mbox_clear_lock_out_of_reset(uint32_t mbox_num) {
 
 void mcu_mbox_update_status_complete(uint32_t mbox_num) {
     // MBOX: Write CMD
-    VPRINTF(LOW, "MCU: Writing to MBOX status 0x2\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE*mbox_num, 0x2 );
+    VPRINTF(LOW, "MCU: Writing to MBOX status CMD_COMPLETE\n"); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE*mbox_num, MCU_MBOX_CMD_COMPLETE);
 }
 
 bool mcu_mbox_wait_for_user_lock(uint32_t mbox_num, uint32_t user_axi, uint32_t attempt_count) {
@@ -219,14 +310,51 @@ void mcu_mbox_clear_mbox_cmd_avail_interrupt(uint32_t mbox_num) {
     // Check that Mailbox cmd available from SOC interrupt has been cleared
     if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
         (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK << mbox_num)) == 1) {
-        VPRINTF(FATAL, "MCU: Mbox%x Mailbox cmd available from SoC interrupt not set\n", mbox_num);
+        VPRINTF(FATAL, "MCU: Mbox%x Mailbox cmd available from SoC interrupt not cleared\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 }
 
+void mcu_mbox_clear_soc_req_while_mcu_lock_interrupt(uint32_t mbox_num) {
+    VPRINTF(LOW, "MCU: RW1C SoC req while MCU lock interrupt Mbox%x\n", mbox_num);
+    uint32_t internal_intr = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
+    internal_intr = MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK << mbox_num;
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, internal_intr);
+
+    // Check that Mailbox cmd available from SOC interrupt has been cleared
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK << mbox_num)) == 1) {
+        VPRINTF(FATAL, "MCU: Mbox%x SoC req while MCU lock interrupt not cleared\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+}
+
+bool mcu_mbox_wait_for_soc_req_while_mcu_lock_interrupt(uint32_t mbox_num, uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for caliptra to attempt a lock while MCU has locked mbox%x\n", mbox_num);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        if(is_mcu_mbox_clear_soc_req_while_mcu_lock_interrupt_set(mbox_num)){
+            VPRINTF(LOW, "MCU: Caliptra attempted a lock while MCU has locked mbox%x\n", mbox_num);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool is_mcu_mbox_clear_soc_req_while_mcu_lock_interrupt_set(uint32_t mbox_num) {
+    // Check that Mailbox SoC req while MCU lock interrupt has been set
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK << mbox_num)) != 0) {
+            VPRINTF(LOW, "MCU: Mbox%x SoC req while MCU lock interrupt set\n", mbox_num);
+            return true;
+    }
+    return false;
+}
+
 void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id) {
     
+    VPRINTF(LOW, "MCU: Configuring Valid AXI USERs in Mbox%x:  0 - 0x%x; 1 - 0x%x; 2 - 0x%x; 3 - 0x%x; 4 - 0x%x;\n", mbox_num, axi_user_id[0], axi_user_id[1], axi_user_id[2], axi_user_id[3], axi_user_id[4]);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[0]);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[1]);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_2 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, axi_user_id[2]);
@@ -238,8 +366,26 @@ void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_2 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_2_LOCK_MASK);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_3 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_3_LOCK_MASK);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_4 + MCU_MBOX_AXI_CFG_STRIDE*mbox_num, MCI_REG_MBOX0_AXI_USER_LOCK_4_LOCK_MASK);
+    VPRINTF(LOW, "MCU: DONE Configuring Valid AXI USERs in Mbox%x\n", mbox_num);
 
-    VPRINTF(LOW, "MCU: Configured Valid AXI USERs in Mbox%x:  0 - 0x%x; 1 - 0x%x; 2 - 0x%x; 3 - 0x%x; 4 - 0x%x;\n", mbox_num, axi_user_id[0], axi_user_id[1], axi_user_id[2], axi_user_id[3], axi_user_id[4]);
+}
+
+// Generate AXI that is guaranteed to not be in axi_user_id
+uint32_t mcu_mbox_generate_invalid_axi(uint32_t *axi_user_id) {
+    bool is_unique;
+    uint32_t caliptra_uc_axi_id;
+    do {
+        is_unique = true;
+        caliptra_uc_axi_id = xorshift32(); // Generate a new value
+
+        // Check if the generated value matches any in axi_user_id
+        for (size_t i = 0; i < sizeof(axi_user_id) / sizeof(axi_user_id[0]); i++) {
+            if (caliptra_uc_axi_id == axi_user_id[i]) {
+                is_unique = false; // Not unique, try again
+                return caliptra_uc_axi_id;
+            }
+        }
+    } while (!is_unique);
 }
 
 bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count) {
@@ -255,6 +401,7 @@ bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count) {
 
 bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count) {
     // TODO: update with MCU Root Strap Value
+    VPRINTF(LOW, "MCU: Wait for Lock to Reflect MBOX USER\n");
     uint32_t mbox_resp_data;
     for(uint32_t ii=0; ii<attempt_count; ii++) {
         mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num);
@@ -266,13 +413,42 @@ bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count)
     return false;
 }
 
-void mcu_mbox_clear_execute(uint32_t mbox_num) {
-    uint32_t mbox_resp_data;
-    VPRINTF(LOW, "MCU: Clearing MBOX%x Execute\n", mbox_num);
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x0);
-    
-    mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num);
-    VPRINTF(LOW, "MCU: MBOX%x USER = %x\n", mbox_num, mbox_resp_data);
+bool mcu_mbox_wait_for_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status status, uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for caliptra (as TARGET USER) to set TARGET_STATUS DONE with completion code: 0x%x (%x\n", status, mbox_num);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        uint32_t reg_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
+        bool target_done = (reg_data & MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK) != 0;
+        reg_data = (reg_data & MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK) >> MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW;
+        if(target_done & (reg_data == status)){
+            VPRINTF(LOW, "MCU: Caliptra (as TARGET USER) set TARGET_STATUS DONE with completion code: 0x%x (%x\n", status, mbox_num);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool is_mcu_mbox_target_done_interrupt_set(uint32_t mbox_num) {
+    // Check that Mailbox Target Done interrupt has been set
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_TARGET_DONE_STS_MASK << mbox_num)) != 0) {
+            VPRINTF(LOW, "MCU: Mbox%x Target Done interrupt set\n", mbox_num);
+            return true;
+    }
+    return false;
+}
+
+void mcu_mbox_clear_target_done_interrupt(uint32_t mbox_num) {
+    VPRINTF(LOW, "MCU: RW1C Target Done interrupt Mbox%x\n", mbox_num);
+    uint32_t internal_intr = MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_TARGET_DONE_STS_MASK << mbox_num;
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, internal_intr);
+
+    // Check that Mailbox Target Done interrupt has been cleared
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_TARGET_DONE_STS_MASK << mbox_num)) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target Done interrupt not cleared\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
 }
 
 // Returns mbox number based on valid mbox instance bitfield
@@ -280,11 +456,26 @@ void mcu_mbox_clear_execute(uint32_t mbox_num) {
 // Default to mbox0 if multiple selected
 uint32_t decode_single_valid_mbox(void) {
     uint32_t mbox_num = 0;
-    VPRINTF(LOW, "MCU: Valid MBOX Vector: 0x%x\n", valid_mbox_instances);
+    VPRINTF(LOW, "Valid MBOX Vector: 0x%x\n", valid_mbox_instances);
     if (valid_mbox_instances == 0x2) {
         mbox_num = 1;
     }
     return mbox_num;
+}
+
+uint32_t mcu_mbox_get_sram_size_kb(uint32_t mbox_num) {
+    uint32_t data;
+    uint32_t mask = MCI_REG_HW_CONFIG0_MCU_MBOX1_SRAM_SIZE_MASK << ((MCU_MBOX_MAX_NUM-1 - mbox_num) * MCI_REG_HW_CONFIG0_MCU_MBOX0_SRAM_SIZE_LOW);
+    data = lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_CONFIG0) & mask;
+    data = data >> ((MCU_MBOX_MAX_NUM-1 - mbox_num) * MCI_REG_HW_CONFIG0_MCU_MBOX0_SRAM_SIZE_LOW);
+    return data;
+}
+
+uint32_t mcu_mbox_gen_rand_dword_addr(uint32_t mbox_num, uint32_t min_kb, uint32_t max_kb) {
+    uint32_t min_size = min_kb * 1024/4;
+    uint32_t max_size = max_kb * 1024/4;
+    uint32_t rand_addr = ((xorshift32() % (max_size - min_size)) + min_size);
+    return rand_addr;
 }
 
 void mcu_cptra_poll_mb_ready() {
