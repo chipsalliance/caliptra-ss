@@ -41,4 +41,6 @@ void main(void) {
     //set ready for MB processing to alert MCU that bringup succeeded
     soc_ifc_set_flow_status_field(SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK);
 
+    // Wait for MCU to end the test
+    while(1);
 }
