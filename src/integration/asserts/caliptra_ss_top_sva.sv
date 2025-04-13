@@ -27,20 +27,6 @@ module caliptra_ss_top_sva
   import caliptra_prim_mubi_pkg::*;
   ();
   
-  fc_partition_escalation_dai_lock : assert property (
-    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    `CPTRA_SS_TOP_PATH.u_otp_ctrl.lc_escalate_en_i == On |-> ##10 `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.state_q == `CPTRA_SS_TOP_PATH.u_otp_ctrl.u_otp_ctrl_dai.ErrorSt
-  ) else $display("SVA ERROR");
-
-  // Zeroization broadcast
-  fc_zeroize_broadcast : assert property (
-    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    disable iff (~`CPTRA_SS_TOP_PATH.u_otp_ctrl.rst_ni)
-    ((`CPTRA_SS_TOP_PATH.u_otp_ctrl.FIPS_ZEROIZATION_CMD_i) || (`CPTRA_SS_TOP_PATH.u_otp_ctrl.lcc_is_in_SCRAP_mode))
-    |=> 
-    `CPTRA_SS_TOP_PATH.u_otp_ctrl.otp_broadcast_o == otp_broadcast_t'('0)
-  ) else $display("SVA ERROR: fuse ctrl broadcast data is not zeroized after cmd");
-
 `ifdef CALIPTRA_ASSERT_DEFAULT_CLK
 `undef CALIPTRA_ASSERT_DEFAULT_CLK
 `define CALIPTRA_ASSERT_DEFAULT_CLK `CPTRA_SS_TOP_PATH.u_otp_ctrl.clk_i
@@ -275,5 +261,23 @@ module caliptra_ss_top_sva
      |-> ##2
      otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
     )
+
+  ////////////////////////////////////////////////////
+  // fuse_ctrl zeroization/escalation
+  ////////////////////////////////////////////////////
+
+  // Assert that a zeroization request results in the broadcast data to be set to zero.
+  `CALIPTRA_ASSERT(FcZeroizeBroadcastData_A,
+    ((`FC_PATH.FIPS_ZEROIZATION_CMD_i) || (`FC_PATH.lcc_is_in_SCRAP_mode) && (!`FC_PATH.rst_ni))
+    |=> 
+    `FC_PATH.otp_broadcast_o == otp_broadcast_t'('0)
+  )
+
+  // Assert that an esclation will transfer the fuse_ctrl into a terminal state.
+  `CALIPTRA_ASSERT(FcEscalationTerminalError_A,
+    `FC_PATH.lc_escalate_en_i == On
+    |-> ##10
+    `FC_PATH.u_otp_ctrl_dai.state_q == `FC_PATH.u_otp_ctrl_dai.ErrorSt
+  )
 
 endmodule
