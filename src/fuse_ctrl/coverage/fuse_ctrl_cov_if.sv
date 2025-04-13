@@ -25,6 +25,7 @@ interface fuse_ctrl_cov_if
     import axi_struct_pkg::*;
     import otp_ctrl_reg_pkg::*;
     import otp_ctrl_pkg::*;
+    import otp_ctrl_part_pkg::*;
     import lc_ctrl_state_pkg::*;
 
     /** fuse_ctrl_filter:
@@ -215,7 +216,26 @@ interface fuse_ctrl_cov_if
 
     endgroup
 
+    /** fuse_ctrl public-key hash volatile lock:
+     *
+     *  All possible locking indices should be covered.
+     */
 
+    if (NumVendorPkFuses > 1) begin
+
+        logic [31:0] pk_hash_volatile_lock;
+        assign pk_hash_volatile_lock = `FC_PATH.reg2hw.vendor_pk_hash_volatile_lock; 
+
+        covergroup fuse_ctrl_pk_hash_volatile_lock_cg @(posedge clk_i);
+            option.per_instance = 1;
+
+            fuse_ctrl_pk_hash_volatile_lock_cp: coverpoint pk_hash_volatile_lock
+            {
+                bins PkHashVolatileLock[] = { [0:NumVendorPkFuses-1] };
+            }
+        endgroup
+
+    end
 
 endinterface
 
