@@ -226,4 +226,54 @@ module caliptra_ss_top_sva
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
   )
 
+  ////////////////////////////////////////////////////
+  // fuse_ctrl partition access control
+  ////////////////////////////////////////////////////
+
+  localparam [11:0] digest_addrs [0:15] = { 
+    32,   // SECRET_TEST_UNLOCK_PARTITION
+    68,   // SECRET_MANUF_PARTITION
+    76,   // SECRET_PROD_PARTITION_0
+    84,   // SECRET_PROD_PARTITION_1
+    92,   // SECRET_PROD_PARTITION_2
+    100,  // SECRET_PROD_PARTITION_3
+    604,  // SW_MANUF_PARTITION
+    696,  // SECRET_LC_TRANSITION_PARTITION
+    0,    // SVN_PARTITION
+    748,  // VENDOR_TEST_PARTITION
+    780,  // VENDOR_HASHES_MANUF_PARTITION
+    1156, // VENDOR_HASHES_PROD_PARTITION
+    1232, // VENDOR_REVOCATIONS_PROD_PARTITION
+    1492, // VENDOR_SECRET_PROD_PARTITION
+    2000, // VENDOR_NON_SECRET_PROD_PARTITION
+    0     // LIFE_CYCLE
+  };
+
+  logic [NumPartWidth-1:0] part_idx;
+  assign part_idx = `FC_PATH.u_otp_ctrl_dai.part_idx;
+
+  // Assert that secret partitions are read-locked after the digest has been computed.
+  `CALIPTRA_ASSERT(FcSecretPartitionReadLock_A,
+    ((PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].secret) &&
+     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[digest_addrs[part_idx]] != 0) &&
+     (`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) && 
+     (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
+     (`FC_PATH.dai_addr/2 < digest_addrs[part_idx]))
+     |-> ##2
+     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+    )
+
+  // Assert that partitions are write-locked after the digest has been computed.
+  `CALIPTRA_ASSERT(FcLockedPartitionWriteLock_A,
+    ((PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].hw_digest || PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].sw_digest) &&
+     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[digest_addrs[part_idx]] != 0) &&
+     (`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) && 
+     (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
+     (`FC_PATH.dai_addr/2 < digest_addrs[part_idx]))
+     |-> ##2
+     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+    )
+
 endmodule
