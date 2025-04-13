@@ -40,8 +40,6 @@ import mci_pkg::*;
     input  logic caliptra_boot_go,
     input  logic mci_bootfsm_go,
     input  logic mcu_rst_req,
-    output logic fw_boot_upd_reset,     // First MCU reset request
-    output logic fw_hitless_upd_reset,  // Other MCU reset requests
     output logic mcu_reset_once, // Has MCU been reset before?
     output mci_boot_fsm_state_e boot_fsm,
 
@@ -79,8 +77,6 @@ logic cptra_rst_b_ff;
 logic mcu_rst_b_nxt;
 logic cptra_rst_b_nxt;
 
-logic fw_boot_upd_reset_nxt;     // First MCU reset request
-logic fw_hitless_upd_reset_nxt;  // Other MCU reset requests
 logic mcu_reset_once_nxt;
 
 logic mcu_cpu_halt_req_nxt;
@@ -142,8 +138,6 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         mcu_rst_b_ff                <= '0;
         cptra_rst_b_ff              <= '0;
         mcu_reset_once              <= '0;
-        fw_boot_upd_reset           <= '0;     
-        fw_hitless_upd_reset        <= '0;  
         min_mcu_rst_count_elapsed   <= '0;
         min_mcu_rst_count           <= '0;
     end
@@ -155,8 +149,6 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         mcu_rst_b_ff    <= mcu_rst_b_nxt;
         cptra_rst_b_ff  <= cptra_rst_b_nxt;
         mcu_reset_once  <= mcu_reset_once_nxt;
-        fw_boot_upd_reset <= fw_boot_upd_reset_nxt;     
-        fw_hitless_upd_reset <= fw_hitless_upd_reset_nxt;  
         min_mcu_rst_count_elapsed <= min_mcu_rst_count_elapsed_nxt;
         min_mcu_rst_count <= min_mcu_rst_count_nxt;       
     end
@@ -171,8 +163,6 @@ always_comb begin
     cptra_rst_b_nxt = cptra_rst_b_ff;
     mcu_reset_once_nxt  = mcu_reset_once;
     mcu_cpu_halt_req_nxt = 1'b0;
-    fw_boot_upd_reset_nxt = fw_boot_upd_reset;     
-    fw_hitless_upd_reset_nxt = fw_hitless_upd_reset;  
     unique case(boot_fsm)
         BOOT_IDLE: begin
             // Can only transition into IDLE on MCI reset
@@ -245,8 +235,6 @@ always_comb begin
         BOOT_WAIT_MCU_HALTED: begin
             if (mcu_cpu_halt_status_i) begin
                 boot_fsm_nxt        = BOOT_RST_MCU;
-                fw_boot_upd_reset_nxt   = !mcu_reset_once;
-                fw_hitless_upd_reset_nxt = mcu_reset_once;
             end
         end
         BOOT_RST_MCU: begin

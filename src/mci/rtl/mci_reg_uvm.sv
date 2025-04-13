@@ -224,6 +224,126 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_CONFIG1
 
+    // Reg - mci_reg::MCU_IFU_AXI_USER
+    class mci_reg__MCU_IFU_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_IFU_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCU_IFU_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCU_IFU_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_IFU_AXI_USER
+
+    // Reg - mci_reg::MCU_LSU_AXI_USER
+    class mci_reg__MCU_LSU_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_LSU_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCU_LSU_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCU_LSU_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_LSU_AXI_USER
+
+    // Reg - mci_reg::MCU_SRAM_CONFIG_AXI_USER
+    class mci_reg__MCU_SRAM_CONFIG_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCU_SRAM_CONFIG_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_SRAM_CONFIG_AXI_USER
+
+    // Reg - mci_reg::MCI_SOC_CONFIG_AXI_USER
+    class mci_reg__MCI_SOC_CONFIG_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCI_SOC_CONFIG_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCI_SOC_CONFIG_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCI_SOC_CONFIG_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCI_SOC_CONFIG_AXI_USER
+
     // Reg - mci_reg::FW_FLOW_STATUS
     class mci_reg__FW_FLOW_STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -309,11 +429,11 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.FW_HITLESS_UPD_RESET = new("FW_HITLESS_UPD_RESET");
-            this.FW_HITLESS_UPD_RESET.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.FW_HITLESS_UPD_RESET.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
             this.FW_BOOT_UPD_RESET = new("FW_BOOT_UPD_RESET");
-            this.FW_BOOT_UPD_RESET.configure(this, 1, 1, "RO", 1, 'h0, 1, 1, 0);
+            this.FW_BOOT_UPD_RESET.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
             this.WARM_RESET = new("WARM_RESET");
-            this.WARM_RESET.configure(this, 1, 2, "RO", 1, 'h0, 1, 1, 0);
+            this.WARM_RESET.configure(this, 1, 2, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(FW_HITLESS_UPD_RESET_bit_cg[bt]) FW_HITLESS_UPD_RESET_bit_cg[bt] = new();
                 foreach(FW_BOOT_UPD_RESET_bit_cg[bt]) FW_BOOT_UPD_RESET_bit_cg[bt] = new();
@@ -2380,7 +2500,7 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__DEBUG_IN_bit_cg DATA_bit_cg[1];
+        mci_reg__DEBUG_IN_bit_cg DATA_bit_cg[32];
         mci_reg__DEBUG_IN_fld_cg fld_cg;
         rand uvm_reg_field DATA;
 
@@ -2395,7 +2515,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.DATA = new("DATA");
-            this.DATA.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.DATA.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(DATA_bit_cg[bt]) DATA_bit_cg[bt] = new();
             end
@@ -2410,7 +2530,7 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__DEBUG_OUT_bit_cg DATA_bit_cg[1];
+        mci_reg__DEBUG_OUT_bit_cg DATA_bit_cg[32];
         mci_reg__DEBUG_OUT_fld_cg fld_cg;
         rand uvm_reg_field DATA;
 
@@ -2425,7 +2545,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.DATA = new("DATA");
-            this.DATA.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.DATA.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(DATA_bit_cg[bt]) DATA_bit_cg[bt] = new();
             end
@@ -10378,6 +10498,10 @@ package mci_reg_uvm;
         rand mci_reg__FW_REV_ID FW_REV_ID[2];
         rand mci_reg__HW_CONFIG0 HW_CONFIG0;
         rand mci_reg__HW_CONFIG1 HW_CONFIG1;
+        rand mci_reg__MCU_IFU_AXI_USER MCU_IFU_AXI_USER;
+        rand mci_reg__MCU_LSU_AXI_USER MCU_LSU_AXI_USER;
+        rand mci_reg__MCU_SRAM_CONFIG_AXI_USER MCU_SRAM_CONFIG_AXI_USER;
+        rand mci_reg__MCI_SOC_CONFIG_AXI_USER MCI_SOC_CONFIG_AXI_USER;
         rand mci_reg__FW_FLOW_STATUS FW_FLOW_STATUS;
         rand mci_reg__HW_FLOW_STATUS HW_FLOW_STATUS;
         rand mci_reg__RESET_REASON RESET_REASON;
@@ -10478,153 +10602,173 @@ package mci_reg_uvm;
 
             this.HW_CONFIG1.build();
             this.default_map.add_reg(this.HW_CONFIG1, 'h1c);
+            this.MCU_IFU_AXI_USER = new("MCU_IFU_AXI_USER");
+            this.MCU_IFU_AXI_USER.configure(this);
+
+            this.MCU_IFU_AXI_USER.build();
+            this.default_map.add_reg(this.MCU_IFU_AXI_USER, 'h20);
+            this.MCU_LSU_AXI_USER = new("MCU_LSU_AXI_USER");
+            this.MCU_LSU_AXI_USER.configure(this);
+
+            this.MCU_LSU_AXI_USER.build();
+            this.default_map.add_reg(this.MCU_LSU_AXI_USER, 'h24);
+            this.MCU_SRAM_CONFIG_AXI_USER = new("MCU_SRAM_CONFIG_AXI_USER");
+            this.MCU_SRAM_CONFIG_AXI_USER.configure(this);
+
+            this.MCU_SRAM_CONFIG_AXI_USER.build();
+            this.default_map.add_reg(this.MCU_SRAM_CONFIG_AXI_USER, 'h28);
+            this.MCI_SOC_CONFIG_AXI_USER = new("MCI_SOC_CONFIG_AXI_USER");
+            this.MCI_SOC_CONFIG_AXI_USER.configure(this);
+
+            this.MCI_SOC_CONFIG_AXI_USER.build();
+            this.default_map.add_reg(this.MCI_SOC_CONFIG_AXI_USER, 'h2c);
             this.FW_FLOW_STATUS = new("FW_FLOW_STATUS");
             this.FW_FLOW_STATUS.configure(this);
 
             this.FW_FLOW_STATUS.build();
-            this.default_map.add_reg(this.FW_FLOW_STATUS, 'h20);
+            this.default_map.add_reg(this.FW_FLOW_STATUS, 'h30);
             this.HW_FLOW_STATUS = new("HW_FLOW_STATUS");
             this.HW_FLOW_STATUS.configure(this);
 
             this.HW_FLOW_STATUS.build();
-            this.default_map.add_reg(this.HW_FLOW_STATUS, 'h24);
+            this.default_map.add_reg(this.HW_FLOW_STATUS, 'h34);
             this.RESET_REASON = new("RESET_REASON");
             this.RESET_REASON.configure(this);
 
             this.RESET_REASON.build();
-            this.default_map.add_reg(this.RESET_REASON, 'h28);
+            this.default_map.add_reg(this.RESET_REASON, 'h38);
             this.RESET_STATUS = new("RESET_STATUS");
             this.RESET_STATUS.configure(this);
 
             this.RESET_STATUS.build();
-            this.default_map.add_reg(this.RESET_STATUS, 'h2c);
+            this.default_map.add_reg(this.RESET_STATUS, 'h3c);
             this.SECURITY_STATE = new("SECURITY_STATE");
             this.SECURITY_STATE.configure(this);
 
             this.SECURITY_STATE.build();
-            this.default_map.add_reg(this.SECURITY_STATE, 'h30);
+            this.default_map.add_reg(this.SECURITY_STATE, 'h40);
             this.HW_ERROR_FATAL = new("HW_ERROR_FATAL");
             this.HW_ERROR_FATAL.configure(this);
 
             this.HW_ERROR_FATAL.build();
-            this.default_map.add_reg(this.HW_ERROR_FATAL, 'h40);
+            this.default_map.add_reg(this.HW_ERROR_FATAL, 'h50);
             this.AGG_ERROR_FATAL = new("AGG_ERROR_FATAL");
             this.AGG_ERROR_FATAL.configure(this);
 
             this.AGG_ERROR_FATAL.build();
-            this.default_map.add_reg(this.AGG_ERROR_FATAL, 'h44);
+            this.default_map.add_reg(this.AGG_ERROR_FATAL, 'h54);
             this.HW_ERROR_NON_FATAL = new("HW_ERROR_NON_FATAL");
             this.HW_ERROR_NON_FATAL.configure(this);
 
             this.HW_ERROR_NON_FATAL.build();
-            this.default_map.add_reg(this.HW_ERROR_NON_FATAL, 'h48);
+            this.default_map.add_reg(this.HW_ERROR_NON_FATAL, 'h58);
             this.AGG_ERROR_NON_FATAL = new("AGG_ERROR_NON_FATAL");
             this.AGG_ERROR_NON_FATAL.configure(this);
 
             this.AGG_ERROR_NON_FATAL.build();
-            this.default_map.add_reg(this.AGG_ERROR_NON_FATAL, 'h4c);
+            this.default_map.add_reg(this.AGG_ERROR_NON_FATAL, 'h5c);
             this.FW_ERROR_FATAL = new("FW_ERROR_FATAL");
             this.FW_ERROR_FATAL.configure(this);
 
             this.FW_ERROR_FATAL.build();
-            this.default_map.add_reg(this.FW_ERROR_FATAL, 'h50);
+            this.default_map.add_reg(this.FW_ERROR_FATAL, 'h60);
             this.FW_ERROR_NON_FATAL = new("FW_ERROR_NON_FATAL");
             this.FW_ERROR_NON_FATAL.configure(this);
 
             this.FW_ERROR_NON_FATAL.build();
-            this.default_map.add_reg(this.FW_ERROR_NON_FATAL, 'h54);
+            this.default_map.add_reg(this.FW_ERROR_NON_FATAL, 'h64);
             this.HW_ERROR_ENC = new("HW_ERROR_ENC");
             this.HW_ERROR_ENC.configure(this);
 
             this.HW_ERROR_ENC.build();
-            this.default_map.add_reg(this.HW_ERROR_ENC, 'h58);
+            this.default_map.add_reg(this.HW_ERROR_ENC, 'h68);
             this.FW_ERROR_ENC = new("FW_ERROR_ENC");
             this.FW_ERROR_ENC.configure(this);
 
             this.FW_ERROR_ENC.build();
-            this.default_map.add_reg(this.FW_ERROR_ENC, 'h5c);
+            this.default_map.add_reg(this.FW_ERROR_ENC, 'h6c);
             foreach(this.FW_EXTENDED_ERROR_INFO[i0]) begin
                 this.FW_EXTENDED_ERROR_INFO[i0] = new($sformatf("FW_EXTENDED_ERROR_INFO[%0d]", i0));
                 this.FW_EXTENDED_ERROR_INFO[i0].configure(this);
                 
                 this.FW_EXTENDED_ERROR_INFO[i0].build();
-                this.default_map.add_reg(this.FW_EXTENDED_ERROR_INFO[i0], 'h60 + i0*'h4);
+                this.default_map.add_reg(this.FW_EXTENDED_ERROR_INFO[i0], 'h70 + i0*'h4);
             end
             this.internal_hw_error_fatal_mask = new("internal_hw_error_fatal_mask");
             this.internal_hw_error_fatal_mask.configure(this);
 
             this.internal_hw_error_fatal_mask.build();
-            this.default_map.add_reg(this.internal_hw_error_fatal_mask, 'h80);
+            this.default_map.add_reg(this.internal_hw_error_fatal_mask, 'h90);
             this.internal_hw_error_non_fatal_mask = new("internal_hw_error_non_fatal_mask");
             this.internal_hw_error_non_fatal_mask.configure(this);
 
             this.internal_hw_error_non_fatal_mask.build();
-            this.default_map.add_reg(this.internal_hw_error_non_fatal_mask, 'h84);
+            this.default_map.add_reg(this.internal_hw_error_non_fatal_mask, 'h94);
             this.internal_agg_error_fatal_mask = new("internal_agg_error_fatal_mask");
             this.internal_agg_error_fatal_mask.configure(this);
 
             this.internal_agg_error_fatal_mask.build();
-            this.default_map.add_reg(this.internal_agg_error_fatal_mask, 'h88);
+            this.default_map.add_reg(this.internal_agg_error_fatal_mask, 'h98);
             this.internal_agg_error_non_fatal_mask = new("internal_agg_error_non_fatal_mask");
             this.internal_agg_error_non_fatal_mask.configure(this);
 
             this.internal_agg_error_non_fatal_mask.build();
-            this.default_map.add_reg(this.internal_agg_error_non_fatal_mask, 'h8c);
+            this.default_map.add_reg(this.internal_agg_error_non_fatal_mask, 'h9c);
             this.internal_fw_error_fatal_mask = new("internal_fw_error_fatal_mask");
             this.internal_fw_error_fatal_mask.configure(this);
 
             this.internal_fw_error_fatal_mask.build();
-            this.default_map.add_reg(this.internal_fw_error_fatal_mask, 'h90);
+            this.default_map.add_reg(this.internal_fw_error_fatal_mask, 'ha0);
             this.internal_fw_error_non_fatal_mask = new("internal_fw_error_non_fatal_mask");
             this.internal_fw_error_non_fatal_mask.configure(this);
 
             this.internal_fw_error_non_fatal_mask.build();
-            this.default_map.add_reg(this.internal_fw_error_non_fatal_mask, 'h94);
+            this.default_map.add_reg(this.internal_fw_error_non_fatal_mask, 'ha4);
             this.WDT_TIMER1_EN = new("WDT_TIMER1_EN");
             this.WDT_TIMER1_EN.configure(this);
 
             this.WDT_TIMER1_EN.build();
-            this.default_map.add_reg(this.WDT_TIMER1_EN, 'ha0);
+            this.default_map.add_reg(this.WDT_TIMER1_EN, 'hb0);
             this.WDT_TIMER1_CTRL = new("WDT_TIMER1_CTRL");
             this.WDT_TIMER1_CTRL.configure(this);
 
             this.WDT_TIMER1_CTRL.build();
-            this.default_map.add_reg(this.WDT_TIMER1_CTRL, 'ha4);
+            this.default_map.add_reg(this.WDT_TIMER1_CTRL, 'hb4);
             foreach(this.WDT_TIMER1_TIMEOUT_PERIOD[i0]) begin
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0] = new($sformatf("WDT_TIMER1_TIMEOUT_PERIOD[%0d]", i0));
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0].configure(this);
                 
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0].build();
-                this.default_map.add_reg(this.WDT_TIMER1_TIMEOUT_PERIOD[i0], 'ha8 + i0*'h4);
+                this.default_map.add_reg(this.WDT_TIMER1_TIMEOUT_PERIOD[i0], 'hb8 + i0*'h4);
             end
             this.WDT_TIMER2_EN = new("WDT_TIMER2_EN");
             this.WDT_TIMER2_EN.configure(this);
 
             this.WDT_TIMER2_EN.build();
-            this.default_map.add_reg(this.WDT_TIMER2_EN, 'hb0);
+            this.default_map.add_reg(this.WDT_TIMER2_EN, 'hc0);
             this.WDT_TIMER2_CTRL = new("WDT_TIMER2_CTRL");
             this.WDT_TIMER2_CTRL.configure(this);
 
             this.WDT_TIMER2_CTRL.build();
-            this.default_map.add_reg(this.WDT_TIMER2_CTRL, 'hb4);
+            this.default_map.add_reg(this.WDT_TIMER2_CTRL, 'hc4);
             foreach(this.WDT_TIMER2_TIMEOUT_PERIOD[i0]) begin
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0] = new($sformatf("WDT_TIMER2_TIMEOUT_PERIOD[%0d]", i0));
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0].configure(this);
                 
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0].build();
-                this.default_map.add_reg(this.WDT_TIMER2_TIMEOUT_PERIOD[i0], 'hb8 + i0*'h4);
+                this.default_map.add_reg(this.WDT_TIMER2_TIMEOUT_PERIOD[i0], 'hc8 + i0*'h4);
             end
             this.WDT_STATUS = new("WDT_STATUS");
             this.WDT_STATUS.configure(this);
 
             this.WDT_STATUS.build();
-            this.default_map.add_reg(this.WDT_STATUS, 'hc0);
+            this.default_map.add_reg(this.WDT_STATUS, 'hd0);
             foreach(this.WDT_CFG[i0]) begin
                 this.WDT_CFG[i0] = new($sformatf("WDT_CFG[%0d]", i0));
                 this.WDT_CFG[i0].configure(this);
                 
                 this.WDT_CFG[i0].build();
-                this.default_map.add_reg(this.WDT_CFG[i0], 'hd0 + i0*'h4);
+                this.default_map.add_reg(this.WDT_CFG[i0], 'hd4 + i0*'h4);
             end
             this.MCU_TIMER_CONFIG = new("MCU_TIMER_CONFIG");
             this.MCU_TIMER_CONFIG.configure(this);

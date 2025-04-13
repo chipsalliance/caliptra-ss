@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include "soc_address_map.h"
+#include "fuse_ctrl.h"
 #include "printf.h"
 #include "soc_ifc.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
@@ -244,6 +245,16 @@ void transition_state_req_with_expec_error(uint32_t next_lc_state, uint32_t toke
     sw_transition_req_with_expec_error(next_lc_state_mne, token_31_0, token_63_32, token_95_64, token_127_96, conditional);
     reset_fc_lcc_rtl();
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in %d state!\n", next_lc_state);
+}
+
+void transition_state_check(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional) {
+    transition_state(next_lc_state, token_31_0, token_63_32, token_95_64, token_127_96, conditional);
+    wait_dai_op_idle(0);
+    uint32_t lc_state_curr = read_lc_state();
+    if (lc_state_curr != next_lc_state) {
+        VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act %d\n", next_lc_state, lc_state_curr);
+        exit(1);
+    }
 }
 
 void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
