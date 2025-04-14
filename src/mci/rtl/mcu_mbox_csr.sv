@@ -519,8 +519,8 @@ module mcu_mbox_csr (
         automatic logic load_next_c;
         next_c = field_storage.mbox_hw_status.ecc_single_error.value;
         load_next_c = '0;
-        if(!field_storage.mbox_execute.execute.value) begin // HW Write - wel
-            next_c = field_storage.mbox_execute.execute.value;
+        if(!field_storage.mbox_lock.lock.value) begin // HW Write - wel
+            next_c = field_storage.mbox_lock.lock.value;
             load_next_c = '1;
         end else if(hwif_in.mbox_hw_status.ecc_single_error.hwset) begin // HW Set
             next_c = '1;
@@ -543,8 +543,8 @@ module mcu_mbox_csr (
         automatic logic load_next_c;
         next_c = field_storage.mbox_hw_status.ecc_double_error.value;
         load_next_c = '0;
-        if(!field_storage.mbox_execute.execute.value) begin // HW Write - wel
-            next_c = field_storage.mbox_execute.execute.value;
+        if(!field_storage.mbox_lock.lock.value) begin // HW Write - wel
+            next_c = field_storage.mbox_lock.lock.value;
             load_next_c = '1;
         end else if(hwif_in.mbox_hw_status.ecc_double_error.hwset) begin // HW Set
             next_c = '1;
