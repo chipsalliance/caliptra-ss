@@ -6180,16 +6180,28 @@
 `define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_LOW                                                        (5)
 `define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_MASK                                                       (32'h1ffe0)
 `endif
+`ifndef MCI_REG_MCU_IFU_AXI_USER
+`define MCI_REG_MCU_IFU_AXI_USER                                                                    (32'h20)
+`endif
+`ifndef MCI_REG_MCU_LSU_AXI_USER
+`define MCI_REG_MCU_LSU_AXI_USER                                                                    (32'h24)
+`endif
+`ifndef MCI_REG_MCU_SRAM_CONFIG_AXI_USER
+`define MCI_REG_MCU_SRAM_CONFIG_AXI_USER                                                            (32'h28)
+`endif
+`ifndef MCI_REG_MCI_SOC_CONFIG_AXI_USER
+`define MCI_REG_MCI_SOC_CONFIG_AXI_USER                                                             (32'h2c)
+`endif
 `ifndef MCI_REG_FW_FLOW_STATUS
-`define MCI_REG_FW_FLOW_STATUS                                                                      (32'h20)
+`define MCI_REG_FW_FLOW_STATUS                                                                      (32'h30)
 `endif
 `ifndef MCI_REG_HW_FLOW_STATUS
-`define MCI_REG_HW_FLOW_STATUS                                                                      (32'h24)
+`define MCI_REG_HW_FLOW_STATUS                                                                      (32'h34)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW                                                         (0)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK                                                        (32'hf)
 `endif
 `ifndef MCI_REG_RESET_REASON
-`define MCI_REG_RESET_REASON                                                                        (32'h28)
+`define MCI_REG_RESET_REASON                                                                        (32'h38)
 `define MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_LOW                                               (0)
 `define MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_MASK                                              (32'h1)
 `define MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_LOW                                                  (1)
@@ -6198,14 +6210,14 @@
 `define MCI_REG_RESET_REASON_WARM_RESET_MASK                                                        (32'h4)
 `endif
 `ifndef MCI_REG_RESET_STATUS
-`define MCI_REG_RESET_STATUS                                                                        (32'h2c)
+`define MCI_REG_RESET_STATUS                                                                        (32'h3c)
 `define MCI_REG_RESET_STATUS_CPTRA_RESET_STS_LOW                                                    (0)
 `define MCI_REG_RESET_STATUS_CPTRA_RESET_STS_MASK                                                   (32'h1)
 `define MCI_REG_RESET_STATUS_MCU_RESET_STS_LOW                                                      (1)
 `define MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK                                                     (32'h2)
 `endif
 `ifndef MCI_REG_SECURITY_STATE
-`define MCI_REG_SECURITY_STATE                                                                      (32'h30)
+`define MCI_REG_SECURITY_STATE                                                                      (32'h40)
 `define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_LOW                                                 (0)
 `define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_MASK                                                (32'h3)
 `define MCI_REG_SECURITY_STATE_DEBUG_LOCKED_LOW                                                     (2)
@@ -6214,7 +6226,7 @@
 `define MCI_REG_SECURITY_STATE_SCAN_MODE_MASK                                                       (32'h8)
 `endif
 `ifndef MCI_REG_HW_ERROR_FATAL
-`define MCI_REG_HW_ERROR_FATAL                                                                      (32'h40)
+`define MCI_REG_HW_ERROR_FATAL                                                                      (32'h50)
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_LOW                                                 (0)
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_MASK                                                (32'h1)
 `define MCI_REG_HW_ERROR_FATAL_NMI_PIN_LOW                                                          (1)
@@ -6223,7 +6235,7 @@
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (32'h4)
 `endif
 `ifndef MCI_REG_AGG_ERROR_FATAL
-`define MCI_REG_AGG_ERROR_FATAL                                                                     (32'h44)
+`define MCI_REG_AGG_ERROR_FATAL                                                                     (32'h54)
 `define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_LOW                                               (0)
 `define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_MASK                                              (32'h1)
 `define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL30_LOW                                               (1)
@@ -6290,14 +6302,14 @@
 `define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL0_MASK                                               (32'h80000000)
 `endif
 `ifndef MCI_REG_HW_ERROR_NON_FATAL
-`define MCI_REG_HW_ERROR_NON_FATAL                                                                  (32'h48)
+`define MCI_REG_HW_ERROR_NON_FATAL                                                                  (32'h58)
 `define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_LOW                                                (0)
 `define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_MASK                                               (32'h1)
 `define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_ECC_UNC_LOW                                                (1)
 `define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_ECC_UNC_MASK                                               (32'h2)
 `endif
 `ifndef MCI_REG_AGG_ERROR_NON_FATAL
-`define MCI_REG_AGG_ERROR_NON_FATAL                                                                 (32'h4c)
+`define MCI_REG_AGG_ERROR_NON_FATAL                                                                 (32'h5c)
 `define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_LOW                                       (0)
 `define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_MASK                                      (32'h1)
 `define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL30_LOW                                       (1)
@@ -6364,43 +6376,43 @@
 `define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL0_MASK                                       (32'h80000000)
 `endif
 `ifndef MCI_REG_FW_ERROR_FATAL
-`define MCI_REG_FW_ERROR_FATAL                                                                      (32'h50)
+`define MCI_REG_FW_ERROR_FATAL                                                                      (32'h60)
 `endif
 `ifndef MCI_REG_FW_ERROR_NON_FATAL
-`define MCI_REG_FW_ERROR_NON_FATAL                                                                  (32'h54)
+`define MCI_REG_FW_ERROR_NON_FATAL                                                                  (32'h64)
 `endif
 `ifndef MCI_REG_HW_ERROR_ENC
-`define MCI_REG_HW_ERROR_ENC                                                                        (32'h58)
+`define MCI_REG_HW_ERROR_ENC                                                                        (32'h68)
 `endif
 `ifndef MCI_REG_FW_ERROR_ENC
-`define MCI_REG_FW_ERROR_ENC                                                                        (32'h5c)
+`define MCI_REG_FW_ERROR_ENC                                                                        (32'h6c)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_0
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                            (32'h60)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                            (32'h70)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_1
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                            (32'h64)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                            (32'h74)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_2
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                            (32'h68)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                            (32'h78)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_3
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                            (32'h6c)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                            (32'h7c)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_4
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                            (32'h70)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                            (32'h80)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_5
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                            (32'h74)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                            (32'h84)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_6
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                            (32'h78)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                            (32'h88)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_7
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                            (32'h7c)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                            (32'h8c)
 `endif
 `ifndef MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK
-`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                        (32'h80)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                        (32'h90)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_ECC_UNC_LOW                              (0)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_ECC_UNC_MASK                             (32'h1)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_NMI_PIN_LOW                                       (1)
@@ -6409,14 +6421,14 @@
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (32'h4)
 `endif
 `ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK
-`define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (32'h84)
+`define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (32'h94)
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_ECC_UNC_LOW                             (0)
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_ECC_UNC_MASK                            (32'h1)
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_ECC_UNC_LOW                             (1)
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_ECC_UNC_MASK                            (32'h2)
 `endif
 `ifndef MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK
-`define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                                       (32'h88)
+`define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                                       (32'h98)
 `define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL31_LOW                            (0)
 `define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL31_MASK                           (32'h1)
 `define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL30_LOW                            (1)
@@ -6483,7 +6495,7 @@
 `define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL0_MASK                            (32'h80000000)
 `endif
 `ifndef MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK
-`define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                                   (32'h8c)
+`define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                                   (32'h9c)
 `define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL31_LOW                    (0)
 `define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL31_MASK                   (32'h1)
 `define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL30_LOW                    (1)
@@ -6550,55 +6562,55 @@
 `define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL0_MASK                    (32'h80000000)
 `endif
 `ifndef MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK
-`define MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                        (32'h90)
+`define MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                        (32'ha0)
 `endif
 `ifndef MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK
-`define MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                                    (32'h94)
+`define MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                                    (32'ha4)
 `endif
 `ifndef MCI_REG_WDT_TIMER1_EN
-`define MCI_REG_WDT_TIMER1_EN                                                                       (32'ha0)
+`define MCI_REG_WDT_TIMER1_EN                                                                       (32'hb0)
 `define MCI_REG_WDT_TIMER1_EN_TIMER1_EN_LOW                                                         (0)
 `define MCI_REG_WDT_TIMER1_EN_TIMER1_EN_MASK                                                        (32'h1)
 `endif
 `ifndef MCI_REG_WDT_TIMER1_CTRL
-`define MCI_REG_WDT_TIMER1_CTRL                                                                     (32'ha4)
+`define MCI_REG_WDT_TIMER1_CTRL                                                                     (32'hb4)
 `define MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_LOW                                                  (0)
 `define MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_MASK                                                 (32'h1)
 `endif
 `ifndef MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0
-`define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                         (32'ha8)
+`define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                         (32'hb8)
 `endif
 `ifndef MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1
-`define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                         (32'hac)
+`define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                         (32'hbc)
 `endif
 `ifndef MCI_REG_WDT_TIMER2_EN
-`define MCI_REG_WDT_TIMER2_EN                                                                       (32'hb0)
+`define MCI_REG_WDT_TIMER2_EN                                                                       (32'hc0)
 `define MCI_REG_WDT_TIMER2_EN_TIMER2_EN_LOW                                                         (0)
 `define MCI_REG_WDT_TIMER2_EN_TIMER2_EN_MASK                                                        (32'h1)
 `endif
 `ifndef MCI_REG_WDT_TIMER2_CTRL
-`define MCI_REG_WDT_TIMER2_CTRL                                                                     (32'hb4)
+`define MCI_REG_WDT_TIMER2_CTRL                                                                     (32'hc4)
 `define MCI_REG_WDT_TIMER2_CTRL_TIMER2_RESTART_LOW                                                  (0)
 `define MCI_REG_WDT_TIMER2_CTRL_TIMER2_RESTART_MASK                                                 (32'h1)
 `endif
 `ifndef MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0
-`define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                         (32'hb8)
+`define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                         (32'hc8)
 `endif
 `ifndef MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1
-`define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                         (32'hbc)
+`define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                         (32'hcc)
 `endif
 `ifndef MCI_REG_WDT_STATUS
-`define MCI_REG_WDT_STATUS                                                                          (32'hc0)
+`define MCI_REG_WDT_STATUS                                                                          (32'hd0)
 `define MCI_REG_WDT_STATUS_T1_TIMEOUT_LOW                                                           (0)
 `define MCI_REG_WDT_STATUS_T1_TIMEOUT_MASK                                                          (32'h1)
 `define MCI_REG_WDT_STATUS_T2_TIMEOUT_LOW                                                           (1)
 `define MCI_REG_WDT_STATUS_T2_TIMEOUT_MASK                                                          (32'h2)
 `endif
 `ifndef MCI_REG_WDT_CFG_0
-`define MCI_REG_WDT_CFG_0                                                                           (32'hd0)
+`define MCI_REG_WDT_CFG_0                                                                           (32'hd4)
 `endif
 `ifndef MCI_REG_WDT_CFG_1
-`define MCI_REG_WDT_CFG_1                                                                           (32'hd4)
+`define MCI_REG_WDT_CFG_1                                                                           (32'hd8)
 `endif
 `ifndef MCI_REG_MCU_TIMER_CONFIG
 `define MCI_REG_MCU_TIMER_CONFIG                                                                    (32'he0)

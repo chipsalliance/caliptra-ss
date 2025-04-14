@@ -35,6 +35,7 @@ import tb_top_pkg::*;
   input  logic                       clk,
   input  logic                       rst_l,
   input  int                         cycleCnt,
+  caliptra_ss_bfm_services_if.tb_services soc_bfm_if,
   css_mcu0_el2_mem_if                cptra_ss_mcu0_el2_mem_export,
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox0_sram_req_if,
@@ -43,9 +44,6 @@ import tb_top_pkg::*;
 );
 
     `include "caliptra_ss_tb_cmd_list.svh"
-
-    `define MCU_TOP_PATH `CPTRA_SS_TOP_PATH.rvtop_wrapper
-    `define MCU_DEC `MCU_TOP_PATH.rvtop.veer.dec
 
     int                         commit_count;
 
@@ -57,9 +55,22 @@ import tb_top_pkg::*;
     logic        [63:0]         mailbox_data;
     logic        [63:0]         prev_mailbox_data;
 
+
+    logic                       cold_rst;
+    logic                       warm_rst;
+    logic                       clr_cold_rst;
+    logic                       clr_warm_rst;
+
     string                      abi_reg[32]; // ABI register names
 
     tb_top_pkg::veer_sram_error_injection_mode_t error_injection_mode;
+    tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mbox0_sram_error_injection_mode;
+    tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mbox1_sram_error_injection_mode;
+    
+    bit                         flip_bit_mbox0;
+    bit                         flip_bit_mbox1;
+    logic [MCU_MBOX0_DATA_AND_ECC_W-1:0] mbox0_sram_wdata_bitflip;
+    logic [MCU_MBOX1_DATA_AND_ECC_W-1:0] mbox1_sram_wdata_bitflip;
 
     logic                       wb_valid;
     logic [4:0]                 wb_dest;
@@ -175,18 +186,20 @@ import tb_top_pkg::*;
             $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.mci_top_i.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
         end
         // Memory signature dump and test END
-        if(mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) begin
+        if((mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) || soc_bfm_if.end_test_success) begin
             if (mem_signature_begin < mem_signature_end) begin
                 dump_signature();
             end
             // End Of test monitor
-            else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS) begin
-                $display("Halting MCU");
-                force `MCI_PATH.mcu_cpu_halt_req_o = 1;
-                $display("Waiting for MCU to halt");
-                wait(`MCI_PATH.mcu_cpu_halt_ack_i);
-                $display("Waiting for MCU halt status");
-                wait(`MCI_PATH.mcu_cpu_halt_status_i);
+            else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || soc_bfm_if.end_test_success ) begin
+                if(`MCU_PATH.rst_l) begin
+                    $display("Halting MCU");
+                    force `MCI_PATH.mcu_cpu_halt_req_o = 1;
+                    $display("Waiting for MCU to halt");
+                    wait(`MCI_PATH.mcu_cpu_halt_ack_i);
+                    $display("Waiting for MCU halt status");
+                    wait(`MCI_PATH.mcu_cpu_halt_status_i);
+                end
 
                 $display("* TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
@@ -207,6 +220,33 @@ import tb_top_pkg::*;
                 $error("* TESTCASE FAILED");
                 $finish;
             end
+        end
+    end
+
+    always @(negedge clk or negedge rst_l) begin
+        if (!rst_l) begin
+            mbox0_sram_error_injection_mode <= '{default: 1'b0};
+            mbox1_sram_error_injection_mode <= '{default: 1'b0};
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MBOX_SRAM_SINGLE_ECC_ERROR)) begin
+            $display("Injecting single bit MCU Mbox SRAM errors");
+            mbox0_sram_error_injection_mode.single_bit_error <= 1'b1;
+            mbox1_sram_error_injection_mode.single_bit_error <= 1'b1;
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR)) begin
+            $display("Injecting double bit MCU Mbox SRAM errors");
+            mbox0_sram_error_injection_mode.double_bit_error <= 1'b1;
+            mbox1_sram_error_injection_mode.double_bit_error <= 1'b1;
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION)) begin
+            $display("Randomizing MCU SRAM Mbox error injection");
+            mbox0_sram_error_injection_mode.randomize <= 1'b1;
+            mbox1_sram_error_injection_mode.randomize <= 1'b1;
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION)) begin
+            $display("Disabling MCU SRAM Mbox injection");
+            mbox0_sram_error_injection_mode <= '{default: 1'b0};
+            mbox1_sram_error_injection_mode <= '{default: 1'b0};
         end
     end
 
@@ -324,6 +364,99 @@ import tb_top_pkg::*;
         end
     end
 
+///////////////////////////////////////////////
+// Time controls 
+//////////////////////////////////////////////
+
+///////////////////////////////////////////////
+// Reset controls
+//////////////////////////////////////////////
+
+    always@(negedge clk) begin
+        if((mailbox_data[7:0] == TB_CMD_COLD_RESET) && mailbox_write) begin 
+            $display("[%t] COLD RESET REQUESTED", $time);
+            cold_rst <= 1'b1; 
+            warm_rst <= 1'b0;
+        end
+        else if((mailbox_data[7:0] == TB_CMD_WARM_RESET) && mailbox_write) begin
+            $display("[%t] WARM RESET REQUESTED", $time);
+            warm_rst <= 1'b1;
+            cold_rst <= 1'b0;
+        end
+        else if(clr_cold_rst) begin
+            cold_rst <= 1'b0;
+        end
+        else if(clr_warm_rst) begin
+            warm_rst <= 1'b0;
+        end
+
+    end
+
+initial begin
+    soc_bfm_if.deassert_hard_rst_flag = 1'b0;
+    soc_bfm_if.deassert_rst_flag      = 1'b0;
+    soc_bfm_if.assert_hard_rst_flag   = 1'b0;
+    soc_bfm_if.assert_rst_flag        = 1'b0;
+    clr_cold_rst                      = 1'b0;
+    clr_warm_rst                      = 1'b0;
+
+    forever begin
+        @(posedge clk);
+        if(cold_rst) begin
+            @(posedge clk);
+            $display("[%t] COLD RESET: Resets asserting", $time);
+            soc_bfm_if.assert_rst_flag <= 1'b1;
+            clr_cold_rst               <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.assert_rst_flag <= 1'b0;
+            clr_cold_rst               <= 1'b0;
+            wait(soc_bfm_if.assert_rst_flag_done);
+            $display("[%t] COLD RESET: Powergood Reset asserting", $time);
+            soc_bfm_if.assert_hard_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.assert_hard_rst_flag <= 1'b0;
+            wait(soc_bfm_if.assert_hard_rst_flag_done);
+            $display("[%t] COLD RESET: Hold", $time);
+            repeat(20) begin
+                @(posedge clk);
+            end
+            $display("[%t] COLD RESET: Powergood Reset deasserting", $time);
+            soc_bfm_if.deassert_hard_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.deassert_hard_rst_flag <= 1'b0;
+            wait(soc_bfm_if.deassert_hard_rst_flag_done);
+            $display("[%t] COLD RESET: Resets deasserting", $time);
+            soc_bfm_if.deassert_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.deassert_rst_flag <= 1'b0;
+            wait(soc_bfm_if.deassert_rst_flag_done);
+
+            $display("[%t] COLD RESET: COMPLETE", $time);
+        end
+        else if(warm_rst) begin
+            @(posedge clk);
+            $display("[%t] WARM RESET: Resets asserting", $time);
+            soc_bfm_if.assert_rst_flag <= 1'b1;
+            clr_warm_rst               <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.assert_rst_flag <= 1'b0;
+            clr_warm_rst               <= 1'b0;
+            wait(soc_bfm_if.assert_rst_flag_done);
+            $display("[%t] WARM RESET: Hold", $time);
+            repeat(10) begin
+                @(posedge clk);
+            end
+            $display("[%t] WARM RESET: Resets deasserting", $time);
+            soc_bfm_if.deassert_rst_flag <= 1'b1;
+            @(posedge clk);
+            soc_bfm_if.deassert_rst_flag <= 1'b0;
+            wait(soc_bfm_if.deassert_rst_flag_done);
+            $display("[%t] WARM RESET: COMPLETE", $time);
+        end
+    end
+end
+
+
 
     // trace monitor
     always @(posedge clk) begin
@@ -333,18 +466,18 @@ import tb_top_pkg::*;
         wb_csr_valid  <= `MCU_DEC.dec_csr_wen_r;
         wb_csr_dest   <= `MCU_DEC.dec_csr_wraddr_r;
         wb_csr_data   <= `MCU_DEC.dec_csr_wrdata_r;
-        if (`MCU_TOP_PATH.trace_rv_i_valid_ip) begin
-           $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", `MCU_TOP_PATH.trace_rv_i_valid_ip, 0, `MCU_TOP_PATH.trace_rv_i_address_ip,
-                  0, `MCU_TOP_PATH.trace_rv_i_insn_ip,`MCU_TOP_PATH.trace_rv_i_exception_ip,`MCU_TOP_PATH.trace_rv_i_ecause_ip,
-                  `MCU_TOP_PATH.trace_rv_i_tval_ip,`MCU_TOP_PATH.trace_rv_i_interrupt_ip);
+        if (`MCU_PATH.trace_rv_i_valid_ip) begin
+           $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", `MCU_PATH.trace_rv_i_valid_ip, 0, `MCU_PATH.trace_rv_i_address_ip,
+                  0, `MCU_PATH.trace_rv_i_insn_ip,`MCU_PATH.trace_rv_i_exception_ip,`MCU_PATH.trace_rv_i_ecause_ip,
+                  `MCU_PATH.trace_rv_i_tval_ip,`MCU_PATH.trace_rv_i_interrupt_ip);
            // Basic trace - no exception register updates
            // #1 0 ee000000 b0201073 c 0b02       00000000
            commit_count++;
            $fwrite (el, "%10d : %8s 0 %h %h%13s %14s ; %s\n", cycleCnt, $sformatf("#%0d",commit_count),
-                        `MCU_TOP_PATH.trace_rv_i_address_ip, `MCU_TOP_PATH.trace_rv_i_insn_ip,
+                        `MCU_PATH.trace_rv_i_address_ip, `MCU_PATH.trace_rv_i_insn_ip,
                         (wb_dest !=0 && wb_valid)?  $sformatf("%s=%h", abi_reg[wb_dest], wb_data) : "            ",
                         (wb_csr_valid)? $sformatf("c%h=%h", wb_csr_dest, wb_csr_data) : "             ",
-                        dasm(`MCU_TOP_PATH.trace_rv_i_insn_ip, `MCU_TOP_PATH.trace_rv_i_address_ip, wb_dest & {5{wb_valid}}, wb_data)
+                        dasm(`MCU_PATH.trace_rv_i_insn_ip, `MCU_PATH.trace_rv_i_address_ip, wb_dest & {5{wb_valid}}, wb_data)
                    );
         end
         if(`MCU_DEC.dec_nonblock_load_wen) begin
@@ -416,6 +549,76 @@ import tb_top_pkg::*;
 
     end
 
+
+    // Mbox0 SRAM error injection
+    `ifndef VERILATOR
+        initial begin
+            automatic bitflip_mask_generator #(MCU_MBOX0_DATA_AND_ECC_W) bitflip_gen = new();
+            forever begin
+                @(posedge clk)
+                if (~|mbox0_sram_error_injection_mode) begin
+                    mbox0_sram_wdata_bitflip <= '0;
+                end
+                else if (cptra_ss_mcu_mbox0_sram_req_if.req.cs & cptra_ss_mcu_mbox0_sram_req_if.req.we) begin
+                    // Corrupt 20% of the writes if randomize is enabled
+                    flip_bit_mbox0 = (mbox0_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                    mbox0_sram_wdata_bitflip <= flip_bit_mbox0 ? bitflip_gen.get_mask(mbox0_sram_error_injection_mode.double_bit_error) : '0;
+                    if (flip_bit_mbox0) begin
+                    //    $display("%t Injecting bit flips to Mbox0 SRAM[%d] Bitflip Mask: 0x%x Write Data: 0x%x", 
+                    //                             $realtime, cptra_ss_mcu_mbox0_sram_req_if.req.addr >>2, mbox0_sram_wdata_bitflip, cptra_ss_mcu_mbox0_sram_req_if.req.wdata);
+                    end
+                end
+            end
+        end
+    `else
+        always @(posedge clk) begin
+            if (~|mbox0_sram_error_injection_mode) begin
+                flip_bit_mbox0 <= 0;
+                mbox0_sram_wdata_bitflip <= '0;
+            end
+            else if (cptra_ss_mcu_mbox0_sram_req_if.req.cs & cptra_ss_mcu_mbox0_sram_req_if.req.cs) begin
+                // Corrupt 20% of the writes if randomize is enabled
+                flip_bit_mbox0 = (mbox0_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                mbox0_sram_wdata_bitflip <= flip_bit_mbox0 ? get_bitflip_mask(mbox0_sram_error_injection_mode.double_bit_error) : '0;
+            end
+        end
+    `endif
+
+    // Mbox1 SRAM error injection
+    `ifndef VERILATOR
+        initial begin
+            automatic bitflip_mask_generator #(MCU_MBOX1_DATA_AND_ECC_W) bitflip_gen = new();
+            forever begin
+                @(posedge clk)
+                if (~|mbox1_sram_error_injection_mode) begin
+                    mbox1_sram_wdata_bitflip <= '0;
+                end
+                else if (cptra_ss_mcu_mbox1_sram_req_if.req.cs & cptra_ss_mcu_mbox1_sram_req_if.req.we) begin
+                    flip_bit_mbox1 = (mbox1_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                    mbox1_sram_wdata_bitflip <= flip_bit_mbox1 ? bitflip_gen.get_mask(mbox1_sram_error_injection_mode.double_bit_error) : '0;
+                    // if (flip_bit_mbox1) $display("Injecting bit flips to Mbox1 SRAM[%d]", $realtime, mbox1_sram_wdata_bitflip, cptra_ss_mcu_mbox1_sram_req_if.req.addr >>2);
+                end
+            end
+    end
+    `else
+        always @(posedge clk) begin
+            if (~|mbox1_sram_error_injection_mode) begin
+                flip_bit_mbox1 <= 0;
+                mbox1_sram_wdata_bitflip <= '0;
+            end
+            else if (cptra_ss_mcu_mbox1_sram_req_if.req.cs & cptra_ss_mcu_mbox1_sram_req_if.req.cs) begin
+                // Corrupt 20% of the writes if randomize is enabled
+                flip_bit_mbox1 = (mbox1_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                mbox1_sram_wdata_bitflip <= flip_bit_mbox1 ? get_bitflip_mask(mbox1_sram_error_injection_mode.double_bit_error) : '0;
+            end
+        end
+    `endif
+
+   //=========================================================================-
+   // SRAM instances
+   //=========================================================================-
+
+
     caliptra_sram
     #(
         .DATA_WIDTH(MCU_MBOX0_DATA_AND_ECC_W),
@@ -428,7 +631,7 @@ import tb_top_pkg::*;
         .cs_i(cptra_ss_mcu_mbox0_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox0_sram_req_if.req.we),
         .addr_i(cptra_ss_mcu_mbox0_sram_req_if.req.addr),
-        .wdata_i(cptra_ss_mcu_mbox0_sram_req_if.req.wdata),
+        .wdata_i(cptra_ss_mcu_mbox0_sram_req_if.req.wdata ^ mbox0_sram_wdata_bitflip),
 
         .rdata_o(cptra_ss_mcu_mbox0_sram_req_if.resp.rdata)
     );
@@ -445,7 +648,7 @@ import tb_top_pkg::*;
         .cs_i(cptra_ss_mcu_mbox1_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox1_sram_req_if.req.we),
         .addr_i(cptra_ss_mcu_mbox1_sram_req_if.req.addr),
-        .wdata_i(cptra_ss_mcu_mbox1_sram_req_if.req.wdata),
+        .wdata_i(cptra_ss_mcu_mbox1_sram_req_if.req.wdata ^ mbox1_sram_wdata_bitflip),
 
         .rdata_o(cptra_ss_mcu_mbox1_sram_req_if.resp.rdata)
     );

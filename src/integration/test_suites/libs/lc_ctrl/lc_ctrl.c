@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include "soc_address_map.h"
+#include "fuse_ctrl.h"
 #include "printf.h"
 #include "soc_ifc.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"

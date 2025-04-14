@@ -172,9 +172,9 @@ addrmap mcu_mbox_csr {
     // the execute field.
     // For errors during AHB (direct-mode) reads, interrupt signals
     // will be used.
-    mbox_hw_status.ecc_single_error->wel  = mbox_execute.execute;
-    mbox_hw_status.ecc_double_error->wel  = mbox_execute.execute;
-    mbox_hw_status.ecc_single_error->next = mbox_execute.execute;
-    mbox_hw_status.ecc_double_error->next = mbox_execute.execute;
+    mbox_hw_status.ecc_single_error->wel  = mbox_lock.lock;
+    mbox_hw_status.ecc_double_error->wel  = mbox_lock.lock;
+    mbox_hw_status.ecc_single_error->next = mbox_lock.lock;
+    mbox_hw_status.ecc_double_error->next = mbox_lock.lock;
 
 };

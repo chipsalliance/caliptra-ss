@@ -24,7 +24,7 @@
 
 #define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
 
-#define FC_LCC_CMD_OFFSET 0xB0
+#define FC_LCC_CMD_OFFSET 0x90
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
 #define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
 #define CMD_FORCE_FC_AWUSER_MCU         FC_LCC_CMD_OFFSET + 0x04
@@ -35,12 +35,30 @@
 #define CMD_FORCE_LC_TOKENS             FC_LCC_CMD_OFFSET + 0x09
 #define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 0x0a
 #define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 0x0b
-
+#define CMD_FC_LCC_EXT_CLK_500MHZ       FC_LCC_CMD_OFFSET + 0x0c
+#define CMD_FC_LCC_EXT_CLK_160MHZ       FC_LCC_CMD_OFFSET + 0x0d
+#define CMD_FC_LCC_EXT_CLK_400MHZ       FC_LCC_CMD_OFFSET + 0x0e
+#define CMD_FC_LCC_EXT_CLK_1000MHZ      FC_LCC_CMD_OFFSET + 0x0f
+#define CMD_FC_LCC_FAULT_DIGEST         FC_LCC_CMD_OFFSET + 0x10
+#define CMD_FC_LCC_FAULT_BUS_ECC        FC_LCC_CMD_OFFSET + 0x11
+#define CMD_LC_TRIGGER_ESCALATION0      FC_LCC_CMD_OFFSET + 0x12
+#define CMD_LC_TRIGGER_ESCALATION1      FC_LCC_CMD_OFFSET + 0x13
 #define TB_CMD_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
 
 #define TB_CMD_DISABLE_INJECT_ECC_ERROR     0xe0
 #define TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM 0xe2
 #define TB_CMD_INJECT_ECC_ERROR_DOUBLE_DCCM 0xe3
+#define TB_CMD_INJECT_MBOX_SRAM_SINGLE_ECC_ERROR  0xe4
+#define TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR  0xe5
+#define TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION 0xe6
+#define TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION 0xe7
+
+
+
+#define TB_CMD_COLD_RESET 0xF5
+#define TB_CMD_WARM_RESET 0xF6
+
+
 
 #define MCU_MBOX_NUM_STRIDE             (SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR - SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR)
 #define MCU_MBOX_AXI_CFG_STRIDE         (SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0 - SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0)
@@ -155,115 +173,101 @@ bool is_mcu_mbox_target_done_interrupt_set(uint32_t mbox_num);
 void mcu_mbox_clear_target_done_interrupt(uint32_t mbox_num);
 uint32_t mcu_mbox_get_sram_size_kb(uint32_t mbox_num);
 uint32_t mcu_mbox_gen_rand_dword_addr(uint32_t mbox_num, uint32_t sram_size_kb, uint32_t max_size_kb);
+bool is_only_mcu_mbox_sb_ecc_interrupt_set(uint32_t mbox_num);
+void clear_mcu_mbox_clear_sb_ecc_interrupt(uint32_t mbox_num);
+bool is_only_mcu_mbox_db_ecc_interrupt_set(uint32_t mbox_num);
+void clear_mcu_mbox_clear_db_ecc_interrupt(uint32_t mbox_num);
+
 
 ///////////////////////////////////////////////////
 // MCU Mbox Read/Write SRAM and CSR functions
 ////////////////////////////////////////////////////
-inline void mcu_mbox_clear_execute(uint32_t mbox_num) {
+static inline void mcu_mbox_clear_execute(uint32_t mbox_num) {
     VPRINTF(LOW, "MCU: Clearing MBOX%x Execute\n", mbox_num);
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x0);
 }
 
-inline void mcu_mbox_set_execute(uint32_t mbox_num) {
+static inline void mcu_mbox_set_execute(uint32_t mbox_num) {
     VPRINTF(LOW, "MCU: Setting MBOX%x Execute\n", mbox_num);
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x1);
 }
 
-inline void mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t cmd) {
+static inline void mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t cmd) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x command: 0%x\n", mbox_num, cmd); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, cmd);
 }
-inline uint32_t mcu_mbox_read_cmd(uint32_t mbox_num) {
+static inline uint32_t mcu_mbox_read_cmd(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading CMD: 0x%x\n", mbox_num, rd_data); 
     return rd_data;
 }
-inline void mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t dlen) {
+static inline void mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t dlen) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x DLEN: 0x%x\n", mbox_num, dlen); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, dlen);
 }
 
-inline uint32_t mcu_mbox_read_dlen(uint32_t mbox_num) {
+static inline uint32_t mcu_mbox_read_dlen(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading DLEN: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }
-inline void mcu_mbox_write_cmd_status(uint32_t mbox_num, enum mcu_mbox_cmd_status cmd_status) {
+static inline void mcu_mbox_write_cmd_status(uint32_t mbox_num, enum mcu_mbox_cmd_status cmd_status) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS: 0%x\n", mbox_num, cmd_status); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, (cmd_status & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK));    
 }
-#define FC_LCC_CMD_OFFSET 0x90
-#define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
-#define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
-#define CMD_FORCE_FC_AWUSER_MCU         FC_LCC_CMD_OFFSET + 0x04
-#define CMD_RELEASE_AWUSER              FC_LCC_CMD_OFFSET + 0x05
-#define CMD_FC_FORCE_ZEROIZATION        FC_LCC_CMD_OFFSET + 0x06
-#define CMD_FC_FORCE_ZEROIZATION_RESET  FC_LCC_CMD_OFFSET + 0x07
-#define CMD_RELEASE_ZEROIZATION         FC_LCC_CMD_OFFSET + 0x08
-#define CMD_FORCE_LC_TOKENS             FC_LCC_CMD_OFFSET + 0x09
-#define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 0x0a
-#define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 0x0b
-#define CMD_FC_LCC_EXT_CLK_500MHZ       FC_LCC_CMD_OFFSET + 0x0c
-#define CMD_FC_LCC_EXT_CLK_160MHZ       FC_LCC_CMD_OFFSET + 0x0d
-#define CMD_FC_LCC_EXT_CLK_400MHZ       FC_LCC_CMD_OFFSET + 0x0e
-#define CMD_FC_LCC_EXT_CLK_1000MHZ      FC_LCC_CMD_OFFSET + 0x0f
-#define CMD_FC_LCC_FAULT_DIGEST         FC_LCC_CMD_OFFSET + 0x10
-#define CMD_FC_LCC_FAULT_BUS_ECC        FC_LCC_CMD_OFFSET + 0x11
-#define CMD_LC_TRIGGER_ESCALATION0      FC_LCC_CMD_OFFSET + 0x12
-#define CMD_LC_TRIGGER_ESCALATION1      FC_LCC_CMD_OFFSET + 0x13
 
-inline uint32_t mcu_mbox_read_cmd_status(uint32_t mbox_num) {
+static inline uint32_t mcu_mbox_read_cmd_status(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading CMD_STATUS: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }
 
-inline uint32_t mcu_mbox_read_mbox_user(uint32_t mbox_num) {
+static inline uint32_t mcu_mbox_read_mbox_user(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading USER: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }
 
-inline uint32_t mcu_mbox_read_lock(uint32_t mbox_num) {
+static inline uint32_t mcu_mbox_read_lock(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading LOCK: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }
 
-inline uint32_t mcu_mbox_read_hw_status(uint32_t mbox_num) {
+static inline uint32_t mcu_mbox_read_hw_status(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading HW_STATUS: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }
 
-inline void mcu_mbox_write_sram_dword(uint32_t mbox_num, uint32_t dword_addr, uint32_t data) {
-    VPRINTF(LOW, "MCU: Writing to MBOX%x data: 0x%x\n", mbox_num, data); 
+static inline void mcu_mbox_write_sram_dword(uint32_t mbox_num, uint32_t dword_addr, uint32_t data) {
+    VPRINTF(LOW, "MCU: Writing to MBOX%x SRAM[%d]: 0x%x\n", mbox_num, dword_addr, data); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num, data);
 }
 
-inline uint32_t mcu_mbox_read_sram_dword(uint32_t mbox_num, uint32_t dword_addr) {
+static inline uint32_t mcu_mbox_read_sram_dword(uint32_t mbox_num, uint32_t dword_addr) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num);
-    VPRINTF(LOW, "MCU: Mbox%x Reading SRAM: 0x%x\n", mbox_num, rd_data);
+    VPRINTF(LOW, "MCU: Mbox%x Reading SRAM[%d]: 0x%x\n", mbox_num, dword_addr, rd_data);
     return rd_data;
 }
 
-inline void mcu_mbox_write_target_user(uint32_t mbox_num, uint32_t axi_id) {
+static inline void mcu_mbox_write_target_user(uint32_t mbox_num, uint32_t axi_id) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x TARGET_USER: 0%x\n", mbox_num, axi_id); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, axi_id);    
 }
 
-inline uint32_t mcu_mbox_read_target_user(uint32_t mbox_num) {
+static inline uint32_t mcu_mbox_read_target_user(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading TARGET_USER: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }
 
-inline void mcu_mbox_write_target_user_valid(uint32_t mbox_num, uint32_t data) {
+static inline void mcu_mbox_write_target_user_valid(uint32_t mbox_num, uint32_t data) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x TARGET_USER_VALID: 0x%x\n", mbox_num, data); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, (data & MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK));    
 }
 
-inline uint32_t mcu_mbox_read_target_user_valid(uint32_t mbox_num) {
+static inline uint32_t mcu_mbox_read_target_user_valid(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading TARGET_USER_VALID: 0x%x\n", mbox_num, rd_data);
     return rd_data;
