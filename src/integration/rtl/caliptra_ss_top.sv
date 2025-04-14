@@ -158,7 +158,7 @@ module caliptra_ss_top
     input  logic             cptra_ss_cptra_core_itrng_valid_i,
 `endif
 
-// Caliptra SS MCU
+// Caliptra SS MCU 
     input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
     input logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
@@ -225,7 +225,7 @@ module caliptra_ss_top
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
     output otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o,
-
+   
 // Caliptra SS I3C GPIO Interface
 `ifdef DIGITAL_IO_I3C
     input  logic cptra_ss_i3c_scl_i,
@@ -249,11 +249,19 @@ module caliptra_ss_top
     output logic        ready_for_mb_processing,
     output logic        mailbox_data_avail
 
-
+    
 );
 
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
+    logic        [31:0]         agg_error_fatal;
+    logic        [31:0]         agg_error_non_fatal;
     logic                       timer_int;
+
+    logic                       mcu_dccm_ecc_single_error;
+    logic                       mcu_dccm_ecc_double_error;
+
+    logic                       i3c_peripheral_reset;
+    logic                       i3c_escalated_reset;
 
     logic        [31:0]         reset_vector;
 
@@ -290,6 +298,10 @@ module caliptra_ss_top
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
 
+    logic cptra_ss_rst_b_o;
+
+    logic mcu_clk_cg;
+
     logic        mcu_dmi_core_enable;
     logic        mcu_dmi_uncore_enable;
     logic        mcu_dmi_uncore_en;
@@ -297,7 +309,7 @@ module caliptra_ss_top
     logic [ 6:0] mcu_dmi_uncore_addr;
     logic [31:0] mcu_dmi_uncore_wdata;
     logic [31:0] mcu_dmi_uncore_rdata;
-    logic        mcu_dmi_active;
+    logic        mcu_dmi_active; 
 
     // ----------------- MCU Trace within Subsystem -----------------------
     logic [31:0] mcu_trace_rv_i_insn_ip;
@@ -307,7 +319,7 @@ module caliptra_ss_top
     logic [ 4:0] mcu_trace_rv_i_ecause_ip;
     logic        mcu_trace_rv_i_interrupt_ip;
     logic [31:0] mcu_trace_rv_i_tval_ip;
-
+    
     // -- caliptra DUT instance
     // -- Will be removed in final release.
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
@@ -365,16 +377,16 @@ module caliptra_ss_top
 
     mci_mcu_sram_if cptra_ss_mcu_rom_mbox0_sram_req_if (
         .clk(cptra_ss_clk_i),
-        .rst_b(cptra_ss_rst_b_i)
+        .rst_b(cptra_ss_rst_b_o)
     );
-
+    
     mci_mcu_sram_if cptra_ss_mcu_rom_mbox1_sram_req_if (
         .clk(cptra_ss_clk_i),
-        .rst_b(cptra_ss_rst_b_i)
+        .rst_b(cptra_ss_rst_b_o)
     );
 
 
-
+    
 
 
 
@@ -385,18 +397,18 @@ module caliptra_ss_top
     assign cptra_ss_mcu_lsu_m_axi_if_r_mgr.aruser = cptra_ss_strap_mcu_lsu_axi_user_i;
     assign cptra_ss_mcu_ifu_m_axi_if_r_mgr.aruser = cptra_ss_strap_mcu_ifu_axi_user_i;
     assign cptra_ss_mcu_sb_m_axi_if_r_mgr.aruser = cptra_ss_strap_mcu_lsu_axi_user_i;
-
+    
     // AWUSER
     assign cptra_ss_mcu_lsu_m_axi_if_w_mgr.awuser = cptra_ss_strap_mcu_lsu_axi_user_i;
     assign cptra_ss_mcu_ifu_m_axi_if_w_mgr.awuser = cptra_ss_strap_mcu_ifu_axi_user_i;
     assign cptra_ss_mcu_sb_m_axi_if_w_mgr.awuser = cptra_ss_strap_mcu_lsu_axi_user_i;
-
+    
     // BUSER
     assign cptra_ss_i3c_s_axi_if_w_sub.buser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
-
+    
     // RUSER
     assign cptra_ss_i3c_s_axi_if_r_sub.ruser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
-
+    
     // WUSER
     assign cptra_ss_mcu_lsu_m_axi_if_w_mgr.wuser = '0; // WUSER not used in Caliptra SS
     assign cptra_ss_mcu_ifu_m_axi_if_w_mgr.wuser = '0; // WUSER not used in Caliptra SS
@@ -440,7 +452,7 @@ module caliptra_ss_top
     //=========================================================================-
     // Caliptra DUT instance
     //=========================================================================-
-
+    
     logic [127:0] cptra_ss_cptra_generic_fw_exec_ctrl_internal;
     assign cptra_ss_cptra_generic_fw_exec_ctrl_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[127:3];
     assign cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[2];
@@ -452,9 +464,9 @@ module caliptra_ss_top
 
         .cptra_obf_key              (cptra_ss_cptra_obf_key_i),
         .cptra_obf_uds_seed_vld     (uds_field_entrpy_valid), //TODO
-        .cptra_obf_uds_seed         (cptra_obf_uds_seed),
-        .cptra_obf_field_entropy_vld(uds_field_entrpy_valid),
-        .cptra_obf_field_entropy    (cptra_obf_field_entropy),
+        .cptra_obf_uds_seed         (cptra_obf_uds_seed), 
+        .cptra_obf_field_entropy_vld(uds_field_entrpy_valid), 
+        .cptra_obf_field_entropy    (cptra_obf_field_entropy), 
         .cptra_csr_hmac_key         (cptra_ss_cptra_csr_hmac_key_i),
 
         .jtag_tck   (cptra_ss_cptra_core_jtag_tck_i   ),
@@ -463,7 +475,7 @@ module caliptra_ss_top
         .jtag_trst_n(cptra_ss_cptra_core_jtag_trst_n_i),
         .jtag_tdo   (cptra_ss_cptra_core_jtag_tdo_o   ),
         .jtag_tdoEn (cptra_ss_cptra_core_jtag_tdoEn_o ),
-
+        
         //SoC AXI Interface
         .s_axi_w_if(cptra_ss_cptra_core_s_axi_if_w_sub),
         .s_axi_r_if(cptra_ss_cptra_core_s_axi_if_r_sub),
@@ -484,7 +496,7 @@ module caliptra_ss_top
         .mbox_sram_addr(cptra_sscptra_core_mbox_sram_addr_o),
         .mbox_sram_wdata(cptra_ss_cptra_core_mbox_sram_wdata_o),
         .mbox_sram_rdata(cptra_ss_cptra_core_mbox_sram_rdata_i),
-
+            
         .imem_cs(cptra_ss_cptra_core_imem_cs_o),
         .imem_addr(cptra_ss_cptra_core_imem_addr_o),
         .imem_rdata(cptra_ss_cptra_core_imem_rdata_i),
@@ -552,6 +564,21 @@ module caliptra_ss_top
     assign ext_int[`VEER_INTR_VEC_FC]                   = intr_otp_operation_done;
     assign ext_int[pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] = cptra_ss_mcu_ext_int;
 
+    //Aggregate error connections
+    assign agg_error_fatal[5:0]   = {5'b0, cptra_error_fatal}; //CPTRA
+    assign agg_error_fatal[11:6]  = {5'b0, mcu_dccm_ecc_double_error}; //MCU
+    assign agg_error_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
+    assign agg_error_fatal[23:18] = {{6-otp_ctrl_reg_pkg::NumAlerts{1'b0}}, fc_alerts}; //FC
+    assign agg_error_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C
+    assign agg_error_fatal[31:30] = '0; //spare
+
+    assign agg_error_non_fatal[5:0]   = {5'b0, cptra_error_non_fatal}; //CPTRA
+    assign agg_error_non_fatal[11:6]  = {5'b0, mcu_dccm_ecc_single_error}; //MCU
+    assign agg_error_non_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
+    assign agg_error_non_fatal[23:18] = {{6-otp_ctrl_reg_pkg::NumAlerts{1'b0}}, fc_alerts}; //FC
+    assign agg_error_non_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C
+    assign agg_error_non_fatal[31:30] = '0; //spare
+
     //=========================================================================-
     // MCU instance
     //=========================================================================-
@@ -578,11 +605,11 @@ module caliptra_ss_top
     assign sb_axi_rdata = '0;
     assign sb_axi_rresp = '0;
     assign sb_axi_rlast = '0;
-
+    
     mcu_top rvtop_wrapper (
         .rst_l                  ( mcu_rst_b ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ), //FIXME same as caliptra?
-        .clk                    ( cptra_ss_clk_i ),
+        .clk                    ( mcu_clk_cg ),
         .rst_vec                ( reset_vector[31:1]),
         .nmi_int                ( mci_mcu_nmi_int),
         .nmi_vec                ( mci_mcu_nmi_vector[31:1]),
@@ -850,8 +877,8 @@ module caliptra_ss_top
 
         .iccm_ecc_single_error  (),
         .iccm_ecc_double_error  (),
-        .dccm_ecc_single_error  (),
-        .dccm_ecc_double_error  (),
+        .dccm_ecc_single_error  (mcu_dccm_ecc_single_error),
+        .dccm_ecc_double_error  (mcu_dccm_ecc_double_error),
 
         .core_id                ('0),
         .scan_mode              ( 1'b0 ),        // To enable scan mode
@@ -879,7 +906,7 @@ module caliptra_ss_top
         .AxiIdWidth  (`AXI_ID_WIDTH  )
     ) i3c (
         .clk_i (cptra_ss_clk_i),
-        .rst_ni(cptra_ss_rst_b_i),
+        .rst_ni(cptra_ss_rst_b_o),
 
         .arvalid_i  (cptra_ss_i3c_s_axi_if_r_sub.arvalid),
         .arready_o  (cptra_ss_i3c_s_axi_if_r_sub.arready),
@@ -927,9 +954,9 @@ module caliptra_ss_top
 `endif
         .recovery_payload_available_o(payload_available_o),
         .recovery_image_activated_o(image_activated_o),
-        .peripheral_reset_o(),
+        .peripheral_reset_o(i3c_peripheral_reset),
         .peripheral_reset_done_i(1'b1),
-        .escalated_reset_o(),
+        .escalated_reset_o(i3c_escalated_reset),
         .irq_o()
 
     // TODO: Add interrupts
@@ -945,7 +972,7 @@ module caliptra_ss_top
       .IW(8)
     ) mcu_rom_i (
       .clk(cptra_ss_clk_i),
-      .rst_n(cptra_ss_rst_b_i),
+      .rst_n(cptra_ss_rst_b_o),
 
       .s_axi_r_if(cptra_ss_mcu_rom_s_axi_if_r_sub),
       .s_axi_w_if(cptra_ss_mcu_rom_s_axi_if_w_sub),
@@ -968,24 +995,29 @@ module caliptra_ss_top
         .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
 
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
-        .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),
-        .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),
+        .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),  
+        .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),    
         .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB),
-        .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),
-        .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER)
+        .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),  
+        .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER)    
     ) mci_top_i (
 
         .clk(cptra_ss_clk_i),
+        .mcu_clk_cg(mcu_clk_cg),
+        .cptra_ss_rdc_clk_cg(), // Unused since no IPs on warm reset. MCU has different clock and Cptra has its own RDC.
+
+
         .mci_rst_b(cptra_ss_rst_b_i),
         .mci_pwrgood(cptra_ss_pwrgood_i),
-
+        .cptra_ss_rst_b_o(cptra_ss_rst_b_o),
+        
         // DFT
         .scan_mode     (cptra_ss_cptra_core_scan_mode_i),
 
         // MCI AXI Interface
         .s_axi_w_if(cptra_ss_mci_s_axi_if_w_sub),
         .s_axi_r_if(cptra_ss_mci_s_axi_if_r_sub),
-
+        
         .strap_mcu_lsu_axi_user(cptra_ss_strap_mcu_lsu_axi_user_i),
         .strap_mcu_ifu_axi_user(cptra_ss_strap_mcu_ifu_axi_user_i),
         .strap_mcu_sram_config_axi_user    (cptra_ss_strap_mcu_sram_config_axi_user_i),
@@ -995,8 +1027,8 @@ module caliptra_ss_top
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
         .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i),
 
-        .agg_error_fatal('0),       // FIXME connect to internal IPs
-        .agg_error_non_fatal('0),   // FIXME connect to internal IPs
+        .agg_error_fatal(agg_error_fatal),
+        .agg_error_non_fatal(agg_error_non_fatal),
 
         .all_error_fatal(cptra_ss_all_error_fatal_o),
         .all_error_non_fatal(cptra_ss_all_error_non_fatal_o),
@@ -1010,7 +1042,7 @@ module caliptra_ss_top
         .cptra_mbox_data_avail(mailbox_data_avail),
 
         .strap_mcu_reset_vector(cptra_ss_strap_mcu_reset_vector_i),
-
+        
         .mcu_reset_vector(reset_vector),
         // MCU Halt Signals
         .mcu_cpu_halt_req_o   (i_cpu_halt_req   ),
@@ -1038,7 +1070,7 @@ module caliptra_ss_top
         .mcu_dmi_uncore_wdata,
         .mcu_dmi_uncore_rdata,
         .mcu_dmi_active,
-
+        
         // MCU Trace
         .mcu_trace_rv_i_insn_ip     ,
         .mcu_trace_rv_i_address_ip  ,
@@ -1066,7 +1098,7 @@ module caliptra_ss_top
         .mci_mcu_sram_req_if  (cptra_ss_mci_mcu_sram_req_if),
         .mcu_mbox0_sram_req_if(cptra_ss_mcu_mbox0_sram_req_if),
         .mcu_mbox1_sram_req_if(cptra_ss_mcu_mbox1_sram_req_if),
-
+        
 
         .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
         .lc_dft_en_i(lc_dft_en_i),
@@ -1089,8 +1121,8 @@ module caliptra_ss_top
     );
 
     //=========================================================================-
-    // Life-cycle Controller Instance :
-    //
+    // Life-cycle Controller Instance : 
+    // 
     //=========================================================================-
 
     //--------------------------------------------------------------------------------------------
@@ -1117,11 +1149,11 @@ module caliptra_ss_top
 
     pwrmgr_pkg::pwr_lc_rsp_t                    u_lc_ctrl_pwr_lc_o;
     assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl_pwr_lc_o.lc_done);
-    assign lcc_init_req.lc_init = mci_to_lcc_init_req;
+    assign lcc_init_req.lc_init = mci_to_lcc_init_req; 
 
     lc_ctrl u_lc_ctrl (
             .clk_i(cptra_ss_clk_i),
-            .rst_ni(cptra_ss_rst_b_i),
+            .rst_ni(cptra_ss_rst_b_o),
             .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
             .axi_wr_req(cptra_ss_lc_axi_wr_req_i),
             .axi_wr_rsp(cptra_ss_lc_axi_wr_rsp_o),
@@ -1130,9 +1162,9 @@ module caliptra_ss_top
 
             .jtag_i(cptra_ss_lc_ctrl_jtag_i),
             .jtag_o(cptra_ss_lc_ctrl_jtag_o),
-
+            
             .scan_rst_ni(cptra_ss_lc_ctrl_scan_rst_ni_i),
-
+            
             .scanmode_i(lc_ctrl_scanmode_i),
 
             .alerts(lc_alerts_o),
@@ -1143,7 +1175,7 @@ module caliptra_ss_top
             .pwr_lc_i(lcc_init_req),
             .pwr_lc_o(u_lc_ctrl_pwr_lc_o), // Note: It is tied with this assignment: lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
 
-            .strap_en_override_o(),  // Note: We use VolatileUnlock and so this port is not used in Caliptra-ss, needs to be removed from LCC RTL
+            .strap_en_override_o(),  // Note: We use VolatileUnlock and so this port is not used in Caliptra-ss, needs to be removed from LCC RTL        
 
             .lc_otp_vendor_test_o(from_lc_to_otp_vendor_test_internal),
             .lc_otp_vendor_test_i(from_otp_to_lc_vendor_test_internal),
@@ -1153,7 +1185,7 @@ module caliptra_ss_top
             .lc_dft_en_o(lc_dft_en_i),
             .lc_creator_seed_sw_rw_en_o(lc_creator_seed_sw_rw_en_internal),
             .lc_owner_seed_sw_rw_en_o(lc_owner_seed_sw_rw_en_internal),
-            .lc_seed_hw_rd_en_o(lc_seed_hw_rd_en_internal),
+            .lc_seed_hw_rd_en_o(lc_seed_hw_rd_en_internal),            
             .lc_escalate_en_o(lc_escalate_en_internal),
             .lc_check_byp_en_o(lc_check_byp_en_internal),
 
@@ -1165,15 +1197,15 @@ module caliptra_ss_top
 
             .otp_device_id_i(256'd0),   // FIXME: This signal should come from FC
             .otp_manuf_state_i(256'd0), // FIXME: This signal should come from FC
-            .hw_rev_o()                 // FIXME: This signal should go to MCI
+            .hw_rev_o()             // FIXME: This signal should go to MCI 
         );
 
 
     //=========================================================================-
-    // Fuse Controller Instance :
-    //
+    // Fuse Controller Instance : 
+    // 
     //=========================================================================-
-
+    
     logic tb_driven_value;
     logic tb_drive_enable;
     wand otp_ext_voltage_h_io;
@@ -1190,7 +1222,7 @@ module caliptra_ss_top
         .MemInitFile ("otp-img.2048.vmem")
     ) u_otp_ctrl (
         .clk_i                      (cptra_ss_clk_i),
-        .rst_ni                     (cptra_ss_rst_b_i),
+        .rst_ni                     (cptra_ss_rst_b_o),
         .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
 
         .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
@@ -1201,7 +1233,7 @@ module caliptra_ss_top
         .core_axi_wr_rsp            (cptra_ss_otp_core_axi_wr_rsp_o),
         .core_axi_rd_req            (cptra_ss_otp_core_axi_rd_req_i),
         .core_axi_rd_rsp            (cptra_ss_otp_core_axi_rd_rsp_o),
-
+        
         .prim_tl_i                  (107'd0),
         .prim_tl_o                  (),
         .prim_generic_otp_outputs_i (cptra_ss_fuse_macro_outputs_i),
@@ -1240,11 +1272,6 @@ module caliptra_ss_top
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False),
         .cio_test_o                 (),    //TODO: Needs to be checked
         .cio_test_en_o              ()    //TODO: Needs to be checked
-    );
-
-    // assign fuse_ctrl_rdy = 1;
-    // De-assert cptra_rst_b only after fuse_ctrl has initialized
-    logic cptra_rst_b; //fixme resets
-    assign cptra_rst_b = cptra_ss_rst_b_i;//fuse_ctrl_rdy ? cptra_soc_bfm_rst_b : 1'b0;
+	); 
 
 endmodule
