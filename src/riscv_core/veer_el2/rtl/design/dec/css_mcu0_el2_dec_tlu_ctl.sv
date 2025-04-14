@@ -489,7 +489,7 @@ import css_mcu0_el2_pkg::*;
 
 `ifdef css_mcu0_RV_USER_MODE
 
-   `include "el2_dec_csr_equ_mu.svh"
+   `include "css_mcu0_el2_dec_csr_equ_mu.svh"
 
    logic  csr_acc_r;    // CSR access error
    logic  csr_wr_usr_r; // Write to an unprivileged/user-level CSR
@@ -497,7 +497,7 @@ import css_mcu0_el2_pkg::*;
 
 `else
 
-   `include "el2_dec_csr_equ_m.svh"
+   `include "css_mcu0_el2_dec_csr_equ_m.svh"
 
 `endif
 
