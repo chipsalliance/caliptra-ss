@@ -16,7 +16,7 @@
 //      Signals for an SRAM interface with ECC
 //
 
-interface mci_mcu_sram_if #(parameter integer ADDR_WIDTH = 16, parameter integer DATA_WIDTH = 32, parameter integer ECC_WIDTH = 7) (input logic clk, input logic rst_b);
+interface mci_mcu_sram_if #(parameter integer ADDR_WIDTH = 17, parameter integer DATA_WIDTH = 32, parameter integer ECC_WIDTH = 7) (input logic clk, input logic rst_b);
 
     // SRAM data
     typedef struct packed {

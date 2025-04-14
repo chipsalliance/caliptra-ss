@@ -90,7 +90,7 @@ module mci_mcu_sram_ctrl
     input  logic        dmi_uncore_en,
     input  logic        dmi_uncore_wr_en,
     input  logic [ 6:0] dmi_uncore_addr,
-    input  logic [MCU_SRAM_DATA_W-1:0] dmi_uncore_wdata,
+    input  logic [MCU_SRAM_ADDR_W-1:0] dmi_uncore_wdata,
     output logic [MCU_SRAM_DATA_W-1:0] dmi_uncore_rdata,
 
 

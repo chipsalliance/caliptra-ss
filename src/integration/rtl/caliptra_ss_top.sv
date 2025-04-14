@@ -589,7 +589,7 @@ module caliptra_ss_top
     
     // BUSER
     assign cptra_ss_i3c_s_axi_if.buser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
-    
+
     // RUSER
     assign cptra_ss_i3c_s_axi_if.ruser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
     
@@ -1057,7 +1057,7 @@ module caliptra_ss_top
         .arvalid_i  (cptra_ss_i3c_s_axi_if.arvalid),
         .arready_o  (cptra_ss_i3c_s_axi_if.arready),
         .arid_i     (cptra_ss_i3c_s_axi_if.arid),
-        .araddr_i   (cptra_ss_i3c_s_axi_if.araddr[`AXI_ADDR_WIDTH:0]),
+        .araddr_i   (cptra_ss_i3c_s_axi_if.araddr[`AXI_ADDR_WIDTH-1:0]),
         .arsize_i   (cptra_ss_i3c_s_axi_if.arsize),
         .aruser_i   (cptra_ss_i3c_s_axi_if.aruser),
         .arlen_i    (cptra_ss_i3c_s_axi_if.arlen),
@@ -1072,7 +1072,7 @@ module caliptra_ss_top
         .awvalid_i  (cptra_ss_i3c_s_axi_if.awvalid),
         .awready_o  (cptra_ss_i3c_s_axi_if.awready),
         .awid_i     (cptra_ss_i3c_s_axi_if.awid),
-        .awaddr_i   (cptra_ss_i3c_s_axi_if.awaddr[`AXI_ADDR_WIDTH:0]),
+        .awaddr_i   (cptra_ss_i3c_s_axi_if.awaddr[`AXI_ADDR_WIDTH-1:0]),
         .awsize_i   (cptra_ss_i3c_s_axi_if.awsize),
         .awuser_i   (cptra_ss_i3c_s_axi_if.awuser),
         .awlen_i    (cptra_ss_i3c_s_axi_if.awlen),

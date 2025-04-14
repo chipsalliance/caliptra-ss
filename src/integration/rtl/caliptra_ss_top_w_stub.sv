@@ -15,14 +15,23 @@ module caliptra_ss_top_w_stub();
     logic cptra_ss_rst_b_i;
     logic cptra_ss_mci_cptra_rst_b_o;
 
-    axi_if cptra_ss_cptra_core_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    axi_if cptra_ss_cptra_core_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    axi_if cptra_ss_mci_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    axi_if cptra_ss_mcu_rom_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    axi_if #(.AW(`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),.DW(`CALIPTRA_AXI_DATA_WIDTH),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
+    cptra_ss_cptra_core_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    axi_if #(.AW(`CALIPTRA_AXI_DMA_ADDR_WIDTH),.DW(CPTRA_AXI_DMA_DATA_WIDTH),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
+    cptra_ss_cptra_core_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
+    cptra_ss_mci_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
+    cptra_ss_mcu_lsu_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
+    cptra_ss_mcu_ifu_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
+    cptra_ss_mcu_sb_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
+    cptra_ss_i3c_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    cptra_ss_mcu_rom_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     axi_mem_if mcu_rom_mem_export_if(.clk(cptra_ss_clk_i), .rst_b(cptra_ss_rst_b_i));
-    axi_if cptra_ss_mcu_lsu_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    axi_if cptra_ss_mcu_ifu_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    axi_if cptra_ss_i3c_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
 
     axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i;
     axi_struct_pkg::axi_wr_rsp_t cptra_ss_lc_axi_wr_rsp_o;
@@ -256,6 +265,7 @@ module caliptra_ss_top_w_stub();
     
         .cptra_ss_mcu_lsu_m_axi_if,
         .cptra_ss_mcu_ifu_m_axi_if,
+        .cptra_ss_mcu_sb_m_axi_if,
         // .mcu_dma_s_axi_if,
         .cptra_ss_i3c_s_axi_if,
     

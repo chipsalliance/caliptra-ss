@@ -375,7 +375,7 @@ package kmac_reg_pkg;
   parameter int unsigned        KMAC_MSG_FIFO_IDX    = 1;
 
   // Register index
-  typedef enum int {
+  typedef enum logic [31:0] {
     KMAC_INTR_STATE,
     KMAC_INTR_ENABLE,
     KMAC_INTR_TEST,
