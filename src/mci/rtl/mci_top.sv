@@ -659,6 +659,7 @@ if (MCU_MBOX0_SIZE_KB == 0) begin : no_mcu_mbox0
         soc_req_mbox0_lock = '0;
         soc_mcu_mbox0_data_avail = '0;
         mcu_mbox0_data_avail = '0;
+        mcu_mbox0_target_user_done = '0;
     end
 end else begin : mcu_mbox0
 mcu_mbox
@@ -708,6 +709,7 @@ if (MCU_MBOX1_SIZE_KB == 0) begin : no_mcu_mbox1
         soc_req_mbox1_lock = '0;
         soc_mcu_mbox1_data_avail = '0;
         mcu_mbox1_data_avail = '0;
+        mcu_mbox1_target_user_done = '0;
     end
 end else begin : mcu_mbox1
 mcu_mbox

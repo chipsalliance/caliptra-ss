@@ -112,6 +112,10 @@ uint32_t xorshift32(void);
 extern uint32_t valid_mbox_instances;
 uint32_t decode_single_valid_mbox(void);
 
+extern uint32_t cfg_caliptra_axi_with_param;
+bool is_caliptra_axi_param(void);
+
+
 inline void mcu_sleep (const uint32_t cycles) {
     for (uint32_t ii = 0; ii < cycles; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
@@ -150,7 +154,7 @@ void boot_i3c_socmgmt_if(void);
 void boot_i3c_standby_ctrl_mode();
 void boot_i3c_reg(void);
 void mcu_mbox_clear_lock_out_of_reset(uint32_t mbox_num);
-void mcu_mbox_update_status_complete(uint32_t mbox_num);
+void mcu_mbox_update_status(uint32_t mbox_num, enum mcu_mbox_cmd_status cmd_status);
 bool mcu_mbox_wait_for_user_lock(uint32_t mbox_num, uint32_t user_axi, uint32_t attempt_count);
 bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t expected_value, uint32_t attempt_count);
 void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id);
@@ -260,6 +264,12 @@ inline void mcu_mbox_write_target_user_valid(uint32_t mbox_num, uint32_t data) {
 inline uint32_t mcu_mbox_read_target_user_valid(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading TARGET_USER_VALID: 0x%x\n", mbox_num, rd_data);
+    return rd_data;
+}
+
+inline uint32_t mcu_mbox_read_target_status(uint32_t mbox_num) {
+    uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "MCU: Mbox%x Reading TARGET_STATUS: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }
 
