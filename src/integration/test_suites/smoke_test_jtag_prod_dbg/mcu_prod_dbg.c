@@ -42,7 +42,8 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-uint32_t PROD_DBG_PK_HASH_OFFSET = 0x21000480;
+uint32_t PROD_DBG_PK_HASH_OFFSET_BASE = 0x21000480;
+uint32_t PROD_DBG_PK_HASH_OFFSET      = 0x00000480;
 uint32_t debug_level = 5;
 
 uint32_t PROD_dbg_pk[] =  {
@@ -118,7 +119,7 @@ void main (void) {
     lsu_write_32(SOC_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET, PROD_DBG_PK_HASH_OFFSET);
     VPRINTF(LOW, "MCU: Set PK hash register bank offset to 0x%08X\n", PROD_DBG_PK_HASH_OFFSET);
     uint32_t base_address;
-    base_address = PROD_DBG_PK_HASH_OFFSET + 12 * (debug_level-1) * 4;
+    base_address = PROD_DBG_PK_HASH_OFFSET_BASE + 12 * (debug_level-1) * 4;
     for (int i = 0; i < 12; i++) {
         uint32_t addr = base_address + (i * 4);
         VPRINTF(LOW, "MCU: writing PROD_dbg_pk[%02d] to address 0x%08X = 0x%08X\n", i, addr, PROD_dbg_pk[i]);
