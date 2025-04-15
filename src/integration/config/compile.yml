@@ -183,6 +183,7 @@ global:
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
+        - +define+SVA_RST=caliptra_ss_top_tb.caliptra_ss_dut.cptra_ss_mci_cptra_rst_b_i
         - +define+CALIPTRA_MODE_SUBSYSTEM
         - +define+MCU_RV_BUILD_AXI4
         - +define+MCU_RV_OPENSOURCE

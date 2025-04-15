@@ -59,7 +59,6 @@ module caliptra_ss_top_tb
     bit                         core_clk;    
     logic                       cptra_ss_pwrgood_i;
     logic                       cptra_ss_rst_b_i;
-    logic                       cptra_rst_b;
     logic                       cptra_ss_mci_cptra_rst_b_o;
 
     logic        [31:0]         trace_rv_i_insn_ip;
@@ -406,11 +405,20 @@ module caliptra_ss_top_tb
 
     
     //Interconnect 0 - MCU LSU
+    // FIXME
+    // Require wsize < 3 so that we can force wsize to '2' in the hack below
+    // This is a workaround for the issue in the interconnect where (wsize == 0) && (wstrb == 0x2)
+    // gets erroneously manipulated into an output with (wsize == 2), but the address remains
+    // unaligned.
+    // That condition violates AXI spec.
+    // The workaround here is to force aligned accesses, and use _only_ wstrb
+    // for lane control, which is compliant to AXI.
+    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BITlsu, (cptra_ss_mcu_lsu_m_axi_if.awvalid && cptra_ss_mcu_lsu_m_axi_if.awready) -> (cptra_ss_mcu_lsu_m_axi_if.awsize < 3), core_clk, !cptra_ss_rst_b_i)
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWVALID = cptra_ss_mcu_lsu_m_axi_if.awvalid;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWADDR[31:0]  = cptra_ss_mcu_lsu_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWADDR[31:0]  = cptra_ss_mcu_lsu_m_axi_if.awaddr[31:0] & 32'hFFFF_FFFC /*FIXME*/;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWID    = cptra_ss_mcu_lsu_m_axi_if.awid;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWLEN   = cptra_ss_mcu_lsu_m_axi_if.awlen;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWSIZE  = cptra_ss_mcu_lsu_m_axi_if.awsize;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWSIZE  = 2; // FIXME cptra_ss_mcu_lsu_m_axi_if.awsize;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWBURST = cptra_ss_mcu_lsu_m_axi_if.awburst;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWLOCK  = cptra_ss_mcu_lsu_m_axi_if.awlock;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWUSER  = cptra_ss_mcu_lsu_m_axi_if.awuser;
