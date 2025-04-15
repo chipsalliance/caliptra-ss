@@ -339,6 +339,40 @@ module caliptra_ss_top_tb
     logic [3:0] cptra_ss_mcu_sb_m_axi_if_awqos;
     logic [3:0] cptra_ss_mcu_sb_m_axi_if_arqos;
 
+    // Signal that may be viewed in waves to review the mapping of
+    // functional AXI interfaces to indexed ports of the interconnect
+    struct packed {
+        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] MCU_LSU_IDX           ; // CSS_INTC_MINTF_MCU_LSU_IDX    0
+        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] MCU_IFU_IDX           ; // CSS_INTC_MINTF_MCU_IFU_IDX    1
+        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] MCU_SB_IDX            ; // CSS_INTC_MINTF_MCU_SB_IDX     2
+        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] CPTRA_DMA_IDX         ; // CSS_INTC_MINTF_CPTRA_DMA_IDX  3
+        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] SOC_BFM_IDX           ; // CSS_INTC_MINTF_SOC_BFM_IDX    4
+
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NC0_IDX          ; // CSS_INTC_SINTF_NC0_IDX           0 /* Currently unconnected */
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_I3C_IDX          ; // CSS_INTC_SINTF_I3C_IDX           1
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCU_ROM_IDX      ; // CSS_INTC_SINTF_MCU_ROM_IDX       2
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_CPTRA_SOC_IFC_IDX; // CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX 3
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCI_IDX          ; // CSS_INTC_SINTF_MCI_IDX           4
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_FC_IDX           ; // CSS_INTC_SINTF_FC_IDX            5
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NC1_IDX          ; // CSS_INTC_SINTF_NC1_IDX           6 /* Currently unconnected */
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_LCC_IDX          ; // CSS_INTC_SINTF_LCC_IDX           7
+    } debug_axi_intf_indices = '{
+        MCU_LSU_IDX            : `CSS_INTC_MINTF_MCU_LSU_IDX,
+        MCU_IFU_IDX            : `CSS_INTC_MINTF_MCU_IFU_IDX,
+        MCU_SB_IDX             : `CSS_INTC_MINTF_MCU_SB_IDX,
+        CPTRA_DMA_IDX          : `CSS_INTC_MINTF_CPTRA_DMA_IDX,
+        SOC_BFM_IDX            : `CSS_INTC_MINTF_SOC_BFM_IDX,
+
+        SINTF_NC0_IDX          : `CSS_INTC_SINTF_NC0_IDX,
+        SINTF_I3C_IDX          : `CSS_INTC_SINTF_I3C_IDX,
+        SINTF_MCU_ROM_IDX      : `CSS_INTC_SINTF_MCU_ROM_IDX,
+        SINTF_CPTRA_SOC_IFC_IDX: `CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX,
+        SINTF_MCI_IDX          : `CSS_INTC_SINTF_MCI_IDX,
+        SINTF_FC_IDX           : `CSS_INTC_SINTF_FC_IDX,
+        SINTF_NC1_IDX          : `CSS_INTC_SINTF_NC1_IDX,
+        SINTF_LCC_IDX          : `CSS_INTC_SINTF_LCC_IDX
+    };
+
     // AXI Interconnect upper address tie to 0
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
