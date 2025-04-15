@@ -90,8 +90,8 @@ module mci_mcu_sram_ctrl
     input  logic        dmi_uncore_en,
     input  logic        dmi_uncore_wr_en,
     input  logic [ 6:0] dmi_uncore_addr,
-    input  logic [MCU_SRAM_ADDR_W-1:0] dmi_uncore_wdata,
-    output logic [MCU_SRAM_DATA_W-1:0] dmi_uncore_rdata,
+    input  logic [31:0] dmi_uncore_wdata,
+    output logic [31:0] dmi_uncore_rdata,
 
 
     // Interface with SRAM
@@ -210,7 +210,7 @@ always_ff @ (posedge clk or negedge mci_pwrgood) begin
 end
 
 
-assign dmi_uncore_rdata = mcu_sram_dmi_addr_rd_req ? mcu_sram_dmi_addr_reg : 
+assign dmi_uncore_rdata = mcu_sram_dmi_addr_rd_req ? { {32-MCU_SRAM_ADDR_W{1'b0}}, mcu_sram_dmi_addr_reg} : 
                           mcu_sram_dmi_data_rd_req ? mcu_sram_dmi_data_reg : 
                           '0;
                           

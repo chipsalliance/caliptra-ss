@@ -967,7 +967,7 @@ module caliptra_ss_top
     //=========================================================================
 
     axi_mem #(
-      .AW(22),
+      .AW($bits(mcu_rom_mem_export_if.req.addr)),
       .DW(64),
       .IW(8)
     ) mcu_rom_i (

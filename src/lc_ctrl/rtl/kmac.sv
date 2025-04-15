@@ -922,6 +922,7 @@ module kmac
     assign msg_data_masked[0] = msg_data[0];
 
     logic unused_msgmask;
+    assign msg_mask = '0;
     assign unused_msgmask = ^{msg_mask, cfg_msg_mask, msg_mask_en};
   end
   caliptra_ss_sha3 #(
@@ -1333,7 +1334,7 @@ module kmac
 
     logic        unused_seed_update;
     logic [31:0] unused_seed_data;
-    logic [31:0] unused_refresh_period;
+    logic unused_refresh_period;
     logic unused_entropy_refresh_req;
     assign unused_seed_data = entropy_seed_data;
     assign unused_seed_update = entropy_seed_update;
@@ -1349,7 +1350,7 @@ module kmac
     assign kmac_entropy_state_error = 1'b 0;
     assign kmac_entropy_hash_counter_error  = 1'b 0;
 
-    logic [1:0] unused_entropy_status;
+    logic unused_entropy_status;
     assign unused_entropy_status = entropy_in_keyblock;
 
     // If Masking is off, always entropy configured
