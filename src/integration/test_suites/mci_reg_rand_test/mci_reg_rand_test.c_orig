@@ -1,0 +1,54 @@
+#include <string.h>
+#include <stdint.h>
+#include <time.h>
+#include <stdlib.h>
+
+#include "soc_address_map.h"
+#include "printf.h"
+#include "riscv_hw_if.h"
+#include "soc_ifc.h"
+#include "fuse_ctrl_address_map.h"
+#include "caliptra_ss_lc_ctrl_address_map.h"
+#include "caliptra_ss_lib.h"
+#include "fuse_ctrl.h"
+#include "lc_ctrl.h"
+
+volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
+#ifdef CPT_VERBOSITY
+    enum printf_verbosity verbosity_g = CPT_VERBOSITY;
+#else
+    enum printf_verbosity verbosity_g = LOW;
+#endif
+
+void main (void) {
+    uint32_t read_data;
+
+    VPRINTF(LOW, "==================\nMCI Registers Test\n==================\n\n");
+    // Read HW_CAPABILITIES Register
+    read_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_CAPABILITIES);
+    VPRINTF(LOW, "SOC_MCI_TOP_MCI_REG_HW_CAPABILITIES [0x%0x] = 0x%0x\n\n", SOC_MCI_TOP_MCI_REG_HW_CAPABILITIES, read_data);
+
+/*
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    
+    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
+    // This is just to see CSSBootFSM running correctly
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
+    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
+
+    uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
+    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
+    
+    lcc_initialization();    
+    raw_to_testunlock0();
+    initialize_otp_controller();
+
+    register_accesses();
+*/
+
+    for (uint8_t ii = 0; ii < 160; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+
+    SEND_STDOUT_CTRL(0xff);
+}
