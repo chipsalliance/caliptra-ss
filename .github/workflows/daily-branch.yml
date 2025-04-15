@@ -1,0 +1,33 @@
+name: Scheduled Branch Creation
+
+on:
+  schedule:
+    # Run every 3 hours from 9 AM to 9 PM UTC
+    - cron: '0 9-21/3 * * *'
+
+jobs:
+  create-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "Caliptra Subsystem Auto Branching"
+          git config --global user.email "nileshbpat@gmail.com"
+
+      - name: Create new branch
+        env:
+          BRANCH_NAME: scheduled-branch-$(date +%Y-%m-%d-%H-%M)
+        run: |
+          # Fetch latest main
+          git fetch origin main
+          git checkout main
+          git pull origin main
+
+          # Create new branch
+          git checkout -b $BRANCH_NAME
+
+          # Push new branch to repository
+          git push origin $BRANCH_NAME
