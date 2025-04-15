@@ -30,6 +30,12 @@
     uint32_t valid_mbox_instances = 0;
 #endif
 
+#ifdef CFG_CALIPTRA_AXI_WITH_PARAM
+    uint32_t cfg_caliptra_axi_with_param = CFG_CALIPTRA_AXI_WITH_PARAM;
+#else
+    uint32_t cfg_caliptra_axi_with_param = 0;
+#endif
+
 #ifdef MY_RANDOM_SEED
     uint32_t state = (unsigned) MY_RANDOM_SEED;
 #else
@@ -265,10 +271,10 @@ void mcu_mbox_clear_lock_out_of_reset(uint32_t mbox_num) {
     VPRINTF(LOW, "MCU: Mbox%x Lock out of reset cleared\n", mbox_num);
 }
 
-void mcu_mbox_update_status_complete(uint32_t mbox_num) {
-    // MBOX: Write CMD
-    VPRINTF(LOW, "MCU: Writing to MBOX status CMD_COMPLETE\n"); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE*mbox_num, MCU_MBOX_CMD_COMPLETE);
+void mcu_mbox_update_status(uint32_t mbox_num, enum mcu_mbox_cmd_status status) {
+    // MBOX: Write status
+    VPRINTF(LOW, "MCU: Writing to MBOX%x status: 0x%x\n", mbox_num, status); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE*mbox_num, status);
 }
 
 bool mcu_mbox_wait_for_user_lock(uint32_t mbox_num, uint32_t user_axi, uint32_t attempt_count) {
@@ -511,6 +517,10 @@ uint32_t decode_single_valid_mbox(void) {
         mbox_num = 1;
     }
     return mbox_num;
+}
+
+bool is_caliptra_axi_param(void) {
+    return (cfg_caliptra_axi_with_param == 1);
 }
 
 uint32_t mcu_mbox_get_sram_size_kb(uint32_t mbox_num) {

@@ -145,7 +145,7 @@ void main (void) {
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    mcu_mbox_update_status_complete(mbox_num);
+    mcu_mbox_update_status(mbox_num, MCU_MBOX_CMD_COMPLETE);
 
     // Acquire lock and send data to mailbox
     // Set execute
