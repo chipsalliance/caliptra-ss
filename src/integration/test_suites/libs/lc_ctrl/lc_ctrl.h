@@ -74,5 +74,7 @@ void force_PPD_pin(void);
 uint32_t read_lc_state(void);
 
 uint32_t read_lc_counter(void);
+void disable_lcc_SVAs(void);
+void enable_lcc_SVAs(void);
 
 #endif // LC_CTRL_H

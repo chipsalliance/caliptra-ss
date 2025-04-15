@@ -51,3 +51,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_registers/smoke_test_lcc_registers: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_bus_ecc_error/caliptra_ss_fuse_ctrl_bus_ecc_error: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_st_trans/smoke_test_lcc_st_trans: { weight: 100 }
