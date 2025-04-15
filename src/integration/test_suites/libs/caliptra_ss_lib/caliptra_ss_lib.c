@@ -352,6 +352,56 @@ bool is_mcu_mbox_clear_soc_req_while_mcu_lock_interrupt_set(uint32_t mbox_num) {
     return false;
 }
 
+bool is_only_mcu_mbox_sb_ecc_interrupt_set(uint32_t mbox_num) {
+    // Check that Mailbox SB ECC interrupt has been set
+    if(lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) ==
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_MASK << mbox_num)) {
+            VPRINTF(LOW, "MCU: Mbox%x SB ECC interrupt set\n", mbox_num);
+            return true;
+    }
+    return false;
+}
+
+bool is_only_mcu_mbox_db_ecc_interrupt_set(uint32_t mbox_num) {
+    // Check that Mailbox DB ECC interrupt has been set
+    if(lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) == 
+        (MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK << mbox_num)) {
+            VPRINTF(LOW, "MCU: Mbox%x DB ECC interrupt set\n", mbox_num);
+            return true;
+    }
+    return false;
+}
+
+void clear_mcu_mbox_clear_sb_ecc_interrupt(uint32_t mbox_num) {
+    VPRINTF(LOW, "MCU: RW1C SB ECC interrupt Mbox%x\n", mbox_num);
+    uint32_t internal_intr = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
+    internal_intr = MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_MASK << mbox_num;
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, internal_intr);
+
+    // Check that Mailbox SB ECC interrupt has been cleared
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_ECC_COR_STS_MASK << mbox_num)) != 0) {
+            VPRINTF(FATAL, "MCU: Mbox%x SB ECC interrupt not cleared\n", mbox_num);
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+    }
+}
+
+void clear_mcu_mbox_clear_db_ecc_interrupt(uint32_t mbox_num) {
+    VPRINTF(LOW, "MCU: RW1C DB ECC interrupt Mbox%x\n", mbox_num);
+    uint32_t internal_intr = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R);
+    internal_intr = MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK << mbox_num;
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R, internal_intr);
+
+    // Check that Mailbox DB ECC interrupt has been cleared
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & 
+        (MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK << mbox_num)) != 0) {
+            VPRINTF(FATAL, "MCU: Mbox%x DB ECC interrupt not cleared\n", mbox_num);
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+    }
+}
+
 void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id) {
     
     VPRINTF(LOW, "MCU: Configuring Valid AXI USERs in Mbox%x:  0 - 0x%x; 1 - 0x%x; 2 - 0x%x; 3 - 0x%x; 4 - 0x%x;\n", mbox_num, axi_user_id[0], axi_user_id[1], axi_user_id[2], axi_user_id[3], axi_user_id[4]);
