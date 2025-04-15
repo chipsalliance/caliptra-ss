@@ -19,7 +19,7 @@ jobs:
 
       - name: Create new branch
         env:
-          BRANCH_NAME: scheduled-branch-$(date +%Y-%m-%d-%H-%M)
+          BRANCH_NAME: msft-daily-$(date +%Y-%m-%d-%H-%M)
         run: |
           # Fetch latest main
           git fetch origin main
