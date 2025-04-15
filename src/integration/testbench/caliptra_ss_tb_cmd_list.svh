@@ -81,6 +81,8 @@ localparam CMD_FC_LCC_FAULT_DIGEST          = FC_LCC_CMD_OFFSET + 8'h10;
 localparam CMD_FC_LCC_FAULT_BUS_ECC         = FC_LCC_CMD_OFFSET + 8'h11;
 localparam CMD_LC_TRIGGER_ESCALATION0       = FC_LCC_CMD_OFFSET + 8'h12;
 localparam CMD_LC_TRIGGER_ESCALATION1       = FC_LCC_CMD_OFFSET + 8'h13;
+localparam CMD_LC_DISABLE_SVA               = FC_LCC_CMD_OFFSET + 8'h14;
+localparam CMD_LC_ENABLE_SVA                = FC_LCC_CMD_OFFSET + 8'h15;
 
 localparam TB_DISABLE_MCU_SRAM_PROT_ASSERTS = 8'hc0;
 

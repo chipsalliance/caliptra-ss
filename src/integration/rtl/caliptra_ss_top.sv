@@ -1205,14 +1205,6 @@ module caliptra_ss_top
     // Fuse Controller Instance : 
     // 
     //=========================================================================-
-    
-    logic tb_driven_value;
-    logic tb_drive_enable;
-    wand otp_ext_voltage_h_io;
-
-    assign tb_drive_enable = 1'b1;
-    assign tb_driven_value = 1'b0;
-    assign otp_ext_voltage_h_io = tb_drive_enable ? tb_driven_value : 1'bz;
 
     pwrmgr_pkg::pwr_otp_rsp_t                   u_otp_ctrl_pwr_otp_o;
     assign otp_ctrl_to_mci_otp_ctrl_done = pwrmgr_pkg::pwr_otp_rsp_t'(u_otp_ctrl_pwr_otp_o.otp_done);
@@ -1266,7 +1258,6 @@ module caliptra_ss_top
         .otp_lc_data_o(from_otp_to_lcc_data_i),
 
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
-        .otp_ext_voltage_h_io       (otp_ext_voltage_h_io),
         .scan_en_i                  ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .scan_rst_ni                (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False),
