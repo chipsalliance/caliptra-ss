@@ -144,6 +144,10 @@ interface lc_ctrl_cov_if
         }
     endgroup
 
+    initial begin
+        lc_ctrl_cg lc_ctrl_cg1 = new();
+    end
+
 endinterface
 
 `endif

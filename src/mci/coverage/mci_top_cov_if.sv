@@ -247,10 +247,10 @@ interface mci_top_cov_if
     endgroup
 
     // Instantiate coverage groups
-    port_lcc_st_trans_toggle_coverage lcc_st_trans_single_bit_cov = new();
     multi_bit_toggle_cg prod_unlock_level[64]; // Maximum size for multi-bit ports
 
-    initial begin
+    initial begin        
+        port_lcc_st_trans_toggle_coverage lcc_st_trans_single_bit_cov = new();
         foreach (prod_unlock_level[ii]) begin
             prod_unlock_level[ii] = new();
         end
