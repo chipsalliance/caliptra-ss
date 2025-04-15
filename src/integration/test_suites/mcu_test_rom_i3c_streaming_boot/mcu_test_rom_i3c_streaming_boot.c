@@ -14,8 +14,6 @@
 #include "string.h"
 #include "stdint.h"
 
-#define STATUS_CHECK_LOOP_COUNT_FOR_RECOVERY 20
-
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 // volatile char* stdout = (char *)0xd0580000;
 

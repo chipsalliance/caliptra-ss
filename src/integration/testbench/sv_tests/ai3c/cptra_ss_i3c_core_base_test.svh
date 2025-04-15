@@ -47,6 +47,28 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 	`avery_test_reg(cptra_ss_i3c_core_base_test)
     random_len_helper random_lengths;  // Create an instance
 
+	// -- I3C Target Addresses
+	ai3c_addr_t general_target_addr;
+	ai3c_addr_t recovery_target_addr;
+
+	//-- image variables
+	bit [31:0] cmdline_img_sz;
+	bit [31:0] img_sz;
+	int fp;
+	string line;
+	int i = 0;
+	bit [7:0] read_mem[8192][16];
+	bit [7:0] image[][];
+	int img_sz_in_16B;
+	int img_sz_in_4B;
+	int wr_count_256B;
+	int wr_count_16B;
+	int wr_count_4B;
+	int wr_count_1B;
+	int r;
+	
+	
+	bit [31:0] remaining_img_sz_in_bytes;
     function new(string name, `avery_xvm_parent);
         super.new("cptra_ss_i3c_core_base_test", parent);
 	endfunction
@@ -77,6 +99,131 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 
         return crc;
     endfunction
+
+	virtual task i3c_bus_init();
+
+		test_log.step("=================================================================");
+		test_log.step("Waiting for Dynamic Address Assignment and Bus Initialization");
+		sys_agt.wait_event("bus_init_done", 1ms);
+		test_log.step("Dynamic Address Assignment and Bus Initialization done");
+		test_log.sample(AI3C_5_1_2_1n3);
+		test_log.sample(AI3C_5_1_2_2n1);
+
+		//-- grabbing dynamic address for the I3C core
+		test_log.step($sformatf("I3C device count: %0d", sys_agt.mgr.dev_infos.size()));
+		foreach (sys_agt.mgr.dev_infos[i]) begin
+			case(sys_agt.mgr.dev_infos[i].sa)
+				'h5A: begin
+					// general_target_addr= sys_agt.mgr.i3c_dev_das[i];
+					general_target_addr= sys_agt.mgr.dev_infos[i].da;
+					test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, general_target_addr));
+				end
+				'h5B: begin
+					// recovery_target_addr = sys_agt.mgr.i3c_dev_das[i];
+					recovery_target_addr = sys_agt.mgr.dev_infos[i].da;
+					test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, recovery_target_addr));
+				end
+				default: begin
+					//-- print error message if the static address is not 0x5A or 0x5B
+					test_log.substep($sformatf(" ERROR : I3C device %0d: static addr 'h %0h is not 0x5A or 0x5B", i, sys_agt.mgr.dev_infos[i].sa));
+				end
+			endcase
+		end
+		test_log.substep($sformatf("I3C Subordinate Recovery addr 'h %0h", recovery_target_addr));
+		test_log.substep($sformatf("I3C Subordinate General addr 'h %0h", general_target_addr));
+
+	endtask
+
+	virtual task read_image();
+
+		test_log.step("=================================================================");
+		test_log.step("Step 0: Reading Firmware test image from file");
+
+		// -- firmware image size
+		// -- check if,
+		// -- 1. cmdline argument is provided
+		// -- 2. random image size is provided
+		// -- if not, read the image size from the file
+		if($value$plusargs("cmdline_img_sz=%h", cmdline_img_sz)) begin
+			
+			test_log.substep($psprintf("using CMD Line for Image Size (in bytes): 'd %0d",cmdline_img_sz));
+			img_sz = cmdline_img_sz;
+		
+		end else if ($test$plusargs("random_img_sz")) begin
+
+			test_log.substep($psprintf("using random image size"));
+			img_sz = 4 + ($urandom_range(0, 319) * 4); //-- 4 to 1280 bytes
+			test_log.substep($psprintf("Random Image Size (in bytes): 'd %0d",img_sz));
+
+		end else begin
+
+			test_log.substep($psprintf("using file ./fw_update.size for Image size"));
+			// Check if file exists and read size
+			fp = $fopen("./fw_update.size", "r");
+			if (fp == 0) begin
+				test_log.step($psprintf("ERROR : File not found: %s", "./fw_update.size"));
+			end
+			r = $fgets(line, fp);
+			if (r == 0) begin
+				test_log.step($psprintf("ERROR : File read error: %s", "./fw_update.size"));
+			end
+			img_sz = line.atoi();
+			$fclose(fp);
+
+		end
+
+		if (img_sz > 0) begin
+			test_log.substep($psprintf("Image Size (in bytes): 'd %0d",img_sz));
+		end else begin
+			test_log.step($psprintf("ERROR : Invalid image size: 'd %0d", img_sz));
+		end
+		
+		// -- for aligned image size
+		wr_count_256B =  (img_sz)     / 256;
+		wr_count_16B  =  (img_sz%256) /16;
+		wr_count_4B   =  (img_sz%16)  /4;
+		wr_count_1B   =  (img_sz%4);
+		
+		if(wr_count_1B > 0) begin
+			test_log.substep($psprintf("Error : Image size is not multiples of 4 Bytes"));
+		end
+
+		test_log.substep($psprintf("== Img Wr Count for 256B : 'd %0d x 256 B = 'd %0d B", wr_count_256B, (wr_count_256B*256)));
+		test_log.substep($psprintf("== Img Wr Count for  16B : 'd %0d x  16 B = 'd %0d B", wr_count_16B, (wr_count_16B*16)));
+		test_log.substep($psprintf("== Img Wr Count for  4B  : 'd %0d x   4 B = 'd %0d B", wr_count_4B, (wr_count_4B*4)));
+		test_log.substep($psprintf("== Calculated Image Size ==  'd %0d B", ((wr_count_256B*256)+(wr_count_16B*16)+(wr_count_4B*4))));
+
+		//-- for unaligned image size
+		img_sz_in_16B = img_sz/16 + (img_sz%16 > 0? 1 : 0);
+		test_log.substep($psprintf("Image Size (in 16B): 'd %0d",img_sz_in_16B));
+
+		//-- for unaligned image size
+		img_sz_in_4B = img_sz/4;
+		test_log.substep($psprintf("Image Size (in 4B): 'h %0h ",img_sz_in_4B));
+		
+
+		// renew image array
+		image = new[img_sz_in_16B];
+		for(int i = 0; i < img_sz_in_16B; i++) begin
+			image[i] = new[16];
+		end
+
+		$readmemh("fw_update.hex", read_mem);
+		if ($isunknown(read_mem[0][0])) begin
+			test_log.step($psprintf("ERROR : File read error: %s", "fw_update.hex"));
+		end
+		//-- writing image to array
+		foreach(image[i]) begin
+			line = "'h ";
+			for(int j = 0; j < 16; j++) begin
+				image[i][j] = read_mem[i][j];
+				line = $psprintf("%s %0h", line, image[i][j]);
+			end
+			test_log.substep($psprintf("Image['d %0d]: %0s", i, line));
+		end
+			
+		test_log.substep("Reading Firmware test image from file completed.");
+	endtask
 
 	virtual task i3c_write( input ai3c_addr_t addr,
 					input bit[7:0] cmd,
@@ -247,37 +394,10 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 
 	virtual task test_body();
 
-		ai3c_addr_t general_target_addr;
-		ai3c_addr_t recovery_target_addr;
 		bit [7:0] data[];
 
-		test_log.step("=================================================================");
-		test_log.step("Wait for Dynamic Address Assignment and Bus Initialization");
-		sys_agt.wait_event("bus_init_done", 1ms);
-		test_log.step("Dynamic Address Assignment and Bus Initialization done");
-		test_log.sample(AI3C_5_1_2_1n3);
-		test_log.sample(AI3C_5_1_2_2n1);
-
-		//-- grabbing dynamic address for the I3C core
-		test_log.step($psprintf("I3C device count: %0d", sys_agt.mgr.dev_infos.size()));
-		foreach (sys_agt.mgr.dev_infos[i]) begin
-			case(sys_agt.mgr.dev_infos[i].sa)
-				'h5A: begin
-					general_target_addr= sys_agt.mgr.i3c_dev_das[i];
-					test_log.substep($psprintf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, general_target_addr));
-				end
-				'h5B: begin
-					recovery_target_addr = sys_agt.mgr.i3c_dev_das[i];
-					test_log.substep($psprintf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, recovery_target_addr));
-				end
-				default: begin
-					//-- print error message if the static address is not 0x5A or 0x5B
-					test_log.substep($psprintf(" ERROR : I3C device %0d: static addr 'h %0h is not 0x5A or 0x5B", i, sys_agt.mgr.dev_infos[i].sa));
-				end
-			endcase
-		end
-		test_log.substep($psprintf("I3C Subordinate Recovery addr 'h %0h", recovery_target_addr));
-		test_log.substep($psprintf("I3C Subordinate General addr 'h %0h", general_target_addr));
+		//-- I3C bus initialization and address assignment
+		i3c_bus_init();
 
 		test_log.step("=============================================================");
 		test_log.step("Step 1: Reading Base Registers");

@@ -324,12 +324,12 @@ void main(void) {
 
     // Send data through AHB interface to AXI_DMA, target the AXI SRAM
     VPRINTF(LOW, "Sending payload via AHB i/f\n");
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, &send_payload, 16, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, send_payload, 16, 0);
     
     // Move data from one address to another in AXI SRAM
     // Use the block-size feature
     VPRINTF(LOW, "Reading payload at SRAM via AHB i/f\n");
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, &read_payload, 16, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, read_payload, 16, 0);
 
     //set ready for FW so tb will push FW
     soc_ifc_set_flow_status_field(SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK);

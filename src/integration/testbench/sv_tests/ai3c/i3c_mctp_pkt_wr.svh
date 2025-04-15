@@ -48,8 +48,6 @@ class i3c_mctp_pkt_wr extends cptra_ss_i3c_core_base_test;
 	//-- test body
 	virtual task test_body();
 
-		ai3c_addr_t general_target_addr;
-		ai3c_addr_t recovery_target_addr;
 		bit [7:0] data[];
 		bit [7:0] read_data[];
 		int       random_data_count;
@@ -59,35 +57,10 @@ class i3c_mctp_pkt_wr extends cptra_ss_i3c_core_base_test;
     	integer file;
 		int     i3c_data_idx;
 		string line;
+		
+		//-- I3C bus initialization and address assignment
+		i3c_bus_init();
 
-		test_log.step("=================================================================");
-		test_log.step("Wait for Dynamic Address Assignment and Bus Initialization");
-		sys_agt.wait_event("bus_init_done", 1ms);
-		test_log.step("Dynamic Address Assignment and Bus Initialization done");
-		test_log.sample(AI3C_5_1_2_1n3);
-		test_log.sample(AI3C_5_1_2_2n1);
-
-		//-- grabbing dynamic address for the I3C core
-		test_log.step($sformatf("I3C device count: %0d", sys_agt.mgr.dev_infos.size()));
-		foreach (sys_agt.mgr.dev_infos[i]) begin
-			case(sys_agt.mgr.dev_infos[i].sa)
-				'h5A: begin
-					general_target_addr= sys_agt.mgr.i3c_dev_das[i];
-					test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, general_target_addr));
-				end
-				'h5B: begin
-					recovery_target_addr = sys_agt.mgr.i3c_dev_das[i];
-					test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, recovery_target_addr));
-				end
-				default: begin
-					//-- print error message if the static address is not 0x5A or 0x5B
-					test_log.substep($sformatf(" ERROR : I3C device %0d: static addr 'h %0h is not 0x5A or 0x5B", i, sys_agt.mgr.dev_infos[i].sa));
-				end
-			endcase
-		end
-		test_log.substep($sformatf("I3C Subordinate Recovery addr 'h %0h", recovery_target_addr));
-		test_log.substep($sformatf("I3C Subordinate General addr 'h %0h", general_target_addr));
-	
 		test_log.step("=============================================================");
 		test_log.step("Step : Writing General Target Interface with Random Data");
 

@@ -11,9 +11,9 @@ plusargs:
   - '+AVY_TEST=i3c_rand_streaming_boot'
   # Image Size Control knobs value
   # cmdline_img_sz in bytes in hex
-  - '+cmdline_img_sz=114'
+  # - '+cmdline_img_sz=114'
   # random_img_sz in bytes in hex
-  # - '+random_img_sz'
+  - '+random_img_sz'
 
 
 
