@@ -135,7 +135,7 @@ module caliptra_ss_top_sva
 
   property Allow_PPD_check_in_LCC;
     @(posedge `LCC_PATH.clk_i)
-      disable iff (!`LCC_PATH.rst_ni)
+      disable iff (!`LCC_PATH.rst_ni || `FC_LCC_TB_SERV_PATH.disable_lcc_sva)
       ($rose(`LCC_PATH.u_lc_ctrl_fsm.trans_cmd_i)
         && (`LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.dec_lc_state_i != {DecLcStateNumRep{DecLcStScrap}})
         && (`LCC_PATH.u_lc_ctrl_fsm.trans_target_i == {DecLcStateNumRep{DecLcStRma}}
