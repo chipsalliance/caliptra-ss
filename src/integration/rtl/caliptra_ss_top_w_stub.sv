@@ -15,16 +15,21 @@
 // limitations under the License.
 //********************************************************************************
 `include "caliptra_ss_includes.svh"
+`include "config_defines.svh"
+`include "caliptra_macros.svh"
 
 module caliptra_ss_top_w_stub();
 
     import axi_pkg::*;
     import soc_ifc_pkg::*;
+    import css_mcu0_el2_pkg::*;
     
+    `include "css_mcu0_el2_param.vh" ;
     // Define the logic and interfaces
     logic cptra_ss_clk_i;
     logic cptra_ss_pwrgood_i;
     logic cptra_ss_rst_b_i;
+    logic cptra_ss_mci_cptra_rst_b_o;
 
     axi_if cptra_ss_cptra_core_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     axi_if cptra_ss_cptra_core_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
@@ -55,6 +60,7 @@ module caliptra_ss_top_w_stub();
     logic cptra_ss_cptra_core_jtag_tdo_o;
     logic cptra_ss_cptra_core_jtag_tdoEn_o;
     logic [124:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
+    logic cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o;
 
     jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i;
     jtag_pkg::jtag_rsp_t cptra_ss_lc_ctrl_jtag_o;
@@ -81,23 +87,28 @@ module caliptra_ss_top_w_stub();
     logic cptra_ss_cptra_core_itrng_valid_i;
 `endif
 
-    logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_lsu_axi_user_i;
-    logic [CPTRA_SS_MCU_USER_WIDTH-1:0] cptra_ss_strap_mcu_ifu_axi_user_i;
+    logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i;
+    logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i;
+    logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i;
+    logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i;
     
     mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if(
         .clk(cptra_ss_clk_i),
         .rst_b(cptra_ss_rst_b_i)
     );
-    mci_mcu_sram_if cptra_ss_mci_mbox0_sram_req_if(
+    mci_mcu_sram_if cptra_ss_mcu_mbox0_sram_req_if(
         .clk(cptra_ss_clk_i),
         .rst_b(cptra_ss_rst_b_i)
     );
-    mci_mcu_sram_if cptra_ss_mci_mbox1_sram_req_if(
+    mci_mcu_sram_if cptra_ss_mcu_mbox1_sram_req_if(
         .clk(cptra_ss_clk_i),
         .rst_b(cptra_ss_rst_b_i)
     );
 
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export();
+
+    logic cptra_ss_soc_mcu_mbox0_data_avail;
+    logic cptra_ss_soc_mcu_mbox1_data_avail;
 
     logic [63:0] cptra_ss_mci_generic_input_wires_i;
 
@@ -105,7 +116,14 @@ module caliptra_ss_top_w_stub();
     logic cptra_ss_mcu_no_rom_config_i;
     logic cptra_ss_mci_boot_seq_brkpoint_i;
 
+    logic cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i;
+    logic cptra_ss_FIPS_ZEROIZATION_PPD_i;
+
     logic [63:0] cptra_ss_mci_generic_output_wires_o;
+    logic cptra_ss_all_error_fatal_o;
+    logic cptra_ss_all_error_non_fatal_o;
+
+    logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int;
 
     logic cptra_ss_mcu_jtag_tck_i;
     logic cptra_ss_mcu_jtag_tms_i;
@@ -121,6 +139,7 @@ module caliptra_ss_top_w_stub();
     logic [63:0] cptra_ss_strap_uds_seed_base_addr_i;
     logic [31:0] cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i;
     logic [31:0] cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i;
+    logic [31:0] cptra_ss_strap_caliptra_dma_axi_user_i;
     logic [31:0] cptra_ss_strap_generic_0_i;
     logic [31:0] cptra_ss_strap_generic_1_i;
     logic [31:0] cptra_ss_strap_generic_2_i;
@@ -140,8 +159,8 @@ module caliptra_ss_top_w_stub();
     wire cptra_ss_soc_dft_en_o;
     wire cptra_ss_soc_hw_debug_en_o;
 
-    tlul_pkg::tl_h2d_t cptra_ss_fuse_macro_prim_tl_i;
-    tlul_pkg::tl_d2h_t cptra_ss_fuse_macro_prim_tl_o;
+    otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i;
+    otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o;
 
 `ifdef DIGITAL_IO_I3C
     logic cptra_ss_i3c_scl_i;
@@ -183,10 +202,15 @@ module caliptra_ss_top_w_stub();
     `endif
         cptra_ss_strap_mcu_lsu_axi_user_i = '0;
         cptra_ss_strap_mcu_ifu_axi_user_i = '0;
+        cptra_ss_strap_mcu_sram_config_axi_user_i = '0;
+        cptra_ss_strap_mci_soc_config_axi_user_i = '0;
         cptra_ss_mci_generic_input_wires_i = '0;
         cptra_ss_strap_mcu_reset_vector_i = '0;
         cptra_ss_mcu_no_rom_config_i = '0;
         cptra_ss_mci_boot_seq_brkpoint_i = '0;
+        cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i = '0;
+        cptra_ss_FIPS_ZEROIZATION_PPD_i = '0;
+        cptra_ss_mcu_ext_int = (pt.PIC_TOTAL_INT+1-`VEER_INTR_EXT_LSB)'(0);
         cptra_ss_mcu_jtag_tck_i = '0;
         cptra_ss_mcu_jtag_tms_i = '0;
         cptra_ss_mcu_jtag_tdi_i = '0;
@@ -198,6 +222,7 @@ module caliptra_ss_top_w_stub();
         cptra_ss_strap_uds_seed_base_addr_i = '0;
         cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = '0;
         cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i = '0;
+        cptra_ss_strap_caliptra_dma_axi_user_i = '0;
         cptra_ss_strap_generic_0_i = '0;
         cptra_ss_strap_generic_1_i = '0;
         cptra_ss_strap_generic_2_i = '0;
@@ -229,6 +254,8 @@ module caliptra_ss_top_w_stub();
         .cptra_ss_clk_i(cptra_ss_clk_i),
         .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i), //fixme
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i), //fixme
+        .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
+        .cptra_ss_mci_cptra_rst_b_o(cptra_ss_mci_cptra_rst_b_o),
     
     //SoC AXI Interface
         .cptra_ss_cptra_core_s_axi_if,
@@ -272,9 +299,8 @@ module caliptra_ss_top_w_stub();
         .cptra_ss_cptra_core_jtag_tdo_o,    // JTAG TDO
         .cptra_ss_cptra_core_jtag_tdoEn_o,  // JTAG TDO enable
         .cptra_ss_cptra_generic_fw_exec_ctrl_o,
-        .cptra_ss_debug_intent_i,
-        .cptra_ss_dbg_manuf_enable_o,
-        .cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o,
+        .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o),
+        .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o),
 
     // LC Controller JTAG
         .cptra_ss_lc_ctrl_jtag_i,
@@ -311,18 +337,27 @@ module caliptra_ss_top_w_stub();
     //MCU
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
+        .cptra_ss_strap_mcu_sram_config_axi_user_i,
+        .cptra_ss_strap_mci_soc_config_axi_user_i,
 
     //MCI
         .cptra_ss_mci_mcu_sram_req_if,
-        .cptra_ss_mci_mbox0_sram_req_if,
-        .cptra_ss_mci_mbox1_sram_req_if,
+        .cptra_ss_mcu_mbox0_sram_req_if,
+        .cptra_ss_mcu_mbox1_sram_req_if,
         .cptra_ss_mcu0_el2_mem_export,
+        .cptra_ss_soc_mcu_mbox0_data_avail,
+        .cptra_ss_soc_mcu_mbox1_data_avail,
         .cptra_ss_mci_boot_seq_brkpoint_i,
         .cptra_ss_mcu_no_rom_config_i,
         .cptra_ss_mci_generic_input_wires_i,
         .cptra_ss_strap_mcu_reset_vector_i,
 
+        .cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i,
+        .cptra_ss_FIPS_ZEROIZATION_PPD_i,
+
         .cptra_ss_mci_generic_output_wires_o,
+        .cptra_ss_all_error_fatal_o,
+        .cptra_ss_all_error_non_fatal_o,
 
         .cptra_ss_mcu_jtag_tck_i,
         .cptra_ss_mcu_jtag_tms_i,
@@ -339,10 +374,14 @@ module caliptra_ss_top_w_stub();
         .cptra_ss_strap_uds_seed_base_addr_i,
         .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i,
         .cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i,
+        .cptra_ss_strap_caliptra_dma_axi_user_i,
         .cptra_ss_strap_generic_0_i,
         .cptra_ss_strap_generic_1_i,
         .cptra_ss_strap_generic_2_i,
         .cptra_ss_strap_generic_3_i,
+        .cptra_ss_debug_intent_i,
+        .cptra_ss_dbg_manuf_enable_o,
+        .cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o,
     
         .cptra_ss_lc_clk_byp_ack_i           (cptra_ss_lc_clk_byp_ack_i),
         .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),
@@ -354,8 +393,8 @@ module caliptra_ss_top_w_stub();
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
 
-        .cptra_ss_fuse_macro_prim_tl_i('0),
-        .cptra_ss_fuse_macro_prim_tl_o(),
+        .cptra_ss_fuse_macro_outputs_i('0),
+        .cptra_ss_fuse_macro_inputs_o,
     
     // I3C Interface
     `ifdef DIGITAL_IO_I3C

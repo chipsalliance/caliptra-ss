@@ -18,7 +18,7 @@ on:
   workflow_call:
 
 env:
-  MSFT_ACTORS: ( "Nitsirks" "calebofearth" "mojtaba-bisheh" "anjpar" "upadhyayulakiran" "nileshbpat" "ekarabu" "clayton8" "kedjenks")
+  MSFT_ACTORS: ( "Nitsirks" "calebofearth" "mojtaba-bisheh" "anjpar" "upadhyayulakiran" "nileshbpat" "ekarabu" "clayton8" "kedjenks" "andrea-caforio" "nasahlpa" )
 
 jobs:
   # Fail if any compile.yml has been modified
@@ -199,7 +199,7 @@ jobs:
   rdl_check:
     name: RDL File Check
     runs-on: ubuntu-22.04
-    if: ${{ (github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch') }}
+    if: ${{ (github.event_name == 'pull_request') || (github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Checkout RTL repo
         uses: actions/checkout@v4

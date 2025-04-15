@@ -309,6 +309,9 @@ module mcu_mbox_csr (
         if(hwif_in.mbox_lock.lock.hwset) begin // HW Write - we
             next_c = hwif_in.mbox_user.user.next;
             load_next_c = '1;
+        end else if(hwif_in.mbox_user.user.hwclr) begin // HW Clear
+            next_c = '0;
+            load_next_c = '1;
         end
         field_combo.mbox_user.user.next = next_c;
         field_combo.mbox_user.user.load_next = load_next_c;
@@ -437,6 +440,7 @@ module mcu_mbox_csr (
         end
     end
     assign hwif_out.mbox_execute.execute.value = field_storage.mbox_execute.execute.value;
+    assign hwif_out.mbox_execute.execute.swmod = decoded_reg_strb.mbox_execute && decoded_req_is_wr;
     // Field: mcu_mbox_csr.mbox_target_status.status
     always_comb begin
         automatic logic [3:0] next_c;
@@ -515,8 +519,8 @@ module mcu_mbox_csr (
         automatic logic load_next_c;
         next_c = field_storage.mbox_hw_status.ecc_single_error.value;
         load_next_c = '0;
-        if(!field_storage.mbox_execute.execute.value) begin // HW Write - wel
-            next_c = field_storage.mbox_execute.execute.value;
+        if(!field_storage.mbox_lock.lock.value) begin // HW Write - wel
+            next_c = field_storage.mbox_lock.lock.value;
             load_next_c = '1;
         end else if(hwif_in.mbox_hw_status.ecc_single_error.hwset) begin // HW Set
             next_c = '1;
@@ -539,8 +543,8 @@ module mcu_mbox_csr (
         automatic logic load_next_c;
         next_c = field_storage.mbox_hw_status.ecc_double_error.value;
         load_next_c = '0;
-        if(!field_storage.mbox_execute.execute.value) begin // HW Write - wel
-            next_c = field_storage.mbox_execute.execute.value;
+        if(!field_storage.mbox_lock.lock.value) begin // HW Write - wel
+            next_c = field_storage.mbox_lock.lock.value;
             load_next_c = '1;
         end else if(hwif_in.mbox_hw_status.ecc_double_error.hwset) begin // HW Set
             next_c = '1;

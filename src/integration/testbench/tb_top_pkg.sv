@@ -17,6 +17,43 @@
 //********************************************************************************
 package tb_top_pkg;
 
+    // -----------------------------------------------------------
+    // Parameters
+    // -----------------------------------------------------------
+    localparam MCU_SRAM_SIZE_KB = 512;
+    localparam MCU_SRAM_DATA_WIDTH   = 32;
+    localparam MCU_SRAM_DATA_WIDTH_BYTES = MCU_SRAM_DATA_WIDTH / 8;
+    localparam MCU_SRAM_ECC_WIDTH = 7;
+    localparam MCU_SRAM_DATA_TOTAL_WIDTH = MCU_SRAM_DATA_WIDTH + MCU_SRAM_ECC_WIDTH;
+    localparam MCU_SRAM_DEPTH   = (MCU_SRAM_SIZE_KB * 1024) / MCU_SRAM_DATA_WIDTH_BYTES;
+    localparam MCU_SRAM_ADDR_WIDTH = $clog2(MCU_SRAM_DEPTH);
+
+
+    localparam MCU_MBOX0_SIZE_KB = 256;
+    localparam MCU_MBOX0_DATA_W = 32;
+    localparam MCU_MBOX0_ECC_DATA_W = 7;
+    localparam MCU_MBOX0_SIZE_BYTES = MCU_MBOX0_SIZE_KB * 1024;
+    localparam MCU_MBOX0_SIZE_DWORDS = MCU_MBOX0_SIZE_BYTES/4;
+    localparam MCU_MBOX0_DATA_AND_ECC_W = MCU_MBOX0_DATA_W + MCU_MBOX0_ECC_DATA_W;
+    localparam MCU_MBOX0_DEPTH = (MCU_MBOX0_SIZE_KB * 1024 * 8) / MCU_MBOX0_DATA_W;
+    localparam MCU_MBOX0_ADDR_W = $clog2(MCU_MBOX0_DEPTH);
+    localparam MCU_MBOX0_DEPTH_LOG2 = $clog2(MCU_MBOX0_DEPTH);
+    localparam [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
+    localparam [4:0][31:0] MCU_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
+
+
+    localparam MCU_MBOX1_SIZE_KB = 256;
+    localparam MCU_MBOX1_DATA_W = 32;
+    localparam MCU_MBOX1_ECC_DATA_W = 7;
+    localparam MCU_MBOX1_SIZE_BYTES = MCU_MBOX1_SIZE_KB * 1024;
+    localparam MCU_MBOX1_SIZE_DWORDS = MCU_MBOX1_SIZE_BYTES/4;
+    localparam MCU_MBOX1_DATA_AND_ECC_W = MCU_MBOX1_DATA_W + MCU_MBOX1_ECC_DATA_W;
+    localparam MCU_MBOX1_DEPTH = (MCU_MBOX1_SIZE_KB * 1024 * 8) / MCU_MBOX1_DATA_W;
+    localparam MCU_MBOX1_ADDR_W = $clog2(MCU_MBOX1_DEPTH);
+    localparam MCU_MBOX1_DEPTH_LOG2 = $clog2(MCU_MBOX1_DEPTH);
+    localparam [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
+    localparam [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
+
     `ifndef VERILATOR
       class bitflip_mask_generator #(
           int DATA_AND_ECC_W = 39
@@ -25,44 +62,49 @@ package tb_top_pkg;
         rand logic [DATA_AND_ECC_W-1:0] rand_sram_bitflip_mask;
         logic do_double_bitflip;
         constraint bitflip_c {
-          if (do_double_bitflip) {
-            $countones(rand_sram_bitflip_mask) == 2;
-          } else {
-            $countones(rand_sram_bitflip_mask) == 1;
-          }
+            if (do_double_bitflip) {
+                $countones(rand_sram_bitflip_mask) == 2;
+            } else {
+                $countones(rand_sram_bitflip_mask) == 1;
+            }
         }
 
-    function new;
-          this.rand_sram_bitflip_mask = '0;
-          this.do_double_bitflip = 1'b0;
-    endfunction
+        function new;
+            this.rand_sram_bitflip_mask = '0;
+            this.do_double_bitflip = 1'b0;
+        endfunction
 
-    function logic [DATA_AND_ECC_W-1:0] get_mask(bit do_double_bit = 1'b0);
-          this.do_double_bitflip = do_double_bit;
-          this.randomize();
-          return this.rand_sram_bitflip_mask;
-    endfunction
+        function logic [DATA_AND_ECC_W-1:0] get_mask(bit do_double_bit = 1'b0);
+            this.do_double_bitflip = do_double_bit;
+            this.randomize();
+            return this.rand_sram_bitflip_mask;
+        endfunction
 
-      endclass
+    endclass
     `else
-  function static logic [39:0] get_bitflip_mask(bit do_double_bit = 1'b0);
+    function static logic [39:0] get_bitflip_mask(bit do_double_bit = 1'b0);
         return 2 << ($urandom % (37)) | 39'(do_double_bit);
-  endfunction
+    endfunction
     `endif
 
-  function static logic [39:0] get_bitflip_mask(bit do_double_bit = 1'b0);
+    function static logic [39:0] get_bitflip_mask(bit do_double_bit = 1'b0);
         return 2 << ($urandom % (37)) | 39'(do_double_bit);
-  endfunction 
+    endfunction 
 
-      typedef struct packed {
-        //  [3] - Double bit, DCCM Error Injection
-        //  [2] - Single bit, DCCM Error Injection
-        //  [1] - Double bit, ICCM Error Injection
-        //  [0] - Single bit, ICCM Error Injection
+    typedef struct packed {
+        //  [1] - Double bit, DCCM Error Injection
+        //  [0] - Single bit, DCCM Error Injection
         logic dccm_double_bit_error;
         logic dccm_single_bit_error;
-        logic iccm_double_bit_error;
-        logic iccm_single_bit_error;
-      } veer_sram_error_injection_mode_t;
+    } veer_sram_error_injection_mode_t;
+
+    typedef struct packed {
+        //  [2] - Randomize when writes are injected
+        //  [1] - Double bit, Mbox SRAM Error Injection
+        //  [0] - Single bit, Mbox SRAM Error Injection
+        logic randomize;
+        logic double_bit_error;
+        logic single_bit_error;
+    } mcu_mbox_sram_error_injection_mode_t;
 
 endpackage

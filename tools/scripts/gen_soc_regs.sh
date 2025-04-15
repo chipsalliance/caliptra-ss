@@ -15,16 +15,16 @@
 
 # Check if a path is provided as an argument
 if [ -z "$1" ]; then
-    # No argument provided, use the default CALIPTRA_SS
-    SCRIPT_PATH="$CALIPTRA_SS"
+    # No argument provided, use the default CALIPTRA_SS_ROOT
+    SCRIPT_PATH="$CALIPTRA_SS_ROOT"
 else
     # Use the provided argument as the path
     SCRIPT_PATH="$1"
 fi
 
-# Check if CALIPTRA_SS is set if no argument is provided
+# Check if CALIPTRA_SS_ROOT is set if no argument is provided
 if [ -z "$SCRIPT_PATH" ]; then
-    echo "Error, must set CALIPTRA_SS or provide a path as an argument"
+    echo "Error, must set CALIPTRA_SS_ROOT or provide a path as an argument"
     exit 1
 fi
 

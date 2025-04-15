@@ -31,16 +31,23 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
+// Global variable allocated to DCCM explicitly, to test DCCM access
+static const char* dccm_msg __attribute__ ((section(".dccm"))) = "=================\nHello World from MCU DCCM\n=================\n\n";
+
 void main (void) {
     int argc=0;
     char *argv[1];
     uint32_t reg_data;
 
-    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
-    mcu_mci_boot_go();
+    // Print message from DCCM memory
+    if (dccm_msg[0] != '=') {
+        VPRINTF(FATAL, "MCU: DCCM does not contain expected message!\nExpected: '=', saw '%c'\n", dccm_msg[0]);
+    } else {
+        VPRINTF(LOW, dccm_msg)
+    }
 
     VPRINTF(LOW, "MCU: Caliptra bringup\n")
-    mcu_cptra_fuse_init();
+    mcu_cptra_init_d();
 
     mcu_cptra_poll_mb_ready();
 }

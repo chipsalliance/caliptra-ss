@@ -38,6 +38,9 @@ targets:
       - $AVERY_AXI/src.axi/aaxi_pkg.sv
       - $AVERY_AXI/src.axi/aaxi_pkg_xactor.sv
       - $AVERY_AXI/src.axi/aaxi_class_pll.sv
+      - $AVERY_AXI/checker/monitor_wrapper/BP063/aaxi_monitor_wrapper.sv
+      - $AVERY_AXI/src.VCS/aaxi_busmonitor.v
+      - $AVERY_AXI/src.axi/aaxi_coverage_metrics.sv 
       - $AVERY_AXI/src.axi/aaxi_pkg_test.sv
       - $AVERY_AXI/src.axi/aaxi_intf.sv
       #-- I3C VIP
@@ -55,11 +58,13 @@ targets:
   tb:
     directories: [$COMPILE_ROOT/rtl]
     files:
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_path_defines.svh
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
   rtl:
     directories: [$COMPILE_ROOT/rtl]
     files:
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_path_defines.svh
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
 ---
@@ -98,9 +103,25 @@ targets:
       - $COMPILE_ROOT/rtl/caliptra_ss_top_w_stub.sv
     tops: [caliptra_ss_top_w_stub]
 --- 
+provides: [caliptra_ss_top_tb_coverage]
+schema_version: 2.4.0
+requires:
+  - axi_dma_coverage
+  - mci_coverage
+  - lc_ctrl_coverage
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/coverage
+    files:
+      - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_if.sv
+      - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_props.sv
+      - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_bind.sv
+--- 
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0
 requires:
+  - ss_asserts
   - caliptra_ss_lc_ctrl_pkg
   - caliptra_ss_top_defines
   - axi_mem_pkg
@@ -110,13 +131,15 @@ requires:
   - fuse_ctrl_pkg
   - caliptra_top_tb_pkg
   - avery_vip
-  - mci_coverage
+  - caliptra_ss_top_tb_coverage
 targets:
   tb:
     directories:
       - $COMPILE_ROOT/vip
       - $COMPILE_ROOT/testbench
       - $COMPILE_ROOT/testbench/sv_tests/ai3c
+      - $COMPILE_ROOT/testbench/sv_tests/mci
+      - $COMPILE_ROOT/testbench/sv_tests/common
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
@@ -130,14 +153,18 @@ targets:
       - $COMPILE_ROOT/testbench/prim_generic_otp.sv
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_tb_cmd_list.svh
+      - $COMPILE_ROOT/testbench/caliptra_ss_veer_sram_export.sv
       - $COMPILE_ROOT/testbench/fc_lcc_tb_services.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_services.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_bfm_services_if.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]
   sim:
     pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
                 && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py .
                 && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py .
+                && echo "[PRE-EXEC] Copying SHA512 Vectors to $(pwd)" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/integration/tb/vectors/SHA*.rsp .
                 && echo "[PRE-EXEC] Copying MLDSA vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 .
                 && echo "[PRE-EXEC] Copying MLDSA debug vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug .
                 && echo "[PRE-EXEC] Copying mldsa directed vector to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex .
@@ -149,6 +176,9 @@ global:
         - '-assert svaext'
         - '-sverilog -full64'
         - '-debug_access+all'
+        - +define+CLP_ASSERT_ON
+        - +define+AVERY_ASSERT_ON
+        - +define+AVERY_MONITOR_ON
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
@@ -170,7 +200,6 @@ global:
         - +define+AAXI_INTC_SLAVE_CNT=8
         - +define+AI3C_LANE_NUM=1
         - +define+DIGITAL_IO_I3C=1
-        - +define+CALIPTRA_MODE_SUBSYSTEM
         # - +define+AI3C_SKIP_DAA=1
         - +define+AVERY_SV_TEST_CASE=1
         - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
@@ -189,12 +218,13 @@ global:
         #FIXME unique case violations in i3c_core
         - '-ignore unique_checks'
       sim:
-        # Uncomment for debug prints
+        # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
         #- '+ai3c_dbg_name=master'
         - '+vpi -lpthread'
         - '+CLP_BUS_LOGS=1'
-        # cmdline_img_sz in bytes in hex
-        # - '+cmdline_img_sz=10'
+        # Command line arg to spcify the I3C test 
         # - +AVY_TEST=ai3ct_ext_basic
+        # Command line arg to spcify the I3C test Runtime
+        # this is useful for production ROM test
         # - '+i3c_run_time=500us'

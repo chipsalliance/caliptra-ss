@@ -39,7 +39,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU: Caliptra Boot Go\n=================\n\n");    
-    mcu_mci_boot_go();
+    mcu_cptra_init_d(.cfg_skip_set_fuse_done=true);
     force_lcc_tokens();
     VPRINTF(LOW, "=========\nMCU: TESTING LCC STATE TRANS FROM RAW to PROD_END\n=================\n\n");   
     test_all_lc_transitions_no_RMA_no_SCRAP();

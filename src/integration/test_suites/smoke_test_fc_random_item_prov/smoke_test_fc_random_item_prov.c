@@ -23,7 +23,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -59,10 +58,10 @@ void program_sw_manuf_partition(uint32_t seed) {
     // 0x0D1: CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR
     // 0x131: CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER
     // 0x141: CPTRA_CORE_SOC_STEPPING_ID
-    // 0x143: CPTRA_SS_PROD_DEBUG_UNLOCK_PKS
-    const uint32_t addresses[5] = {0x0D0, 0x0D1, 0x131, 0x141, 0x143};
-    const uint32_t digest_address = 0x4F8;
-    uint32_t fuse_address = addresses[seed % 5];
+    // 0x143: CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0
+    const uint32_t addresses[12] = {0x0D0, 0x0D1, 0x131, 0x141, 0x143, 0x173, 0x1A3, 0x1D3, 0x203, 0x233, 0x263, 0x293};
+    const uint32_t digest_address = 0x4B8;
+    uint32_t fuse_address = addresses[seed % 12];
 
     const uint32_t data = 0xAB;
     uint32_t read_data;
@@ -92,12 +91,12 @@ void program_sw_manuf_partition(uint32_t seed) {
     }
 
     // Step 6
-    dai_wr(fuse_address, data, 0, 32, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(fuse_address, data, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 7
     uint32_t digest[2];
-    digest[0] = lsu_read_32(FUSE_CTRL_SW_MANUF_PARTITION_DIGEST_0);
-    digest[1] = lsu_read_32(FUSE_CTRL_SW_MANUF_PARTITION_DIGEST_1);
+    digest[0] = lsu_read_32(SOC_OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_0);
+    digest[1] = lsu_read_32(SOC_OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_1);
     if (digest[0] != 0xFF || digest[1] != 0xFF) {
         VPRINTF(LOW, "ERROR: digest is 0\n");
         exit(1);
@@ -128,7 +127,7 @@ void program_vendor_secret_prod_partition(uint32_t seed) {
     uint32_t axi_conf;
     axi_conf = lsu_read_32(0x70000080);
 
-    const uint32_t base_address = 0x9E0;
+    const uint32_t base_address = 0x9A8;
     uint32_t fuse_address = base_address + 32*(seed % 15);
 
     const uint32_t data[2] = {0xdeadbeef, 0xcafebabe};
@@ -146,8 +145,8 @@ void program_vendor_secret_prod_partition(uint32_t seed) {
 
     // Step 3
     uint32_t digest[2];
-    digest[0] = lsu_read_32(FUSE_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_0);
-    digest[1] = lsu_read_32(FUSE_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_1);
+    digest[0] = lsu_read_32(SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_0);
+    digest[1] = lsu_read_32(SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_1);
     if (digest[0] != 0 || digest[1] != 0) {
         VPRINTF(LOW, "ERROR: digest is not 0\n");
     }
@@ -159,14 +158,14 @@ void program_vendor_secret_prod_partition(uint32_t seed) {
     reset_fc_lcc_rtl();
 
     // Step 6
-    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 7
-    dai_wr(fuse_address, data[0], data[1], 64, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(fuse_address, data[0], data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Step 8
-    digest[0] = lsu_read_32(FUSE_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_0);
-    digest[1] = lsu_read_32(FUSE_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_1);
+    digest[0] = lsu_read_32(SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_0);
+    digest[1] = lsu_read_32(SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_1);
     if (digest[0] == 0 && digest[1] == 0) {
         VPRINTF(LOW, "ERROR: digest is 0\n");
         exit(1);
@@ -178,20 +177,14 @@ void program_vendor_secret_prod_partition(uint32_t seed) {
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
-    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
-    // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
-
-    uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
     
     lcc_initialization();
     // Set AXI user ID to MCU.
     grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    wait_dai_op_idle(0);
+    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
 
     initialize_otp_controller();
 

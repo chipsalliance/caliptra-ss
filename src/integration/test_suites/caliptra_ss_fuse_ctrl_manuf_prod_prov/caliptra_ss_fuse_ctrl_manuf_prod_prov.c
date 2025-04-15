@@ -23,7 +23,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -59,11 +58,11 @@ static const prod_manuf_partition_t partitions[12] = {
     { .address = 0x0B0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_2
     { .address = 0x0C0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_3
     { .address = 0x0D0, .granularity = 32, .lc_state = MANUF }, // SW_MANUF_PARTITION
-    { .address = 0x620, .granularity = 32, .lc_state = MANUF }, // VENDOR_HASHES_MANUF_PARTITION
-    { .address = 0x660, .granularity = 32, .lc_state = PROD },  // VENDOR_HASHES_PROD_PARTITION
-    { .address = 0x950, .granularity = 32, .lc_state = PROD },  // VENDOR_REVOCATIONS_PROD_PARTITION
-    { .address = 0x9E8, .granularity = 64, .lc_state = PROD },  // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0xBF0, .granularity = 64, .lc_state = PROD },  // VENDOR_NON_SECRET_PROD_PARTITION
+    { .address = 0x5E0, .granularity = 32, .lc_state = MANUF }, // VENDOR_HASHES_MANUF_PARTITION
+    { .address = 0x620, .granularity = 32, .lc_state = PROD },  // VENDOR_HASHES_PROD_PARTITION
+    { .address = 0x910, .granularity = 32, .lc_state = PROD },  // VENDOR_REVOCATIONS_PROD_PARTITION
+    { .address = 0x9A8, .granularity = 64, .lc_state = PROD },  // VENDOR_SECRET_PROD_PARTITION
+    { .address = 0xBB0, .granularity = 64, .lc_state = PROD },  // VENDOR_NON_SECRET_PROD_PARTITION
 };
 
 /**
@@ -73,10 +72,10 @@ static const prod_manuf_partition_t partitions[12] = {
  */
 void manuf_prod_provision() {
 
-    // 0x580: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
-    const uint32_t base_address  = 0x500;
-    const uint32_t manuf_token_address = 0x580;
-    const uint32_t prod_token_address = 0x590;
+    // 0x540: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
+    const uint32_t base_address  = 0x4C0;
+    const uint32_t manuf_token_address = 0x540;
+    const uint32_t prod_token_address = 0x550;
 
     dai_wr(manuf_token_address, manuf_token_hash[0], manuf_token_hash[1], 64, 0);
     dai_wr(manuf_token_address + 0x08, manuf_token_hash[2], manuf_token_hash[3], 64, 0);
@@ -127,26 +126,20 @@ void manuf_prod_provision() {
         } else {
             grant_mcu_for_fc_writes(); 
         }
-        dai_wr(partitions[i].address, i, 0, partitions[i].granularity, partitions[i].lc_state == MANUF ? FUSE_CTRL_STATUS_DAI_ERROR_MASK : 0);
+        dai_wr(partitions[i].address, i, 0, partitions[i].granularity, partitions[i].lc_state == MANUF ? OTP_CTRL_STATUS_DAI_ERROR_MASK : 0);
     }
 }
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
-    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
-    // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
-
-    uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
       
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    wait_dai_op_idle(0);
+    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
 
     initialize_otp_controller();
 

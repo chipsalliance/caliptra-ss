@@ -31,6 +31,11 @@
   - [Caliptra ROM Requirements](#caliptra-rom-requirements)
   - [I3C and Caliptra-AXI Interactions](#i3c-and-caliptra-axi-interactions)
 - [Caliptra AXI Manager \& DMA assist](#caliptra-axi-manager--dma-assist)
+  - [AXI Feature Support](#axi-feature-support)
+  - [Routes](#routes)
+  - [Streaming Boot Payloads](#streaming-boot-payloads)
+  - [Programming Flowchart {#programming-flowchart}](#programming-flowchart-programming-flowchart)
+  - [Descriptor](#descriptor)
 - [Caliptra SS Fuse Controller](#caliptra-ss-fuse-controller)
   - [Partition Details](#partition-details)
     - [Key Characteristics of Secret Partitions:](#key-characteristics-of-secret-partitions)
@@ -94,6 +99,7 @@
       - [MCU Mailbox MCU Access](#mcu-mailbox-mcu-access)
       - [MCU Mailbox Address Map](#mcu-mailbox-address-map)
     - [MCU SRAM](#mcu-sram-1)
+      - [MCU Hitless Update Handshake](#mcu-hitless-update-handshake)
     - [MCI AXI Subordinate](#mci-axi-subordinate)
     - [Interrupts](#interrupts)
     - [MCI Error handling](#mci-error-handling)
@@ -1023,13 +1029,13 @@ The registers can be split up into a few different categories:
 
 ### MCI Straps
 
-All MCI straps shall be static before mci_rst_b is deasserted.
+All MCI straps shall be static before mci_rst_b is deasserted. Some straps have further restrictions as described below.  
 
 MCI has the following types of straps:
 
 | **Strap Type**     | **Sampled or Direct Use**|**Description**     | 
 | :---------     | :---------| :---------| 
-| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These are not overridable by SW. | 
+| **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These shall be constant non-configurable inputs to CSS/MCI. Inside MCI these are not overridable by SW.| 
 | **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
 | **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
 
@@ -1092,8 +1098,8 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 12. MCU ROM will also write owner_pk_hash register (and any other additional pre-ROM configuration writes here)
 13. MCU ROM will do a fuse_write_done write to Caliptra
 14. Caliptra ROM starts to execute from here on.
-15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU.
-16. CSS-BootFSM will wait for a confirmation from MCU ROM and assert the reset to MCU and deassert the reset to MCU after 10 cycles.
+15. Once Caliptra populates MCU SRAM, it will set FW_EXEC_CTL[2] which will trigger a reset request to MCU. MCU either needs to enable interrupts or poll on the appropriate bit to detect that Caliptra has requested a reset.
+16. CSS-BootFSM waits for MCU to request the reset. Then CSS-BootFSM will do a halt req/ack handshake with MCU and assert the MCU reset after the MCU reports that it has successfully halted.
 17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
 ![](images/Caliptra-SS-BootFSM.png)
@@ -1136,7 +1142,7 @@ A Requester will read the "LOCK" register to obtain a lock on the mailbox. This 
   -  TARGET_DONE
   -  TARGET_USER
 - Mailbox SRAM
-Unlocking occurs when the requestor clears the execution register. After releasing the mailbox the SRAM is zeroed out ([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
+Unlocking/releasing occurs when the requestor writes 0 to the EXECUTE register. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
 
 On MCI reset release the MCU MBOX is locked for MCU. The MCU shall set the DLEN to the size of the SRAM and release the MBOX, causing the SRAM to be zeroed. This is done to prevent data leaking between warm resets via the SRAM. 
 
@@ -1180,7 +1186,7 @@ If set to 0 the mailbox is not instantiated.
 
 When the mailbox lock is released the SRAM is zeroed out from 0 to max DLEN set during the locking period. The flow for clearing the SRAM is:
 
-1. Requester releases lock by clearing the EXECUTE register
+1. Requester releases lock
 2. MCU SRAM starts clearing
 3. MCU SRAM clearing ends
 4. Mailbox is unlocked
@@ -1260,6 +1266,24 @@ The entire MCU SRAM has ECC protection with no ability to disable. Single bit er
 - HW_ERROR_FATAL asserted and sent to SOC
 
 MCU SRAM is accessible via DMI, see [DMI MCU SRAM Access](#dmi-mcu-sram-access) for more details.
+
+#### MCU Hitless Update Handshake
+
+The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). The [Caliptra SS Integration Spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSIntegrationSpecification.md#mci) contains all MCI warm reset and hitless update flows and restrictions. This section is focused on the HW registers both Caliptra and MCU will used to complete the flow. 
+
+MCI tracks three different ```RESET_REASON``` in its register bank:
+| Reset type    | Description     |
+|------------------|------------------|
+|```WARM_RESET```| MCI reset cycle. MCU SRAM has FW image but need Caliptra interaction before jumping to the FW image.|
+| ```FW_BOOT_UPD_RESET```      | First hitless update since MCI warm reset. MCU SRAM needs full initialization.      | 
+| ```FW_HITLESS_UPD_RESET```      | Second or greater hitless update since MCI warm reset. MCU SRAM can be partially initialized since valid content still exists in the MCU SRAM from previous firmware.| 
+
+```WARM_RESET``` will be set by hardware when a warm reset occurs. It should be cleared by the Caliptra Core during a firmware boot or hitless update flow.
+
+```FW_BOOT_UPD_RESET``` and ```FW_HITLESS_UPD_RESET``` are typically set and cleared by the Caliptra Core during a firmware boot or hitless update flow. If Caliptra Core is not used in the design, the SoC needs to designate a different trusted entity to control these registers.
+
+```FW_EXEC_CTLR[2]``` is an input signal to the MCI and is sent as an interrupt (```notif_cptra_mcu_reset_req_sts```) to the MCU. This interrupt should be cleared by the MCU before the requested reset with ```RESET_REQUEST.req```. After a warm reset, setting ```FW_EXEC_CTRL[2]``` will trigger an interrupt to the MCU, indicating that the MCU should reset itself with ```RESET_REQUEST.req```. After the first MCU reset request, when this input signal is cleared, it triggers the interrupt. The MCU is held in reset until ```FW_EXEC_CTRL[2]``` is set, with a minimum reset time determined by the ```MIN_MCU_RST_COUNTER``` MCI parameter.
+
 ### MCI AXI Subordinate
 
 MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the appropriate submodule within MCI. 
@@ -1296,6 +1320,22 @@ SW access to all interrupt registers are restricted to MCU.
 MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any error signals that fuse controller, i3c etc.) and provides subsystem level FATAL and NON FATAL error signals. For all the error information being collected from other subystem modules, MCI also provides masking capability for MCU FW to program/enable based on SOC specific architectures to provide maximum flexibility.
 
 ![](images/MCI-error-agg.png)
+
+Aggregate error register assignments are documented in the register specification: **TODO:** Add a link to rdl -> html file
+
+Regions of 6 bits in the aggregate error registers are reserved for each component.
+MCU and Caliptra errors are connected to appropriate severity levels.
+Lifecycle controller, fuse controller and I3C are connected to both severities. 
+Masks are used to set the severity of each error for these components. These can be configured by integrators, ROM, or runtime firmware.
+
+| **Error Register Bits** | **Component**         | **Default Error Severity** | **Description**          |
+| :---------              | :---------            | :---------                 |:---------                |
+| Aggregate error[5:0]    | Caliptra core         | Both                       | [Caliptra errors](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling) |
+| Aggregate error[11:6]   | MCU                   | Both                       | DCCM double bit ECC error is fatal <br> DCCM single bit ECC error is non-fatal |
+| Aggregate error[17:12]  | Life cycle controller | Fatal                      | [LCC alerts](https://opentitan.org/book/hw/ip/lc_ctrl/doc/interfaces.html#security-alerts) |
+| Aggregate error[23:18]  | OTP Fuse controller   | Fatal                      | [FC alerts](https://opentitan.org/book/hw/top_earlgrey/ip_autogen/otp_ctrl/doc/interfaces.html#security-alerts) |
+| Aggregate error[29:24]  | I3C                   | Non-Fatal                  | Peripheral reset and escalated reset pins from I3C <br> **TODO:** Add a link to I3C doc |
+| Aggregate error[31:30]  | Spare bits            | None                       | Spare bits for integrator use |
 
 MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
 
