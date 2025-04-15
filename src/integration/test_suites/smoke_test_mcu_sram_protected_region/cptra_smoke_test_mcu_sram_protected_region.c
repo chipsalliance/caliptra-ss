@@ -105,7 +105,7 @@ void main(void) {
     VPRINTF(LOW, "Caliptra: TEST PASSED handshake with MCU to finish test\n");
     cptra_mcu_mbox_acquire_lock_set_execute(0, 100);
 
-    cptra_mcu_mbox_wait_for_status_complete(0, 1000);
+    cptra_mcu_mbox_wait_for_status(0, 1000, MCU_MBOX_CMD_COMPLETE);
 
     while(1);
 

@@ -32,7 +32,7 @@ uint32_t cptra_get_mcu_sram_protected_region_start();
 
 uint32_t cptra_get_mcu_sram_protected_region_end();
 
-void cptra_mcu_mbox_wait_for_status_complete(uint32_t mbox_num, uint32_t attempt_count);
+void cptra_mcu_mbox_wait_for_status(uint32_t mbox_num, uint32_t attempt_count, enum mcu_mbox_cmd_status cmd_status);
 
 void cptra_mcu_mbox_acquire_lock_set_execute(uint32_t mbox_num, uint32_t attempt_count);
 
