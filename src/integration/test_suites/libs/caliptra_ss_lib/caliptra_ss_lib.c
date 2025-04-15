@@ -597,7 +597,7 @@ void mcu_cptra_mbox_cmd() {
 }
 
 // -- function to update various register to default values
-// PROT_CAP, DEVICE_ID, HW_STATUS, DEVICE_STATUS
+// PROT_CAP, DEVICE_ID, HW_STATUS
 void boot_i3c_reg(void) {
 
     uint32_t i3c_reg_data;
@@ -625,10 +625,6 @@ void boot_i3c_reg(void) {
     i3c_reg_data = 0x00000100; //-- Dummy value
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr HW_STATUS with 'h %0x\n", i3c_reg_data);
-
-    //-- DEVICE_STATUS
-    i3c_reg_data = 0x00000001; //-- DEVICE_HEALTHY
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, i3c_reg_data);
 
 }
 
@@ -697,17 +693,73 @@ void boot_i3c_socmgmt_if(void) {
 // -- function boot i3c core (i3c bringup)
 void boot_i3c_core(void) {
 
+    uint32_t i3c_reg_data;
+
     VPRINTF(LOW, "MCU: I3C Core Bringup .. Started \n");
     boot_i3c_socmgmt_if();
     boot_i3c_standby_ctrl_mode(); 
     boot_i3c_reg();
 
+    //setting device address to 0x5A
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 90 << 0  | i3c_reg_data;
+    i3c_reg_data = 1  << 15 | i3c_reg_data;
+    lsu_write_32( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_DEVICE_ADDR, i3c_reg_data);
+    VPRINTF(LOW, "MCU: I3C Device Address set to 0x5A\n");
+
+    //setting virtual device address to 0x5B
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 91 << 0  | i3c_reg_data; //0x5B
+    i3c_reg_data = 1  << 15 | i3c_reg_data;   
+    lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
+    VPRINTF(LOW, "MCU: I3C Virtual Device Address set to 0x5B\n");
+
+}
+
+void trigger_caliptra_go(void){
+    
+    enum boot_fsm_state_e boot_fsm_ps;
+    // Wait for Boot FSM to stall (on breakpoint) or finish bootup
+    boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
+    while(boot_fsm_ps != BOOT_DONE && boot_fsm_ps != BOOT_WAIT) {
+        for (uint8_t ii = 0; ii < 16; ii++) {
+            __asm__ volatile ("nop"); // Sleep loop as "nop"
+        }
+        boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
+    }
+
+    // Advance from breakpoint, if set
+    if (boot_fsm_ps == BOOT_WAIT) {
+        lsu_write_32(SOC_SOC_IFC_REG_CPTRA_BOOTFSM_GO, SOC_IFC_REG_CPTRA_BOOTFSM_GO_GO_MASK);
+    }
+    VPRINTF(LOW, "MCU: Set Caliptra BootFSM GO\n");
+
+}
+
+void wait_for_cptra_ready_for_mb_processing(void) {
+    ////////////////////////////////////
+    // Mailbox command test
+    // MBOX: Wait for ready_for_mb_processing
+    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
+        for (uint8_t ii = 0; ii < 16; ii++) {
+            __asm__ volatile ("nop"); // Sleep loop as "nop"
+        }
+    }
+    VPRINTF(LOW, "MCU: Ready for FW\n");
+}
+
+void configure_captra_axi_user(void) {
+    // MBOX: Setup valid AXI USER
+    VPRINTF(LOW, "MCU: Configuring MBOX Valid AXI USER\n");
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0xffffffff); // LSU AxUSER value. TODO: Derive from parameter
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0_LOCK_MASK);
+    VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
 }
 
 // -- function to boot_mcu_with_fuses
 void boot_mcu(){
 
-    enum boot_fsm_state_e boot_fsm_ps;
+    
     const uint32_t mbox_dlen = 64;
     uint32_t mbox_data[] = { 0x00000000,
                              0x11111111,
@@ -795,36 +847,6 @@ void boot_mcu(){
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
 
-    // Wait for Boot FSM to stall (on breakpoint) or finish bootup
-    boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
-    while(boot_fsm_ps != BOOT_DONE && boot_fsm_ps != BOOT_WAIT) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
-        boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
-    }
 
-    // Advance from breakpoint, if set
-    if (boot_fsm_ps == BOOT_WAIT) {
-        lsu_write_32(SOC_SOC_IFC_REG_CPTRA_BOOTFSM_GO, SOC_IFC_REG_CPTRA_BOOTFSM_GO_GO_MASK);
-    }
-    VPRINTF(LOW, "MCU: Set BootFSM GO\n");
-
-    ////////////////////////////////////
-    // Mailbox command test
-    //
-    // MBOX: Wait for ready_for_mb_processing
-    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
-    }
-    VPRINTF(LOW, "MCU: Ready for FW\n");
-
-    // MBOX: Setup valid AXI USER
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0xffffffff); // LSU AxUSER value. TODO: Derive from parameter
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0_LOCK_MASK);
-
-    VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
  
 }

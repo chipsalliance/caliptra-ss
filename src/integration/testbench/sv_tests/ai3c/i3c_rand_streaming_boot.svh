@@ -140,9 +140,9 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 		
 			test_log.substep($psprintf("Writing 'd %0d of 256B blocks", wr_count_256B));
 
-				for(int i = 0; i < wr_count_256B; i++) begin
+			for(int i = 0; i < wr_count_256B; i++) begin
 
-					test_log.step($psprintf("INDIRECT_FIFO_DATA write..'d %0d", i));
+				test_log.step($psprintf("INDIRECT_FIFO_DATA write..'d %0d", i));
 				data = new[16];
 				for(int k = 0; k < 16; k++) begin
 					line = "'h ";
@@ -157,32 +157,32 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 					remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 16;
 				end
 
-					if (remaining_img_sz_in_bytes > 0) begin
-						test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
-						//-- read INDIRECT_FIFO_STATUS register
-						//-- INDIRECT_FIFO_STATUS ('d46)
-						//-- Step 9:
-						//-- The I3C device will keep head and tail pointers along with 
-						//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
-						//-- I3C recovery interface HW wait for an update to 
-						//-- INDIRECT_DATA_REG with 1-256B data from BMC.
-						data[0] = 0;
-						for(int i = 0; i < 100; i++) begin
+				if (remaining_img_sz_in_bytes > 0) begin
+					test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
+					//-- read INDIRECT_FIFO_STATUS register
+					//-- INDIRECT_FIFO_STATUS ('d46)
+					//-- Step 9:
+					//-- The I3C device will keep head and tail pointers along with 
+					//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
+					//-- I3C recovery interface HW wait for an update to 
+					//-- INDIRECT_DATA_REG with 1-256B data from BMC.
+					data[0] = 0;
+					for(int i = 0; i < 100; i++) begin
 							i3c_read(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_STATUS, 20, data);
-							if(data[0] == 'h1) begin
-								test_log.substep("Indirect FIFO is empty");
-								break;
-							end
-							#100ns;
+						if(data[0] == 'h1) begin
+							test_log.substep("Indirect FIFO is empty");
+							break;
 						end
-						if(data[0] != 'h1) begin
-							test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
-						end
-					end else begin
-						test_log.substep($psprintf("Image send completed"));
+						#100ns;
 					end
-
+					if(data[0] != 'h1) begin
+						test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
+					end
+				end else begin
+					test_log.substep($psprintf("Image send completed"));
 				end
+			end
+				
 		end
 
 		//-- writing INDIRECT_FIFO_DATA register for 16B
@@ -195,12 +195,12 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 				test_log.step($psprintf("INDIRECT_FIFO_DATA write..'d %0d", i));
 				data = new[16];
 				line = "'h ";
-					//-- writing 16 bytes of data
-					for(int j = 0; j < 16; j++) begin
-						data[j] = image[(wr_count_256B*16)+i][j];
-						line = $psprintf("%s%0h", line, data[j]);
-					end
-					test_log.substep($psprintf("Image['d %0d]: %s", i, line));
+				//-- writing 16 bytes of data
+				for(int j = 0; j < 16; j++) begin
+					data[j] = image[(wr_count_256B*16)+i][j];
+					line = $psprintf("%s%0h", line, data[j]);
+				end
+				test_log.substep($psprintf("Image['d %0d]: %s", i, line));
 				test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
 				i3c_random_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, remaining_img_sz_in_bytes);
 				remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 16;
@@ -210,6 +210,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 
 
 		end
+
 		//-- writing INDIRECT_FIFO_DATA register for 4B
 		if(wr_count_4B > 0) begin
 
@@ -225,31 +226,6 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 			test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
 			i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, (wr_count_4B*4));
 			
-			// if (remaining_img_sz_in_bytes > 0) begin
-			// 	test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
-			// 	//-- read INDIRECT_FIFO_STATUS register
-			// 	//-- INDIRECT_FIFO_STATUS ('d46)
-			// 	//-- Step 9:
-			// 	//-- The I3C device will keep head and tail pointers along with 
-			// 	//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
-			// 	//-- I3C recovery interface HW wait for an update to 
-			// 	//-- INDIRECT_DATA_REG with 1-256B data from BMC.
-			// 	data[0] = 0;
-			// 	for(int i = 0; i < 100; i++) begin
-			// 		i3c_read(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_STATUS, 20, data);
-			// 		if(data[0] == 'h1) begin
-			// 			test_log.substep("Indirect FIFO is empty");
-			// 			break;
-			// 		end
-			// 		#100ns;
-			// 	end
-			// 	if(data[0] != 'h1) begin
-			// 		test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
-			// 	end
-			// end else begin
-			// 	test_log.substep($psprintf("Image send completed"));
-			// end
-
 		end
 
 		test_log.step("=============================================================");
@@ -283,46 +259,46 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 			test_log.substep($psprintf("Reading RECOVERY_STATUS register .. count 'd %0d", i));
 			i3c_read(recovery_target_addr, `I3C_CORE_RECOVERY_STATUS, 2, data);
 				
-				// 0x0: Not in recovery mode
-				// 0x1: Awaiting recovery image
-				// 0x2: Booting recovery image
-				// 0x3: Recovery successful
-				// 0xc: Recovery failed
-				// 0xd: Recovery image authentication error
-				// 0xe: Error entering  Recovery mode (might be administratively disabled)
-				// 0xf: Invalid component address space
+			// 0x0: Not in recovery mode
+			// 0x1: Awaiting recovery image
+			// 0x2: Booting recovery image
+			// 0x3: Recovery successful
+			// 0xc: Recovery failed
+			// 0xd: Recovery image authentication error
+			// 0xe: Error entering  Recovery mode (might be administratively disabled)
+			// 0xf: Invalid component address space
 
-				case (data[0])
-					'h0: test_log.substep("Not in recovery mode");
-					'h1: begin
-							test_log.substep($psprintf("Awaiting recovery image.. wait loop count : 'd %0d", i));
-						 end
-					'h2: test_log.substep($psprintf("Booting recovery image .. wait loop count : 'd %0d", i));
-					'h3: begin
-							test_log.substep("Recovery successful");
-							break;
-						 end
-					'hc: begin
-							test_log.substep("Recovery failed");
-							break;
-						 end
-					'hd: begin
-							test_log.substep("Recovery image authentication error");
-							break;
-					 	 end
-					'he: begin
-							test_log.substep("Error entering  Recovery mode (might be administratively disabled)");
-							break;
-						 end
-					'hf: begin
-							test_log.substep("Invalid component address space");
-						 	break;
-						 end
-					default: begin 
-							test_log.substep("Unknown status");
-							break;
-						 end
-				endcase
+			case (data[0])
+				'h0: test_log.substep("Not in recovery mode");
+				'h1: begin
+						test_log.substep($psprintf("Awaiting recovery image.. wait loop count : 'd %0d", i));
+						end
+				'h2: test_log.substep($psprintf("Booting recovery image .. wait loop count : 'd %0d", i));
+				'h3: begin
+						test_log.substep("Recovery successful");
+						break;
+						end
+				'hc: begin
+						test_log.substep("Recovery failed");
+						break;
+						end
+				'hd: begin
+						test_log.substep("Recovery image authentication error");
+						break;
+						end
+				'he: begin
+						test_log.substep("Error entering  Recovery mode (might be administratively disabled)");
+						break;
+						end
+				'hf: begin
+						test_log.substep("Invalid component address space");
+						break;
+						end
+				default: begin 
+						test_log.substep("Unknown status");
+						break;
+						end
+			endcase
 
 			#1us;
 
