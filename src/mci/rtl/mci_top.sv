@@ -693,6 +693,7 @@ if (MCU_MBOX0_SIZE_KB == 0) begin : no_mcu_mbox0
         soc_req_mbox0_lock = '0;
         soc_mcu_mbox0_data_avail = '0;
         mcu_mbox0_data_avail = '0;
+        mcu_mbox0_target_user_done = '0;
     end
 end else begin : mcu_mbox0
 mcu_mbox
@@ -742,6 +743,7 @@ if (MCU_MBOX1_SIZE_KB == 0) begin : no_mcu_mbox1
         soc_req_mbox1_lock = '0;
         soc_mcu_mbox1_data_avail = '0;
         mcu_mbox1_data_avail = '0;
+        mcu_mbox1_target_user_done = '0;
     end
 end else begin : mcu_mbox1
 mcu_mbox
@@ -782,8 +784,8 @@ endgenerate
 
  // DUT instantiation
 mci_lcc_st_trans LCC_state_translator (
-    .clk(clk),
-    .rst_n(cptra_ss_rst_b_o),
+    .clk_i(clk),
+    .rst_ni(cptra_ss_rst_b_o),
     .state_error(lc_fatal_state_error_i),  
     .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
     .lc_dft_en_i(lc_dft_en_i),

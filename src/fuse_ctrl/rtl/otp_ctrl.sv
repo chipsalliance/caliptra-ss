@@ -78,8 +78,6 @@ module otp_ctrl
 
   // Hardware config bits
   output otp_broadcast_t                             otp_broadcast_o,
-  // External voltage for OTP
-  inout wire                                         otp_ext_voltage_h_io,
   // Scan
   input                                              scan_en_i,
   input                                              scan_rst_ni,

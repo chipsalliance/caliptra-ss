@@ -66,7 +66,8 @@ CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
 COMP_LIB_NAMES := caliptra_ss_lib \
 		  mci \
 		  fuse_ctrl \
-		  lc_ctrl
+		  lc_ctrl \
+		  wdt
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
