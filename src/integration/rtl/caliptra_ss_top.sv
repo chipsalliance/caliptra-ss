@@ -43,20 +43,25 @@ module caliptra_ss_top
     output logic cptra_ss_mci_cptra_rst_b_o,
 
 // Caliptra Core AXI Sub Interface
-    axi_if cptra_ss_cptra_core_s_axi_if,
+    axi_if.w_sub cptra_ss_cptra_core_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_cptra_core_s_axi_if_r_sub,
 
 // Caliptra Core AXI Manager Interface
-    axi_if cptra_ss_cptra_core_m_axi_if,
+    axi_if.w_mgr cptra_ss_cptra_core_m_axi_if_w_mgr,
+    axi_if.r_mgr cptra_ss_cptra_core_m_axi_if_r_mgr,
 
 // Caliptra SS MCI AXI Sub Interface
-    axi_if cptra_ss_mci_s_axi_if,
+    axi_if.w_sub cptra_ss_mci_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_mci_s_axi_if_r_sub,
 
 // Caliptra SS MCU ROM AXI Sub Interface
-    axi_if cptra_ss_mcu_rom_s_axi_if,
+    axi_if.w_sub cptra_ss_mcu_rom_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_mcu_rom_s_axi_if_r_sub,
     axi_mem_if.request mcu_rom_mem_export_if,
 
 // Caliptra SS MCU LSU/IFU AXI Manager Interface
-    axi_if cptra_ss_mcu_lsu_m_axi_if,
+    axi_if.w_mgr       cptra_ss_mcu_lsu_m_axi_if_w_mgr,
+    axi_if.r_mgr       cptra_ss_mcu_lsu_m_axi_if_r_mgr,
     output logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awcache,
     output logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arcache,
     output logic [2:0] cptra_ss_mcu_lsu_m_axi_if_awprot,
@@ -65,7 +70,8 @@ module caliptra_ss_top
     output logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arregion,
     output logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awqos,
     output logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arqos,
-    axi_if cptra_ss_mcu_ifu_m_axi_if,
+    axi_if.w_mgr       cptra_ss_mcu_ifu_m_axi_if_w_mgr,
+    axi_if.r_mgr       cptra_ss_mcu_ifu_m_axi_if_r_mgr,
     output logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awcache,
     output logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arcache,
     output logic [2:0] cptra_ss_mcu_ifu_m_axi_if_awprot,
@@ -74,7 +80,8 @@ module caliptra_ss_top
     output logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arregion,
     output logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awqos,
     output logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arqos,
-    axi_if cptra_ss_mcu_sb_m_axi_if,
+    axi_if.w_mgr       cptra_ss_mcu_sb_m_axi_if_w_mgr,
+    axi_if.r_mgr       cptra_ss_mcu_sb_m_axi_if_r_mgr,
     output logic [3:0] cptra_ss_mcu_sb_m_axi_if_awcache,
     output logic [3:0] cptra_ss_mcu_sb_m_axi_if_arcache,
     output logic [2:0] cptra_ss_mcu_sb_m_axi_if_awprot,
@@ -85,7 +92,8 @@ module caliptra_ss_top
     output logic [3:0] cptra_ss_mcu_sb_m_axi_if_arqos,
 
 // Caliptra SS I3C AXI Sub Interface
-    axi_if cptra_ss_i3c_s_axi_if,
+    axi_if.w_sub cptra_ss_i3c_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_i3c_s_axi_if_r_sub,
 
 // Caliptra SS LC Controller AXI Sub Interface
     input  axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i,
@@ -160,7 +168,7 @@ module caliptra_ss_top
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
     mci_mcu_sram_if.request cptra_ss_mcu_mbox0_sram_req_if,
     mci_mcu_sram_if.request cptra_ss_mcu_mbox1_sram_req_if,
-    css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export,
+    css_mcu0_el2_mem_if.veer_sram_icache_src cptra_ss_mcu0_el2_mem_export,
 
 //  MCU MBOX signals
     output logic cptra_ss_soc_mcu_mbox0_data_avail,
@@ -303,210 +311,6 @@ module caliptra_ss_top
     logic [31:0] mcu_dmi_uncore_rdata;
     logic        mcu_dmi_active; 
 
-`ifdef MCU_RV_BUILD_AXI4
-   //-------------------------- LSU AXI signals--------------------------
-   // AXI Write Channels
-    wire                        lsu_axi_awvalid;
-    wire                        lsu_axi_awready;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_awid;
-    wire [31:0]                 lsu_axi_awaddr;
-    wire [3:0]                  lsu_axi_awregion;
-    wire [7:0]                  lsu_axi_awlen;
-    wire [2:0]                  lsu_axi_awsize;
-    wire [1:0]                  lsu_axi_awburst;
-    wire                        lsu_axi_awlock;
-    wire [3:0]                  lsu_axi_awcache;
-    wire [2:0]                  lsu_axi_awprot;
-    wire [3:0]                  lsu_axi_awqos;
-
-    wire                        lsu_axi_wvalid;
-    wire                        lsu_axi_wready;
-    wire [63:0]                 lsu_axi_wdata;
-    wire [7:0]                  lsu_axi_wstrb;
-    wire                        lsu_axi_wlast;
-
-    wire                        lsu_axi_bvalid;
-    wire                        lsu_axi_bready;
-    wire [1:0]                  lsu_axi_bresp;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_bid;
-
-    // AXI Read Channels
-    wire                        lsu_axi_arvalid;
-    wire                        lsu_axi_arready;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_arid;
-    wire [31:0]                 lsu_axi_araddr;
-    wire [3:0]                  lsu_axi_arregion;
-    wire [7:0]                  lsu_axi_arlen;
-    wire [2:0]                  lsu_axi_arsize;
-    wire [1:0]                  lsu_axi_arburst;
-    wire                        lsu_axi_arlock;
-    wire [3:0]                  lsu_axi_arcache;
-    wire [2:0]                  lsu_axi_arprot;
-    wire [3:0]                  lsu_axi_arqos;
-
-    wire                        lsu_axi_rvalid;
-    wire                        lsu_axi_rready;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lsu_axi_rid;
-    wire [63:0]                 lsu_axi_rdata;
-    wire [1:0]                  lsu_axi_rresp;
-    wire                        lsu_axi_rlast;
-
-    //-------------------------- IFU AXI signals--------------------------
-    // AXI Write Channels
-    wire                        ifu_axi_awvalid;
-    wire                        ifu_axi_awready;
-    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_awid;
-    wire [31:0]                 ifu_axi_awaddr;
-    wire [3:0]                  ifu_axi_awregion;
-    wire [7:0]                  ifu_axi_awlen;
-    wire [2:0]                  ifu_axi_awsize;
-    wire [1:0]                  ifu_axi_awburst;
-    wire                        ifu_axi_awlock;
-    wire [3:0]                  ifu_axi_awcache;
-    wire [2:0]                  ifu_axi_awprot;
-    wire [3:0]                  ifu_axi_awqos;
-
-    wire                        ifu_axi_wvalid;
-    wire                        ifu_axi_wready;
-    wire [63:0]                 ifu_axi_wdata;
-    wire [7:0]                  ifu_axi_wstrb;
-    wire                        ifu_axi_wlast;
-
-    wire                        ifu_axi_bvalid;
-    wire                        ifu_axi_bready;
-    wire [1:0]                  ifu_axi_bresp;
-    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_bid;
-
-    // AXI Read Channels
-    wire                        ifu_axi_arvalid;
-    wire                        ifu_axi_arready;
-    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_arid;
-    wire [31:0]                 ifu_axi_araddr;
-    wire [3:0]                  ifu_axi_arregion;
-    wire [7:0]                  ifu_axi_arlen;
-    wire [2:0]                  ifu_axi_arsize;
-    wire [1:0]                  ifu_axi_arburst;
-    wire                        ifu_axi_arlock;
-    wire [3:0]                  ifu_axi_arcache;
-    wire [2:0]                  ifu_axi_arprot;
-    wire [3:0]                  ifu_axi_arqos;
-
-    wire                        ifu_axi_rvalid;
-    wire                        ifu_axi_rready;
-    wire [`css_mcu0_RV_IFU_BUS_TAG-1:0]  ifu_axi_rid;
-    wire [63:0]                 ifu_axi_rdata;
-    wire [1:0]                  ifu_axi_rresp;
-    wire                        ifu_axi_rlast;
-
-    //-------------------------- SB AXI signals--------------------------
-    // AXI Write Channels
-    // wire                        sb_axi_awvalid;
-    // wire                        sb_axi_awready;
-    // wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_awid;
-    // wire [31:0]                 sb_axi_awaddr;
-    // wire [3:0]                  sb_axi_awregion;
-    // wire [7:0]                  sb_axi_awlen;
-    // wire [2:0]                  sb_axi_awsize;
-    // wire [1:0]                  sb_axi_awburst;
-    // wire                        sb_axi_awlock;
-    // wire [3:0]                  sb_axi_awcache;
-    // wire [2:0]                  sb_axi_awprot;
-    // wire [3:0]                  sb_axi_awqos;
-
-    // wire                        sb_axi_wvalid;
-    // wire                        sb_axi_wready;
-    // wire [63:0]                 sb_axi_wdata;
-    // wire [7:0]                  sb_axi_wstrb;
-    // wire                        sb_axi_wlast;
-
-    // wire                        sb_axi_bvalid;
-    // wire                        sb_axi_bready;
-    // wire [1:0]                  sb_axi_bresp;
-    // wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_bid;
-
-    // // AXI Read Channels
-    // wire                        sb_axi_arvalid;
-    // wire                        sb_axi_arready;
-    // wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_arid;
-    // wire [31:0]                 sb_axi_araddr;
-    // wire [3:0]                  sb_axi_arregion;
-    // wire [7:0]                  sb_axi_arlen;
-    // wire [2:0]                  sb_axi_arsize;
-    // wire [1:0]                  sb_axi_arburst;
-    // wire                        sb_axi_arlock;
-    // wire [3:0]                  sb_axi_arcache;
-    // wire [2:0]                  sb_axi_arprot;
-    // wire [3:0]                  sb_axi_arqos;
-
-    // wire                        sb_axi_rvalid;
-    // wire                        sb_axi_rready;
-    // wire [`css_mcu0_RV_SB_BUS_TAG-1:0]   sb_axi_rid;
-    // wire [63:0]                 sb_axi_rdata;
-    // wire [1:0]                  sb_axi_rresp;
-    // wire                        sb_axi_rlast;
-
-   //-------------------------- DMA AXI signals--------------------------
-   // AXI Write Channels
-    wire                        dma_axi_awvalid;
-    wire                        dma_axi_awready;
-    wire [`css_mcu0_RV_DMA_BUS_TAG-1:0]  dma_axi_awid;
-    wire [31:0]                 dma_axi_awaddr;
-    wire [2:0]                  dma_axi_awsize;
-    wire [2:0]                  dma_axi_awprot;
-    wire [7:0]                  dma_axi_awlen;
-    wire [1:0]                  dma_axi_awburst;
-
-
-    wire                        dma_axi_wvalid;
-    wire                        dma_axi_wready;
-    wire [63:0]                 dma_axi_wdata;
-    wire [7:0]                  dma_axi_wstrb;
-    wire                        dma_axi_wlast;
-
-    wire                        dma_axi_bvalid;
-    wire                        dma_axi_bready;
-    wire [1:0]                  dma_axi_bresp;
-    wire [`css_mcu0_RV_DMA_BUS_TAG-1:0]  dma_axi_bid;
-
-    // AXI Read Channels
-    wire                        dma_axi_arvalid;
-    wire                        dma_axi_arready;
-    wire [`css_mcu0_RV_DMA_BUS_TAG-1:0]  dma_axi_arid;
-    wire [31:0]                 dma_axi_araddr;
-    wire [2:0]                  dma_axi_arsize;
-    wire [2:0]                  dma_axi_arprot;
-    wire [7:0]                  dma_axi_arlen;
-    wire [1:0]                  dma_axi_arburst;
-
-    wire                        dma_axi_rvalid;
-    wire                        dma_axi_rready;
-    wire [`css_mcu0_RV_DMA_BUS_TAG-1:0]  dma_axi_rid;
-    wire [63:0]                 dma_axi_rdata;
-    wire [1:0]                  dma_axi_rresp;
-    wire                        dma_axi_rlast;
-
-    wire                        lmem_axi_arvalid;
-    wire                        lmem_axi_arready;
-
-    wire                        lmem_axi_rvalid;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lmem_axi_rid;
-    wire [1:0]                  lmem_axi_rresp;
-    wire [63:0]                 lmem_axi_rdata;
-    wire                        lmem_axi_rlast;
-    wire                        lmem_axi_rready;
-
-    wire                        lmem_axi_awvalid;
-    wire                        lmem_axi_awready;
-
-    wire                        lmem_axi_wvalid;
-    wire                        lmem_axi_wready;
-
-    wire [1:0]                  lmem_axi_bresp;
-    wire                        lmem_axi_bvalid;
-    wire [`css_mcu0_RV_LSU_BUS_TAG-1:0]  lmem_axi_bid;
-    wire                        lmem_axi_bready;
-`endif
-    
     // ----------------- MCU Trace within Subsystem -----------------------
     logic [31:0] mcu_trace_rv_i_insn_ip;
     logic [31:0] mcu_trace_rv_i_address_ip;
@@ -590,47 +394,47 @@ module caliptra_ss_top
     // AXI USER assignments
     ///////
     // ARUSER
-    assign cptra_ss_mcu_lsu_m_axi_if.aruser = cptra_ss_strap_mcu_lsu_axi_user_i;
-    assign cptra_ss_mcu_ifu_m_axi_if.aruser = cptra_ss_strap_mcu_ifu_axi_user_i;
-    assign cptra_ss_mcu_sb_m_axi_if.aruser = cptra_ss_strap_mcu_lsu_axi_user_i;
+    assign cptra_ss_mcu_lsu_m_axi_if_r_mgr.aruser = cptra_ss_strap_mcu_lsu_axi_user_i;
+    assign cptra_ss_mcu_ifu_m_axi_if_r_mgr.aruser = cptra_ss_strap_mcu_ifu_axi_user_i;
+    assign cptra_ss_mcu_sb_m_axi_if_r_mgr.aruser = cptra_ss_strap_mcu_lsu_axi_user_i;
     
     // AWUSER
-    assign cptra_ss_mcu_lsu_m_axi_if.awuser = cptra_ss_strap_mcu_lsu_axi_user_i;
-    assign cptra_ss_mcu_ifu_m_axi_if.awuser = cptra_ss_strap_mcu_ifu_axi_user_i;
-    assign cptra_ss_mcu_sb_m_axi_if.awuser = cptra_ss_strap_mcu_lsu_axi_user_i;
+    assign cptra_ss_mcu_lsu_m_axi_if_w_mgr.awuser = cptra_ss_strap_mcu_lsu_axi_user_i;
+    assign cptra_ss_mcu_ifu_m_axi_if_w_mgr.awuser = cptra_ss_strap_mcu_ifu_axi_user_i;
+    assign cptra_ss_mcu_sb_m_axi_if_w_mgr.awuser = cptra_ss_strap_mcu_lsu_axi_user_i;
     
     // BUSER
-    assign cptra_ss_i3c_s_axi_if.buser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
+    assign cptra_ss_i3c_s_axi_if_w_sub.buser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
     
     // RUSER
-    assign cptra_ss_i3c_s_axi_if.ruser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
+    assign cptra_ss_i3c_s_axi_if_r_sub.ruser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
     
     // WUSER
-    assign cptra_ss_mcu_lsu_m_axi_if.wuser = '0; // WUSER not used in Caliptra SS
-    assign cptra_ss_mcu_ifu_m_axi_if.wuser = '0; // WUSER not used in Caliptra SS
-    assign cptra_ss_mcu_sb_m_axi_if.wuser = '0; // WUSER not used in Caliptra SS
+    assign cptra_ss_mcu_lsu_m_axi_if_w_mgr.wuser = '0; // WUSER not used in Caliptra SS
+    assign cptra_ss_mcu_ifu_m_axi_if_w_mgr.wuser = '0; // WUSER not used in Caliptra SS
+    assign cptra_ss_mcu_sb_m_axi_if_w_mgr.wuser = '0; // WUSER not used in Caliptra SS
 
     ///////
     // AXI ID assignments
     ///////
     generate
-        if ($bits(cptra_ss_mcu_lsu_m_axi_if.arid) > pt.LSU_BUS_TAG) begin
-            assign cptra_ss_mcu_lsu_m_axi_if.arid[$bits(cptra_ss_mcu_lsu_m_axi_if.arid)-1:pt.LSU_BUS_TAG] = '0; 
+        if ($bits(cptra_ss_mcu_lsu_m_axi_if_r_mgr.arid) > pt.LSU_BUS_TAG) begin
+            assign cptra_ss_mcu_lsu_m_axi_if_r_mgr.arid[$bits(cptra_ss_mcu_lsu_m_axi_if_r_mgr.arid)-1:pt.LSU_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_mcu_lsu_m_axi_if.awid) > pt.IFU_BUS_TAG) begin
-            assign cptra_ss_mcu_lsu_m_axi_if.awid[$bits(cptra_ss_mcu_lsu_m_axi_if.awid)-1:pt.LSU_BUS_TAG] = '0; 
+        if ($bits(cptra_ss_mcu_lsu_m_axi_if_w_mgr.awid) > pt.IFU_BUS_TAG) begin
+            assign cptra_ss_mcu_lsu_m_axi_if_w_mgr.awid[$bits(cptra_ss_mcu_lsu_m_axi_if_w_mgr.awid)-1:pt.LSU_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_mcu_ifu_m_axi_if.arid) > pt.IFU_BUS_TAG) begin
-            assign cptra_ss_mcu_ifu_m_axi_if.arid[$bits(cptra_ss_mcu_ifu_m_axi_if.arid)-1:pt.IFU_BUS_TAG] = '0;
+        if ($bits(cptra_ss_mcu_ifu_m_axi_if_r_mgr.arid) > pt.IFU_BUS_TAG) begin
+            assign cptra_ss_mcu_ifu_m_axi_if_r_mgr.arid[$bits(cptra_ss_mcu_ifu_m_axi_if_r_mgr.arid)-1:pt.IFU_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_mcu_ifu_m_axi_if.awid) > pt.IFU_BUS_TAG) begin
-            assign cptra_ss_mcu_ifu_m_axi_if.awid[$bits(cptra_ss_mcu_ifu_m_axi_if.awid)-1:pt.IFU_BUS_TAG] = '0;
+        if ($bits(cptra_ss_mcu_ifu_m_axi_if_w_mgr.awid) > pt.IFU_BUS_TAG) begin
+            assign cptra_ss_mcu_ifu_m_axi_if_w_mgr.awid[$bits(cptra_ss_mcu_ifu_m_axi_if_w_mgr.awid)-1:pt.IFU_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_mcu_sb_m_axi_if.arid) > pt.IFU_BUS_TAG) begin
-            assign cptra_ss_mcu_sb_m_axi_if.arid[$bits(cptra_ss_mcu_sb_m_axi_if.arid)-1:pt.SB_BUS_TAG] = '0; 
+        if ($bits(cptra_ss_mcu_sb_m_axi_if_r_mgr.arid) > pt.IFU_BUS_TAG) begin
+            assign cptra_ss_mcu_sb_m_axi_if_r_mgr.arid[$bits(cptra_ss_mcu_sb_m_axi_if_r_mgr.arid)-1:pt.SB_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_mcu_sb_m_axi_if.awid) > pt.IFU_BUS_TAG) begin
-            assign cptra_ss_mcu_sb_m_axi_if.awid[$bits(cptra_ss_mcu_sb_m_axi_if.awid)-1:pt.SB_BUS_TAG] = '0; 
+        if ($bits(cptra_ss_mcu_sb_m_axi_if_w_mgr.awid) > pt.IFU_BUS_TAG) begin
+            assign cptra_ss_mcu_sb_m_axi_if_w_mgr.awid[$bits(cptra_ss_mcu_sb_m_axi_if_w_mgr.awid)-1:pt.SB_BUS_TAG] = '0;
         end
     endgenerate
 
@@ -673,12 +477,12 @@ module caliptra_ss_top
         .jtag_tdoEn (cptra_ss_cptra_core_jtag_tdoEn_o ),
         
         //SoC AXI Interface
-        .s_axi_w_if(cptra_ss_cptra_core_s_axi_if.w_sub),
-        .s_axi_r_if(cptra_ss_cptra_core_s_axi_if.r_sub),
+        .s_axi_w_if(cptra_ss_cptra_core_s_axi_if_w_sub),
+        .s_axi_r_if(cptra_ss_cptra_core_s_axi_if_r_sub),
 
         //AXI DMA Interface
-        .m_axi_w_if(cptra_ss_cptra_core_m_axi_if.w_mgr),
-        .m_axi_r_if(cptra_ss_cptra_core_m_axi_if.r_mgr),
+        .m_axi_w_if(cptra_ss_cptra_core_m_axi_if_w_mgr),
+        .m_axi_r_if(cptra_ss_cptra_core_m_axi_if_r_mgr),
 
         .el2_mem_export(cptra_ss_cptra_core_el2_mem_export),
         .mldsa_memory_export(mldsa_memory_export_req),
@@ -778,6 +582,29 @@ module caliptra_ss_top
     //=========================================================================-
     // MCU instance
     //=========================================================================-
+    logic                     sb_axi_awready;
+    logic                     sb_axi_wready;
+    logic                     sb_axi_bvalid;
+    logic [1:0]               sb_axi_bresp;
+    logic [pt.SB_BUS_TAG-1:0] sb_axi_bid;
+    logic                     sb_axi_arready;
+    logic                     sb_axi_rvalid;
+    logic [pt.SB_BUS_TAG-1:0] sb_axi_rid;
+    logic [63:0]              sb_axi_rdata;
+    logic [1:0]               sb_axi_rresp;
+    logic                     sb_axi_rlast;
+
+    assign sb_axi_awready = '0;
+    assign sb_axi_wready = '0;
+    assign sb_axi_bvalid = '0;
+    assign sb_axi_bresp = '0;
+    assign sb_axi_bid = '0;
+    assign sb_axi_arready = '0;
+    assign sb_axi_rvalid = '0;
+    assign sb_axi_rid = '0;
+    assign sb_axi_rdata = '0;
+    assign sb_axi_rresp = '0;
+    assign sb_axi_rlast = '0;
     
     mcu_top rvtop_wrapper (
         .rst_l                  ( mcu_rst_b ),
@@ -790,142 +617,142 @@ module caliptra_ss_top
         //-------------------------- LSU AXI signals--------------------------
         // // AXI Write Channels
 
-        .lsu_axi_awvalid        (cptra_ss_mcu_lsu_m_axi_if.awvalid),
-        .lsu_axi_awready        (cptra_ss_mcu_lsu_m_axi_if.awready),
-        .lsu_axi_awid           (cptra_ss_mcu_lsu_m_axi_if.awid[pt.LSU_BUS_TAG-1:0]), 
-        .lsu_axi_awaddr         (cptra_ss_mcu_lsu_m_axi_if.awaddr[31:0]),
+        .lsu_axi_awvalid        (cptra_ss_mcu_lsu_m_axi_if_w_mgr.awvalid),
+        .lsu_axi_awready        (cptra_ss_mcu_lsu_m_axi_if_w_mgr.awready),
+        .lsu_axi_awid           (cptra_ss_mcu_lsu_m_axi_if_w_mgr.awid[pt.LSU_BUS_TAG-1:0]),
+        .lsu_axi_awaddr         (cptra_ss_mcu_lsu_m_axi_if_w_mgr.awaddr[31:0]),
         .lsu_axi_awregion       (cptra_ss_mcu_lsu_m_axi_if_awregion),
-        .lsu_axi_awlen          (cptra_ss_mcu_lsu_m_axi_if.awlen),
-        .lsu_axi_awsize         (cptra_ss_mcu_lsu_m_axi_if.awsize),
-        .lsu_axi_awburst        (cptra_ss_mcu_lsu_m_axi_if.awburst),
-        .lsu_axi_awlock         (cptra_ss_mcu_lsu_m_axi_if.awlock),
+        .lsu_axi_awlen          (cptra_ss_mcu_lsu_m_axi_if_w_mgr.awlen),
+        .lsu_axi_awsize         (cptra_ss_mcu_lsu_m_axi_if_w_mgr.awsize),
+        .lsu_axi_awburst        (cptra_ss_mcu_lsu_m_axi_if_w_mgr.awburst),
+        .lsu_axi_awlock         (cptra_ss_mcu_lsu_m_axi_if_w_mgr.awlock),
         .lsu_axi_awcache        (cptra_ss_mcu_lsu_m_axi_if_awcache),
         .lsu_axi_awprot         (cptra_ss_mcu_lsu_m_axi_if_awprot),
         .lsu_axi_awqos          (cptra_ss_mcu_lsu_m_axi_if_awqos),
 
-        .lsu_axi_wvalid         (cptra_ss_mcu_lsu_m_axi_if.wvalid),
-        .lsu_axi_wready         (cptra_ss_mcu_lsu_m_axi_if.wready),
-        .lsu_axi_wdata          (cptra_ss_mcu_lsu_m_axi_if.wdata),
-        .lsu_axi_wstrb          (cptra_ss_mcu_lsu_m_axi_if.wstrb),
-        .lsu_axi_wlast          (cptra_ss_mcu_lsu_m_axi_if.wlast),
+        .lsu_axi_wvalid         (cptra_ss_mcu_lsu_m_axi_if_w_mgr.wvalid),
+        .lsu_axi_wready         (cptra_ss_mcu_lsu_m_axi_if_w_mgr.wready),
+        .lsu_axi_wdata          (cptra_ss_mcu_lsu_m_axi_if_w_mgr.wdata),
+        .lsu_axi_wstrb          (cptra_ss_mcu_lsu_m_axi_if_w_mgr.wstrb),
+        .lsu_axi_wlast          (cptra_ss_mcu_lsu_m_axi_if_w_mgr.wlast),
 
-        .lsu_axi_bvalid         (cptra_ss_mcu_lsu_m_axi_if.bvalid),
-        .lsu_axi_bready         (cptra_ss_mcu_lsu_m_axi_if.bready),
-        .lsu_axi_bresp          (cptra_ss_mcu_lsu_m_axi_if.bresp),
-        .lsu_axi_bid            (cptra_ss_mcu_lsu_m_axi_if.bid[pt.LSU_BUS_TAG-1:0]),
+        .lsu_axi_bvalid         (cptra_ss_mcu_lsu_m_axi_if_w_mgr.bvalid),
+        .lsu_axi_bready         (cptra_ss_mcu_lsu_m_axi_if_w_mgr.bready),
+        .lsu_axi_bresp          (cptra_ss_mcu_lsu_m_axi_if_w_mgr.bresp),
+        .lsu_axi_bid            (cptra_ss_mcu_lsu_m_axi_if_w_mgr.bid[pt.LSU_BUS_TAG-1:0]),
 
-        .lsu_axi_arvalid        (cptra_ss_mcu_lsu_m_axi_if.arvalid),
-        .lsu_axi_arready        (cptra_ss_mcu_lsu_m_axi_if.arready),
-        .lsu_axi_arid           (cptra_ss_mcu_lsu_m_axi_if.arid[pt.LSU_BUS_TAG-1:0]),
-        .lsu_axi_araddr         (cptra_ss_mcu_lsu_m_axi_if.araddr[31:0]),
+        .lsu_axi_arvalid        (cptra_ss_mcu_lsu_m_axi_if_r_mgr.arvalid),
+        .lsu_axi_arready        (cptra_ss_mcu_lsu_m_axi_if_r_mgr.arready),
+        .lsu_axi_arid           (cptra_ss_mcu_lsu_m_axi_if_r_mgr.arid[pt.LSU_BUS_TAG-1:0]),
+        .lsu_axi_araddr         (cptra_ss_mcu_lsu_m_axi_if_r_mgr.araddr[31:0]),
         .lsu_axi_arregion       (cptra_ss_mcu_lsu_m_axi_if_arregion),
-        .lsu_axi_arlen          (cptra_ss_mcu_lsu_m_axi_if.arlen),
-        .lsu_axi_arsize         (cptra_ss_mcu_lsu_m_axi_if.arsize),
-        .lsu_axi_arburst        (cptra_ss_mcu_lsu_m_axi_if.arburst),
-        .lsu_axi_arlock         (cptra_ss_mcu_lsu_m_axi_if.arlock),
+        .lsu_axi_arlen          (cptra_ss_mcu_lsu_m_axi_if_r_mgr.arlen),
+        .lsu_axi_arsize         (cptra_ss_mcu_lsu_m_axi_if_r_mgr.arsize),
+        .lsu_axi_arburst        (cptra_ss_mcu_lsu_m_axi_if_r_mgr.arburst),
+        .lsu_axi_arlock         (cptra_ss_mcu_lsu_m_axi_if_r_mgr.arlock),
         .lsu_axi_arcache        (cptra_ss_mcu_lsu_m_axi_if_arcache),
         .lsu_axi_arprot         (cptra_ss_mcu_lsu_m_axi_if_arprot),
         .lsu_axi_arqos          (cptra_ss_mcu_lsu_m_axi_if_arqos),
 
-        .lsu_axi_rvalid         (cptra_ss_mcu_lsu_m_axi_if.rvalid),
-        .lsu_axi_rready         (cptra_ss_mcu_lsu_m_axi_if.rready),
-        .lsu_axi_rid            (cptra_ss_mcu_lsu_m_axi_if.rid[pt.LSU_BUS_TAG-1:0]),
-        .lsu_axi_rdata          (cptra_ss_mcu_lsu_m_axi_if.rdata),
-        .lsu_axi_rresp          (cptra_ss_mcu_lsu_m_axi_if.rresp),
-        .lsu_axi_rlast          (cptra_ss_mcu_lsu_m_axi_if.rlast),
+        .lsu_axi_rvalid         (cptra_ss_mcu_lsu_m_axi_if_r_mgr.rvalid),
+        .lsu_axi_rready         (cptra_ss_mcu_lsu_m_axi_if_r_mgr.rready),
+        .lsu_axi_rid            (cptra_ss_mcu_lsu_m_axi_if_r_mgr.rid[pt.LSU_BUS_TAG-1:0]),
+        .lsu_axi_rdata          (cptra_ss_mcu_lsu_m_axi_if_r_mgr.rdata),
+        .lsu_axi_rresp          (cptra_ss_mcu_lsu_m_axi_if_r_mgr.rresp),
+        .lsu_axi_rlast          (cptra_ss_mcu_lsu_m_axi_if_r_mgr.rlast),
 
         //-------------------------- IFU AXI signals--------------------------
         // AXI Write Channels
 
-        .ifu_axi_awvalid        ( cptra_ss_mcu_ifu_m_axi_if.awvalid ),
-        .ifu_axi_awready        ( cptra_ss_mcu_ifu_m_axi_if.awready ),
-        .ifu_axi_awid           ( cptra_ss_mcu_ifu_m_axi_if.awid[pt.IFU_BUS_TAG-1:0]),
-        .ifu_axi_awaddr         ( cptra_ss_mcu_ifu_m_axi_if.awaddr[31:0]  ),
+        .ifu_axi_awvalid        ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.awvalid ),
+        .ifu_axi_awready        ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.awready ),
+        .ifu_axi_awid           ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.awid[pt.IFU_BUS_TAG-1:0]),
+        .ifu_axi_awaddr         ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.awaddr[31:0]  ),
         .ifu_axi_awregion       ( cptra_ss_mcu_ifu_m_axi_if_awregion),
-        .ifu_axi_awlen          ( cptra_ss_mcu_ifu_m_axi_if.awlen   ),
-        .ifu_axi_awsize         ( cptra_ss_mcu_ifu_m_axi_if.awsize  ),
-        .ifu_axi_awburst        ( cptra_ss_mcu_ifu_m_axi_if.awburst ),
-        .ifu_axi_awlock         ( cptra_ss_mcu_ifu_m_axi_if.awlock  ),
+        .ifu_axi_awlen          ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.awlen   ),
+        .ifu_axi_awsize         ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.awsize  ),
+        .ifu_axi_awburst        ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.awburst ),
+        .ifu_axi_awlock         ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.awlock  ),
         .ifu_axi_awcache        ( cptra_ss_mcu_ifu_m_axi_if_awcache ),
         .ifu_axi_awprot         ( cptra_ss_mcu_ifu_m_axi_if_awprot  ),
         .ifu_axi_awqos          ( cptra_ss_mcu_ifu_m_axi_if_awqos   ),
 
-        .ifu_axi_wvalid         ( cptra_ss_mcu_ifu_m_axi_if.wvalid  ),
-        .ifu_axi_wready         ( cptra_ss_mcu_ifu_m_axi_if.wready  ),
-        .ifu_axi_wdata          ( cptra_ss_mcu_ifu_m_axi_if.wdata   ),
-        .ifu_axi_wstrb          ( cptra_ss_mcu_ifu_m_axi_if.wstrb   ),
-        .ifu_axi_wlast          ( cptra_ss_mcu_ifu_m_axi_if.wlast   ),
+        .ifu_axi_wvalid         ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.wvalid  ),
+        .ifu_axi_wready         ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.wready  ),
+        .ifu_axi_wdata          ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.wdata   ),
+        .ifu_axi_wstrb          ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.wstrb   ),
+        .ifu_axi_wlast          ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.wlast   ),
 
-        .ifu_axi_bvalid         ( cptra_ss_mcu_ifu_m_axi_if.bvalid  ),
-        .ifu_axi_bready         ( cptra_ss_mcu_ifu_m_axi_if.bready  ),
-        .ifu_axi_bresp          ( cptra_ss_mcu_ifu_m_axi_if.bresp   ),
-        .ifu_axi_bid            ( cptra_ss_mcu_ifu_m_axi_if.bid[pt.IFU_BUS_TAG-1:0]     ),
+        .ifu_axi_bvalid         ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.bvalid  ),
+        .ifu_axi_bready         ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.bready  ),
+        .ifu_axi_bresp          ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.bresp   ),
+        .ifu_axi_bid            ( cptra_ss_mcu_ifu_m_axi_if_w_mgr.bid[pt.IFU_BUS_TAG-1:0]     ),
 
-        .ifu_axi_arvalid        ( cptra_ss_mcu_ifu_m_axi_if.arvalid ),
-        .ifu_axi_arready        ( cptra_ss_mcu_ifu_m_axi_if.arready ),
-        .ifu_axi_arid           ( cptra_ss_mcu_ifu_m_axi_if.arid[pt.IFU_BUS_TAG-1:0]    ),
-        .ifu_axi_araddr         ( cptra_ss_mcu_ifu_m_axi_if.araddr[31:0] ),
-        .ifu_axi_arlen          ( cptra_ss_mcu_ifu_m_axi_if.arlen   ),
-        .ifu_axi_arsize         ( cptra_ss_mcu_ifu_m_axi_if.arsize  ),
-        .ifu_axi_arburst        ( cptra_ss_mcu_ifu_m_axi_if.arburst ),
-        .ifu_axi_arlock         ( cptra_ss_mcu_ifu_m_axi_if.arlock  ),
+        .ifu_axi_arvalid        ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.arvalid ),
+        .ifu_axi_arready        ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.arready ),
+        .ifu_axi_arid           ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.arid[pt.IFU_BUS_TAG-1:0]    ),
+        .ifu_axi_araddr         ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.araddr[31:0] ),
+        .ifu_axi_arlen          ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.arlen   ),
+        .ifu_axi_arsize         ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.arsize  ),
+        .ifu_axi_arburst        ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.arburst ),
+        .ifu_axi_arlock         ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.arlock  ),
         .ifu_axi_arcache        ( cptra_ss_mcu_ifu_m_axi_if_arcache ),
         .ifu_axi_arprot         ( cptra_ss_mcu_ifu_m_axi_if_arprot  ),
         .ifu_axi_arqos          ( cptra_ss_mcu_ifu_m_axi_if_arqos   ),
         .ifu_axi_arregion       ( cptra_ss_mcu_ifu_m_axi_if_arregion),
 
-        .ifu_axi_rvalid         ( cptra_ss_mcu_ifu_m_axi_if.rvalid  ),
-        .ifu_axi_rready         ( cptra_ss_mcu_ifu_m_axi_if.rready  ),
-        .ifu_axi_rid            ( cptra_ss_mcu_ifu_m_axi_if.rid[pt.IFU_BUS_TAG-1:0]     ),
-        .ifu_axi_rdata          ( cptra_ss_mcu_ifu_m_axi_if.rdata   ),
-        .ifu_axi_rresp          ( cptra_ss_mcu_ifu_m_axi_if.rresp   ),
-        .ifu_axi_rlast          ( cptra_ss_mcu_ifu_m_axi_if.rlast   ),
+        .ifu_axi_rvalid         ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.rvalid  ),
+        .ifu_axi_rready         ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.rready  ),
+        .ifu_axi_rid            ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.rid[pt.IFU_BUS_TAG-1:0]     ),
+        .ifu_axi_rdata          ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.rdata   ),
+        .ifu_axi_rresp          ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.rresp   ),
+        .ifu_axi_rlast          ( cptra_ss_mcu_ifu_m_axi_if_r_mgr.rlast   ),
 
         //-------------------------- SB AXI signals--------------------------
         // AXI Write Channels -- system bus
-        .sb_axi_awvalid         (cptra_ss_mcu_sb_m_axi_if.awvalid),
-        .sb_axi_awready         (cptra_ss_mcu_sb_m_axi_if.awready),
-        .sb_axi_awid            (cptra_ss_mcu_sb_m_axi_if.awid[pt.SB_BUS_TAG-1:0]),
-        .sb_axi_awaddr          (cptra_ss_mcu_sb_m_axi_if.awaddr[31:0]),
+        .sb_axi_awvalid         (cptra_ss_mcu_sb_m_axi_if_w_mgr.awvalid),
+        .sb_axi_awready         (cptra_ss_mcu_sb_m_axi_if_w_mgr.awready),
+        .sb_axi_awid            (cptra_ss_mcu_sb_m_axi_if_w_mgr.awid[pt.SB_BUS_TAG-1:0]),
+        .sb_axi_awaddr          (cptra_ss_mcu_sb_m_axi_if_w_mgr.awaddr[31:0]),
         .sb_axi_awregion        (cptra_ss_mcu_sb_m_axi_if_awregion),
-        .sb_axi_awlen           (cptra_ss_mcu_sb_m_axi_if.awlen),
-        .sb_axi_awsize          (cptra_ss_mcu_sb_m_axi_if.awsize),
-        .sb_axi_awburst         (cptra_ss_mcu_sb_m_axi_if.awburst),
-        .sb_axi_awlock          (cptra_ss_mcu_sb_m_axi_if.awlock),
+        .sb_axi_awlen           (cptra_ss_mcu_sb_m_axi_if_w_mgr.awlen),
+        .sb_axi_awsize          (cptra_ss_mcu_sb_m_axi_if_w_mgr.awsize),
+        .sb_axi_awburst         (cptra_ss_mcu_sb_m_axi_if_w_mgr.awburst),
+        .sb_axi_awlock          (cptra_ss_mcu_sb_m_axi_if_w_mgr.awlock),
         .sb_axi_awcache         (cptra_ss_mcu_sb_m_axi_if_awcache),
         .sb_axi_awprot          (cptra_ss_mcu_sb_m_axi_if_awprot),
         .sb_axi_awqos           (cptra_ss_mcu_sb_m_axi_if_awqos),
 
-        .sb_axi_wvalid          (cptra_ss_mcu_sb_m_axi_if.wvalid),
-        .sb_axi_wready          (cptra_ss_mcu_sb_m_axi_if.wready),
-        .sb_axi_wdata           (cptra_ss_mcu_sb_m_axi_if.wdata),
-        .sb_axi_wstrb           (cptra_ss_mcu_sb_m_axi_if.wstrb),
-        .sb_axi_wlast           (cptra_ss_mcu_sb_m_axi_if.wlast),
+        .sb_axi_wvalid          (cptra_ss_mcu_sb_m_axi_if_w_mgr.wvalid),
+        .sb_axi_wready          (cptra_ss_mcu_sb_m_axi_if_w_mgr.wready),
+        .sb_axi_wdata           (cptra_ss_mcu_sb_m_axi_if_w_mgr.wdata),
+        .sb_axi_wstrb           (cptra_ss_mcu_sb_m_axi_if_w_mgr.wstrb),
+        .sb_axi_wlast           (cptra_ss_mcu_sb_m_axi_if_w_mgr.wlast),
 
-        .sb_axi_bvalid          (cptra_ss_mcu_sb_m_axi_if.bvalid),
-        .sb_axi_bready          (cptra_ss_mcu_sb_m_axi_if.bready),
-        .sb_axi_bresp           (cptra_ss_mcu_sb_m_axi_if.bresp),
-        .sb_axi_bid             (cptra_ss_mcu_sb_m_axi_if.bid[pt.SB_BUS_TAG-1:0]),
+        .sb_axi_bvalid          (cptra_ss_mcu_sb_m_axi_if_w_mgr.bvalid),
+        .sb_axi_bready          (cptra_ss_mcu_sb_m_axi_if_w_mgr.bready),
+        .sb_axi_bresp           (cptra_ss_mcu_sb_m_axi_if_w_mgr.bresp),
+        .sb_axi_bid             (cptra_ss_mcu_sb_m_axi_if_w_mgr.bid[pt.SB_BUS_TAG-1:0]),
 
-        .sb_axi_arvalid         (cptra_ss_mcu_sb_m_axi_if.arvalid),
-        .sb_axi_arready         (cptra_ss_mcu_sb_m_axi_if.arready),
-        .sb_axi_arid            (cptra_ss_mcu_sb_m_axi_if.arid[pt.SB_BUS_TAG-1:0]),
-        .sb_axi_araddr          (cptra_ss_mcu_sb_m_axi_if.araddr[31:0]),
+        .sb_axi_arvalid         (cptra_ss_mcu_sb_m_axi_if_r_mgr.arvalid),
+        .sb_axi_arready         (cptra_ss_mcu_sb_m_axi_if_r_mgr.arready),
+        .sb_axi_arid            (cptra_ss_mcu_sb_m_axi_if_r_mgr.arid[pt.SB_BUS_TAG-1:0]),
+        .sb_axi_araddr          (cptra_ss_mcu_sb_m_axi_if_r_mgr.araddr[31:0]),
         .sb_axi_arregion        (cptra_ss_mcu_sb_m_axi_if_arregion),
-        .sb_axi_arlen           (cptra_ss_mcu_sb_m_axi_if.arlen),
-        .sb_axi_arsize          (cptra_ss_mcu_sb_m_axi_if.arsize),
-        .sb_axi_arburst         (cptra_ss_mcu_sb_m_axi_if.arburst),
-        .sb_axi_arlock          (cptra_ss_mcu_sb_m_axi_if.arlock),
+        .sb_axi_arlen           (cptra_ss_mcu_sb_m_axi_if_r_mgr.arlen),
+        .sb_axi_arsize          (cptra_ss_mcu_sb_m_axi_if_r_mgr.arsize),
+        .sb_axi_arburst         (cptra_ss_mcu_sb_m_axi_if_r_mgr.arburst),
+        .sb_axi_arlock          (cptra_ss_mcu_sb_m_axi_if_r_mgr.arlock),
         .sb_axi_arcache         (cptra_ss_mcu_sb_m_axi_if_arcache),
         .sb_axi_arprot          (cptra_ss_mcu_sb_m_axi_if_arprot),
         .sb_axi_arqos           (cptra_ss_mcu_sb_m_axi_if_arqos),
 
-        .sb_axi_rvalid          (cptra_ss_mcu_sb_m_axi_if.rvalid),
-        .sb_axi_rready          (cptra_ss_mcu_sb_m_axi_if.rready),
-        .sb_axi_rid             (cptra_ss_mcu_sb_m_axi_if.rid[pt.SB_BUS_TAG-1:0]),
-        .sb_axi_rdata           (cptra_ss_mcu_sb_m_axi_if.rdata),
-        .sb_axi_rresp           (cptra_ss_mcu_sb_m_axi_if.rresp),
-        .sb_axi_rlast           (cptra_ss_mcu_sb_m_axi_if.rlast),
+        .sb_axi_rvalid          (cptra_ss_mcu_sb_m_axi_if_r_mgr.rvalid),
+        .sb_axi_rready          (cptra_ss_mcu_sb_m_axi_if_r_mgr.rready),
+        .sb_axi_rid             (cptra_ss_mcu_sb_m_axi_if_r_mgr.rid[pt.SB_BUS_TAG-1:0]),
+        .sb_axi_rdata           (cptra_ss_mcu_sb_m_axi_if_r_mgr.rdata),
+        .sb_axi_rresp           (cptra_ss_mcu_sb_m_axi_if_r_mgr.rresp),
+        .sb_axi_rlast           (cptra_ss_mcu_sb_m_axi_if_r_mgr.rlast),
 
         //-------------------------- DMA AXI signals--------------------------
         // AXI Write Channels
@@ -1081,40 +908,40 @@ module caliptra_ss_top
         .clk_i (cptra_ss_clk_i),
         .rst_ni(cptra_ss_rst_b_o),
 
-        .arvalid_i  (cptra_ss_i3c_s_axi_if.arvalid),
-        .arready_o  (cptra_ss_i3c_s_axi_if.arready),
-        .arid_i     (cptra_ss_i3c_s_axi_if.arid),
-        .araddr_i   (cptra_ss_i3c_s_axi_if.araddr[`AXI_ADDR_WIDTH:0]),
-        .arsize_i   (cptra_ss_i3c_s_axi_if.arsize),
-        .aruser_i   (cptra_ss_i3c_s_axi_if.aruser),
-        .arlen_i    (cptra_ss_i3c_s_axi_if.arlen),
-        .arburst_i  (cptra_ss_i3c_s_axi_if.arburst),
-        .arlock_i   (cptra_ss_i3c_s_axi_if.arlock),
-        .rvalid_o   (cptra_ss_i3c_s_axi_if.rvalid),
-        .rready_i   (cptra_ss_i3c_s_axi_if.rready),
-        .rid_o      (cptra_ss_i3c_s_axi_if.rid),
-        .rdata_o    (cptra_ss_i3c_s_axi_if.rdata),
-        .rresp_o    (cptra_ss_i3c_s_axi_if.rresp),
-        .rlast_o    (cptra_ss_i3c_s_axi_if.rlast),
-        .awvalid_i  (cptra_ss_i3c_s_axi_if.awvalid),
-        .awready_o  (cptra_ss_i3c_s_axi_if.awready),
-        .awid_i     (cptra_ss_i3c_s_axi_if.awid),
-        .awaddr_i   (cptra_ss_i3c_s_axi_if.awaddr[`AXI_ADDR_WIDTH:0]),
-        .awsize_i   (cptra_ss_i3c_s_axi_if.awsize),
-        .awuser_i   (cptra_ss_i3c_s_axi_if.awuser),
-        .awlen_i    (cptra_ss_i3c_s_axi_if.awlen),
-        .awburst_i  (cptra_ss_i3c_s_axi_if.awburst),
-        .awlock_i   (cptra_ss_i3c_s_axi_if.awlock),
-        .wvalid_i   (cptra_ss_i3c_s_axi_if.wvalid),
-        .wuser_i    (cptra_ss_i3c_s_axi_if.wuser),
-        .wready_o   (cptra_ss_i3c_s_axi_if.wready),
-        .wdata_i    (cptra_ss_i3c_s_axi_if.wdata),
-        .wstrb_i    (cptra_ss_i3c_s_axi_if.wstrb),
-        .wlast_i    (cptra_ss_i3c_s_axi_if.wlast),
-        .bvalid_o   (cptra_ss_i3c_s_axi_if.bvalid),
-        .bready_i   (cptra_ss_i3c_s_axi_if.bready),
-        .bresp_o    (cptra_ss_i3c_s_axi_if.bresp),
-        .bid_o      (cptra_ss_i3c_s_axi_if.bid),
+        .arvalid_i  (cptra_ss_i3c_s_axi_if_r_sub.arvalid),
+        .arready_o  (cptra_ss_i3c_s_axi_if_r_sub.arready),
+        .arid_i     (cptra_ss_i3c_s_axi_if_r_sub.arid),
+        .araddr_i   (cptra_ss_i3c_s_axi_if_r_sub.araddr[`AXI_ADDR_WIDTH-1:0]),
+        .arsize_i   (cptra_ss_i3c_s_axi_if_r_sub.arsize),
+        .aruser_i   (cptra_ss_i3c_s_axi_if_r_sub.aruser),
+        .arlen_i    (cptra_ss_i3c_s_axi_if_r_sub.arlen),
+        .arburst_i  (cptra_ss_i3c_s_axi_if_r_sub.arburst),
+        .arlock_i   (cptra_ss_i3c_s_axi_if_r_sub.arlock),
+        .rvalid_o   (cptra_ss_i3c_s_axi_if_r_sub.rvalid),
+        .rready_i   (cptra_ss_i3c_s_axi_if_r_sub.rready),
+        .rid_o      (cptra_ss_i3c_s_axi_if_r_sub.rid),
+        .rdata_o    (cptra_ss_i3c_s_axi_if_r_sub.rdata),
+        .rresp_o    (cptra_ss_i3c_s_axi_if_r_sub.rresp),
+        .rlast_o    (cptra_ss_i3c_s_axi_if_r_sub.rlast),
+        .awvalid_i  (cptra_ss_i3c_s_axi_if_w_sub.awvalid),
+        .awready_o  (cptra_ss_i3c_s_axi_if_w_sub.awready),
+        .awid_i     (cptra_ss_i3c_s_axi_if_w_sub.awid),
+        .awaddr_i   (cptra_ss_i3c_s_axi_if_w_sub.awaddr[`AXI_ADDR_WIDTH-1:0]),
+        .awsize_i   (cptra_ss_i3c_s_axi_if_w_sub.awsize),
+        .awuser_i   (cptra_ss_i3c_s_axi_if_w_sub.awuser),
+        .awlen_i    (cptra_ss_i3c_s_axi_if_w_sub.awlen),
+        .awburst_i  (cptra_ss_i3c_s_axi_if_w_sub.awburst),
+        .awlock_i   (cptra_ss_i3c_s_axi_if_w_sub.awlock),
+        .wvalid_i   (cptra_ss_i3c_s_axi_if_w_sub.wvalid),
+        .wuser_i    (cptra_ss_i3c_s_axi_if_w_sub.wuser),
+        .wready_o   (cptra_ss_i3c_s_axi_if_w_sub.wready),
+        .wdata_i    (cptra_ss_i3c_s_axi_if_w_sub.wdata),
+        .wstrb_i    (cptra_ss_i3c_s_axi_if_w_sub.wstrb),
+        .wlast_i    (cptra_ss_i3c_s_axi_if_w_sub.wlast),
+        .bvalid_o   (cptra_ss_i3c_s_axi_if_w_sub.bvalid),
+        .bready_i   (cptra_ss_i3c_s_axi_if_w_sub.bready),
+        .bresp_o    (cptra_ss_i3c_s_axi_if_w_sub.bresp),
+        .bid_o      (cptra_ss_i3c_s_axi_if_w_sub.bid),
 `ifdef DIGITAL_IO_I3C
         .scl_i(cptra_ss_i3c_scl_i),
         .sda_i(cptra_ss_i3c_sda_i),
@@ -1147,8 +974,8 @@ module caliptra_ss_top
       .clk(cptra_ss_clk_i),
       .rst_n(cptra_ss_rst_b_o),
 
-      .s_axi_r_if(cptra_ss_mcu_rom_s_axi_if.r_sub),
-      .s_axi_w_if(cptra_ss_mcu_rom_s_axi_if.w_sub),
+      .s_axi_r_if(cptra_ss_mcu_rom_s_axi_if_r_sub),
+      .s_axi_w_if(cptra_ss_mcu_rom_s_axi_if_w_sub),
 
       .s_mem_req_if(mcu_rom_mem_export_if)
     );
@@ -1188,8 +1015,8 @@ module caliptra_ss_top
         .scan_mode     (cptra_ss_cptra_core_scan_mode_i),
 
         // MCI AXI Interface
-        .s_axi_w_if(cptra_ss_mci_s_axi_if.w_sub),
-        .s_axi_r_if(cptra_ss_mci_s_axi_if.r_sub),
+        .s_axi_w_if(cptra_ss_mci_s_axi_if_w_sub),
+        .s_axi_r_if(cptra_ss_mci_s_axi_if_r_sub),
         
         .strap_mcu_lsu_axi_user(cptra_ss_strap_mcu_lsu_axi_user_i),
         .strap_mcu_ifu_axi_user(cptra_ss_strap_mcu_ifu_axi_user_i),
@@ -1320,7 +1147,8 @@ module caliptra_ss_top
 
     //--------------------------------------------------------------------------------------------
 
-    assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
+    pwrmgr_pkg::pwr_lc_rsp_t                    u_lc_ctrl_pwr_lc_o;
+    assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl_pwr_lc_o.lc_done);
     assign lcc_init_req.lc_init = mci_to_lcc_init_req; 
 
     lc_ctrl u_lc_ctrl (
@@ -1345,7 +1173,7 @@ module caliptra_ss_top
             .esc_scrap_state1(cptra_ss_lc_esclate_scrap_state1_i),
 
             .pwr_lc_i(lcc_init_req),
-            .pwr_lc_o(), // Note: It is tied with this assignment: lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
+            .pwr_lc_o(u_lc_ctrl_pwr_lc_o), // Note: It is tied with this assignment: lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
 
             .strap_en_override_o(),  // Note: We use VolatileUnlock and so this port is not used in Caliptra-ss, needs to be removed from LCC RTL        
 
@@ -1367,8 +1195,8 @@ module caliptra_ss_top
             .lc_clk_byp_req_o(cptra_ss_lc_clk_byp_req_o),
             .lc_clk_byp_ack_i(cptra_ss_lc_clk_byp_ack_i),
 
-            .otp_device_id_i('0),   // FIXME: This signal should come from FC 
-            .otp_manuf_state_i('0), // FIXME: This signal should come from FC 
+            .otp_device_id_i(256'd0),   // FIXME: This signal should come from FC
+            .otp_manuf_state_i(256'd0), // FIXME: This signal should come from FC
             .hw_rev_o()             // FIXME: This signal should go to MCI 
         );
 
@@ -1386,7 +1214,8 @@ module caliptra_ss_top
     assign tb_driven_value = 1'b0;
     assign otp_ext_voltage_h_io = tb_drive_enable ? tb_driven_value : 1'bz;
 
-    assign otp_ctrl_to_mci_otp_ctrl_done = pwrmgr_pkg::pwr_otp_rsp_t'(u_otp_ctrl.pwr_otp_o.otp_done);
+    pwrmgr_pkg::pwr_otp_rsp_t                   u_otp_ctrl_pwr_otp_o;
+    assign otp_ctrl_to_mci_otp_ctrl_done = pwrmgr_pkg::pwr_otp_rsp_t'(u_otp_ctrl_pwr_otp_o.otp_done);
     assign otp_ctrl_init_req.otp_init = mci_to_otp_ctrl_init_req;
 
     otp_ctrl #(
@@ -1405,7 +1234,7 @@ module caliptra_ss_top
         .core_axi_rd_req            (cptra_ss_otp_core_axi_rd_req_i),
         .core_axi_rd_rsp            (cptra_ss_otp_core_axi_rd_rsp_o),
         
-        .prim_tl_i                  ('0),
+        .prim_tl_i                  (107'd0),
         .prim_tl_o                  (),
         .prim_generic_otp_outputs_i (cptra_ss_fuse_macro_outputs_i),
         .prim_generic_otp_inputs_o  (cptra_ss_fuse_macro_inputs_o),
@@ -1415,12 +1244,12 @@ module caliptra_ss_top
         // .alert_rx_i                 (),
         // .alert_tx_o                 (),
         .alerts(fc_alerts),
-        .obs_ctrl_i                 ('0),    //TODO: Needs to be checked
+        .obs_ctrl_i                 (12'd0),    //TODO: Needs to be checked
         .otp_obs_o                  (),
         .otp_ast_pwr_seq_o          (),
-        .otp_ast_pwr_seq_h_i        ('0),    //TODO: Needs to be checked
+        .otp_ast_pwr_seq_h_i        (2'd0),    //TODO: Needs to be checked
         .pwr_otp_i                  (otp_ctrl_init_req),
-        .pwr_otp_o                  (),
+        .pwr_otp_o                  (u_otp_ctrl_pwr_otp_o),
 
         .lc_otp_vendor_test_i(from_lc_to_otp_vendor_test_internal),
         .lc_otp_vendor_test_o(from_otp_to_lc_vendor_test_internal),
