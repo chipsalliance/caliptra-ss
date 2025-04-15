@@ -136,26 +136,26 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 		remaining_img_sz_in_bytes = img_sz;
 		test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
 
-		while(remaining_img_sz_in_bytes > 0) begin
+		if(wr_count_256B > 0) begin
 		
 			test_log.substep($psprintf("Writing 'd %0d of 256B blocks", wr_count_256B));
-			if(remaining_img_sz_in_bytes > 256) begin
-				test_log.substep($psprintf("Writing 'd %0d of 256B blocks", wr_count_256B));
+
 				for(int i = 0; i < wr_count_256B; i++) begin
 
 					test_log.step($psprintf("INDIRECT_FIFO_DATA write..'d %0d", i));
-					data = new[256];
+				data = new[16];
+				for(int k = 0; k < 16; k++) begin
 					line = "'h ";
-					for (int k = 0; k < 256; k++) begin
-						for(int j = 0; j < 16; j++) begin
-							data[k] = image[i*16+k][j];
-							line = $psprintf("%s%0h", line, data[k]);
-						end
-						test_log.substep($psprintf("Image['d %0d]: %s", (i*16+k), line));
+					//-- writing 16 bytes of data
+					for(int j = 0; j < 16; j++) begin
+						data[j] = image[i*16+k][j];
+						line = $psprintf("%s%2.0h", line, data[j]);
 					end
+					test_log.substep($psprintf("== Image['d %0d]: %s", (i*16+k), line));
 					test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
 					i3c_random_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, 256);
-					remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 256;
+					remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 16;
+				end
 
 					if (remaining_img_sz_in_bytes > 0) begin
 						test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
@@ -183,22 +183,72 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 					end
 
 				end
-			end else begin
-				test_log.substep($psprintf("writing remaining image size 'd %0d", remaining_img_sz_in_bytes));
-				data = new[remaining_img_sz_in_bytes];
+		end
+
+		//-- writing INDIRECT_FIFO_DATA register for 16B
+		if(wr_count_16B > 0) begin
+			test_log.substep($psprintf("Writing 'd %0d of 16B blocks", wr_count_16B));
+		
+			for(int i = 0; i < wr_count_16B; i++) begin
+			// for(int i = 0; i < 1; i++) begin
+
+				test_log.step($psprintf("INDIRECT_FIFO_DATA write..'d %0d", i));
+				data = new[16];
 				line = "'h ";
-				for (int k = 0; k < remaining_img_sz_in_bytes; k++) begin
+					//-- writing 16 bytes of data
 					for(int j = 0; j < 16; j++) begin
-						data[k] = image[(wr_count_256B*16)+k][j];
-						line = $psprintf("%s%0h", line, data[k]);
+						data[j] = image[(wr_count_256B*16)+i][j];
+						line = $psprintf("%s%0h", line, data[j]);
 					end
-					test_log.substep($psprintf("Image['d %0d]: %s", ((wr_count_256B*16)+k), line));
-				end
+					test_log.substep($psprintf("Image['d %0d]: %s", i, line));
 				test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
 				i3c_random_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, remaining_img_sz_in_bytes);
-				remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - remaining_img_sz_in_bytes;
+				remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 16;
 			end
+				
 			test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d / 'd %0d", remaining_img_sz_in_bytes, img_sz));
+
+
+		end
+		//-- writing INDIRECT_FIFO_DATA register for 4B
+		if(wr_count_4B > 0) begin
+
+			test_log.substep($psprintf("Writing 'd %0d of 4B blocks", wr_count_4B));
+			data = new[wr_count_4B*4];
+			line = "'h ";
+			for(int i = 0; i < (wr_count_4B*4); i++) begin	
+				data[i] = image[(wr_count_256B*16)+(wr_count_16B)][i];
+				line = $psprintf("%s%0h", line, data[i]);
+				remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 4;
+			end
+			test_log.substep($psprintf("Image['d %0d]: %s", ((wr_count_256B*16)+(wr_count_16B)), line));
+			test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
+			i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, (wr_count_4B*4));
+			
+			// if (remaining_img_sz_in_bytes > 0) begin
+			// 	test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
+			// 	//-- read INDIRECT_FIFO_STATUS register
+			// 	//-- INDIRECT_FIFO_STATUS ('d46)
+			// 	//-- Step 9:
+			// 	//-- The I3C device will keep head and tail pointers along with 
+			// 	//-- FIFO status up to date into INDIRECT_FIFO_STATUS register. 
+			// 	//-- I3C recovery interface HW wait for an update to 
+			// 	//-- INDIRECT_DATA_REG with 1-256B data from BMC.
+			// 	data[0] = 0;
+			// 	for(int i = 0; i < 100; i++) begin
+			// 		i3c_read(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_STATUS, 20, data);
+			// 		if(data[0] == 'h1) begin
+			// 			test_log.substep("Indirect FIFO is empty");
+			// 			break;
+			// 		end
+			// 		#100ns;
+			// 	end
+			// 	if(data[0] != 'h1) begin
+			// 		test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
+			// 	end
+			// end else begin
+			// 	test_log.substep($psprintf("Image send completed"));
+			// end
 
 		end
 

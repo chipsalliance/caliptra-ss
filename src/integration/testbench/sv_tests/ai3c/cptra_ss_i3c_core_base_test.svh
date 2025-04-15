@@ -30,15 +30,16 @@
 
 class random_len_helper;
     rand int random_len[];  // Declare as class member
-    int len;               // Length of the data to be written
+    int total_length;               // Length of the data to be written
 
     constraint len_c {
-        random_len.sum() == len;
+        random_len.sum() == total_length;
         random_len.size() > 0;
+		random_len.size() <= 10;
         foreach (random_len[i]) { random_len[i] inside {4, 8, 16, 32, 64}; }
     }
     function new(int length);
-        this.len = length;
+        this.total_length = length;
     endfunction
 endclass
 
@@ -284,32 +285,32 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 
         bit [7:0] data_subset[];
         int data_idx;
-        int wr_len[];
+        // int wr_len[];
 
         //-- create a new instance of RandomWriteHelper
         random_lengths = new(len);
         assert(random_lengths.randomize());  // Randomize wr_len
-        wr_len = random_lengths.random_len;  // Retrieve randomized values
-        test_log.substep($psprintf("Randomized write lengths: %0d", wr_len.size()));
-        foreach (wr_len[i]) begin
-            test_log.substep($psprintf("Randomized write length %0d: %0d", i, wr_len[i]));
+        // wr_len = new[random_lengths.random_len.size()];  // Retrieve randomized values
+        // test_log.substep($psprintf("Randomized write lengths: %0d", wr_len.size()));
+        foreach (random_lengths.random_len[i]) begin
+            test_log.substep($psprintf("Randomized write length %0d: %0d", i, random_lengths.random_len[i]));
         end
 
-        //-- perform write with each wr_len
-        foreach (wr_len[i]) begin
-            test_log.substep($psprintf("Writing %0d bytes", wr_len[i]));
-            data_subset = new[wr_len[i]];
+        //-- perform write with each random_lengths.random_len
+        foreach (random_lengths.random_len[i]) begin
+            test_log.substep($psprintf("Writing %0d bytes", random_lengths.random_len[i]));
+            data_subset = new[random_lengths.random_len[i]];
             data_idx = 0;
             for (int j = 0; j < i; j++) begin
-                data_idx += wr_len[j];
+                data_idx += random_lengths.random_len[j];
             end
-            test_log.substep($psprintf("starting data_index = %0d, wr_len = %0d", data_idx, wr_len[i]));
-            for (int j = 0; j < wr_len[i]; j++) begin
+            test_log.substep($psprintf("starting data_index = %0d, andom_lengths.random_len[%0d] = %0d", data_idx, i, random_lengths.random_len[i]));
+            for (int j = 0; j < random_lengths.random_len[i]; j++) begin
                 data_subset[j] = data[data_idx + j];
             end
-            i3c_write(addr, cmd, data, wr_len[i]);
+            i3c_write(addr, cmd, data, random_lengths.random_len[i]);
         end
-        test_log.substep($psprintf("Completed writing %0d bytes in %0d chunks", len, wr_len.size()));
+        test_log.substep($psprintf("Completed writing %0d bytes in %0d chunks", len, random_lengths.random_len.size()));
 
     endtask
 

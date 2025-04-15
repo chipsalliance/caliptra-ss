@@ -143,6 +143,7 @@ class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 		//-- BMC can implement flow control through NACK responses. 
 		
 		remaining_img_sz_in_bytes = img_sz;
+		test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
 
 		if(wr_count_256B > 0) begin
 		
