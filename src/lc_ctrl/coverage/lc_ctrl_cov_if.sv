@@ -17,6 +17,7 @@
 interface lc_ctrl_cov_if
     import lc_ctrl_pkg::*;
     import lc_ctrl_state_pkg::*;
+    import lc_ctrl_reg_pkg::*;
 (
     input  logic clk_i,
     input  logic rst_ni
@@ -36,6 +37,9 @@ interface lc_ctrl_cov_if
 
     bit sec_volatile_raw_unlock;
     assign sec_volatile_raw_unlock = lc_ctrl.SecVolatileRawUnlockEn;
+
+    logic [NumAlerts-1:0] alerts;
+    assign alerts = lc_ctrl.alerts;
 
     // Precompute replicated constants for the state bins:
     localparam ext_dec_lc_state_t DEC_LC_ST_RAW_REP             =    {DecLcStateNumRep{DecLcStRaw}};
@@ -150,6 +154,12 @@ interface lc_ctrl_cov_if
         {
             bins Disabled = { 1'b0 };
             bins Enabled  = { 1'b1 };
+        }
+        
+        // All life-cycle alerts are triggered.
+        lc_ctrl_alerts_cp: coverpoint alerts
+        {
+            bins Alerts[] = { NumAlerts'(3'b001), NumAlerts'(3'b010), NumAlerts'(3'b100) };
         }
     endgroup
 
