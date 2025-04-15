@@ -67,7 +67,9 @@ task get_execution_last_address(output logic [AXI_AW-1:0] addr);
 
     get_execution_base_address(base_addr);
     get_mcu_sram_last_addr(last_addr);
-    addr = ((reg_value + 1) * 4096) + base_addr - 1; // Last address is one byte before the base of the PROTECTED region
+    addr = ((reg_value + 1) * 4096) + base_addr - 1; // Last address is one byte before the base of the PROTECTED region. 
+                                                     // + 1 because FW_SRAM_EXEC_REGION_SIZE is base 0 meaning 0x0 allocates 
+                                                     // 4KB for execution region
     if(last_addr > last_addr)
         addr = last_addr;
 endtask
