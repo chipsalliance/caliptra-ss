@@ -75,7 +75,10 @@ interface fuse_ctrl_cov_if
         {                                                                                   \
             bins Fuse = { [1:] };                                                           \
         }                                                                                   \
-      endgroup
+      endgroup                                             \
+      initial begin                                         \
+        fuse_``ADDR``_cg cg_``ADDR``_1 = new();         \       
+      end                                           
 
     // SECRET_TEST_UNLOCK_PARTITION
     `FUSE_CG(CptraCoreManufDebugUnlockTokenOffset, CptraCoreManufDebugUnlockTokenSize)
@@ -221,22 +224,29 @@ interface fuse_ctrl_cov_if
      *
      *  All possible locking indices should be covered.
      */
-
-    if (NumVendorPkFuses > 1) begin
-
+    generate
         logic [31:0] pk_hash_volatile_lock;
         assign pk_hash_volatile_lock = `FC_PATH.reg2hw.vendor_pk_hash_volatile_lock; 
-
-        covergroup fuse_ctrl_pk_hash_volatile_lock_cg @(posedge clk_i);
+        if (NumVendorPkFuses > 1) begin : gen_pk_hash_cg
+          covergroup fuse_ctrl_pk_hash_volatile_lock_cg @(posedge clk_i);
             option.per_instance = 1;
-
-            fuse_ctrl_pk_hash_volatile_lock_cp: coverpoint pk_hash_volatile_lock
-            {
-                bins PkHashVolatileLock[] = { [0:NumVendorPkFuses-1] };
+            fuse_ctrl_pk_hash_volatile_lock_cp: coverpoint pk_hash_volatile_lock {
+              bins PkHashVolatileLock[] = {[0:NumVendorPkFuses-1]};
             }
-        endgroup
+          endgroup
+      
+          fuse_ctrl_pk_hash_volatile_lock_cg cg_inst;  // Declare only!
+        end
+    endgenerate
+      
+      initial begin
+        // Instantiate the covergroup outside the generate block
+        if (NumVendorPkFuses > 1) begin
+          gen_pk_hash_cg.cg_inst = new();
+        end
+      end
+      
 
-    end
 
     /** fuse_ctrl register accesses:
      *
@@ -296,6 +306,12 @@ interface fuse_ctrl_cov_if
         }
 
     endgroup
+
+    initial begin
+        fuse_ctrl_filter_cg fuse_ctrl_filter_cg1 = new();
+        fuse_ctrl_test_unlock_tokens_cg fuse_ctrl_test_unlock_tokens_cg1 = new();
+        fuse_ctrl_core_tl_i_cg fuse_ctrl_core_tl_i_cg1 = new();
+    end
 
 endinterface
 
