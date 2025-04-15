@@ -1,9 +1,9 @@
-name: Scheduled Branch Creation
+name: Daily Branch Creation
 
 on:
   schedule:
-    # Run every 3 hours from 9 AM to 9 PM UTC
-    - cron: '0 9-21/3 * * *'
+    # Runs every day at midnight (UTC)
+    - cron: '0 0 * * *'
 
 jobs:
   create-branch:
