@@ -553,7 +553,6 @@ always_comb mcu_sram_dmi_uncore_wdata = mcu_dmi_uncore_wdata;
 
 always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts.hwset           = mcu_sram_dmi_axi_collision_error; // Set by any protocol error violation (mirrors the bits in CPTRA_HW_ERROR_NON_FATAL)
                                               
-// FIXME RDC clock?
 always_ff @(posedge clk or negedge mci_pwrgood) begin
     if (~mci_pwrgood) begin
       mcu_dmi_uncore_rdata <= '0;
@@ -821,7 +820,7 @@ assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec;
 // Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL
 // Also calculate whether or not an unmasked event is being set, so we can
 // trigger the SOC interrupt signal
-always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_double_ecc_error; // FIXME do we need to add a reset window disable like in caliptra?
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_double_ecc_error;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      = nmi_intr;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  = mcu_sram_dmi_axi_collision_error;
 // Using we+next instead of hwset allows us to encode the reserved fields in some fashion
@@ -1268,7 +1267,7 @@ assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_c
 mci_reg i_mci_reg (
 
         .clk  (clk),
-        .rst  ('0), // FIXME why is this tied off in soc_ifc?
+        .rst  ('0), 
 
         .s_cpuif_req            (cif_resp_if.dv),
         .s_cpuif_req_is_wr      (cif_resp_if.req_data.write),

@@ -1431,21 +1431,26 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_cptra_rst_b_o,
     
     //SoC AXI Interface
-        .cptra_ss_cptra_core_s_axi_if,
+        .cptra_ss_cptra_core_s_axi_if_r_sub(cptra_ss_cptra_core_s_axi_if.r_sub),
+        .cptra_ss_cptra_core_s_axi_if_w_sub(cptra_ss_cptra_core_s_axi_if.w_sub),
     
     // AXI Manager INF
-        .cptra_ss_cptra_core_m_axi_if,
+        .cptra_ss_cptra_core_m_axi_if_r_mgr(cptra_ss_cptra_core_m_axi_if.r_mgr),
+        .cptra_ss_cptra_core_m_axi_if_w_mgr(cptra_ss_cptra_core_m_axi_if.w_mgr),
     
     //MCU ROM Sub Interface
-        .cptra_ss_mcu_rom_s_axi_if,
+        .cptra_ss_mcu_rom_s_axi_if_r_sub(cptra_ss_mcu_rom_s_axi_if.r_sub),
+        .cptra_ss_mcu_rom_s_axi_if_w_sub(cptra_ss_mcu_rom_s_axi_if.w_sub),
         .mcu_rom_mem_export_if,
     
     //MCI AXI Sub Interface
-        .cptra_ss_mci_s_axi_if,
+        .cptra_ss_mci_s_axi_if_r_sub(cptra_ss_mci_s_axi_if.r_sub),
+        .cptra_ss_mci_s_axi_if_w_sub(cptra_ss_mci_s_axi_if.w_sub),
     
     // AXI Manager INF
     
-        .cptra_ss_mcu_lsu_m_axi_if,
+        .cptra_ss_mcu_lsu_m_axi_if_r_mgr(cptra_ss_mcu_lsu_m_axi_if.r_mgr),
+        .cptra_ss_mcu_lsu_m_axi_if_w_mgr(cptra_ss_mcu_lsu_m_axi_if.w_mgr),
         .cptra_ss_mcu_lsu_m_axi_if_awcache,
         .cptra_ss_mcu_lsu_m_axi_if_arcache,
         .cptra_ss_mcu_lsu_m_axi_if_awprot,
@@ -1454,7 +1459,8 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_lsu_m_axi_if_arregion,
         .cptra_ss_mcu_lsu_m_axi_if_awqos,
         .cptra_ss_mcu_lsu_m_axi_if_arqos,
-        .cptra_ss_mcu_ifu_m_axi_if,
+        .cptra_ss_mcu_ifu_m_axi_if_r_mgr(cptra_ss_mcu_ifu_m_axi_if.r_mgr),
+        .cptra_ss_mcu_ifu_m_axi_if_w_mgr(cptra_ss_mcu_ifu_m_axi_if.w_mgr),
         .cptra_ss_mcu_ifu_m_axi_if_awcache,
         .cptra_ss_mcu_ifu_m_axi_if_arcache,
         .cptra_ss_mcu_ifu_m_axi_if_awprot,
@@ -1463,7 +1469,8 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_ifu_m_axi_if_arregion,
         .cptra_ss_mcu_ifu_m_axi_if_awqos,
         .cptra_ss_mcu_ifu_m_axi_if_arqos,
-        .cptra_ss_mcu_sb_m_axi_if,
+        .cptra_ss_mcu_sb_m_axi_if_r_mgr(cptra_ss_mcu_sb_m_axi_if.r_mgr),
+        .cptra_ss_mcu_sb_m_axi_if_w_mgr(cptra_ss_mcu_sb_m_axi_if.w_mgr),
         .cptra_ss_mcu_sb_m_axi_if_awcache,
         .cptra_ss_mcu_sb_m_axi_if_arcache,
         .cptra_ss_mcu_sb_m_axi_if_awprot,
@@ -1473,7 +1480,8 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_sb_m_axi_if_awqos,
         .cptra_ss_mcu_sb_m_axi_if_arqos,
         // .mcu_dma_s_axi_if,
-        .cptra_ss_i3c_s_axi_if,
+        .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
+        .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
     
         .cptra_ss_lc_axi_wr_req_i,
         .cptra_ss_lc_axi_wr_rsp_o,
