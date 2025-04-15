@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "wdt.h"
+#include "caliptra_ss_lib.h"
 
 // volatile uint32_t* stdout           = (uint32_t *)STDOUT;
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
@@ -54,7 +55,7 @@ void nmi_handler (void);
 void nmi_handler (void) {
     VPRINTF(LOW, "*** Entering NMI Handler ***\n");
     if (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL) & MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK) {
-        SEND_STDOUT_CTRL(0xf6);
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
     }
     else {
         VPRINTF(ERROR, "Unexpected entry into NMI handler function\n");
@@ -114,10 +115,9 @@ void main(void) {
 
     }
     else if (rst_count == 2) {
-        VPRINTF(LOW, "Coming out of warm reset after NMI intr\n");
+        VPRINTF(LOW, "Coming out of cold reset after NMI intr\n");
     }
 
-    SEND_STDOUT_CTRL(0x00);
     SEND_STDOUT_CTRL(0xff);
 }
 

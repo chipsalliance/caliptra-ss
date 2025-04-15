@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "wdt.h"
+#include "caliptra_ss_lib.h"
 
 // volatile uint32_t* stdout           = (uint32_t *)STDOUT;
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
@@ -54,7 +55,7 @@ void nmi_handler (void);
 void nmi_handler (void) {
     VPRINTF(LOW, "*** Entering NMI Handler ***\n");
     if (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL) & MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK) {
-        SEND_STDOUT_CTRL(0xf5);
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
     }
     else {
         VPRINTF(ERROR, "Unexpected entry into NMI handler function\n");
@@ -84,7 +85,7 @@ void main(void) {
         VPRINTF(LOW, "Stall until timer1 times out\n");
         service_t1_intr();
         
-        SEND_STDOUT_CTRL(0xf6);
+        SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
     }
     else if (rst_count == 2) {
         VPRINTF(LOW, "Cascaded mode, t1 timeout, cold rst\n");
@@ -93,7 +94,7 @@ void main(void) {
         *wdt_timer1_ctrl = MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_MASK;
 
         service_t1_intr();
-        SEND_STDOUT_CTRL(0xf5);
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
     }
     else if (rst_count == 3) {
         VPRINTF(LOW, "Independent mode - both timers enabled - warm rst\n");
@@ -109,7 +110,7 @@ void main(void) {
         //reset t2
         *wdt_timer2_en = 0;
         
-        SEND_STDOUT_CTRL(0xf6);
+        SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
     }
     else if (rst_count == 4) {
         VPRINTF(LOW, "Independent mode - both timers enabled - cold rst\n");
@@ -123,7 +124,7 @@ void main(void) {
         service_t2_intr();
         *wdt_timer2_en = 0;
         
-        SEND_STDOUT_CTRL(0xf5);
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
     }
     else if (rst_count == 5) {
         configure_wdt_cascade(0x200, 0x00, 0xffffffff, 0xffffffff);
@@ -155,7 +156,7 @@ void main(void) {
         service_t2_intr();
         *wdt_timer2_en = 0;
         
-        SEND_STDOUT_CTRL(0xf6);
+        SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
     }
     else if (rst_count == 7) {
         VPRINTF(LOW, "Independent mode - timer2 enabled, timer1 disabled - cold rst\n");
@@ -165,51 +166,50 @@ void main(void) {
         service_t2_intr();
         *wdt_timer2_en = 0;
         
-        SEND_STDOUT_CTRL(0xf5);
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
     }
     else if (rst_count == 8) {
         //Issue warm reset during WDT operation
         //WDT cascade mode
         VPRINTF(LOW, "Cascade mode with warm reset during operation\n");
         configure_wdt_cascade(0x37, 0x00, 0xffffffff, 0xffffffff);
-        SEND_STDOUT_CTRL(0xf6);
+        SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
     }
     else if (rst_count == 9) {
         //Issue cold reset during WDT operation
         VPRINTF(LOW, "Cascade mode with cold reset during operation\n");
         configure_wdt_cascade(0x37, 0x00, 0xffffffff, 0xffffffff);
-        SEND_STDOUT_CTRL(0xf5);
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
     }
     else if (rst_count == 10) {
         //Issue warm reset during WDT operation
         //WDT cascade mode
         VPRINTF(LOW, "Independent mode with warm reset during operation\n");
         configure_wdt_independent(BOTH_TIMERS_EN, 0x200, 0x00000000, 0x34, 0x00000000);
-        SEND_STDOUT_CTRL(0xf6);
+        SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
     }
     else if (rst_count == 11) {
         //Issue warm reset during WDT operation
         //WDT cascade mode
         VPRINTF(LOW, "Independent mode with cold reset during operation\n");
         configure_wdt_independent(BOTH_TIMERS_EN, 0x200, 0x00000000, 0x34, 0x00000000);
-        SEND_STDOUT_CTRL(0xf5);
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
     }
     else if (rst_count == 12) {
         //Issue warm reset during WDT operation
         //WDT cascade mode
         VPRINTF(LOW, "Independent mode - t2 en with warm reset during operation\n");
         configure_wdt_independent(T1_DIS_T2_EN, 0x200, 0x00000000, 0x200, 0x00000000);
-        SEND_STDOUT_CTRL(0xf6);
+        SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
     }
     else if (rst_count == 13) {
         //Issue warm reset during WDT operation
         //WDT cascade mode
         VPRINTF(LOW, "Independent mode - t2 en with cold reset during operation\n");
         configure_wdt_independent(T1_DIS_T2_EN, 0x200, 0x00000000, 0x200, 0x00000000);
-        SEND_STDOUT_CTRL(0xf5);
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
     }
     else {
-        SEND_STDOUT_CTRL(0x00);
         SEND_STDOUT_CTRL(0xff);
     }
 }
