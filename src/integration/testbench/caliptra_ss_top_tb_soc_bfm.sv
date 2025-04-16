@@ -78,6 +78,9 @@ initial begin
     if ($test$plusargs("SMOKE_TEST_MCU_SRAM_EXECUTION_REGION")) begin
         smoke_test_mcu_sram_execution_region();        
     end
+    else if($test$plusargs("SMOKE_TEST_MCU_SRAM_DEBUG_STRESS"))begin
+        smoke_test_mcu_sram_debug_stress();        
+    end
 end
 
 ///////////////////////////////////
