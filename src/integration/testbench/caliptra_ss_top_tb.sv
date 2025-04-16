@@ -56,7 +56,7 @@ module caliptra_ss_top_tb
 `endif
 
 
-    bit                         core_clk;    
+    bit                         core_clk;
     logic                       cptra_ss_pwrgood_i;
     logic                       cptra_ss_rst_b_i;
     logic                       cptra_ss_mci_cptra_rst_b_o;
@@ -119,16 +119,16 @@ module caliptra_ss_top_tb
          // Inputs from OTP_Ctrl
          otp_ctrl_pkg::otp_lc_data_t                  from_otp_to_lcc_program_i;
          // Inputs from Caliptra_Core
-         logic                                         ss_dbg_manuf_enable_i   ; 
+         logic                                         ss_dbg_manuf_enable_i   ;
          logic [63:0]                                  ss_soc_dbg_unlock_level_i;
-      
-      
+
+
          soc_ifc_pkg::security_state_t                security_state_o;
 
 //---------------------------I3C---------------------------------------
          logic payload_available_o;
          logic image_activated_o;
-      
+
 //------------------------------------------------------------------------
 
     logic         cptra_ss_debug_intent_i;
@@ -140,35 +140,35 @@ module caliptra_ss_top_tb
     logic cptra_ss_FIPS_ZEROIZATION_PPD_i;
     logic lcc_bfm_reset;
 
-    //-- 
+    //--
     logic                                 cptra_ss_soc_dft_en_o;
     logic                                 cptra_ss_soc_hw_debug_en_o;
 
     css_mcu0_el2_mem_if         cptra_ss_mcu0_el2_mem_export ();
-    el2_mem_if                  cptra_ss_cptra_core_el2_mem_export ();        
+    el2_mem_if                  cptra_ss_cptra_core_el2_mem_export ();
 
     caliptra_ss_bfm_services_if i_caliptra_ss_bfm_services_if();
 
     logic fuse_ctrl_rdy;
-    
+
     // -- Read clock frequency from file and set the clock accordingly using a case statement
     initial begin
-        
+
         integer file;
         integer status;
         int frequency;
-    
+
         // Open the file to read the clock frequency
         file = $fopen("caliptra_ss_clk_freq.cfg", "r");
         if (file == 0) begin
             $display("Error: Unable to open file caliptra_ss_clk_freq.cfg");
             $finish;
         end
-    
+
         // Read the frequency from the file
         status = $fscanf(file, "%d", frequency);
         $fclose(file);
-    
+
         if (status != 1) begin
             $display("Error: Failed to read clock frequency from file");
             $finish;
@@ -403,7 +403,7 @@ module caliptra_ss_top_tb
 
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BID = 8'h0;
 
-    
+
     //Interconnect 0 - MCU LSU
     // FIXME
     // Require wsize < 3 so that we can force wsize to '2' in the hack below
@@ -939,7 +939,7 @@ module caliptra_ss_top_tb
         .clk(core_clk),
         .rst_b(cptra_ss_rst_b_i)
     );
-    
+
     mci_mcu_sram_if #(
         .ADDR_WIDTH(MCU_MBOX1_ADDR_W),
         .DATA_WIDTH(MCU_MBOX1_DATA_W),
@@ -964,7 +964,7 @@ module caliptra_ss_top_tb
 
     logic [`CLP_OBF_KEY_DWORDS-1:0][31:0]          cptra_ss_cptra_obf_key_i;
     logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0]     cptra_ss_cptra_csr_hmac_key_i;
-    
+
     logic [0:`CLP_OBF_UDS_DWORDS-1][31:0]          cptra_uds_rand;
     logic [0:`CLP_OBF_FE_DWORDS-1][31:0]           cptra_fe_rand;
     logic [0:`CLP_OBF_KEY_DWORDS-1][31:0]          cptra_obf_key_tb;
@@ -1043,7 +1043,7 @@ module caliptra_ss_top_tb
 
         .cptra_error_fatal(cptra_error_fatal),
         .cptra_error_non_fatal(cptra_error_non_fatal),
-        
+
         //Interrupt flags
         .int_flag(int_flag),
         .cycleCnt_smpl_en(cycleCnt_smpl_en),
@@ -1054,7 +1054,7 @@ module caliptra_ss_top_tb
         .deassert_rst_flag_from_service(deassert_rst_flag_from_service)
 
     );
-    
+
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag0"),
@@ -1129,7 +1129,7 @@ module caliptra_ss_top_tb
 
         .assert_rst_flag(assert_rst_flag_from_service),
         .deassert_rst_flag(deassert_rst_flag_from_service),
-        
+
         .cptra_uds_tb(cptra_uds_rand),
         .cptra_fe_tb(cptra_fe_rand),
         .cptra_obf_key_tb(cptra_obf_key_tb)
@@ -1192,14 +1192,14 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_rom_s_axi_if.awlen                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWLEN;
     assign cptra_ss_mcu_rom_s_axi_if.awsize                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWSIZE;
     assign cptra_ss_mcu_rom_s_axi_if.awburst                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWBURST;
-    assign cptra_ss_mcu_rom_s_axi_if.awlock                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWLOCK; 
+    assign cptra_ss_mcu_rom_s_axi_if.awlock                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWLOCK;
     assign cptra_ss_mcu_rom_s_axi_if.awuser                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWUSER;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWREADY     = cptra_ss_mcu_rom_s_axi_if.awready;
     assign cptra_ss_mcu_rom_s_axi_if.wvalid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WVALID;
     assign cptra_ss_mcu_rom_s_axi_if.wdata                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WDATA;
     assign cptra_ss_mcu_rom_s_axi_if.wstrb                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WSTRB;
     assign cptra_ss_mcu_rom_s_axi_if.wlast                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WLAST;
-    assign cptra_ss_mcu_rom_s_axi_if.wuser                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WUSER; 
+    assign cptra_ss_mcu_rom_s_axi_if.wuser                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WUSER;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WREADY      = cptra_ss_mcu_rom_s_axi_if.wready;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BVALID      = cptra_ss_mcu_rom_s_axi_if.bvalid;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BRESP       = cptra_ss_mcu_rom_s_axi_if.bresp;
@@ -1236,7 +1236,7 @@ module caliptra_ss_top_tb
    logic cptra_ss_lc_esclate_scrap_state0_i;
    logic cptra_ss_lc_esclate_scrap_state1_i;
 
-   
+
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_ack_i;
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_req_o;
 
@@ -1271,7 +1271,7 @@ module caliptra_ss_top_tb
     //--------------------------------------------------------------------------------------------
 
     assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(caliptra_ss_dut.u_lc_ctrl.pwr_lc_o.lc_done);
-    assign lcc_init_req.lc_init = mci_to_lcc_init_req; 
+    assign lcc_init_req.lc_init = mci_to_lcc_init_req;
 
 
     fuse_ctrl_bfm u_fuse_ctrl_bfm (
@@ -1351,7 +1351,7 @@ module caliptra_ss_top_tb
 
     initial begin
         string avy_test_name;
-        
+
         // --- Avery I3C slave ---
         // slave = new("slave", , AI3C_SLAVE, slave_intf);
         // slave.log.enable_bus_tracker = 1;
@@ -1368,7 +1368,7 @@ module caliptra_ss_top_tb
         master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
         master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
         master0.cfg_info.receive_all_txn = 0;
-        
+
 
         // --- I3C env ---
         i3c_env0 = new("i3c_env0");
@@ -1380,7 +1380,7 @@ module caliptra_ss_top_tb
             #150us;  // system boot delay
             i3c_env0.sb.enable_sb=0;
             master0.set("start_bfm");
-            ai3c_run_test(avy_test_name, i3c_env0); 
+            ai3c_run_test(avy_test_name, i3c_env0);
         end
 
     end
@@ -1391,7 +1391,7 @@ module caliptra_ss_top_tb
     logic         cptra_ss_mci_boot_seq_brkpoint_i;
     logic         cptra_ss_mcu_no_rom_config_i;
     logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;
-    logic [63:0]  cptra_ss_mci_generic_input_wires_i; 
+    logic [63:0]  cptra_ss_mci_generic_input_wires_i;
     logic [63:0]  cptra_ss_mci_generic_output_wires_o;
     logic         cptra_ss_all_error_fatal_o;
     logic         cptra_ss_all_error_non_fatal_o;
@@ -1471,26 +1471,26 @@ module caliptra_ss_top_tb
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o,
-    
+
     //SoC AXI Interface
         .cptra_ss_cptra_core_s_axi_if_r_sub(cptra_ss_cptra_core_s_axi_if.r_sub),
         .cptra_ss_cptra_core_s_axi_if_w_sub(cptra_ss_cptra_core_s_axi_if.w_sub),
-    
+
     // AXI Manager INF
         .cptra_ss_cptra_core_m_axi_if_r_mgr(cptra_ss_cptra_core_m_axi_if.r_mgr),
         .cptra_ss_cptra_core_m_axi_if_w_mgr(cptra_ss_cptra_core_m_axi_if.w_mgr),
-    
+
     //MCU ROM Sub Interface
         .cptra_ss_mcu_rom_s_axi_if_r_sub(cptra_ss_mcu_rom_s_axi_if.r_sub),
         .cptra_ss_mcu_rom_s_axi_if_w_sub(cptra_ss_mcu_rom_s_axi_if.w_sub),
         .mcu_rom_mem_export_if,
-    
+
     //MCI AXI Sub Interface
         .cptra_ss_mci_s_axi_if_r_sub(cptra_ss_mci_s_axi_if.r_sub),
         .cptra_ss_mci_s_axi_if_w_sub(cptra_ss_mci_s_axi_if.w_sub),
-    
+
     // AXI Manager INF
-    
+
         .cptra_ss_mcu_lsu_m_axi_if_r_mgr(cptra_ss_mcu_lsu_m_axi_if.r_mgr),
         .cptra_ss_mcu_lsu_m_axi_if_w_mgr(cptra_ss_mcu_lsu_m_axi_if.w_mgr),
         .cptra_ss_mcu_lsu_m_axi_if_awcache,
@@ -1524,23 +1524,23 @@ module caliptra_ss_top_tb
         // .mcu_dma_s_axi_if,
         .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
         .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
-    
+
         .cptra_ss_lc_axi_wr_req_i,
         .cptra_ss_lc_axi_wr_rsp_o,
         .cptra_ss_lc_axi_rd_req_i,
         .cptra_ss_lc_axi_rd_rsp_o,
-    
+
         .cptra_ss_otp_core_axi_wr_req_i,
         .cptra_ss_otp_core_axi_wr_rsp_o,
         .cptra_ss_otp_core_axi_rd_req_i,
         .cptra_ss_otp_core_axi_rd_rsp_o,
-    
+
     //--------------------
     //caliptra core signals
     //--------------------
         .cptra_ss_cptra_obf_key_i,
-        .cptra_ss_cptra_csr_hmac_key_i,  
-    
+        .cptra_ss_cptra_csr_hmac_key_i,
+
     //Caliptra JTAG Interface
         .cptra_ss_cptra_core_jtag_tck_i,    // JTAG clk
         .cptra_ss_cptra_core_jtag_tms_i,    // JTAG TMS
@@ -1562,21 +1562,21 @@ module caliptra_ss_top_tb
     // Caliptra Memory Export Interface
         .cptra_ss_cptra_core_el2_mem_export,
         .mldsa_memory_export_req(mldsa_memory_export.req),
-    
+
     //SRAM interface for mbox
         .cptra_ss_cptra_core_mbox_sram_cs_o,
         .cptra_ss_cptra_core_mbox_sram_we_o,
         .cptra_sscptra_core_mbox_sram_addr_o,
         .cptra_ss_cptra_core_mbox_sram_wdata_o,
         .cptra_ss_cptra_core_mbox_sram_rdata_i,
-    
+
     //SRAM interface for imem
         .cptra_ss_cptra_core_imem_cs_o,
         .cptra_ss_cptra_core_imem_addr_o,
         .cptra_ss_cptra_core_imem_rdata_i,
 
         .cptra_ss_cptra_core_bootfsm_bp_i,
-       
+
     // TRNG Interface
     `ifdef CALIPTRA_INTERNAL_TRNG
         // External Request
@@ -1585,8 +1585,8 @@ module caliptra_ss_top_tb
         .cptra_ss_cptra_core_itrng_data_i,
         .cptra_ss_cptra_core_itrng_valid_i,
     `endif
-    
-    
+
+
     //MCU
         .cptra_ss_strap_mcu_lsu_axi_user_i,
         .cptra_ss_strap_mcu_ifu_axi_user_i,
@@ -1632,20 +1632,20 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_generic_1_i,
         .cptra_ss_strap_generic_2_i,
         .cptra_ss_strap_generic_3_i,
-    
+
         .cptra_ss_lc_clk_byp_ack_i           (cptra_ss_lc_clk_byp_ack_i),
         .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),
         .cptra_ss_lc_ctrl_scan_rst_ni_i      (1'b1), // Note: Since we do not use dmi and use JTAG we do not need this
-    
+
         .cptra_ss_lc_esclate_scrap_state0_i,
         .cptra_ss_lc_esclate_scrap_state1_i,
-    
+
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
 
         .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
         .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
-    
+
     // I3C Interface
     `ifdef DIGITAL_IO_I3C
         .cptra_ss_i3c_scl_i(master0_intf.scl_and),
@@ -1689,7 +1689,7 @@ module caliptra_ss_top_tb
         .tb_services_if(i_caliptra_ss_bfm_services_if.bfm)
 
     );
-    
+
     // Instantiate caliptra_ss_top_tb_services
     caliptra_ss_top_tb_services u_caliptra_ss_top_tb_services (
         .clk                         (core_clk                    ),
@@ -1702,7 +1702,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_mbox1_sram_req_if,
         .mcu_rom_mem_export_if
     );
-    
+
 
 endmodule
 
