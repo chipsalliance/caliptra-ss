@@ -967,8 +967,6 @@ module caliptra_ss_top
     //=========================================================================
 
     axi_mem #(
-    //The address width needed from axi is 3 bits wider
-    //than the resulting memory_if width due to 8 byte wide data
       .AW(CPTRA_SS_ROM_AXI_ADDR_W),
       .DW(CPTRA_SS_ROM_DATA_W),
       .IW(`CALIPTRA_AXI_ID_WIDTH)
