@@ -29,6 +29,16 @@ interface caliptra_ss_top_cov_if
 
     logic cptra_ss_cptra_core_m_axi_if_ar_hshake;
     logic cptra_ss_cptra_core_m_axi_if_aw_hshake;
+    logic wdt_timer1_en;
+    logic wdt_timer2_en;
+    logic nmi_int;
+
+    always_comb cptra_ss_cptra_core_m_axi_if_ar_hshake = cptra_ss_cptra_core_m_axi_if.arvalid && cptra_ss_cptra_core_m_axi_if.arready;
+    always_comb cptra_ss_cptra_core_m_axi_if_aw_hshake = cptra_ss_cptra_core_m_axi_if.awvalid && cptra_ss_cptra_core_m_axi_if.awready;
+
+    always_comb wdt_timer1_en = caliptra_ss_top.mci_top_i.i_mci_wdt_top.timer1_en;
+    always_comb wdt_timer2_en = caliptra_ss_top.mci_top_i.i_mci_wdt_top.timer2_en;
+    always_comb nmi_int = caliptra_ss_top.mci_mcu_nmi_int;
     always_comb cptra_ss_cptra_core_m_axi_if_ar_hshake = cptra_ss_cptra_core_m_axi_if_r_mgr.arvalid && cptra_ss_cptra_core_m_axi_if_r_mgr.arready;
     always_comb cptra_ss_cptra_core_m_axi_if_aw_hshake = cptra_ss_cptra_core_m_axi_if_w_mgr.awvalid && cptra_ss_cptra_core_m_axi_if_w_mgr.awready;
     
@@ -77,32 +87,28 @@ interface caliptra_ss_top_cov_if
         axi_wr_fc_regs: coverpoint cptra_ss_cptra_core_m_axi_if_aw_hshake && cptra_ss_cptra_core_m_axi_if_w_mgr.awaddr inside {[64'h7000_0000:64'h7000_03FF]} {
             bins axi_wr_req = {1'b1};
         }
+
+        //-----------------------------------------
+        //WDT coverpoints
+        //-----------------------------------------
+        wdt_t1: coverpoint wdt_timer1_en;
+        wdt_t2: coverpoint wdt_timer2_en;
+        wdt_t1Xt2: cross wdt_t1, wdt_t2;
+        // wdt_t1t2Xwarmrst: cross wdt_t1Xt2, cptra_rst_b;
+        // wdt_t1t2Xcoldrst: cross wdt_t1Xt2, cptra_pwrgood;
+        nmi:    coverpoint nmi_int;
     endgroup
     caliptra_ss_top_cov_grp caliptra_ss_top_cov_grp1 = new();
 //    logic clk_gating_en;
 //    logic cpu_halt_status;
-//    logic wdt_timer1_en;
-//    logic wdt_timer2_en;
-//    logic nmi_int;
 //
 //    assign clk_gating_en = caliptra_top.cg.clk_gate_en;
 //    assign cpu_halt_status = caliptra_top.cg.cpu_halt_status;
-//    assign wdt_timer1_en = caliptra_top.soc_ifc_top1.i_wdt.timer1_en;
-//    assign wdt_timer2_en = caliptra_top.soc_ifc_top1.i_wdt.timer2_en;
-//    assign nmi_int = caliptra_top.nmi_int;
 //    
 //
 //    covergroup caliptra_top_cov_grp @(posedge clk);
 //        option.per_instance = 1;
-//
-//        //-----------------------------------------
-//        //WDT coverpoints
-//        //-----------------------------------------
-//        wdt_t1: coverpoint wdt_timer1_en;
-//        wdt_t2: coverpoint wdt_timer2_en;
-//        wdt_t1Xt2: cross wdt_t1, wdt_t2;
-//        // wdt_t1t2Xwarmrst: cross wdt_t1Xt2, cptra_rst_b;
-//        // wdt_t1t2Xcoldrst: cross wdt_t1Xt2, cptra_pwrgood;
+//   
 //
 //        //-----------------------------------------
 //        //CLK GATING coverpoints
@@ -138,7 +144,6 @@ interface caliptra_ss_top_cov_if
 //        scan:               coverpoint scan_mode;
 //        debug:              coverpoint security_state.debug_locked;
 //        fatal_error:        coverpoint cptra_error_fatal;
-//        nmi:                coverpoint nmi_int;
 //        generic:            coverpoint generic_input_wires;
 //
 //        enXcore_asleep:             cross cg_en, core_asleep_value {

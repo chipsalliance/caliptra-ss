@@ -92,11 +92,14 @@ always @(posedge core_clk) begin
     else if (tb_services_if.deassert_hard_rst_flag) begin
         $display("[%t] SOC: Deasserting Hard Reset (cptra_pwrgood)", $time);
         deassert_cptra_pwrgood(100);
+        deassert_cptra_rst_b(100);
         tb_services_if.deassert_hard_rst_flag_done <= 1'b1;
     end
     else if ( tb_services_if.assert_hard_rst_flag) begin
         $display("[%t] SOC: Asserting Hard Reset (cptra_pwrgood)", $time);
-        assert_cptra_pwrgood(100);
+        halt_mcu_core(100);
+        assert_cptra_rst_b(0);
+        assert_cptra_pwrgood(0);
         tb_services_if.assert_hard_rst_flag_done <= 1'b1;
     end
     else begin
@@ -119,6 +122,7 @@ always @(posedge core_clk) begin
     end
     else if ( tb_services_if.assert_rst_flag) begin
         $display("[%t] SOC: Asserting Caliptra Reset (cptra_rst_b)", $time);
+        halt_mcu_core(100);
         assert_cptra_rst_b(100);
         tb_services_if.assert_rst_flag_done <= 1'b1;
     end
