@@ -655,8 +655,7 @@ end
 
     rom #(
         .DEPTH     (16'h8000), // 256KiB
-        .DATA_WIDTH(64),
-        .ADDR_WIDTH(22)
+        .DATA_WIDTH(64)
     ) imem (
         .clk_i   (clk),
         .cs_i    (mcu_rom_mem_export_if.req.cs),

@@ -3,7 +3,10 @@
 `include "caliptra_macros.svh"
 
 module caliptra_ss_top_w_stub(
-    input logic cptra_ss_clk_i
+    input logic cptra_ss_clk_i,
+    input logic cptra_ss_cptra_core_jtag_tck_i,
+    input logic cptra_ss_mcu_jtag_tck_i,
+    input jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i
 );
 
     import axi_pkg::*;
@@ -81,7 +84,7 @@ module caliptra_ss_top_w_stub(
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_mcu_rom_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_S_IF_TIE_OFF(cptra_ss_mcu_rom_s_axi_if);
-    axi_mem_if #(.ADDR_WIDTH(22),.DATA_WIDTH(64))
+    axi_mem_if #(.ADDR_WIDTH(15),.DATA_WIDTH(64))
     mcu_rom_mem_export_if(.clk(cptra_ss_clk_i), .rst_b(cptra_ss_rst_b_i));
     assign mcu_rom_mem_export_if.resp.rdata = '0;
 
@@ -125,7 +128,6 @@ module caliptra_ss_top_w_stub(
     logic [255:0] cptra_ss_cptra_obf_key_i;
     logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_ss_cptra_csr_hmac_key_i;
 
-    logic cptra_ss_cptra_core_jtag_tck_i;
     logic cptra_ss_cptra_core_jtag_tms_i;
     logic cptra_ss_cptra_core_jtag_tdi_i;
     logic cptra_ss_cptra_core_jtag_trst_n_i;
@@ -133,12 +135,6 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_cptra_core_jtag_tdoEn_o;
     logic [124:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
     logic cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o;
-
-    jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i;
-    assign cptra_ss_lc_ctrl_jtag_i.tck = '0;
-    assign cptra_ss_lc_ctrl_jtag_i.tms = '0;
-    assign cptra_ss_lc_ctrl_jtag_i.tdi = '0;
-    assign cptra_ss_lc_ctrl_jtag_i.trst_n = '0;
 
     jtag_pkg::jtag_rsp_t cptra_ss_lc_ctrl_jtag_o;
 
@@ -224,7 +220,6 @@ module caliptra_ss_top_w_stub(
 
     logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int;
 
-    logic cptra_ss_mcu_jtag_tck_i;
     logic cptra_ss_mcu_jtag_tms_i;
     logic cptra_ss_mcu_jtag_tdi_i;
     logic cptra_ss_mcu_jtag_trst_n_i;
@@ -270,6 +265,8 @@ module caliptra_ss_top_w_stub(
 `else
     wire cptra_ss_i3c_scl_io;
     wire cptra_ss_i3c_sda_io;
+    assign cptra_ss_i3c_sda_io = 1'b0;
+    assign cptra_ss_i3c_scl_io = 1'b0;
 `endif
 
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
@@ -289,7 +286,6 @@ module caliptra_ss_top_w_stub(
         cptra_ss_otp_core_axi_rd_req_i = '0;
         cptra_ss_cptra_obf_key_i = '0;
         cptra_ss_cptra_csr_hmac_key_i = '0;
-        cptra_ss_cptra_core_jtag_tck_i = '0;
         cptra_ss_cptra_core_jtag_tms_i = '0;
         cptra_ss_cptra_core_jtag_tdi_i = '0;
         cptra_ss_cptra_core_jtag_trst_n_i = '0;
@@ -309,7 +305,6 @@ module caliptra_ss_top_w_stub(
         cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i = '0;
         cptra_ss_FIPS_ZEROIZATION_PPD_i = '0;
         cptra_ss_mcu_ext_int = '0;
-        cptra_ss_mcu_jtag_tck_i = '0;
         cptra_ss_mcu_jtag_tms_i = '0;
         cptra_ss_mcu_jtag_tdi_i = '0;
         cptra_ss_mcu_jtag_trst_n_i = '0;

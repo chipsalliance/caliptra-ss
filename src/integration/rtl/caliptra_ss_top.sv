@@ -967,7 +967,9 @@ module caliptra_ss_top
     //=========================================================================
 
     axi_mem #(
-      .AW($bits(mcu_rom_mem_export_if.req.addr)),
+    //The address width needed from axi is 3 bits wider
+    //than the resulting memory_if width due to 8 byte wide data
+      .AW($bits(mcu_rom_mem_export_if.req.addr)+3),
       .DW(64),
       .IW(8)
     ) mcu_rom_i (
