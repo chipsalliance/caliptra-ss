@@ -105,4 +105,110 @@ module caliptra_ss_top_sva
   //   `CPTRA_SS_TOP_PATH.u_otp_ctrl.otp_broadcast_o != otp_broadcast_t'('0)
   // ) else $display("SVA ERROR: fuse ctrl broadcast data is not signaled after zeroization relesase");
 
+  //WDT checks:
+  cascade_wdt_t1_pet: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`WDT_PATH.timer1_restart && !`WDT_PATH.timer2_en && !`WDT_PATH.t1_timeout) |=> (`WDT_PATH.timer1_count == 'h0)
+  )
+  else $display("SVA ERROR: [Cascade] WDT Timer1 did not restart on pet");
+
+  cascade_wdt_t2_pet: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`WDT_PATH.timer2_restart && !`WDT_PATH.timer2_en && !`WDT_PATH.t2_timeout) |=> (`WDT_PATH.timer2_count == 'h0)
+  )
+  else $display("SVA ERROR: [Cascade] WDT Timer2 did not restart on pet");
+
+  cascade_wdt_t1_service: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`WDT_PATH.wdt_timer1_timeout_serviced_qual && !`WDT_PATH.timer2_en && !`WDT_PATH.t2_timeout) |=> (`WDT_PATH.timer1_count == 'h0)
+  )
+  else $display("SVA ERROR: [Cascade] WDT Timer1 did not restart after interrupt service");
+
+  cascade_wdt_t2_service: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`WDT_PATH.wdt_timer2_timeout_serviced_qual && !`WDT_PATH.timer2_en) |=> (`WDT_PATH.timer2_count == 'h0)
+  )
+  else $display("SVA ERROR: [Cascade] WDT Timer2 did not restart after interrupt service");
+
+  independent_wdt_t1_pet: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`WDT_PATH.timer1_restart && `WDT_PATH.timer2_en) |=> (`WDT_PATH.timer1_count == 'h0)
+  )
+  else $display("SVA ERROR: [Independent] WDT Timer1 did not restart on pet");
+
+  independent_wdt_t2_pet: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`WDT_PATH.timer2_restart && `WDT_PATH.timer2_en) |=> (`WDT_PATH.timer2_count == 'h0)
+  )
+  else $display("SVA ERROR: [Independent] WDT Timer2 did not restart on pet");
+
+  independent_wdt_t1_service: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`WDT_PATH.wdt_timer1_timeout_serviced_qual && `WDT_PATH.timer2_en && !`WDT_PATH.t2_timeout) |=> (`WDT_PATH.timer1_count == 'h0)
+  )
+  else $display("SVA ERROR: [Independent] WDT Timer1 did not restart after interrupt service");
+
+  independent_wdt_t2_service: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`WDT_PATH.wdt_timer2_timeout_serviced_qual && `WDT_PATH.timer2_en) |=> (`WDT_PATH.timer2_count == 'h0)
+  )
+  else $display("SVA ERROR: [Independent] WDT Timer2 did not restart after interrupt service");
+
+  wdt_status_t1_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    disable iff (~`CPTRA_SS_TB_TOP_NAME.cptra_ss_rst_b_i)
+    $rose(`WDT_PATH.t1_timeout) |=> $rose(`MCI_PATH.mci_reg_hwif_out.WDT_STATUS.t1_timeout.value)
+  )
+  else $display("SVA ERROR: WDT Status bit not set on t1 expiry!");
+
+  wdt_status_t2_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    disable iff (~`CPTRA_SS_TB_TOP_NAME.cptra_ss_rst_b_i)
+    $rose(`WDT_PATH.t2_timeout) |=> $rose(`MCI_PATH.mci_reg_hwif_out.WDT_STATUS.t2_timeout.value)
+  )
+  else $display("SVA ERROR: WDT Status bit not set on t2 expiry!");
+
+
+
+  // Check that a rollback (i.e. transition to a lower numbered state) never occurs.
+  property lcc_state_no_rollback_transition;
+    @(posedge `LCC_PATH.u_lc_ctrl_fsm.clk_i)
+      disable iff (`LCC_PATH.u_lc_ctrl_fsm.rst_ni || !`LCC_PATH.u_lc_ctrl_fsm.init_done_o)
+      // Cast the states to unsigned so that the ordering can be compared.
+      (`LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.trans_cmd_i && (`LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.trans_target_i <=
+       `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.dec_lc_state_i));
+  endproperty
+
+  assert property (lcc_state_no_rollback_transition)
+    else $display("SVA ERROR: Rollback transition detected in LCC: current state = %0d, next state = %0d",
+      `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.trans_target_i,
+      `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.dec_lc_state_i);
+
+  // Check that a transition from PROD_END to RMA is prohibited.
+  property no_prod_end_to_rma_transition;
+    @(posedge `LCC_PATH.u_lc_ctrl_fsm.clk_i)
+      disable iff (`LCC_PATH.u_lc_ctrl_fsm.rst_ni)
+      ( `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.trans_cmd_i
+          && (`LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.dec_lc_state_i == {DecLcStateNumRep{DecLcStProdEnd}} )
+          |->   ( `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.trans_target_i != {DecLcStateNumRep{DecLcStRma}} ));
+  endproperty
+
+  assert property (no_prod_end_to_rma_transition)
+    else $display("SVA ERROR: Invalid transition from PROD_END to RMA detected.");
+
+  property Allow_PPD_check_in_LCC;
+    @(posedge `LCC_PATH.clk_i)
+      disable iff (!`LCC_PATH.rst_ni || `FC_LCC_TB_SERV_PATH.disable_lcc_sva)
+      ($rose(`LCC_PATH.u_lc_ctrl_fsm.trans_cmd_i)
+        && (`LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.dec_lc_state_i != {DecLcStateNumRep{DecLcStScrap}})
+        && (`LCC_PATH.u_lc_ctrl_fsm.trans_target_i == {DecLcStateNumRep{DecLcStRma}}
+            || `LCC_PATH.u_lc_ctrl_fsm.trans_target_i == {DecLcStateNumRep{DecLcStScrap}}))
+          |-> (`LCC_PATH.Allow_RMA_or_SCRAP_on_PPD throughout (!`LCC_PATH.trans_success_q));
+  endproperty
+  
+  assert property (Allow_PPD_check_in_LCC)
+    else $display("SVA ERROR: Allow_RMA_or_SCRAP_on_PPD was not asserted for SCRAP and RMA.");
+    
+
+      
 endmodule

@@ -29,6 +29,7 @@ module fc_lcc_tb_services (
 
   logic [1:0] freq_sel;
   assign freq_sel = '0;
+  logic disable_lcc_sva;
 
   logic ecc_fault_en;
   assign ecc_fault_en = 1'b0;
@@ -187,6 +188,7 @@ module fc_lcc_tb_services (
       if (!cptra_rst_b) begin
           fc_lcc_reset_active  <= 1'b0;
           fc_lcc_reset_counter <= '0;
+          disable_lcc_sva      <= 1'b0;
       end
       else begin
           // Detect the fc_lcc reset command from the mailbox
@@ -205,6 +207,16 @@ module fc_lcc_tb_services (
                   fc_lcc_reset_counter <= fc_lcc_reset_counter + 1;
               end
           end
+
+          if (tb_service_cmd_valid && tb_service_cmd == CMD_LC_DISABLE_SVA && !disable_lcc_sva) begin
+            disable_lcc_sva  <= 1'b1;
+            $display("Top-level: Received disable LCC's Assertions.");
+          end
+          
+          if (tb_service_cmd_valid && tb_service_cmd == CMD_LC_ENABLE_SVA && disable_lcc_sva) begin
+            disable_lcc_sva  <= 1'b0;
+            $display("Top-level: Received enable LCC's Assertions.");
+          end
       end
   end
 
@@ -212,9 +224,11 @@ module fc_lcc_tb_services (
     if(fc_lcc_reset_active) begin
       force `LCC_PATH.rst_ni  = 1'b0;
       force `FC_PATH.rst_ni  = 1'b0;
+      force `MCI_PATH.LCC_state_translator.rst_ni  = 1'b0;
     end else begin
       release `LCC_PATH.rst_ni;
       release `FC_PATH.rst_ni;
+      release `MCI_PATH.LCC_state_translator.rst_ni;
     end
   end
 

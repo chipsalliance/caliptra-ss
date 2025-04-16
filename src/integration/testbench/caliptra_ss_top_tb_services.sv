@@ -404,16 +404,11 @@ initial begin
         @(posedge clk);
         if(cold_rst) begin
             @(posedge clk);
-            $display("[%t] COLD RESET: Resets asserting", $time);
-            soc_bfm_if.assert_rst_flag <= 1'b1;
-            clr_cold_rst               <= 1'b1;
-            @(posedge clk);
-            soc_bfm_if.assert_rst_flag <= 1'b0;
-            clr_cold_rst               <= 1'b0;
-            wait(soc_bfm_if.assert_rst_flag_done);
             $display("[%t] COLD RESET: Powergood Reset asserting", $time);
             soc_bfm_if.assert_hard_rst_flag <= 1'b1;
+            clr_cold_rst               <= 1'b1;
             @(posedge clk);
+            clr_cold_rst               <= 1'b0;
             soc_bfm_if.assert_hard_rst_flag <= 1'b0;
             wait(soc_bfm_if.assert_hard_rst_flag_done);
             $display("[%t] COLD RESET: Hold", $time);
@@ -425,11 +420,6 @@ initial begin
             @(posedge clk);
             soc_bfm_if.deassert_hard_rst_flag <= 1'b0;
             wait(soc_bfm_if.deassert_hard_rst_flag_done);
-            $display("[%t] COLD RESET: Resets deasserting", $time);
-            soc_bfm_if.deassert_rst_flag <= 1'b1;
-            @(posedge clk);
-            soc_bfm_if.deassert_rst_flag <= 1'b0;
-            wait(soc_bfm_if.deassert_rst_flag_done);
 
             $display("[%t] COLD RESET: COMPLETE", $time);
         end

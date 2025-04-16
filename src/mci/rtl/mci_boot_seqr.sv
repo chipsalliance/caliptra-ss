@@ -187,34 +187,34 @@ always_ff @(posedge clk or negedge mci_pwrgood) begin
     end
     else begin
         boot_fsm                    <= warm_reset ? BOOT_IDLE : boot_fsm_nxt;
-        boot_fsm_prev               <= (boot_fsm != boot_fsm_nxt) ? boot_fsm : boot_fsm_prev; // Capture where FSM came from
-        fc_opt_init                 <= fc_opt_init_nxt;
-        lc_init                     <= lc_init_nxt;
+        boot_fsm_prev   <= (boot_fsm != boot_fsm_nxt) ? boot_fsm : boot_fsm_prev; // Capture where FSM came from
+        fc_opt_init     <= fc_opt_init_nxt;
+        lc_init         <= lc_init_nxt;
         cptra_ss_rst_b_o_ff         <= cptra_ss_rst_b_o_nxt;
-        mcu_rst_b_ff                <= mcu_rst_b_nxt;
-        cptra_rst_b_ff              <= cptra_rst_b_nxt;
-        mcu_reset_once              <= mcu_reset_once_nxt;
-        min_mcu_rst_count_elapsed   <= min_mcu_rst_count_elapsed_nxt;
-        min_mcu_rst_count           <= min_mcu_rst_count_nxt;       
+        mcu_rst_b_ff    <= mcu_rst_b_nxt;
+        cptra_rst_b_ff  <= cptra_rst_b_nxt;
+        mcu_reset_once  <= mcu_reset_once_nxt;
+        min_mcu_rst_count_elapsed <= min_mcu_rst_count_elapsed_nxt;
+        min_mcu_rst_count <= min_mcu_rst_count_nxt;       
     end
 end
 
 
 always_comb begin
-    boot_fsm_nxt            = boot_fsm;
-    fc_opt_init_nxt         = fc_opt_init;
-    lc_init_nxt             = lc_init;
+    boot_fsm_nxt    = boot_fsm;
+    fc_opt_init_nxt = fc_opt_init;
+    lc_init_nxt     = lc_init;
     cptra_ss_rst_b_o_nxt    = cptra_ss_rst_b_o_ff;
-    mcu_rst_b_nxt           = mcu_rst_b_ff;
-    cptra_rst_b_nxt         = cptra_rst_b_ff;
-    mcu_reset_once_nxt      = mcu_reset_once;
-    mcu_cpu_halt_req_nxt    = 1'b0;
+    mcu_rst_b_nxt   = mcu_rst_b_ff;
+    cptra_rst_b_nxt = cptra_rst_b_ff;
+    mcu_reset_once_nxt  = mcu_reset_once;
+    mcu_cpu_halt_req_nxt = 1'b0;
     unique case(boot_fsm)
         BOOT_IDLE: begin
             // Can only transition into IDLE on MCI reset
             // If this changes we need to add init signal values
             // for FC, LCC, MCU, CPTRA
-            boot_fsm_nxt            = BOOT_OTP_FC; 
+            boot_fsm_nxt = BOOT_OTP_FC; 
             cptra_ss_rst_b_o_nxt    = 1'b0;
             mcu_rst_b_nxt           = 1'b0;
             cptra_rst_b_nxt         = 1'b0;
