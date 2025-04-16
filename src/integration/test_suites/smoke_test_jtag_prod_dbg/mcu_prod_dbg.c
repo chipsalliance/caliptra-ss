@@ -47,19 +47,18 @@ uint32_t PROD_DBG_PK_HASH_OFFSET      = 0x00000480;
 uint32_t debug_level = 5;
 
 uint32_t PROD_dbg_pk[] =  {
-
-    0x035278d8, 
-    0x2e967ec5,
-    0x3e0b23d0,
-    0xe90e4d75,
-    0xda2baa9a,
-    0xf512c60b,
-    0xea89133c,
-    0x12b300da,
-    0xfcc5d451,
-    0x192f449f,
-    0x13e16fe9,
-    0x392db0f2
+    0x2bb37255, 
+    0x51a4edc7,
+    0xbd948b1e,
+    0x2c2a257e,
+    0x7a694bfd,
+    0xc2d5de4d,
+    0x8adec52a,
+    0xe7aeda4a,
+    0x2761c721,
+    0x98940dae,
+    0xe14e2482,
+    0xd6da39e1
 };
 
 

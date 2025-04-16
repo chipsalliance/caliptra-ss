@@ -28,7 +28,7 @@ set DMI_REG_BOOTFSM_GO_ADDR             0x61
 
 # Req Payload
 array set REQ_PAYLOAD {
-    0 0xFFFFFEC2
+    0 0xFFFFFEBE
     1 0x00000002
     2 0x00000005
 }
