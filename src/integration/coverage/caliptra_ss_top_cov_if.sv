@@ -39,8 +39,6 @@ interface caliptra_ss_top_cov_if
     always_comb wdt_timer1_en = caliptra_ss_top.mci_top_i.i_mci_wdt_top.timer1_en;
     always_comb wdt_timer2_en = caliptra_ss_top.mci_top_i.i_mci_wdt_top.timer2_en;
     always_comb nmi_int = caliptra_ss_top.mci_mcu_nmi_int;
-    always_comb cptra_ss_cptra_core_m_axi_if_ar_hshake = cptra_ss_cptra_core_m_axi_if_r_mgr.arvalid && cptra_ss_cptra_core_m_axi_if_r_mgr.arready;
-    always_comb cptra_ss_cptra_core_m_axi_if_aw_hshake = cptra_ss_cptra_core_m_axi_if_w_mgr.awvalid && cptra_ss_cptra_core_m_axi_if_w_mgr.awready;
     
     covergroup caliptra_ss_top_cov_grp @(posedge cptra_ss_clk_i);
         option.per_instance = 1;
