@@ -18,3 +18,9 @@ task end_test_successful_req();
     tb_services_if.end_test_success = 1'b1;
 
 endtask
+
+task wait_lcc_init();
+    $display("[%t]: Waiting for LCC init", $time);
+    wait(`MCI_PATH.i_boot_seqr.lc_done);
+    $display("[%t]: LCC init complete", $time);
+endtask
