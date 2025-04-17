@@ -77,6 +77,8 @@ module caliptra_ss_top_tb
     logic                       o_cpu_halt_status;
     logic                       o_cpu_run_ack;
 
+    logic                       cptra_ss_cpu_halt_status_o;
+
     logic        [63:0]         dma_hrdata       ;
     logic        [63:0]         dma_hwdata       ;
     logic                       dma_hready       ;
@@ -1509,6 +1511,8 @@ module caliptra_ss_top_tb
         // .mcu_dma_s_axi_if,
         .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
         .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
+
+        .cptra_ss_cpu_halt_status_o,
 
         .cptra_ss_lc_axi_wr_req_i,
         .cptra_ss_lc_axi_wr_rsp_o,

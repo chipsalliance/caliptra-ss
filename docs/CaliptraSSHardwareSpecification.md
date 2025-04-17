@@ -101,7 +101,7 @@
     - [MCU SRAM](#mcu-sram-1)
       - [MCU Hitless Update Handshake](#mcu-hitless-update-handshake)
     - [MCI AXI Subordinate](#mci-axi-subordinate)
-    - [Interrupts](#interrupts)
+    - [MCI Interrupts](#mci-interrupts)
     - [MCI Error handling](#mci-error-handling)
     - [MCI Fuse Storage Support](#mci-fuse-storage-support)
     - [MCU Timer](#mcu-timer)
@@ -1290,12 +1290,15 @@ MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the 
 
 The MCI AXI Sub will respond with an AXI error if one of the following conditions is met:
 
-1. AXI Address miss
-2. Submodule error response
-3. Invalid MBOX AXI User access (MCU and Debug AXI USERs bypasses this check)
+1. Submodule error response
+
+AXI access misses are:
+
+1. Writes dropped
+2. Reads return 0
 
 
-### Interrupts
+### MCI Interrupts
 
 ![](images/MCI-Interrupts.png)
 
@@ -1314,6 +1317,16 @@ Each group of interrupts has its own global status and enable registers that are
 All interrupt groups are ORed and sent out on a signal mci_intr pin. 
 
 SW access to all interrupt registers are restricted to MCU.
+
+MCI aggregates other Caliptra SS interrupts in this infrastructure. To clear these interrupts FW must:
+
+1. Service the interrupt at the IP source.
+2. Clear the interrupt in MCI.
+
+Interrupts that are aggregated in MCI:
+
+1. Caliptra MBOX data available
+2. [OTP FC Done Interrupt](https://github.com/lowRISC/opentitan/blob/backport-25674-to-earlgrey_1.0.0/hw/ip/otp_ctrl/doc/interfaces.md#interrupts)
 
 ### MCI Error handling
 
@@ -1352,9 +1365,13 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 ![](images/MCI-MCU-Trace-Buffer-Diagram.png)
 
-MCI hosts the MCU trace buffer. It can hold up to 64 traces from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Access to the trace buffer and enabling it is controlled by the LCC state Translator. If not **Debug Unlock** then all traces and access to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while not in Debug Unlock mode.
-MCU RISC-V processor can enable/disable tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces other than being debug locked.
+MCI hosts the MCU trace buffer. It can hold up to 64 traces from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Read access to the trace buffer is controlled by the LCC state Translator. When Debug Locked all AXI and DMI accesses to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while Debug Locked.
+
+MCU RISC-V processor can enable/disable tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces.
+
 The trace buffer is a circular buffer where old data is overwritten by new traces. The start of the first trace packet is stored at offset 0 and subsequent trace data is written to WRITE_PTR + 1. 
+
+The trace buffer is reset when MCI reset is asserted (warm reset).
 
 ![](images/MCI-MCU-Trace-Buffer-Circular-Diagram.png)
 
@@ -1364,8 +1381,8 @@ Below is the SW interface to extract trace data:
 | **Register Name** | **Access Type**     | **Description**     | 
 | :---------         | :---------     | :---------| 
 | DATA               | RO        | Trace data at READ_PTR location|
-| READ_PTR           | RW        | Read pointer. NOTE this is not an address so increment by 1 to get the next entry. | 
-| WRITE_PTR          | RO        | Last valid data written into trace buffer              |
+| READ_PTR           | RW        | Read pointer in trace buffer for DATA. NOTE: this is not an address, meaning increment by 1 to get the next entry. | 
+| WRITE_PTR          | RO        | Next trace entry in trace buffer.              |
 | STATUS.VALID_DATA         | RO        | Indicates at least one entry is valid in the trace buffer.      |
 | STATUS.WRAPPED            | RO        | Indicates the trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid.|
 | CONFIG.TRACE_BUFFER_DEPTH | RO        | Indicates the total number of 32 bit entries in the trace buffer. TRACE_BUFFER_DEPTH - 1 is the last valid WRITE/READ_PTR entry in the trace buffer. NOTE: This is the trace buffer depth and not the number of [MCU Trace Buffer Packets](#mcu-trace-buffer-packet). |
@@ -1375,7 +1392,7 @@ Below is the SW interface to extract trace data:
 A single MCU trace is more than 32 bits, meaning each trace takes up more than one offset. Trace data is stored in the following format:
 ![](images/MCI-MCU-Trace-Buffer-Data.png)
 
-Assuming there is only one trace stored in the trace buffer the WRITE_PTR would read as 0x3. To get the entire trace packet the user would need to read offsets 0x0, 0x1, 0x2, and 0x3. 
+Assuming there is only one trace stored in the trace buffer the WRITE_PTR would read as 0x4. To get the entire trace packet the user would need to read offsets 0x0, 0x1, 0x2, and 0x3. 
 
 #### MCU Trace Buffer Extraction
 
@@ -1386,7 +1403,7 @@ To extrace trace buffer data the user should send the following transaction:
 
 Repeat these steps until all data required has been extracted. 
 
-The user should use the combination of WRITE_PTR, VALID_DATA, WRAPPED, and TRACE_BUFFER_DEPTH to know where valid data
+The user should use the combination of WRITE_PTR, VALID_DATA, WRAPPED, and TRACE_BUFFER_DEPTH to know where valid data lives in the trace buffer.
 
 #### MCU Trace Buffer Error Handling
 
@@ -1408,7 +1425,7 @@ MCI provides DMI access via MCU TAP and a DEBUG AXI USER address for debug acces
 ![](images/MCI-DMI-Interface.png)
 
 
-The DMI port on MCU is a dedicated interface that is controled via the MCU TAP interface. MCI provides two services when it comes to DMI:
+The DMI port on MCU is a dedicated interface that is controlled via the MCU TAP interface. MCI provides two services when it comes to DMI:
 
 1. MCU DMI enable control (uncore and core)
 

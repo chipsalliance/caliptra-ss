@@ -232,6 +232,7 @@ module mci_reg (
             logic notif_scan_mode_intr_count_r;
             logic notif_mbox0_soc_req_lock_intr_count_r;
             logic notif_mbox1_soc_req_lock_intr_count_r;
+            logic notif_otp_operation_done_intr_count_r;
             logic error_internal_intr_count_incr_r;
             logic error_mbox0_ecc_unc_intr_count_incr_r;
             logic error_mbox1_ecc_unc_intr_count_incr_r;
@@ -316,6 +317,7 @@ module mci_reg (
             logic notif_scan_mode_intr_count_incr_r;
             logic notif_mbox0_soc_req_lock_intr_count_incr_r;
             logic notif_mbox1_soc_req_lock_intr_count_incr_r;
+            logic notif_otp_operation_done_intr_count_incr_r;
         } intr_block_rf;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
@@ -522,6 +524,7 @@ module mci_reg (
         decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h12ac);
         decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h12b0);
         decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h12b4);
+        decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h12b8);
         decoded_reg_strb.intr_block_rf.error_internal_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1300);
         decoded_reg_strb.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1304);
         decoded_reg_strb.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1308);
@@ -606,6 +609,7 @@ module mci_reg (
         decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1444);
         decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1448);
         decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h144c);
+        decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1450);
     end
 
     // Pass down signals to next stage
@@ -1730,6 +1734,10 @@ module mci_reg (
                     logic next;
                     logic load_next;
                 } notif_mbox1_soc_req_lock_en;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_otp_operation_done_en;
             } notif0_intr_en_r;
             struct packed{
                 struct packed{
@@ -2094,6 +2102,10 @@ module mci_reg (
                     logic next;
                     logic load_next;
                 } notif_mbox1_soc_req_lock_sts;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_otp_operation_done_sts;
             } notif0_internal_intr_r;
             struct packed{
                 struct packed{
@@ -2438,6 +2450,10 @@ module mci_reg (
                     logic next;
                     logic load_next;
                 } notif_mbox1_soc_req_lock_trig;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_otp_operation_done_trig;
             } notif0_intr_trig_r;
             struct packed{
                 struct packed{
@@ -3243,6 +3259,14 @@ module mci_reg (
             } notif_mbox1_soc_req_lock_intr_count_r;
             struct packed{
                 struct packed{
+                    logic [31:0] next;
+                    logic load_next;
+                    logic incrthreshold;
+                    logic incrsaturate;
+                } cnt;
+            } notif_otp_operation_done_intr_count_r;
+            struct packed{
+                struct packed{
                     logic next;
                     logic load_next;
                     logic decrthreshold;
@@ -3913,6 +3937,14 @@ module mci_reg (
                     logic underflow;
                 } pulse;
             } notif_mbox1_soc_req_lock_intr_count_incr_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                    logic decrthreshold;
+                    logic underflow;
+                } pulse;
+            } notif_otp_operation_done_intr_count_incr_r;
         } intr_block_rf;
     } field_combo_t;
     field_combo_t field_combo;
@@ -4780,6 +4812,9 @@ module mci_reg (
                 struct packed{
                     logic value;
                 } notif_mbox1_soc_req_lock_en;
+                struct packed{
+                    logic value;
+                } notif_otp_operation_done_en;
             } notif0_intr_en_r;
             struct packed{
                 struct packed{
@@ -5056,6 +5091,9 @@ module mci_reg (
                 struct packed{
                     logic value;
                 } notif_mbox1_soc_req_lock_sts;
+                struct packed{
+                    logic value;
+                } notif_otp_operation_done_sts;
             } notif0_internal_intr_r;
             struct packed{
                 struct packed{
@@ -5316,6 +5354,9 @@ module mci_reg (
                 struct packed{
                     logic value;
                 } notif_mbox1_soc_req_lock_trig;
+                struct packed{
+                    logic value;
+                } notif_otp_operation_done_trig;
             } notif0_intr_trig_r;
             struct packed{
                 struct packed{
@@ -5837,6 +5878,11 @@ module mci_reg (
             } notif_mbox1_soc_req_lock_intr_count_r;
             struct packed{
                 struct packed{
+                    logic [31:0] value;
+                } cnt;
+            } notif_otp_operation_done_intr_count_r;
+            struct packed{
+                struct packed{
                     logic value;
                 } pulse;
             } error_internal_intr_count_incr_r;
@@ -6255,6 +6301,11 @@ module mci_reg (
                     logic value;
                 } pulse;
             } notif_mbox1_soc_req_lock_intr_count_incr_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } pulse;
+            } notif_otp_operation_done_intr_count_incr_r;
         } intr_block_rf;
     } field_storage_t;
     field_storage_t field_storage;
@@ -11667,6 +11718,26 @@ module mci_reg (
             field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value <= field_combo.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.next;
         end
     end
+    // Field: mci_reg.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.notif0_intr_en_r && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value & ~decoded_wr_biten[14:14]) | (decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.next = next_c;
+        field_combo.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.load_next) begin
+            field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value <= field_combo.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.next;
+        end
+    end
     // Field: mci_reg.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal31_en
     always_comb begin
         automatic logic [0:0] next_c;
@@ -13787,6 +13858,32 @@ module mci_reg (
             field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.value <= field_combo.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.next;
         end
     end
+    // Field: mci_reg.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value;
+        load_next_c = '0;
+        if(field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value != '0) begin // stickybit
+            next_c = field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value | field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end else if(decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write 1 clear
+            next_c = field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.next = next_c;
+        field_combo.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.load_next) begin
+            field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value <= field_combo.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.next;
+        end
+    end
     assign hwif_out.intr_block_rf.notif0_internal_intr_r.intr =
         |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_mcu_sram_ecc_cor_en.value)
         || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_cptra_mcu_reset_req_en.value)
@@ -13801,7 +13898,8 @@ module mci_reg (
         || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_debug_locked_en.value)
         || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_scan_mode_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_scan_mode_en.value)
         || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_soc_req_lock_en.value)
-        || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value);
+        || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value)
+        || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value);
     // Field: mci_reg.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal31_sts
     always_comb begin
         automatic logic [0:0] next_c;
@@ -15861,6 +15959,29 @@ module mci_reg (
             field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.value <= 1'h0;
         end else if(field_combo.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.load_next) begin
             field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.value <= field_combo.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write 1 set
+            next_c = field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value | (decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end else begin // singlepulse clears back to 0
+            next_c = '0;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.next = next_c;
+        field_combo.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.load_next) begin
+            field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value <= field_combo.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.next;
         end
     end
     // Field: mci_reg.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal31_trig
@@ -19455,6 +19576,40 @@ module mci_reg (
             field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r.cnt.value <= field_combo.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r.cnt.next;
         end
     end
+    // Field: mci_reg.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt
+    always_comb begin
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_r && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value) begin // increment
+            if(((33)'(next_c) + 32'h1) > 32'hffffffff) begin // up-counter saturated
+                next_c = 32'hffffffff;
+            end else begin
+                next_c = next_c + 32'h1;
+            end
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.incrthreshold = (field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value >= 32'hffffffff);
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.incrsaturate = (field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value >= 32'hffffffff);
+        if(next_c > 32'hffffffff) begin
+            next_c = 32'hffffffff;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.next = next_c;
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value <= 32'h0;
+        end else if(field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.load_next) begin
+            field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value <= field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.next;
+        end
+    end
     // Field: mci_reg.intr_block_rf.error_internal_intr_count_incr_r.pulse
     always_comb begin
         automatic logic [0:0] next_c;
@@ -22059,6 +22214,37 @@ module mci_reg (
             field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r.pulse.value <= field_combo.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r.pulse.next;
         end
     end
+    // Field: mci_reg.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value;
+        load_next_c = '0;
+        if(field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value) begin // HW Write - we
+            next_c = field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value) begin // decrement
+            field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.underflow = (next_c < (1'h1));
+            next_c = next_c - 1'h1;
+            load_next_c = '1;
+        end else begin
+            field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.underflow = '0;
+        end
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.decrthreshold = (field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value <= 1'd0);
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.next = next_c;
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.load_next) begin
+            field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value <= field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.next;
+        end
+    end
 
     //--------------------------------------------------------------------------
     // Write response
@@ -22076,7 +22262,7 @@ module mci_reg (
     logic [31:0] readback_data;
 
     // Assign readback values to a flattened array
-    logic [376-1:0][31:0] readback_array;
+    logic [378-1:0][31:0] readback_array;
     assign readback_array[0][31:0] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.cap.value : '0;
     assign readback_array[1][31:0] = (decoded_reg_strb.FW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.FW_CAPABILITIES.cap.value : '0;
     assign readback_array[2][0:0] = (decoded_reg_strb.CAP_LOCK && !decoded_req_is_wr) ? field_storage.CAP_LOCK.lock.value : '0;
@@ -22395,7 +22581,8 @@ module mci_reg (
     assign readback_array[196][11:11] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_scan_mode_en.value : '0;
     assign readback_array[196][12:12] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_soc_req_lock_en.value : '0;
     assign readback_array[196][13:13] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value : '0;
-    assign readback_array[196][31:14] = '0;
+    assign readback_array[196][14:14] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value : '0;
+    assign readback_array[196][31:15] = '0;
     assign readback_array[197][0:0] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal31_en.value : '0;
     assign readback_array[197][1:1] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal30_en.value : '0;
     assign readback_array[197][2:2] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal29_en.value : '0;
@@ -22487,7 +22674,8 @@ module mci_reg (
     assign readback_array[202][11:11] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_scan_mode_sts.value : '0;
     assign readback_array[202][12:12] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts.value : '0;
     assign readback_array[202][13:13] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.value : '0;
-    assign readback_array[202][31:14] = '0;
+    assign readback_array[202][14:14] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value : '0;
+    assign readback_array[202][31:15] = '0;
     assign readback_array[203][0:0] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal31_sts.value : '0;
     assign readback_array[203][1:1] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal30_sts.value : '0;
     assign readback_array[203][2:2] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal29_sts.value : '0;
@@ -22573,7 +22761,8 @@ module mci_reg (
     assign readback_array[206][11:11] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_scan_mode_trig.value : '0;
     assign readback_array[206][12:12] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox0_soc_req_lock_trig.value : '0;
     assign readback_array[206][13:13] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.value : '0;
-    assign readback_array[206][31:14] = '0;
+    assign readback_array[206][14:14] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value : '0;
+    assign readback_array[206][31:15] = '0;
     assign readback_array[207][0:0] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal31_trig.value : '0;
     assign readback_array[207][1:1] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal30_trig.value : '0;
     assign readback_array[207][2:2] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal29_trig.value : '0;
@@ -22690,174 +22879,177 @@ module mci_reg (
     assign readback_array[289][31:0] = (decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_scan_mode_intr_count_r.cnt.value : '0;
     assign readback_array[290][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_r.cnt.value : '0;
     assign readback_array[291][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r.cnt.value : '0;
-    assign readback_array[292][0:0] = (decoded_reg_strb.intr_block_rf.error_internal_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_internal_intr_count_incr_r.pulse.value : '0;
-    assign readback_array[292][31:1] = '0;
-    assign readback_array[293][0:0] = (decoded_reg_strb.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[292][31:0] = (decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value : '0;
+    assign readback_array[293][0:0] = (decoded_reg_strb.intr_block_rf.error_internal_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_internal_intr_count_incr_r.pulse.value : '0;
     assign readback_array[293][31:1] = '0;
-    assign readback_array[294][0:0] = (decoded_reg_strb.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[294][0:0] = (decoded_reg_strb.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r.pulse.value : '0;
     assign readback_array[294][31:1] = '0;
-    assign readback_array[295][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[295][0:0] = (decoded_reg_strb.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r.pulse.value : '0;
     assign readback_array[295][31:1] = '0;
-    assign readback_array[296][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[296][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value : '0;
     assign readback_array[296][31:1] = '0;
-    assign readback_array[297][0:0] = (decoded_reg_strb.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[297][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value : '0;
     assign readback_array[297][31:1] = '0;
-    assign readback_array[298][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal0_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal0_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[298][0:0] = (decoded_reg_strb.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse.value : '0;
     assign readback_array[298][31:1] = '0;
-    assign readback_array[299][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal1_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal1_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[299][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal0_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal0_intr_count_incr_r.pulse.value : '0;
     assign readback_array[299][31:1] = '0;
-    assign readback_array[300][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal2_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal2_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[300][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal1_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal1_intr_count_incr_r.pulse.value : '0;
     assign readback_array[300][31:1] = '0;
-    assign readback_array[301][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal3_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal3_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[301][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal2_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal2_intr_count_incr_r.pulse.value : '0;
     assign readback_array[301][31:1] = '0;
-    assign readback_array[302][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal4_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal4_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[302][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal3_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal3_intr_count_incr_r.pulse.value : '0;
     assign readback_array[302][31:1] = '0;
-    assign readback_array[303][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal5_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal5_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[303][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal4_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal4_intr_count_incr_r.pulse.value : '0;
     assign readback_array[303][31:1] = '0;
-    assign readback_array[304][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal6_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal6_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[304][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal5_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal5_intr_count_incr_r.pulse.value : '0;
     assign readback_array[304][31:1] = '0;
-    assign readback_array[305][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal7_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal7_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[305][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal6_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal6_intr_count_incr_r.pulse.value : '0;
     assign readback_array[305][31:1] = '0;
-    assign readback_array[306][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal8_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal8_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[306][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal7_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal7_intr_count_incr_r.pulse.value : '0;
     assign readback_array[306][31:1] = '0;
-    assign readback_array[307][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal9_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal9_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[307][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal8_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal8_intr_count_incr_r.pulse.value : '0;
     assign readback_array[307][31:1] = '0;
-    assign readback_array[308][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal10_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal10_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[308][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal9_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal9_intr_count_incr_r.pulse.value : '0;
     assign readback_array[308][31:1] = '0;
-    assign readback_array[309][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal11_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal11_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[309][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal10_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal10_intr_count_incr_r.pulse.value : '0;
     assign readback_array[309][31:1] = '0;
-    assign readback_array[310][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal12_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal12_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[310][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal11_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal11_intr_count_incr_r.pulse.value : '0;
     assign readback_array[310][31:1] = '0;
-    assign readback_array[311][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal13_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal13_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[311][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal12_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal12_intr_count_incr_r.pulse.value : '0;
     assign readback_array[311][31:1] = '0;
-    assign readback_array[312][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal14_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal14_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[312][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal13_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal13_intr_count_incr_r.pulse.value : '0;
     assign readback_array[312][31:1] = '0;
-    assign readback_array[313][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal15_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal15_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[313][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal14_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal14_intr_count_incr_r.pulse.value : '0;
     assign readback_array[313][31:1] = '0;
-    assign readback_array[314][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal16_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal16_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[314][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal15_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal15_intr_count_incr_r.pulse.value : '0;
     assign readback_array[314][31:1] = '0;
-    assign readback_array[315][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal17_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal17_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[315][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal16_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal16_intr_count_incr_r.pulse.value : '0;
     assign readback_array[315][31:1] = '0;
-    assign readback_array[316][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal18_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal18_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[316][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal17_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal17_intr_count_incr_r.pulse.value : '0;
     assign readback_array[316][31:1] = '0;
-    assign readback_array[317][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal19_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal19_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[317][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal18_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal18_intr_count_incr_r.pulse.value : '0;
     assign readback_array[317][31:1] = '0;
-    assign readback_array[318][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal20_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal20_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[318][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal19_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal19_intr_count_incr_r.pulse.value : '0;
     assign readback_array[318][31:1] = '0;
-    assign readback_array[319][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal21_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal21_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[319][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal20_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal20_intr_count_incr_r.pulse.value : '0;
     assign readback_array[319][31:1] = '0;
-    assign readback_array[320][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal22_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal22_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[320][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal21_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal21_intr_count_incr_r.pulse.value : '0;
     assign readback_array[320][31:1] = '0;
-    assign readback_array[321][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal23_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal23_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[321][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal22_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal22_intr_count_incr_r.pulse.value : '0;
     assign readback_array[321][31:1] = '0;
-    assign readback_array[322][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal24_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal24_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[322][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal23_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal23_intr_count_incr_r.pulse.value : '0;
     assign readback_array[322][31:1] = '0;
-    assign readback_array[323][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal25_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal25_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[323][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal24_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal24_intr_count_incr_r.pulse.value : '0;
     assign readback_array[323][31:1] = '0;
-    assign readback_array[324][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal26_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal26_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[324][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal25_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal25_intr_count_incr_r.pulse.value : '0;
     assign readback_array[324][31:1] = '0;
-    assign readback_array[325][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal27_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal27_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[325][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal26_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal26_intr_count_incr_r.pulse.value : '0;
     assign readback_array[325][31:1] = '0;
-    assign readback_array[326][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal28_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal28_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[326][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal27_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal27_intr_count_incr_r.pulse.value : '0;
     assign readback_array[326][31:1] = '0;
-    assign readback_array[327][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal29_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal29_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[327][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal28_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal28_intr_count_incr_r.pulse.value : '0;
     assign readback_array[327][31:1] = '0;
-    assign readback_array[328][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal30_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal30_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[328][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal29_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal29_intr_count_incr_r.pulse.value : '0;
     assign readback_array[328][31:1] = '0;
-    assign readback_array[329][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal31_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal31_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[329][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal30_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal30_intr_count_incr_r.pulse.value : '0;
     assign readback_array[329][31:1] = '0;
-    assign readback_array[330][0:0] = (decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[330][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal31_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal31_intr_count_incr_r.pulse.value : '0;
     assign readback_array[330][31:1] = '0;
-    assign readback_array[331][0:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[331][0:0] = (decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value : '0;
     assign readback_array[331][31:1] = '0;
-    assign readback_array[332][0:0] = (decoded_reg_strb.intr_block_rf.notif_gen_in_toggle_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_gen_in_toggle_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[332][0:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_incr_r.pulse.value : '0;
     assign readback_array[332][31:1] = '0;
-    assign readback_array[333][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal0_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal0_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[333][0:0] = (decoded_reg_strb.intr_block_rf.notif_gen_in_toggle_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_gen_in_toggle_intr_count_incr_r.pulse.value : '0;
     assign readback_array[333][31:1] = '0;
-    assign readback_array[334][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal1_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal1_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[334][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal0_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal0_intr_count_incr_r.pulse.value : '0;
     assign readback_array[334][31:1] = '0;
-    assign readback_array[335][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal2_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal2_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[335][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal1_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal1_intr_count_incr_r.pulse.value : '0;
     assign readback_array[335][31:1] = '0;
-    assign readback_array[336][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal3_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal3_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[336][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal2_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal2_intr_count_incr_r.pulse.value : '0;
     assign readback_array[336][31:1] = '0;
-    assign readback_array[337][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal4_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal4_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[337][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal3_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal3_intr_count_incr_r.pulse.value : '0;
     assign readback_array[337][31:1] = '0;
-    assign readback_array[338][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal5_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal5_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[338][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal4_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal4_intr_count_incr_r.pulse.value : '0;
     assign readback_array[338][31:1] = '0;
-    assign readback_array[339][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal6_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal6_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[339][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal5_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal5_intr_count_incr_r.pulse.value : '0;
     assign readback_array[339][31:1] = '0;
-    assign readback_array[340][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal7_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal7_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[340][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal6_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal6_intr_count_incr_r.pulse.value : '0;
     assign readback_array[340][31:1] = '0;
-    assign readback_array[341][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal8_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal8_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[341][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal7_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal7_intr_count_incr_r.pulse.value : '0;
     assign readback_array[341][31:1] = '0;
-    assign readback_array[342][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal9_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal9_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[342][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal8_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal8_intr_count_incr_r.pulse.value : '0;
     assign readback_array[342][31:1] = '0;
-    assign readback_array[343][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal10_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal10_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[343][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal9_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal9_intr_count_incr_r.pulse.value : '0;
     assign readback_array[343][31:1] = '0;
-    assign readback_array[344][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal11_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal11_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[344][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal10_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal10_intr_count_incr_r.pulse.value : '0;
     assign readback_array[344][31:1] = '0;
-    assign readback_array[345][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal12_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal12_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[345][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal11_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal11_intr_count_incr_r.pulse.value : '0;
     assign readback_array[345][31:1] = '0;
-    assign readback_array[346][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal13_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal13_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[346][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal12_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal12_intr_count_incr_r.pulse.value : '0;
     assign readback_array[346][31:1] = '0;
-    assign readback_array[347][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal14_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal14_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[347][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal13_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal13_intr_count_incr_r.pulse.value : '0;
     assign readback_array[347][31:1] = '0;
-    assign readback_array[348][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal15_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal15_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[348][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal14_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal14_intr_count_incr_r.pulse.value : '0;
     assign readback_array[348][31:1] = '0;
-    assign readback_array[349][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal16_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal16_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[349][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal15_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal15_intr_count_incr_r.pulse.value : '0;
     assign readback_array[349][31:1] = '0;
-    assign readback_array[350][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal17_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal17_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[350][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal16_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal16_intr_count_incr_r.pulse.value : '0;
     assign readback_array[350][31:1] = '0;
-    assign readback_array[351][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal18_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal18_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[351][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal17_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal17_intr_count_incr_r.pulse.value : '0;
     assign readback_array[351][31:1] = '0;
-    assign readback_array[352][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal19_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal19_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[352][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal18_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal18_intr_count_incr_r.pulse.value : '0;
     assign readback_array[352][31:1] = '0;
-    assign readback_array[353][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal20_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal20_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[353][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal19_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal19_intr_count_incr_r.pulse.value : '0;
     assign readback_array[353][31:1] = '0;
-    assign readback_array[354][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal21_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal21_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[354][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal20_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal20_intr_count_incr_r.pulse.value : '0;
     assign readback_array[354][31:1] = '0;
-    assign readback_array[355][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal22_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal22_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[355][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal21_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal21_intr_count_incr_r.pulse.value : '0;
     assign readback_array[355][31:1] = '0;
-    assign readback_array[356][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal23_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal23_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[356][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal22_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal22_intr_count_incr_r.pulse.value : '0;
     assign readback_array[356][31:1] = '0;
-    assign readback_array[357][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal24_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal24_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[357][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal23_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal23_intr_count_incr_r.pulse.value : '0;
     assign readback_array[357][31:1] = '0;
-    assign readback_array[358][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal25_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal25_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[358][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal24_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal24_intr_count_incr_r.pulse.value : '0;
     assign readback_array[358][31:1] = '0;
-    assign readback_array[359][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal26_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal26_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[359][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal25_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal25_intr_count_incr_r.pulse.value : '0;
     assign readback_array[359][31:1] = '0;
-    assign readback_array[360][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal27_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal27_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[360][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal26_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal26_intr_count_incr_r.pulse.value : '0;
     assign readback_array[360][31:1] = '0;
-    assign readback_array[361][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal28_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal28_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[361][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal27_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal27_intr_count_incr_r.pulse.value : '0;
     assign readback_array[361][31:1] = '0;
-    assign readback_array[362][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal29_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal29_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[362][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal28_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal28_intr_count_incr_r.pulse.value : '0;
     assign readback_array[362][31:1] = '0;
-    assign readback_array[363][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal30_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal30_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[363][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal29_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal29_intr_count_incr_r.pulse.value : '0;
     assign readback_array[363][31:1] = '0;
-    assign readback_array[364][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal31_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal31_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[364][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal30_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal30_intr_count_incr_r.pulse.value : '0;
     assign readback_array[364][31:1] = '0;
-    assign readback_array[365][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_target_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_target_done_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[365][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal31_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal31_intr_count_incr_r.pulse.value : '0;
     assign readback_array[365][31:1] = '0;
-    assign readback_array[366][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_target_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_target_done_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[366][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_target_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_target_done_intr_count_incr_r.pulse.value : '0;
     assign readback_array[366][31:1] = '0;
-    assign readback_array[367][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_cmd_avail_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[367][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_target_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_target_done_intr_count_incr_r.pulse.value : '0;
     assign readback_array[367][31:1] = '0;
-    assign readback_array[368][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_cmd_avail_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[368][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_cmd_avail_intr_count_incr_r.pulse.value : '0;
     assign readback_array[368][31:1] = '0;
-    assign readback_array[369][0:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[369][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_cmd_avail_intr_count_incr_r.pulse.value : '0;
     assign readback_array[369][31:1] = '0;
-    assign readback_array[370][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_ecc_cor_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[370][0:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse.value : '0;
     assign readback_array[370][31:1] = '0;
-    assign readback_array[371][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_ecc_cor_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[371][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_ecc_cor_intr_count_incr_r.pulse.value : '0;
     assign readback_array[371][31:1] = '0;
-    assign readback_array[372][0:0] = (decoded_reg_strb.intr_block_rf.notif_debug_locked_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_debug_locked_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[372][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_ecc_cor_intr_count_incr_r.pulse.value : '0;
     assign readback_array[372][31:1] = '0;
-    assign readback_array[373][0:0] = (decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_scan_mode_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[373][0:0] = (decoded_reg_strb.intr_block_rf.notif_debug_locked_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_debug_locked_intr_count_incr_r.pulse.value : '0;
     assign readback_array[373][31:1] = '0;
-    assign readback_array[374][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[374][0:0] = (decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_scan_mode_intr_count_incr_r.pulse.value : '0;
     assign readback_array[374][31:1] = '0;
-    assign readback_array[375][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[375][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r.pulse.value : '0;
     assign readback_array[375][31:1] = '0;
+    assign readback_array[376][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[376][31:1] = '0;
+    assign readback_array[377][0:0] = (decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[377][31:1] = '0;
 
     // Reduce the array
     always_comb begin
@@ -22865,7 +23057,7 @@ module mci_reg (
         readback_done = decoded_req & ~decoded_req_is_wr;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<376; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<378; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 

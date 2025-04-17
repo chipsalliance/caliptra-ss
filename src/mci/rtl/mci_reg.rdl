@@ -1097,6 +1097,7 @@ regfile intr_block_t {
         field {desc = "Enable bit for Scan mode asserted";                              } notif_scan_mode_en = 1'b0;
         field {desc = "Enable bit for SoC requested the mailbox while mcu has lock";          } notif_mbox0_soc_req_lock_en = 1'b0;
         field {desc = "Enable bit for SoC requested the mailbox while mcu has lock";          } notif_mbox1_soc_req_lock_en = 1'b0;
+        field {desc = "Enable bit for OTP operation done interrupt https://github.com/lowRISC/opentitan/blob/backport-25674-to-earlgrey_1.0.0/hw/ip/otp_ctrl/doc/interfaces.md#interrupts";          } notif_otp_operation_done_en = 1'b0;
     };
     reg notif1_intr_en_t {
         name = "Per-Event Interrupt Enable Register";
@@ -1233,6 +1234,7 @@ regfile intr_block_t {
         field {desc = "Scan mode asserted status bit";                         } notif_scan_mode_sts = 1'b0;
         field {desc = "SoC requested the mailbox while mcu has lock status bit";     } notif_mbox0_soc_req_lock_sts = 1'b0;
         field {desc = "SoC requested the mailbox while mcu has lock status bit";     } notif_mbox1_soc_req_lock_sts = 1'b0;
+        field {desc = "OTP operation done interrupt https://github.com/lowRISC/opentitan/blob/backport-25674-to-earlgrey_1.0.0/hw/ip/otp_ctrl/doc/interfaces.md#interrupts";          } notif_otp_operation_done_sts = 1'b0;
     };
     reg notif1_intr_t {
         name = "Interrupt Status Register type definition";
@@ -1400,6 +1402,7 @@ regfile intr_block_t {
         field {desc = "Scan mode asserted trigger bit";                         } notif_scan_mode_trig = 1'b0;
         field {desc = "SoC requested the mailbox while mcu has lock trigger bit";     } notif_mbox0_soc_req_lock_trig = 1'b0;
         field {desc = "SoC requested the mailbox while mcu has lock trigger bit";     } notif_mbox1_soc_req_lock_trig = 1'b0;
+        field {desc = "OTP operation done interrupt https://github.com/lowRISC/opentitan/blob/backport-25674-to-earlgrey_1.0.0/hw/ip/otp_ctrl/doc/interfaces.md#interrupts trigger bit";          } notif_otp_operation_done_trig = 1'b0;
     };
 
     reg notif1_intr_trig_t {
@@ -1590,6 +1593,7 @@ regfile intr_block_t {
     intr_count_t      notif_scan_mode_intr_count_r;        /* Per notification */                                    //
     intr_count_t      notif_mbox0_soc_req_lock_intr_count_r;     /* Per notification */                                    //
     intr_count_t      notif_mbox1_soc_req_lock_intr_count_r;     /* Per notification */                                    //
+    intr_count_t      notif_otp_operation_done_intr_count_r;     /* Per notification */                                    //
                                                                                                                      //
     // These registers should be treated by SW as reserved, and ignored.                                             //
     // Offset at 0x200 gives enough space for 32 Errors and 32 Notifications                                         //
@@ -1680,6 +1684,7 @@ regfile intr_block_t {
     intr_count_incr_t notif_scan_mode_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_mbox0_soc_req_lock_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_mbox1_soc_req_lock_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_otp_operation_done_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
     /* ------------------------------------------------------------------------------------------------------------- */
 
     /* ---- Reset assignment for Error Events ---- */
@@ -1846,6 +1851,7 @@ regfile intr_block_t {
     notif0_internal_intr_r.notif_scan_mode_sts     -> enable = notif0_intr_en_r.notif_scan_mode_en;
     notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts  -> enable = notif0_intr_en_r.notif_mbox0_soc_req_lock_en;
     notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts  -> enable = notif0_intr_en_r.notif_mbox1_soc_req_lock_en;
+    notif0_internal_intr_r.notif_otp_operation_done_sts  -> enable = notif0_intr_en_r.notif_otp_operation_done_en;
 
     error0_internal_intr_r.error_internal_sts     -> next   = error0_intr_trig_r.error_internal_trig;
     error0_internal_intr_r.error_mbox0_ecc_unc_sts -> next   = error0_intr_trig_r.error_mbox0_ecc_unc_trig;
@@ -1931,6 +1937,7 @@ regfile intr_block_t {
     notif0_internal_intr_r.notif_scan_mode_sts     -> next   = notif0_intr_trig_r.notif_scan_mode_trig;
     notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts  -> next   = notif0_intr_trig_r.notif_mbox0_soc_req_lock_trig;
     notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts  -> next   = notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig;
+    notif0_internal_intr_r.notif_otp_operation_done_sts  -> next   = notif0_intr_trig_r.notif_otp_operation_done_trig;
 
     // NOTE: hwset for events is implicitly defined as module input
 
@@ -2457,6 +2464,12 @@ regfile intr_block_t {
     notif_mbox1_soc_req_lock_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
     notif_mbox1_soc_req_lock_intr_count_incr_r.pulse -> decr  = notif_mbox1_soc_req_lock_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     notif_mbox1_soc_req_lock_intr_count_r.cnt        -> incr  = notif_mbox1_soc_req_lock_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+
+    notif_otp_operation_done_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_otp_operation_done_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_otp_operation_done_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_otp_operation_done_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_otp_operation_done_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_otp_operation_done_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_otp_operation_done_intr_count_incr_r.pulse -> decr  = notif_otp_operation_done_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_otp_operation_done_intr_count_r.cnt        -> incr  = notif_otp_operation_done_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
 
 };

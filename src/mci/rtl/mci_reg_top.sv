@@ -135,6 +135,9 @@ module mci_reg_top
     input  logic [31:0] strap_mcu_reset_vector, // default reset vector
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
 
+    // OTP
+    input logic intr_otp_operation_done,
+
     // NMI
     input  logic nmi_intr,
     output logic [31:0] mcu_nmi_vector,
@@ -810,6 +813,11 @@ end
 
 always_comb cptra_mbox_cmd_avail_p = cptra_mbox_data_avail & !cptra_mbox_data_avail_d;
 always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts.hwset          = cptra_mbox_cmd_avail_p;
+
+///////////////////////////////////////////////
+// MISC INTERRUPTS
+///////////////////////////////////////////////
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.hwset       = intr_otp_operation_done;
 
 ///////////////////////////////////////////////
 // NMI Vector   
