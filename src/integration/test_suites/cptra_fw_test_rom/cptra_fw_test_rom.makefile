@@ -56,32 +56,33 @@ clean:
 ############ TEST build ###############################
 
 # Build program.hex from RUST executable
-program.hex: vendor_pk_hash_val.hex owner_pk_hash_val.hex fw_update.hex $(TEST_DIR)/$(TESTNAME).extracted $(TEST_DIR)/$(TESTNAME)
+program.hex: vendor_pk_hash_val.hex owner_pk_hash_val.hex fw_update.hex $(BUILD_DIR)/$(TESTNAME).extracted $(TEST_DIR)/$(TESTNAME).bin $(TEST_DIR)/$(TESTNAME_fw)
 	@-echo "Building program.hex from $(TESTNAME) using Crypto Test rules for pre-compiled RUST executables"
-	$(GCC_PREFIX)-objcopy -I binary -O verilog --pad-to 0xC000 --gap-fill 0xFF --no-change-warnings $(TEST_DIR)/$(TESTNAME) program.hex
-	du -b $(TEST_DIR)/$(TESTNAME) | cut -f1 > $(TESTNAME).size
+	$(GCC_PREFIX)-objcopy -I binary -O verilog --pad-to 0xC000 --gap-fill 0xFF --no-change-warnings $(BUILD_DIR)/$(TESTNAME) program.hex
+	du -b $(BUILD_DIR)/$(TESTNAME) | cut -f1 > $(BUILD_DIR)/$(TESTNAME).size
 
-fw_update.hex: $(TEST_DIR)/$(TESTNAME).extracted $(TEST_DIR)/$(TESTNAME_fw)
+fw_update.hex: $(BUILD_DIR)/$(TESTNAME).extracted
 	@-echo "Building fw_update.hex from $(TESTNAME_fw) using binary objcopy pre-compiled RUST package"
-	$(GCC_PREFIX)-objcopy -I binary -O verilog --pad-to 0x20000 --gap-fill 0xFF --no-change-warnings $(TEST_DIR)/$(TESTNAME_fw) fw_update.hex
-	du -b $(TEST_DIR)/$(TESTNAME_fw) | cut -f1 > fw_update.size
+	$(GCC_PREFIX)-objcopy -I binary -O verilog --pad-to 0x20000 --gap-fill 0xFF --no-change-warnings $(BUILD_DIR)/$(TESTNAME_fw) fw_update.hex
+	du -b $(BUILD_DIR)/$(TESTNAME_fw) | cut -f1 > $(BUILD_DIR)/fw_update.size
 
 # Extract public keys from ROM binary and dump as hex values
 vendor_pk_hash_val.hex: vendor_pk_val.bin
-	sha384sum vendor_pk_val.bin | sed 's,\s\+\S\+$$,,' > vendor_pk_hash_val.hex
+	sha384sum vendor_pk_val.bin | sed 's,\s\+\S\+$$,,' > $(BUILD_DIR)/vendor_pk_hash_val.hex
 
-vendor_pk_val.bin: $(TEST_DIR)/$(TESTNAME).extracted
-	dd ibs=1 obs=1 if=$(TEST_DIR)/$(TESTNAME_fw) of=vendor_pk_val.bin skip=$(KEY_MANIFEST_ECC_PK_ROM_OFFSET) count=$(KEY_MANIFEST_PK_LENGTH)
+vendor_pk_val.bin: $(BUILD_DIR)/$(TESTNAME).extracted
+	dd ibs=1 obs=1 if=$(BUILD_DIR)/$(TESTNAME_fw) of=vendor_pk_val.bin skip=$(KEY_MANIFEST_ECC_PK_ROM_OFFSET) count=$(KEY_MANIFEST_PK_LENGTH)
 
 owner_pk_hash_val.hex: owner_pk_val.bin
 	sha384sum owner_pk_val.bin | sed 's,\s\+\S\+$$,,' > owner_pk_hash_val.hex
 
-owner_pk_val.bin: $(TEST_DIR)/$(TESTNAME).extracted
-	dd ibs=1 obs=1 if=$(TEST_DIR)/$(TESTNAME_fw) of=owner_pk_val.bin skip=$(OWNER_ECC_PK_ROM_OFFSET) count=$(OWNER_PK_LENGTH)
+owner_pk_val.bin: $(BUILD_DIR)/$(TESTNAME).extracted
+	dd ibs=1 obs=1 if=$(BUILD_DIR)/$(TESTNAME_fw) of=owner_pk_val.bin skip=$(OWNER_ECC_PK_ROM_OFFSET) count=$(OWNER_PK_LENGTH)
 
-$(TEST_DIR)/$(TESTNAME).extracted:
-	 cp $(TEST_DIR)/$(TESTNAME).bin $(TEST_DIR)/$(TESTNAME)
-	 touch $(TEST_DIR)/$(TESTNAME).extracted
+$(BUILD_DIR)/$(TESTNAME).extracted: $(TEST_DIR)/$(TESTNAME).bin $(TEST_DIR)/$(TESTNAME_fw)
+	 cp $(TEST_DIR)/$(TESTNAME).bin $(BUILD_DIR)/$(TESTNAME)
+	 cp $(TEST_DIR)/$(TESTNAME_fw) $(BUILD_DIR)/$(TESTNAME_fw)
+	 touch $(BUILD_DIR)/$(TESTNAME).extracted
 
 help:
 	@echo Make sure the environment variable RV_ROOT is set.

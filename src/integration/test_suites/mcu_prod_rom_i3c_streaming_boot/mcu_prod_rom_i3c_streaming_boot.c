@@ -30,15 +30,17 @@ void main (void) {
     char *argv[1];
     uint32_t i3c_reg_data;
 
-    //-- Boot MCU
-    VPRINTF(LOW, "MCU: Booting...\n");
-    
-    boot_mcu();
-    boot_i3c_core();
-    trigger_caliptra_go();
-    wait_for_cptra_ready_for_mb_processing();
-    // configure_captra_axi_user();
-    cptra_prod_rom_boot_go();
+    // Initialize the printf library   
+    VPRITF("=== MCU boot.. started == \n");
+
+    mcu_cptra_init_d( 
+        .cfg_enable_cptra_mbox_user_init=true, 
+        .cfg_cptra_fuse=true,
+        .cfg_cptra_wdt=true,
+        .cfg_boot_i3c_core=true,
+        .cfg_trigger_prod_rom=true); 
+
+    VPRITF("=== MCU boot.. completed == \n");
 
     for(uint8_t ii=0; ii<10000; ii++) {
         for (uint8_t ii = 0; ii < 16; ii++) {
