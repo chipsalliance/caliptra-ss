@@ -214,9 +214,13 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     /////////////////////////////////
     // BRING CPTRA OUT OF RESET
     /////////////////////////////////
-    mcu_mci_boot_go();
+    mcu_mci_boot_go();    
 
     mcu_cptra_wait_for_fuses();
+
+    if(args.cfg_cptra_fuse){
+        boot_mcu();
+    }
 
     /////////////////////////////////
     // CPTRA FUSE CONFIGURATION
@@ -240,6 +244,17 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     }
 
     /////////////////////////////////
+    // BOOT I3C
+    /////////////////////////////////
+    if (!args.cfg_skip_boot_i3c_core) {
+        boot_i3c_core();
+    }
+    else{
+        VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip Boot I3C\n");
+    }
+
+
+    /////////////////////////////////
     // CPTRA ENSURE BREAKPOINT SET  
     /////////////////////////////////
     if (!args.cfg_skip_set_fuse_done) {
@@ -247,6 +262,17 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     }
     else{
         VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip advance CPTRA advance breakpoint\n");
+    }
+
+    /////////////////////////////////
+    // TRIGGER PROD ROM
+    /////////////////////////////////
+    if (args.cfg_trigger_prod_rom) {
+        mcu_cptra_poll_mb_ready();
+        cptra_prod_rom_boot_go();
+    } 
+    else {
+        VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip Trigger Prod ROM\n");
     }
 
 
@@ -756,30 +782,49 @@ void configure_captra_axi_user(void) {
     VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
 }
 
+void cptra_prod_rom_boot_go(void) {
+
+    mcu_cptra_user_init();
+    
+    // MBOX: Acquire lock
+    VPRINTF(LOW, "MCU: Acquiring Mbox lock\n");
+    while((lsu_read_32(SOC_MBOX_CSR_MBOX_LOCK) & MBOX_CSR_MBOX_LOCK_LOCK_MASK));
+    VPRINTF(LOW, "MCU: Mbox lock acquired\n");
+
+    // MBOX: Write CMD
+    lsu_write_32(SOC_MBOX_CSR_MBOX_CMD, 0x52494644 | MBOX_CMD_FIELD_RESP_MASK); // Resp required
+
+    // MBOX: Write DLEN
+    lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 0);
+
+    // MBOX: Execute
+    lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
+    VPRINTF(LOW, "MCU: Mbox execute\n");
+
+    // MBOX: Poll status
+    while(((lsu_read_32(SOC_MBOX_CSR_MBOX_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK) >> MBOX_CSR_MBOX_STATUS_STATUS_LOW) != CMD_COMPLETE) {
+        for (uint8_t ii = 0; ii < 16; ii++) {
+            __asm__ volatile ("nop"); // Sleep loop as "nop"
+        }
+    }
+    VPRINTF(LOW, "MCU: Mbox response ready\n");
+
+    for (uint8_t ii = 0; ii < 16; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+
+    // MBOX: Clear Execute
+    lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0);
+    VPRINTF(LOW, "MCU: Mbox execute clear\n");
+
+    VPRINTF(LOW, "MCU: Completed with cptra_prod_rom_boot_go\n");
+
+}
+
 // -- function to boot_mcu_with_fuses
 void boot_mcu(){
 
-    
-    const uint32_t mbox_dlen = 64;
-    uint32_t mbox_data[] = { 0x00000000,
-                             0x11111111,
-                             0x22222222,
-                             0x33333333,
-                             0x44444444,
-                             0x55555555,
-                             0x66666666,
-                             0x77777777,
-                             0x88888888,
-                             0x99999999,
-                             0xaaaaaaaa,
-                             0xbbbbbbbb,
-                             0xcccccccc,
-                             0xdddddddd,
-                             0xeeeeeeee,
-                             0xffffffff };
-    uint32_t mbox_resp_dlen;
-    uint32_t mbox_resp_data;
-    uint32_t cptra_boot_go;
+   
     uint32_t reg_data_32;
     
     mcu_mci_boot_go();
@@ -848,5 +893,4 @@ void boot_mcu(){
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
 
 
- 
 }

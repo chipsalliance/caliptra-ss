@@ -85,8 +85,15 @@ typedef struct {
     // SOC_IFC MBOX
     bool cfg_enable_cptra_mbox_user_init;
 
-    // FUSE DONE
+    // FUSE 
+    bool cfg_cptra_fuse;
     bool cfg_skip_set_fuse_done;
+
+    // Boot I3C
+    bool cfg_skip_boot_i3c_core;
+
+    // Trigger Prod ROM 
+    bool cfg_trigger_prod_rom;
 
 } mcu_cptra_init_args;
 #define mcu_cptra_init_arg_defaults           \
@@ -104,7 +111,12 @@ typedef struct {
     /* SOC_IFC MBOX */                        \
     .cfg_enable_cptra_mbox_user_init = false, \
     /* FUSE DONE */                           \
-    .cfg_skip_set_fuse_done          = false
+    .cfg_cptra_fuse                  = false, \
+    .cfg_skip_set_fuse_done          = false, \
+    /* Boot I3C */                            \
+    .cfg_skip_boot_i3c_core          = false, \
+    /* Trigger Prod ROM */                    \
+    .cfg_trigger_prod_rom            = false
 
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!

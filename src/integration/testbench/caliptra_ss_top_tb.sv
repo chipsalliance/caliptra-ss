@@ -1350,8 +1350,19 @@ module caliptra_ss_top_tb
         master0 = new("master0", , AI3C_MASTER, master0_intf);
         master0.cfg_info.is_main_master = 1;
         master0.log.enable_bus_tracker  = 1;
+
+//if I3C_BOOT_USING_ENTDAA is defined, then set the dynamic address to 0
+`ifdef I3C_BOOT_USING_ENTDAA
+        master0.set("add_i3c_dev_da",0);
+        master0.set("add_i3c_dev_da",0);
+`endif
+
+//if I3C_BOOT_USING_ENTDAA is not defined, then use the static address
+`ifndef I3C_BOOT_USING_ENTDAA
         master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
         master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
+`endif
+        
         master0.cfg_info.receive_all_txn = 0;
 
 
