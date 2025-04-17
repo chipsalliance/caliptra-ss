@@ -582,30 +582,6 @@ module caliptra_ss_top
     //=========================================================================-
     // MCU instance
     //=========================================================================-
-    logic                     sb_axi_awready;
-    logic                     sb_axi_wready;
-    logic                     sb_axi_bvalid;
-    logic [1:0]               sb_axi_bresp;
-    logic [pt.SB_BUS_TAG-1:0] sb_axi_bid;
-    logic                     sb_axi_arready;
-    logic                     sb_axi_rvalid;
-    logic [pt.SB_BUS_TAG-1:0] sb_axi_rid;
-    logic [63:0]              sb_axi_rdata;
-    logic [1:0]               sb_axi_rresp;
-    logic                     sb_axi_rlast;
-
-    assign sb_axi_awready = '0;
-    assign sb_axi_wready = '0;
-    assign sb_axi_bvalid = '0;
-    assign sb_axi_bresp = '0;
-    assign sb_axi_bid = '0;
-    assign sb_axi_arready = '0;
-    assign sb_axi_rvalid = '0;
-    assign sb_axi_rid = '0;
-    assign sb_axi_rdata = '0;
-    assign sb_axi_rresp = '0;
-    assign sb_axi_rlast = '0;
-    
     mcu_top rvtop_wrapper (
         .rst_l                  ( mcu_rst_b ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ), //FIXME same as caliptra?

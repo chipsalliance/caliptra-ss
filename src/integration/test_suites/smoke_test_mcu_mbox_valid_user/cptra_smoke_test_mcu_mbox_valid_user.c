@@ -403,7 +403,7 @@ void main(void) {
             while(1);
         }
 
-        if(!caliptra_ss_mcu_mbox_wait_execute(mbox_num, 300)) {
+        if(!caliptra_ss_mcu_mbox_wait_execute(mbox_num, 1000)) {
             VPRINTF(FATAL, "CALIPTRA: Timed out waiting for MBOX%x execute\n", mbox_num);
             SEND_STDOUT_CTRL(0x1);
             while(1);
