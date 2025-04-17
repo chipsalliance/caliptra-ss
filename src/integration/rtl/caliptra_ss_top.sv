@@ -1175,8 +1175,6 @@ module caliptra_ss_top
             .pwr_lc_i(lcc_init_req),
             .pwr_lc_o(u_lc_ctrl_pwr_lc_o), // Note: It is tied with this assignment: lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
 
-            .strap_en_override_o(),  // Note: We use VolatileUnlock and so this port is not used in Caliptra-ss, needs to be removed from LCC RTL        
-
             .lc_otp_vendor_test_o(from_lc_to_otp_vendor_test_internal),
             .lc_otp_vendor_test_i(from_otp_to_lc_vendor_test_internal),
             .lc_otp_program_o(from_lcc_to_otp_program_i),
@@ -1190,7 +1188,6 @@ module caliptra_ss_top
             .lc_check_byp_en_o(lc_check_byp_en_internal),
 
             .lc_hw_debug_en_o(lc_hw_debug_en_i),
-            .lc_cpu_en_o(), // Note: this port is not used in Caliptra-ss, needs to be removed from LCC RTL
 
             .lc_clk_byp_req_o(cptra_ss_lc_clk_byp_req_o),
             .lc_clk_byp_ack_i(cptra_ss_lc_clk_byp_ack_i),

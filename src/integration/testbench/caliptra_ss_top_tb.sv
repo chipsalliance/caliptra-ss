@@ -1222,7 +1222,6 @@ module caliptra_ss_top_tb
     // JTAG Assignment for top level caliptra SS design
     jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i;
     jtag_pkg::jtag_rsp_t cptra_ss_lc_ctrl_jtag_o;
-    assign cptra_ss_lc_ctrl_jtag_i = '0;
 
     lc_ctrl_bfm u_lc_ctrl_bfm (
         .clk(core_clk),
@@ -1245,6 +1244,21 @@ module caliptra_ss_top_tb
     initial begin
         cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
     end
+
+    // JTAG DPI
+    jtagdpi #(
+        .Name           ("jtag2"),
+        .ListenPort     (7000)
+    ) jtagdpi_lcc (
+        .clk_i          (core_clk),
+        .rst_ni         (cptra_ss_rst_b_i),
+        .jtag_tck       (cptra_ss_lc_ctrl_jtag_i.tck),
+        .jtag_tms       (cptra_ss_lc_ctrl_jtag_i.tms),
+        .jtag_tdi       (cptra_ss_lc_ctrl_jtag_i.tdi),
+        .jtag_tdo       (cptra_ss_lc_ctrl_jtag_o.tdo),
+        .jtag_trst_n    (cptra_ss_lc_ctrl_jtag_i.trst_n),
+        .jtag_srst_n    ()
+    );
 
 
     //--------------------------------------------------------------------------------------------
