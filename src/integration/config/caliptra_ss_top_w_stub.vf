@@ -23,6 +23,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/mcu/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi
++incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/../src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl
