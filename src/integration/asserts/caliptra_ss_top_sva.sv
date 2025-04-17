@@ -280,4 +280,16 @@ module caliptra_ss_top_sva
     `FC_PATH.u_otp_ctrl_dai.state_q == `FC_PATH.u_otp_ctrl_dai.ErrorSt
   )
 
+  ////////////////////////////////////////////////////
+  // lcc volatile raw unlock dft en
+  ////////////////////////////////////////////////////
+
+  // Assert that a successful volatile raw unlock will assert the dft output port.
+  `CALIPTRA_ASSERT(LccVolatileRawUnlockDftEn_A,
+    (`LCC_PATH.SecVolatileRawUnlockEn &&
+     `LCC_PATH.trans_success_q)
+    |=>
+    (`LCC_PATH.lc_dft_en_o && `LCC_PATH.lc_hw_debug_en_o)
+  )
+
 endmodule

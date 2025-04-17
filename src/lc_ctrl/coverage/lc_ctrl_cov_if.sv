@@ -34,6 +34,9 @@ interface lc_ctrl_cov_if
     assign st_trans_cmd = ext_dec_lc_state_t'(lc_ctrl.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.trans_cmd_i);
     assign next_dec_state = ext_dec_lc_state_t'(lc_ctrl.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.trans_target_i);
 
+    bit sec_volatile_raw_unlock;
+    assign sec_volatile_raw_unlock = lc_ctrl.SecVolatileRawUnlockEn;
+
     // Precompute replicated constants for the state bins:
     localparam ext_dec_lc_state_t DEC_LC_ST_RAW_REP             =    {DecLcStateNumRep{DecLcStRaw}};
     localparam ext_dec_lc_state_t DEC_LC_ST_TEST_UNLOCKED0_REP  =    {DecLcStateNumRep{DecLcStTestUnlocked0}};
@@ -141,6 +144,12 @@ interface lc_ctrl_cov_if
         // the counter equals LcCnt0.
         from_TU0_to_Prov_cr: cross lc_valid_early_prov_state_cp, lc_state_cp{
             bins TestUnlcked0_to_PROV_X = binsof(lc_state_cp.DecLcStTestUnlocked0);
+        }
+
+        lc_voltatile_raw_unlock_cp: coverpoint sec_volatile_raw_unlock
+        {
+            bins Disabled = { 1'b0 };
+            bins Enabled  = { 1'b1 };
         }
     endgroup
 
