@@ -943,9 +943,9 @@ module caliptra_ss_top
     //=========================================================================
 
     axi_mem #(
-      .AW(22),
-      .DW(64),
-      .IW(8)
+      .AW(CPTRA_SS_ROM_AXI_ADDR_W),
+      .DW(CPTRA_SS_ROM_DATA_W),
+      .IW(`CALIPTRA_AXI_ID_WIDTH)
     ) mcu_rom_i (
       .clk(cptra_ss_clk_i),
       .rst_n(cptra_ss_rst_b_o),

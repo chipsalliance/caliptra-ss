@@ -951,8 +951,8 @@ module caliptra_ss_top_tb
     );
 
     axi_mem_if #(
-        .ADDR_WIDTH(32),
-        .DATA_WIDTH(64)
+        .ADDR_WIDTH(CPTRA_SS_ROM_MEM_ADDR_W),
+        .DATA_WIDTH(CPTRA_SS_ROM_DATA_W)
     ) mcu_rom_mem_export_if (
         .clk(core_clk),
         .rst_b(cptra_ss_rst_b_i)
