@@ -17,3 +17,4 @@
 
 `include "mci_common_tasks.svh"
 `include "smoke_test_mcu_sram_execution_region.svh"
+`include "smoke_test_mcu_sram_debug_stress.svh"

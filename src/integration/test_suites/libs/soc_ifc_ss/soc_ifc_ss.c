@@ -150,26 +150,20 @@ void cptra_mcu_mbox_acquire_lock_set_execute(uint32_t mbox_num, uint32_t attempt
 
 }
 
-void cptra_mcu_mbox_wait_for_status_complete(uint32_t mbox_num, uint32_t attempt_count) {
+void cptra_mcu_mbox_wait_for_status(uint32_t mbox_num, uint32_t attempt_count, enum mcu_mbox_cmd_status cmd_status) {
     uint32_t status;
     uint64_t addr;
-    VPRINTF(LOW, "Caliptra: Waiting for Mbox%x Status Complete\n", mbox_num);
+    VPRINTF(LOW, "Caliptra: Waiting for Mbox%x Status: 0x%x\n", mbox_num, cmd_status);
     addr = SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num;
     for(uint32_t ii=0; ii<attempt_count; ii++) {
         status = cptra_axi_dword_read(addr) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK;
 
-        if(status == 0x2){
-            VPRINTF(LOW, "Caliptra: Mbox%x Status Complete Seen!\n", mbox_num);
+        if(status == cmd_status){
+            VPRINTF(LOW, "Caliptra: Mbox%x Status 0x%x Seen!\n", mbox_num, cmd_status);
             return;
         }
-        else if(status != 0x0) {
-            VPRINTF(FATAL, "Caliptra: NON-COMPLETE Status seen MCU MBOX%x: 0x%x", mbox_num, status);
-            SEND_STDOUT_CTRL(0x1);
-            while(1);
-
-        }
     }   
-    VPRINTF(FATAL, "Caliptra: Failed to get a status from MCU MBOX%x after %d attempts", mbox_num, attempt_count);
+    VPRINTF(FATAL, "Caliptra: Failed to get status: 0x%x from MCU MBOX%x after %d attempts", cmd_status, mbox_num, attempt_count);
     SEND_STDOUT_CTRL(0x1);
     while(1);
 }

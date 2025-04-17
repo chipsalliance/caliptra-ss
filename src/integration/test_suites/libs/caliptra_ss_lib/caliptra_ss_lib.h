@@ -43,6 +43,12 @@
 #define CMD_FC_LCC_FAULT_BUS_ECC        FC_LCC_CMD_OFFSET + 0x11
 #define CMD_LC_TRIGGER_ESCALATION0      FC_LCC_CMD_OFFSET + 0x12
 #define CMD_LC_TRIGGER_ESCALATION1      FC_LCC_CMD_OFFSET + 0x13
+#define CMD_LC_DISABLE_SVA              FC_LCC_CMD_OFFSET + 0x14
+#define CMD_LC_ENABLE_SVA               FC_LCC_CMD_OFFSET + 0x15
+#define CMD_FC_LCC_CORRECTABLE_FAULT    FC_LCC_CMD_OFFSET + 0x16
+#define CMD_FC_LCC_UNCORRECTABLE_FAULT  FC_LCC_CMD_OFFSET + 0x17
+
+
 #define TB_CMD_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
 
 #define TB_CMD_DISABLE_INJECT_ECC_ERROR     0xe0
@@ -129,6 +135,10 @@ uint32_t xorshift32(void);
 extern uint32_t valid_mbox_instances;
 uint32_t decode_single_valid_mbox(void);
 
+extern uint32_t cfg_caliptra_axi_with_param;
+bool is_caliptra_axi_param(void);
+
+
 inline void mcu_sleep (const uint32_t cycles) {
     for (uint32_t ii = 0; ii < cycles; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
@@ -167,7 +177,7 @@ void boot_i3c_socmgmt_if(void);
 void boot_i3c_standby_ctrl_mode();
 void boot_i3c_reg(void);
 void mcu_mbox_clear_lock_out_of_reset(uint32_t mbox_num);
-void mcu_mbox_update_status_complete(uint32_t mbox_num);
+void mcu_mbox_update_status(uint32_t mbox_num, enum mcu_mbox_cmd_status cmd_status);
 bool mcu_mbox_wait_for_user_lock(uint32_t mbox_num, uint32_t user_axi, uint32_t attempt_count);
 bool mcu_mbox_wait_for_user_execute(uint32_t mbox_num, uint32_t expected_value, uint32_t attempt_count);
 void mcu_mbox_configure_valid_axi(uint32_t mbox_num, uint32_t *axi_user_id);
@@ -228,6 +238,28 @@ static inline void mcu_mbox_write_cmd_status(uint32_t mbox_num, enum mcu_mbox_cm
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, (cmd_status & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK));    
 }
 
+#define FC_LCC_CMD_OFFSET 0x90
+#define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
+#define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
+#define CMD_FORCE_FC_AWUSER_MCU         FC_LCC_CMD_OFFSET + 0x04
+#define CMD_RELEASE_AWUSER              FC_LCC_CMD_OFFSET + 0x05
+#define CMD_FC_FORCE_ZEROIZATION        FC_LCC_CMD_OFFSET + 0x06
+#define CMD_FC_FORCE_ZEROIZATION_RESET  FC_LCC_CMD_OFFSET + 0x07
+#define CMD_RELEASE_ZEROIZATION         FC_LCC_CMD_OFFSET + 0x08
+#define CMD_FORCE_LC_TOKENS             FC_LCC_CMD_OFFSET + 0x09
+#define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 0x0a
+#define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 0x0b
+#define CMD_FC_LCC_EXT_CLK_500MHZ       FC_LCC_CMD_OFFSET + 0x0c
+#define CMD_FC_LCC_EXT_CLK_160MHZ       FC_LCC_CMD_OFFSET + 0x0d
+#define CMD_FC_LCC_EXT_CLK_400MHZ       FC_LCC_CMD_OFFSET + 0x0e
+#define CMD_FC_LCC_EXT_CLK_1000MHZ      FC_LCC_CMD_OFFSET + 0x0f
+#define CMD_FC_LCC_FAULT_DIGEST         FC_LCC_CMD_OFFSET + 0x10
+#define CMD_FC_LCC_FAULT_BUS_ECC        FC_LCC_CMD_OFFSET + 0x11
+#define CMD_LC_TRIGGER_ESCALATION0      FC_LCC_CMD_OFFSET + 0x12
+#define CMD_LC_TRIGGER_ESCALATION1      FC_LCC_CMD_OFFSET + 0x13
+#define CMD_FC_LCC_CORRECTABLE_FAULT    FC_LCC_CMD_OFFSET + 0x14
+#define CMD_FC_LCC_UNCORRECTABLE_FAULT  FC_LCC_CMD_OFFSET + 0x15
+
 static inline uint32_t mcu_mbox_read_cmd_status(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading CMD_STATUS: 0x%x\n", mbox_num, rd_data);
@@ -282,6 +314,12 @@ static inline void mcu_mbox_write_target_user_valid(uint32_t mbox_num, uint32_t 
 static inline uint32_t mcu_mbox_read_target_user_valid(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading TARGET_USER_VALID: 0x%x\n", mbox_num, rd_data);
+    return rd_data;
+}
+
+inline uint32_t mcu_mbox_read_target_status(uint32_t mbox_num) {
+    uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "MCU: Mbox%x Reading TARGET_STATUS: 0x%x\n", mbox_num, rd_data);
     return rd_data;
 }
 

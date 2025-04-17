@@ -582,30 +582,6 @@ module caliptra_ss_top
     //=========================================================================-
     // MCU instance
     //=========================================================================-
-    logic                     sb_axi_awready;
-    logic                     sb_axi_wready;
-    logic                     sb_axi_bvalid;
-    logic [1:0]               sb_axi_bresp;
-    logic [pt.SB_BUS_TAG-1:0] sb_axi_bid;
-    logic                     sb_axi_arready;
-    logic                     sb_axi_rvalid;
-    logic [pt.SB_BUS_TAG-1:0] sb_axi_rid;
-    logic [63:0]              sb_axi_rdata;
-    logic [1:0]               sb_axi_rresp;
-    logic                     sb_axi_rlast;
-
-    assign sb_axi_awready = '0;
-    assign sb_axi_wready = '0;
-    assign sb_axi_bvalid = '0;
-    assign sb_axi_bresp = '0;
-    assign sb_axi_bid = '0;
-    assign sb_axi_arready = '0;
-    assign sb_axi_rvalid = '0;
-    assign sb_axi_rid = '0;
-    assign sb_axi_rdata = '0;
-    assign sb_axi_rresp = '0;
-    assign sb_axi_rlast = '0;
-    
     mcu_top rvtop_wrapper (
         .rst_l                  ( mcu_rst_b ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ), //FIXME same as caliptra?
@@ -967,9 +943,9 @@ module caliptra_ss_top
     //=========================================================================
 
     axi_mem #(
-      .AW(22),
-      .DW(64),
-      .IW(8)
+      .AW(CPTRA_SS_ROM_AXI_ADDR_W),
+      .DW(CPTRA_SS_ROM_DATA_W),
+      .IW(`CALIPTRA_AXI_ID_WIDTH)
     ) mcu_rom_i (
       .clk(cptra_ss_clk_i),
       .rst_n(cptra_ss_rst_b_o),
@@ -1205,14 +1181,6 @@ module caliptra_ss_top
     // Fuse Controller Instance : 
     // 
     //=========================================================================-
-    
-    logic tb_driven_value;
-    logic tb_drive_enable;
-    wand otp_ext_voltage_h_io;
-
-    assign tb_drive_enable = 1'b1;
-    assign tb_driven_value = 1'b0;
-    assign otp_ext_voltage_h_io = tb_drive_enable ? tb_driven_value : 1'bz;
 
     pwrmgr_pkg::pwr_otp_rsp_t                   u_otp_ctrl_pwr_otp_o;
     assign otp_ctrl_to_mci_otp_ctrl_done = pwrmgr_pkg::pwr_otp_rsp_t'(u_otp_ctrl_pwr_otp_o.otp_done);
@@ -1266,7 +1234,6 @@ module caliptra_ss_top
         .otp_lc_data_o(from_otp_to_lcc_data_i),
 
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
-        .otp_ext_voltage_h_io       (otp_ext_voltage_h_io),
         .scan_en_i                  ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .scan_rst_ni                (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False),

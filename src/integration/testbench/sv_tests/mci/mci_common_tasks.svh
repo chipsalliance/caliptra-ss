@@ -22,6 +22,14 @@ task get_mcu_sram_last_addr(output logic [AXI_AW-1:0] addr);
     addr =  `SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + (MCU_SRAM_SIZE_KB * 1024) - 1;
 endtask
 
+task get_mcu_sram_size_byte(output int size);
+    size = (MCU_SRAM_SIZE_KB * 1024);
+endtask
+
+task get_mcu_sram_size_dword(output int size);
+    size = (MCU_SRAM_SIZE_KB * 1024) / 4;
+endtask
+
 
 task get_execution_base_address(output logic [AXI_AW-1:0] addr);
     get_mcu_sram_base_addr(addr);
@@ -39,6 +47,7 @@ task set_random_fw_sram_exec_region_size();
     bfm_axi_write_single_mcu_lsu(`SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE, fw_sram_exec_value);
 
 endtask
+
   
 // Task to get the last address of the EXECUTION region
 task get_execution_last_address(output logic [AXI_AW-1:0] addr);
@@ -58,8 +67,10 @@ task get_execution_last_address(output logic [AXI_AW-1:0] addr);
 
     get_execution_base_address(base_addr);
     get_mcu_sram_last_addr(last_addr);
-    addr = (reg_value * 4096) + base_addr - 1; // Last address is one byte before the base of the PROTECTED region
-    if(last_addr > last_addr)
+    addr = ((reg_value + 1) * 4096) + base_addr - 1; // Last address is one byte before the base of the PROTECTED region. 
+                                                     // + 1 because FW_SRAM_EXEC_REGION_SIZE is base 0 meaning 0x0 allocates 
+                                                     // 4KB for execution region
+    if(addr > last_addr)
         addr = last_addr;
 endtask
 

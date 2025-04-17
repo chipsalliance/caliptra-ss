@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+#include "soc_address_map.h"
+#define STDOUT SOC_MCI_TOP_MCI_REG_DEBUG_OUT
 
 .set    mfdc, 0x7f9
 .set    mrac, 0x7c0
@@ -54,17 +56,15 @@ _start:
 
         call main
 
-        # Map exit code of main() to command to be written to tohost
+        # Map exit code of main() to command to be written to STDOUT
         snez a0, a0
         bnez a0, _finish
         li   a0, 0xFF
 
 .global _finish
 _finish:
-        la t0, tohost
+        li t0, STDOUT
         sb a0, 0(t0)
-        li a0, 1
-        sw a0, 0(t0)
         beq x0, x0, _finish
         .rept 10
         nop
@@ -79,7 +79,7 @@ _finish:
 .endm
 .align 4
 _trap:
-    la t0, tohost
+    la t0, STDOUT
     // sep '.'
     li a0, 0x2e
     sb a0, 0(t0)
@@ -119,7 +119,3 @@ _trap:
     // Failure
     li a0, 1 # failure
     j _finish
-
-.section .data.io
-.global tohost
-tohost: .word 0

@@ -31,19 +31,49 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 static const char* mcu_sram_msg __attribute__ ((section(".mcu_sram.msg"))) = "=================\nHello World from MCU SRAM\n=================\n";
-void mcu_sram_print_msg (void) __attribute__ ((aligned(4),section (".mcu_sram.print_msg")));
+static       uint32_t mcu_sram_array [8] __attribute__ ((section(".mcu_sram.array")));
+void mcu_sram_print_msg (uint32_t decision) __attribute__ ((aligned(4),section (".mcu_sram.print_msg")));
 
-void mcu_sram_print_msg (void) {
-    VPRINTF(LOW, mcu_sram_msg);
+void mcu_sram_print_msg (uint32_t decision) {
+    uint32_t rg;
+    // Execute some code in MCU SRAM
+    // Use some non-determinism to avoid the compiler optimizing away this
+    // function or inlining it.
+    rg = lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_CONFIG0) ^ lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_CONFIG1);
+    if (rg != 0) {
+        VPRINTF(LOW, mcu_sram_msg);
+    } else {
+        printf("MCU: DECISION is %d\nMCU: MESSAGE is:\n%s", decision, mcu_sram_msg);
+    }
+    // LSU reads from MCU SRAM
+    if (mcu_sram_array[0] != 0x0a090807) { VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[0]); SEND_STDOUT_CTRL(0x1); while(1); }
+    if (mcu_sram_array[1] != 0x1b1c1d1e) { VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[1]); SEND_STDOUT_CTRL(0x1); while(1); }
+    if (mcu_sram_array[2] != 0x2a282921) { VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[2]); SEND_STDOUT_CTRL(0x1); while(1); }
+    if (mcu_sram_array[3] != 0x3f3d3e33) { VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[3]); SEND_STDOUT_CTRL(0x1); while(1); }
+    if (mcu_sram_array[4] != 0x44454647) { VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[4]); SEND_STDOUT_CTRL(0x1); while(1); }
+    if (mcu_sram_array[5] != 0x5afecafe) { VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[5]); SEND_STDOUT_CTRL(0x1); while(1); }
+    if (mcu_sram_array[6] != 0x6adbabe5) { VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[6]); SEND_STDOUT_CTRL(0x1); while(1); }
+    if (mcu_sram_array[7] != 0x7ee78008) { VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[7]); SEND_STDOUT_CTRL(0x1); while(1); }
+    return;
 }
 
 void main (void) {
     int argc=0;
     char *argv[1];
-    uint32_t reg_data;
+    uintptr_t addr;
 
     if (lsu_read_32(SOC_MCI_TOP_MCI_REG_RESET_REASON) & MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK) {
-        mcu_sram_print_msg();
+        // Perform some writes to MCU SRAM
+        addr = (uintptr_t) (&mcu_sram_array) + 0 ; VPRINTF(LOW, "0x%x to 0x%x\n", 0x0a090807, addr); lsu_write_32(addr, 0x0a090807);
+        addr = (uintptr_t) (&mcu_sram_array) + 4 ; VPRINTF(LOW, "0x%x to 0x%x\n", 0x1b1c1d1e, addr); lsu_write_32(addr, 0x1b1c1d1e);
+        addr = (uintptr_t) (&mcu_sram_array) + 8 ; VPRINTF(LOW, "0x%x to 0x%x\n", 0x2a282921, addr); lsu_write_32(addr, 0x2a282921);
+        addr = (uintptr_t) (&mcu_sram_array) + 12; VPRINTF(LOW, "0x%x to 0x%x\n", 0x3f3d3e33, addr); lsu_write_32(addr, 0x3f3d3e33);
+        addr = (uintptr_t) (&mcu_sram_array) + 16; VPRINTF(LOW, "0x%x to 0x%x\n", 0x44454647, addr); lsu_write_32(addr, 0x44454647);
+        addr = (uintptr_t) (&mcu_sram_array) + 20; VPRINTF(LOW, "0x%x to 0x%x\n", 0x5afecafe, addr); lsu_write_32(addr, 0x5afecafe);
+        addr = (uintptr_t) (&mcu_sram_array) + 24; VPRINTF(LOW, "0x%x to 0x%x\n", 0x6adbabe5, addr); lsu_write_32(addr, 0x6adbabe5);
+        addr = (uintptr_t) (&mcu_sram_array) + 28; VPRINTF(LOW, "0x%x to 0x%x\n", 0x7ee78008, addr); lsu_write_32(addr, 0x7ee78008);
+        // Call a function located in MCU SRAM to show IFU accesses to MCU SRAM
+        mcu_sram_print_msg(0xca5e);
         SEND_STDOUT_CTRL(0xFF);
         while(1);
     } else {

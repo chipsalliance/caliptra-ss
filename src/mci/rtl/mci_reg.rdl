@@ -63,7 +63,7 @@ addrmap mci_reg {
     } axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky;
 
     //defined fields by access type
-    field rw_ro_ro_hw {swwe = axi_mcu_or_mci_soc_config_req; hw = r;}; //writes enabled only for MCU, hw readable
+    field rw_ro_ro_sticky_hw {swwe = axi_mcu_or_mci_soc_config_req; hw = r; resetsignal = mci_pwrgood;}; //writes enabled only for MCU, hw readable
     field rw_rw_sticky_hw { sw=rw; hw=rw; we=true; woclr = true; resetsignal = mci_pwrgood;}; //W1C            - used by HW ERROR regs
     field rw_rw_sticky    { sw=rw; hw=rw; we=true; swmod = true; resetsignal = mci_pwrgood;}; //writes enabled - used by FW ERROR regs
 
@@ -246,38 +246,38 @@ addrmap mci_reg {
                 [br] 31:30 -- spare bits
                 [br]AXI Access: RW1C
                 [br]TAP Access [with debug intent set]: RO";
-        rw_rw_sticky_hw agg_error_fatal31 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal30 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal29 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal28 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal27 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal26 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal25 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal24 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal23 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal22 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal21 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal20 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal19 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal18 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal17 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal16 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal15 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal14 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal13 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal12 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal11 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal10 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal9  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal8  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal7  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal6  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal5  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal4  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal3  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal2  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal1  = 1'b0;
         rw_rw_sticky_hw agg_error_fatal0  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal1  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal2  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal3  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal4  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal5  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal6  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal7  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal8  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal9  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal10 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal11 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal12 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal13 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal14 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal15 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal16 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal17 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal18 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal19 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal20 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal21 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal22  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal23  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal24  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal25  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal26  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal27  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal28  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal29  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal30  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal31  = 1'b0;
     } AGG_ERROR_FATAL;
     reg {
         name = "Hardware Error Non-Fatal";
@@ -328,38 +328,38 @@ addrmap mci_reg {
                 [br] 31:30 -- spare bits
                 [br]AXI Access:      RW1C
                 [br]TAP Access [with debug intent set]: RO";
-        rw_rw_sticky_hw agg_error_non_fatal31 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal30 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal29 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal28 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal27 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal26 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal25 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal24 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal23 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal22 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal21 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal20 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal19 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal18 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal17 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal16 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal15 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal14 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal13 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal12 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal11 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal0 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal1 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal2 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal3 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal4 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal5 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal6 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal7 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal8 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal9 = 1'b0;
         rw_rw_sticky_hw agg_error_non_fatal10 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal9  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal8  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal7  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal6  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal5  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal4  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal3  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal2  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal1  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal0  = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal11 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal12 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal13 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal14 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal15 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal16 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal17 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal18 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal19 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal20 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal21 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal22 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal23 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal24 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal25 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal26 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal27 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal28 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal29 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal30 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal31 = 1'b0;
     } AGG_ERROR_NON_FATAL;
     reg {
         name = "Firmware Error Fatal";
@@ -428,9 +428,9 @@ addrmap mci_reg {
                 [br]Firmware can not cause the interrupt output to deassert by setting
                 mask bits for fatal error conditions that have already triggered the 
                 interrupt.";
-        rw_ro_ro_hw mask_mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
-        rw_ro_ro_hw mask_nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
-        rw_ro_ro_hw mask_mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
+        rw_ro_ro_sticky_hw mask_mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
+        rw_ro_ro_sticky_hw mask_nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
+        rw_ro_ro_sticky_hw mask_mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
     } internal_hw_error_fatal_mask;
     reg {
         name = "Hardware Error Non-Fatal Mask";
@@ -457,8 +457,8 @@ addrmap mci_reg {
                 [br] [*] agg_error_non_fatal_mask
                 [br] [*] fw_error_non_fatal_mask 
                 [/list]";
-        rw_ro_ro_hw mask_mbox0_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
-        rw_ro_ro_hw mask_mbox1_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
+        rw_ro_ro_sticky_hw mask_mbox0_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
+        rw_ro_ro_sticky_hw mask_mbox1_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
     } internal_hw_error_non_fatal_mask;
     reg {
         name = "Aggregate Error Fatal Mask";
@@ -475,38 +475,38 @@ addrmap mci_reg {
                 [br]Firmware can not cause the interrupt output to deassert by setting
                 mask bits for fatal error conditions that have already triggered the 
                 interrupt.";
-        rw_ro_ro_hw mask_agg_error_fatal31 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal30 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal29 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal28 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal27 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal26 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal25 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal24 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal23 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal22 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal21 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal20 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal19 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal18 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal17 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal16 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal15 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal14 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal13 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal12 = 1'b1;
-        rw_ro_ro_hw mask_agg_error_fatal11 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal10 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal9  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal8  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal7  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal6  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal5  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal4  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal3  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal2  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal1  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal0  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal31 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal30 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal29 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal28 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal27 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal26 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal25 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal24 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal23 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal22 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal21 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal20 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal19 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal18 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal17 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal16 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal15 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal14 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal13 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal12 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal11 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal10 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal9  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal8  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal7  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal6  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal5  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal4  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal3  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal2  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal1  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal0  = 1'b0;
     } internal_agg_error_fatal_mask;
     reg {
         name = "Aggregate Error Non-Fatal Mask";
@@ -533,38 +533,38 @@ addrmap mci_reg {
                 [br] [*] agg_error_non_fatal_mask
                 [br] [*] fw_error_non_fatal_mask 
                 [/list]";
-        rw_ro_ro_hw mask_agg_error_non_fatal31 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal30 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal29 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal28 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal27 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal26 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal25 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal24 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal23 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal22 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal21 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal20 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal19 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal18 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal17 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal16 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal15 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal14 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal13 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal12 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal11 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal10 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal9  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal8  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal7  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal6  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal5  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal4  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal3  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal2  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal1  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal0  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal31 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal30 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal29 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal28 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal27 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal26 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal25 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal24 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal23 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal22 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal21 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal20 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal19 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal18 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal17 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal16 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal15 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal14 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal13 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal12 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal11 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal10 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal9  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal8  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal7  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal6  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal5  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal4  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal3  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal2  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal1  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal0  = 1'b0;
     } internal_agg_error_non_fatal_mask;
     reg {
         name = "Firmware Error Fatal Mask";
@@ -581,7 +581,7 @@ addrmap mci_reg {
                 [br]Firmware can not cause the interrupt output to deassert by setting
                 mask bits for fatal error conditions that have already triggered the 
                 interrupt.";
-        rw_ro_ro_hw mask[32]=0; 
+        rw_ro_ro_sticky_hw mask[32]=0; 
     } internal_fw_error_fatal_mask;
     reg {
         name = "Firmware Error Non-Fatal Mask";
@@ -608,7 +608,7 @@ addrmap mci_reg {
                 [br] [*] agg_error_non_fatal_mask
                 [br] [*] fw_error_non_fatal_mask 
                 [/list]";
-        rw_ro_ro_hw mask[32]=0; 
+        rw_ro_ro_sticky_hw mask[32]=0; 
     } internal_fw_error_non_fatal_mask;
 
     // ----------------------------------------

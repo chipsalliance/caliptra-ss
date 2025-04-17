@@ -490,3 +490,13 @@ uint32_t read_lc_counter(void) {
 
     return reg_val;
 }
+
+void disable_lcc_SVAs(void) {
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_DISABLE_SVA);
+    VPRINTF(LOW, "MCU: LCC's SVAs are turned off!\n");
+}
+
+void enable_lcc_SVAs(void) {
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_ENABLE_SVA);
+    VPRINTF(LOW, "MCU: LCC's SVAs are turned on!\n");
+}
