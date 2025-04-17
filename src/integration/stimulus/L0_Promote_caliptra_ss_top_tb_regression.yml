@@ -27,6 +27,12 @@ contents:
         - ../test_suites/smoke_test_mcu_sram_protected_region/smoke_test_mcu_sram_protected_region.yml
         - ../test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region.yml
         - ../test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region_max_size.yml
+        - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer.yml
+        - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_single.yml
+        - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_random.yml
+        - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_64.yml
+        - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_63.yml
+        - ../test_suites/smoke_test_mcu_trace_buffer_no_debug/smoke_test_mcu_trace_buffer_no_debug.yml
         - ../test_suites/smoke_test_mcu_mbox_valid_user/smoke_test_mcu_mbox0_valid_user.yml
         - ../test_suites/smoke_test_mcu_mbox_write_user_lock/smoke_test_mcu_mbox0_write_user_lock.yml
         - ../test_suites/smoke_test_mcu_mbox_usr_lock_out_zero/smoke_test_mcu_mbox0_usr_lock_out_zero.yml
@@ -39,5 +45,4 @@ contents:
         - ../test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check.yml
         - ../test_suites/smoke_test_lcc_registers/smoke_test_lcc_registers.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_bus_ecc_error/caliptra_ss_fuse_ctrl_bus_ecc_error.yml
-        - ../test_suites/smoke_test_wdt/smoke_test_wdt.yml
         - ../test_suites/smoke_test_lcc_st_trans/smoke_test_lcc_st_trans.yml

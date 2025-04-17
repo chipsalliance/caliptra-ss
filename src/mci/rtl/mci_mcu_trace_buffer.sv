@@ -63,10 +63,8 @@ mci_mcu_trace_packet_t  write_trace_data_packet;
 mci_mcu_trace_packet_t  read_trace_data_packet;
 logic [31:0]            read_trace_data;
 
-
-logic [31:0] write_ptr; // Entry into trace_buffer array
+logic [31:0] write_ptr_shift; // Shifted write_ptr
 logic [NUM_TRACE_ENTRIES_PTR_WIDTH-1:0] write_ptr_chop; // Shortened write_ptr
-logic [31:0] write_ptr_dword; // Translate write_ptr to num dwords in trace_buffer
 logic [31:0] read_ptr; // Entry into trace_buffer array
 logic [NUM_TRACE_ENTRIES_PTR_WIDTH-1:0] read_ptr_chop; // Shortened read_ptr
 logic [31:0] read_ptr_dword; // Translate read_ptr to num dword in trace_buffer
@@ -77,8 +75,6 @@ logic trace_buffer_reg_read_error;
 logic trace_buffer_reg_write_error;
 logic [31:0] c_cpuif_wr_biten; // Byte Enable mapping
 logic cif_illegal_access_error;
-logic trace_buffer_valid_data;
-logic trace_buffer_wrapped;
 logic dmi_wr_en_qual;
 
 
@@ -88,7 +84,7 @@ logic dmi_wr_en_qual;
 ////////////////////////
 assign trace_buffer_hwif_in.rst_b = rst_b;
 
-assign write_trace_buffer = debug_en && mcu_trace_rv_i_valid_ip;
+assign write_trace_buffer =  mcu_trace_rv_i_valid_ip;
 
 assign write_trace_data_packet.reserved                  = '0; 
 assign write_trace_data_packet.trace_rv_i_interrupt_ip   = mcu_trace_rv_i_interrupt_ip;
@@ -107,36 +103,32 @@ assign cif_resp_if.hold = '0;
 ////////////////////////
 // Write Pointer
 ////////////////////////
-always_ff @(posedge clk or negedge rst_b) begin
-    if (!rst_b) begin
-        write_ptr <= '0;
-        trace_buffer_valid_data <= '0;
-        trace_buffer_wrapped <= '0;
+always_comb begin
+    trace_buffer_hwif_in.STATUS.valid_data.next = trace_buffer_hwif_out.STATUS.valid_data.value;
+    if(write_trace_buffer) begin
+        trace_buffer_hwif_in.STATUS.valid_data.next = 1'b1;
     end
-    else begin
-        if (write_trace_buffer) begin
-            trace_buffer_valid_data <= 1'b1;
-            if (write_ptr == NUM_TRACE_ENTRIES - 1) begin
-                trace_buffer_wrapped <= 1'b1;
-                write_ptr <= '0;
-            end
-            else begin
-                write_ptr <= write_ptr + 1;
-            end
+end 
+
+always_comb begin
+    trace_buffer_hwif_in.WRITE_PTR.ptr.next = trace_buffer_hwif_out.WRITE_PTR.ptr.value;
+    trace_buffer_hwif_in.STATUS.wrapped.next = trace_buffer_hwif_out.STATUS.wrapped.value;
+    if(write_trace_buffer) begin
+        if ((trace_buffer_hwif_out.WRITE_PTR.ptr.value + MCI_MCU_TRACE_PACKET_NUM_DWORDS) >= TRACE_BUFFER_DWORD_DEPTH) begin
+            trace_buffer_hwif_in.STATUS.wrapped.next = 1'b1;
+            trace_buffer_hwif_in.WRITE_PTR.ptr.next = '0;
+        end
+        else begin
+            trace_buffer_hwif_in.WRITE_PTR.ptr.next = trace_buffer_hwif_out.WRITE_PTR.ptr.value + MCI_MCU_TRACE_PACKET_NUM_DWORDS;
         end
     end
 end
     
-// Use appropriate number of bits to fix lint issue.
-assign write_ptr_chop = write_ptr[NUM_TRACE_ENTRIES_PTR_WIDTH-1:0];
-
-// Shift left by 2 because there are 4 DWORDs in a trace_buffer entry
+// Shift right by 2 because there are 4 DWORDs in a trace_buffer entry
 // and the data for FW is DWORD accessible. 
-assign write_ptr_dword = write_ptr << 2;
-
-assign trace_buffer_hwif_in.WRITE_PTR.ptr.next      = write_ptr_dword; 
-assign trace_buffer_hwif_in.STATUS.valid_data.next  = trace_buffer_valid_data; 
-assign trace_buffer_hwif_in.STATUS.wrapped.next     = trace_buffer_wrapped; 
+assign write_ptr_shift = trace_buffer_hwif_out.WRITE_PTR.ptr.value >> 2;
+// Use appropriate number of bits to fix lint issue.
+assign write_ptr_chop  = write_ptr_shift[NUM_TRACE_ENTRIES_PTR_WIDTH-1:0] ;
 
 ////////////////////////
 // Read Pointer/Data
@@ -146,7 +138,7 @@ assign read_ptr_dword = trace_buffer_hwif_out.READ_PTR.ptr.value;
 
 // Shift right by 2 because there are 4 DWORDs in a trace_buffer entry
 // So div by 4 to get packet number in the trace_buffer. 
-assign read_ptr = {2'b00, read_ptr_dword >> 2};
+assign read_ptr = read_ptr_dword >> 2;
 
 // Use appropriate number of bits to fix lint issue.
 assign read_ptr_chop = read_ptr[NUM_TRACE_ENTRIES_PTR_WIDTH-1:0];
@@ -182,11 +174,11 @@ end
 ////////////////////////
 
 
-assign dmi_reg_pre_security.TRACE_STATUS = trace_buffer_hwif_out.STATUS;
-assign dmi_reg_pre_security.TRACE_CONFIG = trace_buffer_hwif_out.CONFIG;
-assign dmi_reg_pre_security.TRACE_WR_PTR = trace_buffer_hwif_out.WRITE_PTR;
-assign dmi_reg_pre_security.TRACE_RD_PTR = trace_buffer_hwif_out.READ_PTR;
-assign dmi_reg_pre_security.TRACE_DATA   = trace_buffer_hwif_out.DATA; 
+assign dmi_reg_pre_security.TRACE_STATUS = {30'h0, trace_buffer_hwif_out.STATUS.wrapped.value, trace_buffer_hwif_out.STATUS.valid_data.value};
+assign dmi_reg_pre_security.TRACE_CONFIG = trace_buffer_hwif_out.CONFIG.trace_buffer_depth.value;
+assign dmi_reg_pre_security.TRACE_WR_PTR = trace_buffer_hwif_out.WRITE_PTR.ptr.value;
+assign dmi_reg_pre_security.TRACE_RD_PTR = trace_buffer_hwif_out.READ_PTR.ptr.value;
+assign dmi_reg_pre_security.TRACE_DATA   = trace_buffer_hwif_out.DATA.data.value; 
 
 assign dmi_reg = debug_en ? dmi_reg_pre_security : '0; 
 

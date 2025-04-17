@@ -1,4 +1,19 @@
 
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 class RandInvalidAXIUser;
   randc logic [31:0] rand_user;
   logic [31:0] strap_mcu_lsu_axi_user;
@@ -45,6 +60,43 @@ task bfm_axi_read_single(input [AXI_AW-1:0] addr,
     end
 endtask
 
+task bfm_axi_read_single_response(input [AXI_AW-1:0] addr,
+                          input [31:0]       user,
+                          output [31:0]      data,
+                          output axi_resp_e   resp);
+    logic [31:0] rsp_user;
+
+    m_axi_bfm_if.axi_read_single(addr,
+                                  user,
+                                  ,
+                                  ,
+                                  data,
+                                  rsp_user,
+                                  resp);
+endtask
+
+task bfm_axi_read_single_check_data_response(input [AXI_AW-1:0] addr,
+                          input [31:0]       user,
+                          input [31:0]       exp_data,
+                          input axi_resp_e   exp_resp);
+    logic [31:0] data;
+    axi_resp_e resp;
+
+    bfm_axi_read_single_response(addr,
+                                  user,
+                                  data,
+                                  resp);
+    
+    if(resp !== exp_resp) begin
+        $error("Read response missmatch when reading 0x%x: 0x%x - Expected response 0x%x Actual response 0x%x", addr, data, exp_resp, resp);
+    end
+
+    if(data !== exp_data) begin
+        $error("Read data missmatch when reading 0x%x: 0x%x - Expected data 0x%x Actual data 0x%x", addr, data, exp_data, data);
+    end
+
+endtask
+
 task automatic bfm_axi_read_single_invalid_user( input [AXI_AW-1:0] addr,
                                                  output [31:0]       data); 
     RandInvalidAXIUser invalid_axi_user_gen = new(
@@ -76,6 +128,27 @@ task bfm_axi_write_single(input [AXI_AW-1:0] addr,
     if(resp !== AXI_RESP_OKAY) begin
         $error("AXI WRITE: Write response error: 0x%h when writing to 0x%h: 0x%h with AXI USER: 0x%h", resp, addr, data, user);
     end 
+endtask
+
+task bfm_axi_read_check(input [AXI_AW-1:0] addr,
+                          input [31:0]       user,
+                          input [31:0]       data); 
+    axi_resp_e   resp;
+    logic [31:0] rsp_user;
+    logic [31:0] read_data;
+    m_axi_bfm_if.axi_read_single(addr,
+                                  user,
+                                  ,
+                                  ,
+                                  read_data,
+                                  rsp_user,
+                                  resp);
+    if(resp !== AXI_RESP_OKAY) begin
+        $error("AXI READ: Read response error: 0x%h when reading to 0x%h: 0x%h with AXI USER: 0x%h", resp, addr, data, user);
+    end
+    if(read_data !== data) begin
+        $error("AXI READ: Read data mismatch: Actual 0x%h when reading to 0x%h: Expected Data:  0x%h with AXI USER: 0x%h", read_data, addr, data, user);
+    end
 endtask
 
 task automatic bfm_axi_write_single_invalid_user(input [AXI_AW-1:0] addr,

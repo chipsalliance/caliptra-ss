@@ -128,3 +128,67 @@ task mcu_protected_region_exists(output logic exists);
     exists = exec_last_addr < mcu_last_addr;
 endtask
 
+task get_mcu_trace_buffer_entry(input logic [31:0] index, output logic [31:0] entry);
+    if (index < 0 || index >= 256) begin
+        $fatal("Index out of bounds: %d", index);
+    end
+    bfm_axi_write_single(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_READ_PTR, $urandom(), index);
+    bfm_axi_read_single(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_DATA, $urandom(), entry);
+endtask
+
+task check_mcu_trace_buffer_entry(input logic [31:0] index, input logic no_debug = 0);
+    logic [31:0] entry;
+    $display("[%t] Checking MCU trace buffer entry at index %d", $time, index);
+    get_mcu_trace_buffer_entry(index, entry);
+    if(no_debug) begin
+        if(entry !== '0) begin
+            $fatal("Data mismatch at index %d: expected %h, got %h", index, '0, entry);
+        end
+        else begin
+            $display("[%t] Entry %d is correct: %h", $time, index, entry);
+        end
+    end
+    else begin
+        if(entry !== mcu_trace_buffer[index]) begin
+            $fatal("Data mismatch at index %d: expected %h, got %h", index, mcu_trace_buffer[index], entry);
+        end
+        else begin
+            $display("[%t] Entry %d is correct: %h", $time, index, entry);
+        end
+    end
+
+endtask
+
+task check_mcu_trace_buffer(input logic no_debug = 0);
+    $display("[%t] Checking MCU trace buffer", $time);
+    for (int i = 0; i < 256; i++) begin
+        check_mcu_trace_buffer_entry(i, no_debug);
+    end
+endtask
+
+task mcu_trace_buffer_force_num_entires(input int num_entries);
+    $display("[%t] Forcing MCU trace buffer to have %d entries", $time, num_entries);
+    if(num_entries == 64) begin
+        wait(mcu_trace_buffer_wr_ptr === 0  && mcu_trace_buffer_valid === 1);
+    end
+    else begin
+        wait((num_entries * 4) === mcu_trace_buffer_wr_ptr);
+    end
+    force `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip = '0;
+    $display("%t] MCU trace buffer forced to have %d entries", $time, num_entries);
+endtask
+
+task mcu_trace_buffer_random_inject_trace_data();
+    $display("[%t] Randomly injecting trace data into the trace buffer", $time);
+    forever begin
+        @(posedge `MCI_PATH.i_mci_mcu_trace_buffer.clk);
+        #1;
+        force `MCU_PATH.trace_rv_i_insn_ip       = $urandom;
+        force `MCU_PATH.trace_rv_i_address_ip    = $urandom;
+        force `MCU_PATH.trace_rv_i_exception_ip  = $urandom % 2; // Randomize to 0 or 1
+        force `MCU_PATH.trace_rv_i_ecause_ip     = $urandom % 32; // Randomize to 5-bit value
+        force `MCU_PATH.trace_rv_i_interrupt_ip  = $urandom % 2; // Randomize to 0 or 1
+        force `MCU_PATH.trace_rv_i_tval_ip       = $urandom;
+    end
+endtask
+
