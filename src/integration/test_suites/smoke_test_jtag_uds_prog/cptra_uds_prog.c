@@ -80,7 +80,7 @@ uint32_t dma_read_from_lsu(uint32_t address){
 }
 
 void dma_write_from_lsu(uint32_t address, uint32_t write_data){
-    soc_ifc_axi_dma_send_ahb_payload(address, 0, &write_data, 16, 0);
+    soc_ifc_axi_dma_send_ahb_payload(address, 0, &write_data, 4, 0);
     return;
 }
 
