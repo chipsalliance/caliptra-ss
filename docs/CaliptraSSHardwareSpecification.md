@@ -115,6 +115,7 @@
       - [MCI DMI](#mci-dmi)
         - [MCU DMI Enable Control](#mcu-dmi-enable-control)
         - [MCI DMI Memory Map](#mci-dmi-memory-map)
+          - [DMI Only Registers](#dmi-only-registers)
         - [MCI DMI Interface](#mci-dmi-interface)
         - [DMI MCU SRAM Access](#dmi-mcu-sram-access)
         - [DMI MCU Trace Buffer Access](#dmi-mcu-trace-buffer-access)
@@ -1480,6 +1481,16 @@ MCI provides the logic for these enables. When the following condition(s) are me
 | SS\_CONFIG\_DONE | 0x79 | RW |  |  | Yes |
 | SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  |  | Yes |
 | MCU\_NMI\_VECTOR | 0x7B | RW |  |  | Yes |
+| MCI\_DMI\_MCI\_HW\_OVERRIDE ([DMI ONLY Reg](#dmi-only-registers)) | 0x7C | RW |  |  | Yes |
+
+###### DMI Only Registers 
+
+MCI\_DMI\_MCU\_HW\_OVERRIDE
+
+| Field Name | Bits  | Access Type | Description | 
+| :----      | :---- | :----       | :----       | 
+| `mcu_sram_fw_exec_region_lock`      | [0]  | RW          | mcu_sram_fw_exec_region_lock control. ORed with input signal giving debugger control if Caliptra Core in reset while attempting MCU reset flow.         |
+| `reserved`      | [31:1]  | RW          | Reserved         |
 
 ##### MCI DMI Interface
 
