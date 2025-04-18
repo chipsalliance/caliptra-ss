@@ -1365,11 +1365,11 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 ![](images/MCI-MCU-Trace-Buffer-Diagram.png)
 
-MCI hosts the MCU trace buffer. It can hold up to 64 traces from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Read access to the trace buffer is controlled by the LCC state Translator. When Debug Locked all AXI and DMI accesses to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while Debug Locked.
+MCI hosts the MCU trace buffer. It can hold up to 64 trace packets from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Read access to the trace buffer is controlled by the LCC state Translator. When Debug Locked all AXI and DMI accesses to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while Debug Locked.
 
 MCU RISC-V processor can enable/disable tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces.
 
-The trace buffer is a circular buffer where old data is overwritten by new traces. The start of the first trace packet is stored at offset 0 and subsequent trace data is written to WRITE_PTR + 1. 
+The trace buffer is a circular buffer where the oldest data is overwritten by new traces when the buffer is full. When a trace packet is stored the write pointer increments by [MCU Trace Buffer Packet Size](#mcu-trace-buffer-packet)/DWORD
 
 The trace buffer is reset when MCI reset is asserted (warm reset).
 
@@ -1382,21 +1382,22 @@ Below is the SW interface to extract trace data:
 | :---------         | :---------     | :---------| 
 | DATA               | RO        | Trace data at READ_PTR location|
 | READ_PTR           | RW        | Read pointer in trace buffer for DATA. NOTE: this is not an address, meaning increment by 1 to get the next entry. | 
-| WRITE_PTR          | RO        | Next trace entry in trace buffer.              |
+| WRITE_PTR          | RO        | Offset to store next trace entry in trace buffer. If VALID_DATA is set, WRITE_PTR - 1 is the newest trace entry.              |
 | STATUS.VALID_DATA         | RO        | Indicates at least one entry is valid in the trace buffer.      |
-| STATUS.WRAPPED            | RO        | Indicates the trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid.|
+| STATUS.WRAPPED            | RO        | Indicates the trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid. If 0, then the oldest entry in the buffer is at ptr=0. If 1, the oldest entry is at WRITE_PTR|
 | CONFIG.TRACE_BUFFER_DEPTH | RO        | Indicates the total number of 32 bit entries in the trace buffer. TRACE_BUFFER_DEPTH - 1 is the last valid WRITE/READ_PTR entry in the trace buffer. NOTE: This is the trace buffer depth and not the number of [MCU Trace Buffer Packets](#mcu-trace-buffer-packet). |
 
 #### MCU Trace Buffer Packet
 
-A single MCU trace is more than 32 bits, meaning each trace takes up more than one offset. Trace data is stored in the following format:
+A single MCU trace packet is more than 32 bits, meaning each trace takes up more than one READ/WRITE_PTR entry. Trace data is stored in the following format:
+
 ![](images/MCI-MCU-Trace-Buffer-Data.png)
 
 Assuming there is only one trace stored in the trace buffer the WRITE_PTR would read as 0x4. To get the entire trace packet the user would need to read offsets 0x0, 0x1, 0x2, and 0x3. 
 
 #### MCU Trace Buffer Extraction
 
-To extrace trace buffer data the user should send the following transaction:
+To extract trace buffer data the user should send the following transaction:
 
 1. Write READ_PTR
 2. Read DATA
