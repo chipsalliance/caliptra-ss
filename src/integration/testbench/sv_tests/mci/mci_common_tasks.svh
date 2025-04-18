@@ -128,18 +128,24 @@ task mcu_protected_region_exists(output logic exists);
     exists = exec_last_addr < mcu_last_addr;
 endtask
 
-task get_mcu_trace_buffer_entry(input logic [31:0] index, output logic [31:0] entry);
+task get_mcu_trace_buffer_entry(input logic [31:0] index, output logic [31:0] entry, input logic no_debug = 0);
     if (index < 0 || index >= 256) begin
         $fatal("Index out of bounds: %d", index);
     end
-    bfm_axi_write_single(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_READ_PTR, $urandom(), index);
-    bfm_axi_read_single(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_DATA, $urandom(), entry);
+    if(no_debug) begin
+        bfm_axi_write_single_check_response(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_READ_PTR, $urandom(), index, AXI_RESP_SLVERR);
+        bfm_axi_read_single_check_response(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_DATA, $urandom(), entry, AXI_RESP_SLVERR);
+    end
+    else begin
+        bfm_axi_write_single(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_READ_PTR, $urandom(), index);
+        bfm_axi_read_single(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_DATA, $urandom(), entry);
+    end
 endtask
 
 task check_mcu_trace_buffer_entry(input logic [31:0] index, input logic no_debug = 0);
     logic [31:0] entry;
     $display("[%t] Checking MCU trace buffer entry at index %d", $time, index);
-    get_mcu_trace_buffer_entry(index, entry);
+    get_mcu_trace_buffer_entry(index, entry, no_debug);
     if(no_debug) begin
         if(entry !== '0) begin
             $fatal("Data mismatch at index %d: expected %h, got %h", index, '0, entry);

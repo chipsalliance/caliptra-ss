@@ -75,6 +75,23 @@ task bfm_axi_read_single_response(input [AXI_AW-1:0] addr,
                                   resp);
 endtask
 
+task bfm_axi_read_single_check_response(input [AXI_AW-1:0] addr,
+                          input [31:0]       user,
+                          output [31:0]      data,
+                          input axi_resp_e   exp_resp);
+    axi_resp_e resp;
+
+    bfm_axi_read_single_response(addr,
+                                  user,
+                                  data,
+                                  resp);
+    
+    if(resp !== exp_resp) begin
+        $error("Read response missmatch when reading 0x%x: 0x%x - Expected response 0x%x Actual response 0x%x", addr, data, exp_resp, resp);
+    end
+
+endtask
+
 task bfm_axi_read_single_check_data_response(input [AXI_AW-1:0] addr,
                           input [31:0]       user,
                           input [31:0]       exp_data,
@@ -112,6 +129,40 @@ task automatic bfm_axi_read_single_invalid_user( input [AXI_AW-1:0] addr,
     bfm_axi_read_single(addr, invalid_axi_user_gen.rand_user, data);
 endtask
 
+task bfm_axi_write_single_check_response(input [AXI_AW-1:0] addr,
+                          input [31:0]       user,
+                          input [31:0]       data,
+                          input axi_resp_e   exp_resp);
+    axi_resp_e   resp;
+    logic [31:0] rsp_user;
+    m_axi_bfm_if.axi_write_single(addr,
+                                  user,
+                                  ,   
+                                  ,   
+                                  data,
+                                  user,
+                                  resp,
+                                  rsp_user);
+    if(resp !== exp_resp) begin
+        $error("AXI WRITE: Write response error: Expected 0x%h when writing to 0x%h: 0x%h with AXI USER: 0x%h Actual: 0x%h", resp, addr, data, user, exp_resp);
+    end
+endtask
+
+task bfm_axi_write_single_response(input [AXI_AW-1:0] addr,
+                          input [31:0]       user,
+                          input [31:0]       data,
+                          output axi_resp_e   resp);
+    logic [31:0] rsp_user;
+    m_axi_bfm_if.axi_write_single(addr,
+                                  user,
+                                  ,   
+                                  ,   
+                                  data,
+                                  user,
+                                  resp,
+                                  rsp_user);
+endtask
+
 task bfm_axi_write_single(input [AXI_AW-1:0] addr,
                           input [31:0]       user,
                           input [31:0]       data); 
@@ -144,7 +195,7 @@ task bfm_axi_read_check(input [AXI_AW-1:0] addr,
                                   rsp_user,
                                   resp);
     if(resp !== AXI_RESP_OKAY) begin
-        $error("AXI READ: Read response error: 0x%h when reading to 0x%h: 0x%h with AXI USER: 0x%h", resp, addr, data, user);
+        $error("AXI READ: Read response error: Actual -  0x%h Expected - 0x%h when reading to 0x%h: 0x%h with AXI USER: 0x%h", resp, AXI_RESP_OKAY, addr, data, user, );
     end
     if(read_data !== data) begin
         $error("AXI READ: Read data mismatch: Actual 0x%h when reading to 0x%h: Expected Data:  0x%h with AXI USER: 0x%h", read_data, addr, data, user);
