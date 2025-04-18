@@ -656,7 +656,7 @@ import css_mcu0_el2_pkg::*;
    logic         dec_tlu_flush_err_r;
    logic         ifu_i0_valid;
    logic [31:0]  ifu_i0_instr;
-   logic [31:1]  ifu_i0_pc;
+   (* syn_keep = "true", mark_debug = "true" *) logic [31:1]  ifu_i0_pc;
 
    logic        exu_flush_final;
 
