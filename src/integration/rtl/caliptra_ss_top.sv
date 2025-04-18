@@ -159,10 +159,11 @@ module caliptra_ss_top
 `endif
 
 // Caliptra SS MCU 
-    input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
-    input logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
-    input logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
-    input logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
+    input  logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+    input  logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
+    input  logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
+    input  logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
+    output logic        cptra_ss_cpu_halt_status_o,
 
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
@@ -260,6 +261,7 @@ module caliptra_ss_top
     logic                       mcu_dccm_ecc_single_error;
     logic                       mcu_dccm_ecc_double_error;
 
+    logic                       i3c_irq_o;
     logic                       i3c_peripheral_reset;
     logic                       i3c_escalated_reset;
 
@@ -271,7 +273,6 @@ module caliptra_ss_top
     logic                       jtag_tdo;
     logic                       i_cpu_halt_req;
     logic                       o_cpu_halt_ack;
-    logic                       o_cpu_halt_status;
     logic                       o_cpu_run_ack;
 
     logic        [63:0]         dma_hrdata       ;
@@ -361,7 +362,7 @@ module caliptra_ss_top
     logic [31:0] mci_mcu_nmi_vector;
     logic mci_mcu_timer_int;
 
-    logic [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o;  // FIXME: This needs to be an input of MCI
+    logic [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o; 
 
     // ----------------- FC to Caliptra-Core ports -----------------------
     otp_ctrl_part_pkg::otp_broadcast_t from_otp_to_clpt_core_broadcast;  // This is a struct data type
@@ -559,23 +560,21 @@ module caliptra_ss_top
 
     //Interrupt connections
     assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
-    assign ext_int[`VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL]  = mailbox_data_avail;
-    assign ext_int[`VEER_INTR_VEC_I3C]                  = 0;
-    assign ext_int[`VEER_INTR_VEC_FC]                   = intr_otp_operation_done;
+    assign ext_int[`VEER_INTR_VEC_I3C]                  = i3c_irq_o;
     assign ext_int[pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] = cptra_ss_mcu_ext_int;
 
     //Aggregate error connections
     assign agg_error_fatal[5:0]   = {5'b0, cptra_error_fatal}; //CPTRA
     assign agg_error_fatal[11:6]  = {5'b0, mcu_dccm_ecc_double_error}; //MCU
     assign agg_error_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
-    assign agg_error_fatal[23:18] = {{6-otp_ctrl_reg_pkg::NumAlerts{1'b0}}, fc_alerts}; //FC
+    assign agg_error_fatal[23:18] = {fc_intr_otp_error, fc_alerts}; //FC
     assign agg_error_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C
     assign agg_error_fatal[31:30] = '0; //spare
 
     assign agg_error_non_fatal[5:0]   = {5'b0, cptra_error_non_fatal}; //CPTRA
     assign agg_error_non_fatal[11:6]  = {5'b0, mcu_dccm_ecc_single_error}; //MCU
     assign agg_error_non_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
-    assign agg_error_non_fatal[23:18] = {{6-otp_ctrl_reg_pkg::NumAlerts{1'b0}}, fc_alerts}; //FC
+    assign agg_error_non_fatal[23:18] = {fc_intr_otp_error, fc_alerts}; //FC
     assign agg_error_non_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C
     assign agg_error_non_fatal[31:30] = '0; //spare
 
@@ -803,7 +802,7 @@ module caliptra_ss_top
 
         .i_cpu_halt_req         ( i_cpu_halt_req ),    // Async halt req to CPU
         .o_cpu_halt_ack         ( o_cpu_halt_ack ),    // core response to halt
-        .o_cpu_halt_status      ( o_cpu_halt_status ), // 1'b1 indicates core is halted
+        .o_cpu_halt_status      ( cptra_ss_cpu_halt_status_o ), // 1'b1 indicates core is halted
         .i_cpu_run_req          ( 1'b0  ),     // Async restart req to CPU
         .o_cpu_run_ack          ( o_cpu_run_ack ),     // Core response to run req
 
@@ -933,9 +932,8 @@ module caliptra_ss_top
         .peripheral_reset_o(i3c_peripheral_reset),
         .peripheral_reset_done_i(1'b1),
         .escalated_reset_o(i3c_escalated_reset),
-        .irq_o()
+        .irq_o(i3c_irq_o)
 
-    // TODO: Add interrupts
     );
 
     //=========================================================================
@@ -1020,10 +1018,14 @@ module caliptra_ss_top
         .strap_mcu_reset_vector(cptra_ss_strap_mcu_reset_vector_i),
         
         .mcu_reset_vector(reset_vector),
+        
+        // OTP
+        .intr_otp_operation_done,
+        
         // MCU Halt Signals
         .mcu_cpu_halt_req_o   (i_cpu_halt_req   ),
         .mcu_cpu_halt_ack_i   (o_cpu_halt_ack   ),
-        .mcu_cpu_halt_status_i(o_cpu_halt_status),
+        .mcu_cpu_halt_status_i(cptra_ss_cpu_halt_status_o),
 
         .mcu_no_rom_config(cptra_ss_mcu_no_rom_config_i),
 
@@ -1208,7 +1210,7 @@ module caliptra_ss_top
         .prim_generic_otp_inputs_o  (cptra_ss_fuse_macro_inputs_o),
 
         .intr_otp_operation_done_o  (intr_otp_operation_done),
-        .intr_otp_error_o           (fc_intr_otp_error), //TODO: This signal should be connected to MCI
+        .intr_otp_error_o           (fc_intr_otp_error), 
         // .alert_rx_i                 (),
         // .alert_tx_o                 (),
         .alerts(fc_alerts),
