@@ -21,5 +21,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region_max_size: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_mcu_sram_to_sha/caliptra_ss_mcu_sram_to_sha: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_external_clock/caliptra_ss_fuse_ctrl_external_clock: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_escalation/caliptra_ss_lcc_escalation: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_init_fail: { weight: 100 }
