@@ -1233,10 +1233,6 @@ module caliptra_ss_top
         // .alert_rx_i                 (),
         // .alert_tx_o                 (),
         .alerts(fc_alerts),
-        .obs_ctrl_i                 (12'd0),    //TODO: Needs to be checked
-        .otp_obs_o                  (),
-        .otp_ast_pwr_seq_o          (),
-        .otp_ast_pwr_seq_h_i        (2'd0),    //TODO: Needs to be checked
         .pwr_otp_i                  (otp_ctrl_init_req),
         .pwr_otp_o                  (u_otp_ctrl_pwr_otp_o),
 
@@ -1255,11 +1251,7 @@ module caliptra_ss_top
         .otp_lc_data_o(from_otp_to_lcc_data_i),
 
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
-        .scan_en_i                  ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .scan_rst_ni                (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False),
-        .cio_test_o                 (),    //TODO: Needs to be checked
-        .cio_test_en_o              ()    //TODO: Needs to be checked
+        .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
 	); 
 
 endmodule
