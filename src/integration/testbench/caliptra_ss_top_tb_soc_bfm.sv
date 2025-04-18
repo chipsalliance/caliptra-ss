@@ -80,6 +80,9 @@ initial begin
     end
     else if($test$plusargs("SMOKE_TEST_MCU_SRAM_DEBUG_STRESS"))begin
         smoke_test_mcu_sram_debug_stress();        
+    end 
+    if ($test$plusargs("MCU_MBOX_SOC_AGENT_WRITE_FW_IMAGE")) begin
+        mcu_mbox_soc_agent_write_fw_image();       
     end
 end
 

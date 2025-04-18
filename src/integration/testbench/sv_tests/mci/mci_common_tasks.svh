@@ -128,3 +128,59 @@ task mcu_protected_region_exists(output logic exists);
     exists = exec_last_addr < mcu_last_addr;
 endtask
 
+task get_mcu_mbox_lock_address(output logic [AXI_AW-1:0] addr);
+    addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK;
+endtask
+
+task get_mcu_mbox_valid_axi_user_address(output logic [AXI_AW-1:0] addr);
+    addr = `SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0;
+endtask
+
+task get_mcu_mbox_axi_user_lock_address(output logic [AXI_AW-1:0] addr);
+    addr = `SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0;
+endtask
+
+task get_mcu_mbox_sram_base_addr(output logic [AXI_AW-1:0] addr, input int mbox_num = 0);
+    if (mbox_num == 0)
+        addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR;
+    else if (mbox_num == 1)
+        addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_BASE_ADDR;
+endtask
+
+task get_mcu_mbox_sram_addr(output logic [AXI_AW-1:0] addr, input int dword, input int mbox_num);
+    logic [AXI_AW-1:0] base_addr;
+    get_mcu_mbox_sram_base_addr(base_addr, mbox_num);
+    addr = base_addr + (dword * 4);
+endtask
+
+task get_mcu_mbox_dlen_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
+    if (mbox_num == 0)
+        addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN;
+    else if (mbox_num == 1)
+        addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_DLEN;
+endtask
+
+task get_mbox_mcu_execute_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
+    if (mbox_num == 0)
+        addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE;
+    else if (mbox_num == 1)
+        addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_EXECUTE;
+endtask
+
+task get_mcu_mbox_cmd_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
+    if (mbox_num == 0)
+        addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD;
+    else if (mbox_num == 1)
+        addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD;
+endtask
+
+task get_cptra_boot_go_address(output logic [AXI_AW-1:0] addr);
+    addr = `SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO;
+endtask
+
+task get_mbox_mcu_cmd_status_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
+    if (mbox_num == 0)
+        addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS;
+    else if (mbox_num == 1)
+        addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD_STATUS;
+endtask
