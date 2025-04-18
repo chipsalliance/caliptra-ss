@@ -210,5 +210,86 @@ module caliptra_ss_top_sva
     else $display("SVA ERROR: Allow_RMA_or_SCRAP_on_PPD was not asserted for SCRAP and RMA.");
     
 
-      
+  //Error handling - TODO: disable conditions
+  mci_error_fatal_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`MCI_REG_TOP_PATH.nmi_intr |=> `MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin) and (`MCI_REG_TOP_PATH.mcu_sram_double_ecc_error |=> `MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc) and (`MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error |=> `MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision)
+  ) else $display("SVA ERROR: MCI HW ERROR FATAL reg is not set correctly");
+
+  mci_error_fatal_cold_rst_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL=='h0)) 
+  ) else $display("SVA ERROR: MCI HW ERROR FATAL is expected to reset on cold reset");
+
+  mci_error_fatal_warm_rst_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    disable iff (!`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i)
+    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL)[*5])) 
+  ) else $display("SVA ERROR: MCI HW ERROR FATAL is expected to remain unchanged on warm reset");
+
+  all_error_fatal_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    ((`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision) & (`MCI_REG_TOP_PATH.nmi_intr | `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error) & `MCI_REG_TOP_PATH.mci_intr |=> ~`MCI_REG_TOP_PATH.all_error_fatal[*5])
+  ) else $display("SVA ERROR: all_error_fatal is asserted unexpectedly");
+  
+  all_error_fatal_sram_doublebit_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    ((`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc) & `MCI_REG_TOP_PATH.mcu_sram_double_ecc_error & `MCI_REG_TOP_PATH.cif_resp_if.error |=> ~`MCI_REG_TOP_PATH.all_error_fatal[*5])
+  ) else $display("SVA ERROR: all_error_fatal for mcu_sram_ecc_unc is asserted unexpectedly");
+
+  //----------------------------------------------
+  mci_error_non_fatal_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`MCI_REG_TOP_PATH.mbox0_sram_double_ecc_error |=> `MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox0_ecc_unc) and (`MCI_REG_TOP_PATH.mbox1_sram_double_ecc_error |=> `MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox1_ecc_unc)
+  ) else $display("SVA ERROR: MCI HW ERROR NON FATAL reg is not set correctly");
+
+  mci_error_non_fatal_cold_rst_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_NON_FATAL=='h0)) 
+  ) else $display("SVA ERROR: MCI HW ERROR NON FATAL is expected to reset on cold reset");
+
+  mci_error_non_fatal_warm_rst_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    disable iff (!`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i)
+    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_NON_FATAL)[*5])) 
+  ) else $display("SVA ERROR: MCI HW ERROR NON FATAL is expected to remain unchanged on warm reset");
+
+  all_error_non_fatal_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    ((`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc) & (`MCI_REG_TOP_PATH.mbox0_sram_double_ecc_error | `MCI_REG_TOP_PATH.mbox1_sram_double_ecc_error) & `MCI_REG_TOP_PATH.mci_intr |=> ~`MCI_REG_TOP_PATH.all_error_non_fatal[*5])
+  ) else $display("SVA ERROR: all_error_non_fatal is asserted unexpectedly");
+
+  //----------------------------------------------
+  all_error_fatal_warm_rst_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (~`MCI_REG_TOP_PATH.mci_rst_b |-> ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o)
+  ) else $display("SVA ERROR: all_error_fatal is not reset correctly after a warm reset");
+
+  all_error_non_fatal_warm_rst_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (~`MCI_REG_TOP_PATH.mci_rst_b |-> ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o)
+  ) else $display("SVA ERROR: all_error_non_fatal is not reset correctly after a warm reset");
+
+  //----------------------------------------------
+  agg_all_error_fatal_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`CPTRA_SS_TOP_PATH.cptra_error_fatal & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal0 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
+    (`CPTRA_SS_TOP_PATH.mcu_dccm_ecc_double_error & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal6 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
+    ((`CPTRA_SS_TOP_PATH.lc_alerts_o != 0) & (`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal14 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal13 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal12) |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
+    ((`CPTRA_SS_TOP_PATH.fc_alerts != 0) & (`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal20 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal19 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal18) |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
+    (`CPTRA_SS_TOP_PATH.i3c_peripheral_reset & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal25 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
+    (`CPTRA_SS_TOP_PATH.i3c_escalated_reset & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal24 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o)
+  ) else $display("SVA ERROR: AGG all_error_fatal is not set correctly");
+
+  agg_all_error_non_fatal_check: assert property (
+    @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
+    (`CPTRA_SS_TOP_PATH.cptra_error_non_fatal & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
+    (`CPTRA_SS_TOP_PATH.mcu_dccm_ecc_single_error & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
+    ((`CPTRA_SS_TOP_PATH.lc_alerts_o != 0) & (`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12) |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
+    ((`CPTRA_SS_TOP_PATH.fc_alerts != 0) & (`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18) |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
+    (`CPTRA_SS_TOP_PATH.i3c_peripheral_reset & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
+    (`CPTRA_SS_TOP_PATH.i3c_escalated_reset & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o)
+  ) else $display("SVA ERROR: AGG all_error_non_fatal is not set correctly");
+
+
 endmodule

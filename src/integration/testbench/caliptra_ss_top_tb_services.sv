@@ -150,6 +150,11 @@ import tb_top_pkg::*;
 
     end
 
+    //Note update these as more errors are added to aggregate_error bus
+    logic [2:0] rand_err_injection_sel;
+    localparam NUM_AGG_ERROR_FATAL = 6;
+    localparam NUM_AGG_ERROR_NON_FATAL = 6;
+
     always @(negedge clk) begin
         // console Monitor
         if( mailbox_data_val & mailbox_write) begin
@@ -179,6 +184,122 @@ import tb_top_pkg::*;
         // ECC error injection - FIXME
         error_injection_mode.dccm_single_bit_error <= 1'b0;
         error_injection_mode.dccm_double_bit_error <= 1'b0;
+
+        //TODO: randomly select which error bit to force for more complete testing
+        // MCI error injection
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MCI_ERROR_FATAL)) begin
+            $display("Injecting MCI errs");
+            
+            force `MCI_REG_TOP_PATH.nmi_intr = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.nmi_intr;
+            repeat($urandom_range(0,15)) @(negedge clk);
+        
+            force `MCI_REG_TOP_PATH.mcu_sram_double_ecc_error = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.mcu_sram_double_ecc_error;
+            repeat($urandom_range(0,15)) @(negedge clk);
+        
+            force `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error;
+        end
+
+        //MCI non-fatal error injection
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MCI_ERROR_NON_FATAL)) begin
+            $display("Injecting non-ftl MCI errs");
+
+            force `MCI_REG_TOP_PATH.mbox0_sram_double_ecc_error = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.mbox0_sram_double_ecc_error;
+            repeat($urandom_range(0,15)) @(negedge clk);
+
+            force `MCI_REG_TOP_PATH.mbox1_sram_double_ecc_error = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.mbox1_sram_double_ecc_error;
+        end
+
+        //Aggregate fatal error injection
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_AGG_ERROR_FATAL)) begin
+            $display("Injecting aggregate ftl errs");
+            rand_err_injection_sel = $urandom_range(0,NUM_AGG_ERROR_FATAL-1);
+
+            case(rand_err_injection_sel)
+                0: begin
+                    force `CPTRA_SS_TOP_PATH.cptra_error_fatal = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.cptra_error_fatal;
+                end
+                1: begin
+                    force `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_double_error = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_double_error;
+                end
+                2: begin
+                    force `CPTRA_SS_TOP_PATH.lc_alerts_o = $urandom_range(0,(2**lc_ctrl_reg_pkg::NumAlerts)-1);
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.lc_alerts_o;
+                end
+                3: begin
+                    force `CPTRA_SS_TOP_PATH.fc_alerts = $urandom_range(0, (2**otp_ctrl_reg_pkg::NumAlerts)-1);
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.fc_alerts;
+                end
+                4: begin
+                    force `CPTRA_SS_TOP_PATH.i3c_peripheral_reset = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.i3c_peripheral_reset;
+                end
+                5: begin
+                    force `CPTRA_SS_TOP_PATH.i3c_escalated_reset = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.i3c_escalated_reset;
+                end
+                default: begin
+                end
+            endcase
+        end
+
+        //Aggregate non_fatal error injection
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_AGG_ERROR_NON_FATAL)) begin
+            $display("Injecting aggregate non ftl errs");
+            rand_err_injection_sel = $urandom_range(0,NUM_AGG_ERROR_NON_FATAL-1);
+
+            case(rand_err_injection_sel)
+                0: begin
+                    force `CPTRA_SS_TOP_PATH.cptra_error_non_fatal = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.cptra_error_non_fatal;
+                end
+                1: begin
+                    force `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_single_error = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_single_error;
+                end
+                2: begin
+                    force `CPTRA_SS_TOP_PATH.lc_alerts_o = $urandom_range(0,(2**lc_ctrl_reg_pkg::NumAlerts)-1);
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.lc_alerts_o;
+                end
+                3: begin
+                    force `CPTRA_SS_TOP_PATH.fc_alerts = $urandom_range(0, (2**otp_ctrl_reg_pkg::NumAlerts)-1);
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.fc_alerts;
+                end
+                4: begin
+                    force `CPTRA_SS_TOP_PATH.i3c_peripheral_reset = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.i3c_peripheral_reset;
+                end
+                5: begin
+                    force `CPTRA_SS_TOP_PATH.i3c_escalated_reset = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.i3c_escalated_reset;
+                end
+                default: begin
+                end
+            endcase
+        end
 
         // Disable MCU_SRAM assertions
         if(mailbox_write && (mailbox_data[7:0] == TB_DISABLE_MCU_SRAM_PROT_ASSERTS)) begin

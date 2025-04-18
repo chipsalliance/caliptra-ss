@@ -55,6 +55,8 @@
 //         8'he0        - Disable ECC Error Injection
 //         8'he2        - Inject Single-bit ECC errors into MCU DCCM
 //         8'he3        - Inject Double-bit ECC errors into MCU DCCM
+//         8'he8        - Inject MCI error fatal (nmi, mcu_sram_ecc_unc, mcu_sram_dmi_axi_collision)
+//         8'he9        - Inject MCI error non fatal (mbox0/mbox1_ecc_unc)
 //         --
 //         8'hff        - End the simulation with a Success status
 localparam TB_SERVICE_CMD_NOPE              = 8'h00;
@@ -93,6 +95,10 @@ localparam TB_CMD_INJECT_MBOX_SRAM_SINGLE_ECC_ERROR = 8'he4;
 localparam TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR = 8'he5;
 localparam TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION = 8'he6;
 localparam TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION = 8'he7;
+localparam TB_CMD_INJECT_MCI_ERROR_FATAL = 8'he8;
+localparam TB_CMD_INJECT_MCI_ERROR_NON_FATAL = 8'he9;
+localparam TB_CMD_INJECT_AGG_ERROR_FATAL = 8'hea;
+localparam TB_CMD_INJECT_AGG_ERROR_NON_FATAL = 8'heb;
 
 localparam TB_CMD_COLD_RESET                  = 8'hF5;
 localparam TB_CMD_WARM_RESET                  = 8'hF6;
