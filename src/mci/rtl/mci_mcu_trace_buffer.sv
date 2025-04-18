@@ -127,7 +127,7 @@ end
     
 // Shift right by 2 because there are 4 DWORDs in a trace_buffer entry
 // and the data for FW is DWORD accessible. 
-assign write_ptr_shift = trace_buffer_hwif_out.WRITE_PTR.ptr.value >> 2;
+assign write_ptr_shift = {2'b0, trace_buffer_hwif_out.WRITE_PTR.ptr.value >> 2};
 // Use appropriate number of bits to fix lint issue.
 assign write_ptr_chop  = write_ptr_shift[NUM_TRACE_ENTRIES_PTR_WIDTH-1:0] ;
 
@@ -139,7 +139,7 @@ assign read_ptr_dword = trace_buffer_hwif_out.READ_PTR.ptr.value;
 
 // Shift right by 2 because there are 4 DWORDs in a trace_buffer entry
 // So div by 4 to get packet number in the trace_buffer. 
-assign read_ptr = read_ptr_dword >> 2;
+assign read_ptr = {2'b0, read_ptr_dword >> 2};
 
 // Use appropriate number of bits to fix lint issue.
 assign read_ptr_chop = read_ptr[NUM_TRACE_ENTRIES_PTR_WIDTH-1:0];
