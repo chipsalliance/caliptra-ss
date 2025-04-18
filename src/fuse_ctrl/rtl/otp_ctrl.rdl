@@ -20,7 +20,7 @@
 
 
 
-addrmap otp_ctrl {
+addrmap caliptra_otp_ctrl {
     reg {
         field {
             sw = rw;

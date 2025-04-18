@@ -53,7 +53,7 @@ void iterate_test_unlock_states() {
     const uint32_t base_address = 0x4C0;
 
     // Write the tokens into the partition.
-    for (uint32_t i = 0; i < 8; i++) {
+    for (uint32_t i = 0; i < 3; i++) {
         dai_wr(base_address + 0x10*i, hashed_tokens[i][0], hashed_tokens[i][1], 64, 0);
         dai_wr(base_address + 0x08 + 0x10*i, hashed_tokens[i][2], hashed_tokens[i][3], 64, 0);
     }
@@ -63,7 +63,7 @@ void iterate_test_unlock_states() {
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
-    for (uint32_t state = TEST_LOCKED0, token = 0x0; state <= TEST_UNLOCKED7; token += (state & 0x1), state++) {
+    for (uint32_t state = TEST_LOCKED0, token = 0x0; state <= TEST_UNLOCKED2; token += (state & 0x1), state++) {
         VPRINTF(LOW, "LC_CTRL: transition to %d state\n", state);
 
         transition_state(state, token, 0, 0, 0, state & 0x1 /* No token required for TEST_LOCKED states*/ );

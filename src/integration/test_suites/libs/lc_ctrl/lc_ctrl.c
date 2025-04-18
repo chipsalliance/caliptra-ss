@@ -51,6 +51,7 @@ uint32_t state_sequence[] = {
     16, // LcStDev
     17, // LcStProd
     18, // LcStProdEnd
+    19, // LcStRma
     20  // LcStScrap
 };
 
@@ -78,6 +79,7 @@ uint8_t use_token[] = {
     1, // from TestUnlocked7 -> MANUF
     1, // from MANUF -> PROD
     1, // from PROD -> PROD_END
+    1, // from PROD -> RMA
     0  // from PROD -> SCRAP
 };
 

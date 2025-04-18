@@ -47,43 +47,39 @@ const uint32_t tokens[21][4] = {
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
-    {0x72f04808, 0x05f493b4, 0x7790628a, 0x318372c8}, // CPTRA_SS_TEST_UNLOCK_TOKEN_0
+    {0x72f04808, 0x05f493b4, 0x7790628a, 0x318372c8}, // CPTRA_SS_TEST_UNLOCK_TOKEN_1
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
-    {0x17c78a78, 0xc7b443ef, 0xd6931045, 0x55e74f3c}, // CPTRA_SS_TEST_UNLOCK_TOKEN_1
+    {0x17c78a78, 0xc7b443ef, 0xd6931045, 0x55e74f3c}, // CPTRA_SS_TEST_UNLOCK_TOKEN_2
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
-    {0x1644aa12, 0x79925802, 0xdbc26815, 0x8597a5fa}, // CPTRA_SS_TEST_UNLOCK_TOKEN_2
+    {0x1644aa12, 0x79925802, 0xdbc26815, 0x8597a5fa}, // CPTRA_SS_TEST_UNLOCK_TOKEN_3
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
-    {0x34d1ea6e, 0x121f023f, 0x6e9dc51c, 0xc7439b6f}, // CPTRA_SS_TEST_UNLOCK_TOKEN_3
+    {0x34d1ea6e, 0x121f023f, 0x6e9dc51c, 0xc7439b6f}, // CPTRA_SS_TEST_UNLOCK_TOKEN_4
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
-    {0x03fd9df1, 0x20978af4, 0x49db216d, 0xb0225ece}, // CPTRA_SS_TEST_UNLOCK_TOKEN_4
+    {0x03fd9df1, 0x20978af4, 0x49db216d, 0xb0225ece}, // CPTRA_SS_TEST_UNLOCK_TOKEN_5
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
-    {0xcfc0871c, 0xc400e922, 0x4290a4ad, 0x7f10dc89}, // CPTRA_SS_TEST_UNLOCK_TOKEN_5
+    {0xcfc0871c, 0xc400e922, 0x4290a4ad, 0x7f10dc89}, // CPTRA_SS_TEST_UNLOCK_TOKEN_6
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
-    {0x67e87f3e, 0xae6ee167, 0x802efa05, 0xbaaa3138}, // CPTRA_SS_TEST_UNLOCK_TOKEN_6
+    {0x67e87f3e, 0xae6ee167, 0x802efa05, 0xbaaa3138}, // CPTRA_SS_TEST_UNLOCK_TOKEN_7
     {0x2f533ae9, 0x341d2478, 0x5f066362, 0xb5fe1577}, // CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
     {0xf622abb6, 0x5d8318f4, 0xc721179d, 0x51c001f2}, // CPTRA_SS_MANUF_TO_PROD_TOKEN
     {0x25b8649d, 0xe7818e5b, 0x826d5ba4, 0xd6b633a0}, // CPTRA_SS_PROD_TO_PROD_END_TOKEN
-    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {0x72f04808, 0x05f493b4, 0x7790628a, 0x318372c8}, // CPTRA_SS_RMA_TOKEN
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}  // empty
 };
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
-    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
-    // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
 
-    uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
-
+    uint32_t read_value = lsu_read_32(0x70000448);
+      
     uint32_t lc_state_curr = read_lc_state();
 
     // Check if we can increment from the current state to the next.
-    // PROD_END (18) to RMA (19) not possible.
     // SCRAP (20) is the last state.
-    if (lc_state_curr == 18 || lc_state_curr == 20) {
+    if (lc_state_curr == 20) {
         VPRINTF(LOW, "Info: Cannot increment state from current %d state. Exit test\n", lc_state_curr);
         SEND_STDOUT_CTRL(0xff);
     }
