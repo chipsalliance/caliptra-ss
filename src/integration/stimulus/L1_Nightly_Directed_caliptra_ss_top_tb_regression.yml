@@ -24,6 +24,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_setmrl/mcu_test_rom_i3c_setmrl: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_streaming_boot/mcu_test_rom_i3c_streaming_boot: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_streaming_boot_sram/mcu_test_rom_i3c_streaming_boot_sram: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_i3c_reg_rd_wr_cptra_i3c_strap/mcu_i3c_reg_rd_wr_cptra_i3c_strap: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox0: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox1: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_zeroize/smoke_test_mcu_mbox0_zeroize: { weight: 100 }

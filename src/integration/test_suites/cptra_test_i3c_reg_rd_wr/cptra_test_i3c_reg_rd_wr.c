@@ -120,14 +120,6 @@ void main(void) {
     // init_interrupts();
     fail = 0;
 
-    // FIXME : Depends on, Assertion issue, DMA write strobe issue. 
-    // "/home/ws/caliptra/pateln/caliptra_ws_250317/Caliptra/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv", 1733: caliptra_ss_top_tb.axi_interconnect.master_mon[3].monitor.checker0.axi4_errm_wstrb: started at 116405000ps failed at 116405000ps
-    // 	Offending '(~BStrbError)'
-    // Error: "/home/ws/caliptra/pateln/caliptra_ws_250317/Caliptra/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv", 1733: caliptra_ss_top_tb.axi_interconnect.master_mon[3].monitor.checker0.axi4_errm_wstrb: at time 116405000 ps
-    // AXI4_ERRM_WSTRB: Write strobes must only be asserted for the correct byte lanes as determined from start address, transfer size and beat number. Spec: section A3.4.3.
-    
-    // FIXME : Uncomment when above issue is resolved. 
-
     // Send data through AHB interface to AXI_DMA, target the AXI SRAM
     VPRINTF(LOW, "Sending payload via AHB i/f\n");
     soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, send_payload, 16, 0);
