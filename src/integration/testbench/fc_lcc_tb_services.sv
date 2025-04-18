@@ -208,5 +208,57 @@ module fc_lcc_tb_services (
     end
   end
 
+  //-------------------------------------------------------------------------
+  // OTP memory fault injection
+  // Correctable error: One bit flip in locked partition
+  // Uncorrectable error: Flip all bits of a word in a locked partition
+  //-------------------------------------------------------------------------
+
+  reg fault_active_q;
+  reg [15:0] faulted_word_q [0:7];
+
+  localparam int partition_offsets [0:7] = '{'h000, 'h024, 'h048, 'h050, 'h058, 'h060, 'h260, 'h4D4};
+  localparam int partition_digests [0:7] = '{'h020, 'h044, 'h04C, 'h054, 'h05C, 'h064, 'h2B8, 'h5D4};
+
+  always_ff @(posedge clk or negedge cptra_rst_b) begin
+    if (!cptra_rst_b) begin
+      fault_active_q <= 1'b0;
+    end else begin
+      if (tb_service_cmd_valid && (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT || tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) && !fault_active_q) begin
+        fault_active_q <= 1'b1;
+      end
+    end
+  end
+
+  generate
+  for (genvar i = 0; i < 8; i++) begin
+    always_ff @(posedge clk or negedge cptra_rst_b) begin
+      if (!cptra_rst_b) begin
+        faulted_word_q[i] <= '0;
+      end else begin
+        if (tb_service_cmd_valid && !fault_active_q) begin
+          // Only inject faults into partitions that are locked.
+          if (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT) begin
+            faulted_word_q[i] <= { `FC_MEM[partition_offsets[i]][15:1], `FC_MEM[partition_offsets[i]][0] ^ |`FC_MEM[partition_digests[i]] };
+          end else if (tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) begin
+            faulted_word_q[i] <= `FC_MEM[partition_offsets[i]][15:0] ^ {16{|`FC_MEM[partition_digests[i]]}};
+          end
+        end
+      end
+    end
+  end
+  endgenerate
+
+  generate
+  for (genvar i = 0; i < 8; i++) begin
+    always_comb begin
+      if (fault_active_q) begin
+        force `FC_MEM[partition_offsets[i]][15:0] = faulted_word_q[i];
+      end else begin
+        release `FC_MEM[partition_offsets[i]][15:0];
+      end
+    end
+  end
+  endgenerate
 
 endmodule

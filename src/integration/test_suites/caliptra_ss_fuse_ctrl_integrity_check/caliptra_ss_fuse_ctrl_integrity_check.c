@@ -37,7 +37,7 @@ void main (void) {
 
     initialize_otp_controller();
 
-    wait_dai_op_idle(0x1BFFFF);
+    wait_dai_op_idle(0x3FFFF);
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"

@@ -338,10 +338,10 @@ always_comb begin
     mci_reg_hwif_in.MCU_NMI_VECTOR.vec.next             = mcu_dmi_uncore_wdata ; 
 
     // Straps with no override
-    assign mci_reg_hwif_in.MCU_IFU_AXI_USER.value.next = { {(32-$bits(strap_mcu_ifu_axi_user)){1'b0}}, strap_mcu_ifu_axi_user};
-    assign mci_reg_hwif_in.MCU_LSU_AXI_USER.value.next = { {(32-$bits(strap_mcu_lsu_axi_user)){1'b0}}, strap_mcu_lsu_axi_user};
-    assign mci_reg_hwif_in.MCU_SRAM_CONFIG_AXI_USER.value.next = { {(32-$bits(strap_mcu_sram_config_axi_user)){1'b0}}, strap_mcu_sram_config_axi_user} ;
-    assign mci_reg_hwif_in.MCI_SOC_CONFIG_AXI_USER.value.next  = { {(32-$bits(strap_mci_soc_config_axi_user )){1'b0}}, strap_mci_soc_config_axi_user} ;
+    mci_reg_hwif_in.MCU_IFU_AXI_USER.value.next = { {(32-$bits(strap_mcu_ifu_axi_user)){1'b0}}, strap_mcu_ifu_axi_user};
+    mci_reg_hwif_in.MCU_LSU_AXI_USER.value.next = { {(32-$bits(strap_mcu_lsu_axi_user)){1'b0}}, strap_mcu_lsu_axi_user};
+    mci_reg_hwif_in.MCU_SRAM_CONFIG_AXI_USER.value.next = { {(32-$bits(strap_mcu_sram_config_axi_user)){1'b0}}, strap_mcu_sram_config_axi_user} ;
+    mci_reg_hwif_in.MCI_SOC_CONFIG_AXI_USER.value.next  = { {(32-$bits(strap_mci_soc_config_axi_user )){1'b0}}, strap_mci_soc_config_axi_user} ;
 
 end
 

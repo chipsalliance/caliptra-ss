@@ -116,6 +116,7 @@ import tb_top_pkg::*;
         end 
         if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
+            force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
         end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
@@ -644,9 +645,8 @@ end
 
 
     rom #(
-        .DEPTH     (16'h8000), // 256KiB
-        .DATA_WIDTH(64),
-        .ADDR_WIDTH(22)
+        .DEPTH     (CPTRA_SS_ROM_DEPTH), // 256KiB
+        .DATA_WIDTH(CPTRA_SS_ROM_DATA_W)
     ) imem (
         .clk_i   (clk),
         .cs_i    (mcu_rom_mem_export_if.req.cs),

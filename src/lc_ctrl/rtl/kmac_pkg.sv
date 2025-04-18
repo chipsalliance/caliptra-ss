@@ -192,7 +192,7 @@ package kmac_pkg;
 
   // Application Algorithm
   // Each interface can choose algorithms among SHA3, cSHAKE, KMAC
-  typedef enum bit [1:0] {
+  typedef enum logic [1:0] {
     // SHA3 mode doer not nees any additional information.
     // Prefix will be tied to all zero and not used.
     AppSHA3   = 0,
@@ -225,7 +225,7 @@ package kmac_pkg;
     // and cSHAKE operations.
     // Choose **0** for CSRs (!!PREFIX), or **1** to use `Prefix` parameter
     // below.
-    bit PrefixMode;
+    logic PrefixMode;
 
     // If `PrefixMode` is 1'b 1, then this `Prefix` value will be used in
     // cSHAKE or KMAC operation.
@@ -256,7 +256,7 @@ package kmac_pkg;
     Prefix: NSPrefixW'({EncodedStringRomCtrl, EncodedStringEmpty})
   };
 
-  // Exporting the app internal mux selection enum into the package. So that DV
+  // Exporting the app internal mux selection enum logic [31:0]o the package. So that DV
   // can use this enum in its scoreboard.
   // Encoding generated with:
   // $ ./util/design/sparse-fsm-encode.py -d 3 -m 4 -n 5 \
