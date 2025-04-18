@@ -63,27 +63,23 @@ const uint32_t tokens[21][4] = {
     {0x2f533ae9, 0x341d2478, 0x5f066362, 0xb5fe1577}, // CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
     {0xf622abb6, 0x5d8318f4, 0xc721179d, 0x51c001f2}, // CPTRA_SS_MANUF_TO_PROD_TOKEN
     {0x25b8649d, 0xe7818e5b, 0x826d5ba4, 0xd6b633a0}, // CPTRA_SS_PROD_TO_PROD_END_TOKEN
-    {0x00000000, 0x00000000, 0x00000000, 0x00000000}, // empty
+    {0x72f04808, 0x05f493b4, 0x7790628a, 0x318372c8}, // CPTRA_SS_RMA_TOKEN
     {0x00000000, 0x00000000, 0x00000000, 0x00000000}  // empty
 };
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
-    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
-    // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
 
-    uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
-
+    uint32_t read_value = lsu_read_32(0x70000448);
+      
     uint32_t lc_state_curr = read_lc_state();
 
     // Check if we can increment from the current state to the next.
-    // PROD_END (18) to RMA (19) not possible.
     // SCRAP (20) is the last state.
-    if (lc_state_curr == 18 || lc_state_curr == 20) {
+    if (lc_state_curr == 20) {
         VPRINTF(LOW, "Info: Cannot increment state from current %d state. Exit test\n", lc_state_curr);
         SEND_STDOUT_CTRL(0xff);
     }
