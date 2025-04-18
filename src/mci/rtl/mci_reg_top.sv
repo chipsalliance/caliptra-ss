@@ -181,10 +181,8 @@ logic scan_mode_p;
 
 // DMI
 logic mcu_dmi_uncore_dbg_unlocked_en;
-logic mcu_dmi_uncore_manuf_unlocked_en;
 logic mcu_dmi_uncore_locked_en;
 logic mcu_dmi_uncore_dbg_unlocked_wr_en;
-logic mcu_dmi_uncore_manuf_unlocked_wr_en;
 logic mcu_dmi_uncore_locked_wr_en  ;
 // unused in 2.0 logic mcu_dmi_uncore_mbox0_dout_access_f;
 // unused in 2.0 logic mcu_dmi_uncore_mbox0_din_access_f;
@@ -432,12 +430,6 @@ assign mcu_dmi_uncore_enable        = (!security_state_o.debug_locked) || (secur
 //Uncore registers open for all cases
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;
 
-//Uncore registers only open for debug unlock or manufacturing
-// NOTE - unused in 2.0
-always_comb mcu_dmi_uncore_manuf_unlocked_en = mcu_dmi_uncore_en & 
-                                                (~(security_state_o.debug_locked) | 
-                                                 (security_state_o.device_lifecycle == DEVICE_MANUFACTURING));
-
 //Uncore registers only open for debug unlock 
 always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & 
                                                 (~(security_state_o.debug_locked)  
@@ -446,7 +438,6 @@ always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en &
 
 
 always_comb mcu_dmi_uncore_dbg_unlocked_wr_en   = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_dbg_unlocked_en);
-always_comb mcu_dmi_uncore_manuf_unlocked_wr_en = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_manuf_unlocked_en);
 always_comb mcu_dmi_uncore_locked_wr_en         = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_locked_en);
 
 //DMI unlocked register read mux
