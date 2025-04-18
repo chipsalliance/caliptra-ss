@@ -332,7 +332,7 @@ module mcu_top
     input logic [pt.ICACHE_BANKS_WAY-1:0][(71*pt.ICACHE_NUM_WAYS)-1:0]                    wb_packeddout_pre,
     input logic [pt.ICACHE_NUM_WAYS-1:0][pt.ICACHE_BANKS_WAY-1:0][71-1:0]                 wb_dout_pre_up,
     // ICache Tag
-    output logic [pt.ICACHE_NUM_WAYS-1:0]                ic_tag_clken_final,
+    output logic                                         ic_tag_clken_final,
     output logic [pt.ICACHE_NUM_WAYS-1:0]                ic_tag_wren_q,
     output logic [(26*pt.ICACHE_NUM_WAYS)-1 :0]           ic_tag_wren_biten_vec,
     output logic [25:0]                                       ic_tag_wr_data,
@@ -353,11 +353,11 @@ module mcu_top
     output logic mpc_debug_halt_ack,  // Halt ack
     output logic mpc_debug_run_ack,   // Run ack
     output logic debug_brkpt_status,  // debug breakpoint
+    output logic o_debug_mode_status, // Core to the PMU that core is in debug mode. When core is in debug mode, the PMU should refrain from sendng a halt or run request
 
     input logic i_cpu_halt_req,  // Async halt req to CPU
     output logic o_cpu_halt_ack,  // core response to halt
     output logic o_cpu_halt_status,  // 1'b1 indicates core is halted
-    output logic                            o_debug_mode_status, // Core to the PMU that core is in debug mode. When core is in debug mode, the PMU should refrain from sendng a halt or run request
     input logic i_cpu_run_req,  // Async restart req to CPU
     output logic o_cpu_run_ack,  // Core response to run req
     input logic scan_mode,  // To enable scan mode
@@ -376,6 +376,7 @@ module mcu_top
 );
 
   css_mcu0_el2_mem_if mem_export ();
+  css_mcu0_el2_mem_if mem_export_icache ();
   assign mem_clk                   = mem_export.clk;
   // DCCM
   assign dccm_clken                = mem_export.dccm_clken;
@@ -394,26 +395,26 @@ module mcu_top
   assign mem_export.iccm_bank_dout = iccm_bank_dout;
   assign mem_export.iccm_bank_ecc  = iccm_bank_ecc;
   // ICache Data
-  assign ic_b_sb_wren                 = mem_export.ic_b_sb_wren;
-  assign ic_b_sb_bit_en_vec           = mem_export.ic_b_sb_bit_en_vec;
-  assign ic_sb_wr_data                = mem_export.ic_sb_wr_data;
-  assign ic_rw_addr_bank_q            = mem_export.ic_rw_addr_bank_q;
-  assign ic_bank_way_clken_final      = mem_export.ic_bank_way_clken_final;
-  assign ic_bank_way_clken_final_up   = mem_export.ic_bank_way_clken_final_up;
-  assign mem_export.wb_packeddout_pre = wb_packeddout_pre;
-  assign mem_export.wb_dout_pre_up    = wb_dout_pre_up;
+  assign ic_b_sb_wren                 = mem_export_icache.ic_b_sb_wren;
+  assign ic_b_sb_bit_en_vec           = mem_export_icache.ic_b_sb_bit_en_vec;
+  assign ic_sb_wr_data                = mem_export_icache.ic_sb_wr_data;
+  assign ic_rw_addr_bank_q            = mem_export_icache.ic_rw_addr_bank_q;
+  assign ic_bank_way_clken_final      = mem_export_icache.ic_bank_way_clken_final;
+  assign ic_bank_way_clken_final_up   = mem_export_icache.ic_bank_way_clken_final_up;
+  assign mem_export_icache.wb_packeddout_pre = wb_packeddout_pre;
+  assign mem_export_icache.wb_dout_pre_up    = wb_dout_pre_up;
   // ICache Data
-  assign ic_tag_clken_final                    = mem_export.ic_tag_clken_final;
-  assign ic_tag_wren_q                         = mem_export.ic_tag_wren_q;
-  assign ic_tag_wren_biten_vec                 = mem_export.ic_tag_wren_biten_vec;
-  assign ic_tag_wr_data                        = mem_export.ic_tag_wr_data;
-  assign ic_rw_addr_q                          = mem_export.ic_rw_addr_q;
-  assign mem_export.ic_tag_data_raw_packed_pre = ic_tag_data_raw_packed_pre;
-  assign mem_export.ic_tag_data_raw_pre        = ic_tag_data_raw_pre;
+  assign ic_tag_clken_final                    = mem_export_icache.ic_tag_clken_final;
+  assign ic_tag_wren_q                         = mem_export_icache.ic_tag_wren_q;
+  assign ic_tag_wren_biten_vec                 = mem_export_icache.ic_tag_wren_biten_vec;
+  assign ic_tag_wr_data                        = mem_export_icache.ic_tag_wr_data;
+  assign ic_rw_addr_q                          = mem_export_icache.ic_rw_addr_q;
+  assign mem_export_icache.ic_tag_data_raw_packed_pre = ic_tag_data_raw_packed_pre;
+  assign mem_export_icache.ic_tag_data_raw_pre        = ic_tag_data_raw_pre;
 
   css_mcu0_el2_veer_wrapper rvtop (
       .el2_mem_export(mem_export.veer_sram_src),
-      .el2_icache_export(mem_export.veer_icache_src),
+      .el2_icache_export(mem_export_icache.veer_icache_src),
       .dmi_core_enable(dmi_core_enable),
       .dmi_active(dmi_active),
       .*

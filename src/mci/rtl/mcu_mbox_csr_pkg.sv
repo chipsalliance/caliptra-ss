@@ -23,6 +23,7 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic [31:0] next;
+        logic hwclr;
     } mcu_mbox_csr__mbox_user_user_70a5ffab__user_we_466f6a8b__in_t;
 
     typedef struct packed{
@@ -84,16 +85,16 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic hwset;
-    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__ecc_single_error_next_e066e214_wel_e066e214__in_t;
+    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_single_error_next_1ebd8f42_wel_1ebd8f42__in_t;
 
     typedef struct packed{
         logic hwset;
-    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__ecc_double_error_next_e066e214_wel_e066e214__in_t;
+    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_double_error_next_1ebd8f42_wel_1ebd8f42__in_t;
 
     typedef struct packed{
-        mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__ecc_single_error_next_e066e214_wel_e066e214__in_t ecc_single_error;
-        mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__ecc_double_error_next_e066e214_wel_e066e214__in_t ecc_double_error;
-    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__in_t;
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_single_error_next_1ebd8f42_wel_1ebd8f42__in_t ecc_single_error;
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_double_error_next_1ebd8f42_wel_1ebd8f42__in_t ecc_double_error;
+    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__in_t;
 
     typedef struct packed{
         logic rst_b;
@@ -110,7 +111,7 @@ package mcu_mbox_csr_pkg;
         mcu_mbox_csr__mbox_dlen__in_t mbox_dlen;
         mcu_mbox_csr__mbox_target_status__in_t mbox_target_status;
         mcu_mbox_csr__mbox_cmd_status__in_t mbox_cmd_status;
-        mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__in_t mbox_hw_status;
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__in_t mbox_hw_status;
     } mcu_mbox_csr__in_t;
 
     typedef struct packed{
@@ -155,7 +156,16 @@ package mcu_mbox_csr_pkg;
     } mcu_mbox_csr__mbox_target_user_valid__out_t;
 
     typedef struct packed{
+        logic [31:0] value;
+    } mcu_mbox_csr__mbox_dlen__length__out_t;
+
+    typedef struct packed{
+        mcu_mbox_csr__mbox_dlen__length__out_t length;
+    } mcu_mbox_csr__mbox_dlen__out_t;
+
+    typedef struct packed{
         logic value;
+        logic swmod;
     } mcu_mbox_csr__mbox_execute__execute__out_t;
 
     typedef struct packed{
@@ -185,16 +195,16 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic value;
-    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__ecc_single_error_next_e066e214_wel_e066e214__out_t;
+    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_single_error_next_1ebd8f42_wel_1ebd8f42__out_t;
 
     typedef struct packed{
         logic value;
-    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__ecc_double_error_next_e066e214_wel_e066e214__out_t;
+    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_double_error_next_1ebd8f42_wel_1ebd8f42__out_t;
 
     typedef struct packed{
-        mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__ecc_single_error_next_e066e214_wel_e066e214__out_t ecc_single_error;
-        mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__ecc_double_error_next_e066e214_wel_e066e214__out_t ecc_double_error;
-    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__out_t;
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_single_error_next_1ebd8f42_wel_1ebd8f42__out_t ecc_single_error;
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_double_error_next_1ebd8f42_wel_1ebd8f42__out_t ecc_double_error;
+    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__out_t;
 
     typedef struct packed{
         mcu_mbox_csr__MBOX_SRAM__external__out_t MBOX_SRAM;
@@ -202,10 +212,11 @@ package mcu_mbox_csr_pkg;
         mcu_mbox_csr__mbox_user_user_70a5ffab__out_t mbox_user;
         mcu_mbox_csr__mbox_target_user__out_t mbox_target_user;
         mcu_mbox_csr__mbox_target_user_valid__out_t mbox_target_user_valid;
+        mcu_mbox_csr__mbox_dlen__out_t mbox_dlen;
         mcu_mbox_csr__mbox_execute__out_t mbox_execute;
         mcu_mbox_csr__mbox_target_status__out_t mbox_target_status;
         mcu_mbox_csr__mbox_cmd_status__out_t mbox_cmd_status;
-        mcu_mbox_csr__mbox_hw_status_ecc_double_error_38cec4b0_ecc_single_error_9c62b760__out_t mbox_hw_status;
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__out_t mbox_hw_status;
     } mcu_mbox_csr__out_t;
 
     typedef enum logic [31:0] {

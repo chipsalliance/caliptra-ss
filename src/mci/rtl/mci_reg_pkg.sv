@@ -33,6 +33,38 @@ package mci_reg_pkg;
     } mci_reg__HW_CONFIG1__in_t;
 
     typedef struct packed{
+        logic [31:0] next;
+    } mci_reg__MCU_IFU_AXI_USER__value__in_t;
+
+    typedef struct packed{
+        mci_reg__MCU_IFU_AXI_USER__value__in_t value;
+    } mci_reg__MCU_IFU_AXI_USER__in_t;
+
+    typedef struct packed{
+        logic [31:0] next;
+    } mci_reg__MCU_LSU_AXI_USER__value__in_t;
+
+    typedef struct packed{
+        mci_reg__MCU_LSU_AXI_USER__value__in_t value;
+    } mci_reg__MCU_LSU_AXI_USER__in_t;
+
+    typedef struct packed{
+        logic [31:0] next;
+    } mci_reg__MCU_SRAM_CONFIG_AXI_USER__value__in_t;
+
+    typedef struct packed{
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER__value__in_t value;
+    } mci_reg__MCU_SRAM_CONFIG_AXI_USER__in_t;
+
+    typedef struct packed{
+        logic [31:0] next;
+    } mci_reg__MCI_SOC_CONFIG_AXI_USER__value__in_t;
+
+    typedef struct packed{
+        mci_reg__MCI_SOC_CONFIG_AXI_USER__value__in_t value;
+    } mci_reg__MCI_SOC_CONFIG_AXI_USER__in_t;
+
+    typedef struct packed{
         logic [3:0] next;
     } mci_reg__HW_FLOW_STATUS__boot_fsm__in_t;
 
@@ -42,19 +74,10 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic next;
-    } mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t;
-
-    typedef struct packed{
-        logic next;
-    } mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t;
-
-    typedef struct packed{
-        logic next;
+        logic we;
     } mci_reg__RESET_REASON__WARM_RESET__in_t;
 
     typedef struct packed{
-        mci_reg__RESET_REASON__FW_HITLESS_UPD_RESET__in_t FW_HITLESS_UPD_RESET;
-        mci_reg__RESET_REASON__FW_BOOT_UPD_RESET__in_t FW_BOOT_UPD_RESET;
         mci_reg__RESET_REASON__WARM_RESET__in_t WARM_RESET;
     } mci_reg__RESET_REASON__in_t;
 
@@ -101,38 +124,38 @@ package mci_reg_pkg;
     } mci_reg__HW_ERROR_FATAL__in_t;
 
     typedef struct packed{
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal31;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal30;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal29;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal28;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal27;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal26;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal25;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal24;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal23;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal22;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal21;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal20;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal19;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal18;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal17;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal16;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal15;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal14;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal13;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal12;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal11;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal10;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal9;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal8;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal7;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal6;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal5;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal4;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal3;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal2;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal1;
         mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal0;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal1;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal2;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal3;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal4;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal5;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal6;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal7;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal8;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal9;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal10;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal11;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal12;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal13;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal14;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal15;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal16;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal17;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal18;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal19;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal20;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal21;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal22;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal23;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal24;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal25;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal26;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal27;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal28;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal29;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal30;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_fatal31;
     } mci_reg__AGG_ERROR_FATAL__in_t;
 
     typedef struct packed{
@@ -141,38 +164,38 @@ package mci_reg_pkg;
     } mci_reg__HW_ERROR_NON_FATAL__in_t;
 
     typedef struct packed{
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal31;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal30;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal29;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal28;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal27;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal26;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal25;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal24;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal23;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal22;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal21;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal20;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal19;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal18;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal17;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal16;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal15;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal14;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal13;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal12;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal11;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal10;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal9;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal8;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal7;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal6;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal5;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal4;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal3;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal2;
-        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal1;
         mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal0;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal1;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal2;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal3;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal4;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal5;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal6;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal7;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal8;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal9;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal10;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal11;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal12;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal13;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal14;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal15;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal16;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal17;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal18;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal19;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal20;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal21;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal22;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal23;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal24;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal25;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal26;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal27;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal28;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal29;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal30;
+        mci_reg__rw_rw_sticky_hw__in_t agg_error_non_fatal31;
     } mci_reg__AGG_ERROR_NON_FATAL__in_t;
 
     typedef struct packed{
@@ -785,11 +808,16 @@ package mci_reg_pkg;
         logic ss_config_unlock;
         logic ss_config_unlock_sticky;
         logic axi_mcu_req_or_mci_soc_config_req__cap_unlock;
+        logic axi_mcu_or_mcu_sram_config_req;
         logic axi_mcu_or_mci_soc_config_req;
         logic axi_mcu_or_mci_soc_config_req__ss_config_unlock;
         logic axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky;
         mci_reg__HW_CONFIG0__in_t HW_CONFIG0;
         mci_reg__HW_CONFIG1__in_t HW_CONFIG1;
+        mci_reg__MCU_IFU_AXI_USER__in_t MCU_IFU_AXI_USER;
+        mci_reg__MCU_LSU_AXI_USER__in_t MCU_LSU_AXI_USER;
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER__in_t MCU_SRAM_CONFIG_AXI_USER;
+        mci_reg__MCI_SOC_CONFIG_AXI_USER__in_t MCI_SOC_CONFIG_AXI_USER;
         mci_reg__HW_FLOW_STATUS__in_t HW_FLOW_STATUS;
         mci_reg__RESET_REASON__in_t RESET_REASON;
         mci_reg__RESET_STATUS__in_t RESET_STATUS;
@@ -886,38 +914,38 @@ package mci_reg_pkg;
     } mci_reg__HW_ERROR_FATAL__out_t;
 
     typedef struct packed{
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal31;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal30;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal29;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal28;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal27;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal26;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal25;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal24;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal23;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal22;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal21;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal20;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal19;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal18;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal17;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal16;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal15;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal14;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal13;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal12;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal11;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal10;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal9;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal8;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal7;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal6;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal5;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal4;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal3;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal2;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal1;
         mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal0;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal1;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal2;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal3;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal4;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal5;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal6;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal7;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal8;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal9;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal10;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal11;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal12;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal13;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal14;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal15;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal16;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal17;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal18;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal19;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal20;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal21;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal22;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal23;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal24;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal25;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal26;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal27;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal28;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal29;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal30;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_fatal31;
     } mci_reg__AGG_ERROR_FATAL__out_t;
 
     typedef struct packed{
@@ -926,38 +954,38 @@ package mci_reg_pkg;
     } mci_reg__HW_ERROR_NON_FATAL__out_t;
 
     typedef struct packed{
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal31;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal30;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal29;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal28;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal27;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal26;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal25;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal24;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal23;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal22;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal21;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal20;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal19;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal18;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal17;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal16;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal15;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal14;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal13;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal12;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal11;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal10;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal9;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal8;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal7;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal6;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal5;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal4;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal3;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal2;
-        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal1;
         mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal0;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal1;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal2;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal3;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal4;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal5;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal6;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal7;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal8;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal9;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal10;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal11;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal12;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal13;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal14;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal15;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal16;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal17;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal18;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal19;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal20;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal21;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal22;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal23;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal24;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal25;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal26;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal27;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal28;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal29;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal30;
+        mci_reg__rw_rw_sticky_hw__out_t agg_error_non_fatal31;
     } mci_reg__AGG_ERROR_NON_FATAL__out_t;
 
     typedef struct packed{
@@ -999,99 +1027,99 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
-    } mci_reg__rw_ro_ro_hw__out_t;
+    } mci_reg__rw_ro_ro_sticky_hw__out_t;
 
     typedef struct packed{
-        mci_reg__rw_ro_ro_hw__out_t mask_mcu_sram_ecc_unc;
-        mci_reg__rw_ro_ro_hw__out_t mask_nmi_pin;
-        mci_reg__rw_ro_ro_hw__out_t mask_mcu_sram_dmi_axi_collision;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_mcu_sram_ecc_unc;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_nmi_pin;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_mcu_sram_dmi_axi_collision;
     } mci_reg__internal_hw_error_fatal_mask__out_t;
 
     typedef struct packed{
-        mci_reg__rw_ro_ro_hw__out_t mask_mbox0_ecc_unc;
-        mci_reg__rw_ro_ro_hw__out_t mask_mbox1_ecc_unc;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_mbox0_ecc_unc;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_mbox1_ecc_unc;
     } mci_reg__internal_hw_error_non_fatal_mask__out_t;
 
     typedef struct packed{
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal31;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal30;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal29;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal28;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal27;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal26;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal25;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal24;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal23;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal22;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal21;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal20;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal19;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal18;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal17;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal16;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal15;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal14;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal13;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal12;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal11;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal10;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal9;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal8;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal7;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal6;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal5;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal4;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal3;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal2;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal1;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_fatal0;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal31;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal30;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal29;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal28;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal27;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal26;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal25;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal24;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal23;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal22;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal21;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal20;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal19;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal18;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal17;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal16;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal15;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal14;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal13;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal12;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal11;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal10;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal9;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal8;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal7;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal6;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal5;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal4;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal3;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal2;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal1;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_fatal0;
     } mci_reg__internal_agg_error_fatal_mask__out_t;
 
     typedef struct packed{
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal31;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal30;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal29;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal28;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal27;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal26;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal25;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal24;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal23;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal22;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal21;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal20;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal19;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal18;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal17;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal16;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal15;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal14;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal13;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal12;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal11;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal10;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal9;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal8;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal7;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal6;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal5;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal4;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal3;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal2;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal1;
-        mci_reg__rw_ro_ro_hw__out_t mask_agg_error_non_fatal0;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal31;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal30;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal29;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal28;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal27;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal26;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal25;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal24;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal23;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal22;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal21;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal20;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal19;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal18;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal17;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal16;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal15;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal14;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal13;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal12;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal11;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal10;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal9;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal8;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal7;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal6;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal5;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal4;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal3;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal2;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal1;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_agg_error_non_fatal0;
     } mci_reg__internal_agg_error_non_fatal_mask__out_t;
 
     typedef struct packed{
         logic [31:0] value;
-    } mci_reg__rw_ro_ro_hw_w32__out_t;
+    } mci_reg__rw_ro_ro_sticky_hw_w32__out_t;
 
     typedef struct packed{
-        mci_reg__rw_ro_ro_hw_w32__out_t mask;
+        mci_reg__rw_ro_ro_sticky_hw_w32__out_t mask;
     } mci_reg__internal_fw_error_fatal_mask__out_t;
 
     typedef struct packed{
-        mci_reg__rw_ro_ro_hw_w32__out_t mask;
+        mci_reg__rw_ro_ro_sticky_hw_w32__out_t mask;
     } mci_reg__internal_fw_error_non_fatal_mask__out_t;
 
     typedef struct packed{

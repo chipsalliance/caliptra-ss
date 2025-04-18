@@ -10,7 +10,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-volatile char* stdout = (char *)0x21000410;
+volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
@@ -32,19 +32,19 @@ void lcc_initilization(){
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
     uint32_t reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    uint32_t loop_ctrl = reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK; 
+    uint32_t loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1); 
     while(!loop_ctrl){
         VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_READY_MASK); 
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK; 
+        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is ready!\n");
     reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK)>>1) & 1; 
+    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     while(!loop_ctrl){
         VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK)>>1) & 1; 
+        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
     

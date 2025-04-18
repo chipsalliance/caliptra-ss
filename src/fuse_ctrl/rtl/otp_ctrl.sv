@@ -28,14 +28,8 @@ module otp_ctrl
   input                                              rst_ni,
   // This is a command to zeroize the secrets in run-time
   input                                              FIPS_ZEROIZATION_CMD_i,
-  // EDN clock and interface
-  logic                                              clk_edn_i,
-  logic                                              rst_edn_ni,
-  output edn_pkg::edn_req_t                          edn_o,
-  input  edn_pkg::edn_rsp_t                          edn_i,
-  // Bus Interface
-  // input  tlul_pkg::tl_h2d_t                          core_tl_i,
-  // output tlul_pkg::tl_d2h_t                          core_tl_o,
+  input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
+  input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
   input axi_struct_pkg::axi_wr_req_t                  core_axi_wr_req,
   output axi_struct_pkg::axi_wr_rsp_t                 core_axi_wr_rsp,
   input axi_struct_pkg::axi_rd_req_t                  core_axi_rd_req,
@@ -43,6 +37,9 @@ module otp_ctrl
 
   input  tlul_pkg::tl_h2d_t                          prim_tl_i,
   output tlul_pkg::tl_d2h_t                          prim_tl_o,
+
+  input prim_generic_otp_outputs_t                  prim_generic_otp_outputs_i,
+  output prim_generic_otp_inputs_t                  prim_generic_otp_inputs_o,
 
   // Interrupt Requests
   output logic                                       intr_otp_operation_done_o,
@@ -78,18 +75,9 @@ module otp_ctrl
   // OTP broadcast outputs
   // SEC_CM: TOKEN_VALID.CTRL.MUBI
   output otp_lc_data_t                               otp_lc_data_o,
-  output otp_keymgr_key_t                            otp_keymgr_key_o,
-  // Scrambling key requests
-  input  flash_otp_key_req_t                         flash_otp_key_i,
-  output flash_otp_key_rsp_t                         flash_otp_key_o,
-  input  sram_otp_key_req_t [NumSramKeyReqSlots-1:0] sram_otp_key_i,
-  output sram_otp_key_rsp_t [NumSramKeyReqSlots-1:0] sram_otp_key_o,
-  input  otbn_otp_key_req_t                          otbn_otp_key_i,
-  output otbn_otp_key_rsp_t                          otbn_otp_key_o,
+
   // Hardware config bits
   output otp_broadcast_t                             otp_broadcast_o,
-  // External voltage for OTP
-  inout wire                                         otp_ext_voltage_h_io,
   // Scan
   input                                              scan_en_i,
   input                                              scan_rst_ni,
@@ -122,6 +110,7 @@ module otp_ctrl
   assign core_axi_wr_rsp.awready = core_axi_if.awready;
 
   assign core_axi_if.wdata       = core_axi_wr_req.wdata;
+  assign core_axi_if.wuser       = '0; // FIXME
   assign core_axi_if.wstrb       = core_axi_wr_req.wstrb;
   assign core_axi_if.wlast       = core_axi_wr_req.wlast;
   assign core_axi_if.wvalid      = core_axi_wr_req.wvalid;
@@ -163,9 +152,6 @@ module otp_ctrl
       .tl_o           (core_tl_i),
       .tl_i           (core_tl_o)
   );
-
-
-
 
   ////////////////////////
   // Integration Checks //
@@ -395,6 +381,8 @@ module otp_ctrl
   dai_cmd_e                     dai_cmd;
   logic [OtpByteAddrWidth-1:0]  dai_addr;
 
+  logic [lc_ctrl_state_pkg::DecLcStateWidth-1:0] lc_state_idx;
+
   // SEC_CM: ACCESS.CTRL.MUBI
   part_access_t [NumPart-1:0] part_access_pre, part_access;
   always_comb begin : p_access_control
@@ -408,34 +396,51 @@ module otp_ctrl
     part_access_pre[LifeCycleIdx].write_lock = MuBi8True;
     part_access_pre[LifeCycleIdx].read_lock = MuBi8True;
 
-    // Special partitions for keymgr material only become writable when
-    // provisioning is enabled.
-    if (lc_ctrl_pkg::lc_tx_test_false_loose(lc_creator_seed_sw_rw_en)) begin
-      for (int k = 0; k < NumPart; k++) begin
-        if (PartInfo[k].iskeymgr_creator) begin
-          part_access_pre[k] = {2{caliptra_prim_mubi_pkg::MuBi8True}};
-        end
-      end
-    end
-    if (lc_ctrl_pkg::lc_tx_test_false_loose(lc_owner_seed_sw_rw_en)) begin
-      for (int k = 0; k < NumPart; k++) begin
-        if (PartInfo[k].iskeymgr_owner) begin
-          part_access_pre[k] = {2{caliptra_prim_mubi_pkg::MuBi8True}};
-        end
-      end
-    end
-
     // Intercept write requests to the `VENDOR_HASHES_PROD` partition and verify
     // the write is allowed by the volatile lock of the `VENDOR_PK_HASH_VOLATILE LOCK` register.
     if (NumVendorPkFuses > 1) begin
       if (dai_cmd == DaiWrite && reg2hw.vendor_pk_hash_volatile_lock != '0 &&
           dai_addr >= VendorHashesProdPartitionOffset &&
           dai_addr < VendorHashesProdPartitionDigestOffset) begin
-        if (dai_addr >= (VendorHashesProdPartitionOffset + (reg2hw.vendor_pk_hash_volatile_lock * (CptraCoreVendorPkHash1Size + CptraCorePqcKeyType1Size)))) begin
+        if (32'(dai_addr) >= (VendorHashesProdPartitionOffset + (reg2hw.vendor_pk_hash_volatile_lock * (CptraCoreVendorPkHash1Size + CptraCorePqcKeyType1Size)))) begin
           part_access_pre[VendorHashesProdPartitionIdx].write_lock = MuBi8True;
         end
       end
     end
+
+    // XXX: Maybe encode the LC state index directly into the LC partition
+    // instead of decoding it on-the-fly.
+    unique case (otp_lc_data_o.state)
+      lc_ctrl_state_pkg::LcStRaw:           lc_state_idx = 0;
+      lc_ctrl_state_pkg::LcStTestUnlocked0: lc_state_idx = 1;
+      lc_ctrl_state_pkg::LcStTestLocked0:   lc_state_idx = 2;
+      lc_ctrl_state_pkg::LcStTestUnlocked1: lc_state_idx = 3;
+      lc_ctrl_state_pkg::LcStTestLocked1:   lc_state_idx = 4;
+      lc_ctrl_state_pkg::LcStTestUnlocked2: lc_state_idx = 5;
+      lc_ctrl_state_pkg::LcStTestLocked2:   lc_state_idx = 6;
+      lc_ctrl_state_pkg::LcStTestUnlocked3: lc_state_idx = 7;
+      lc_ctrl_state_pkg::LcStTestLocked3:   lc_state_idx = 8;
+      lc_ctrl_state_pkg::LcStTestUnlocked4: lc_state_idx = 9;
+      lc_ctrl_state_pkg::LcStTestLocked4:   lc_state_idx = 10;
+      lc_ctrl_state_pkg::LcStTestUnlocked5: lc_state_idx = 11;
+      lc_ctrl_state_pkg::LcStTestLocked5:   lc_state_idx = 12;
+      lc_ctrl_state_pkg::LcStTestUnlocked6: lc_state_idx = 13;
+      lc_ctrl_state_pkg::LcStTestLocked6:   lc_state_idx = 14;
+      lc_ctrl_state_pkg::LcStTestUnlocked7: lc_state_idx = 15;
+      lc_ctrl_state_pkg::LcStDev:           lc_state_idx = 16;
+      lc_ctrl_state_pkg::LcStProd:          lc_state_idx = 17;
+      lc_ctrl_state_pkg::LcStProdEnd:       lc_state_idx = 18;
+      lc_ctrl_state_pkg::LcStRma:           lc_state_idx = 19;
+      default:                              lc_state_idx = 20;
+    endcase
+
+    // Write-lock partitions whose LC phase has expired.
+    for (int k = 0; k < NumPart-1; k++) begin
+      if ((lc_state_idx == 0) || (lc_state_idx > PartInfo[k].lc_phase)) begin
+        part_access_pre[k].write_lock = MuBi8True;
+      end
+    end
+
   end
 
   // This prevents the synthesis tool from optimizing the multibit signals.
@@ -702,23 +707,6 @@ end
     1'b1  // fatal_macro_error_q
   };
 
-  // Caliptra does not use alert sender
-  // for (genvar k = 0; k < NumAlerts; k++) begin : gen_alert_tx
-  //   caliptra_prim_alert_sender #(
-  //     .AsyncOn(AlertAsyncOn[k]),
-  //     .IsFatal(AlertIsFatal[k])
-  //   ) u_prim_alert_sender (
-  //     .clk_i,
-  //     .rst_ni,
-  //     .alert_test_i  ( alert_test[k] ),
-  //     .alert_req_i   ( alerts[k]     ),
-  //     .alert_ack_o   (               ),
-  //     .alert_state_o (               ),
-  //     .alert_rx_i    ( alert_rx_i[k] ),
-  //     .alert_tx_o    ( alert_tx_o[k] )
-  //   );
-  // end
-
   ////////////////////////////////
   // LFSR Timer and CSR mapping //
   ////////////////////////////////
@@ -726,8 +714,6 @@ end
   logic integ_chk_trig, cnsty_chk_trig;
   logic [NumPart-1:0] integ_chk_req, integ_chk_ack;
   logic [NumPart-1:0] cnsty_chk_req, cnsty_chk_ack;
-  logic lfsr_edn_req, lfsr_edn_ack;
-  logic [EdnDataWidth-1:0] edn_data;
 
   assign integ_chk_trig   = reg2hw.check_trigger.integrity.q &
                             reg2hw.check_trigger.integrity.qe;
@@ -741,9 +727,9 @@ end
   ) u_otp_ctrl_lfsr_timer (
     .clk_i,
     .rst_ni,
-    .edn_req_o          ( lfsr_edn_req              ),
-    .edn_ack_i          ( lfsr_edn_ack              ),
-    .edn_data_i         ( edn_data                  ),
+    .edn_req_o          (                          ), 
+    .edn_ack_i          ( '0                       ),
+    .edn_data_i         ( '0                       ), 
     // We can enable the timer once OTP has initialized.
     // Note that this is only the initial release that gets
     // the timer FSM into an operational state.
@@ -771,49 +757,6 @@ end
     .escalate_en_i      ( lc_escalate_en[NumAgents] ),
     .chk_timeout_o      ( chk_timeout               ),
     .fsm_err_o          ( lfsr_fsm_err              )
-  );
-
-  ///////////////////////////////////////
-  // EDN Arbitration, Request and Sync //
-  ///////////////////////////////////////
-
-  // Both the key derivation and LFSR reseeding are low bandwidth,
-  // hence they can share the same EDN interface.
-  logic edn_req, edn_ack;
-  logic key_edn_req, key_edn_ack;
-  caliptra_prim_arbiter_tree #(
-    .N(2),
-    .EnDataPort(0)
-  ) u_edn_arb (
-    .clk_i,
-    .rst_ni,
-    .req_chk_i ( ~lc_escalate_en_any         ),
-    .req_i     ( {lfsr_edn_req, key_edn_req} ),
-    .data_i    ( '{default: '0}              ),
-    .gnt_o     ( {lfsr_edn_ack, key_edn_ack} ),
-    .idx_o     (                             ), // unused
-    .valid_o   ( edn_req                     ),
-    .data_o    (                             ), // unused
-    .ready_i   ( edn_ack                     )
-  );
-
-  // This synchronizes the data coming from EDN and stacks the
-  // 32bit EDN words to achieve an internal entropy width of 64bit.
-  caliptra_prim_edn_req #(
-    .OutWidth(EdnDataWidth)
-  ) u_prim_edn_req (
-    .clk_i,
-    .rst_ni,
-    .req_chk_i ( ~lc_escalate_en_any ),
-    .req_i     ( edn_req             ),
-    .ack_o     ( edn_ack             ),
-    .data_o    ( edn_data            ),
-    .fips_o    (                     ), // unused
-    .err_o     (                     ), // unused
-    .clk_edn_i,
-    .rst_edn_ni,
-    .edn_o,
-    .edn_i
   );
 
   ///////////////////////////////
@@ -891,53 +834,47 @@ end
   assign cio_test_en_o = (lc_ctrl_pkg::lc_tx_test_true_strict(lc_dft_en[2])) ?
                          {OtpTestVectWidth{1'b1}} : '0;
 
-  // SEC_CM: MACRO.MEM.CM, MACRO.MEM.INTEGRITY
-  prim_generic_otp #(
-    .Width            ( OtpWidth            ),
-    .Depth            ( OtpDepth            ),
-    .SizeWidth        ( OtpSizeWidth        ),
-    .PwrSeqWidth      ( OtpPwrSeqWidth      ),
-    .TestCtrlWidth    ( OtpTestCtrlWidth    ),
-    .TestStatusWidth  ( OtpTestStatusWidth  ),
-    .TestVectWidth    ( OtpTestVectWidth    ),
-    .MemInitFile      ( MemInitFile         ),
-    .VendorTestOffset ( VendorTestOffset    ),
-    .VendorTestSize   ( VendorTestSize      )
-  ) u_otp (
-    .clk_i,
-    .rst_ni,
-    // Observability controls to/from AST
-    .obs_ctrl_i,
-    .otp_obs_o,
-    // Power sequencing signals to/from AST
-    .pwr_seq_o        ( otp_ast_pwr_seq_o.pwr_seq     ),
-    .pwr_seq_h_i      ( otp_ast_pwr_seq_h_i.pwr_seq_h ),
-    .ext_voltage_io   ( otp_ext_voltage_h_io          ),
-    // Test interface
-    .test_ctrl_i      ( lc_otp_vendor_test_i.ctrl     ),
-    .test_status_o    ( lc_otp_vendor_test_o.status   ),
-    .test_vect_o      ( otp_test_vect                 ),
-    .test_tl_i        ( prim_tl_h2d_gated             ),
-    .test_tl_o        ( prim_tl_d2h_gated             ),
+
+  always_comb begin : FCM_port_assignment
+    // Clock, reset and observability
+    prim_generic_otp_inputs_o.clk_i      = clk_i;
+    prim_generic_otp_inputs_o.rst_ni     = rst_ni;
+    prim_generic_otp_inputs_o.obs_ctrl_i = obs_ctrl_i;
+    otp_obs_o                          = prim_generic_otp_outputs_i.otp_obs_o;
+    
+    // Power sequencing signals
+    prim_generic_otp_inputs_o.pwr_seq_h_i = otp_ast_pwr_seq_h_i.pwr_seq_h;
+    otp_ast_pwr_seq_o.pwr_seq            = prim_generic_otp_outputs_i.pwr_seq_o;
+    
+    // Test interface signals
+    lc_otp_vendor_test_o.status          = '0;
+    otp_test_vect                        = '0;
+    prim_tl_d2h_gated                    = '0;
+    
     // Other DFT signals
-    .scan_en_i,
-    .scan_rst_ni,
-    .scanmode_i,
-    // Alerts
-    .fatal_alert_o    ( fatal_prim_otp_alert ),
-    .recov_alert_o    ( recov_prim_otp_alert ),
-    // Read / Write command interface
-    .ready_o          ( otp_prim_ready       ),
-    .valid_i          ( otp_prim_valid       ),
-    .cmd_i            ( otp_arb_bundle.cmd   ),
-    .size_i           ( otp_arb_bundle.size  ),
-    .addr_i           ( otp_arb_bundle.addr  ),
-    .wdata_i          ( otp_arb_bundle.wdata ),
-    // Read data out
-    .valid_o          ( otp_rvalid           ),
-    .rdata_o          ( part_otp_rdata       ),
-    .err_o            ( part_otp_err         )
-  );
+    prim_generic_otp_inputs_o.scanmode_i  = scanmode_i;
+    prim_generic_otp_inputs_o.scan_en_i   = scan_en_i;
+    prim_generic_otp_inputs_o.scan_rst_ni = scan_rst_ni;
+    
+    // Command interface (read/write)
+    prim_generic_otp_inputs_o.valid_i  = otp_prim_valid;
+    prim_generic_otp_inputs_o.size_i   = otp_arb_bundle.size;
+    prim_generic_otp_inputs_o.cmd_i    = otp_arb_bundle.cmd;
+    prim_generic_otp_inputs_o.addr_i   = otp_arb_bundle.addr;
+    prim_generic_otp_inputs_o.wdata_i  = otp_arb_bundle.wdata;
+    
+    // Ready/Response signals
+    otp_prim_ready      = prim_generic_otp_outputs_i.ready_o;
+    otp_rvalid          = prim_generic_otp_outputs_i.valid_o;
+    part_otp_rdata      = prim_generic_otp_outputs_i.rdata_o;
+    part_otp_err        = prim_generic_otp_outputs_i.err_o;
+    
+    // Alert signals
+    fatal_prim_otp_alert = prim_generic_otp_outputs_i.fatal_alert_o;
+    recov_prim_otp_alert = prim_generic_otp_outputs_i.recov_alert_o;
+  end
+  
+
 
   logic otp_fifo_valid;
   logic [vbits(NumAgents)-1:0] otp_part_idx;
@@ -1090,8 +1027,10 @@ end
   wire discarded_fuse_write, discard_fuse_write;
 
   fuse_ctrl_filter u_fuse_ctrl_filter (
-    .clk_i                   (clk_i),
-    .rst_n_i                 (rst_ni),
+    .clk_i                              (clk_i),
+    .rst_n_i                            (rst_ni),
+    .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
+    .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_cptra_axi_user_i),
     .fc_init_done            (pwr_otp_rsp_d),
     .core_axi_wr_req         (core_axi_wr_req),
     .core_axi_wr_rsp         (core_axi_wr_rsp),
@@ -1186,61 +1125,6 @@ end
                                     part_scrmbl_req_ready[LciIdx],
                                     part_scrmbl_rsp_valid[LciIdx]};
 
-  ////////////////////////////////////
-  // Key Derivation Interface (KDI) //
-  ////////////////////////////////////
-
-  // logic scrmbl_key_seed_valid;
-  // logic [SramKeySeedWidth-1:0] sram_data_key_seed;
-  // logic [FlashKeySeedWidth-1:0] flash_data_key_seed, flash_addr_key_seed;
-
-  // otp_ctrl_kdi #(
-  //   .RndCnstScrmblKeyInit(RndCnstScrmblKeyInit)
-  // ) u_otp_ctrl_kdi (
-  //   .clk_i,
-  //   .rst_ni,
-  //   .kdi_en_i                ( pwr_otp_o.otp_done      ),
-  //   .escalate_en_i           ( lc_escalate_en[KdiIdx]  ),
-  //   .fsm_err_o               ( part_fsm_err[KdiIdx]    ),
-  //   .scrmbl_key_seed_valid_i ( scrmbl_key_seed_valid   ),
-  //   .flash_data_key_seed_i   ( flash_data_key_seed     ),
-  //   .flash_addr_key_seed_i   ( flash_addr_key_seed     ),
-  //   .sram_data_key_seed_i    ( sram_data_key_seed      ),
-  //   .edn_req_o               ( key_edn_req             ),
-  //   .edn_ack_i               ( key_edn_ack             ),
-  //   .edn_data_i              ( edn_data                ),
-  //   .flash_otp_key_i,
-  //   .flash_otp_key_o,
-  //   .sram_otp_key_i,
-  //   .sram_otp_key_o,
-  //   .otbn_otp_key_i,
-  //   .otbn_otp_key_o,
-  //   .scrmbl_mtx_req_o        ( part_scrmbl_mtx_req[KdiIdx]          ),
-  //   .scrmbl_mtx_gnt_i        ( part_scrmbl_mtx_gnt[KdiIdx]          ),
-  //   .scrmbl_cmd_o            ( part_scrmbl_req_bundle[KdiIdx].cmd   ),
-  //   .scrmbl_mode_o           ( part_scrmbl_req_bundle[KdiIdx].mode  ),
-  //   .scrmbl_sel_o            ( part_scrmbl_req_bundle[KdiIdx].sel   ),
-  //   .scrmbl_data_o           ( part_scrmbl_req_bundle[KdiIdx].data  ),
-  //   .scrmbl_valid_o          ( part_scrmbl_req_bundle[KdiIdx].valid ),
-  //   .scrmbl_ready_i          ( part_scrmbl_req_ready[KdiIdx]        ),
-  //   .scrmbl_valid_i          ( part_scrmbl_rsp_valid[KdiIdx]        ),
-  //   .scrmbl_data_i           ( part_scrmbl_rsp_data                 )
-  // );
-
-  // Tie off OTP bus access, since this is not needed.
-  
-  //TODO: Removed this KdiIdx
-  // assign part_otp_arb_req[KdiIdx] = 1'b0;
-  // assign part_otp_arb_bundle[KdiIdx] = '0;
-  
-
-  // This stops lint from complaining about unused signals.
-
-  //TODO: Removed this KdiIdx
-  // logic unused_kdi_otp_sigs;
-  // assign unused_kdi_otp_sigs = ^{part_otp_arb_gnt[KdiIdx],
-  //                                part_otp_rvalid[KdiIdx]};
-
   /////////////////////////
   // Partition Instances //
   /////////////////////////
@@ -1299,9 +1183,6 @@ end
                                          integ_chk_req[k],
                                          cnsty_chk_req[k]};
 
-      // Alert assertion for sparse FSM.
-      `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlPartUnbufFsmCheck_A,
-          u_part_unbuf.u_state_regs, alert_tx_o[1])
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else if (PartInfo[k].variant == Buffered) begin : gen_buffered
       otp_ctrl_part_buf #(
@@ -1354,11 +1235,6 @@ end
       assign part_tlul_rvalid[k] = 1'b0;
       assign part_tlul_rdata[k]  = '0;
 
-      // Alert assertion for sparse FSM.
-      `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlPartBufFsmCheck_A,
-          u_part_buf.u_state_regs, alert_tx_o[1])
-      `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntPartBufCheck_A,
-          u_part_buf.u_prim_count, alert_tx_o[1])
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else if (PartInfo[k].variant == LifeCycle) begin : gen_lifecycle
       otp_ctrl_part_buf #(
@@ -1423,11 +1299,6 @@ end
       assign unused_part_scrmbl_sigs = ^{part_scrmbl_mtx_gnt[k],
                                          part_scrmbl_req_ready[k],
                                          part_scrmbl_rsp_valid[k]};
-      // Alert assertion for sparse FSM.
-      `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlPartLcFsmCheck_A,
-          u_part_buf.u_state_regs, alert_tx_o[1])
-      `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntPartLcCheck_A,
-          u_part_buf.u_prim_count, alert_tx_o[1])
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else begin : gen_invalid
       // This is invalid and should break elaboration
@@ -1474,83 +1345,14 @@ end
     otp_broadcast_FIPS_checked.valid = otp_broadcast_valid_q;
   end
 
-  // Root keys and seeds.
-  // This uses a generated function to assign all collateral that is marked with "iskeymgr" in
-  // the memory map. Note that in this case the type is static and represents a superset of all
-  // options so that we can maintain a stable interface with keymgr (otherwise keymgr will have
-  // to be templated as well. Unused key material will be tied off to '0. The keymgr has to be
-  // parameterized accordingly (via SV parameters) to consume the correct key material.
-  //
-  // The key material valid signals are set to true if the corresponding digest is nonzero and the
-  // partition is initialized. On top of that, the entire output is gated by lc_seed_hw_rd_en.
-  otp_keymgr_key_t otp_keymgr_key;
-  assign otp_keymgr_key = named_keymgr_key_assign(part_digest,
-                                                  part_buf_data,
-                                                  lc_seed_hw_rd_en);
-
-  // Note regarding these breakouts: named_keymgr_key_assign will tie off unused key material /
-  // valid signals to '0. This is the case for instance in system configurations that keep the seed
-  // material in the flash instead of OTP.
-  logic creator_root_key_share0_valid_d, creator_root_key_share0_valid_q;
-  logic creator_root_key_share1_valid_d, creator_root_key_share1_valid_q;
-  logic creator_seed_valid_d, creator_seed_valid_q;
-  logic owner_seed_valid_d, owner_seed_valid_q;
-  caliptra_prim_flop #(
-    .Width(4)
-  ) u_keygmr_key_valid (
-    .clk_i,
-    .rst_ni,
-    .d_i ({creator_root_key_share0_valid_d,
-           creator_root_key_share1_valid_d,
-           creator_seed_valid_d,
-           owner_seed_valid_d}),
-    .q_o ({creator_root_key_share0_valid_q,
-           creator_root_key_share1_valid_q,
-           creator_seed_valid_q,
-           owner_seed_valid_q})
-  );
-
-  always_comb begin : p_otp_keymgr_key_valid
-    // Valid reg inputs
-    creator_root_key_share0_valid_d = otp_keymgr_key.creator_root_key_share0_valid;
-    creator_root_key_share1_valid_d = otp_keymgr_key.creator_root_key_share1_valid;
-    creator_seed_valid_d            = otp_keymgr_key.creator_seed_valid;
-    owner_seed_valid_d              = otp_keymgr_key.owner_seed_valid;
-    // Output to keymgr
-    otp_keymgr_key_o                               = otp_keymgr_key;
-    otp_keymgr_key_o.creator_root_key_share0_valid = creator_root_key_share0_valid_q;
-    otp_keymgr_key_o.creator_root_key_share1_valid = creator_root_key_share1_valid_q;
-    otp_keymgr_key_o.creator_seed_valid            = creator_seed_valid_q;
-    otp_keymgr_key_o.owner_seed_valid              = owner_seed_valid_q;
-  end
-
-  // Check that the lc_seed_hw_rd_en remains stable, once the key material is valid.
-  `CALIPTRA_ASSERT(LcSeedHwRdEnStable0_A,
-    $rose(creator_root_key_share0_valid_q) |=> $stable(lc_seed_hw_rd_en) [*1:$],
-    clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
-  )
-  `CALIPTRA_ASSERT(LcSeedHwRdEnStable1_A,
-    $rose(creator_root_key_share1_valid_q) |=> $stable(lc_seed_hw_rd_en) [*1:$],
-    clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
-  )
-  `CALIPTRA_ASSERT(LcSeedHwRdEnStable2_A,
-    $rose(creator_seed_valid_q) |=> $stable(lc_seed_hw_rd_en) [*1:$],
-    clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
-  )
-  `CALIPTRA_ASSERT(LcSeedHwRdEnStable3_A,
-    $rose(owner_seed_valid_q) |=> $stable(lc_seed_hw_rd_en) [*1:$],
-    clk_i, !rst_ni || lc_ctrl_pkg::lc_tx_test_true_loose(lc_escalate_en_i) // Disable if escalating
-  )
-
-  int test_unlock_token_idx;
-  assign test_unlock_token_idx = CptraSsTestUnlockToken0Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStRaw :
-                                 CptraSsTestUnlockToken1Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked0 :
-                                 CptraSsTestUnlockToken2Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked1 :
-                                 CptraSsTestUnlockToken3Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked2 :
-                                 CptraSsTestUnlockToken4Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked3 :
-                                 CptraSsTestUnlockToken5Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked4 :
-                                 CptraSsTestUnlockToken6Offset ? otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestUnlocked5 :
-                                 CptraSsTestUnlockToken7Offset;
+  logic [31:0] test_unlock_token_idx;
+  assign test_unlock_token_idx = otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked0 ? CptraSsTestUnlockToken0Offset : 
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked1 ? CptraSsTestUnlockToken1Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked2 ? CptraSsTestUnlockToken2Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked3 ? CptraSsTestUnlockToken3Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked4 ? CptraSsTestUnlockToken4Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked5 ? CptraSsTestUnlockToken5Offset :
+                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked6 ? CptraSsTestUnlockToken6Offset : '0;
 
   assign otp_lc_data_o.test_unlock_token = part_buf_data[test_unlock_token_idx +:
                                                          CptraSsTestUnlockToken0Size];
@@ -1632,65 +1434,12 @@ end
   `CALIPTRA_ASSERT_KNOWN(PrimTlOutKnown_A,            prim_tl_o)
   `CALIPTRA_ASSERT_KNOWN(IntrOtpOperationDoneKnown_A, intr_otp_operation_done_o)
   `CALIPTRA_ASSERT_KNOWN(IntrOtpErrorKnown_A,         intr_otp_error_o)
-  `CALIPTRA_ASSERT_KNOWN(AlertTxKnown_A,              alert_tx_o)
   `CALIPTRA_ASSERT_KNOWN(PwrOtpInitRspKnown_A,        pwr_otp_o)
   `CALIPTRA_ASSERT_KNOWN(LcOtpProgramRspKnown_A,      lc_otp_program_o)
   `CALIPTRA_ASSERT_KNOWN(OtpLcDataKnown_A,            otp_lc_data_o)
-  `CALIPTRA_ASSERT_KNOWN(OtpKeymgrKeyKnown_A,         otp_keymgr_key_o)
-  `CALIPTRA_ASSERT_KNOWN(FlashOtpKeyRspKnown_A,       flash_otp_key_o)
-  `CALIPTRA_ASSERT_KNOWN(OtpSramKeyKnown_A,           sram_otp_key_o)
-  `CALIPTRA_ASSERT_KNOWN(OtpOtgnKeyKnown_A,           otbn_otp_key_o)
   `CALIPTRA_ASSERT_KNOWN(OtpBroadcastKnown_A,         otp_broadcast_o)
 
   `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 |-> test_tokens_valid == lc_ctrl_pkg::On)
 
-  // Alert assertions for sparse FSMs.
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlDaiFsmCheck_A,
-      u_otp_ctrl_dai.u_state_regs, alert_tx_o[1])
-  // `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlKdiFsmCheck_A,
-  //     u_otp_ctrl_kdi.u_state_regs, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLciFsmCheck_A,
-      u_otp_ctrl_lci.u_state_regs, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlLfsrTimerFsmCheck_A,
-      u_otp_ctrl_lfsr_timer.u_state_regs, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(CtrlScrambleFsmCheck_A,
-      u_otp_ctrl_scrmbl.u_state_regs, alert_tx_o[1])
 
-  // Alert assertions for redundant counters.
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntIntegCheck_A,
-      u_otp_ctrl_lfsr_timer.u_prim_count_integ, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntCnstyCheck_A,
-      u_otp_ctrl_lfsr_timer.u_prim_count_cnsty, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntDaiCheck_A,
-      u_otp_ctrl_dai.u_prim_count, alert_tx_o[1])
-  // `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntKdiSeedCheck_A,
-  //     u_otp_ctrl_kdi.u_prim_count_seed, alert_tx_o[1])
-  // `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntKdiEntropyCheck_A,
-  //     u_otp_ctrl_kdi.u_prim_count_entropy, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntLciCheck_A,
-      u_otp_ctrl_lci.u_prim_count, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(CntScrmblCheck_A,
-      u_otp_ctrl_scrmbl.u_prim_count, alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(TlLcGateFsm_A,
-      u_tlul_lc_gate.u_state_regs, alert_tx_o[2])
-
-  // Alert assertions for double LFSR.
-  `CALIPTRA_ASSERT_PRIM_DOUBLE_LFSR_ERROR_TRIGGER_ALERT(DoubleLfsrCheck_A,
-      u_otp_ctrl_lfsr_timer.u_prim_double_lfsr, alert_tx_o[1])
-
-  // Alert assertions for reg_we onehot check
-  `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegWeOnehotCheck_A, u_reg_core, alert_tx_o[2])
-
-  // Assertions for countermeasures inside prim_otp
-  `ifndef PRIM_DEFAULT_IMPL
-    `define PRIM_DEFAULT_IMPL prim_pkg::ImplGeneric
-  `endif
-  if (`CALIPTRA_PRIM_DEFAULT_IMPL == caliptra_prim_pkg::ImplGeneric) begin : gen_reg_we_assert_generic
-    `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(PrimFsmCheck_A,
-        u_otp.u_state_regs, alert_tx_o[3])
-        //u_otp.gen_generic.u_impl_generic.u_state_regs, alert_tx_o[3])
-    `CALIPTRA_ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(PrimRegWeOnehotCheck_A,
-        u_otp.u_reg_top, alert_tx_o[3])
-    //    //u_otp.gen_generic.u_impl_generic.u_reg_top, alert_tx_o[3])
-  end
 endmodule : otp_ctrl

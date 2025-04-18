@@ -1,0 +1,42 @@
+document:
+  schema: 1.0
+
+contents:
+  - tests:
+      tags: ["L0", "Lop_regression", "top_regression"]
+      paths:
+        - ../test_suites/mcu_cptra_bringup/mcu_cptra_bringup.yml
+        - ../test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation.yml
+        - ../test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock.yml
+        - ../test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens.yml
+        - ../test_suites/smoke_test_fc_registers/smoke_test_fc_registers.yml
+        - ../test_suites/mcu_hello_world/mcu_hello_world.yml
+        - ../test_suites/mcu_lmem_exe/mcu_lmem_exe.yml
+        - ../test_suites/smoke_test_lcc_scrap/smoke_test_lcc_scrap.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_manuf_prod_prov/caliptra_ss_fuse_ctrl_manuf_prod_prov.yml
+        - ../test_suites/smoke_test_fc_unlock_transitions/smoke_test_fc_unlock_transitions.yml
+        - ../test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox0.yml
+        - ../test_suites/smoke_test_mcu_mbox_zeroize/smoke_test_mcu_mbox0_zeroize.yml
+        - ../test_suites/mcu_mbox_lock_return_one_during_zeroize/mcu_mbox0_lock_return_one_during_zeroize.yml
+        - ../test_suites/smoke_test_mbox_csr_zeros_after_release/smoke_test_mbox0_csr_zeros_after_release.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_escalation/caliptra_ss_fuse_ctrl_escalation.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_writeblank/caliptra_ss_fuse_ctrl_writeblank.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_zeroization/caliptra_ss_fuse_ctrl_zeroization.yml
+        - ../test_suites/smoke_test_mcu_sram_byte_write/smoke_test_mcu_sram_byte_write.yml
+        - ../test_suites/smoke_test_mcu_sram_protected_region/smoke_test_mcu_sram_protected_region.yml
+        - ../test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region.yml
+        - ../test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region_max_size.yml
+        - ../test_suites/smoke_test_mcu_mbox_valid_user/smoke_test_mcu_mbox0_valid_user.yml
+        - ../test_suites/smoke_test_mcu_mbox_write_user_lock/smoke_test_mcu_mbox0_write_user_lock.yml
+        - ../test_suites/smoke_test_mcu_mbox_usr_lock_out_zero/smoke_test_mcu_mbox0_usr_lock_out_zero.yml
+        - ../test_suites/smoke_test_mcu_mbox_target_user/smoke_test_mcu_mbox0_target_user.yml
+        - ../test_suites/smoke_test_mcu_mbox_invalid_axi/smoke_test_mcu_mbox0_invalid_axi.yml
+        - ../test_suites/smoke_test_mcu_mbox_ecc/smoke_test_mcu_mbox0_ecc.yml
+        - ../test_suites/smoke_test_mcu_mbox_strb_wr_csr/smoke_test_mcu_mbox0_strb_wr_csr.yml
+        - ../test_suites/smoke_test_lcc_kmac_kat/smoke_test_lcc_kmac_kat.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_external_clock/caliptra_ss_fuse_ctrl_external_clock.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check.yml
+        - ../test_suites/smoke_test_lcc_registers/smoke_test_lcc_registers.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_bus_ecc_error/caliptra_ss_fuse_ctrl_bus_ecc_error.yml
+        - ../test_suites/smoke_test_wdt/smoke_test_wdt.yml
+        - ../test_suites/smoke_test_lcc_st_trans/smoke_test_lcc_st_trans.yml

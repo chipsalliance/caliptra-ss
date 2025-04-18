@@ -13,7 +13,8 @@ files:
   - src/fuse_ctrl/config/compile.yml
   - src/mci/config/compile.yml
   - src/axi_mem/config/compile.yml
-  - src/integration/config/avery_vip.yml
+  - src/libs/config/compile.yml
+  # Caliptra Core
   - third_party/caliptra-rtl/src/libs/config/compile.yml
   - third_party/caliptra-rtl/src/ahb_lite_bus/config/compile.yml
   - third_party/caliptra-rtl/src/riscv_core/veer_el2/config/compile.yml
@@ -79,3 +80,4 @@ files:
   # Please add your next file/folder above not below the line
   - third_party/caliptra-rtl/src/integration/config/compile.yml
   - src/integration/config/compile.yml
+  - src/integration/asserts/config/compile.yml

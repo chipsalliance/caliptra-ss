@@ -38,38 +38,20 @@ else
 fi
 cd "${CALIPTRA_SS_ROOT}"
 
-# Find all RTL files that are generated from RDL
-declare -a gen_rtl_list
-for rdl_file in $(find "${CALIPTRA_SS_ROOT}/src" -name "*.rdl"); do 
-    rtl_file=$(sed 's,\.rdl,.sv,' <<< $(basename $rdl_file));
-    if [[ $(find $(dirname $(dirname $rdl_file)) -name "$rtl_file" | wc -l) -eq 1 ]]; then
-        gen_rtl_list+=("${rtl_file}")
-    else
-        echo "Did not find any file named [$rtl_file] that would be generated from [$rdl_file]";
-    fi;
-done
-patn=$(echo "${gen_rtl_list[@]}" | sed 's, ,\\\|,g')
+# Run the HTML Doc generator script (to update the REG macro header files)
+# and the individual reg generator script but then remove the docs directories
+# before checking if the script caused any file modifications
+bash "${CALIPTRA_SS_ROOT}/tools/scripts/gen_soc_regs.sh" "${CALIPTRA_SS_ROOT}"
+rm -rf "${CALIPTRA_SS_ROOT}/src/integration/docs"
 
-# Find file modifications
-rdl_mod_count=$(git diff --merge-base "${merge_dest}" --name-only | grep -c -e '\.rdl$\|tools\/templates\/rdl\|reg_gen.sh\|reg_gen.py\|reg_doc_gen.sh\|reg_doc_gen.py' -e "${patn}" || exit 0)
-if [[ "${rdl_mod_count}" -gt 0 ]]; then
-    # Run the HTML Doc generator script (to update the REG macro header files)
-    # and the individual reg generator script but then remove the docs directories
-
-    bash "${CALIPTRA_SS_ROOT}/tools/scripts/gen_soc_regs.sh" "${CALIPTRA_SS_ROOT}"
-    rm -rf "${CALIPTRA_SS_ROOT}/src/integration/docs"
-
-    # Check for any file changes
-    if [[ $(git status -s --untracked-files=all --ignored=traditional -- "${CALIPTRA_SS_ROOT}/src/" | wc -l) -gt 0 ]]; then
-      echo "Regenerating reg RDL outputs produced some file changes:";
-      git status -s --untracked-files=all --ignored=traditional;
-      git diff;
-      echo "*****************************************";
-      echo "Review above changes locally and resubmit pipeline";
-      echo "(Hint: Check ${CALIPTRA_SS_ROOT} for the above changes)";
-      echo "*****************************************";
-      exit 1;
-    fi
-else
-    echo "skipping RDL check since no RDL files were modified"
+# Check for any file changes
+if [[ $(git status -s --untracked-files=all --ignored=traditional -- "${CALIPTRA_SS_ROOT}/src/" | wc -l) -gt 0 ]]; then
+  echo "Regenerating reg RDL outputs produced some file changes:";
+  git status -s --untracked-files=all --ignored=traditional;
+  git diff;
+  echo "*****************************************";
+  echo "Review above changes locally and resubmit pipeline";
+  echo "(Hint: Check ${CALIPTRA_SS_ROOT} for the above changes)";
+  echo "*****************************************";
+  exit 1;
 fi

@@ -15,7 +15,7 @@
 
 #define STATUS_CHECK_LOOP_COUNT_FOR_RECOVERY 20
 
-volatile char* stdout = (char *)0x21000410;
+volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 // volatile char* stdout = (char *)0xd0580000;
 
 #ifdef CPT_VERBOSITY
@@ -45,7 +45,6 @@ void boot_i3c_recovery_reg(void) {
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_3, i3c_reg_data++);
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_4, i3c_reg_data++);
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_5, i3c_reg_data++);
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_6, i3c_reg_data++);
 
     //-- HW_STATUS
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS, i3c_reg_data++);
@@ -142,11 +141,11 @@ void boot_mcu(){
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO\n");
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
+    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
 
-    cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
+    cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
+    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
 
     VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n");
 
@@ -244,7 +243,7 @@ void boot_mcu(){
     VPRINTF(LOW, "MCU: Ready for FW\n");
 
     // MBOX: Setup valid AXI USER
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0xffffffff);
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0x1); // LSU AxUSER value. TODO: Derive from parameter
     //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_1, 1);
     //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_2, 2);
     //    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_3, 3);
@@ -268,11 +267,11 @@ void boot_mcu(){
     // MBOX: Write DLEN
     lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 0);
 
-    // MBOX: SOC_MBOX_CSR_MBOX_USER
-    // Writing MBOX user anything but 0xffff_ffff
-    // DPE considers all ffff_ffff as invalid user
-    // suggested based on Caliptra 1.x requirements.
-    lsu_write_32(SOC_MBOX_CSR_MBOX_USER, 0x1);
+//    // MBOX: SOC_MBOX_CSR_MBOX_USER
+//    // Writing MBOX user anything but 0xffff_ffff
+//    // DPE considers all ffff_ffff as invalid user
+//    // suggested based on Caliptra 1.x requirements.
+//    lsu_write_32(SOC_MBOX_CSR_MBOX_USER, 0x1);
 
     // // MBOX: Write datain
     // for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {

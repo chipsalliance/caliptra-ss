@@ -1781,37 +1781,45 @@ I think this is the one that isn't used
 caliptra_ss_top caliptra_ss_top_0 (
 
     // TODO: I can't figure out the LCC and debug interactions right now. Try forcing these bits
-    .force_mcu_dmi_core_enable(hwif_out.interface_regs.control.force_mcu_dmi_core_enable.value),
-    .force_mcu_dmi_uncore_enable(hwif_out.interface_regs.control.force_mcu_dmi_uncore_enable.value),
+    //.force_mcu_dmi_core_enable(hwif_out.interface_regs.control.force_mcu_dmi_core_enable.value),
+    //.force_mcu_dmi_uncore_enable(hwif_out.interface_regs.control.force_mcu_dmi_uncore_enable.value),
 
     .cptra_ss_clk_i(core_clk),
     .cptra_i3c_clk_i(i3c_clk),
     .cptra_ss_pwrgood_i(hwif_out.interface_regs.control.cptra_pwrgood.value),
     .cptra_ss_rst_b_i(hwif_out.interface_regs.control.cptra_ss_rst_b.value),
+    .cptra_ss_mci_cptra_rst_b_i, // TODO Copy this from the other branch
+    .cptra_ss_mci_cptra_rst_b_o,
 
     // Caliptra Core AXI Sub Interface
-    .cptra_ss_cptra_core_s_axi_if(cptra_core_s_axi),
+    .cptra_ss_cptra_core_s_axi_if(cptra_core_s_axi), // TODO this changed!
+    //axi_if.w_sub cptra_ss_cptra_core_s_axi_if_w_sub,
+    //axi_if.r_sub cptra_ss_cptra_core_s_axi_if_r_sub,
 
     // Caliptra Core AXI Manager Interface
-    .cptra_ss_cptra_core_m_axi_if(cptra_core_m_axi),
+    .cptra_ss_cptra_core_m_axi_if(cptra_core_m_axi), // TODO this changed!
+    //axi_if.w_mgr cptra_ss_cptra_core_m_axi_if_w_mgr,
+    //axi_if.r_mgr cptra_ss_cptra_core_m_axi_if_r_mgr,
 
     // Caliptra SS MCI AXI Sub Interface
-    .cptra_ss_mci_s_axi_if(cptra_ss_mci_s_axi),
+    .cptra_ss_mci_s_axi_if(cptra_ss_mci_s_axi), // TODO this changed!
+    //axi_if.w_sub cptra_ss_mci_s_axi_if_w_sub,
+    //axi_if.r_sub cptra_ss_mci_s_axi_if_r_sub,
 
     // Caliptra SS MCU ROM AXI Sub Interface
-    .cptra_ss_mcu_rom_s_axi_if,
+    .cptra_ss_mcu_rom_s_axi_if, // TODO this changed!
+    //axi_if.w_sub cptra_ss_mcu_rom_s_axi_if_w_sub,
+    //axi_if.r_sub cptra_ss_mcu_rom_s_axi_if_r_sub,
     .mcu_rom_mem_export_if,
 
-    // TODO: Remove
-    // Caliptra SS MCI AXI Manager Interface
-    //.cptra_ss_mci_m_axi_if,
-
     // Caliptra SS MCU LSU/IFU AXI Manager Interface
-    .cptra_ss_mcu_lsu_m_axi_if,
-    .cptra_ss_mcu_ifu_m_axi_if,
+    .cptra_ss_mcu_lsu_m_axi_if, // TODO this changed!
+    .cptra_ss_mcu_ifu_m_axi_if, // TODO this changed!
 
     // Caliptra SS I3C AXI Sub Interface
-    .cptra_ss_i3c_s_axi_if,
+    .cptra_ss_i3c_s_axi_if, // TODO this changed!
+    //axi_if.w_sub cptra_ss_i3c_s_axi_if_w_sub,
+    //axi_if.r_sub cptra_ss_i3c_s_axi_if_r_sub,
 
     // Caliptra SS LC Controller AXI Sub Interface
     .cptra_ss_lc_axi_wr_req_i,
@@ -1847,6 +1855,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_cptra_core_jtag_tdoEn_o(),
     //output logic [124:0]               cptra_ss_cptra_generic_fw_exec_ctrl_o,
     .cptra_ss_cptra_generic_fw_exec_ctrl_o(),
+    .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o(),
+    .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i(0), // TODO: How to connect?
 
     // LC Controller JTAG
     .cptra_ss_lc_ctrl_jtag_i,
@@ -1893,7 +1903,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mci_mcu_sram_req_if,
     .cptra_ss_mcu_mbox0_sram_req_if,
     .cptra_ss_mcu_mbox1_sram_req_if,
-    .cptra_ss_mcu0_el2_mem_export,
+    .cptra_ss_mcu0_el2_mem_export, // TODO this changed
+    //css_mcu0_el2_mem_if.veer_sram_icache_src cptra_ss_mcu0_el2_mem_export,
     
     .cptra_ss_mci_generic_input_wires_i({hwif_out.interface_regs.mci_generic_input_wires[0].value.value, hwif_out.interface_regs.mci_generic_input_wires[1].value.value}),
     .cptra_ss_mci_generic_output_wires_o({hwif_in.interface_regs.mci_generic_output_wires[0].value.next, hwif_in.interface_regs.mci_generic_output_wires[1].value.next}),
@@ -1909,6 +1920,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_all_error_fatal_o(hwif_in.interface_regs.mci_error.mci_error_fatal.next), // TODO: Update name in wrapper
     .cptra_ss_all_error_non_fatal_o(hwif_in.interface_regs.mci_error.mci_error_non_fatal.next), // TODO: Update name in wrapper
     
+    .cptra_ss_mcu_ext_int(0), // TODO: Width? Drive from SW?
     // TODO: MCU JTAG
     .cptra_ss_mcu_jtag_tck_i(mcu_jtag_tck_i),
     .cptra_ss_mcu_jtag_tms_i(mcu_jtag_tms_i),
@@ -1948,8 +1960,10 @@ caliptra_ss_top caliptra_ss_top_0 (
     /*output wire*/ .cptra_ss_soc_hw_debug_en_o(),
     
     // Caliptra SS Fuse Controller Interface (Fuse Macros)
-    /*input  tlul_pkg::tl_h2d_t*/ .cptra_ss_fuse_macro_prim_tl_i('0),
-    /*output tlul_pkg::tl_d2h_t*/ .cptra_ss_fuse_macro_prim_tl_o(),
+    // TODO: Copy from other SS repo
+    .cptra_ss_fuse_macro_outputs_i,
+    .cptra_ss_fuse_macro_inputs_o,
+
    
     // Caliptra SS I3C GPIO Interface
     .cptra_ss_i3c_scl_i(SCL),

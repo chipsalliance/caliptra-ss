@@ -1,9 +1,18 @@
-// Copyright lowRISC contributors (OpenTitan project).
-// Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 //
-// Package partition metadata.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 ${gen_comment}
 
 <%
@@ -14,6 +23,7 @@ package otp_ctrl_part_pkg;
   import caliptra_prim_util_pkg::vbits;
   import otp_ctrl_reg_pkg::*;
   import otp_ctrl_pkg::*;
+  import lc_ctrl_state_pkg::*;
 
   parameter int NumVendorPkFuses = ${num_vendor_pk_fuses};
   parameter int NumVendorSecretFuses = ${num_vendor_secret_fuses};
@@ -113,6 +123,9 @@ package otp_ctrl_part_pkg;
     logic integrity;        // Whether the partition is integrity protected
     logic iskeymgr_creator; // Whether the partition has any creator key material
     logic iskeymgr_owner;   // Whether the partition has any owner key material
+    // Decoded LC state index. A partition can be written as long this index is
+    // smaller or equal the current state index of the LC (see `dec_lc_state_e`).
+    logic [DecLcStateWidth-1:0] lc_phase;
   } part_info_t;
 
   parameter part_info_t PartInfoDefault = '{
@@ -127,7 +140,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b0,
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
-      iskeymgr_owner:   1'b0
+      iskeymgr_owner:   1'b0,
+      lc_phase:         DecLcStRaw
   };
 
   ////////////////////////
@@ -149,7 +163,8 @@ package otp_ctrl_part_pkg;
       read_lock:        1'b${"1" if part["read_lock"].lower() == "digest" else "0"},
       integrity:        1'b${"1" if part["integrity"] else "0"},
       iskeymgr_creator: 1'b${"1" if part["iskeymgr_creator"] else "0"},
-      iskeymgr_owner:   1'b${"1" if part["iskeymgr_owner"] else "0"}
+      iskeymgr_owner:   1'b${"1" if part["iskeymgr_owner"] else "0"},
+      lc_phase:         ${"Dec"+part["lc_phase"]}
     }${"" if loop.last else ","}
 % endfor
   };
