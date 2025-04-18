@@ -18,6 +18,7 @@
 
 module caliptra_ss_top_tb_soc_bfm
 import axi_pkg::*;
+import mci_dmi_pkg::*;
 #(
     parameter MCU_SRAM_SIZE_KB = 512
 ) 
@@ -48,11 +49,18 @@ import axi_pkg::*;
 localparam AXI_AW = $bits(m_axi_bfm_if.araddr);
 
 
+// MCU Trace Buffer monitor signals
+logic [31:0] mcu_trace_buffer [0:255];
+int unsigned mcu_trace_buffer_wr_ptr;
+logic mcu_trace_buffer_valid;
+logic mcu_trace_buffer_wrapped;
+string cptra_ss_test_name;
+
 ///////////////////////////////////
 // TEST FILE INCULDES
 //////////////////////////////////
-`include "mci_test_includes.svh"
 `include "common_test_includes.svh"
+`include "mci_test_includes.svh"
 
 
 
@@ -68,22 +76,48 @@ initial begin
     tb_services_if.assert_hard_rst_flag_done = 1'b0;
     tb_services_if.deassert_rst_flag_done = 1'b0;
     tb_services_if.assert_rst_flag_done = 1'b0;
-
+    mcu_trace_buffer            = '{default: '0};
+    mcu_trace_buffer_wr_ptr     = '0;
+    mcu_trace_buffer_valid      = '0;
+    mcu_trace_buffer_wrapped    = '0;
 
     
     
     ///////////////////////////////////
     // Test Sequences
     //////////////////////////////////
-    if ($test$plusargs("SMOKE_TEST_MCU_SRAM_EXECUTION_REGION")) begin
-        smoke_test_mcu_sram_execution_region();        
+    if ($value$plusargs("cptra_ss_sv_test=%s", cptra_ss_test_name)) begin
+        $display("[%t] CPTRA SS SV TEST: Test Name from Plusarg: %s", $time, cptra_ss_test_name);
+        if (cptra_ss_test_name == "SMOKE_TEST_MCU_SRAM_EXECUTION_REGION") begin
+            smoke_test_mcu_sram_execution_region();        
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCU_SRAM_DEBUG_STRESS")begin
+            smoke_test_mcu_sram_debug_stress();        
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCU_SRAM_DEBUG_STRESS") begin
+            smoke_test_mcu_trace_buffer();
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCU_TRACE_BUFFER") begin
+            smoke_test_mcu_trace_buffer();
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCU_TRACE_BUFFER_NO_DEBUG") begin
+            smoke_test_mcu_trace_buffer_no_debug();
+        end
+        else if ($test$plusargs("MCU_MBOX_SOC_AGENT_WRITE_FW_IMAGE")) begin
+            mcu_mbox_soc_agent_write_fw_image();       
+        end
     end
-    else if($test$plusargs("SMOKE_TEST_MCU_SRAM_DEBUG_STRESS"))begin
-        smoke_test_mcu_sram_debug_stress();        
-    end 
-    if ($test$plusargs("MCU_MBOX_SOC_AGENT_WRITE_FW_IMAGE")) begin
-        mcu_mbox_soc_agent_write_fw_image();       
-    end
+end
+
+
+
+///////////////////////////////////
+// MONITOR STARTUP             
+//////////////////////////////////
+initial begin
+    fork 
+        mcu_trace_buffer_mon();
+    join_none
 end
 
 ///////////////////////////////////
@@ -176,7 +210,7 @@ initial begin
 end
 initial begin
     // MCU SRAM CONFIG
-    if ($value$plusargs("MCU_SRAM CONFIG_AXI_USER=%h", cptra_ss_strap_mcu_sram_config_axi_user_i)) begin
+    if ($value$plusargs("MCU_SRAM_CONFIG_AXI_USER=%h", cptra_ss_strap_mcu_sram_config_axi_user_i)) begin
         // Plusarg value is directly assigned to cptra_ss_strap_mcu_sram_config_axi_user_i as hex
         $display("MCU SRAM CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mcu_sram_config_axi_user_i);
     end else if ($test$plusargs("MCU_SRAM CONFIG_AXI_USER_RAND")) begin
@@ -191,7 +225,7 @@ initial begin
 end
 initial begin
     // MCU SOC CONFIG
-    if ($value$plusargs("MCU SOC CONFIG_AXI_USER=%h", cptra_ss_strap_mci_soc_config_axi_user_i)) begin
+    if ($value$plusargs("MCU_SOC_CONFIG_AXI_USER=%h", cptra_ss_strap_mci_soc_config_axi_user_i)) begin
         // Plusarg value is directly assigned to cptra_ss_strap_mcu_ifu_axi_user_i as hex
         $display("MCU SOC CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
     end else if ($test$plusargs("MCU_SOC CONFIG_AXI_USER_RAND")) begin

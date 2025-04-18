@@ -1,6 +1,4 @@
-//********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,37 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//********************************************************************************
-
-#include "soc_address_map.h"
-#include "mci.h"
-#include "printf.h"
-#include "riscv_hw_if.h"
+//
+#include "caliptra_defines.h"
+#include "caliptra_isr.h"
+#include "riscv-csr.h"
 #include "soc_ifc.h"
-#include "caliptra_ss_lib.h"
+#include "soc_ifc_ss.h"
+#include "riscv_hw_if.h"
 #include <string.h>
 #include <stdint.h>
-#include "lc_ctrl.h"
+#include "printf.h"
 
-volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
+volatile uint32_t* stdout           = (uint32_t *)STDOUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void main (void) {
+volatile uint32_t  intr_count;
+volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
+void main(void) {
+    uint32_t wr_data;
+    uint32_t status;
+    uint32_t payload[1] = {0};
 
-    VPRINTF(LOW, "=================\nMCU: Testing Protected Region\n=================\n\n");
-    lcc_initialization();
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    reset_fc_lcc_rtl();
+    while(1); // DO nothing in this test
 
-    // Test is ended by the SOC BFM.
-
-
-
-    while(1);
 }
