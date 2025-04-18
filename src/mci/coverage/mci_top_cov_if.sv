@@ -72,7 +72,7 @@ interface mci_top_cov_if
     input logic [ 6:0] mcu_dmi_uncore_addr,
     input logic [31:0] mcu_dmi_uncore_wdata,
     input logic [31:0] mcu_dmi_uncore_rdata,
-    input logic        mcu_dmi_active, // FIXME: This is not used in the design
+    input logic        mcu_dmi_active, 
 
     // MCU Trace
     input logic [31:0] mcu_trace_rv_i_insn_ip,

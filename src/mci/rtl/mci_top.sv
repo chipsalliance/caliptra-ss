@@ -186,6 +186,8 @@ module mci_top
     logic        mcu_sram_single_ecc_error;
     logic        mcu_sram_double_ecc_error;
     logic        mcu_sram_fw_exec_region_lock_sync;
+    logic        mcu_sram_fw_exec_region_lock_internal;
+    logic        mcu_sram_fw_exec_region_lock_dmi_override;
     logic        mcu_sram_dmi_axi_collision_error;
     logic        mcu_sram_dmi_uncore_en;
     logic        mcu_sram_dmi_uncore_wr_en;
@@ -310,6 +312,8 @@ caliptra_prim_flop_2sync #(
   .rst_ni(cptra_ss_rst_b_o),
   .d_i(mcu_sram_fw_exec_region_lock),
   .q_o(mcu_sram_fw_exec_region_lock_sync));
+
+assign mcu_sram_fw_exec_region_lock_internal = mcu_sram_fw_exec_region_lock_dmi_override | mcu_sram_fw_exec_region_lock_sync;
   
 // Caliptra internal fabric interface for MCI Mbox0
 // Address width is set to AXI_ADDR_WIDTH and Mbox0
@@ -420,7 +424,7 @@ mci_boot_seqr #(
 
     // SoC signals
     .mci_boot_seq_brkpoint,
-    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),
     .mcu_no_rom_config,                // Determines boot sequencer boot flow
 
     // LCC Signals
@@ -495,7 +499,7 @@ mci_mcu_sram_ctrl #(
     .axi_mcu_sram_config_req    ,
 
     // Access lock interface
-    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),  
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),  
     
     // DMI
     .dmi_uncore_en    (mcu_sram_dmi_uncore_en),
@@ -660,7 +664,8 @@ mci_reg_top #(
     .mcu_nmi_vector,
     
     // MISC
-    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),
+    .mcu_sram_fw_exec_region_lock_dmi_override,
 
     // MCU SRAM specific signals
     .mcu_sram_single_ecc_error,
