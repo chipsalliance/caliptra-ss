@@ -71,6 +71,7 @@ logic [31:0] read_ptr_dword; // Translate read_ptr to num dword in trace_buffer
 logic [1:0]  read_ptr_offset; // DWORD Offset in a trace_buffer entry to access
 logic write_trace_buffer;
 logic trace_buffer_reg_req;
+logic trace_buffer_reg_wr;
 logic trace_buffer_reg_read_error;
 logic trace_buffer_reg_write_error;
 logic [31:0] c_cpuif_wr_biten; // Byte Enable mapping
@@ -194,6 +195,7 @@ assign trace_buffer_hwif_in.READ_PTR.ptr.next = dmi_reg_wdata;
 
 // Qualify trace_buffer_reg_req with debug_en
 assign trace_buffer_reg_req = cif_resp_if.dv & debug_en;
+assign trace_buffer_reg_wr  = trace_buffer_reg_req & cif_resp_if.req_data.write;
 
 // Map CIF WSTRB to BITEN of CSR block
 genvar i;
@@ -213,7 +215,7 @@ trace_buffer_csr i_trace_buffer_csr(
         .rst('0),
 
         .s_cpuif_req            (trace_buffer_reg_req),
-        .s_cpuif_req_is_wr      (cif_resp_if.req_data.write),
+        .s_cpuif_req_is_wr      (trace_buffer_reg_wr),
         .s_cpuif_addr           (cif_resp_if.req_data.addr[TRACE_BUFFER_CSR_MIN_ADDR_WIDTH-1:0]),
         .s_cpuif_wr_data        (cif_resp_if.req_data.wdata),
         .s_cpuif_wr_biten       (c_cpuif_wr_biten),
