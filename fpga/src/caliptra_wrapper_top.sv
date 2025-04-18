@@ -291,7 +291,7 @@ module caliptra_wrapper_top #(
     // AXI Write Channels
     output wire                      M_AXI_MCU_IFU_AWVALID,
     input  wire                      M_AXI_MCU_IFU_AWREADY,
-    output wire [18:0]              M_AXI_MCU_IFU_AWID,
+    output wire [18:0]               M_AXI_MCU_IFU_AWID,
     output wire [              31:0] M_AXI_MCU_IFU_AWADDR,
     output wire [               3:0] M_AXI_MCU_IFU_AWREGION,
     output wire [               7:0] M_AXI_MCU_IFU_AWLEN,
@@ -311,7 +311,7 @@ module caliptra_wrapper_top #(
     input  wire                      M_AXI_MCU_IFU_BVALID,
     output wire                      M_AXI_MCU_IFU_BREADY,
     input  wire [               1:0] M_AXI_MCU_IFU_BRESP,
-    input  wire [18:0]              M_AXI_MCU_IFU_BID,
+    input  wire [18:0]               M_AXI_MCU_IFU_BID,
 
     // AXI Read Channels
     output wire                      M_AXI_MCU_IFU_ARVALID,
@@ -1646,6 +1646,50 @@ I think this is the one that isn't used
     assign S_AXI_OTP_RLAST   = cptra_ss_otp_core_axi_rd_rsp_o.rlast;
     assign S_AXI_OTP_RVALID  = cptra_ss_otp_core_axi_rd_rsp_o.rvalid;
 
+    
+    otp_ctrl_pkg::prim_generic_otp_outputs_t cptra_ss_fuse_macro_outputs_tb;
+    otp_ctrl_pkg::prim_generic_otp_inputs_t  cptra_ss_fuse_macro_inputs_tb;
+    prim_generic_otp #(
+        .Width            ( otp_ctrl_pkg::OtpWidth            ),
+        .Depth            ( otp_ctrl_pkg::OtpDepth            ),
+        .SizeWidth        ( otp_ctrl_pkg::OtpSizeWidth        ),
+        .PwrSeqWidth      ( otp_ctrl_pkg::OtpPwrSeqWidth      ),
+        .TestCtrlWidth    ( otp_ctrl_pkg::OtpTestCtrlWidth    ),
+        .TestStatusWidth  ( otp_ctrl_pkg::OtpTestStatusWidth  ),
+        .TestVectWidth    ( otp_ctrl_pkg::OtpTestVectWidth    ),
+        .MemInitFile      ("otp-img.2048.vmem"                  ),
+        .VendorTestOffset ( otp_ctrl_reg_pkg::VendorTestOffset    ),
+        .VendorTestSize   ( otp_ctrl_reg_pkg::VendorTestSize      )
+    ) u_otp (
+        // Clock and Reset
+        .clk_i          ( cptra_ss_fuse_macro_inputs_tb.clk_i ),
+        .rst_ni         ( cptra_ss_fuse_macro_inputs_tb.rst_ni ),
+        // Observability controls to/from AST
+        .obs_ctrl_i     ( cptra_ss_fuse_macro_inputs_tb.obs_ctrl_i ),
+        .otp_obs_o      ( cptra_ss_fuse_macro_outputs_tb.otp_obs_o ),
+        // Power sequencing signals to/from AST
+        .pwr_seq_o      ( cptra_ss_fuse_macro_outputs_tb.pwr_seq_o ),
+        .pwr_seq_h_i    ( cptra_ss_fuse_macro_inputs_tb.pwr_seq_h_i ),
+        // Other DFT signals
+        .scanmode_i     ( cptra_ss_fuse_macro_inputs_tb.scanmode_i ),
+        .scan_en_i      ( cptra_ss_fuse_macro_inputs_tb.scan_en_i ),
+        .scan_rst_ni    ( cptra_ss_fuse_macro_inputs_tb.scan_rst_ni ),
+        // Alert signals
+        .fatal_alert_o  ( cptra_ss_fuse_macro_outputs_tb.fatal_alert_o ),
+        .recov_alert_o  ( cptra_ss_fuse_macro_outputs_tb.recov_alert_o ),
+        // Ready/valid handshake and command interface
+        .ready_o        ( cptra_ss_fuse_macro_outputs_tb.ready_o ),
+        .valid_i        ( cptra_ss_fuse_macro_inputs_tb.valid_i ),
+        .size_i         ( cptra_ss_fuse_macro_inputs_tb.size_i ),
+        .cmd_i          ( cptra_ss_fuse_macro_inputs_tb.cmd_i ),
+        .addr_i         ( cptra_ss_fuse_macro_inputs_tb.addr_i ),
+        .wdata_i        ( cptra_ss_fuse_macro_inputs_tb.wdata_i ),
+        // Response channel
+        .valid_o        ( cptra_ss_fuse_macro_outputs_tb.valid_o ),
+        .rdata_o        ( cptra_ss_fuse_macro_outputs_tb.rdata_o ),
+        .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
+    );
+
     // CSR HMAC KEY - TODO: Copying initialization from soc_bfm. Should probably connect to SW
     logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_ss_cptra_csr_hmac_key_i;
     initial begin
@@ -1778,6 +1822,12 @@ I think this is the one that isn't used
         endcase
     end
 
+
+// Looping back cptra_rst_b
+logic cptra_rst_b;
+// Looping back cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu
+logic cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu;
+
 caliptra_ss_top caliptra_ss_top_0 (
 
     // TODO: I can't figure out the LCC and debug interactions right now. Try forcing these bits
@@ -1788,8 +1838,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_i3c_clk_i(i3c_clk),
     .cptra_ss_pwrgood_i(hwif_out.interface_regs.control.cptra_pwrgood.value),
     .cptra_ss_rst_b_i(hwif_out.interface_regs.control.cptra_ss_rst_b.value),
-    .cptra_ss_mci_cptra_rst_b_i, // TODO Copy this from the other branch
-    .cptra_ss_mci_cptra_rst_b_o,
+    .cptra_ss_mci_cptra_rst_b_i(cptra_rst_b),
+    .cptra_ss_mci_cptra_rst_b_o(cptra_rst_b),
 
     // Caliptra Core AXI Sub Interface
     .cptra_ss_cptra_core_s_axi_if(cptra_core_s_axi), // TODO this changed!
@@ -1855,8 +1905,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_cptra_core_jtag_tdoEn_o(),
     //output logic [124:0]               cptra_ss_cptra_generic_fw_exec_ctrl_o,
     .cptra_ss_cptra_generic_fw_exec_ctrl_o(),
-    .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o(),
-    .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i(0), // TODO: How to connect?
+    .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu),
+    .cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu),
 
     // LC Controller JTAG
     .cptra_ss_lc_ctrl_jtag_i,
@@ -1895,7 +1945,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     // Caliptra SS MCU 
     .cptra_ss_strap_mcu_lsu_axi_user_i(hwif_out.interface_regs.lsu_user.lsu_user.value),
     .cptra_ss_strap_mcu_ifu_axi_user_i(hwif_out.interface_regs.ifu_user.ifu_user.value),
-    .cptra_ss_strap_cptra_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value),
+    //.cptra_ss_strap_cptra_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value), TODO
     .cptra_ss_strap_mcu_sram_config_axi_user_i(hwif_out.interface_regs.sram_config_user.sram_config_user.value),
     .cptra_ss_strap_mci_soc_config_axi_user_i(hwif_out.interface_regs.soc_config_user.soc_config_user.value),
 
@@ -1920,8 +1970,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_all_error_fatal_o(hwif_in.interface_regs.mci_error.mci_error_fatal.next), // TODO: Update name in wrapper
     .cptra_ss_all_error_non_fatal_o(hwif_in.interface_regs.mci_error.mci_error_non_fatal.next), // TODO: Update name in wrapper
     
-    .cptra_ss_mcu_ext_int(0), // TODO: Width? Drive from SW?
     // TODO: MCU JTAG
+    .cptra_ss_mcu_ext_int(0), // TODO: Should SW drive this to something?
     .cptra_ss_mcu_jtag_tck_i(mcu_jtag_tck_i),
     .cptra_ss_mcu_jtag_tms_i(mcu_jtag_tms_i),
     .cptra_ss_mcu_jtag_tdi_i(mcu_jtag_tdi_i),
@@ -1942,7 +1992,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_strap_generic_1_i(32'h0),
     .cptra_ss_strap_generic_2_i(32'h0),
     .cptra_ss_strap_generic_3_i(32'h0),
-    .cptra_ss_debug_intent_i(1'b1),            // Debug intent signal
+    .cptra_ss_debug_intent_i(hwif_out.interface_regs.control.ss_debug_intent.value),            // Debug intent signal
 
     // TODO: Connect
     /*output logic        */ .cptra_ss_dbg_manuf_enable_o(),
@@ -1960,11 +2010,9 @@ caliptra_ss_top caliptra_ss_top_0 (
     /*output wire*/ .cptra_ss_soc_hw_debug_en_o(),
     
     // Caliptra SS Fuse Controller Interface (Fuse Macros)
-    // TODO: Copy from other SS repo
-    .cptra_ss_fuse_macro_outputs_i,
-    .cptra_ss_fuse_macro_inputs_o,
+    .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
+    .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
 
-   
     // Caliptra SS I3C GPIO Interface
     .cptra_ss_i3c_scl_i(SCL),
     .cptra_ss_i3c_sda_i(SDA),
