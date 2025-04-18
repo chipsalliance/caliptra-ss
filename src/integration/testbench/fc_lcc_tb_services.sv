@@ -33,6 +33,9 @@ module fc_lcc_tb_services (
 
   logic ecc_fault_en;
   assign ecc_fault_en = 1'b0;
+
+  logic lcc_bus_error_en;
+  assign lcc_bus_error_en = 1'b0;
  
   always_ff @(posedge clk or negedge cptra_rst_b) begin
     if (cptra_rst_b) begin
@@ -121,6 +124,13 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: triggering esc_scrap_state1 escalation");
             force `LCC_PATH.esc_scrap_state1 = 1'b1;
           end
+          CMD_LCC_FATAL_BUS_INTEG_ERROR: begin
+            $display("fc_lcc_tb_services: triggering a bus integrity fault");
+            force lcc_bus_error_en = 1'b1;
+            // XXX: The AXI controller blocks when observing a write response error.
+            // This manually pulls the signal down to allow for program continuation.
+            force `LCC_PATH.axi_wr_rsp.bresp = '0;
+          end
           default: begin
             // No action for unrecognized commands.
           end
@@ -135,6 +145,15 @@ module fc_lcc_tb_services (
       force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0] = ~`FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0];
     end else begin
       force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data = `FC_PATH.u_core_axi2tlul.i_sub2tlul.wdata;
+    end
+  end
+
+    // Toggle a bit when observing a LCC register write.
+  always_comb begin
+    if (lcc_bus_error_en == 1'b1 && `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.write == 1'b1 && `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.addr == 32'h7000_0400) begin
+      force `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.tl_o.a_data[0] = ~`LCC_PATH.u_lc_axi2tlul.i_sub2tlul.tl_o.a_data[0];
+    end else begin
+      force `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.tl_o.a_data = `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.wdata;
     end
   end
 
