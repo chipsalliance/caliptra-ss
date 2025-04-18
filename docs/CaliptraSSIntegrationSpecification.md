@@ -1076,10 +1076,10 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Internal Block | Address Offset (from base address) | End Address| 
 | :---- | :---- | :---- |
 | CSRs | 0x0 | 0x1FFF | 
-| MCU Trace Buffer | 0x10000 | 0x1001F
-| Mailbox 0 | 0x400000| 0x7FFFFF
-| Mailbox 1 | 0x800000| 0xBFFFFF 
-| MCU SRAM | 0xC00000 | MCU SRAM BASE + MCU_SRAM_SIZE 
+| MCU Trace Buffer | 0x10000 | 0x1001F |
+| Mailbox 0 | 0x400000| 0x7FFFFF |
+| Mailbox 1 | 0x800000| 0xBFFFFF |
+| MCU SRAM | 0xC00000 | MCU SRAM BASE + MCU_SRAM_SIZE |
 
 - MCU SRAM Memory Map
 
