@@ -22,6 +22,12 @@ parameter CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER   = 32'h3; // FIXME make these val
 parameter CPTRA_SS_STRAP_MCU_LSU_AXI_USER       = 32'h1; // FIXME make these values modifiable at run-time for testing
 parameter CPTRA_SS_STRAP_MCU_IFU_AXI_USER       = 32'h2; // FIXME make these values modifiable at run-time for testing
 
+parameter CPTRA_SS_ROM_SIZE_KB = 256;
+parameter CPTRA_SS_ROM_DATA_W = 64;
+parameter CPTRA_SS_ROM_DEPTH = (CPTRA_SS_ROM_SIZE_KB*1024) / (CPTRA_SS_ROM_DATA_W/8);
+parameter CPTRA_SS_ROM_AXI_ADDR_W = $clog2(CPTRA_SS_ROM_SIZE_KB*1024);
+parameter CPTRA_SS_ROM_MEM_ADDR_W = $clog2(CPTRA_SS_ROM_DEPTH);
+
 // Interrupt Assignments
 // NOTE Vector 0 is reserved by VeeR
 `define VEER_INTR_VEC_MCI                 1

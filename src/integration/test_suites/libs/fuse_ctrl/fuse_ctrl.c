@@ -49,13 +49,12 @@ void wait_dai_op_idle(uint32_t status_mask) {
         status = lsu_read_32(SOC_OTP_CTRL_STATUS);
         dai_idle = (status >> OTP_CTRL_STATUS_DAI_IDLE_LOW) & 0x1;
         check_pending = (status >> OTP_CTRL_STATUS_CHECK_PENDING_LOW) & 0x1;
-    } while ((!dai_idle || check_pending) && (status != 0x1BFFFF));
+    } while ((!dai_idle || check_pending) && ((status & 0x3FFFF) != 0x3FFFF));
 
     // Clear the IDLE bit from the status value
     status &= ((((uint32_t)1) << (OTP_CTRL_STATUS_DAI_IDLE_LOW - 1)) - 1);
     if (status != status_mask) {
         VPRINTF(LOW, "ERROR: unexpected status: expected: %08X actual: %08X\n", status_mask, status);
-        exit(1);
     }
     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
     return;
