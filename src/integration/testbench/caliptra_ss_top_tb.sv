@@ -151,7 +151,7 @@ module caliptra_ss_top_tb
 
     logic fuse_ctrl_rdy;
     logic lcc_clock_switch_req;
-    logic [1:0] lcc_clock_selection;
+    int lcc_clock_selection;
 
     // -- Read clock frequency from file and set the clock accordingly using a case statement
     initial begin
