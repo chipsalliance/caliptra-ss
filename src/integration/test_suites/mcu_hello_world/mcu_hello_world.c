@@ -1,6 +1,5 @@
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +33,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 // Global variable allocated to DCCM explicitly, to test DCCM access
 static const char* dccm_msg __attribute__ ((section(".dccm"))) = "=================\nHello World from MCU DCCM\n=================\n\n";
 
-void main (void) {
+uint8_t main (void) {
     int argc=0;
     char *argv[1];
     uint32_t reg_data;
@@ -50,4 +49,8 @@ void main (void) {
     mcu_cptra_init_d();
 
     mcu_cptra_poll_mb_ready();
+
+    // return status is treated as an 'exit' code by mcu_crt0
+    // 0-value indicates success, non-zero is error
+    return 0;
 }

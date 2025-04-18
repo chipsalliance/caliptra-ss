@@ -20,6 +20,7 @@
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
 #include "caliptra_ss_lib.h"
+#include "veer-csr.h"
 #include <string.h>
 #include <stdint.h>
 
@@ -46,9 +47,6 @@ void main (void) {
     mcu_cptra_init_d(.mcu_fw_sram_exec_reg_size=32, .cfg_mcu_fw_sram_exec_reg_size=true); // Set to 128KB 
 
     //Halt the core to wait for Caliptra to finish the test
-    __asm__ volatile ("csrwi    %0, %1" \
-                      : /* output: none */        \
-                      : "i" (0x7c6), "i" (0x03)  /* input : immediate  */ \
-                      : /* clobbers: none */);
+    csr_write_mpmc_halt();
 
 }

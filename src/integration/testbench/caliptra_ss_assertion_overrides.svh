@@ -44,6 +44,4 @@ initial begin
 
 
 
-    $assertoff(0, caliptra_ss_top_tb.CPTRA_AXI_RD_32BITcptra_ss_mcu_rom_s_axi_if); // FIXME - https://github.com/chipsalliance/caliptra-ss/issues/157
-
 end
