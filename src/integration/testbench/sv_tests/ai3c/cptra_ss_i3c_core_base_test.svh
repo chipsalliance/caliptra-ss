@@ -28,8 +28,8 @@
       1. Main Master can do read/write transfer to each slave
 */
 
-// FIXME: REMOVE HARDCODED PATH
-`include "/cad/tools/mentor/avery/2025.1/i3cxactor-2025.1/src.i3c/ai3c_enum.svh"
+// `include "/cad/tools/mentor/avery/2025.1/i3cxactor-2025.1/src.i3c/ai3c_enum.svh"
+`include "ai3c_enum.svh"
 
 class random_len_helper;
     rand int random_len[];  // Declare as class member
