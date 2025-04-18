@@ -395,7 +395,7 @@ The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsys
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
      - It is **illegal** to only toggle `cptra_ss_reset_n` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
      - SOC shall toggle `cptra_ss_reset_b` only after ```cptra_ss_cpu_halt_status_o``` is asserted to guarantee MCU is idle and to prevent any RDC issues.
-The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_reset_n` to ensure `cptra_ss_rdc_clk_cg_o` is gated before reset is asserted. This reset is needed for RDC purposed between the warm reset domain and the cold reset/memory domain.
+The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_reset_n` to ensure `cptra_ss_rdc_clk_cg_o` is gated before reset is asserted. This reset is needed for the purpose of RDC between the warm reset domain and the cold reset/memory domain.
 
    - **Signal Name** `cptra_ss_rst_b_o`
    - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
