@@ -165,6 +165,7 @@ ipx::associate_bus_interfaces -busif mcu_rom_backdoor -clock mcu_rom_backdoor_cl
 
 ipx::associate_bus_interfaces -busif M_AXI_MCU_IFU -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif M_AXI_MCU_LSU -clock core_clk [ipx::current_core]
+ipx::associate_bus_interfaces -busif M_AXI_MCU_SB -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif M_AXI_MCI -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif S_AXI_MCI -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif S_AXI_MCU_ROM -clock core_clk [ipx::current_core]
