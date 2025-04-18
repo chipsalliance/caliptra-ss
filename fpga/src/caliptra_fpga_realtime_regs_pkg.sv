@@ -4,15 +4,15 @@
 package caliptra_fpga_realtime_regs_pkg;
 
     localparam CALIPTRA_FPGA_REALTIME_REGS_DATA_WIDTH = 32;
-    localparam CALIPTRA_FPGA_REALTIME_REGS_MIN_ADDR_WIDTH = 13;
+    localparam CALIPTRA_FPGA_REALTIME_REGS_MIN_ADDR_WIDTH = 32;
 
     typedef struct {
         logic [31:0] next;
-    } interface_regs__generic_output_wires__value__in_t;
+    } interface_regs__fpga_version__fpga_version__in_t;
 
     typedef struct {
-        interface_regs__generic_output_wires__value__in_t value;
-    } interface_regs__generic_output_wires__in_t;
+        interface_regs__fpga_version__fpga_version__in_t fpga_version;
+    } interface_regs__fpga_version__in_t;
 
     typedef struct {
         logic next;
@@ -62,11 +62,11 @@ package caliptra_fpga_realtime_regs_pkg;
 
     typedef struct {
         logic [31:0] next;
-    } interface_regs__fpga_version__fpga_version__in_t;
+    } interface_regs__generic_output_wires__value__in_t;
 
     typedef struct {
-        interface_regs__fpga_version__fpga_version__in_t fpga_version;
-    } interface_regs__fpga_version__in_t;
+        interface_regs__generic_output_wires__value__in_t value;
+    } interface_regs__generic_output_wires__in_t;
 
     typedef struct {
         logic next;
@@ -90,10 +90,10 @@ package caliptra_fpga_realtime_regs_pkg;
     } interface_regs__mci_generic_output_wires__in_t;
 
     typedef struct {
-        interface_regs__generic_output_wires__in_t generic_output_wires[2];
+        interface_regs__fpga_version__in_t fpga_version;
         interface_regs__status__in_t status;
         interface_regs__cycle_count__in_t cycle_count;
-        interface_regs__fpga_version__in_t fpga_version;
+        interface_regs__generic_output_wires__in_t generic_output_wires[2];
         interface_regs__mci_error__in_t mci_error;
         interface_regs__mci_generic_output_wires__in_t mci_generic_output_wires[2];
     } interface_regs__in_t;
@@ -173,27 +173,19 @@ package caliptra_fpga_realtime_regs_pkg;
 
     typedef struct {
         logic [31:0] value;
-    } interface_regs__generic_input_wires__value__out_t;
+    } interface_regs__fpga_magic__fpga_magic__out_t;
 
     typedef struct {
-        interface_regs__generic_input_wires__value__out_t value;
-    } interface_regs__generic_input_wires__out_t;
-
-    typedef struct {
-        logic [31:0] value;
-    } interface_regs__generic_output_wires__value__out_t;
-
-    typedef struct {
-        interface_regs__generic_output_wires__value__out_t value;
-    } interface_regs__generic_output_wires__out_t;
+        interface_regs__fpga_magic__fpga_magic__out_t fpga_magic;
+    } interface_regs__fpga_magic__out_t;
 
     typedef struct {
         logic [31:0] value;
-    } interface_regs__cptra_obf_key__value__out_t;
+    } interface_regs__fpga_version__fpga_version__out_t;
 
     typedef struct {
-        interface_regs__cptra_obf_key__value__out_t value;
-    } interface_regs__cptra_obf_key__out_t;
+        interface_regs__fpga_version__fpga_version__out_t fpga_version;
+    } interface_regs__fpga_version__out_t;
 
     typedef struct {
         logic value;
@@ -202,6 +194,14 @@ package caliptra_fpga_realtime_regs_pkg;
     typedef struct {
         logic value;
     } interface_regs__control__cptra_ss_rst_b__out_t;
+
+    typedef struct {
+        logic value;
+    } interface_regs__control__cptra_obf_uds_seed_vld__out_t;
+
+    typedef struct {
+        logic value;
+    } interface_regs__control__cptra_obf_field_entropy_vld__out_t;
 
     typedef struct {
         logic value;
@@ -216,11 +216,18 @@ package caliptra_fpga_realtime_regs_pkg;
     } interface_regs__control__bootfsm_brkpoint__out_t;
 
     typedef struct {
+        logic value;
+    } interface_regs__control__ss_debug_intent__out_t;
+
+    typedef struct {
         interface_regs__control__cptra_pwrgood__out_t cptra_pwrgood;
         interface_regs__control__cptra_ss_rst_b__out_t cptra_ss_rst_b;
+        interface_regs__control__cptra_obf_uds_seed_vld__out_t cptra_obf_uds_seed_vld;
+        interface_regs__control__cptra_obf_field_entropy_vld__out_t cptra_obf_field_entropy_vld;
         interface_regs__control__force_mcu_dmi_core_enable__out_t force_mcu_dmi_core_enable;
         interface_regs__control__force_mcu_dmi_uncore_enable__out_t force_mcu_dmi_uncore_enable;
         interface_regs__control__bootfsm_brkpoint__out_t bootfsm_brkpoint;
+        interface_regs__control__ss_debug_intent__out_t ss_debug_intent;
     } interface_regs__control__out_t;
 
     typedef struct {
@@ -287,11 +294,51 @@ package caliptra_fpga_realtime_regs_pkg;
 
     typedef struct {
         logic [31:0] value;
-    } interface_regs__fpga_version__fpga_version__out_t;
+    } interface_regs__generic_input_wires__value__out_t;
 
     typedef struct {
-        interface_regs__fpga_version__fpga_version__out_t fpga_version;
-    } interface_regs__fpga_version__out_t;
+        interface_regs__generic_input_wires__value__out_t value;
+    } interface_regs__generic_input_wires__out_t;
+
+    typedef struct {
+        logic [31:0] value;
+    } interface_regs__generic_output_wires__value__out_t;
+
+    typedef struct {
+        interface_regs__generic_output_wires__value__out_t value;
+    } interface_regs__generic_output_wires__out_t;
+
+    typedef struct {
+        logic [31:0] value;
+    } interface_regs__cptra_obf_key__value__out_t;
+
+    typedef struct {
+        interface_regs__cptra_obf_key__value__out_t value;
+    } interface_regs__cptra_obf_key__out_t;
+
+    typedef struct {
+        logic [31:0] value;
+    } interface_regs__cptra_csr_hmac_key__value__out_t;
+
+    typedef struct {
+        interface_regs__cptra_csr_hmac_key__value__out_t value;
+    } interface_regs__cptra_csr_hmac_key__out_t;
+
+    typedef struct {
+        logic [31:0] value;
+    } interface_regs__cptra_obf_uds_seed__value__out_t;
+
+    typedef struct {
+        interface_regs__cptra_obf_uds_seed__value__out_t value;
+    } interface_regs__cptra_obf_uds_seed__out_t;
+
+    typedef struct {
+        logic [31:0] value;
+    } interface_regs__cptra_obf_field_entropy__value__out_t;
+
+    typedef struct {
+        interface_regs__cptra_obf_field_entropy__value__out_t value;
+    } interface_regs__cptra_obf_field_entropy__out_t;
 
     typedef struct {
         logic [31:0] value;
@@ -404,15 +451,19 @@ package caliptra_fpga_realtime_regs_pkg;
     } interface_regs__mci_generic_output_wires__out_t;
 
     typedef struct {
-        interface_regs__generic_input_wires__out_t generic_input_wires[2];
-        interface_regs__generic_output_wires__out_t generic_output_wires[2];
-        interface_regs__cptra_obf_key__out_t cptra_obf_key[8];
+        interface_regs__fpga_magic__out_t fpga_magic;
+        interface_regs__fpga_version__out_t fpga_version;
         interface_regs__control__out_t control;
         interface_regs__status__out_t status;
         interface_regs__pauser__out_t pauser;
         interface_regs__itrng_divisor__out_t itrng_divisor;
         interface_regs__cycle_count__out_t cycle_count;
-        interface_regs__fpga_version__out_t fpga_version;
+        interface_regs__generic_input_wires__out_t generic_input_wires[2];
+        interface_regs__generic_output_wires__out_t generic_output_wires[2];
+        interface_regs__cptra_obf_key__out_t cptra_obf_key[8];
+        interface_regs__cptra_csr_hmac_key__out_t cptra_csr_hmac_key[16];
+        interface_regs__cptra_obf_uds_seed__out_t cptra_obf_uds_seed[16];
+        interface_regs__cptra_obf_field_entropy__out_t cptra_obf_field_entropy[8];
         interface_regs__lsu_user__out_t lsu_user;
         interface_regs__ifu_user__out_t ifu_user;
         interface_regs__clp_user__out_t clp_user;

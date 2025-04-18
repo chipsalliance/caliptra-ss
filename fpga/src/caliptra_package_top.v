@@ -328,6 +328,53 @@ module caliptra_package_axi_top (
     input  wire [               1:0] M_AXI_MCU_IFU_RRESP,
     input  wire                      M_AXI_MCU_IFU_RLAST,
 
+    //-------------------------- SB AXI signals--------------------------
+    // AXI Write Channels
+    output wire                      M_AXI_MCU_SB_AWVALID,
+    input  wire                      M_AXI_MCU_SB_AWREADY,
+    output wire [18:0]               M_AXI_MCU_SB_AWID,
+    output wire [              31:0] M_AXI_MCU_SB_AWADDR,
+    output wire [               3:0] M_AXI_MCU_SB_AWREGION,
+    output wire [               7:0] M_AXI_MCU_SB_AWLEN,
+    output wire [               2:0] M_AXI_MCU_SB_AWSIZE,
+    output wire [               1:0] M_AXI_MCU_SB_AWBURST,
+    output wire                      M_AXI_MCU_SB_AWLOCK,
+    output wire [               3:0] M_AXI_MCU_SB_AWCACHE,
+    output wire [               2:0] M_AXI_MCU_SB_AWPROT,
+    output wire [               3:0] M_AXI_MCU_SB_AWQOS,
+
+    output wire                      M_AXI_MCU_SB_WVALID,
+    input  wire                      M_AXI_MCU_SB_WREADY,
+    output wire [63:0]               M_AXI_MCU_SB_WDATA,
+    output wire [ 7:0]               M_AXI_MCU_SB_WSTRB,
+    output wire                      M_AXI_MCU_SB_WLAST,
+
+    input  wire                      M_AXI_MCU_SB_BVALID,
+    output wire                      M_AXI_MCU_SB_BREADY,
+    input  wire [               1:0] M_AXI_MCU_SB_BRESP,
+    input  wire [18:0]               M_AXI_MCU_SB_BID,
+
+    // AXI Read Channels
+    output wire                      M_AXI_MCU_SB_ARVALID,
+    input  wire                      M_AXI_MCU_SB_ARREADY,
+    output wire [18:0]               M_AXI_MCU_SB_ARID,
+    output wire [              31:0] M_AXI_MCU_SB_ARADDR,
+    output wire [               3:0] M_AXI_MCU_SB_ARREGION,
+    output wire [               7:0] M_AXI_MCU_SB_ARLEN,
+    output wire [               2:0] M_AXI_MCU_SB_ARSIZE,
+    output wire [               1:0] M_AXI_MCU_SB_ARBURST,
+    output wire                      M_AXI_MCU_SB_ARLOCK,
+    output wire [               3:0] M_AXI_MCU_SB_ARCACHE,
+    output wire [               2:0] M_AXI_MCU_SB_ARPROT,
+    output wire [               3:0] M_AXI_MCU_SB_ARQOS,
+
+    input  wire                      M_AXI_MCU_SB_RVALID,
+    output wire                      M_AXI_MCU_SB_RREADY,
+    input  wire [18:0]               M_AXI_MCU_SB_RID,
+    input  wire [              63:0] M_AXI_MCU_SB_RDATA,
+    input  wire [               1:0] M_AXI_MCU_SB_RRESP,
+    input  wire                      M_AXI_MCU_SB_RLAST,
+
     // I3C
     input	wire                      S_AXI_I3C_AWVALID,
     output	wire                      S_AXI_I3C_AWREADY,
@@ -788,6 +835,53 @@ caliptra_wrapper_top cptra_wrapper (
     .M_AXI_MCU_IFU_RDATA(M_AXI_MCU_IFU_RDATA),
     .M_AXI_MCU_IFU_RRESP(M_AXI_MCU_IFU_RRESP),
     .M_AXI_MCU_IFU_RLAST(M_AXI_MCU_IFU_RLAST),
+
+    //-------------------------- MCU SB AXI signals--------------------------
+    // AXI Write Channels
+    .M_AXI_MCU_SB_AWVALID(M_AXI_MCU_SB_AWVALID),
+    .M_AXI_MCU_SB_AWREADY(M_AXI_MCU_SB_AWREADY),
+    .M_AXI_MCU_SB_AWID(M_AXI_MCU_SB_AWID),
+    .M_AXI_MCU_SB_AWADDR(M_AXI_MCU_SB_AWADDR),
+    .M_AXI_MCU_SB_AWREGION(M_AXI_MCU_SB_AWREGION),
+    .M_AXI_MCU_SB_AWLEN(M_AXI_MCU_SB_AWLEN),
+    .M_AXI_MCU_SB_AWSIZE(M_AXI_MCU_SB_AWSIZE),
+    .M_AXI_MCU_SB_AWBURST(M_AXI_MCU_SB_AWBURST),
+    .M_AXI_MCU_SB_AWLOCK(M_AXI_MCU_SB_AWLOCK),
+    .M_AXI_MCU_SB_AWCACHE(M_AXI_MCU_SB_AWCACHE),
+    .M_AXI_MCU_SB_AWPROT(M_AXI_MCU_SB_AWPROT),
+    .M_AXI_MCU_SB_AWQOS(M_AXI_MCU_SB_AWQOS),
+
+    .M_AXI_MCU_SB_WVALID(M_AXI_MCU_SB_WVALID),
+    .M_AXI_MCU_SB_WREADY(M_AXI_MCU_SB_WREADY),
+    .M_AXI_MCU_SB_WDATA(M_AXI_MCU_SB_WDATA),
+    .M_AXI_MCU_SB_WSTRB(M_AXI_MCU_SB_WSTRB),
+    .M_AXI_MCU_SB_WLAST(M_AXI_MCU_SB_WLAST),
+
+    .M_AXI_MCU_SB_BVALID(M_AXI_MCU_SB_BVALID),
+    .M_AXI_MCU_SB_BREADY(M_AXI_MCU_SB_BREADY),
+    .M_AXI_MCU_SB_BRESP(M_AXI_MCU_SB_BRESP),
+    .M_AXI_MCU_SB_BID(M_AXI_MCU_SB_BID),
+
+    // AXI Read Channels
+    .M_AXI_MCU_SB_ARVALID(M_AXI_MCU_SB_ARVALID),
+    .M_AXI_MCU_SB_ARREADY(M_AXI_MCU_SB_ARREADY),
+    .M_AXI_MCU_SB_ARID(M_AXI_MCU_SB_ARID),
+    .M_AXI_MCU_SB_ARADDR(M_AXI_MCU_SB_ARADDR),
+    .M_AXI_MCU_SB_ARREGION(M_AXI_MCU_SB_ARREGION),
+    .M_AXI_MCU_SB_ARLEN(M_AXI_MCU_SB_ARLEN),
+    .M_AXI_MCU_SB_ARSIZE(M_AXI_MCU_SB_ARSIZE),
+    .M_AXI_MCU_SB_ARBURST(M_AXI_MCU_SB_ARBURST),
+    .M_AXI_MCU_SB_ARLOCK(M_AXI_MCU_SB_ARLOCK),
+    .M_AXI_MCU_SB_ARCACHE(M_AXI_MCU_SB_ARCACHE),
+    .M_AXI_MCU_SB_ARPROT(M_AXI_MCU_SB_ARPROT),
+    .M_AXI_MCU_SB_ARQOS(M_AXI_MCU_SB_ARQOS),
+
+    .M_AXI_MCU_SB_RVALID(M_AXI_MCU_SB_RVALID),
+    .M_AXI_MCU_SB_RREADY(M_AXI_MCU_SB_RREADY),
+    .M_AXI_MCU_SB_RID(M_AXI_MCU_SB_RID),
+    .M_AXI_MCU_SB_RDATA(M_AXI_MCU_SB_RDATA),
+    .M_AXI_MCU_SB_RRESP(M_AXI_MCU_SB_RRESP),
+    .M_AXI_MCU_SB_RLAST(M_AXI_MCU_SB_RLAST),
 
     // I3C
     .S_AXI_I3C_AWVALID(S_AXI_I3C_AWVALID),
