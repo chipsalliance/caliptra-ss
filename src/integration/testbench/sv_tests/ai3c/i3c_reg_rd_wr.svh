@@ -89,31 +89,25 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 		i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_CTRL, data, 6);
 
 		test_log.substep($psprintf("Sending read to INDIRECT_FIFO_CTRL register"));
-		read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_CTRL,  6, read_data);
-		
-		// FIXME : INDIRECT_FIFO_CTRL register is not working as expected
-		// Waiting for the fix in the I3C core
-		// check_data(read_data, data, 6);
+		read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_CTRL,  6, read_data);		
+		check_data(read_data, data, 6);
 
-		// FIXME : INDIRECT_FIFO_DATA register is not working as expected
-		// test_log.step("=============================================================");
-		// test_log.step("Step : Write & Read back I3C_CORE_INDIRECT_FIFO_DATA Registers");
+		test_log.step("=============================================================");
+		test_log.step("Step : Write & Read back I3C_CORE_INDIRECT_FIFO_DATA Registers");
 
-		// random_data_count = $urandom_range(1, 20);
-		// data = new[random_data_count];
-		// foreach(data[i]) begin
-		// 	data[i] = $urandom_range(0, 255);
-		// end
+		random_data_count = $urandom_range(1, 20);
+		data = new[random_data_count];
+		foreach(data[i]) begin
+			data[i] = $urandom_range(0, 255);
+		end
 			
-		// test_log.substep($psprintf("Sending write to INDIRECT_FIFO_CTRL register"));
-		// i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, random_data_count);
+		test_log.substep($psprintf("Sending write to INDIRECT_FIFO_CTRL register"));
+		i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, random_data_count);
 
-		// test_log.substep($psprintf("Sending read to INDIRECT_FIFO_CTRL register"));
-		// read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_DATA,  random_data_count, read_data);
+		test_log.substep($psprintf("Sending read to INDIRECT_FIFO_CTRL register"));
+		read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_DATA,  random_data_count, read_data);
 
-		// FIXME : INDIRECT_FIFO_DATA register is not working as expected
-		// Waiting for the fix in the I3C core
-		// check_data(read_data, data, random_data_count);
+		check_data(read_data, data, random_data_count);
 
 		test_log.step("=============================================================");
 		test_log.step("I3C Reg Read & Write test completed");

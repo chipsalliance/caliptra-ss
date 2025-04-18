@@ -28,6 +28,9 @@
       1. Main Master can do read/write transfer to each slave
 */
 
+// FIXME: REMOVE HARDCODED PATH
+`include "/cad/tools/mentor/avery/2025.1/i3cxactor-2025.1/src.i3c/ai3c_enum.svh"
+
 class random_len_helper;
     rand int random_len[];  // Declare as class member
     int total_length;               // Length of the data to be written
@@ -101,6 +104,46 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
         return crc;
     endfunction
 
+	function ai3c_transaction gen_dc_ccc_cmd(
+        input ai3c_ccc_e  dc_ccc,
+        ref   ai3c_addr_t das[$]
+        );
+        ai3c_transaction tr;
+        string           s;
+        bit              ok;
+
+        tr = new(sys_agt.mgr, 1);
+        ok = tr.randomize () with {
+            ccc        == dc_ccc;
+            mhs.size() == das.size() + 1;
+            foreach (das[i]) {
+                mhs[i+1].addr == das[i];
+            }
+            // TODO: for specify CCC, give special value, EXP. SETMRL ...
+        };
+        if (!ok) begin
+            foreach (das[i])
+                s = {s, $psprintf("  da[%0d]: 'h%h", i, das[i])};
+            test_log.fatal($psprintf("Randomization failed, dc_ccc:%s, das size:%0d\n", dc_ccc.name, das.size()));
+        end
+        return tr;
+    endfunction
+
+	virtual task i3c_send_dc_ccc_setmrl();
+		ai3c_transaction tr;
+		ai3c_addr_t addr[$];
+		test_log.step("=================================================================");
+		test_log.step("Sending DC CCC SETMRL command");
+		addr.push_back(sys_agt.mgr.dev_infos[0].da);
+		addr.push_back(sys_agt.mgr.dev_infos[0].da);
+		// tr = gen_dc_ccc_cmd(AI3C_CCC_SETMRL, addr);
+		tr = gen_dc_ccc_cmd(AI3C_CCC_DC_SETMRL, addr);
+		sys_agt.post_transaction(tr);
+		tr.wait_done(20us);
+		chk_tr(tr);
+		test_log.step($psprintf("DC CCC SETMRL command sent to device 'h %0h", addr[0]));
+	endtask
+	
 	virtual task i3c_bus_init();
 
 		test_log.step("=================================================================");

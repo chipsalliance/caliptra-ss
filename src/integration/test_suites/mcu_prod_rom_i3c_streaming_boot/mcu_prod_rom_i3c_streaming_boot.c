@@ -31,7 +31,7 @@ void main (void) {
     uint32_t i3c_reg_data;
 
     // Initialize the printf library   
-    VPRITF("=== MCU boot.. started == \n");
+    VPRINTF(LOW, "=== MCU boot.. started == \n");
 
     mcu_cptra_init_d( 
         .cfg_enable_cptra_mbox_user_init=true, 
@@ -40,7 +40,7 @@ void main (void) {
         .cfg_boot_i3c_core=true,
         .cfg_trigger_prod_rom=true); 
 
-    VPRITF("=== MCU boot.. completed == \n");
+    VPRINTF(LOW, "=== MCU boot.. completed == \n");
 
     for(uint8_t ii=0; ii<10000; ii++) {
         for (uint8_t ii = 0; ii < 16; ii++) {

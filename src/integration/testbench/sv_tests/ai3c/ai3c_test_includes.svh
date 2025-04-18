@@ -20,3 +20,4 @@
 `include "i3c_streaming_boot.svh"
 `include "i3c_rand_streaming_boot.svh"
 `include "i3c_mctp_pkt_wr.svh"
+`include "i3c_setmrl.svh"
