@@ -71,12 +71,52 @@ void main (void) {
 
     // If hitless update is the reset reason then print out the message that is executing out of SRAM
     if (lsu_read_32(SOC_MCI_TOP_MCI_REG_RESET_REASON) & MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_MASK) {
+
+        // MBOX: Poll status
+        VPRINTF(LOW, "MCU: Waiting for Caliptra Mbox Status\n");
+        if(!mcu_cptra_mbox_wait_for_status(10000, CMD_COMPLETE)) {
+            VPRINTF(FATAL, "MCU: Mbox%x Caliptra Mbox status not set\n", decode_single_valid_mbox());
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+        }
+        VPRINTF(LOW, "MCU: Caliptra Mbox responded with cmd_complete\n");
+
+        // MBOX: Clear Execute in Caliptra
+        lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0);
+        VPRINTF(LOW, "MCU: Caliptra Mbox execute clear\n");
+
+        // MBOX: Set complete in MCU Mbox
+        mcu_mbox_write_cmd_status(decode_single_valid_mbox(), MCU_MBOX_CMD_COMPLETE);
+
         bool success = false;
+
+        // MCU Hitless SRAM code to print message and check boolean runs out of udpated MCU SRAM
         if(mcu_hitless_sram_print_msg()) {
             SEND_STDOUT_CTRL(0xFF);
         } else {
             SEND_STDOUT_CTRL(0x1);
         }
+        while(1);
+
+    } else if (lsu_read_32(SOC_MCI_TOP_MCI_REG_RESET_REASON) & MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK){
+        // This section is to emulate an initial FW_BOOT_UPD_RESET scenario to exercise FW_CTRL[2] state tracking HW
+        // This will still run out of ROM and handle rest of handshake for doing the hitless update as the MCU SRAM
+        // is preloaded with random data to test out hitless update
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_RESET_REASON, 0);
+        
+        // Wait for Reset req sts interrupt
+        if(!mcu_wait_for_mcu_reset_req_interrupt(10000)) {
+            VPRINTF(FATAL, "MCU: Reset Request Interrupt not set\n", decode_single_valid_mbox());
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+        }
+        
+        // Clear Reset req sts interrupt
+        mcu_clear_reset_req_interrupt();
+
+        // Set RESET_REQUEST.mcu_req
+        VPRINTF(LOW, "MCU: Issuing reset for Hitless Update\n\n");
+        mcu_mci_req_reset();
         while(1);
     } else {
 
@@ -151,22 +191,6 @@ void main (void) {
         lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
         VPRINTF(LOW, "MCU: Caliptra Mbox execute\n");
 
-        // MBOX: Poll status
-        VPRINTF(LOW, "MCU: Waiting for Caliptra Mbox Status\n");
-        if(!mcu_cptra_mbox_wait_for_status(10000, CMD_COMPLETE)) {
-            VPRINTF(FATAL, "MCU: Mbox%x Caliptra Mbox status not set\n", mbox_num);
-            SEND_STDOUT_CTRL(0x1);
-            while(1);
-        }
-        VPRINTF(LOW, "MCU: Caliptra Mbox responded with cmd_complete\n");
-
-        // MBOX: Clear Execute in Caliptra
-        lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0);
-        VPRINTF(LOW, "MCU: Caliptra Mbox execute clear\n");
-
-        // MBOX: Set complete in MCU Mbox
-        mcu_mbox_write_cmd_status(mbox_num, MCU_MBOX_CMD_COMPLETE);
-
         // MBOX: Wait for Reset req sts interrupt
         if(!mcu_wait_for_mcu_reset_req_interrupt(10000)) {
             VPRINTF(FATAL, "MCU: Reset Request Interrupt not set\n", mbox_num);
@@ -174,21 +198,10 @@ void main (void) {
             while(1);
         }
 
-        // HACK: clear initial setting of reset_req to emulate that MCU was already running out of SRAM
-        mcu_clear_reset_req_interrupt();
-
-        // Wait for Reset req sts interrupt
-        if(!mcu_wait_for_mcu_reset_req_interrupt(10000)) {
-            VPRINTF(FATAL, "MCU: Reset Request Interrupt not set\n", mbox_num);
-            SEND_STDOUT_CTRL(0x1);
-            while(1);
-        }
-        
-        // Clear Reset req sts interrupt
         mcu_clear_reset_req_interrupt();
 
         // Set RESET_REQUEST.mcu_req
-        VPRINTF(LOW, "MCU: Issuing reset\n\n");
+        VPRINTF(LOW, "MCU: Issuing reset for FW_BOOT_UPD_RESET\n\n");
         mcu_mci_req_reset();
 
         while(1);

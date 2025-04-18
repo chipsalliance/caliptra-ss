@@ -19,7 +19,7 @@ task mcu_mbox_soc_agent_write_fw_image();
     localparam FW_BLOB_SIZE_DWORDS = FW_BLOB_SIZE_BYTES/4;
 
     localparam MCU_MBOX_CMD_COMPLETE = 2;
-    localparam WAIT_ATTEMPT_TIMEOUT_LIMIT = 10000000;
+    localparam WAIT_ATTEMPT_TIMEOUT_LIMIT = 2147483646;
 
     logic [31:0] rd_data;
     logic [31:0] rsp_user;

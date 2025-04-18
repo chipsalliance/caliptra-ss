@@ -105,26 +105,19 @@ void main(void) {
         data = cptra_mcu_mbox_read_dword_sram(mbox_num, (dlen/2)/4-1);
         data = cptra_mcu_mbox_read_dword_sram(mbox_num, dlen/4-1);
 
-        //set complete status
-        VPRINTF(LOW, "Caliptra: Set cmd complete status\n");
-        lsu_write_32(CLP_MBOX_CSR_MBOX_STATUS, CMD_COMPLETE);
+        // Set RESET_REASON to indicate FW_BOOT_UPD update
+        VPRINTF(LOW, "Caliptra: Setting RESET_REASON.FW_BOOT_UPD_RESET\n");
+        cptra_axi_dword_write(SOC_MCI_TOP_MCI_REG_RESET_REASON, MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK);
 
-        // HACK: Set FW_EXEC_CTRL[2] to emulate that MCU was already running out of MCU SRAM
+        // HACK: Set FW_EXEC_CTRL[2] to do FW_BOOT_UPD_RESET first so MCU HW tracking looks like FW_BOOT has been done
         VPRINTF(LOW, "CALIPTRA: Setting FW_EXEC_CTRL[2]\n");
         lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, 0x4);
-
-        // HACK: needed to clear posedge indication that would be cleared after FW_BOOT_UPD reset
-        VPRINTF(LOW, "CALIPTRA: Clearing FW_EXEC_CTRL[2]\n");
-        lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, 0x0);
 
         // Wait for MCU to clear interrupt
         cptra_wait_mcu_reset_req_interrupt_clear(10000);
 
-        // HACK: Set FW_EXEC_CTRL[2] to emulate that MCU was already running out of SRAM
-        VPRINTF(LOW, "CALIPTRA: Setting FW_EXEC_CTRL[2]\n");
-        lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, 0x4);
         // Clear FW_EXEC_CTRL[2] to indicate hitless update is ready
-        VPRINTF(LOW, "FW: Clearing FW_EXEC_CTRL[2]\n");
+        VPRINTF(LOW, "CALIPTRA: Clearing FW_EXEC_CTRL[2]\n");
         lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, 0x0);
 
         // Wait for MCU to clear interrupt
@@ -141,6 +134,10 @@ void main(void) {
             VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x SRAM[%d]: 0x%x\n", mbox_num, ii, mbox_sram_data);
             cptra_axi_dword_write(sram_base_addr + 4*ii, mbox_sram_data);
         }
+
+        //set complete status
+        VPRINTF(LOW, "Caliptra: Set cmd complete status\n");
+        lsu_write_32(CLP_MBOX_CSR_MBOX_STATUS, CMD_COMPLETE);
 
         // Set RESET_REASON to indicate hitless update
         VPRINTF(LOW, "Caliptra: Setting RESET_REASON.FW_HITLESS_UPD_RESET\n");

@@ -644,7 +644,7 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
         mcu_sram_fw_exec_region_lock_prev <= 0;
     end
-    else if(!Warm_Reset_Capture_Flag) begin
+    else begin
         mcu_sram_fw_exec_region_lock_prev <= mcu_sram_fw_exec_region_lock;
     end
 end
