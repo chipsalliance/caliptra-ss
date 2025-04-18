@@ -268,6 +268,9 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 			// 0xe: Error entering  Recovery mode (might be administratively disabled)
 			// 0xf: Invalid component address space
 
+			//-- BIT 0-3 : Recovery Status Code
+			data[0] = data[0] & 'hf;
+
 			case (data[0])
 				'h0: test_log.substep("Not in recovery mode");
 				'h1: begin

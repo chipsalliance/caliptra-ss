@@ -657,7 +657,11 @@ void boot_i3c_reg(void) {
     VPRINTF(LOW, "MCU: Wr PROT_CAP_0 with 'h %0x\n", i3c_reg_data);
     i3c_reg_data = 0x56434552;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, i3c_reg_data);
-    VPRINTF(LOW, "MCU: Wr PROT_CAP_1 with 'h %0x\n", i3c_reg_data);    
+    VPRINTF(LOW, "MCU: Wr PROT_CAP_1 with 'h %0x\n", i3c_reg_data);
+
+    i3c_reg_data = 0x00000101;
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2, i3c_reg_data);
+    VPRINTF(LOW, "MCU: Wr PROT_CAP_2 with 'h %0x\n", i3c_reg_data);    
 
     //-- DEVICE_ID
     i3c_reg_data = 0x00000001; //-- Dummy value
