@@ -588,22 +588,10 @@
       default: "184",
       local: "true"
     },
-    { name: "CptraSsTestUnlockToken0Offset",
-      desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_0",
-      type: "int",
-      default: "1216",
-      local: "true"
-    },
-    { name: "CptraSsTestUnlockToken0Size",
-      desc: "Size of CPTRA_SS_TEST_UNLOCK_TOKEN_0",
-      type: "int",
-      default: "16",
-      local: "true"
-    },
     { name: "CptraSsTestUnlockToken1Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_1",
       type: "int",
-      default: "1232",
+      default: "1216",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken1Size",
@@ -615,7 +603,7 @@
     { name: "CptraSsTestUnlockToken2Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_2",
       type: "int",
-      default: "1248",
+      default: "1232",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken2Size",
@@ -627,7 +615,7 @@
     { name: "CptraSsTestUnlockToken3Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_3",
       type: "int",
-      default: "1264",
+      default: "1248",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken3Size",
@@ -639,7 +627,7 @@
     { name: "CptraSsTestUnlockToken4Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_4",
       type: "int",
-      default: "1280",
+      default: "1264",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken4Size",
@@ -651,7 +639,7 @@
     { name: "CptraSsTestUnlockToken5Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_5",
       type: "int",
-      default: "1296",
+      default: "1280",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken5Size",
@@ -663,7 +651,7 @@
     { name: "CptraSsTestUnlockToken6Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_6",
       type: "int",
-      default: "1312",
+      default: "1296",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken6Size",
@@ -675,7 +663,7 @@
     { name: "CptraSsTestUnlockToken7Offset",
       desc: "Offset of CPTRA_SS_TEST_UNLOCK_TOKEN_7",
       type: "int",
-      default: "1328",
+      default: "1312",
       local: "true"
     },
     { name: "CptraSsTestUnlockToken7Size",
@@ -687,7 +675,7 @@
     { name: "CptraSsTestExitToManufTokenOffset",
       desc: "Offset of CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN",
       type: "int",
-      default: "1344",
+      default: "1328",
       local: "true"
     },
     { name: "CptraSsTestExitToManufTokenSize",
@@ -699,7 +687,7 @@
     { name: "CptraSsManufToProdTokenOffset",
       desc: "Offset of CPTRA_SS_MANUF_TO_PROD_TOKEN",
       type: "int",
-      default: "1360",
+      default: "1344",
       local: "true"
     },
     { name: "CptraSsManufToProdTokenSize",
@@ -711,11 +699,23 @@
     { name: "CptraSsProdToProdEndTokenOffset",
       desc: "Offset of CPTRA_SS_PROD_TO_PROD_END_TOKEN",
       type: "int",
-      default: "1376",
+      default: "1360",
       local: "true"
     },
     { name: "CptraSsProdToProdEndTokenSize",
       desc: "Size of CPTRA_SS_PROD_TO_PROD_END_TOKEN",
+      type: "int",
+      default: "16",
+      local: "true"
+    },
+    { name: "CptraSsRmaTokenOffset",
+      desc: "Offset of CPTRA_SS_RMA_TOKEN",
+      type: "int",
+      default: "1376",
+      local: "true"
+    },
+    { name: "CptraSsRmaTokenSize",
+      desc: "Size of CPTRA_SS_RMA_TOKEN",
       type: "int",
       default: "16",
       local: "true"
