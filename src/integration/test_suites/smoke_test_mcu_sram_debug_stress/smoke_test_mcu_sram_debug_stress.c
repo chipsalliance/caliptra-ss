@@ -23,7 +23,7 @@
 #include "caliptra_ss_lib.h"
 #include <string.h>
 #include <stdint.h>
-
+#include "lc_ctrl.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -37,7 +37,13 @@ void main (void) {
 
 
     VPRINTF(LOW, "=================\nMCU: Testing Protected Region\n=================\n\n");
+    lcc_initialization();
+    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    reset_fc_lcc_rtl();
+
     // Test is ended by the SOC BFM.
+
+
 
     while(1);
 }
