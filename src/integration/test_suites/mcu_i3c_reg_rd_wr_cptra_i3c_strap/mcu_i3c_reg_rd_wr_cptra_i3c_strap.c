@@ -34,12 +34,25 @@ void main (void) {
 
     //-- Boot MCU
     VPRINTF(LOW, "MCU: Booting... \n");
-    
     boot_mcu();
-    boot_i3c_core();
-    trigger_caliptra_go();
-    wait_for_cptra_ready_for_mb_processing();
-    configure_captra_axi_user();
+
+    // -- Boot I3C Core
+    VPRINTF(LOW, "MCU: Boot I3C Core\n");
+    boot_i3c_core();  
+
+    //setting device address to 0x5A
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 90 << 0  | i3c_reg_data;
+    i3c_reg_data = 1  << 15 | i3c_reg_data;
+    lsu_write_32( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_DEVICE_ADDR, i3c_reg_data);
+    VPRINTF(LOW, "MCU: I3C Device Address set to 0x5A\n");
+
+    //setting virtual device address to 0x5B
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 91 << 0  | i3c_reg_data; //0x5B
+    i3c_reg_data = 1  << 15 | i3c_reg_data;   
+    lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
+    VPRINTF(LOW, "MCU: I3C Virtual Device Address set to 0x5B\n");
 
     VPRINTF(LOW, "MCU: Updating I3C Recovery Registers\n");
     // Programming I3C for Recovery Mode 
@@ -69,8 +82,7 @@ void main (void) {
         }    
     }
 
-    VPRINTF(LOW, "MCU: INDIRECT_FIFO_CTRL_1 is not zero\n");
-    
+    VPRINTF(LOW, "MCU: INDIRECT_FIFO_CTRL_1 is not zero\n");   
     VPRINTF(LOW, "MCU: End of I3C Reg Read Write Test\n");
     SEND_STDOUT_CTRL(0xff);
 }

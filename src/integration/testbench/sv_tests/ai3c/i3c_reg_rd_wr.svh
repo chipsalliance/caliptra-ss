@@ -42,39 +42,12 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 	//-- test body
 	virtual task test_body();
 
-		ai3c_addr_t general_target_addr;
-		ai3c_addr_t recovery_target_addr;
 		bit [7:0] data[];
 		bit [7:0] read_data[];
 		int       random_data_count;
 
-		test_log.step("=================================================================");
-		test_log.step("Wait for Dynamic Address Assignment and Bus Initialization");
-		sys_agt.wait_event("bus_init_done", 1ms);
-		test_log.step("Dynamic Address Assignment and Bus Initialization done");
-		test_log.sample(AI3C_5_1_2_1n3);
-		test_log.sample(AI3C_5_1_2_2n1);
-
-		//-- grabbing dynamic address for the I3C core
-		test_log.step($psprintf("I3C device count: %0d", sys_agt.mgr.dev_infos.size()));
-		foreach (sys_agt.mgr.dev_infos[i]) begin
-			case(sys_agt.mgr.dev_infos[i].sa)
-				'h5A: begin
-					general_target_addr= sys_agt.mgr.i3c_dev_das[i];
-					test_log.substep($psprintf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, general_target_addr));
-				end
-				'h5B: begin
-					recovery_target_addr = sys_agt.mgr.i3c_dev_das[i];
-					test_log.substep($psprintf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, recovery_target_addr));
-				end
-				default: begin
-					//-- print error message if the static address is not 0x5A or 0x5B
-					test_log.substep($psprintf(" ERROR : I3C device %0d: static addr 'h %0h is not 0x5A or 0x5B", i, sys_agt.mgr.dev_infos[i].sa));
-				end
-			endcase
-		end
-		test_log.substep($psprintf("I3C Subordinate Recovery addr 'h %0h", recovery_target_addr));
-		test_log.substep($psprintf("I3C Subordinate General addr 'h %0h", general_target_addr));
+		//-- I3C bus initialization and address assignment
+		i3c_bus_init();
 
 		test_log.step("=============================================================");
 		test_log.step("Step : Reading Read Only Registers");
@@ -116,13 +89,10 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 		i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_CTRL, data, 6);
 
 		test_log.substep($psprintf("Sending read to INDIRECT_FIFO_CTRL register"));
-		read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_CTRL,  6, read_data);
-		
-		// FIXME : INDIRECT_FIFO_CTRL register is not working as expected
-		// Waiting for the fix in the I3C core
-		// check_data(read_data, data, 6);
+		read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_CTRL,  6, read_data);		
+		check_data(read_data, data, 6);
 
-		// FIXME : INDIRECT_FIFO_DATA register is not working as expected
+		//-- FIXME: https://github.com/chipsalliance/i3c-core/issues/36
 		// test_log.step("=============================================================");
 		// test_log.step("Step : Write & Read back I3C_CORE_INDIRECT_FIFO_DATA Registers");
 
@@ -132,14 +102,12 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 		// 	data[i] = $urandom_range(0, 255);
 		// end
 			
-		// test_log.substep($psprintf("Sending write to INDIRECT_FIFO_CTRL register"));
+		// test_log.substep($psprintf("Sending write to I3C_CORE_INDIRECT_FIFO_DATA register"));
 		// i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, random_data_count);
 
-		// test_log.substep($psprintf("Sending read to INDIRECT_FIFO_CTRL register"));
+		// test_log.substep($psprintf("Sending read to I3C_CORE_INDIRECT_FIFO_DATA register"));
 		// read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_DATA,  random_data_count, read_data);
 
-		// FIXME : INDIRECT_FIFO_DATA register is not working as expected
-		// Waiting for the fix in the I3C core
 		// check_data(read_data, data, random_data_count);
 
 		test_log.step("=============================================================");

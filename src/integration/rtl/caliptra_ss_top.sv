@@ -932,7 +932,11 @@ module caliptra_ss_top
         .peripheral_reset_o(i3c_peripheral_reset),
         .peripheral_reset_done_i(1'b1),
         .escalated_reset_o(i3c_escalated_reset),
-        .irq_o(i3c_irq_o)
+        .irq_o(i3c_irq_o),
+
+        //-- AXI USER ID FILTERING
+        .disable_id_filtering_i(1'b1), // -- FIXME : ENABLE THIS FEATURE
+        .priv_ids_i('{32'b0, 32'b0, 32'b0, 32'b0}) // -- FIXME : ENABLE THIS FEATURE
 
     );
 
@@ -1231,5 +1235,13 @@ module caliptra_ss_top
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
 	); 
+
+    // assign fuse_ctrl_rdy = 1;
+    // De-assert cptra_rst_b only after fuse_ctrl has initialized
+    logic cptra_rst_b; //fixme resets
+    assign cptra_rst_b = cptra_ss_rst_b_i;//fuse_ctrl_rdy ? cptra_soc_bfm_rst_b : 1'b0;
+
+    `CALIPTRA_ASSERT(i3c_payload_available, ($rose(payload_available_o) |-> ##[1:50] payload_available_o == 0),cptra_ss_clk_i, cptra_ss_rst_b_i)
+    `CALIPTRA_ASSERT(i3c_image_activated, ($rose(image_activated_o) |-> ##[1:50] image_activated_o == 0), cptra_ss_clk_i, cptra_ss_rst_b_i)
 
 endmodule

@@ -210,6 +210,8 @@ global:
         - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME : remve this Note suppression
         - '-suppress=SV-LCM-PPWI'
+        #FIXME : ENABLE THIS DEFINE FOR THE RELEASE
+        # - +define+I3C_BOOT_USING_ENTDAA
       elab:
         #FIXME : remve this warning suppression
         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
@@ -224,7 +226,8 @@ global:
         # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
         #- '+ai3c_dbg_name=master'
-        - '+vpi -lpthread'
+        - '+vpi'
+        # - -lpthread'
         - '+CLP_BUS_LOGS=1'
         # Command line arg to spcify the I3C test 
         # - +AVY_TEST=ai3ct_ext_basic

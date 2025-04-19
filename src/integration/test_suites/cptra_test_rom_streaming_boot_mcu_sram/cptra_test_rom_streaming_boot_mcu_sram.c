@@ -195,6 +195,7 @@ uint32_t read_image_size(){
 void read_image_from_fifo(uint32_t fw_image_size) {
 
     uint32_t dma_block_size;
+    uint32_t ss_mci_sram_base_addr;
 
     // -- FIXME: Uncomment code for randomized block size
     // -- randomize block size between 4 to 256 bytes for the power of 2
@@ -202,10 +203,17 @@ void read_image_from_fifo(uint32_t fw_image_size) {
     // dma_block_size = (dma_block_size < 4) ? 4 : dma_block_size; // minimum block size is 4 bytes
     dma_block_size = 256; // 256 bytes
 
+    // read the ss_mci_base address
+    // 0xC00000 is the offset for the MCI SRAM
+    ss_mci_sram_base_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_MCI_BASE_ADDR_L) + 0xC00000; //-- FIXME: Make it dynamic
+
+    //-- FIXME : mcu initialization required for SRAM 
+    // mcu_set_fw_sram_exec_region_size(args.mcu_fw_sram_exec_reg_size); 
+
     // Program DMA to read the payload from the FIFO
     VPRINTF(LOW, "CPTRA: Programming DMA to read DWORDS : 'h %0x , 'd %0d \n", fw_image_size, fw_image_size);
-    soc_ifc_axi_dma_read_mbox_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA, 0x4400, 1, fw_image_size*4, dma_block_size);
-    VPRINTF(LOW, "CPTRA: Reading payload from Mailbox via Direct Mode\n");
+    soc_ifc_axi_dma_send_axi_to_axi(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA, 0, ss_mci_sram_base_addr, 1, fw_image_size*4, dma_block_size);
+    VPRINTF(LOW, "CPTRA: reading I3C FIFO and storing the data in MCU SRAM\n");
            
 }
 

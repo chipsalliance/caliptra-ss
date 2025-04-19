@@ -13,12 +13,12 @@
 // limitations under the License.
 //
 
-class ai3ct_ext_basic extends ai3ct_base;
+class cptra_ss_ext_basic extends cptra_ss_i3c_core_base_test;
 
-	`avery_test_reg(ai3ct_ext_basic)
+	`avery_test_reg(cptra_ss_ext_basic)
 
 	function new(string name, `avery_xvm_parent);
-        super.new("ai3ct_ext_basic", parent);
+        super.new("cptra_ss_ext_basic", parent);
 	endfunction
 
 	task pre_bfm_started();
@@ -48,221 +48,14 @@ class ai3ct_ext_basic extends ai3ct_base;
         return crc;
     endfunction
 
-	task i3c_write( input ai3c_addr_t addr,
-					input bit[7:0] cmd,
-					input bit[7:0] data[],
-					input int      len);
-
-		ai3c_transaction tr;
-       	ai3c_message    msg;
-       	bit [7:0]       pec;
-
-		test_log.step($psprintf("I3C wr txfer started at...: addr = 'h %0h, len = 'd %0d", addr, len));
-
-		tr = new(`avery_strarg sys_agt.mgr);
-       	tr.mhs[0].addr = addr;
-       	tr.mhs[0].rw   = AI3C_write;
-       	tr.mhs[0].len  = len + 4; // added 4 bytes for cmd, legnth lsb, length msb, and pec
-       	tr.msgs[0]     = new(tr.mhs[0], tr);
-       	msg            = tr.msgs[0];
-
-        pec = crc8('{addr << 1, cmd, len, 0});
-        pec = crc8(data, pec);
-
-		for(int i = 0; i < len + 4; i++) begin
-			if(i==0) 	  		msg.data_bytes[i] = cmd;        // cmd byte [0th byte]
-			else if(i==1) 		msg.data_bytes[i] = len;        // cmd lsb  [1st byte]
-			else if(i==2) 		msg.data_bytes[i] = 0;          // cmd msb  [2nd byte]
-			else if(i==len+3)   msg.data_bytes[i] = pec;        // pec byte [nth byte]
-			else 				msg.data_bytes[i] = data[i-3];  // data bytes [3rd to nth byte]
-		end
-
-		test_log.substep($psprintf("Writing data:\n%s", tr.sprint(2)));
-
-		sys_agt.post_transaction(tr);
-       	tr.wait_done(20us);
-       	chk_tr(tr);
-       	test_log.step($psprintf("I3C wr txfer completed at.: addr = 'h %0h, len = 'd %0d", addr, len));
-
-	endtask
-
-	task i3c_read(	input ai3c_addr_t  addr,
-					input bit [7:0]    cmd,
-					input int   	   len,
-					output bit [7:0] data[]);
-
-		ai3c_transaction tr;
-		ai3c_message     msg;
-		bit              ok;
-		// bit [7:0]        data[];
-        bit [7:0]        pec;
-
-		test_log.step($psprintf("I3C rd txfer started at...: addr = 'h %0h, len = 'd %0d", addr, len));
-		tr = new(`avery_strarg sys_agt.mgr);
-		ok = tr.randomize () with {
-				mhs.size() == 2;
-				mhs.size() == 2 -> mhs[0].addr == addr;
-				mhs.size() == 2 -> mhs[0].rw   == AI3C_write;
-				mhs.size() == 2 -> mhs[0].len  == 2;
-				mhs.size() == 2 -> mhs[1].addr == addr;
-				mhs.size() == 2 -> mhs[1].rw   == AI3C_read;
-                mhs.size() == 2 -> mhs[1].len  == len + 3; // Account for len lsb+msb and PEC
-		};
-
-		if (!ok) begin 
-				test_log.fatal($psprintf("%m: randomization failed"));
-		end
-
-        pec = crc8('{addr << 1, cmd});
-
-		msg = tr.msgs[0];
-		msg.data_bytes[0] = cmd;
-		msg.data_bytes[1] = pec;
-		test_log.substep($psprintf("Transfer:\n%s", tr.sprint(2)));
-
-		sys_agt.post_transaction(tr);
-		tr.wait_done(32us);
-
-		//-- read data from the subordinate
-		msg = tr.msgs[1];
-		data = new[len];
-		foreach(msg.data_bytes[i]) begin
-            data[i] = msg.data_bytes[2 + i]; // Account for len lsb+msb
-            test_log.substep($psprintf("Data Read : 'h %0h", msg.data_bytes[i]));
-		end
-
-        pec = crc8('{(addr << 1) | 1}); // address
-        pec = crc8('{msg.data_bytes[0], msg.data_bytes[1]}, pec); // len
-        pec = crc8(data, pec); // payload
-
-		test_log.substep($psprintf("Addr      : 'h %0h ", addr));
-		test_log.substep($psprintf("Length    : 'h %0h ", len));
-		test_log.substep($psprintf("Data Read :\n%s", tr.sprint(2)));
-
-        test_log.substep($psprintf("PEC recvd : 'h %0h", msg.data_bytes[2+len]));
-        test_log.substep($psprintf("PEC calcd : 'h %0h", pec));
-
-        if (pec != msg.data_bytes[2+len])
-            test_log.substep("Received PEC mismatch!");
-
-		test_log.step($psprintf("I3C rd txfer completed at.: addr = 'h %0h, len = 'd %0d", addr, len));
-
-	endtask
-
 	virtual task test_body();
 
-		ai3c_addr_t general_target_addr;
-		ai3c_addr_t recovery_target_addr;
-		ai3c_addr_t addr = 8'h5A;
-		bit ok;
 		bit [7:0] data[];
 
-		int fp;
-		string line;
-		int i = 0;
-		bit [7:0] read_mem[8192][16];
-		bit [7:0] image[][];
-		bit [31:0] img_sz;
-		int img_sz_in_16B;
-		int img_sz_in_4B;
-		int wr_count_256B;
-		int wr_count_16B;
-		int wr_count_4B;
-		int wr_count_1B;
-		int r;
-		bit [31:0] cmdline_img_sz;
-
-		test_log.step("=================================================================");
-		test_log.step("Step 0: Reading Firmware test image from file");
-
-		if($value$plusargs("cmdline_img_sz=%h", cmdline_img_sz)) begin
-			
-			test_log.substep($psprintf("using CMD Line for Image Size (in bytes): 'd %0d",cmdline_img_sz));
-			img_sz = cmdline_img_sz;
-
-		end else begin
-
-			test_log.substep($psprintf("using file ./fw_update.size for Image size"));
-			// Check if file exists and read size
-			fp = $fopen("./fw_update.size", "r");
-			if (fp == 0) begin
-				test_log.step($psprintf("ERROR : File not found: %s", "./fw_update.size"));
-			end
-			
-			r = $fgets(line, fp);
-			if (r == 0) begin
-				test_log.step($psprintf("ERROR : File read error: %s", "./fw_update.size"));
-			end
-
-			img_sz = line.atoi();
-			$fclose(fp);
-
-		end
-
-		if (img_sz > 0) begin
-			test_log.substep($psprintf("Image Size (in bytes): 'd %0d",img_sz));
-		end else begin
-			test_log.step($psprintf("ERROR : Invalid image size: 'd %0d", img_sz));
-		end
-		
-		// -- for aligned image size
-		wr_count_256B =  (img_sz)     / 256;
-		wr_count_16B  =  (img_sz%256) /16;
-		wr_count_4B   =  (img_sz%16)  /4;
-		wr_count_1B   =  (img_sz%4);
-		
-		if(wr_count_1B > 0) begin
-			test_log.substep($psprintf("Error : Image size is not multiples of 4 Bytes"));
-		end
-
-		test_log.substep($psprintf("== Img Wr Count for 256B : 'd %0d x 256 B = 'd %0d B", wr_count_256B, (wr_count_256B*256)));
-		test_log.substep($psprintf("== Img Wr Count for  16B : 'd %0d x  16 B = 'd %0d B", wr_count_16B, (wr_count_16B*16)));
-		test_log.substep($psprintf("== Img Wr Count for  4B  : 'd %0d x   4 B = 'd %0d B", wr_count_4B, (wr_count_4B*4)));
-		test_log.substep($psprintf("== Calculated Image Size ==  'd %0d B", ((wr_count_256B*256)+(wr_count_16B*16)+(wr_count_4B*4))));
-
-		//-- for unaligned image size
-		img_sz_in_16B = img_sz/16 + (img_sz%16 > 0? 1 : 0);
-		test_log.substep($psprintf("Image Size (in 16B): 'd %0d",img_sz_in_16B));
-
-		//-- for unaligned image size
-		img_sz_in_4B = img_sz/4;
-		test_log.substep($psprintf("Image Size (in 4B): 'h %0h ",img_sz_in_4B));
-		
-
-		// renew image array
-		image = new[img_sz_in_16B];
-		for(int i = 0; i < img_sz_in_16B; i++) begin
-			image[i] = new[16];
-		end
-
-		$readmemh("fw_update.hex", read_mem);
-		if ($isunknown(read_mem[0][0])) begin
-			test_log.step($psprintf("ERROR : File read error: %s", "fw_update.hex"));
-		end
-		//-- writing image to array
-		foreach(image[i]) begin
-			line = "'h ";
-			for(int j = 0; j < 16; j++) begin
-				image[i][j] = read_mem[i][j];
-				line = $psprintf("%s %0h", line, image[i][j]);
-			end
-			test_log.substep($psprintf("Image['d %0d]: %0s", i, line));
-		end
-			
-		test_log.substep("Reading Firmware test image from file completed.");
-
-		test_log.step("=================================================================");
-		test_log.step("Wait for Dynamic Address Assignment and Bus Initialization");
-		sys_agt.wait_event("bus_init_done", 1ms);
-		test_log.step("Dynamic Address Assignment and Bus Initialization done");
-		test_log.sample(AI3C_5_1_2_1n3);
-		test_log.sample(AI3C_5_1_2_2n1);
-
-		//-- grabbing dynamic address for the I3C core
-		recovery_target_addr = sys_agt.mgr.i3c_dev_das[0]; // get 0 slave
-		general_target_addr = sys_agt.mgr.i3c_dev_das[1]; // get 1 slave
-		test_log.substep($psprintf("I3C Subordinate Recovery addr 'h %0h", recovery_target_addr));
-		test_log.substep($psprintf("I3C Subordinate General addr 'h %0h", general_target_addr));
+		//-- Read image from hex file
+		read_image();
+		//-- I3C bus initialization and address assignment
+		i3c_bus_init();
 
 		test_log.step("=============================================================");
 		test_log.step("Step 1: Reading Base Registers");

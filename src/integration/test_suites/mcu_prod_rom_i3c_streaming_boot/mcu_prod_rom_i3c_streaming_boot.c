@@ -6,10 +6,6 @@
 //  The test brings up the I3C interface and sends a command to the I3C device. 
 //  The test is expected to pass if the I3C device responds with the expected data.
 
-// -- Description
-// -- MCU Firmware for the I3C Streaming Boot Test
-// -- 1. Boots the MCU
-
 #include "soc_address_map.h"
 #include "printf.h"
 #include "riscv_hw_if.h"
@@ -17,8 +13,6 @@
 #include "caliptra_ss_lib.h"
 #include "string.h"
 #include "stdint.h"
-
-#define STATUS_CHECK_LOOP_COUNT_FOR_RECOVERY 20
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 // volatile char* stdout = (char *)0xd0580000;
@@ -36,14 +30,17 @@ void main (void) {
     char *argv[1];
     uint32_t i3c_reg_data;
 
-    //-- Boot MCU
-    VPRINTF(LOW, "MCU: Booting..\n");
-    
-    boot_mcu();
-    boot_i3c_core();
-    trigger_caliptra_go();
-    wait_for_cptra_ready_for_mb_processing();
-    configure_captra_axi_user();
+    // Initialize the printf library   
+    VPRINTF(LOW, "=== MCU boot.. started == \n");
+
+    mcu_cptra_init_d( 
+        .cfg_enable_cptra_mbox_user_init=true, 
+        .cfg_cptra_fuse=true,
+        .cfg_cptra_wdt=true,
+        .cfg_boot_i3c_core=true,
+        .cfg_trigger_prod_rom=true); 
+
+    VPRINTF(LOW, "=== MCU boot.. completed == \n");
 
     for(uint8_t ii=0; ii<10000; ii++) {
         for (uint8_t ii = 0; ii < 16; ii++) {
