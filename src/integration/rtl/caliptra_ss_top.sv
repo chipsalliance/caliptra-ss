@@ -932,7 +932,11 @@ module caliptra_ss_top
         .peripheral_reset_o(i3c_peripheral_reset),
         .peripheral_reset_done_i(1'b1),
         .escalated_reset_o(i3c_escalated_reset),
-        .irq_o(i3c_irq_o)
+        .irq_o(i3c_irq_o),
+
+        //-- AXI USER ID FILTERING
+        .disable_id_filtering_i(1'b1), // -- FIXME : ENABLE THIS FEATURE
+        .priv_ids_i('{32'b0, 32'b0, 32'b0, 32'b0}) // -- FIXME : ENABLE THIS FEATURE
 
     );
 
