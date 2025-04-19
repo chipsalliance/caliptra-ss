@@ -99,7 +99,7 @@ module lc_ctrl
   output pwrmgr_pkg::pwr_lc_rsp_t                    pwr_lc_o,
   // Strap sampling override that is only used when SecVolatileRawUnlockEn = 1,
   // Otherwise this output is tied off to 0.
-  output logic                                       strap_en_override_o,
+  // output logic                                       strap_en_override_o,
   // Strap override - this is only used when
   // Macro-specific test registers going to lifecycle TAP
   output otp_ctrl_pkg::lc_otp_vendor_test_req_t      lc_otp_vendor_test_o,
@@ -122,7 +122,7 @@ module lc_ctrl
   output lc_tx_t                                     lc_dft_en_o,
   // output lc_tx_t                                     lc_nvm_debug_en_o,
   output lc_tx_t                                     lc_hw_debug_en_o,
-  output lc_tx_t                                     lc_cpu_en_o,
+  
   output lc_tx_t                                     lc_creator_seed_sw_rw_en_o, // TODO: remove them when they are removed from otp ctrl
   output lc_tx_t                                     lc_owner_seed_sw_rw_en_o,  // TODO: remove them when they are removed from otp ctrl
   // output lc_tx_t                                     lc_iso_part_sw_rd_en_o,
@@ -151,7 +151,8 @@ module lc_ctrl
   // Hardware revision output (static)
   output lc_hw_rev_t                                 hw_rev_o
 );
-
+  //Unused signals
+  lc_tx_t                                     lc_cpu_en_o;
   // Short-cut assignments since Caliptra-SS does not use this ports
   lc_tx_t                                     lc_nvm_debug_en_o;
   lc_tx_t                                     lc_iso_part_sw_rd_en_o;
@@ -914,7 +915,7 @@ module lc_ctrl
     .use_ext_clock_i        ( use_ext_clock_q                  ),
     .ext_clock_switched_o   ( ext_clock_switched               ),
     .volatile_raw_unlock_i  ( volatile_raw_unlock_q            ),
-    .strap_en_override_o,
+    // .strap_en_override_o,
     .test_unlock_token_i    ( otp_lc_data_i.test_unlock_token  ),
     .test_exit_dev_token_i      ( otp_lc_data_i.test_exit_dev_token    ),
     .dev_exit_prod_token_i      ( otp_lc_data_i.dev_exit_prod_token    ),
