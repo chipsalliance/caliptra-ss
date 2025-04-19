@@ -29,14 +29,14 @@ addrmap trace_buffer_csr {
     reg {
         name="Trace Status";
         desc="Status bits for the Trace Buffer";
-        field {desc="Indicates trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid.";sw=r; hw=rw; } wrapped=0;
+        field {desc="Indicates WRITE_PTR has wrapped. Meaning all entries in the trace buffer are valid.";sw=r; hw=rw; } wrapped=0;
         field {desc="Indicates at least one entry in the trace buffer is valid.";sw=r; hw=rw; } valid_data=0;
     } STATUS;
     
     reg {
         name="Trace Configuration";
         desc="HW configuration of the trace buffer";
-        field {desc="Total number of DWORD entries in the trace buffer. TRACE_BUFFER_DEPTH-1 is the last valide read/write pointer entries in the trace buffer.";sw=r; hw=rw; } trace_buffer_depth[32]=0;
+        field {desc="Total number of DWORD entries in the trace buffer. TRACE_BUFFER_DEPTH-1 is the last valid read/write pointer entries in the trace buffer.";sw=r; hw=rw; } trace_buffer_depth[32]=0;
     } CONFIG;
 
     reg {
