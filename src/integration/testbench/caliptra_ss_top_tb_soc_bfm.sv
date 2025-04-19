@@ -103,7 +103,7 @@ initial begin
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_TRACE_BUFFER_NO_DEBUG") begin
             smoke_test_mcu_trace_buffer_no_debug();
         end
-        else if ($test$plusargs("MCU_MBOX_SOC_AGENT_WRITE_FW_IMAGE")) begin
+        else if(cptra_ss_test_name == "MCU_MBOX_SOC_AGENT_WRITE_FW_IMAGE") begin
             mcu_mbox_soc_agent_write_fw_image();       
         end
     end
