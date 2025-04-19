@@ -406,7 +406,7 @@ package otp_ctrl_part_pkg;
     }
   };
 
-  typedef enum {
+  typedef enum logic [4:0] {
     SecretTestUnlockPartitionIdx,
     SecretManufPartitionIdx,
     SecretProdPartition0Idx,

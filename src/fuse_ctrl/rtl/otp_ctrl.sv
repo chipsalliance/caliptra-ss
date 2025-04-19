@@ -1328,19 +1328,15 @@ end
     otp_broadcast_FIPS_checked.valid = otp_broadcast_valid_q;
   end
 
-  logic [31:0] test_unlock_token_idx;
-  assign test_unlock_token_idx = lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked1 ? CptraSsTestUnlockToken1Offset : 
-                                 lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked2 ? CptraSsTestUnlockToken2Offset :
-                                 lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked3 ? CptraSsTestUnlockToken3Offset :
-                                 lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked4 ? CptraSsTestUnlockToken4Offset :
-                                 lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked5 ? CptraSsTestUnlockToken5Offset :
-                                 lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked6 ? CptraSsTestUnlockToken6Offset :
-                                 lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked7 ? CptraSsTestUnlockToken7Offset : '0;
-
-  assign otp_lc_data_o.test_unlock_token = part_buf_data[test_unlock_token_idx +:
-                                                         CptraSsTestUnlockToken1Size];
-
   // LCC transition tokens.
+  assign otp_lc_data_o.test_unlock_token = lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked1 ? part_buf_data[CptraSsTestUnlockToken1Offset +: CptraSsTestUnlockToken1Size] : 
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked2 ? part_buf_data[CptraSsTestUnlockToken2Offset +: CptraSsTestUnlockToken2Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked3 ? part_buf_data[CptraSsTestUnlockToken3Offset +: CptraSsTestUnlockToken3Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked4 ? part_buf_data[CptraSsTestUnlockToken4Offset +: CptraSsTestUnlockToken4Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked5 ? part_buf_data[CptraSsTestUnlockToken5Offset +: CptraSsTestUnlockToken5Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked6 ? part_buf_data[CptraSsTestUnlockToken6Offset +: CptraSsTestUnlockToken6Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked7 ? part_buf_data[CptraSsTestUnlockToken7Offset +: CptraSsTestUnlockToken7Size] : '0;
+
   assign otp_lc_data_o.test_exit_dev_token     = part_buf_data[CptraSsTestExitToManufTokenOffset +:
                                                                CptraSsTestExitToManufTokenSize];
   assign otp_lc_data_o.dev_exit_prod_token     = part_buf_data[CptraSsManufToProdTokenOffset +:

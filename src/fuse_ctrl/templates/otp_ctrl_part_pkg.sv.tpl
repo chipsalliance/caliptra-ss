@@ -169,7 +169,7 @@ package otp_ctrl_part_pkg;
 % endfor
   };
 
-  typedef enum {
+  typedef enum logic [4:0] {
 % for part in otp_mmap.config["partitions"]:
     ${Name.from_snake_case(part["name"]).as_camel_case()}Idx,
 % endfor

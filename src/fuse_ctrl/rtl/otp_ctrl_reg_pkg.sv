@@ -1030,7 +1030,7 @@ package otp_ctrl_reg_pkg;
   parameter int unsigned       OTP_CTRL_SW_CFG_WINDOW_IDX    = 0;
 
   // Register index for core interface
-  typedef enum int {
+  typedef enum logic [31:0] {
     OTP_CTRL_INTR_STATE,
     OTP_CTRL_INTR_ENABLE,
     OTP_CTRL_INTR_TEST,
@@ -1443,7 +1443,7 @@ package otp_ctrl_reg_pkg;
   parameter logic [PrimAw-1:0] OTP_CTRL_CSR7_OFFSET = 5'h 1c;
 
   // Register index for prim interface
-  typedef enum int {
+  typedef enum logic [31:0] {
     OTP_CTRL_CSR0,
     OTP_CTRL_CSR1,
     OTP_CTRL_CSR2,
