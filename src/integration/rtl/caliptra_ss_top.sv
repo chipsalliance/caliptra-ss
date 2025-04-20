@@ -928,6 +928,36 @@ xpm_cdc_single_image_activated_inst (
    .src_clk(cptra_i3c_clk_i),   // 1-bit input: optional; required when SRC_INPUT_REG = 1
    .src_in(image_activated_o_presync)      // 1-bit input: Input signal to be synchronized to dest_clk domain.
 );
+logic i3c_peripheral_reset_presync;
+xpm_cdc_single #(
+   .DEST_SYNC_FF(4),   // DECIMAL; range: 2-10
+   .INIT_SYNC_FF(0),   // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
+   .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+   .SRC_INPUT_REG(1)   // DECIMAL; 0=do not register input, 1=register input
+)
+xpm_cdc_single_i3c_peripheral_reset_inst (
+   .dest_out(i3c_peripheral_reset), // 1-bit output: src_in synchronized to the destination clock domain. This output is
+                        // registered.
+
+   .dest_clk(cptra_ss_clk_i), // 1-bit input: Clock signal for the destination clock domain.
+   .src_clk(cptra_i3c_clk_i),   // 1-bit input: optional; required when SRC_INPUT_REG = 1
+   .src_in(i3c_peripheral_reset_presync)      // 1-bit input: Input signal to be synchronized to dest_clk domain.
+);
+logic i3c_escalated_reset_presync;
+xpm_cdc_single #(
+   .DEST_SYNC_FF(4),   // DECIMAL; range: 2-10
+   .INIT_SYNC_FF(0),   // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
+   .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+   .SRC_INPUT_REG(1)   // DECIMAL; 0=do not register input, 1=register input
+)
+xpm_cdc_single_i3c_escalated_reset_inst (
+   .dest_out(i3c_escalated_reset), // 1-bit output: src_in synchronized to the destination clock domain. This output is
+                        // registered.
+
+   .dest_clk(cptra_ss_clk_i), // 1-bit input: Clock signal for the destination clock domain.
+   .src_clk(cptra_i3c_clk_i),   // 1-bit input: optional; required when SRC_INPUT_REG = 1
+   .src_in(i3c_escalated_reset_presync)      // 1-bit input: Input signal to be synchronized to dest_clk domain.
+);
 
 
     i3c_wrapper #(
@@ -985,9 +1015,9 @@ xpm_cdc_single_image_activated_inst (
 `endif
         .recovery_payload_available_o(payload_available_o_presync),
         .recovery_image_activated_o(image_activated_o_presync),
-        .peripheral_reset_o(i3c_peripheral_reset),
+        .peripheral_reset_o(i3c_peripheral_reset_presync),
         .peripheral_reset_done_i(1'b1),
-        .escalated_reset_o(i3c_escalated_reset),
+        .escalated_reset_o(i3c_escalated_reset_presync),
         .irq_o()
 
     // TODO: Add interrupts
