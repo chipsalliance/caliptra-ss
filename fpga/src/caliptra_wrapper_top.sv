@@ -1625,6 +1625,22 @@ I think this is the one that isn't used
     assign cptra_ss_mcu_sb_m_axi_if.rvalid =   M_AXI_MCU_SB_RVALID;
     assign M_AXI_MCU_SB_RREADY = cptra_ss_mcu_sb_m_axi_if.rready;
 
+    // CDC for user signal to I3C
+    logic [`CALIPTRA_AXI_USER_WIDTH-1:0] i3c_user_synch;
+    xpm_cdc_array_single #(
+        .DEST_SYNC_FF(4),   // DECIMAL; range: 2-10
+        .INIT_SYNC_FF(0),   // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
+        .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .SRC_INPUT_REG(1),  // DECIMAL; 0=do not register input, 1=register input
+        .WIDTH(`CALIPTRA_AXI_USER_WIDTH) // DECIMAL; range: 1-1024
+    )
+    xpm_cdc_array_single_inst (
+        .dest_out(i3c_user_synch),
+        .dest_clk(i3c_clk),
+        .src_clk(core_clk),
+        .src_in(hwif_out.interface_regs.pauser.pauser.value)
+    );
+
     // I3C AXI Subordinate
     axi_if #(
         .AW(32),//`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
@@ -1638,7 +1654,7 @@ I think this is the one that isn't used
     assign cptra_ss_i3c_s_axi_if.awburst  = S_AXI_I3C_AWBURST;
     assign cptra_ss_i3c_s_axi_if.awsize   = S_AXI_I3C_AWSIZE;
     assign cptra_ss_i3c_s_axi_if.awlen    = S_AXI_I3C_AWLEN;
-    assign cptra_ss_i3c_s_axi_if.awuser   = hwif_out.interface_regs.pauser.pauser.value; //S_AXI_I3C_AWUSER;
+    assign cptra_ss_i3c_s_axi_if.awuser   = i3c_user_synch; //S_AXI_I3C_AWUSER;
     assign cptra_ss_i3c_s_axi_if.awid     = S_AXI_I3C_AWID;
     assign cptra_ss_i3c_s_axi_if.awlock   = S_AXI_I3C_AWLOCK;
     assign cptra_ss_i3c_s_axi_if.awvalid  = S_AXI_I3C_AWVALID;
@@ -1659,7 +1675,7 @@ I think this is the one that isn't used
     assign cptra_ss_i3c_s_axi_if.arburst = S_AXI_I3C_ARBURST;
     assign cptra_ss_i3c_s_axi_if.arsize  = S_AXI_I3C_ARSIZE;
     assign cptra_ss_i3c_s_axi_if.arlen   = S_AXI_I3C_ARLEN;
-    assign cptra_ss_i3c_s_axi_if.aruser  = hwif_out.interface_regs.pauser.pauser.value; // S_AXI_I3C_ARUSER;
+    assign cptra_ss_i3c_s_axi_if.aruser  = i3c_user_synch; // S_AXI_I3C_ARUSER;
     assign cptra_ss_i3c_s_axi_if.arid    = S_AXI_I3C_ARID;
     assign cptra_ss_i3c_s_axi_if.arlock  = S_AXI_I3C_ARLOCK;
     assign cptra_ss_i3c_s_axi_if.arvalid = S_AXI_I3C_ARVALID;
