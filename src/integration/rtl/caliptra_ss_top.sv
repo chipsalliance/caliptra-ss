@@ -24,6 +24,9 @@
 `include "caliptra_ss_includes.svh"
 `include "css_mcu0_common_defines.vh"
 
+// Trying to avoid compile error in css_mcu0_el2_param.vh. This worked in caliptra_ss_top but this would be better.
+`include "css_mcu0_el2_pdef.vh"
+
 module caliptra_ss_top
     import axi_pkg::*;
     import soc_ifc_pkg::*;
@@ -124,6 +127,8 @@ module caliptra_ss_top
     output logic                       cptra_ss_cptra_core_jtag_tdo_o,    // JTAG TDO
     output logic                       cptra_ss_cptra_core_jtag_tdoEn_o,  // JTAG TDO enable
     output logic [124:0]               cptra_ss_cptra_generic_fw_exec_ctrl_o,
+    output logic cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o,
+    input  logic cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i,
 
 //LC controller JTAG
     input   jtag_pkg::jtag_req_t                       cptra_ss_lc_ctrl_jtag_i,

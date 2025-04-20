@@ -22,8 +22,6 @@
 // TODO: This never gets included?
 //`include "css_mcu0_el2_pdef.vh"
 
-// Trying to avoid compile error in css_mcu0_el2_param.vh. This worked in caliptra_ss_top but this would be better.
-`include "css_mcu0_el2_pdef.vh"
 
 // TODO: Not sure if axi_struct_pkg needs to be imported. Currently getting errors
 //`include "tlul_pkg.sv"
