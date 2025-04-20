@@ -278,6 +278,13 @@ def main():
             # Life cycle counter cannot be 0 for non RAW states.
             lc_cnt = random.randint(1, num_cnts - 1)
 
+    # ─── DEBUG: print just the 128‑bit tokens ───────────────────────────────────
+    print("\n=== MSFT: OTP TRANSITION TOKENS Before HASH ===")
+    for name, value in token_cfg.items():
+        # value is an int; print it as a 32‑hex‑digit (128‑bit) constant
+        print(f"{name}: {value}")
+    print("=============================\n")
+    print("\n=== MSFT: OTP TRANSITION TOKENS Afrer HASH ===")
     img_config = {}
     img_config['seed'] = 0 # Not used.
     img_config['partitions'] = []
@@ -311,6 +318,7 @@ def main():
             token_item = {}
             token_item['name'] = token_name
             token_item['value'] = str(hex(digest))
+            print(f"hashed {token_name}: {hex(digest)}")
             token_config['items'].append(token_item)
         # Append the tokens to the partition.
         img_config['partitions'].append(token_config)
