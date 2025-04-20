@@ -48,7 +48,7 @@ void main (void) {
     i3c_reg_data = 1 << 12 | i3c_reg_data; // Flashless/Streaming Boot (FSB) (Reason of recovery) 
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, i3c_reg_data);
 
-    // - RECOVERY_STATU_0
+    // - RECOVERY_STATUS_0
     i3c_reg_data = 0x00000001; // Awaiting recovery image
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS, i3c_reg_data);
     VPRINTF(LOW, "MCU: I3C Recovery Registers updated\n");

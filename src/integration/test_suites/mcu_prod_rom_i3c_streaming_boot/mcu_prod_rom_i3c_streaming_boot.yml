@@ -1,9 +1,9 @@
 seed: 1
 testname: mcu_prod_rom_i3c_streaming_boot
 pre-exec: |
-  echo "Running pre_exec for test c_sram "
-  echo "FIXME: Test is running at 1000MHz"
-  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/cptra_fw_test_rom CALIPTRA_INTERNAL_TRNG=0 TESTNAME=cptra_fw_test_rom program.hex
+  echo "Running pre_exec for test c_sram " &&
+  echo "FIXME: Test is running at 1000MHz" &&
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/cptra_fw_test_rom AUX_HEADER_FILES=$CALIPTRA_SS_ROOT/src/integration/rtl/soc_address_map.h CALIPTRA_INTERNAL_TRNG=0 TESTNAME=cptra_fw_test_rom program.hex   &&
   make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=mcu_prod_rom_i3c_streaming_boot CALIPTRA_SS_CLK_FREQ=1000 mcu_program.hex
 plusargs:
   - '+AVY_TEST=i3c_streaming_boot'
