@@ -19,6 +19,7 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_address_map.h"
+#include "soc_ifc.h"
 #include "stdint.h"
 #include <stdbool.h>
 
@@ -188,6 +189,14 @@ void clear_mcu_mbox_clear_sb_ecc_interrupt(uint32_t mbox_num);
 bool is_only_mcu_mbox_db_ecc_interrupt_set(uint32_t mbox_num);
 void clear_mcu_mbox_clear_db_ecc_interrupt(uint32_t mbox_num);
 
+bool mcu_mbox_wait_for_soc_data_avail_interrupt(uint32_t mbox_num, uint32_t attempt_count);
+bool is_mcu_mbox_soc_data_avail_interrupt_set(uint32_t mbox_num);
+void clear_mcu_mbox_soc_data_avail_interrupt(uint32_t mbox_num);
+ 
+bool mcu_cptra_mbox_acquire_lock(uint32_t attempt_count);
+bool mcu_cptra_mbox_wait_for_status(uint32_t attempt_count, enum mbox_status_e status);
+bool mcu_wait_for_mcu_reset_req_interrupt(uint32_t attempt_count);
+void mcu_clear_reset_req_interrupt();
 
 ///////////////////////////////////////////////////
 // MCU Mbox Read/Write SRAM and CSR functions
