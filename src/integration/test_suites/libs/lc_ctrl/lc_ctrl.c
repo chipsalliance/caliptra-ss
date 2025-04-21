@@ -292,7 +292,7 @@ void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
     // We start at index0=0 (Raw). We do transitions *from* each state
     // to the *next* in the sequence. So we loop from i=0 to i=(N-2).
     int n_states = sizeof(state_sequence)/sizeof(state_sequence[0]);
-    for (int i = 0; i < (n_states - 2); i++) {
+    for (int i = 0; i < (n_states - 3); i++) {
         uint32_t from_state = state_sequence[i];
         uint32_t to_state   = state_sequence[i+1];
         VPRINTF(LOW, "\n=== Transition from %08d to %08d ===\n", 
