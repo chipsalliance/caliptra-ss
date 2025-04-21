@@ -41,7 +41,7 @@ initial begin
     $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_tlul_lc_gate.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
     $assertoff(0, caliptra_ss_top_tb.u_otp.u_state_regs.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
     $assertoff(0, caliptra_ss_top_tb.u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check.AssertConnected_A); // FIXME - remove https://github.com/chipsalliance/caliptra-ss/issues/148
-
+    $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.mci_top_i.LCC_state_translator.DebugLockedCheck_A);
 
 
 end
