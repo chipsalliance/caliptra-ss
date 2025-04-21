@@ -120,10 +120,9 @@ void mcu_mci_req_reset() {
 
 void mcu_cptra_wait_for_fuses() {
     // Wait for ready_for_fuses
-    VPRINTF(LOW, "MCU: Wait for CPTRA FLOW STATUS\n");
+    VPRINTF(LOW, "MCU: Wait for CPTRA FLOW STATUS to indicate ready for fuses \n");
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
-    VPRINTF(LOW, "MCU: CPTRA FLOW STATUS COMPLETE\n");
-
+    VPRINTF(LOW, "MCU: Caliptra is ready for fuses\n");
 }
 
 void mcu_cptra_set_fuse_done() {
@@ -220,7 +219,7 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     /////////////////////////////////
     // BRING CPTRA OUT OF RESET
     /////////////////////////////////
-    mcu_mci_boot_go();
+    mcu_mci_boot_go();    
 
     mcu_cptra_wait_for_fuses();
 
@@ -238,12 +237,40 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     /////////////////////////////////
     // CPTRA LOCK FUSE CONFIGURATION
     /////////////////////////////////
+
+    // enable only to program fuses.
+    if(args.cfg_cptra_fuse){
+        update_cptra_fuse_cfg();
+        update_pqc_key_type(); //-- FIXME : should have separate config
+    }
+    // enabled by default to indicate that fuses are done.
     if (!args.cfg_skip_set_fuse_done) {
         mcu_cptra_set_fuse_done();
     }
     else{
         VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip Set fuse done\n");
     }
+
+    ///////////////////////////////
+    // CPTRA WDT CONFIGURATION
+    ///////////////////////////////
+    if (args.cfg_cptra_wdt) {
+        update_cptra_wdt_cfg(1000, 250, 0);
+    }
+    else{
+        VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip CPTRA WDT\n");
+    }
+
+    /////////////////////////////////
+    // BOOT I3C
+    /////////////////////////////////
+    if (args.cfg_boot_i3c_core) {
+        boot_i3c_core();
+    }
+    else{
+        VPRINTF(LOW, "MCU: Skipping I3C Core boot\n");
+    }
+
 
     /////////////////////////////////
     // CPTRA ENSURE BREAKPOINT SET  
@@ -253,6 +280,17 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     }
     else{
         VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip advance CPTRA advance breakpoint\n");
+    }
+
+    /////////////////////////////////
+    // TRIGGER PROD ROM
+    /////////////////////////////////
+    if (args.cfg_trigger_prod_rom) {
+        mcu_cptra_poll_mb_ready();
+        cptra_prod_rom_boot_go();
+    } 
+    else {
+        VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip Trigger Prod ROM\n");
     }
 
 
@@ -691,7 +729,7 @@ void mcu_cptra_mbox_cmd() {
 }
 
 // -- function to update various register to default values
-// PROT_CAP, DEVICE_ID, HW_STATUS, DEVICE_STATUS
+// PROT_CAP, DEVICE_ID, HW_STATUS
 void boot_i3c_reg(void) {
 
     uint32_t i3c_reg_data;
@@ -703,7 +741,11 @@ void boot_i3c_reg(void) {
     VPRINTF(LOW, "MCU: Wr PROT_CAP_0 with 'h %0x\n", i3c_reg_data);
     i3c_reg_data = 0x56434552;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, i3c_reg_data);
-    VPRINTF(LOW, "MCU: Wr PROT_CAP_1 with 'h %0x\n", i3c_reg_data);    
+    VPRINTF(LOW, "MCU: Wr PROT_CAP_1 with 'h %0x\n", i3c_reg_data);
+
+    i3c_reg_data = 0x00000101;
+    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2, i3c_reg_data);
+    VPRINTF(LOW, "MCU: Wr PROT_CAP_2 with 'h %0x\n", i3c_reg_data);    
 
     //-- DEVICE_ID
     i3c_reg_data = 0x00000001; //-- Dummy value
@@ -719,10 +761,6 @@ void boot_i3c_reg(void) {
     i3c_reg_data = 0x00000100; //-- Dummy value
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr HW_STATUS with 'h %0x\n", i3c_reg_data);
-
-    //-- DEVICE_STATUS
-    i3c_reg_data = 0x00000001; //-- DEVICE_HEALTHY
-    lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, i3c_reg_data);
 
 }
 
@@ -782,7 +820,7 @@ void boot_i3c_socmgmt_if(void) {
     }
 
     //-- Enable the I3C bus
-    VPRINTF(LOW, "MCU:  writing I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW register  \n");
+    VPRINTF(LOW, "MCU: Writing I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW register  \n");
     i3c_reg_data = lsu_read_32( SOC_I3CCSR_I3CBASE_HC_CONTROL);
     i3c_reg_data = 1 << I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW | i3c_reg_data;
     lsu_write_32( SOC_I3CCSR_I3CBASE_HC_CONTROL, i3c_reg_data);
@@ -791,37 +829,179 @@ void boot_i3c_socmgmt_if(void) {
 // -- function boot i3c core (i3c bringup)
 void boot_i3c_core(void) {
 
+    uint32_t i3c_reg_data;
+
     VPRINTF(LOW, "MCU: I3C Core Bringup .. Started \n");
     boot_i3c_socmgmt_if();
     boot_i3c_standby_ctrl_mode(); 
     boot_i3c_reg();
 
+    //setting device address to 0x5A
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 90 << 0  | i3c_reg_data;
+    i3c_reg_data = 1  << 15 | i3c_reg_data;
+    lsu_write_32( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_DEVICE_ADDR, i3c_reg_data);
+    VPRINTF(LOW, "MCU: I3C Device Address set to 0x5A\n");
+
+    //setting virtual device address to 0x5B
+    i3c_reg_data = 0x00000000;
+    i3c_reg_data = 91 << 0  | i3c_reg_data; //0x5B
+    i3c_reg_data = 1  << 15 | i3c_reg_data;   
+    lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
+    VPRINTF(LOW, "MCU: I3C Virtual Device Address set to 0x5B\n");
+    VPRINTF(LOW, "MCU: I3C Core Bringup .. Completed \n");
+
+}
+
+void trigger_caliptra_go(void){
+    
+    enum boot_fsm_state_e boot_fsm_ps;
+    // Wait for Boot FSM to stall (on breakpoint) or finish bootup
+    boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
+    while(boot_fsm_ps != BOOT_DONE && boot_fsm_ps != BOOT_WAIT) {
+        for (uint8_t ii = 0; ii < 16; ii++) {
+            __asm__ volatile ("nop"); // Sleep loop as "nop"
+        }
+        boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
+    }
+
+    // Advance from breakpoint, if set
+    if (boot_fsm_ps == BOOT_WAIT) {
+        lsu_write_32(SOC_SOC_IFC_REG_CPTRA_BOOTFSM_GO, SOC_IFC_REG_CPTRA_BOOTFSM_GO_GO_MASK);
+    }
+    VPRINTF(LOW, "MCU: Set Caliptra BootFSM GO\n");
+
+}
+
+void wait_for_cptra_ready_for_mb_processing(void) {
+    ////////////////////////////////////
+    // Mailbox command test
+    // MBOX: Wait for ready_for_mb_processing
+    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
+        for (uint8_t ii = 0; ii < 16; ii++) {
+            __asm__ volatile ("nop"); // Sleep loop as "nop"
+        }
+    }
+    VPRINTF(LOW, "MCU: Ready for FW\n");
+}
+
+void configure_captra_axi_user(void) {
+    // MBOX: Setup valid AXI USER
+    VPRINTF(LOW, "MCU: Configuring MBOX Valid AXI USER\n");
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0xffffffff); // LSU AxUSER value. TODO: Derive from parameter
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0_LOCK_MASK);
+    VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
+}
+
+void cptra_prod_rom_boot_go(void) {
+
+    mcu_cptra_user_init();
+    
+    // MBOX: Acquire lock
+    VPRINTF(LOW, "MCU: Acquiring Mbox lock\n");
+    while((lsu_read_32(SOC_MBOX_CSR_MBOX_LOCK) & MBOX_CSR_MBOX_LOCK_LOCK_MASK));
+    VPRINTF(LOW, "MCU: Mbox lock acquired\n");
+
+    // MBOX: Write CMD
+    lsu_write_32(SOC_MBOX_CSR_MBOX_CMD, 0x52494644 | MBOX_CMD_FIELD_RESP_MASK); // Resp required
+
+    // MBOX: Write DLEN
+    lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 0);
+
+    // MBOX: Execute
+    lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
+    VPRINTF(LOW, "MCU: Mbox execute\n");
+
+    // MBOX: Poll status
+    while(((lsu_read_32(SOC_MBOX_CSR_MBOX_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK) >> MBOX_CSR_MBOX_STATUS_STATUS_LOW) != CMD_COMPLETE) {
+        for (uint8_t ii = 0; ii < 16; ii++) {
+            __asm__ volatile ("nop"); // Sleep loop as "nop"
+        }
+    }
+    VPRINTF(LOW, "MCU: Mbox response ready\n");
+
+    for (uint8_t ii = 0; ii < 16; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+
+    // MBOX: Clear Execute
+    lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0);
+    VPRINTF(LOW, "MCU: Mbox execute clear\n");
+
+    VPRINTF(LOW, "MCU: Completed with cptra_prod_rom_boot_go\n");
+
+}
+
+// -- function to update cptra_wdt_cfg
+// -- example call to function : update_cptra_wdt_cfg(1000, 250, 1);
+void update_cptra_wdt_cfg(uint16_t cptra_timer_cfg, uint16_t cptra_wdt_cfg_1, uint16_t cptra_wdt_cfg_0) {
+    // programming WDT
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_TIMER_CONFIG, cptra_timer_cfg);
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_WDT_CFG_1, cptra_wdt_cfg_1);
+    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_WDT_CFG_0, cptra_wdt_cfg_0);
+}
+
+void update_cptra_fuse_cfg(void) {
+
+    uint32_t reg_data_32;
+    
+    VPRINTF(LOW, "MCU: Updating CPTRA FUSE registers..started\n");
+
+    // Add fuse values
+    // SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_0..11
+    // ROM11 : 8af1e8fbb74c19b9d6b234fe4dfc403a378cb4d5dd5cf4f375fb4ecc1d03f40071a3c8471c27f02db1b296f2cb3fb923
+    reg_data_32 = 0x8af1e8fb; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_0, reg_data_32);
+    reg_data_32 = 0xb74c19b9; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_1, reg_data_32);
+    reg_data_32 = 0xd6b234fe; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_2, reg_data_32);
+    reg_data_32 = 0x4dfc403a; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_6, reg_data_32);
+    reg_data_32 = 0x1d03f400; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_7, reg_data_32);
+    reg_data_32 = 0x71a3c847; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_8, reg_data_32);
+    reg_data_32 = 0x1c27f02d; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_9, reg_data_32);
+    reg_data_32 = 0xb1b296f2; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_10, reg_data_32);
+    reg_data_32 = 0xcb3fb923; lsu_write_32(SOC_SOC_IFC_REG_FUSE_VENDOR_PK_HASH_11, reg_data_32);
+
+    // SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_0..11 
+    // ROM11 : 18211dda96dc39ae5782ef97408cad8da81915087739d3eeda8581a4d4a72c16df1e4144cbf6423e1bb98990153def5b
+    reg_data_32 = 0x18211dda; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_0, reg_data_32);
+    reg_data_32 = 0x96dc39ae; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_1, reg_data_32);
+    reg_data_32 = 0x5782ef97; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_2, reg_data_32);
+    reg_data_32 = 0x408cad8d; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_3, reg_data_32);
+    reg_data_32 = 0xa8191508; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_4, reg_data_32);
+    reg_data_32 = 0x7739d3ee; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_5, reg_data_32);
+    reg_data_32 = 0xda8581a4; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_6, reg_data_32);
+    reg_data_32 = 0xd4a72c16; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_7, reg_data_32);
+    reg_data_32 = 0xdf1e4144; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_8, reg_data_32);
+    reg_data_32 = 0xcbf6423e; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_9, reg_data_32);
+    reg_data_32 = 0x1bb98990; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_10, reg_data_32);
+    reg_data_32 = 0x153def5b; lsu_write_32(SOC_SOC_IFC_REG_CPTRA_OWNER_PK_HASH_11, reg_data_32);
+
+    // SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_0..23
+    reg_data_32 = 0x0;        lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_0,      reg_data_32);
+    reg_data_32 = 0xFFFFFFFF; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_11,     reg_data_32);
+    reg_data_32 = 0x02020101; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_12,     reg_data_32);
+    reg_data_32 = 0x30304040; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_13,     reg_data_32);
+    reg_data_32 = 0x05050606; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_14,     reg_data_32);
+    reg_data_32 = 0x70708080; lsu_write_32(SOC_SOC_IFC_REG_FUSE_IDEVID_CERT_ATTR_15,     reg_data_32);
+
+    VPRINTF(LOW, "MCU: Update CPTRA FUSE registers.. Completed\n");
+
+}
+
+// -- function to update pqc key type
+void update_pqc_key_type(void){
+    uint32_t reg_data_32;
+    // Update PQC Key Type
+    VPRINTF(LOW, "MCU: Update PQC Key Type.. Started\n");
+    // SOC_IFC_REG_FUSE_PQC_KEY_TYPE
+    reg_data_32 = 0x1;        
+    lsu_write_32(SOC_SOC_IFC_REG_FUSE_PQC_KEY_TYPE,        reg_data_32);
+    VPRINTF(LOW, "MCU: Update PQC Key Type.. Completed\n");
 }
 
 // -- function to boot_mcu_with_fuses
 void boot_mcu(){
 
-    enum boot_fsm_state_e boot_fsm_ps;
-    const uint32_t mbox_dlen = 64;
-    uint32_t mbox_data[] = { 0x00000000,
-                             0x11111111,
-                             0x22222222,
-                             0x33333333,
-                             0x44444444,
-                             0x55555555,
-                             0x66666666,
-                             0x77777777,
-                             0x88888888,
-                             0x99999999,
-                             0xaaaaaaaa,
-                             0xbbbbbbbb,
-                             0xcccccccc,
-                             0xdddddddd,
-                             0xeeeeeeee,
-                             0xffffffff };
-    uint32_t mbox_resp_dlen;
-    uint32_t mbox_resp_data;
-    uint32_t cptra_boot_go;
+   
     uint32_t reg_data_32;
     
     mcu_mci_boot_go();
@@ -880,45 +1060,11 @@ void boot_mcu(){
     // SOC_IFC_REG_FUSE_PQC_KEY_TYPE
     reg_data_32 = 0x1;        lsu_write_32(SOC_SOC_IFC_REG_FUSE_PQC_KEY_TYPE,        reg_data_32);
 
-    // programming WDT 
-    reg_data_32 = 1000;       lsu_write_32(SOC_SOC_IFC_REG_CPTRA_TIMER_CONFIG, reg_data_32);
-    reg_data_32 = 250;        lsu_write_32(SOC_SOC_IFC_REG_CPTRA_WDT_CFG_1,reg_data_32);
-    reg_data_32 = 1;          lsu_write_32(SOC_SOC_IFC_REG_CPTRA_WDT_CFG_0,reg_data_32);
-
+    //-- update the Caliptra WDT Config
+    update_cptra_wdt_cfg(1000, 250, 1);
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");
 
-    // Wait for Boot FSM to stall (on breakpoint) or finish bootup
-    boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
-    while(boot_fsm_ps != BOOT_DONE && boot_fsm_ps != BOOT_WAIT) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
-        boot_fsm_ps = (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
-    }
 
-    // Advance from breakpoint, if set
-    if (boot_fsm_ps == BOOT_WAIT) {
-        lsu_write_32(SOC_SOC_IFC_REG_CPTRA_BOOTFSM_GO, SOC_IFC_REG_CPTRA_BOOTFSM_GO_GO_MASK);
-    }
-    VPRINTF(LOW, "MCU: Set BootFSM GO\n");
-
-    ////////////////////////////////////
-    // Mailbox command test
-    //
-    // MBOX: Wait for ready_for_mb_processing
-    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
-    }
-    VPRINTF(LOW, "MCU: Ready for FW\n");
-
-    // MBOX: Setup valid AXI USER
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_VALID_AXI_USER_0, 0xffffffff); // LSU AxUSER value. TODO: Derive from parameter
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0, SOC_IFC_REG_CPTRA_MBOX_AXI_USER_LOCK_0_LOCK_MASK);
-
-    VPRINTF(LOW, "MCU: Configured MBOX Valid AXI USER\n");
- 
 }

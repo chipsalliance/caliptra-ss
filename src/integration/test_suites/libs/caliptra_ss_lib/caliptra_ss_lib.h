@@ -92,8 +92,18 @@ typedef struct {
     // SOC_IFC MBOX
     bool cfg_enable_cptra_mbox_user_init;
 
-    // FUSE DONE
+    // FUSE 
+    bool cfg_cptra_fuse;
     bool cfg_skip_set_fuse_done;
+
+    // Boot I3C
+    bool cfg_boot_i3c_core;
+
+    // Trigger Prod ROM 
+    bool cfg_trigger_prod_rom;
+
+    // WDT
+    bool cfg_cptra_wdt;
 
 } mcu_cptra_init_args;
 #define mcu_cptra_init_arg_defaults           \
@@ -111,7 +121,14 @@ typedef struct {
     /* SOC_IFC MBOX */                        \
     .cfg_enable_cptra_mbox_user_init = false, \
     /* FUSE DONE */                           \
-    .cfg_skip_set_fuse_done          = false
+    .cfg_cptra_fuse                  = false, \
+    .cfg_skip_set_fuse_done          = false, \
+    /* Boot I3C */                            \
+    .cfg_boot_i3c_core          = false, \
+    /* Trigger Prod ROM */                    \
+    .cfg_trigger_prod_rom            = false, \
+    /* WDT */                                \
+    .cfg_cptra_wdt                   = false
 
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!
@@ -188,11 +205,16 @@ bool is_only_mcu_mbox_sb_ecc_interrupt_set(uint32_t mbox_num);
 void clear_mcu_mbox_clear_sb_ecc_interrupt(uint32_t mbox_num);
 bool is_only_mcu_mbox_db_ecc_interrupt_set(uint32_t mbox_num);
 void clear_mcu_mbox_clear_db_ecc_interrupt(uint32_t mbox_num);
-
+void update_cptra_wdt_cfg(uint16_t cptra_timer_cfg, uint16_t cptra_wdt_cfg_1, uint16_t cptra_wdt_cfg_0);
+void update_cptra_fuse_cfg(void);
+void update_pqc_key_type(void);
+void cptra_prod_rom_boot_go(void);
+void configure_captra_axi_user(void); //-- FIXME : DELETE THIS FUNCTION
+void wait_for_cptra_ready_for_mb_processing(void); //-- FIXME : DELETE THIS FUNCTION
+void trigger_caliptra_go(void); //-- FIXME : DELETE THIS FUNCTION
 bool mcu_mbox_wait_for_soc_data_avail_interrupt(uint32_t mbox_num, uint32_t attempt_count);
 bool is_mcu_mbox_soc_data_avail_interrupt_set(uint32_t mbox_num);
 void clear_mcu_mbox_soc_data_avail_interrupt(uint32_t mbox_num);
- 
 bool mcu_cptra_mbox_acquire_lock(uint32_t attempt_count);
 bool mcu_cptra_mbox_wait_for_status(uint32_t attempt_count, enum mbox_status_e status);
 bool mcu_wait_for_mcu_reset_req_interrupt(uint32_t attempt_count);
