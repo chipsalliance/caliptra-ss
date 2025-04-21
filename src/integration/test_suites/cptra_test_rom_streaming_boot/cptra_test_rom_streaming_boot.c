@@ -46,24 +46,30 @@ void update_prot_cap(){
     
     VPRINTF(LOW, "CPTRA: executing update_prot_cap \n"); 
 
-    // 0x52454356 = "RECOVERY"
-    i3c_reg_data = 0x52454356;
-    VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0 with 'h %0x\n", i3c_reg_data);
-    soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, 0, &i3c_reg_data, 4, 0);
+    // PROT CAP REGISTERs need to be updated by MCU, not CALIPTRA
+    // // 0x52454356 = "RECV"
+    // i3c_reg_data = 0x52454356;
+    // VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0 with 'h %0x\n", i3c_reg_data);
+    // soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, 0, &i3c_reg_data, 4, 0);
     
-    // 0x4f435020 = "OCP"
-    i3c_reg_data = 0x4f435020;
-    VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1 with 'h %0x\n", i3c_reg_data);
-    soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, 0, &i3c_reg_data, 4, 0);
+    // // 0x4f435020 = "OCP "
+    // i3c_reg_data = 0x4f435020;
+    // VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1 with 'h %0x\n", i3c_reg_data);
+    // soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, 0, &i3c_reg_data, 4, 0);
     
     // Write PROT_CAP_2
-    // value {0x1} to Bit 7: Push-C-Image support
-    // value {0x1} to Bit 11: Flashless boot (from reset) 
-    // value {0x1} to Bit 12: FIFO CMS support (INDIRECT_FIFO_CTRL)
+    // Bytes 8,9,10,11: 0x00000000
+    // Byte 8: Major version number = 0x1
+    // Byte 9: Minor version number = 0x1
+    // Byte 10-11, value {0x1} to Bit 7: Push-C-Image support
+    // Byte 10-11, value {0x1} to Bit 11: Flashless boot (from reset) 
+    // Byte 10-11, value {0x1} to Bit 12: FIFO CMS support (INDIRECT_FIFO_CTRL)
     i3c_reg_data = 0x00000000;
-    i3c_reg_data = 0x1 << 7 | i3c_reg_data;
-    i3c_reg_data = 0x1 << 11 | i3c_reg_data;
-    i3c_reg_data = 0x1 << 12 | i3c_reg_data;
+    i3c_reg_data = 0x1 << (0  + 0)  | i3c_reg_data; // Major version number
+    i3c_reg_data = 0x1 << (8  + 0)  | i3c_reg_data; // Minor version number
+    i3c_reg_data = 0x1 << (16 + 7)  | i3c_reg_data; // Push-C-Image support
+    i3c_reg_data = 0x1 << (16 + 11) | i3c_reg_data; // Flashless boot (from reset)
+    i3c_reg_data = 0x1 << (16 + 12) | i3c_reg_data; // FIFO CMS support (INDIRECT_FIFO_CTRL)
     VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2 with 'h %0x\n", i3c_reg_data);
     soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2, 0, &i3c_reg_data, 4, 0);	
 
@@ -319,12 +325,12 @@ void main(void) {
 
     // Send data through AHB interface to AXI_DMA, target the AXI SRAM
     VPRINTF(LOW, "Sending payload via AHB i/f\n");
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, &send_payload, 16, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, send_payload, 16, 0);
     
     // Move data from one address to another in AXI SRAM
     // Use the block-size feature
     VPRINTF(LOW, "Reading payload at SRAM via AHB i/f\n");
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, &read_payload, 16, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, read_payload, 16, 0);
 
     //set ready for FW so tb will push FW
     soc_ifc_set_flow_status_field(SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK);

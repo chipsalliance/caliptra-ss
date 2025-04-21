@@ -215,10 +215,11 @@ always_comb soc_resp_if.hold =  (soc_mcu_sram_req           & (~soc_mcu_sram_req
 
 
 ///////////////////////////////////////////////////////////
-// Drive appropriate error back or request misses all destinations
+// Drive appropriate error back all destinations
 ///////////////////////////////////////////////////////////
 
 // Missed all destinations 
+// Do not respond with error to avoid bringing down the system if a miss occurs.
 always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_req | soc_mcu_trace_buffer_req | soc_mci_reg_req | soc_mcu_mbox0_req | soc_mcu_mbox1_req);
 
 // Error for SOC
@@ -226,8 +227,7 @@ always_comb soc_resp_if.error = (soc_mcu_sram_req           & mcu_sram_req_if.er
                                 (soc_mcu_trace_buffer_req   & mcu_trace_buffer_req_if.error)   |
                                 (soc_mci_reg_req            & mci_reg_req_if.error)   |
                                 (soc_mcu_mbox0_req          & mcu_mbox0_req_if.error) |
-                                (soc_mcu_mbox1_req          & mcu_mbox1_req_if.error) |
-                                soc_req_miss;
+                                (soc_mcu_mbox1_req          & mcu_mbox1_req_if.error);
 
 ///////////////////////////////////////////////
 // Determine if the user matches any of the  
