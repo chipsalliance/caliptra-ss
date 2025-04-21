@@ -44,8 +44,8 @@ array set tokens {
 
 #––– Initialize the controller and re‑read state –––
 lcc_initialization
-# test_read_only_registers
-# test_write_only_registers
+test_read_only_registers
+test_write_only_registers
 # test_transition_cmd_ctrl_registers
 # test_read_write_registers 0
 test_transition_if 0
