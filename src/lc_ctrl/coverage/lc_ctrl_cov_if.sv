@@ -157,6 +157,35 @@ interface lc_ctrl_cov_if
         lc_ctrl_cg lc_ctrl_cg1 = new();
     end
 
+    localparam lc_state_e lc_states [NumLcStates] = {
+        LcStRaw, LcStTestUnlocked0, LcStTestLocked0, LcStTestUnlocked1, LcStTestLocked1, LcStTestUnlocked2, LcStTestLocked2, LcStTestUnlocked3,
+        LcStTestLocked3, LcStTestUnlocked4, LcStTestLocked4, LcStTestUnlocked5, LcStTestLocked5, LcStTestUnlocked6, LcStTestLocked6, LcStTestUnlocked7,
+        LcStDev,LcStProd, LcStProdEnd, LcStRma, LcStScrap
+    };  
+
+    otp_ctrl_pkg::otp_lc_data_t otp_lc_data_i;
+    assign otp_lc_data_i = lc_ctrl.otp_lc_data_i;
+
+    // Make sure all valid state transitions are covered.
+    covergroup lc_ctrl_transition_cg(input lc_state_e src, input lc_state_e dst, input token_idx_e token) @(posedge clk_i);
+        lc_ctrl_valid_transition_cp: coverpoint otp_lc_data_i.state iff (token != InvalidTokenIdx)
+        {
+            bins ValidTransition = ( src => [0:] => dst);
+        }
+        lc_ctrl_invalid_transition_cp: coverpoint otp_lc_data_i.state iff (token == InvalidTokenIdx && src != dst)
+        {
+            illegal_bins InvalidTransition = ( src => [0:] => dst);
+        }
+    endgroup
+
+    lc_ctrl_transition_cg lc_ctrl_transitions_cg [NumLcStates][NumLcStates];
+
+    initial begin
+        for (int i = 0; i < NumLcStates; i++)
+            for (int j = 0; j < NumLcStates; j++)
+                lc_ctrl_transitions_cg[i][j] = new(lc_states[i], lc_states[j], TransTokenIdxMatrix[i][j]);
+    end
+
 endinterface
 
 `endif

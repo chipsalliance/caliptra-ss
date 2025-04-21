@@ -1328,32 +1328,29 @@ end
     otp_broadcast_FIPS_checked.valid = otp_broadcast_valid_q;
   end
 
-  logic [31:0] test_unlock_token_idx;
-  assign test_unlock_token_idx = otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked0 ? CptraSsTestUnlockToken0Offset : 
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked1 ? CptraSsTestUnlockToken1Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked2 ? CptraSsTestUnlockToken2Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked3 ? CptraSsTestUnlockToken3Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked4 ? CptraSsTestUnlockToken4Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked5 ? CptraSsTestUnlockToken5Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked6 ? CptraSsTestUnlockToken6Offset : '0;
-
-  assign otp_lc_data_o.test_unlock_token = part_buf_data[test_unlock_token_idx +:
-                                                         CptraSsTestUnlockToken0Size];
-
   // LCC transition tokens.
+  assign otp_lc_data_o.test_unlock_token = lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked1 ? part_buf_data[CptraSsTestUnlockToken1Offset +: CptraSsTestUnlockToken1Size] : 
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked2 ? part_buf_data[CptraSsTestUnlockToken2Offset +: CptraSsTestUnlockToken2Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked3 ? part_buf_data[CptraSsTestUnlockToken3Offset +: CptraSsTestUnlockToken3Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked4 ? part_buf_data[CptraSsTestUnlockToken4Offset +: CptraSsTestUnlockToken4Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked5 ? part_buf_data[CptraSsTestUnlockToken5Offset +: CptraSsTestUnlockToken5Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked6 ? part_buf_data[CptraSsTestUnlockToken6Offset +: CptraSsTestUnlockToken6Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked7 ? part_buf_data[CptraSsTestUnlockToken7Offset +: CptraSsTestUnlockToken7Size] : '0;
+
   assign otp_lc_data_o.test_exit_dev_token     = part_buf_data[CptraSsTestExitToManufTokenOffset +:
                                                                CptraSsTestExitToManufTokenSize];
   assign otp_lc_data_o.dev_exit_prod_token     = part_buf_data[CptraSsManufToProdTokenOffset +:
                                                                CptraSsManufToProdTokenSize];
   assign otp_lc_data_o.prod_exit_prodend_token = part_buf_data[CptraSsProdToProdEndTokenOffset +:
                                                                CptraSsProdToProdEndTokenSize];
-  assign otp_lc_data_o.rma_token               = '0;
+  assign otp_lc_data_o.rma_token               = part_buf_data[CptraSsRmaTokenOffset +:
+                                                               CptraSsRmaTokenSize];
 
   lc_ctrl_pkg::lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
   // The transition tokens have been provisioned.
   assign test_tokens_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The rma token has been provisioned.
-  assign rma_token_valid = lc_ctrl_pkg::Off;
+  assign rma_token_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
   assign secrets_valid = lc_ctrl_pkg::Off;
 
