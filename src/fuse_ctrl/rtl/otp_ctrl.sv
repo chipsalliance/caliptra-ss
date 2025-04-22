@@ -6,6 +6,7 @@
 //
 
 `include "caliptra_prim_assert.sv"
+`include "caliptra_ss_prim_assert_sec_cm.svh"
 
 module otp_ctrl
   import otp_ctrl_pkg::*;
@@ -1166,6 +1167,8 @@ end
                                          integ_chk_req[k],
                                          cnsty_chk_req[k]};
 
+      `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlPartUnbufStateRegsCheck_A, u_part_unbuf.u_state_regs, alerts[1])
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else if (PartInfo[k].variant == Buffered) begin : gen_buffered
       otp_ctrl_part_buf #(
@@ -1217,6 +1220,9 @@ end
       assign part_tlul_rerror[k] = '0;
       assign part_tlul_rvalid[k] = 1'b0;
       assign part_tlul_rdata[k]  = '0;
+
+      `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrPartBufPrimCountCheck_A, u_part_buf.u_prim_count, alerts[1])
+      `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlPartBufStateRegsCheck_A, u_part_buf.u_state_regs, alerts[1])
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else if (PartInfo[k].variant == LifeCycle) begin : gen_lifecycle
@@ -1282,6 +1288,10 @@ end
       assign unused_part_scrmbl_sigs = ^{part_scrmbl_mtx_gnt[k],
                                          part_scrmbl_req_ready[k],
                                          part_scrmbl_rsp_valid[k]};
+
+      `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrLcPartBufPrimCountCheck_A, u_part_buf.u_prim_count, alerts[1])
+      `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlLcPartBufStateRegsCheck_A, u_part_buf.u_state_regs, alerts[1])
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else begin : gen_invalid
       // This is invalid and should break elaboration
@@ -1419,5 +1429,20 @@ end
 
   `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 |-> test_tokens_valid == lc_ctrl_pkg::On)
 
+  // Redirect error triggers to the state error alert port.
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrlDaiPrimCountCheck_A, u_otp_ctrl_dai.u_prim_count, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlDaiStateRegsCheck_A, u_otp_ctrl_dai.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(OtpCtrlPrimOnehotCheck_A, u_reg_core.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlLciPrimCountCheck_A, u_otp_ctrl_lci.u_prim_count, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlLciStateRegsCheck_A, u_otp_ctrl_lci.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlLfsrTimerPrimCountCnstyCheck_A, u_otp_ctrl_lfsr_timer.u_prim_count_cnsty, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlLfsrTimerPrimCountIntegCheck_A, u_otp_ctrl_lfsr_timer.u_prim_count_integ, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_DOUBLE_LFSR_ERROR_TRIGGER_ALERT(OtpCtrlLfsrTimerPrimDoubleLfsrCheck_A, u_otp_ctrl_lfsr_timer.u_prim_double_lfsr, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlLfsrTimerStateRegsCheck_A, u_otp_ctrl_lfsr_timer.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlScrmlPrimCountCheck_A, u_otp_ctrl_scrmbl.u_prim_count, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlScrmblStateRegsCheck_A, u_otp_ctrl_scrmbl.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlTlulLcGateStateRegsCheck_A, u_tlul_lc_gate.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, caliptra_ss_top_tb.u_otp.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(OtpPrimOnehotCheck_A, caliptra_ss_top_tb.u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check, alerts[1])
 
 endmodule : otp_ctrl
