@@ -205,7 +205,7 @@ import tb_top_pkg::*;
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
                 if($test$plusargs("AVY_TEST")) begin
-                    if($value$plusargs("i3c_run_time=%0t", i3c_run_time)) begin
+                    if($value$plusargs("i3c_run_time=%0d", i3c_run_time)) begin
                         $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
                         #i3c_run_time;
                     end else begin

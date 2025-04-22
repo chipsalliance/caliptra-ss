@@ -932,7 +932,11 @@ module caliptra_ss_top
         .peripheral_reset_o(i3c_peripheral_reset),
         .peripheral_reset_done_i(1'b1),
         .escalated_reset_o(i3c_escalated_reset),
-        .irq_o(i3c_irq_o)
+        .irq_o(i3c_irq_o),
+
+        //-- AXI USER ID FILTERING
+        .disable_id_filtering_i(1'b1), // -- FIXME : ENABLE THIS FEATURE
+        .priv_ids_i('{32'b0, 32'b0, 32'b0, 32'b0}) // -- FIXME : ENABLE THIS FEATURE
 
     );
 
@@ -1153,8 +1157,6 @@ module caliptra_ss_top
             .pwr_lc_i(lcc_init_req),
             .pwr_lc_o(u_lc_ctrl_pwr_lc_o), // Note: It is tied with this assignment: lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl.pwr_lc_o.lc_done);
 
-            .strap_en_override_o(),  // Note: We use VolatileUnlock and so this port is not used in Caliptra-ss, needs to be removed from LCC RTL        
-
             .lc_otp_vendor_test_o(from_lc_to_otp_vendor_test_internal),
             .lc_otp_vendor_test_i(from_otp_to_lc_vendor_test_internal),
             .lc_otp_program_o(from_lcc_to_otp_program_i),
@@ -1168,7 +1170,6 @@ module caliptra_ss_top
             .lc_check_byp_en_o(lc_check_byp_en_internal),
 
             .lc_hw_debug_en_o(lc_hw_debug_en_i),
-            .lc_cpu_en_o(), // Note: this port is not used in Caliptra-ss, needs to be removed from LCC RTL
 
             .lc_clk_byp_req_o(cptra_ss_lc_clk_byp_req_o),
             .lc_clk_byp_ack_i(cptra_ss_lc_clk_byp_ack_i),
@@ -1214,10 +1215,6 @@ module caliptra_ss_top
         // .alert_rx_i                 (),
         // .alert_tx_o                 (),
         .alerts(fc_alerts),
-        .obs_ctrl_i                 (12'd0),    //TODO: Needs to be checked
-        .otp_obs_o                  (),
-        .otp_ast_pwr_seq_o          (),
-        .otp_ast_pwr_seq_h_i        (2'd0),    //TODO: Needs to be checked
         .pwr_otp_i                  (otp_ctrl_init_req),
         .pwr_otp_o                  (u_otp_ctrl_pwr_otp_o),
 
@@ -1236,11 +1233,15 @@ module caliptra_ss_top
         .otp_lc_data_o(from_otp_to_lcc_data_i),
 
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
-        .scan_en_i                  ('0), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .scan_rst_ni                (1'b1), // FIXME: this port is not used in Caliptra-ss, needs to be removed from FC RTL
-        .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False),
-        .cio_test_o                 (),    //TODO: Needs to be checked
-        .cio_test_en_o              ()    //TODO: Needs to be checked
+        .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
 	); 
+
+    // assign fuse_ctrl_rdy = 1;
+    // De-assert cptra_rst_b only after fuse_ctrl has initialized
+    logic cptra_rst_b; //fixme resets
+    assign cptra_rst_b = cptra_ss_rst_b_i;//fuse_ctrl_rdy ? cptra_soc_bfm_rst_b : 1'b0;
+
+    `CALIPTRA_ASSERT(i3c_payload_available, ($rose(payload_available_o) |-> ##[1:50] payload_available_o == 0),cptra_ss_clk_i, cptra_ss_rst_b_i)
+    `CALIPTRA_ASSERT(i3c_image_activated, ($rose(image_activated_o) |-> ##[1:50] image_activated_o == 0), cptra_ss_clk_i, cptra_ss_rst_b_i)
 
 endmodule

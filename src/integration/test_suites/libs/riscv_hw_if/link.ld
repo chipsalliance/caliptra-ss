@@ -41,5 +41,10 @@ SECTIONS {
   . = 0x21C00000;
   .mcu_sram : { *(.mcu_sram*) ; . = ALIGN(4); } =0x0000,
   _mcu_sram_end = .;
+
+    . = 0x21C00000;
+  .mcu_hitless_sram : { *(.mcu_hitless_sram*) ; . = ALIGN(4); } =0x0000,
+  _mcu_hitless_sram_end = .;
   ASSERT( _mcu_sram_end < 0x21C7FFFF, "ERROR: MCU SRAM size exceeds 512KiB")
+  ASSERT( _mcu_hitless_sram_end < 0x21C7FFFF, "ERROR: MCU SRAM size exceeds 512KiB")
 }

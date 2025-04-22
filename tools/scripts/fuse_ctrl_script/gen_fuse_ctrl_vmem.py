@@ -223,8 +223,6 @@ def main():
     else:
         # Create random token configuration.
         token_cfg = {}
-        token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_0'] = random.getrandbits(128)
-        token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_0'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_0'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
         token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_1'] = random.getrandbits(128)
         token_tpl['CPTRA_SS_TEST_UNLOCK_TOKEN_1'] = [(token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_1'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
         token_cfg['CPTRA_SS_TEST_UNLOCK_TOKEN_2'] = random.getrandbits(128)
@@ -245,6 +243,8 @@ def main():
         token_tpl['CPTRA_SS_MANUF_TO_PROD_TOKEN'] = [(token_cfg['CPTRA_SS_MANUF_TO_PROD_TOKEN'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
         token_cfg['CPTRA_SS_PROD_TO_PROD_END_TOKEN'] = random.getrandbits(128)
         token_tpl['CPTRA_SS_PROD_TO_PROD_END_TOKEN'] = [(token_cfg['CPTRA_SS_PROD_TO_PROD_END_TOKEN'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
+        token_cfg['CPTRA_SS_RMA_TOKEN'] = random.getrandbits(128)
+        token_tpl['CPTRA_SS_RMA_TOKEN'] = [(token_cfg['CPTRA_SS_RMA_TOKEN'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
  
     if args.token_header is not None and args.token_tpl is not None:
         render_template(template = Path(args.token_tpl),
@@ -278,6 +278,13 @@ def main():
             # Life cycle counter cannot be 0 for non RAW states.
             lc_cnt = random.randint(1, num_cnts - 1)
 
+    # ─── DEBUG: print just the 128‑bit tokens ───────────────────────────────────
+    print("\n=== MSFT: OTP TRANSITION TOKENS Before HASH ===")
+    for name, value in token_cfg.items():
+        # value is an int; print it as a 32‑hex‑digit (128‑bit) constant
+        print(f"{name}: {value}")
+    print("=============================\n")
+    print("\n=== MSFT: OTP TRANSITION TOKENS Afrer HASH ===")
     img_config = {}
     img_config['seed'] = 0 # Not used.
     img_config['partitions'] = []
@@ -311,6 +318,7 @@ def main():
             token_item = {}
             token_item['name'] = token_name
             token_item['value'] = str(hex(digest))
+            print(f"hashed {token_name}: {hex(digest)}")
             token_config['items'].append(token_item)
         # Append the tokens to the partition.
         img_config['partitions'].append(token_config)
