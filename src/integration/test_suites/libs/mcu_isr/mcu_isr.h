@@ -29,6 +29,7 @@
 #define EN_ISR_PRINTS 1
 
 #include "caliptra_ss_defines.h"
+#include "riscv_hw_if.h"
 #include <stdint.h>
 #include "printf.h"
 
@@ -38,7 +39,7 @@ typedef struct {
     uint32_t mci_error1;
     uint32_t mci_notif0;
     uint32_t mci_notif1;
-    uint32_t i3c;
+    uint32_t i3c; // FIXME sub-banks of vectors
 } mcu_intr_received_s;
 extern volatile mcu_intr_received_s mcu_intr_rcv;
 
@@ -55,14 +56,14 @@ inline void service_mci_intr() {
     uint32_t sts_err, sts_ntf;
     uint32_t which = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R);
     switch (which) {
-        MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS0_MASK:
+        case MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS0_MASK:
             sts_err = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R);
             /* Write 1 to Clear the pending interrupt */
             // TODO should handle on a per-intr basis
             lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R, sts_err);
             mcu_intr_rcv.mci_error0 |= sts_err;
             break;
-        MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS1_MASK:
+        case MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS1_MASK:
             sts_err = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R);
             /* Write 1 to Clear the pending interrupt */
             // TODO should handle on a per-intr basis
@@ -76,14 +77,14 @@ inline void service_mci_intr() {
     }
     which = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R);
     switch (which) {
-        MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS0_MASK:
+        case MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS0_MASK:
             sts_ntf = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
             /* Write 1 to Clear the pending interrupt */
             // TODO should handle on a per-intr basis
             lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, sts_ntf);
             mcu_intr_rcv.mci_notif0 |= sts_ntf;
             break;
-        MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS1_MASK:
+        case MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS1_MASK:
             sts_ntf = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R);
             /* Write 1 to Clear the pending interrupt */
             // TODO should handle on a per-intr basis

@@ -20,7 +20,7 @@
 #include "veer-csr.h"
 #include "riscv-interrupts.h"
 #include "printf.h"
-#include "riscv_hw_if.h"
+#include "caliptra_ss_lib.h"
 
 
 extern volatile uint32_t intr_count;
@@ -28,10 +28,10 @@ extern volatile uint32_t intr_count;
 extern volatile rv_exception_struct_s exc_flag;
 #endif
 
-#define CPTRA_REPT_8(X) X X X X X X X X
-#define CPTRA_REPT_32(Y) CPTRA_REPT_8(Y) \
-                         CPTRA_REPT_8(Y) \
-                         CPTRA_REPT_8(Y) \
+#define CPTRA_REPT_8(X) X, X, X, X, X, X, X, X
+#define CPTRA_REPT_32(Y) CPTRA_REPT_8(Y), \
+                         CPTRA_REPT_8(Y), \
+                         CPTRA_REPT_8(Y), \
                          CPTRA_REPT_8(Y)
 
 //////////////////////////////////////////////////////////////////////////////
@@ -143,15 +143,15 @@ static void (* __attribute__ ((aligned(4))) nonstd_veer_isr_vector_table [CSS_MC
     nonstd_veer_isr_28,
     nonstd_veer_isr_29,
     nonstd_veer_isr_30,
-    nonstd_veer_isr_31
+    nonstd_veer_isr_31,
     /* Empty definitions up to the 255 index */
-    CPTRA_REPT_32( ,std_rv_nop_machine )
-    CPTRA_REPT_32( ,std_rv_nop_machine )
-    CPTRA_REPT_32( ,std_rv_nop_machine )
-    CPTRA_REPT_32( ,std_rv_nop_machine )
-    CPTRA_REPT_32( ,std_rv_nop_machine )
-    CPTRA_REPT_32( ,std_rv_nop_machine )
-    CPTRA_REPT_32( ,std_rv_nop_machine )
+    CPTRA_REPT_32( std_rv_nop_machine ),
+    CPTRA_REPT_32( std_rv_nop_machine ),
+    CPTRA_REPT_32( std_rv_nop_machine ),
+    CPTRA_REPT_32( std_rv_nop_machine ),
+    CPTRA_REPT_32( std_rv_nop_machine ),
+    CPTRA_REPT_32( std_rv_nop_machine ),
+    CPTRA_REPT_32( std_rv_nop_machine )
 };
 
 // Table defines the RV standard vectored entries pointed to by mtvec

@@ -84,18 +84,6 @@ HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(BUILD_DIR)/caliptra_ss_clk_freq.h \
 		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
-# Only build the mcu_isr lib (which consumes a large block of DCCM) if it is
-# included by the test code.
-ifeq (0,$(shell grep '#include "mcu_isr.h"' $(TEST_DIR)/$(TESTNAME).c && echo $$?))
-# Tests might have a local variant of mcu_isr header
-# If not, use the default
-ifeq (0,$(shell test -e $(TEST_DIR)/mcu_isr.h && echo $$?))
-	HEADER_FILES += $(TEST_DIR)/mcu_isr.h
-else
-	HEADER_FILES += $(ISR_DIR)/mcu_isr.h
-endif
-endif
-
 TEST_GEN_FILES := $(CALIPTRA_SS_ROOT)/src/fuse_ctrl/data/otp-img.2048.vmem \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py \
@@ -115,10 +103,23 @@ OFILES += $(TESTNAME).o
 # tests will not
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += printf.o
-	OFILES += mcu_isr.o
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
+endif
+
+# Only build the mcu_isr lib (which consumes a large block of DCCM) if it is
+# included by the test code.
+ifeq (0,$(shell grep -e '\#include "mcu_isr.h"' $(TEST_DIR)/$(TESTNAME).c > /dev/null && echo $$?))
+	OFILES += mcu_isr.o
+# Tests might have a local variant of mcu_isr header
+# If not, use the default
+ifeq (0,$(shell test -e $(TEST_DIR)/mcu_isr.h && echo $$?))
+	HEADER_FILES += $(TEST_DIR)/mcu_isr.h
+else
+	HEADER_FILES += $(ISR_DIR)/mcu_isr.h
+endif
+HEADER_FILES += $(ISR_DIR)/riscv-interrupts.h
 endif
 
 # Verilator trace format
