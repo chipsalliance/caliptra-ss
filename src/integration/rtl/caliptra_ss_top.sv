@@ -150,7 +150,7 @@ module caliptra_ss_top
 
     input logic [63:0] cptra_ss_mci_generic_input_wires_i,
 
-    input logic [31:0] cptra_ss_strap_mcu_reset_vector_i,
+    (* syn_keep = "true", mark_debug = "true" *) input logic [31:0] cptra_ss_strap_mcu_reset_vector_i,
     input logic cptra_ss_mcu_no_rom_config_i,
     input logic cptra_ss_mci_boot_seq_brkpoint_i,
 
@@ -229,7 +229,7 @@ module caliptra_ss_top
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
     logic                       timer_int;
 
-    logic        [31:0]         reset_vector;
+    (* syn_keep = "true", mark_debug = "true" *) logic        [31:0]         reset_vector;
 
 
     logic                       o_debug_mode_status;

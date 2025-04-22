@@ -224,6 +224,7 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |  2 | force_mcu_dmi_core_enable |  rw  | 0x0 |  — |
 |  3 |force_mcu_dmi_uncore_enable|  rw  | 0x0 |  — |
 |  4 |      bootfsm_brkpoint     |  rw  | 0x0 |  — |
+|  5 |      ss_debug_intent      |  rw  | 0x0 |  — |
 
 ### status register
 

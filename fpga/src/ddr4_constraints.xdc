@@ -119,3 +119,4 @@ set_property PACKAGE_PIN AF43 [get_ports {ddr4_dimm1_sma_clk_clk_n[0]}]
 
 
 
+

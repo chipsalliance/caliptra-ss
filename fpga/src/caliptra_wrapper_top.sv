@@ -291,7 +291,7 @@ module caliptra_wrapper_top #(
     // AXI Write Channels
     output wire                      M_AXI_MCU_IFU_AWVALID,
     input  wire                      M_AXI_MCU_IFU_AWREADY,
-    output wire [18:0]              M_AXI_MCU_IFU_AWID,
+    output wire [18:0]               M_AXI_MCU_IFU_AWID,
     output wire [              31:0] M_AXI_MCU_IFU_AWADDR,
     output wire [               3:0] M_AXI_MCU_IFU_AWREGION,
     output wire [               7:0] M_AXI_MCU_IFU_AWLEN,
@@ -311,7 +311,7 @@ module caliptra_wrapper_top #(
     input  wire                      M_AXI_MCU_IFU_BVALID,
     output wire                      M_AXI_MCU_IFU_BREADY,
     input  wire [               1:0] M_AXI_MCU_IFU_BRESP,
-    input  wire [18:0]              M_AXI_MCU_IFU_BID,
+    input  wire [18:0]               M_AXI_MCU_IFU_BID,
 
     // AXI Read Channels
     output wire                      M_AXI_MCU_IFU_ARVALID,
@@ -1854,10 +1854,6 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mcu_rom_s_axi_if,
     .mcu_rom_mem_export_if,
 
-    // TODO: Remove
-    // Caliptra SS MCI AXI Manager Interface
-    //.cptra_ss_mci_m_axi_if,
-
     // Caliptra SS MCU LSU/IFU AXI Manager Interface
     .cptra_ss_mcu_lsu_m_axi_if,
     .cptra_ss_mcu_ifu_m_axi_if,
@@ -1985,7 +1981,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_strap_generic_1_i(32'h0),
     .cptra_ss_strap_generic_2_i(32'h0),
     .cptra_ss_strap_generic_3_i(32'h0),
-    .cptra_ss_debug_intent_i(1'b1),            // Debug intent signal
+    .cptra_ss_debug_intent_i(hwif_out.interface_regs.control.ss_debug_intent.value),            // Debug intent signal
 
     // TODO: Connect
     /*output logic        */ .cptra_ss_dbg_manuf_enable_o(),

@@ -216,11 +216,16 @@ package caliptra_fpga_realtime_regs_pkg;
     } interface_regs__control__bootfsm_brkpoint__out_t;
 
     typedef struct {
+        logic value;
+    } interface_regs__control__ss_debug_intent__out_t;
+
+    typedef struct {
         interface_regs__control__cptra_pwrgood__out_t cptra_pwrgood;
         interface_regs__control__cptra_ss_rst_b__out_t cptra_ss_rst_b;
         interface_regs__control__force_mcu_dmi_core_enable__out_t force_mcu_dmi_core_enable;
         interface_regs__control__force_mcu_dmi_uncore_enable__out_t force_mcu_dmi_uncore_enable;
         interface_regs__control__bootfsm_brkpoint__out_t bootfsm_brkpoint;
+        interface_regs__control__ss_debug_intent__out_t ss_debug_intent;
     } interface_regs__control__out_t;
 
     typedef struct {

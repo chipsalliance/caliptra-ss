@@ -84,8 +84,8 @@ module mci_top
     output logic mci_intr,
 
     // MCU Reset vector
-    input  logic [31:0] strap_mcu_reset_vector, // default reset vector
-    output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
+    (* syn_keep = "true", mark_debug = "true" *) input  logic [31:0] strap_mcu_reset_vector, // default reset vector
+    (* syn_keep = "true", mark_debug = "true" *) output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
     input  logic mcu_no_rom_config,                // Determines boot sequencer boot flow
 
     // MCU Halt Signals

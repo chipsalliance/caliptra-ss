@@ -31,7 +31,7 @@ import css_mcu0_el2_pkg::*;
    input logic                  dbg_rst_l,
    // rst_vec is supposed to be connected to a constant in the top level
    /*pragma coverage off*/
-   input logic [31:1]           rst_vec,
+   (* syn_keep = "true", mark_debug = "true" *) input logic [31:1]           rst_vec,
    /*pragma coverage on*/
    input logic                  nmi_int,
    // nmi_vec is supposed to be connected to a constant in the top level

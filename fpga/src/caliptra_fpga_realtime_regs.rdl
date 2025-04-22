@@ -53,6 +53,7 @@ regfile interface_regs {
         field { sw=rw; hw=r; } force_mcu_dmi_uncore_enable = 1'b0;
 
         field { sw=rw; hw=r; } bootfsm_brkpoint = 1'b0;
+        field { sw=rw; hw=r; } ss_debug_intent = 1'b0;
     } control;
 
     reg {
