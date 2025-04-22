@@ -283,89 +283,85 @@ proc test_read_only_registers {} {
     puts "============\n"
 
     # STATUS
-    set status_exp 3
-    set status     [riscv dmi_read $LC_CTRL_STATUS_OFFSET]
-    if {$status != $status_exp} {
-        puts "ERROR: incorrect status: exp: $status_exp, act: $status"
+    set status_exp  [riscv dmi_read $LC_CTRL_STATUS_OFFSET]
+    riscv dmi_write $LC_CTRL_STATUS_OFFSET 0xdeadbeef
+    set status      [riscv dmi_read $LC_CTRL_STATUS_OFFSET]
+    if {$status_exp != $status} {
+        puts "ERROR: incorrect value: exp: $status_exp, act: $status"
         exit 1
     }
 
     # TRANSITION_REGWEN
-    set trw_exp 0
-    set trw     [riscv dmi_read $LC_CTRL_TRANSITION_REGWEN_OFFSET]
-    if {$trw != $trw_exp} {
-        puts "ERROR: incorrect transition_regwen: exp: $trw_exp, act: $trw"
+    set trw_exp     [riscv dmi_read $LC_CTRL_TRANSITION_REGWEN_OFFSET]
+    riscv dmi_write $LC_CTRL_TRANSITION_REGWEN_OFFSET 0xdeadbeef
+    set trw         [riscv dmi_read $LC_CTRL_TRANSITION_REGWEN_OFFSET]
+    if {$trw_exp != $trw} {
+        puts "ERROR: incorrect value: exp: $trw_exp, act: $trw"
         exit 1
     }
 
     # OTP_VENDOR_TEST_STATUS
-    set otpsts_exp 0
-    set otpsts     [riscv dmi_read $LC_CTRL_OTP_VENDOR_TEST_STATUS_OFFSET]
-    if {$otpsts != $otpsts_exp} {
-        puts "ERROR: incorrect otp_vendor_test_status: exp: $otpsts_exp, act: $otpsts"
+    set otpsts_exp     [riscv dmi_read $LC_CTRL_OTP_VENDOR_TEST_STATUS_OFFSET]
+    riscv dmi_write $LC_CTRL_OTP_VENDOR_TEST_STATUS_OFFSET 0xdeadbeef
+    set otpsts         [riscv dmi_read $LC_CTRL_OTP_VENDOR_TEST_STATUS_OFFSET]
+    if {$otpsts_exp != $otpsts} {
+        puts "ERROR: incorrect value: exp: $otpsts_exp, act: $otpsts"
         exit 1
     }
 
     # LC_STATE
-    set lcst_exp 0
-    set lcst     [expr {[riscv dmi_read $LC_CTRL_LC_STATE_OFFSET] & 0x3FFFFFFF}]
-    if {$lcst != $lcst_exp} {
-        puts "ERROR: incorrect lc_state: exp: $lcst_exp, act: $lcst"
+    set lcst_exp     [riscv dmi_read $LC_CTRL_LC_STATE_OFFSET]
+    riscv dmi_write $LC_CTRL_LC_STATE_OFFSET 0xdeadbeef
+    set lcst         [riscv dmi_read $LC_CTRL_LC_STATE_OFFSET]
+    if {$lcst_exp != $lcst} {
+        puts "ERROR: incorrect value: exp: $lcst_exp, act: $lcst"
         exit 1
     }
 
     # LC_TRANSITION_CNT
-    set lcnt_exp 0
-    set lcnt     [expr {[riscv dmi_read $LC_CTRL_LC_TRANSITION_CNT_OFFSET] & 0x1F}]
-    if {$lcnt != $lcnt_exp} {
-        puts "ERROR: incorrect lc_transition_cnt: exp: $lcnt_exp, act: $lcnt"
+    set lcnt_exp     [riscv dmi_read $LC_CTRL_LC_TRANSITION_CNT_OFFSET]
+    riscv dmi_write $LC_CTRL_LC_TRANSITION_CNT_OFFSET 0xdeadbeef
+    set lcnt         [riscv dmi_read $LC_CTRL_LC_TRANSITION_CNT_OFFSET]
+    if {$lcnt_exp != $lcnt} {
+        puts "ERROR: incorrect value: exp: $lcnt_exp, act: $lcnt"
         exit 1
     }
 
     # LC_ID_STATE
-    set lidst_exp 0
-    set lidst     [riscv dmi_read $LC_CTRL_LC_ID_STATE_OFFSET]
-    if {$lidst != $lidst_exp} {
-        puts "ERROR: incorrect lc_id_state: exp: $lidst_exp, act: $lidst"
+    set lidst_exp     [riscv dmi_read $LC_CTRL_LC_ID_STATE_OFFSET]
+    riscv dmi_write $LC_CTRL_LC_ID_STATE_OFFSET 0xdeadbeef
+    set lidst         [riscv dmi_read $LC_CTRL_LC_ID_STATE_OFFSET]
+    if {$lidst_exp != $lidst} {
+        puts "ERROR: incorrect value: exp: $lidst_exp, act: $lidst"
         exit 1
     }
 
     # HW_REVISION0
-    set hw0    [riscv dmi_read $LC_CTRL_HW_REVISION0_OFFSET]
-    set pid_exp 0
-    set sid_exp 0
-    set pid     [expr {$hw0 & 0xFFFF}]
-    set sid     [expr {($hw0 >> 16) & 0xFFFF}]
-    if {$pid != $pid_exp} {
-        puts "ERROR: incorrect product_id: exp: $pid_exp, act: $pid"
-        exit 1
-    }
-    if {$sid != $sid_exp} {
-        puts "ERROR: incorrect silicon_creater_id: exp: $sid_exp, act: $sid"
+    set hw0_exp     [riscv dmi_read $LC_CTRL_HW_REVISION0_OFFSET]
+    riscv dmi_write $LC_CTRL_HW_REVISION0_OFFSET 0xdeadbeef
+    set hw0         [riscv dmi_read $LC_CTRL_HW_REVISION0_OFFSET]
+    if {$hw0_exp != $hw0} {
+        puts "ERROR: incorrect value: exp: $hw0_exp, act: $hw0"
         exit 1
     }
 
     # HW_REVISION1
-    set hw1      [riscv dmi_read $LC_CTRL_HW_REVISION1_OFFSET]
-    set prid_exp 0
-    set resv_exp 0
-    set prid     [expr {$hw1 & 0xFF}]
-    set resv     [expr {($hw1 >> 8) & 0xFFFFFF}]
-    if {$prid != $prid_exp} {
-        puts "ERROR: incorrect product_revision_id: exp: $prid_exp, act: $prid"
-        exit 1
-    }
-    if {$resv != $resv_exp} {
-        puts "ERROR: incorrect reserved: exp: $resv_exp, act: $resv"
+    set hw1_exp     [riscv dmi_read $LC_CTRL_HW_REVISION1_OFFSET]
+    riscv dmi_write $LC_CTRL_HW_REVISION1_OFFSET 0xdeadbeef
+    set hw1         [riscv dmi_read $LC_CTRL_HW_REVISION1_OFFSET]
+    if {$hw1_exp != $hw1} {
+        puts "ERROR: incorrect value: exp: $hw1_exp, act: $hw1"
         exit 1
     }
 
     # DEVICE_ID[0..7]
     foreach idx {0 1 2 3 4 5 6 7} {
         set offset "LC_CTRL_DEVICE_ID_${idx}_OFFSET"
-        set dev   [riscv dmi_read [set ${offset}]]
-        if {$dev != 0} {
-            puts "ERROR: incorrect device_id${idx}: exp: 0, act: $dev"
+        set dev_exp   [riscv dmi_read [set ${offset}]]
+        riscv dmi_write [set ${offset}] 0xdeadbeef
+        set dev       [riscv dmi_read [set ${offset}]]
+        if {$dev_exp != $dev} {
+            puts "ERROR: incorrect device_id${idx}: exp: $dev_exp, act: $dev"
             exit 1
         }
     }
@@ -373,9 +369,11 @@ proc test_read_only_registers {} {
     # MANUF_STATE[0..7]
     foreach idx {0 1 2 3 4 5 6 7} {
         set offset "LC_CTRL_MANUF_STATE_${idx}_OFFSET"
-        set ms    [riscv dmi_read [set ${offset}]]
-        if {$ms != 0} {
-            puts "ERROR: incorrect manuf_state${idx}: exp: 0, act: $ms"
+        set ms_exp    [riscv dmi_read [set ${offset}]]
+        riscv dmi_write [set ${offset}] 0xdeadbeef
+        set ms        [riscv dmi_read [set ${offset}]]
+        if {$ms_exp != $ms} {
+            puts "ERROR: incorrect manuf_state${idx}: $ms_exp, act: $ms"
             exit 1
         }
     }
@@ -392,8 +390,17 @@ proc test_write_only_registers {} {
     puts "MCU: TESTING WO LCC REGISTERS"
     puts "============\n"
 
-    riscv dmi_write $LC_CTRL_ALERT_TEST_OFFSET 0x7
-    riscv dmi_write $LC_CTRL_ALERT_TEST_OFFSET 0x0
+    set reg_value   [riscv dmi_read $LC_CTRL_ALERT_TEST_OFFSET]
+    set reg_write_value 0x7
+
+    riscv dmi_write $LC_CTRL_ALERT_TEST_OFFSET $reg_write_value
+
+    set reg_value   [riscv dmi_read $LC_CTRL_ALERT_TEST_OFFSET]
+
+    if {$reg_value == $reg_write_value} {
+        puts "ERROR: could read write-only register: $reg_value, act: $reg_write_value"
+        exit 1
+    }
 
     puts "============"
     puts "MCU: TESTING WO LCC REGISTERS FINISHED"
