@@ -123,6 +123,7 @@ module lc_ctrl_state_transition
     end
 
     if (fsm_state_i inside {TransCheckSt,
+                            TokenHashSt,
                             TokenCheck0St,
                             TokenCheck1St,
                             TransProgSt}) begin
