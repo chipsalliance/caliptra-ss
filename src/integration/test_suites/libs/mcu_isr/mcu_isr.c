@@ -61,14 +61,14 @@ void nonstd_veer_mtvec_mcei(void) __attribute__ ((interrupt ("machine") , aligne
 
 
 // VeeR Per-Source Vectored ISR functions
-static void nonstd_veer_isr_msi_intr  (void) __attribute__ ((interrupt ("machine")));
-static void nonstd_veer_isr_i3c_intr  (void) __attribute__ ((interrupt ("machine")));
+static void nonstd_veer_isr_mci  (void) __attribute__ ((interrupt ("machine")));
+static void nonstd_veer_isr_i3c  (void) __attribute__ ((interrupt ("machine")));
 
 // Could be much more fancy with C preprocessing to pair up the ISR with Vector
 // numbers as defined in caliptra_defines.h.... TODO
 static void          nonstd_veer_isr_0   (void) __attribute__ ((interrupt ("machine"))); // Empty function instead of function pointer for Vec 0
-static void (* const nonstd_veer_isr_1 ) (void) = nonstd_veer_isr_msi_intr    ;    // Definitions come from the
-static void (* const nonstd_veer_isr_2 ) (void) = nonstd_veer_isr_i3c_intr    ;    // param'd macro "nonstd_veer_isr" below
+static void (* const nonstd_veer_isr_1 ) (void) = nonstd_veer_isr_mci;    // Definitions come from the
+static void (* const nonstd_veer_isr_2 ) (void) = nonstd_veer_isr_i3c;    // param'd macro "nonstd_veer_isr" below
 static void (* const nonstd_veer_isr_3 ) (void) = std_rv_nop_machine; // -------.
 static void (* const nonstd_veer_isr_4 ) (void) = std_rv_nop_machine; //        |
 static void (* const nonstd_veer_isr_5 ) (void) = std_rv_nop_machine; //        |
@@ -144,6 +144,7 @@ static void (* __attribute__ ((aligned(4))) nonstd_veer_isr_vector_table [CSS_MC
     nonstd_veer_isr_29,
     nonstd_veer_isr_30,
     nonstd_veer_isr_31
+    /* Empty definitions up to the 255 index */
     CPTRA_REPT_32( ,std_rv_nop_machine )
     CPTRA_REPT_32( ,std_rv_nop_machine )
     CPTRA_REPT_32( ,std_rv_nop_machine )
@@ -167,18 +168,13 @@ void init_interrupts(void) {
     volatile uint32_t * const meies          = (uint32_t*) VEER_MM_PIC_MEIES;      // Treat these
     volatile uint32_t * const meigwctrls     = (uint32_t*) VEER_MM_PIC_MEIGWCTRLS; // as arrays
     volatile uint32_t * const meigwclrs      = (uint32_t*) VEER_MM_PIC_MEIGWCLRS;  //
-    volatile uint32_t * const mci_reg        = (uint32_t*) CSS_MCI_REG_BASE_ADDR;
-    volatile uint32_t * const hmac_reg       = (uint32_t*) CLP_HMAC_REG_BASE_ADDR;
-    volatile uint32_t * const sha512_reg     = (uint32_t*) CLP_SHA512_REG_BASE_ADDR;
-    volatile uint32_t * const sha256_reg     = (uint32_t*) CLP_SHA256_REG_BASE_ADDR;
-    volatile uint32_t * const sha512_acc_csr = (uint32_t*) CLP_SHA512_ACC_CSR_BASE_ADDR;
-    volatile uint32_t * const mldsa_reg      = (uint32_t*) CLP_MLDSA_REG_BASE_ADDR;
-    volatile uint32_t * const axi_dma_reg    = (uint32_t*) CLP_AXI_DMA_REG_BASE_ADDR;
-    volatile uint32_t * const mtime_l        = (uint32_t*) CLP_SOC_IFC_REG_INTERNAL_RV_MTIME_L;
-    volatile uint32_t * const mtime_h        = (uint32_t*) CLP_SOC_IFC_REG_INTERNAL_RV_MTIME_H;
-    volatile uint32_t * const mtimecmp_l     = (uint32_t*) CLP_SOC_IFC_REG_INTERNAL_RV_MTIMECMP_L;
-    volatile uint32_t * const mtimecmp_h     = (uint32_t*) CLP_SOC_IFC_REG_INTERNAL_RV_MTIMECMP_H;
-    char* DCCM = (char *) RV_DCCM_SADR;
+    volatile uint32_t * const mci_reg        = (uint32_t*) SOC_MCI_TOP_MCI_REG_BASE_ADDR;
+    volatile uint32_t * const i3c_reg        = (uint32_t*) SOC_I3CCSR_BASE_ADDR;
+    volatile uint32_t * const mtime_l        = (uint32_t*) SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_L;
+    volatile uint32_t * const mtime_h        = (uint32_t*) SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_H;
+    volatile uint32_t * const mtimecmp_l     = (uint32_t*) SOC_MCI_TOP_MCI_REG_MCU_RV_MTIMECMP_L;
+    volatile uint32_t * const mtimecmp_h     = (uint32_t*) SOC_MCI_TOP_MCI_REG_MCU_RV_MTIMECMP_H;
+    char* DCCM = (char *) CSS_MCU0_RV_DCCM_SADR;
     uint32_t value;
 
     /* -- Enable standard RISC-V interrupts (mtvec etc.) -- */
@@ -215,33 +211,9 @@ void init_interrupts(void) {
                       : /* clobbers: none */);
 
     // MEIPL_S - assign interrupt priorities
-    meipls[VEER_INTR_VEC_DOE_ERROR       ] = VEER_INTR_PRIO_DOE_ERROR       ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_DOE_NOTIF       ] = VEER_INTR_PRIO_DOE_NOTIF       ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_ECC_ERROR       ] = VEER_INTR_PRIO_ECC_ERROR       ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_ECC_NOTIF       ] = VEER_INTR_PRIO_ECC_NOTIF       ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_HMAC_ERROR      ] = VEER_INTR_PRIO_HMAC_ERROR      ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_HMAC_NOTIF      ] = VEER_INTR_PRIO_HMAC_NOTIF      ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_KV_ERROR        ] = VEER_INTR_PRIO_KV_ERROR        ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_KV_NOTIF        ] = VEER_INTR_PRIO_KV_NOTIF        ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_SHA512_ERROR    ] = VEER_INTR_PRIO_SHA512_ERROR    ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_SHA512_NOTIF    ] = VEER_INTR_PRIO_SHA512_NOTIF    ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_SHA256_ERROR    ] = VEER_INTR_PRIO_SHA256_ERROR    ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_SHA256_NOTIF    ] = VEER_INTR_PRIO_SHA256_NOTIF    ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_RSVD0_ERROR     ] = VEER_INTR_PRIO_RSVD0_ERROR     ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_RSVD0_NOTIF     ] = VEER_INTR_PRIO_RSVD0_NOTIF     ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_RSVD1_ERROR     ] = VEER_INTR_PRIO_RSVD1_ERROR     ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_RSVD1_NOTIF     ] = VEER_INTR_PRIO_RSVD1_NOTIF     ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_RSVD2_ERROR     ] = VEER_INTR_PRIO_RSVD2_ERROR     ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_RSVD2_NOTIF     ] = VEER_INTR_PRIO_RSVD2_NOTIF     ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_SOC_IFC_ERROR   ] = VEER_INTR_PRIO_SOC_IFC_ERROR   ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_SOC_IFC_NOTIF   ] = VEER_INTR_PRIO_SOC_IFC_NOTIF   ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_SHA512_ACC_ERROR] = VEER_INTR_PRIO_SHA512_ACC_ERROR; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_SHA512_ACC_NOTIF] = VEER_INTR_PRIO_SHA512_ACC_NOTIF; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_MLDSA_ERROR     ] = VEER_INTR_PRIO_MLDSA_ERROR     ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_MLDSA_NOTIF     ] = VEER_INTR_PRIO_MLDSA_NOTIF     ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_AXI_DMA_ERROR   ] = VEER_INTR_PRIO_AXI_DMA_ERROR   ; __asm__ volatile ("fence");
-    meipls[VEER_INTR_VEC_AXI_DMA_NOTIF   ] = VEER_INTR_PRIO_AXI_DMA_NOTIF   ; __asm__ volatile ("fence");
-    for (uint8_t undef = VEER_INTR_VEC_MAX_ASSIGNED+1; undef <= RV_PIC_TOTAL_INT; undef++) {
+    meipls[CSS_MCU0_VEER_INTR_VEC_MCI] = CSS_MCU0_VEER_INTR_PRIO_MCI; __asm__ volatile ("fence");
+    meipls[CSS_MCU0_VEER_INTR_VEC_I3C] = CSS_MCU0_VEER_INTR_PRIO_I3C; __asm__ volatile ("fence");
+    for (uint8_t undef = CSS_MCU0_VEER_INTR_EXT_LSB; undef <= CSS_MCU0_RV_PIC_TOTAL_INT; undef++) {
         meipls[undef] = 0; __asm__ volatile ("fence"); // Set to 0 meaning NEVER interrupt
     }
 
@@ -259,7 +231,7 @@ void init_interrupts(void) {
                       : "i" (VEER_CSR_MEICURPL), "i" (0x00)  /* input : immediate  */ \
                       : /* clobbers: none */);
 
-    for (uint8_t vec = 1; vec <= RV_PIC_TOTAL_INT; vec++) {
+    for (uint8_t vec = 1; vec <= CSS_MCU0_RV_PIC_TOTAL_INT; vec++) {
         // MEIGWCTRL_S
         meigwctrls[vec] = VEER_MEIGWCTRL_ACTIVE_HI_LEVEL;  __asm__ volatile ("fence");
 
@@ -268,100 +240,152 @@ void init_interrupts(void) {
         meigwclrs[vec]  = 0; __asm__ volatile ("fence");
 
         // MEIE_S - Enable implemented interrupt sources
-        meies[vec]  = (vec <= VEER_INTR_VEC_MAX_ASSIGNED); __asm__ volatile ("fence");
+        meies[vec]  = (vec < CSS_MCU0_VEER_INTR_EXT_LSB); __asm__ volatile ("fence");
     }
 
     /* -- Re-enable global interrupts -- */
 
     // Enable Interrupts for each component
-    // DOE
-    // TODO error interrupt enables
-    doe_reg[DOE_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R /sizeof(uint32_t)] = DOE_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_CMD_DONE_EN_MASK;
-    doe_reg[DOE_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = DOE_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
-                                                                       DOE_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
+    // MCI
+    mci_reg[MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R /sizeof(uint32_t)] = MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_INTERNAL_EN_MASK                   |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_ECC_UNC_EN_MASK              |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_ECC_UNC_EN_MASK              |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER1_TIMEOUT_EN_MASK         |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER2_TIMEOUT_EN_MASK;
+    mci_reg[MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R /sizeof(uint32_t)] = MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL31_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL30_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL29_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL28_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL27_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL26_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL25_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL24_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL23_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL22_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL21_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL20_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL19_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL18_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL17_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL16_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL15_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL14_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL13_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL12_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL11_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL10_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL9_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL8_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL7_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL6_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL5_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL4_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL3_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL2_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL1_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R_ERROR_AGG_ERROR_FATAL0_EN_MASK;
+    mci_reg[MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R /sizeof(uint32_t)] = MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MCU_SRAM_ECC_COR_EN_MASK     |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_CPTRA_MCU_RESET_REQ_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_GEN_IN_TOGGLE_EN_MASK        |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_TARGET_DONE_EN_MASK    |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_TARGET_DONE_EN_MASK    |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_CMD_AVAIL_EN_MASK      |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_CMD_AVAIL_EN_MASK      |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_CPTRA_MBOX_CMD_AVAIL_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_ECC_COR_EN_MASK        |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_ECC_COR_EN_MASK        |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_DEBUG_LOCKED_EN_MASK         |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_SCAN_MODE_EN_MASK            |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_MASK   |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK   |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_OTP_OPERATION_DONE_EN_MASK;
+    mci_reg[MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R /sizeof(uint32_t)] = MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL31_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL30_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL29_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL28_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL27_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL26_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL25_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL24_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL23_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL22_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL21_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL20_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL19_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL18_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL17_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL16_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL15_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL14_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL13_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL12_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL11_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL10_EN_MASK |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL9_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL8_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL7_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL6_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL5_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL4_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL3_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL2_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL1_EN_MASK  |
+                                                                        MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL0_EN_MASK;
+    mci_reg[MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
+                                                                       MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
 
-    // ECC
-    ecc_reg[ECC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R /sizeof(uint32_t)] = ECC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_INTERNAL_EN_MASK;
-    ecc_reg[ECC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R /sizeof(uint32_t)] = ECC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_CMD_DONE_EN_MASK;
-    ecc_reg[ECC_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = ECC_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
-                                                                       ECC_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
-
-    // HMAC
-    hmac_reg[HMAC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R /sizeof(uint32_t)] = HMAC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_KEY_MODE_ERROR_EN_MASK | 
-                                                                         HMAC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_KEY_ZERO_ERROR_EN_MASK | 
-                                                                         HMAC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR2_EN_MASK |
-                                                                         HMAC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR3_EN_MASK;
-    hmac_reg[HMAC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R /sizeof(uint32_t)] = HMAC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_CMD_DONE_EN_MASK;
-    hmac_reg[HMAC_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = HMAC_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
-                                                                         HMAC_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
-
-    // SHA512
-    // TODO error interrupt enables
-    sha512_reg[SHA512_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R /sizeof(uint32_t)] = SHA512_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_CMD_DONE_EN_MASK;
-    sha512_reg[SHA512_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = SHA512_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
-                                                                             SHA512_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
-
-    // SHA256
-    // TODO error interrupt enables
-    sha256_reg[SHA256_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R /sizeof(uint32_t)] = SHA256_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR0_EN_MASK |
-                                                                             SHA256_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR1_EN_MASK;
-    sha256_reg[SHA256_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R /sizeof(uint32_t)] = SHA256_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_CMD_DONE_EN_MASK;
-    sha256_reg[SHA256_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = SHA256_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
-                                                                             SHA256_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
-
-    // MLDSA
-    mldsa_reg[MLDSA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R /sizeof(uint32_t)] = MLDSA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_INTERNAL_EN_MASK;
-    mldsa_reg[MLDSA_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R /sizeof(uint32_t)] = MLDSA_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_CMD_DONE_EN_MASK;
-    mldsa_reg[MLDSA_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = MLDSA_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
-                                                                       MLDSA_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
-
-    // Mailbox
-    // Clear DEBUG locked, which is always set on reset deassertion due to rst_val != TB input val
-    soc_ifc_reg[SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R /sizeof(uint32_t)] = SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_MASK;
-    soc_ifc_reg[SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R /sizeof(uint32_t)] = SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_SCAN_MODE_STS_MASK;
-    // Also clear the statistics counter for DEBUG locked
-    soc_ifc_reg[SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_R /sizeof(uint32_t)] = 0;
-    soc_ifc_reg[SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R /sizeof(uint32_t)] = 0;
-    soc_ifc_reg[SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R /sizeof(uint32_t)] = SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_INTERNAL_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_INV_DEV_EN_MASK  |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_CMD_FAIL_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_BAD_FUSE_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_ICCM_BLOCKED_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_MBOX_ECC_UNC_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_WDT_TIMER1_TIMEOUT_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_WDT_TIMER2_TIMEOUT_EN_MASK;
-
-    soc_ifc_reg[SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R /sizeof(uint32_t)] = SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_CMD_AVAIL_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_MBOX_ECC_COR_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_DEBUG_LOCKED_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_SCAN_MODE_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_SOC_REQ_LOCK_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_GEN_IN_TOGGLE_EN_MASK;
-    soc_ifc_reg[SOC_IFC_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = SOC_IFC_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
-                                                                               SOC_IFC_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
-
-    // SHA Accelerator
-    // TODO error interrupt enables
-    sha512_acc_csr[SHA512_ACC_CSR_INTR_BLOCK_RF_NOTIF_INTR_EN_R /sizeof(uint32_t)] = SHA512_ACC_CSR_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_CMD_DONE_EN_MASK;
-    sha512_acc_csr[SHA512_ACC_CSR_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = SHA512_ACC_CSR_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
-                                                                                     SHA512_ACC_CSR_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
-
-    // AXI DMA
-    // TODO
-    axi_dma_reg[AXI_DMA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R /sizeof(uint32_t)] = AXI_DMA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_CMD_DEC_EN_MASK        |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_AXI_RD_EN_MASK         |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_AXI_WR_EN_MASK         |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_MBOX_LOCK_EN_MASK      |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_SHA_LOCK_EN_MASK       |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_FIFO_OFLOW_EN_MASK     |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_ERROR_INTR_EN_R_ERROR_FIFO_UFLOW_EN_MASK;
-    axi_dma_reg[AXI_DMA_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R /sizeof(uint32_t)] = AXI_DMA_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_TXN_DONE_EN_MASK       |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_FIFO_EMPTY_EN_MASK     |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_FIFO_NOT_EMPTY_EN_MASK |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_FIFO_FULL_EN_MASK      |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_NOTIF_INTR_EN_R_NOTIF_FIFO_NOT_FULL_EN_MASK;
-    axi_dma_reg[AXI_DMA_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = AXI_DMA_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
-                                                                               AXI_DMA_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
+    // I3C
+    i3c_reg[I3CCSR_I3CBASE_INTR_STATUS_ENABLE /sizeof(uint32_t)] = I3CCSR_I3CBASE_INTR_STATUS_ENABLE_HC_INTERNAL_ERR_STAT_EN_MASK |
+                                                                   I3CCSR_I3CBASE_INTR_STATUS_ENABLE_HC_SEQ_CANCEL_STAT_EN_MASK |
+                                                                   I3CCSR_I3CBASE_INTR_STATUS_ENABLE_HC_WARN_CMD_SEQ_STALL_STAT_EN_MASK |
+                                                                   I3CCSR_I3CBASE_INTR_STATUS_ENABLE_HC_ERR_CMD_SEQ_TIMEOUT_STAT_EN_MASK |
+                                                                   I3CCSR_I3CBASE_INTR_STATUS_ENABLE_SCHED_CMD_MISSED_TICK_STAT_EN_MASK;
+    i3c_reg[I3CCSR_I3CBASE_INTR_SIGNAL_ENABLE /sizeof(uint32_t)] = I3CCSR_I3CBASE_INTR_SIGNAL_ENABLE_HC_INTERNAL_ERR_SIGNAL_EN_MASK |
+                                                                   I3CCSR_I3CBASE_INTR_SIGNAL_ENABLE_HC_SEQ_CANCEL_SIGNAL_EN_MASK |
+                                                                   I3CCSR_I3CBASE_INTR_SIGNAL_ENABLE_HC_WARN_CMD_SEQ_STALL_SIGNAL_EN_MASK |
+                                                                   I3CCSR_I3CBASE_INTR_SIGNAL_ENABLE_HC_ERR_CMD_SEQ_TIMEOUT_SIGNAL_EN_MASK |
+                                                                   I3CCSR_I3CBASE_INTR_SIGNAL_ENABLE_SCHED_CMD_MISSED_TICK_SIGNAL_EN_MASK;
+    i3c_reg[I3CCSR_PIOCONTROL_PIO_INTR_STATUS_ENABLE /sizeof(uint32_t)] = I3CCSR_PIOCONTROL_PIO_INTR_STATUS_ENABLE_TX_THLD_STAT_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_STATUS_ENABLE_RX_THLD_STAT_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_STATUS_ENABLE_IBI_STATUS_THLD_STAT_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_STATUS_ENABLE_CMD_QUEUE_READY_STAT_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_STATUS_ENABLE_RESP_READY_STAT_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_STATUS_ENABLE_TRANSFER_ABORT_STAT_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_STATUS_ENABLE_TRANSFER_ERR_STAT_EN_MASK;
+    i3c_reg[I3CCSR_PIOCONTROL_PIO_INTR_SIGNAL_ENABLE /sizeof(uint32_t)] = I3CCSR_PIOCONTROL_PIO_INTR_SIGNAL_ENABLE_TX_THLD_SIGNAL_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_SIGNAL_ENABLE_RX_THLD_SIGNAL_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_SIGNAL_ENABLE_IBI_STATUS_THLD_SIGNAL_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_SIGNAL_ENABLE_CMD_QUEUE_READY_SIGNAL_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_SIGNAL_ENABLE_RESP_READY_SIGNAL_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_SIGNAL_ENABLE_TRANSFER_ABORT_SIGNAL_EN_MASK |
+                                                                          I3CCSR_PIOCONTROL_PIO_INTR_SIGNAL_ENABLE_TRANSFER_ERR_SIGNAL_EN_MASK;
+    i3c_reg[I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE /sizeof(uint32_t)] = I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_ACR_HANDOFF_OK_REMAIN_SIGNAL_EN_MASK |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_ACR_HANDOFF_OK_PRIMED_SIGNAL_EN_MASK |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_ACR_HANDOFF_ERR_FAIL_SIGNAL_EN_MASK  |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_ACR_HANDOFF_ERR_M3_SIGNAL_EN_MASK    |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_CRR_RESPONSE_SIGNAL_EN_MASK          |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_STBY_CR_DYN_ADDR_SIGNAL_EN_MASK      |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_STBY_CR_ACCEPT_NACKED_SIGNAL_EN_MASK |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_STBY_CR_ACCEPT_OK_SIGNAL_EN_MASK     |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_STBY_CR_ACCEPT_ERR_SIGNAL_EN_MASK    |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_STBY_CR_OP_RSTACT_SIGNAL_EN_MASK     |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_CCC_PARAM_MODIFIED_SIGNAL_EN_MASK    |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_CCC_UNHANDLED_NACK_SIGNAL_EN_MASK    |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_CCC_FATAL_RSTDAA_ERR_SIGNAL_EN_LOW   |
+                                                                                        I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE_CCC_FATAL_RSTDAA_ERR_SIGNAL_EN_MASK;
+    i3c_reg[I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE /sizeof(uint32_t)] = I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_RX_DESC_STAT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TX_DESC_STAT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_RX_DESC_TIMEOUT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TX_DESC_TIMEOUT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TX_DATA_THLD_STAT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_RX_DATA_THLD_STAT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TX_DESC_THLD_STAT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_RX_DESC_THLD_STAT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_IBI_THLD_STAT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_IBI_DONE_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TRANSFER_ABORT_STAT_EN_MASK |
+                                                                    I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TRANSFER_ERR_STAT_EN_MASK;
 
     // Set mtimecmp to max value to avoid spurious timer interrupts
     *mtimecmp_l = 0xFFFFFFFF;
@@ -401,8 +425,8 @@ void std_rv_nop_machine(void)  {
 }
 
 void std_rv_mtvec_mti(void) {
-    volatile uint32_t * const mtimecmp_l     = (uint32_t*) CLP_SOC_IFC_REG_INTERNAL_RV_MTIMECMP_L;
-    volatile uint32_t * const mtimecmp_h     = (uint32_t*) CLP_SOC_IFC_REG_INTERNAL_RV_MTIMECMP_H;
+    volatile uint32_t * const mtimecmp_l     = (uint32_t*) SOC_MCI_TOP_MCI_REG_MCU_RV_MTIMECMP_L;
+    volatile uint32_t * const mtimecmp_h     = (uint32_t*) SOC_MCI_TOP_MCI_REG_MCU_RV_MTIMECMP_H;
 
     // Set mtimecmp to max value to avoid further timer interrupts
     *mtimecmp_l = 0xFFFFFFFF;
@@ -416,7 +440,7 @@ void nonstd_veer_mtvec_miti0(void) {
     //Disable internal timer 0 count en to service intr
     __asm__ volatile ("csrwi %0, %1" \
                       : /* output : none */ \
-                      : "i" (0x7d4), "i" (0x00) /* input : immediate */ \
+                      : "i" (VEER_CSR_MITCTL0), "i" (0x00) /* input : immediate */ \
                       : /* clobbers : none */);
 
 }
@@ -440,7 +464,7 @@ void nonstd_veer_mtvec_mcei(void) {
 
 static void std_rv_isr(void) {
     void (* isr) (void); // Function pointer to source-specific ISR
-    SEND_STDOUT_CTRL(0xfb); //FIXME
+    SEND_STDOUT_CTRL(TB_CMD_INCR_INTR_ACTIVE);
     uint_xlen_t this_cause = csr_read_mcause();
     VPRINTF(LOW,"In:Std ISR\nmcause:%x\n", this_cause);
     if (this_cause &  MCAUSE_INTERRUPT_BIT_MASK) {
@@ -505,7 +529,7 @@ static void std_rv_isr(void) {
             break;
         }
     }
-    SEND_STDOUT_CTRL(0xfc); //FIXME
+    SEND_STDOUT_CTRL(TB_CMD_DECR_INTR_ACTIVE);
     return;
 }
 
@@ -561,7 +585,7 @@ static void std_rv_isr_vector_table(void) {
 
 // Exception handler for Standard RISC-V Vectored operation
 void std_rv_mtvec_exception(void) {
-    SEND_STDOUT_CTRL( 0xfb); //FIXME
+    SEND_STDOUT_CTRL( TB_CMD_INCR_INTR_ACTIVE);
     uint_xlen_t this_cause = csr_read_mcause();
     VPRINTF(WARNING,"In:Std Excptn\nmcause:%x\n", this_cause);
     if (this_cause &  MCAUSE_INTERRUPT_BIT_MASK) {
@@ -602,7 +626,7 @@ void std_rv_mtvec_exception(void) {
                 // Bail immediately instead of killing the sim.
                 // Caliptra RESET is expected due to FATAL Error, but if it's
                 // masked the originating test should decide what to do.
-                SEND_STDOUT_CTRL(0xfc); //FIXME
+                SEND_STDOUT_CTRL(TB_CMD_DECR_INTR_ACTIVE);
                 return;
             }
             #endif
@@ -613,7 +637,7 @@ void std_rv_mtvec_exception(void) {
                 // Bail immediately instead of killing the sim.
                 // Caliptra RESET is expected due to FATAL Error, but if it's
                 // masked the originating test should decide what to do.
-                SEND_STDOUT_CTRL(0xfc); //FIXME
+                SEND_STDOUT_CTRL(TB_CMD_DECR_INTR_ACTIVE);
                 return;
             }
             #endif
@@ -621,7 +645,7 @@ void std_rv_mtvec_exception(void) {
         case RISCV_EXCP_INSTRUCTION_ACCESS_FAULT :
             #ifdef RV_EXCEPTION_STRUCT
             if (exc_flag.mscause == RISC_EXCP_MSCAUSE_ICCM_INST_UNC_ECC_ERR) {
-                SEND_STDOUT_CTRL(0xfc); //FIXME
+                SEND_STDOUT_CTRL(TB_CMD_DECR_INTR_ACTIVE);
 
                 // Reset uC instead of killing the sim.
                 // Caliptra RESET is expected due to FATAL Error, but if it's
@@ -648,16 +672,16 @@ void std_rv_mtvec_exception(void) {
         }
     }
     SEND_STDOUT_CTRL(0x1 ); // KILL THE SIMULATION with "ERROR"
-    SEND_STDOUT_CTRL(0xfc); //FIXME
+    SEND_STDOUT_CTRL(TB_CMD_DECR_INTR_ACTIVE);
     return;
 }
 
 // Non-Standard Vectored Interrupt Handler (vector 0)
 // ISR 0 is, by definition, not implemented and simply returns
 static void nonstd_veer_isr_0 (void) {
-    SEND_STDOUT_CTRL(0xfb); //FIXME
+    SEND_STDOUT_CTRL(TB_CMD_INCR_INTR_ACTIVE);
     VPRINTF(MEDIUM, "In:0\n");
-    SEND_STDOUT_CTRL(0xfc); //FIXME
+    SEND_STDOUT_CTRL(TB_CMD_DECR_INTR_ACTIVE);
     return;
 }
 
@@ -670,7 +694,7 @@ static void nonstd_veer_isr_0 (void) {
 // calls
 #define stringify(text) #text
 #define nonstd_veer_isr(name) static void nonstd_veer_isr_##name (void) {                           \
-    SEND_STDOUT_CTRL(0xfb); /*FIXME*/                                                                 \
+    SEND_STDOUT_CTRL(TB_CMD_INCR_INTR_ACTIVE);                                                        \
                                                                                                       \
     /* Print msg before enabling nested interrupts so it                                              \
      * completes printing and is legible                                                              \
@@ -698,7 +722,7 @@ static void nonstd_veer_isr_0 (void) {
     /* Set the priority threshold to current priority */                                              \
     __asm__ volatile ("csrw    %0, %1"                                                                \
                       : /* output: none */                                                            \
-                      : "i" (VEER_CSR_MEICURPL), "r" (meicidpl)  /* input : immediate  */            \
+                      : "i" (VEER_CSR_MEICURPL), "r" (meicidpl)  /* input : immediate  */             \
                       : /* clobbers: none */);                                                        \
                                                                                                       \
     /* Reenable interrupts (nesting) */                                                               \
@@ -707,28 +731,10 @@ static void nonstd_veer_isr_0 (void) {
     /* Service the interrupt (clear the interrupt source) */                                          \
     intr_count++;                                                                                     \
     VPRINTF(MEDIUM,"cnt_"stringify(name)":%x\n",intr_count);                                          \
-    /* Fill in with macro contents, e.g. "service_soc_ifc_error_intr" */                              \
+    /* Fill in with macro contents, e.g. "service_mci_intr" */                                        \
     /* This will match one macro from this list:                                                      \
-     * service_doe_error_intr                                                                         \
-     * service_doe_notif_intr                                                                         \
-     * service_ecc_error_intr                                                                         \
-     * service_ecc_notif_intr                                                                         \
-     * service_hmac_error_intr                                                                        \
-     * service_hmac_notif_intr                                                                        \
-     * service_kv_error_intr                                                                          \
-     * service_kv_notif_intr                                                                          \
-     * service_sha512_error_intr                                                                      \
-     * service_sha512_notif_intr                                                                      \
-     * service_sha256_error_intr                                                                      \
-     * service_sha256_notif_intr                                                                      \
-     * service_soc_ifc_error_intr                                                                     \
-     * service_soc_ifc_notif_intr                                                                     \
-     * service_sha512_acc_error_intr                                                                  \
-     * service_sha512_acc_notif_intr
-     * service_mldsa_error_intr                                                                       \
-     * service_mldsa_notif_intr                                                                       \
-     * service_axi_dma_error_intr                                                                     \
-     * service_axi_dma_notif_intr                                                                     \
+     * service_mci_intr                                                                               \
+     * service_i3c_intr                                                                               \
      */                                                                                               \
     service_##name##_intr();                                                                          \
                                                                                                       \
@@ -738,59 +744,22 @@ static void nonstd_veer_isr_0 (void) {
     /* Restore Context from Stack */                                                                  \
     __asm__ volatile ("csrw    %0, %1"                                                                \
                       : /* output: none */                                                            \
-                      : "i" (VEER_CSR_MEICURPL), "r" (prev_meicurpl)  /* input : immediate  */       \
+                      : "i" (VEER_CSR_MEICURPL), "r" (prev_meicurpl)  /* input : immediate  */        \
                       : /* clobbers: none */);                                                        \
     csr_write_mepc(prev_mepc);                                                                        \
     csr_set_bits_mstatus(prev_mstatus & (MSTATUS_MPIE_BIT_MASK | MSTATUS_MPP_BIT_MASK));              \
     csr_set_bits_mie(prev_mie & (MIE_MSI_BIT_MASK | MIE_MTI_BIT_MASK | MIE_MEI_BIT_MASK));            \
                                                                                                       \
     /* Done */                                                                                        \
-    SEND_STDOUT_CTRL(0xfc); /*FIXME */                                                                \
+    SEND_STDOUT_CTRL(TB_CMD_DECR_INTR_ACTIVE);                                                        \
     return;                                                                                           \
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Auto define ISR for each interrupt source using a macro
-// Resulting defined functions are, e.g. "nonstd_veer_isr_doe_error" (for Vector 1)
+// Resulting defined functions are, e.g. "nonstd_veer_isr_mci" (for Vector 1)
 
-// Non-Standard Vectored Interrupt Handler (DOE Error = Vector 1)
-nonstd_veer_isr(doe_error)
-// Non-Standard Vectored Interrupt Handler (DOE Notification = vector 2)
-nonstd_veer_isr(doe_notif)
-// Non-Standard Vectored Interrupt Handler (ECC Error = vector 3)
-nonstd_veer_isr(ecc_error)
-// Non-Standard Vectored Interrupt Handler (ECC Notification = vector 4)
-nonstd_veer_isr(ecc_notif)
-// Non-Standard Vectored Interrupt Handler (HMAC Error = vector 5)
-nonstd_veer_isr(hmac_error)
-// Non-Standard Vectored Interrupt Handler (HMAC Notification = vector 6)
-nonstd_veer_isr(hmac_notif)
-// Non-Standard Vectored Interrupt Handler (KeyVault Error = vector 7)
-nonstd_veer_isr(kv_error)
-// Non-Standard Vectored Interrupt Handler (KeyVault Notification = vector 8)
-nonstd_veer_isr(kv_notif)
-// Non-Standard Vectored Interrupt Handler (SHA512 Error = vector 9)
-nonstd_veer_isr(sha512_error)
-// Non-Standard Vectored Interrupt Handler (SHA512 Notification = vector 10)
-nonstd_veer_isr(sha512_notif)
-// Non-Standard Vectored Interrupt Handler (SHA256 Error = vector 11)
-nonstd_veer_isr(sha256_error)
-// Non-Standard Vectored Interrupt Handler (SHA256 Notification = vector 12)
-nonstd_veer_isr(sha256_notif)
-// Non-Standard Vectored Interrupt Handler (SOC_IFC Error = vector 19)
-nonstd_veer_isr(soc_ifc_error)
-// Non-Standard Vectored Interrupt Handler (SOC_IFC Notification = vector 20)
-nonstd_veer_isr(soc_ifc_notif)
-// Non-Standard Vectored Interrupt Handler (SHA Error = vector 21)
-nonstd_veer_isr(sha512_acc_error)
-// Non-Standard Vectored Interrupt Handler (SHA Notification = vector 22)
-nonstd_veer_isr(sha512_acc_notif)
-// Non-Standard Vectored Interrupt Handler (MLDSA Error = vector 23)
-nonstd_veer_isr(mldsa_error)
-// Non-Standard Vectored Interrupt Handler (MLDSA Notification = vector 24)
-nonstd_veer_isr(mldsa_notif)
-
-// Non-Standard Vectored Interrupt Handler (AXI DMA Error = vector 25)
-nonstd_veer_isr(axi_dma_error)
-// Non-Standard Vectored Interrupt Handler (AXI DMA Notification = vector 26)
-nonstd_veer_isr(axi_dma_notif)
+// Non-Standard Vectored Interrupt Handler (MCI Interrupt = Vector 1)
+nonstd_veer_isr(mci)
+// Non-Standard Vectored Interrupt Handler (I3C Interrupt = vector 2)
+nonstd_veer_isr(i3c)

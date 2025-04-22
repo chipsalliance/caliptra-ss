@@ -34,28 +34,13 @@
 
 /* --------------- symbols/typedefs --------------- */
 typedef struct {
-    uint32_t doe_error;
-    uint32_t doe_notif;
-    uint32_t ecc_error;
-    uint32_t ecc_notif;
-    uint32_t hmac_error;
-    uint32_t hmac_notif;
-    uint32_t kv_error;
-    uint32_t kv_notif;
-    uint32_t sha512_error;
-    uint32_t sha512_notif;
-    uint32_t sha256_error;
-    uint32_t sha256_notif;
-    uint32_t soc_ifc_error;
-    uint32_t soc_ifc_notif;
-    uint32_t sha512_acc_error;
-    uint32_t sha512_acc_notif;
-    uint32_t mldsa_error;
-    uint32_t mldsa_notif;
-    uint32_t axi_dma_error;
-    uint32_t axi_dma_notif;
-} caliptra_intr_received_s;
-extern volatile caliptra_intr_received_s cptra_intr_rcv;
+    uint32_t mci_error0;
+    uint32_t mci_error1;
+    uint32_t mci_notif0;
+    uint32_t mci_notif1;
+    uint32_t i3c;
+} mcu_intr_received_s;
+extern volatile mcu_intr_received_s mcu_intr_rcv;
 
 //////////////////////////////////////////////////////////////////////////////
 // Function Declarations
@@ -66,179 +51,73 @@ void init_interrupts(void);
 
 // These inline functions are used to insert event-specific functionality into the
 // otherwise generic ISR that gets laid down by the parameterized macro "nonstd_veer_isr"
-inline void service_doe_error_intr() {return;}
-inline void service_doe_notif_intr() {
-    uint32_t * reg = (uint32_t *) (CLP_DOE_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R);
-    uint32_t sts = *reg;
-    /* Write 1 to Clear the pending interrupt */
-    if (sts & DOE_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK) {
-        *reg = DOE_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-        cptra_intr_rcv.doe_notif |= DOE_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
+inline void service_mci_intr() {
+    uint32_t sts_err, sts_ntf;
+    uint32_t which = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R);
+    switch (which) {
+        MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS0_MASK:
+            sts_err = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R);
+            /* Write 1 to Clear the pending interrupt */
+            // TODO should handle on a per-intr basis
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R, sts_err);
+            mcu_intr_rcv.mci_error0 |= sts_err;
+            break;
+        MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS1_MASK:
+            sts_err = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R);
+            /* Write 1 to Clear the pending interrupt */
+            // TODO should handle on a per-intr basis
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R, sts_err);
+            mcu_intr_rcv.mci_error1 |= sts_err;
+            break;
+        default:
+            VPRINTF(FATAL, "Bad glbl err intr 0x%x\n", which);
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
     }
-    if (sts == 0) {
-        VPRINTF(ERROR,"bad doe_notif_intr sts:%x\n", sts);
+    which = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R);
+    switch (which) {
+        MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS0_MASK:
+            sts_ntf = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
+            /* Write 1 to Clear the pending interrupt */
+            // TODO should handle on a per-intr basis
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, sts_ntf);
+            mcu_intr_rcv.mci_notif0 |= sts_ntf;
+            break;
+        MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS1_MASK:
+            sts_ntf = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R);
+            /* Write 1 to Clear the pending interrupt */
+            // TODO should handle on a per-intr basis
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R, sts_ntf);
+            mcu_intr_rcv.mci_notif1 |= sts_ntf;
+            break;
+        default:
+            VPRINTF(FATAL, "Bad glbl ntf intr 0x%x\n", which);
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+    }
+    if (!sts_err && !sts_ntf) {
+        VPRINTF(ERROR,"bad mci_intr sts:%x %x\n", sts_err, sts_ntf);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 }
 
-inline void service_ecc_error_intr() {return;}
-inline void service_ecc_notif_intr() {
-    uint32_t * reg = (uint32_t *) (CLP_ECC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R);
-    uint32_t sts = *reg;
+inline void service_i3c_intr() {
+    // TODO this ISR needs more logic for I3C interrupts
+    uint32_t sts = lsu_read_32(SOC_I3CCSR_I3CBASE_INTR_STATUS) |
+                   lsu_read_32(SOC_I3CCSR_PIOCONTROL_PIO_INTR_STATUS) |
+                   lsu_read_32(SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_STATUS) |
+                   lsu_read_32(SOC_I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS);
     /* Write 1 to Clear the pending interrupt */
-    if (sts & ECC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK) {
-        *reg = ECC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-        cptra_intr_rcv.ecc_notif |= ECC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-    }
+    // TODO
+
+    // Status check
     if (sts == 0) {
-        VPRINTF(ERROR,"bad ecc_notif_intr sts:%x\n", sts);
+        VPRINTF(ERROR,"bad i3c_intr sts:%x\n", sts);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 }
-
-inline void service_hmac_error_intr() {return;}
-inline void service_hmac_notif_intr() {
-    uint32_t * reg = (uint32_t *) (CLP_HMAC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R);
-    uint32_t sts = *reg;
-    /* Write 1 to Clear the pending interrupt */
-    if (sts & HMAC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK) {
-        *reg = HMAC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-        cptra_intr_rcv.hmac_notif |= HMAC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-    }
-    if (sts == 0) {
-        VPRINTF(ERROR,"bad hmac_notif_intr sts:%x\n", sts);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-}
-
-inline void service_kv_error_intr() {return;}
-inline void service_kv_notif_intr() {return;}
-inline void service_sha512_error_intr() {return;}
-inline void service_sha512_notif_intr() {
-    uint32_t * reg = (uint32_t *) (CLP_SHA512_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R);
-    uint32_t sts = *reg;
-    /* Write 1 to Clear the pending interrupt */
-    if (sts & SHA512_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK) {
-        *reg = SHA512_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-        cptra_intr_rcv.sha512_notif |= SHA512_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-    }
-    if (sts == 0) {
-        VPRINTF(ERROR,"bad sha512_notif_intr sts:%x\n", sts);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-}
-
-inline void service_sha256_error_intr() {return;}
-inline void service_sha256_notif_intr() {
-    uint32_t * reg = (uint32_t *) (CLP_SHA256_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R);
-    uint32_t sts = *reg;
-    /* Write 1 to Clear the pending interrupt */
-    if (sts & SHA256_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK) {
-        *reg = SHA256_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-        cptra_intr_rcv.sha256_notif |= SHA256_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-    }
-    if (sts == 0) {
-        VPRINTF(ERROR,"bad sha256_notif_intr sts:%x\n", sts);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-}
-
-
-inline void service_soc_ifc_error_intr() {
-    uint32_t * reg = (uint32_t *) (CLP_SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R);
-    uint32_t sts = *reg;
-    /* Write 1 to Clear the pending interrupt */
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_INTERNAL_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_INTERNAL_STS_MASK;
-        cptra_intr_rcv.soc_ifc_error |= SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_INTERNAL_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_INV_DEV_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_INV_DEV_STS_MASK;
-        cptra_intr_rcv.soc_ifc_error |= SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_INV_DEV_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_CMD_FAIL_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_CMD_FAIL_STS_MASK;
-        cptra_intr_rcv.soc_ifc_error |= SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_CMD_FAIL_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_BAD_FUSE_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_BAD_FUSE_STS_MASK;
-        cptra_intr_rcv.soc_ifc_error |= SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_BAD_FUSE_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_ICCM_BLOCKED_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_ICCM_BLOCKED_STS_MASK;
-        cptra_intr_rcv.soc_ifc_error |= SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_ICCM_BLOCKED_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_MBOX_ECC_UNC_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_MBOX_ECC_UNC_STS_MASK;
-        cptra_intr_rcv.soc_ifc_error |= SOC_IFC_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_R_ERROR_MBOX_ECC_UNC_STS_MASK;
-    }
-    if (sts == 0) {
-        VPRINTF(ERROR,"bad soc_ifc_error_intr sts:%x\n", sts);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-}
-
-inline void service_soc_ifc_notif_intr () {
-    uint32_t * reg = (uint32_t *) (CLP_SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R);
-    uint32_t sts = *reg;
-    /* Write 1 to Clear the pending interrupt */
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_AVAIL_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_AVAIL_STS_MASK;
-        cptra_intr_rcv.soc_ifc_notif |= SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_AVAIL_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_MBOX_ECC_COR_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_MBOX_ECC_COR_STS_MASK;
-        cptra_intr_rcv.soc_ifc_notif |= SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_MBOX_ECC_COR_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_MASK;
-        cptra_intr_rcv.soc_ifc_notif |= SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_SCAN_MODE_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_SCAN_MODE_STS_MASK;
-        cptra_intr_rcv.soc_ifc_notif |= SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_SCAN_MODE_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_SOC_REQ_LOCK_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_SOC_REQ_LOCK_STS_MASK;
-        cptra_intr_rcv.soc_ifc_notif |= SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_SOC_REQ_LOCK_STS_MASK;
-    }
-    if (sts & SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_GEN_IN_TOGGLE_STS_MASK) {
-        *reg = SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_GEN_IN_TOGGLE_STS_MASK;
-        cptra_intr_rcv.soc_ifc_notif |= SOC_IFC_REG_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_GEN_IN_TOGGLE_STS_MASK;
-    }
-    if (sts == 0) {
-        VPRINTF(ERROR,"bad soc_ifc_notif_intr sts:%x\n", sts);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-}
-
-inline void service_sha512_acc_error_intr() {return;}
-inline void service_sha512_acc_notif_intr() {
-    uint32_t * reg = (uint32_t *) (CLP_SHA512_ACC_CSR_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R);
-    uint32_t sts = *reg;
-    /* Write 1 to Clear the pending interrupt */
-    if (sts & SHA512_ACC_CSR_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK) {
-        *reg = SHA512_ACC_CSR_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-        cptra_intr_rcv.sha512_acc_notif |= SHA512_ACC_CSR_INTR_BLOCK_RF_NOTIF_INTERNAL_INTR_R_NOTIF_CMD_DONE_STS_MASK;
-    }
-    if (sts == 0) {
-        VPRINTF(ERROR,"bad sha512_acc_notif_intr sts:%x\n", sts);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-}
-
-inline void service_mldsa_error_intr() {return;}
-inline void service_mldsa_notif_intr() {return;}
-inline void service_axi_dma_error_intr() {return;}
-inline void service_axi_dma_notif_intr() {return;}
 
 
 #endif //MCU_ISR_H

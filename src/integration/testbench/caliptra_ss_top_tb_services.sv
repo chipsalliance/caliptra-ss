@@ -223,6 +223,17 @@ import tb_top_pkg::*;
         end
     end
 
+    // Aids debugging with waves
+    logic [7:0] isr_active = 8'h0;
+    always @(negedge clk) begin
+        if ((WriteData[7:0] == TB_CMD_DECR_INTR_ACTIVE) && mailbox_write) begin
+            isr_active--;
+        end
+        else if ((WriteData[7:0] == TB_CMD_INCR_INTR_ACTIVE) && mailbox_write) begin
+            isr_active++;
+        end
+    end
+
     always @(negedge clk or negedge rst_l) begin
         if (!rst_l) begin
             mbox0_sram_error_injection_mode <= '{default: 1'b0};
