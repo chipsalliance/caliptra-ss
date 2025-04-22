@@ -47,7 +47,7 @@ module caliptra_ss_top_sva
     ((`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) && 
      (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr == 32'h7000_0060) &&
      (`FC_PATH.dai_addr < 12'h090) &&
-     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser == CPTRA_SS_STRAP_MCU_LSU_AXI_USER))
+     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser == `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i))
      |-> ##2
      `FC_PATH.discard_fuse_write)
 

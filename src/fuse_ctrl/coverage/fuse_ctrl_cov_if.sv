@@ -53,8 +53,8 @@ interface fuse_ctrl_cov_if
 
         fuse_ctrl_filter_awuser_cp: coverpoint core_axi_wr_req_awuser
         {
-            bins CptraSsStrapClptraCoreAxiUser = { CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER };
-            bins CptraSsStrapMcuLsuAxiUser     = { CPTRA_SS_STRAP_MCU_LSU_AXI_USER };
+            bins CptraSsStrapClptraCoreAxiUser = { `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_caliptra_dma_axi_user_i };
+            bins CptraSsStrapMcuLsuAxiUser     = { `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i };
         }
 
         fuser_ctrl_filter_cr: cross fuse_ctrl_filter_awaddr_cp, fuse_ctrl_filter_awuser_cp;
