@@ -29,7 +29,7 @@ module lc_ctrl
   parameter lc_keymgr_div_t RndCnstLcKeymgrDivProduction   = LcKeymgrDivWidth'(3),
   parameter lc_keymgr_div_t RndCnstLcKeymgrDivRma          = LcKeymgrDivWidth'(4),
   parameter lc_token_mux_t  RndCnstInvalidTokens           = {TokenMuxBits{1'b1}},
-  parameter bit             SecVolatileRawUnlockEn         = 0
+  parameter bit             SecVolatileRawUnlockEn         = 1
 ) (
   // Life cycle controller clock
   input                                              clk_i,
