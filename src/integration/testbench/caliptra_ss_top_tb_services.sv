@@ -226,10 +226,10 @@ import tb_top_pkg::*;
     // Aids debugging with waves
     logic [7:0] isr_active = 8'h0;
     always @(negedge clk) begin
-        if ((WriteData[7:0] == TB_CMD_DECR_INTR_ACTIVE) && mailbox_write) begin
+        if ((mailbox_data[7:0] == TB_CMD_DECR_INTR_ACTIVE) && mailbox_write) begin
             isr_active--;
         end
-        else if ((WriteData[7:0] == TB_CMD_INCR_INTR_ACTIVE) && mailbox_write) begin
+        else if ((mailbox_data[7:0] == TB_CMD_INCR_INTR_ACTIVE) && mailbox_write) begin
             isr_active++;
         end
     end
