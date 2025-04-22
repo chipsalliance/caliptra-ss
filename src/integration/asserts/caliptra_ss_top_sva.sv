@@ -153,8 +153,9 @@ module caliptra_ss_top_sva
       ($rose(`LCC_PATH.u_lc_ctrl_fsm.trans_cmd_i)
         && (`LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.dec_lc_state_i != {DecLcStateNumRep{DecLcStScrap}})
         && (`LCC_PATH.u_lc_ctrl_fsm.trans_target_i == {DecLcStateNumRep{DecLcStRma}}
-            || `LCC_PATH.u_lc_ctrl_fsm.trans_target_i == {DecLcStateNumRep{DecLcStScrap}}))
-          |-> (`LCC_PATH.Allow_RMA_or_SCRAP_on_PPD throughout (!`LCC_PATH.trans_success_q));
+            || `LCC_PATH.u_lc_ctrl_fsm.trans_target_i == {DecLcStateNumRep{DecLcStScrap}})
+        && (`LCC_PATH.trans_success_q)
+        |-> `LCC_PATH.Allow_RMA_or_SCRAP_on_PPD);
   endproperty
   
   assert property (Allow_PPD_check_in_LCC)

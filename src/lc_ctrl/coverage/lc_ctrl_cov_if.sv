@@ -186,6 +186,50 @@ interface lc_ctrl_cov_if
                 lc_ctrl_transitions_cg[i][j] = new(lc_states[i], lc_states[j], TransTokenIdxMatrix[i][j]);
     end
 
+    logic trans_cnt_oflw_error_o = lc_ctrl.u_lc_ctrl_fsm.trans_cnt_oflw_error_o;
+    logic trans_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.trans_invalid_error_o;
+    logic token_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.token_invalid_error_o;
+    logic flash_rma_error_o = lc_ctrl.u_lc_ctrl_fsm.flash_rma_error_o;
+    logic otp_prog_error_o = lc_ctrl.u_lc_ctrl_fsm.otp_prog_error_o;
+    logic state_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.state_invalid_error_o;
+
+    covergroup lc_ctrl_errors_cg @(posedge clk_i);
+        lc_ctrl_cnt_oflw_error_cp: coverpoint trans_cnt_oflw_error_o
+        {
+            bins On  = { 1'b1 };
+            bins Off = { 1'b0 };
+        }
+        lc_ctrl_trans_invalid_error_cp: coverpoint trans_invalid_error_o
+        {
+            bins On  = { 1'b1 };
+            bins Off = { 1'b0 };
+        }
+        lc_ctrl_token_invalid_error_cp: coverpoint token_invalid_error_o
+        {
+            bins On  = { 1'b1 };
+            bins Off = { 1'b0 };
+        }
+        lc_ctrl_flash_rma_error_cp: coverpoint flash_rma_error_o
+        {
+            bins On  = { 1'b1 };
+            bins Off = { 1'b0 };
+        }
+        lc_ctrl_otp_prog_error_cp: coverpoint otp_prog_error_o
+        {
+            bins On  = { 1'b1 };
+            bins Off = { 1'b0 };
+        }
+        lc_ctrl_state_invalid_error_cp: coverpoint state_invalid_error_o
+        {
+            bins On  = { 1'b1 };
+            bins Off = { 1'b0 };
+        }
+    endgroup
+
+    initial begin
+        lc_ctrl_errors_cg lc_ctrl_errors_cg1 = new();
+    end
+
 endinterface
 
 `endif

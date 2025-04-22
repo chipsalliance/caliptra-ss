@@ -132,6 +132,14 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: triggering esc_scrap_state1 escalation");
             force `LCC_PATH.esc_scrap_state1 = 1'b1;
           end
+          CMD_LC_FAULT_CNTR: begin
+            $display("fc_lcc_tb_services: fault lcc cntr fuse");
+          force `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.lc_cnt_i[0] = '0;
+          end
+          CMD_DISABLE_CLK_BYP_ACK: begin
+            $display("fc_lcc_tb_services: disable clk_byp_ack");
+          force `LCC_PATH.lc_clk_byp_ack_i = '0;
+          end
           default: begin
             // No action for unrecognized commands.
           end
