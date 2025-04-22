@@ -68,5 +68,9 @@ void cptra_mcu_mbox_write_mbox_user(uint32_t mbox_num, uint32_t data);
 void cptra_mcu_mbox_write_target_user(uint32_t mbox_num, uint32_t data);
 void cptra_mcu_mbox_write_target_user_valid(uint32_t mbox_num, uint32_t data);
 
+bool cptra_wait_for_cptra_mbox_execute(uint32_t attempt_count);
+void cptra_wait_mcu_reset_req_interrupt_clear(uint32_t attempt_count);
+void cptra_wait_mcu_reset_status_set(uint32_t attempt_count);
+
 #endif // SOC_IFC_SS
 
