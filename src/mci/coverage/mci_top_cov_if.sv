@@ -195,6 +195,7 @@ interface mci_top_cov_if
     endgroup
 
     mci_top_cg mci_top_cg1 = new();
+    mci_boot_seqr_cg mci_boot_seqr_cg1 = new();
     
     generic_wires_cg giw_cg[64];
     generic_wires_cg gow_cg[64];
