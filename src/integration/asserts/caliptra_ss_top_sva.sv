@@ -161,7 +161,7 @@ module caliptra_ss_top_sva
     else $display("SVA ERROR: Allow_RMA_or_SCRAP_on_PPD was not asserted for SCRAP and RMA.");
     
 
-  //Error handling - TODO: disable conditions
+  //Error handling
   mci_error_fatal_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i)
