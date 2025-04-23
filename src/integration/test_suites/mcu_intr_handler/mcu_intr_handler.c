@@ -28,7 +28,7 @@ volatile uint32_t  intr_count;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
-    enum printf_verbosity verbosity_g = LOW;
+    enum printf_verbosity verbosity_g = MEDIUM;
 #endif
 
 volatile mcu_intr_received_s mcu_intr_rcv = {0};
@@ -54,6 +54,7 @@ uint32_t main(void) {
         intr_count = 0;
 
         // Trigger each intr bit and sleep in between triggers to allow ISR to execute and show idle time in sims
+        VPRINTF(MEDIUM,"MCU: Trigger MCI Error0 Intr\n");
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_TRIG_MASK); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_INTERNAL_TRIG_MASK                  ); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_MBOX0_ECC_UNC_TRIG_MASK             ); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
@@ -61,6 +62,7 @@ uint32_t main(void) {
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER1_TIMEOUT_TRIG_MASK        ); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_TRIG_R_ERROR_WDT_TIMER2_TIMEOUT_TRIG_MASK        ); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
 
+        VPRINTF(MEDIUM,"MCU: Trigger MCI Error1 Intr\n");
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL31_TRIG_MASK); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL30_TRIG_MASK); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL29_TRIG_MASK); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
@@ -94,6 +96,7 @@ uint32_t main(void) {
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL1_TRIG_MASK ); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_TRIG_R_ERROR_AGG_ERROR_FATAL0_TRIG_MASK ); mci_error_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
 
+        VPRINTF(MEDIUM,"MCU: Trigger MCI Notif0 Intr\n");
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MCU_SRAM_ECC_COR_TRIG_MASK    ); mci_notif_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_CPTRA_MCU_RESET_REQ_TRIG_MASK ); mci_notif_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_GEN_IN_TOGGLE_TRIG_MASK       ); mci_notif_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
@@ -110,6 +113,7 @@ uint32_t main(void) {
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_MASK  ); mci_notif_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_OTP_OPERATION_DONE_TRIG_MASK  ); mci_notif_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
 
+        VPRINTF(MEDIUM,"MCU: Trigger MCI Notif1 Intr\n");
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R_NOTIF_AGG_ERROR_NON_FATAL31_TRIG_MASK); mci_notif_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R_NOTIF_AGG_ERROR_NON_FATAL30_TRIG_MASK); mci_notif_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R, MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R_NOTIF_AGG_ERROR_NON_FATAL29_TRIG_MASK); mci_notif_intr_count++; __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
@@ -150,7 +154,7 @@ uint32_t main(void) {
 
         // Print interrupt count from FW/HW trackers
         // MCI Error
-        VPRINTF(MEDIUM, "MCI Err fw count: %x\n", mci_error_intr_count);
+        VPRINTF(MEDIUM, "MCU: MCI Err fw count: 0x%x\n", mci_error_intr_count);
         mci_error_intr_count_hw =  lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MCU_SRAM_DMI_AXI_COLLISION_INTR_COUNT_R    ) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_R                      ) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_MBOX0_ECC_UNC_INTR_COUNT_R                 ) +
@@ -189,17 +193,29 @@ uint32_t main(void) {
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_R              ) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_R              ) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_R );
-        VPRINTF(MEDIUM, "MCI Err hw count: %x\n", mci_error_intr_count_hw);
+        VPRINTF(MEDIUM, "MCU: MCI Err hw count: 0x%x\n", mci_error_intr_count_hw);
         if (mci_error_intr_count != mci_error_intr_count_hw) {
-            VPRINTF(ERROR, "MCI Error count mismatch! 0x%x 0x%x\n", mci_error_intr_count, mci_error_intr_count_hw);
+            VPRINTF(ERROR, "MCU: MCI Error count mismatch! 0x%x 0x%x\n", mci_error_intr_count, mci_error_intr_count_hw);
             SEND_STDOUT_CTRL(0x1); // Kill sim with ERROR
         }
 
         // MCI Notif
-        VPRINTF(MEDIUM, "MCI Ntf fw count: %x\n", mci_notif_intr_count);
+        VPRINTF(MEDIUM, "MCU: MCI Ntf fw count: 0x%x\n", mci_notif_intr_count);
         mci_notif_intr_count_hw =  lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_R     ) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MCU_RESET_REQ_INTR_COUNT_R  ) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_GEN_IN_TOGGLE_INTR_COUNT_R        ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_TARGET_DONE_INTR_COUNT_R    ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_TARGET_DONE_INTR_COUNT_R    ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_CMD_AVAIL_INTR_COUNT_R      ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_CMD_AVAIL_INTR_COUNT_R      ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_CPTRA_MBOX_CMD_AVAIL_INTR_COUNT_R ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_ECC_COR_INTR_COUNT_R        ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_ECC_COR_INTR_COUNT_R        ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_R         ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R            ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R   ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R   ) +
+                                   lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_R   ) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_R) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_R) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_R) +
@@ -232,20 +248,21 @@ uint32_t main(void) {
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_R ) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_R ) +
                                    lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_R );
-        VPRINTF(MEDIUM, "MCI Ntf hw count: %x\n", mci_notif_intr_count_hw);
+        VPRINTF(MEDIUM, "MCU: MCI Ntf hw count: 0x%x\n", mci_notif_intr_count_hw);
         if (mci_notif_intr_count != mci_notif_intr_count_hw) {
-            VPRINTF(ERROR, "MCI Notif count mismatch! 0x%x 0x%x\n", mci_notif_intr_count, mci_notif_intr_count_hw);
+            VPRINTF(ERROR, "MCU: MCI Notif count mismatch! 0x%x 0x%x\n", mci_notif_intr_count, mci_notif_intr_count_hw);
             SEND_STDOUT_CTRL(0x1); // Kill sim with ERROR
         }
 
         // Print total interrupt count
-        VPRINTF(MEDIUM, "main end - intr_cnt:%x\n", intr_count);
+        VPRINTF(MEDIUM, "MCU: main intr trig end - intr_cnt:0x%x\n", intr_count);
         if (intr_count != mci_error_intr_count_hw + mci_notif_intr_count_hw) {
             VPRINTF(ERROR, "TOTAL count mismatch!\n");
             SEND_STDOUT_CTRL(0x1); // Kill sim with ERROR
         }
 
         // Now test timer interrupts
+        VPRINTF(MEDIUM, "MCU: Test timer int\n");
         mtime = ((uint64_t) lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_H) << 32) | lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_L);
         // Did we just rollover? Maybe the value read from MTIME_H was stale after reading MTIME_L.
         // Reread.
@@ -264,6 +281,8 @@ uint32_t main(void) {
 
         // Poll for Timer Interrupt Handler to complete processing.
         // Timer ISR simply sets mtimecmp back to max values, so poll for that.
+        // A simulation can never hit this value naturally, because it's a 64b timer and will
+        // timeout.
         while (lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RV_MTIMECMP_H) != 0xFFFFFFFF) {
             // Sleep in between triggers to allow ISR to execute and show idle time in sims
             mcu_sleep(100);
