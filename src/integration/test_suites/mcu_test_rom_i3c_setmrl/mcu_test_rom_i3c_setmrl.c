@@ -53,7 +53,7 @@ void main (void) {
     i3c_reg_data = 0x00000001; // Awaiting recovery image
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS, i3c_reg_data);
     VPRINTF(LOW, "MCU: I3C Recovery Registers updated\n");
-
+   
     //Halt the core to wait for Caliptra to finish the test
     csr_write_mpmc_halt();
 }

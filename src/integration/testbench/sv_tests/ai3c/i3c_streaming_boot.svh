@@ -389,6 +389,8 @@ class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 		test_log.step("=============================================================");
 		test_log.step("Step 5: Recovery completed");
 
+		process_test_result();
+
 	endtask
 
 endclass

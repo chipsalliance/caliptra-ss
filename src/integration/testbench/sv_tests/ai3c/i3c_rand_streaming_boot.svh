@@ -25,6 +25,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 
 	function new(string name, `avery_xvm_parent);
         super.new("i3c_rand_streaming_boot", parent);
+		err_count = 0;
 	endfunction
 
 	virtual task test_body();
@@ -330,6 +331,8 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 
 		test_log.step("=============================================================");
 		test_log.step("Step 5: Recovery completed");
+
+		process_test_result();
 
 	endtask
 
