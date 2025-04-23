@@ -800,15 +800,23 @@ void boot_i3c_socmgmt_if(void) {
     switch (clk_freq) {
         case 160:
             //-- for 160 MHz
-            write_i3c_socmgmtif_registers(0x00000002, 0x00000002, 0x00000003, 0x00000001);
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+            break;
+        case 167:
+            //-- for 167 MHz
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+            break;
+        case 170:
+            //-- for 170 MHz
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
             break;
         case 400:
             //-- for 400 MHz
-            write_i3c_socmgmtif_registers(0x00000005, 0x00000005, 0x00000006, 0x00000002);
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
             break;
         case 500:
             //-- for 500 MHz
-            write_i3c_socmgmtif_registers(0x00000006, 0x00000006, 0x00000007, 0x00000003);
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
             break;
         case 1000:
             //-- for 1000 MHz
