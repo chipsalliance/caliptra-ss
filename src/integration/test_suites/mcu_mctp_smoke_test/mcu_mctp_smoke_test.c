@@ -137,7 +137,7 @@ void main (void) {
     
     if(error_status) {
         VPRINTF(LOW, "MCU: I3C MCTP smoke test failed\n");
-        SEND_STDOUT_CTRL(0x00);
+        SEND_STDOUT_CTRL(0x01);
     } else {
         VPRINTF(LOW, "MCU: I3C MCTP smoke test passed\n");
         SEND_STDOUT_CTRL(0xff);
