@@ -30,6 +30,7 @@ requires:
   - edn_pkg
   - pwrmgr_pkg
   - fuse_ctrl_pkg
+  - ss_libs
 targets:
   rtl:
     directories:

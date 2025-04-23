@@ -124,11 +124,15 @@ task automatic deassert_cptra_rst_b(int max_delay = 100, int min_delay = 0);
 endtask
 
 task automatic wait_mcu_rst_b_deassert();
+    $display("[%t] Waiting for MCU reset deassertion", $time);
     wait(`MCU_PATH.rst_l);
+    $display("%t] MCU reset deasserted", $time);
 endtask
 
 task automatic wait_mcu_rst_b_assert();
+    $display("[%t] Waiting for MCU reset assertion", $time);
     wait(!`MCU_PATH.rst_l);
+    $display("%t] MCU reset asserted", $time);
 endtask
 
 task automatic halt_mcu_core(int max_delay = 100, int min_delay = 0);

@@ -135,6 +135,9 @@ module mci_reg_top
     input  logic [31:0] strap_mcu_reset_vector, // default reset vector
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
 
+    // OTP
+    input logic intr_otp_operation_done,
+
     // NMI
     input  logic nmi_intr,
     output logic [31:0] mcu_nmi_vector,
@@ -179,10 +182,8 @@ logic scan_mode_p;
 
 // DMI
 logic mcu_dmi_uncore_dbg_unlocked_en;
-logic mcu_dmi_uncore_manuf_unlocked_en;
 logic mcu_dmi_uncore_locked_en;
 logic mcu_dmi_uncore_dbg_unlocked_wr_en;
-logic mcu_dmi_uncore_manuf_unlocked_wr_en;
 logic mcu_dmi_uncore_locked_wr_en  ;
 // unused in 2.0 logic mcu_dmi_uncore_mbox0_dout_access_f;
 // unused in 2.0 logic mcu_dmi_uncore_mbox0_din_access_f;
@@ -443,12 +444,6 @@ assign mcu_dmi_uncore_enable        = (!security_state_o.debug_locked) || (secur
 //Uncore registers open for all cases
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;
 
-//Uncore registers only open for debug unlock or manufacturing
-// NOTE - unused in 2.0
-always_comb mcu_dmi_uncore_manuf_unlocked_en = mcu_dmi_uncore_en & 
-                                                (~(security_state_o.debug_locked) | 
-                                                 (security_state_o.device_lifecycle == DEVICE_MANUFACTURING));
-
 //Uncore registers only open for debug unlock 
 always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & 
                                                 (~(security_state_o.debug_locked)  
@@ -457,7 +452,6 @@ always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en &
 
 
 always_comb mcu_dmi_uncore_dbg_unlocked_wr_en   = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_dbg_unlocked_en);
-always_comb mcu_dmi_uncore_manuf_unlocked_wr_en = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_manuf_unlocked_en);
 always_comb mcu_dmi_uncore_locked_wr_en         = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_locked_en);
 
 //DMI unlocked register read mux
@@ -659,7 +653,7 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
         mcu_sram_fw_exec_region_lock_prev <= 0;
     end
-    else if(!Warm_Reset_Capture_Flag) begin
+    else begin
         mcu_sram_fw_exec_region_lock_prev <= mcu_sram_fw_exec_region_lock;
     end
 end
@@ -825,6 +819,11 @@ end
 
 always_comb cptra_mbox_cmd_avail_p = cptra_mbox_data_avail & !cptra_mbox_data_avail_d;
 always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts.hwset          = cptra_mbox_cmd_avail_p;
+
+///////////////////////////////////////////////
+// MISC INTERRUPTS
+///////////////////////////////////////////////
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.hwset       = intr_otp_operation_done;
 
 ///////////////////////////////////////////////
 // NMI Vector   

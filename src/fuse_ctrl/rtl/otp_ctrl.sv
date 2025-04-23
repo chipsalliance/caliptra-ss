@@ -6,6 +6,7 @@
 //
 
 `include "caliptra_prim_assert.sv"
+`include "caliptra_ss_prim_assert_sec_cm.svh"
 
 module otp_ctrl
   import otp_ctrl_pkg::*;
@@ -49,12 +50,6 @@ module otp_ctrl
   // output caliptra_prim_alert_pkg::alert_tx_t [NumAlerts-1:0]  alert_tx_o,
   // Caliptra-SS does not use alert sender. It directs alerts to MCI.
   output  [NumAlerts-1:0] alerts,
-  // Observability to AST
-  input ast_pkg::ast_obs_ctrl_t                      obs_ctrl_i,
-  output logic [7:0]                                 otp_obs_o,
-  // Macro-specific power sequencing signals to/from AST.
-  output otp_ast_req_t                               otp_ast_pwr_seq_o,
-  input  otp_ast_rsp_t                               otp_ast_pwr_seq_h_i,
   // Power manager interface (inputs are synced to OTP clock domain)
   input  pwrmgr_pkg::pwr_otp_req_t                   pwr_otp_i,
   output pwrmgr_pkg::pwr_otp_rsp_t                   pwr_otp_o,
@@ -79,8 +74,6 @@ module otp_ctrl
   // Hardware config bits
   output otp_broadcast_t                             otp_broadcast_o,
   // Scan
-  input                                              scan_en_i,
-  input                                              scan_rst_ni,
   input caliptra_prim_mubi_pkg::mubi4_t                       scanmode_i,
   // Test-related GPIO output
   output logic [OtpTestVectWidth-1:0]                cio_test_o,
@@ -826,35 +819,26 @@ end
     .err_o   (intg_error[2])
   );
 
-  // Test-related GPIOs.
-  // SEC_CM: TEST.BUS.LC_GATED
-  logic [OtpTestVectWidth-1:0] otp_test_vect;
-  assign cio_test_o    = (lc_ctrl_pkg::lc_tx_test_true_strict(lc_dft_en[1])) ?
-                         otp_test_vect            : '0;
-  assign cio_test_en_o = (lc_ctrl_pkg::lc_tx_test_true_strict(lc_dft_en[2])) ?
-                         {OtpTestVectWidth{1'b1}} : '0;
+
 
 
   always_comb begin : FCM_port_assignment
     // Clock, reset and observability
     prim_generic_otp_inputs_o.clk_i      = clk_i;
     prim_generic_otp_inputs_o.rst_ni     = rst_ni;
-    prim_generic_otp_inputs_o.obs_ctrl_i = obs_ctrl_i;
-    otp_obs_o                          = prim_generic_otp_outputs_i.otp_obs_o;
+    prim_generic_otp_inputs_o.obs_ctrl_i = '0;
     
     // Power sequencing signals
-    prim_generic_otp_inputs_o.pwr_seq_h_i = otp_ast_pwr_seq_h_i.pwr_seq_h;
-    otp_ast_pwr_seq_o.pwr_seq            = prim_generic_otp_outputs_i.pwr_seq_o;
+    prim_generic_otp_inputs_o.pwr_seq_h_i = '0;
     
     // Test interface signals
     lc_otp_vendor_test_o.status          = '0;
-    otp_test_vect                        = '0;
     prim_tl_d2h_gated                    = '0;
     
     // Other DFT signals
     prim_generic_otp_inputs_o.scanmode_i  = scanmode_i;
-    prim_generic_otp_inputs_o.scan_en_i   = scan_en_i;
-    prim_generic_otp_inputs_o.scan_rst_ni = scan_rst_ni;
+    prim_generic_otp_inputs_o.scan_en_i   = '0;
+    prim_generic_otp_inputs_o.scan_rst_ni = '0;
     
     // Command interface (read/write)
     prim_generic_otp_inputs_o.valid_i  = otp_prim_valid;
@@ -1183,6 +1167,8 @@ end
                                          integ_chk_req[k],
                                          cnsty_chk_req[k]};
 
+      `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlPartUnbufStateRegsCheck_A, u_part_unbuf.u_state_regs, alerts[1])
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else if (PartInfo[k].variant == Buffered) begin : gen_buffered
       otp_ctrl_part_buf #(
@@ -1234,6 +1220,9 @@ end
       assign part_tlul_rerror[k] = '0;
       assign part_tlul_rvalid[k] = 1'b0;
       assign part_tlul_rdata[k]  = '0;
+
+      `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrPartBufPrimCountCheck_A, u_part_buf.u_prim_count, alerts[1])
+      `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlPartBufStateRegsCheck_A, u_part_buf.u_state_regs, alerts[1])
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else if (PartInfo[k].variant == LifeCycle) begin : gen_lifecycle
@@ -1299,6 +1288,10 @@ end
       assign unused_part_scrmbl_sigs = ^{part_scrmbl_mtx_gnt[k],
                                          part_scrmbl_req_ready[k],
                                          part_scrmbl_rsp_valid[k]};
+
+      `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrLcPartBufPrimCountCheck_A, u_part_buf.u_prim_count, alerts[1])
+      `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlLcPartBufStateRegsCheck_A, u_part_buf.u_state_regs, alerts[1])
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     end else begin : gen_invalid
       // This is invalid and should break elaboration
@@ -1345,32 +1338,29 @@ end
     otp_broadcast_FIPS_checked.valid = otp_broadcast_valid_q;
   end
 
-  logic [31:0] test_unlock_token_idx;
-  assign test_unlock_token_idx = otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked0 ? CptraSsTestUnlockToken0Offset : 
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked1 ? CptraSsTestUnlockToken1Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked2 ? CptraSsTestUnlockToken2Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked3 ? CptraSsTestUnlockToken3Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked4 ? CptraSsTestUnlockToken4Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked5 ? CptraSsTestUnlockToken5Offset :
-                                 otp_lc_data_o.state == lc_ctrl_state_pkg::LcStTestLocked6 ? CptraSsTestUnlockToken6Offset : '0;
-
-  assign otp_lc_data_o.test_unlock_token = part_buf_data[test_unlock_token_idx +:
-                                                         CptraSsTestUnlockToken0Size];
-
   // LCC transition tokens.
+  assign otp_lc_data_o.test_unlock_token = lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked1 ? part_buf_data[CptraSsTestUnlockToken1Offset +: CptraSsTestUnlockToken1Size] : 
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked2 ? part_buf_data[CptraSsTestUnlockToken2Offset +: CptraSsTestUnlockToken2Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked3 ? part_buf_data[CptraSsTestUnlockToken3Offset +: CptraSsTestUnlockToken3Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked4 ? part_buf_data[CptraSsTestUnlockToken4Offset +: CptraSsTestUnlockToken4Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked5 ? part_buf_data[CptraSsTestUnlockToken5Offset +: CptraSsTestUnlockToken5Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked6 ? part_buf_data[CptraSsTestUnlockToken6Offset +: CptraSsTestUnlockToken6Size] :
+                                           lc_otp_program_i.state == lc_ctrl_state_pkg::LcStTestUnlocked7 ? part_buf_data[CptraSsTestUnlockToken7Offset +: CptraSsTestUnlockToken7Size] : '0;
+
   assign otp_lc_data_o.test_exit_dev_token     = part_buf_data[CptraSsTestExitToManufTokenOffset +:
                                                                CptraSsTestExitToManufTokenSize];
   assign otp_lc_data_o.dev_exit_prod_token     = part_buf_data[CptraSsManufToProdTokenOffset +:
                                                                CptraSsManufToProdTokenSize];
   assign otp_lc_data_o.prod_exit_prodend_token = part_buf_data[CptraSsProdToProdEndTokenOffset +:
                                                                CptraSsProdToProdEndTokenSize];
-  assign otp_lc_data_o.rma_token               = '0;
+  assign otp_lc_data_o.rma_token               = part_buf_data[CptraSsRmaTokenOffset +:
+                                                               CptraSsRmaTokenSize];
 
   lc_ctrl_pkg::lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
   // The transition tokens have been provisioned.
   assign test_tokens_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The rma token has been provisioned.
-  assign rma_token_valid = lc_ctrl_pkg::Off;
+  assign rma_token_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
   assign secrets_valid = lc_ctrl_pkg::Off;
 
@@ -1428,8 +1418,6 @@ end
   //`CALIPTRA_ASSERT_INIT(TestUnlockTokenSize_A, lc_ctrl_state_pkg::LcTokenWidth == TestUnlockToken0Size * 8)
   `CALIPTRA_ASSERT_INIT(LcStateSize_A,         lc_ctrl_state_pkg::LcStateWidth == LcStateSize * 8)
   `CALIPTRA_ASSERT_INIT(LcTransitionCntSize_A, lc_ctrl_state_pkg::LcCountWidth == LcTransitionCntSize * 8)
-
-  `CALIPTRA_ASSERT_KNOWN(OtpAstPwrSeqKnown_A,         otp_ast_pwr_seq_o)
   `CALIPTRA_ASSERT_KNOWN(CoreTlOutKnown_A,            core_tl_o)
   `CALIPTRA_ASSERT_KNOWN(PrimTlOutKnown_A,            prim_tl_o)
   `CALIPTRA_ASSERT_KNOWN(IntrOtpOperationDoneKnown_A, intr_otp_operation_done_o)
@@ -1441,5 +1429,20 @@ end
 
   `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 |-> test_tokens_valid == lc_ctrl_pkg::On)
 
+  // Redirect error triggers to the state error alert port.
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrlDaiPrimCountCheck_A, u_otp_ctrl_dai.u_prim_count, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlDaiStateRegsCheck_A, u_otp_ctrl_dai.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(OtpCtrlPrimOnehotCheck_A, u_reg_core.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlLciPrimCountCheck_A, u_otp_ctrl_lci.u_prim_count, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlLciStateRegsCheck_A, u_otp_ctrl_lci.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlLfsrTimerPrimCountCnstyCheck_A, u_otp_ctrl_lfsr_timer.u_prim_count_cnsty, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlLfsrTimerPrimCountIntegCheck_A, u_otp_ctrl_lfsr_timer.u_prim_count_integ, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_DOUBLE_LFSR_ERROR_TRIGGER_ALERT(OtpCtrlLfsrTimerPrimDoubleLfsrCheck_A, u_otp_ctrl_lfsr_timer.u_prim_double_lfsr, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlLfsrTimerStateRegsCheck_A, u_otp_ctrl_lfsr_timer.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlScrmlPrimCountCheck_A, u_otp_ctrl_scrmbl.u_prim_count, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlScrmblStateRegsCheck_A, u_otp_ctrl_scrmbl.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlTlulLcGateStateRegsCheck_A, u_tlul_lc_gate.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, caliptra_ss_top_tb.u_otp.u_state_regs, alerts[1])
+  `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(OtpPrimOnehotCheck_A, caliptra_ss_top_tb.u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check, alerts[1])
 
 endmodule : otp_ctrl

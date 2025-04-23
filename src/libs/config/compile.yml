@@ -5,9 +5,11 @@ targets:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/sram_zeroization_gadget.sv
+      - $COMPILE_ROOT/rtl/caliptra_ss_prim_assert_sec_cm.svh
   rtl:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/sram_zeroization_gadget.sv
+      - $COMPILE_ROOT/rtl/caliptra_ss_prim_assert_sec_cm.svh
 
 

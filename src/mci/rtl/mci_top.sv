@@ -145,6 +145,8 @@ module mci_top
     input  logic  FIPS_ZEROIZATION_PPD_i,
     output logic  FIPS_ZEROIZATION_CMD_o,
 
+    input logic intr_otp_operation_done,
+
 
     // MCU SRAM Interface
     mci_mcu_sram_if.request mci_mcu_sram_req_if,
@@ -598,6 +600,9 @@ mci_reg_top #(
     // Generic IN/OUT
     .mci_generic_input_wires,
     .mci_generic_output_wires,
+
+    // OTP
+    .intr_otp_operation_done,
     
     // Debug intent
     .ss_debug_intent,

@@ -12,7 +12,9 @@ targets:
   rtl:
     directories:
       - $COMPILE_ROOT/../../third_party/i3c-core/src
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/libs
       - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi_sub
     files:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/mem/prim_ram_1p_pkg.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/mem/prim_generic_ram_1p.sv
@@ -28,6 +30,10 @@ targets:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/i3c_io.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/csr/I3CCSR.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/interrupt.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_arb.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_rd.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_wr.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/queues/read_queue.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/queues/write_queue.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/ahb_if.sv

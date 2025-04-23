@@ -21,7 +21,7 @@ task smoke_test_mcu_sram_debug_stress();
     logic [31:0]       read_data;
     int mcu_sram_size_dword;
 
-    wait_lcc_init();
+    wait_debug_unlock();
     @(posedge core_clk);
     
     get_mcu_sram_size_byte(mcu_sram_size_dword);

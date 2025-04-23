@@ -333,7 +333,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
     $rose( ! (CLPTR_PROD_DEBUG_UNLOCK_AND && (otp_static_state == LcStProd))
     & !(ss_dbg_manuf_enable_i && (otp_static_state == LcStDev))
     & !((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUnlocked2, LcStTestUnlocked3,
-                                    LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7})
+                                    LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7, LcStRma})
     & (mci_trans_st_current != TRANSLATOR_RESET))
   ) 
   |=> ##1 (security_state_o.debug_locked == 1'b1)
@@ -347,7 +347,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
  $rose((!ss_dbg_manuf_enable_i 
    & !(|ss_soc_dbg_unlock_level_i)
    & !(otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUnlocked2, LcStTestUnlocked3,
-                                  LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7})) 
+                                  LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7, LcStRma})) 
     & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##1 (security_state_o.debug_locked == 1'b1)
 );

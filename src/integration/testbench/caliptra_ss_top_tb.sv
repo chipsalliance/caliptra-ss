@@ -78,6 +78,8 @@ module caliptra_ss_top_tb
     logic                       o_cpu_halt_status;
     logic                       o_cpu_run_ack;
 
+    logic                       cptra_ss_cpu_halt_status_o;
+
     logic        [63:0]         dma_hrdata       ;
     logic        [63:0]         dma_hwdata       ;
     logic                       dma_hready       ;
@@ -151,6 +153,8 @@ module caliptra_ss_top_tb
     caliptra_ss_bfm_services_if i_caliptra_ss_bfm_services_if();
 
     logic fuse_ctrl_rdy;
+    logic lcc_clock_switch_req;
+    int lcc_clock_selection;
 
     // -- Read clock frequency from file and set the clock accordingly using a case statement
     initial begin
@@ -177,16 +181,21 @@ module caliptra_ss_top_tb
 
         core_clk = 0;
         // Use a case statement to set the clock period based on the frequency
-        case (frequency)
-            160: forever core_clk = #(3.125) ~core_clk; // 160MHz -> 6.25ns period, 3.125ns half-period
-            400: forever core_clk = #(1.25) ~core_clk;  // 400MHz -> 2.5ns period, 1.25ns half-period
-            500: forever core_clk = #(1.0) ~core_clk;   // 500MHz -> 2.0ns period, 1.0ns half-period
-            1000: forever core_clk = #(0.5) ~core_clk;   // 1000MHz -> 1.0ns period, 0.5ns half-period
-            default: begin
-                $display("Error: Unsupported frequency value %d in file", frequency);
-                $finish;
+        forever begin
+            if (lcc_clock_switch_req) begin
+                frequency = lcc_clock_selection;
             end
-        endcase
+            case (frequency)
+                160: core_clk = #(3.125) ~core_clk; // 160MHz -> 6.25ns period, 3.125ns half-period
+                400: core_clk = #(1.25) ~core_clk;  // 400MHz -> 2.5ns period, 1.25ns half-period
+                500: core_clk = #(1.0) ~core_clk;   // 500MHz -> 2.0ns period, 1.0ns half-period
+                1000: core_clk = #(0.5) ~core_clk;   // 1000MHz -> 1.0ns period, 0.5ns half-period
+                default: begin
+                    $display("Error: Unsupported frequency value %d in file", frequency);
+                    $finish;
+                end
+            endcase
+        end
     end
 
 
@@ -1244,7 +1253,6 @@ module caliptra_ss_top_tb
     // JTAG Assignment for top level caliptra SS design
     jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i;
     jtag_pkg::jtag_rsp_t cptra_ss_lc_ctrl_jtag_o;
-    assign cptra_ss_lc_ctrl_jtag_i = '0;
 
     lc_ctrl_bfm u_lc_ctrl_bfm (
         .clk(core_clk),
@@ -1267,6 +1275,21 @@ module caliptra_ss_top_tb
     initial begin
         cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
     end
+
+    // JTAG DPI
+    jtagdpi #(
+        .Name           ("jtag2"),
+        .ListenPort     (7000)
+    ) jtagdpi_lcc (
+        .clk_i          (core_clk),
+        .rst_ni         (cptra_ss_rst_b_i),
+        .jtag_tck       (cptra_ss_lc_ctrl_jtag_i.tck),
+        .jtag_tms       (cptra_ss_lc_ctrl_jtag_i.tms),
+        .jtag_tdi       (cptra_ss_lc_ctrl_jtag_i.tdi),
+        .jtag_tdo       (cptra_ss_lc_ctrl_jtag_o.tdo),
+        .jtag_trst_n    (cptra_ss_lc_ctrl_jtag_i.trst_n),
+        .jtag_srst_n    ()
+    );
 
 
     //--------------------------------------------------------------------------------------------
@@ -1366,8 +1389,19 @@ module caliptra_ss_top_tb
         master0 = new("master0", , AI3C_MASTER, master0_intf);
         master0.cfg_info.is_main_master = 1;
         master0.log.enable_bus_tracker  = 1;
+
+//if I3C_BOOT_USING_ENTDAA is defined, then set the dynamic address to 0
+`ifdef I3C_BOOT_USING_ENTDAA
+        master0.set("add_i3c_dev_da",0);
+        master0.set("add_i3c_dev_da",0);
+`endif
+
+//if I3C_BOOT_USING_ENTDAA is not defined, then use the static address
+`ifndef I3C_BOOT_USING_ENTDAA
         master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
         master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
+`endif
+        
         master0.cfg_info.receive_all_txn = 0;
 
 
@@ -1526,6 +1560,8 @@ module caliptra_ss_top_tb
         // .mcu_dma_s_axi_if,
         .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
         .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
+
+        .cptra_ss_cpu_halt_status_o,
 
         .cptra_ss_lc_axi_wr_req_i,
         .cptra_ss_lc_axi_wr_rsp_o,
