@@ -6,7 +6,7 @@ contents:
       tags: ["L1", "caliptra_ss_top_tb", "Random", "Nightly"]
       path: ""
       weight: 100
-      generations: 50
+      generations: 100
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
@@ -14,5 +14,12 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_random_item_prov/smoke_test_fc_random_item_prov: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_RMA/smoke_test_lcc_RMA: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_test_unlocked0_prov/caliptra_ss_fuse_ctrl_test_unlocked0_prov: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_axi_id/caliptra_ss_fuse_ctrl_axi_id: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_unexpected_reset/caliptra_ss_fuse_ctrl_unexpected_reset: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_protected_region/smoke_test_mcu_sram_protected_region: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region_max_size: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_mcu_sram_to_sha/caliptra_ss_mcu_sram_to_sha: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_external_clock/caliptra_ss_fuse_ctrl_external_clock: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_escalation/caliptra_ss_lcc_escalation: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_init_fail: { weight: 100 }

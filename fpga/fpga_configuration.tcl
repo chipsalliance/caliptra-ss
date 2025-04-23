@@ -10,7 +10,7 @@ set BOARD VCK190
 set DISABLE_ECC FALSE
 set ENABLE_ADB TRUE
 set ITRNG TRUE
-set FAST_I3C TRUE
+set FAST_I3C FALSE
 
 set I3C_OUTSIDE FALSE
 set APB FALSE
@@ -124,7 +124,7 @@ close $xdc_fd
 create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 axi_interconnect_0
 set_property -dict [list \
   CONFIG.NUM_MI {11} \
-  CONFIG.NUM_SI {5} \
+  CONFIG.NUM_SI {6} \
   CONFIG.NUM_CLKS {2} \
 ] [get_bd_cells axi_interconnect_0]
 
@@ -193,8 +193,9 @@ connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/S01_AXI] [get_bd_intf_p
 # MCU
 connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/M_AXI_MCU_IFU] -boundary_type upper [get_bd_intf_pins axi_interconnect_0/S02_AXI]
 connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/M_AXI_MCU_LSU] -boundary_type upper [get_bd_intf_pins axi_interconnect_0/S03_AXI]
+connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/M_AXI_MCU_SB]  -boundary_type upper [get_bd_intf_pins axi_interconnect_0/S04_AXI]
 # MCI
-connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/M_AXI_MCI] -boundary_type upper [get_bd_intf_pins axi_interconnect_0/S04_AXI]
+connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/M_AXI_MCI] -boundary_type upper [get_bd_intf_pins axi_interconnect_0/S05_AXI]
 
 # AXI Interconnect to AXI Subordinates
 # Caliptra
@@ -356,8 +357,6 @@ set_property STEPS.SYNTH_DESIGN.ARGS.GATED_CLOCK_CONVERSION $GATED_CLOCK_CONVERS
 # Add DDR pin placement constraints
 add_files -fileset constrs_1 $fpgaDir/src/ddr4_constraints.xdc
 
-#add_files -fileset constrs_1 $fpgaDir/src/versal_i3c_constraints.xdc
-#add_files -fileset constrs_1 $fpgaDir/debug.xdc
 
 # Consider constraint:
 # set_max_delay -from [get_clocks clk_pl_0] -to [get_clocks clk_pl_1] 25.0

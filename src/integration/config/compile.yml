@@ -109,6 +109,7 @@ requires:
   - axi_dma_coverage
   - mci_coverage
   - lc_ctrl_coverage
+  - fuse_ctrl_coverage
 targets:
   tb:
     directories:
@@ -138,6 +139,8 @@ targets:
       - $COMPILE_ROOT/vip
       - $COMPILE_ROOT/testbench
       - $COMPILE_ROOT/testbench/sv_tests/ai3c
+      - $COMPILE_ROOT/testbench/sv_tests/mci
+      - $COMPILE_ROOT/testbench/sv_tests/common
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
@@ -153,8 +156,11 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_tb_cmd_list.svh
       - $COMPILE_ROOT/testbench/caliptra_ss_veer_sram_export.sv
       - $COMPILE_ROOT/testbench/fc_lcc_tb_services.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_axi_64_to_32_downsizer.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_services.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_bfm_services_if.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]
   sim:
     pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
@@ -178,6 +184,7 @@ global:
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
+        - +define+SVA_RST=caliptra_ss_top_tb.caliptra_ss_dut.cptra_ss_mci_cptra_rst_b_i
         - +define+CALIPTRA_MODE_SUBSYSTEM
         - +define+MCU_RV_BUILD_AXI4
         - +define+MCU_RV_OPENSOURCE

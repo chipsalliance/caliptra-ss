@@ -224,6 +224,126 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_CONFIG1
 
+    // Reg - mci_reg::MCU_IFU_AXI_USER
+    class mci_reg__MCU_IFU_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_IFU_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCU_IFU_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCU_IFU_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_IFU_AXI_USER
+
+    // Reg - mci_reg::MCU_LSU_AXI_USER
+    class mci_reg__MCU_LSU_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_LSU_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCU_LSU_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCU_LSU_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_LSU_AXI_USER
+
+    // Reg - mci_reg::MCU_SRAM_CONFIG_AXI_USER
+    class mci_reg__MCU_SRAM_CONFIG_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCU_SRAM_CONFIG_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_SRAM_CONFIG_AXI_USER
+
+    // Reg - mci_reg::MCI_SOC_CONFIG_AXI_USER
+    class mci_reg__MCI_SOC_CONFIG_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCI_SOC_CONFIG_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCI_SOC_CONFIG_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCI_SOC_CONFIG_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCI_SOC_CONFIG_AXI_USER
+
     // Reg - mci_reg::FW_FLOW_STATUS
     class mci_reg__FW_FLOW_STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -309,11 +429,11 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.FW_HITLESS_UPD_RESET = new("FW_HITLESS_UPD_RESET");
-            this.FW_HITLESS_UPD_RESET.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.FW_HITLESS_UPD_RESET.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
             this.FW_BOOT_UPD_RESET = new("FW_BOOT_UPD_RESET");
-            this.FW_BOOT_UPD_RESET.configure(this, 1, 1, "RO", 1, 'h0, 1, 1, 0);
+            this.FW_BOOT_UPD_RESET.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
             this.WARM_RESET = new("WARM_RESET");
-            this.WARM_RESET.configure(this, 1, 2, "RO", 1, 'h0, 1, 1, 0);
+            this.WARM_RESET.configure(this, 1, 2, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(FW_HITLESS_UPD_RESET_bit_cg[bt]) FW_HITLESS_UPD_RESET_bit_cg[bt] = new();
                 foreach(FW_BOOT_UPD_RESET_bit_cg[bt]) FW_BOOT_UPD_RESET_bit_cg[bt] = new();
@@ -445,71 +565,71 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal31_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal30_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal29_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal28_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal27_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal26_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal25_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal24_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal23_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal22_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal21_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal20_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal19_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal18_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal17_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal16_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal15_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal14_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal13_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal12_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal11_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal10_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal9_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal8_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal7_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal6_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal5_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal4_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal3_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal2_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal1_bit_cg[1];
         mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal0_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal1_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal2_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal3_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal4_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal5_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal6_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal7_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal8_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal9_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal10_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal11_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal12_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal13_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal14_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal15_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal16_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal17_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal18_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal19_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal20_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal21_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal22_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal23_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal24_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal25_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal26_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal27_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal28_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal29_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal30_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal31_bit_cg[1];
         mci_reg__AGG_ERROR_FATAL_fld_cg fld_cg;
-        rand uvm_reg_field agg_error_fatal31;
-        rand uvm_reg_field agg_error_fatal30;
-        rand uvm_reg_field agg_error_fatal29;
-        rand uvm_reg_field agg_error_fatal28;
-        rand uvm_reg_field agg_error_fatal27;
-        rand uvm_reg_field agg_error_fatal26;
-        rand uvm_reg_field agg_error_fatal25;
-        rand uvm_reg_field agg_error_fatal24;
-        rand uvm_reg_field agg_error_fatal23;
-        rand uvm_reg_field agg_error_fatal22;
-        rand uvm_reg_field agg_error_fatal21;
-        rand uvm_reg_field agg_error_fatal20;
-        rand uvm_reg_field agg_error_fatal19;
-        rand uvm_reg_field agg_error_fatal18;
-        rand uvm_reg_field agg_error_fatal17;
-        rand uvm_reg_field agg_error_fatal16;
-        rand uvm_reg_field agg_error_fatal15;
-        rand uvm_reg_field agg_error_fatal14;
-        rand uvm_reg_field agg_error_fatal13;
-        rand uvm_reg_field agg_error_fatal12;
-        rand uvm_reg_field agg_error_fatal11;
-        rand uvm_reg_field agg_error_fatal10;
-        rand uvm_reg_field agg_error_fatal9;
-        rand uvm_reg_field agg_error_fatal8;
-        rand uvm_reg_field agg_error_fatal7;
-        rand uvm_reg_field agg_error_fatal6;
-        rand uvm_reg_field agg_error_fatal5;
-        rand uvm_reg_field agg_error_fatal4;
-        rand uvm_reg_field agg_error_fatal3;
-        rand uvm_reg_field agg_error_fatal2;
-        rand uvm_reg_field agg_error_fatal1;
         rand uvm_reg_field agg_error_fatal0;
+        rand uvm_reg_field agg_error_fatal1;
+        rand uvm_reg_field agg_error_fatal2;
+        rand uvm_reg_field agg_error_fatal3;
+        rand uvm_reg_field agg_error_fatal4;
+        rand uvm_reg_field agg_error_fatal5;
+        rand uvm_reg_field agg_error_fatal6;
+        rand uvm_reg_field agg_error_fatal7;
+        rand uvm_reg_field agg_error_fatal8;
+        rand uvm_reg_field agg_error_fatal9;
+        rand uvm_reg_field agg_error_fatal10;
+        rand uvm_reg_field agg_error_fatal11;
+        rand uvm_reg_field agg_error_fatal12;
+        rand uvm_reg_field agg_error_fatal13;
+        rand uvm_reg_field agg_error_fatal14;
+        rand uvm_reg_field agg_error_fatal15;
+        rand uvm_reg_field agg_error_fatal16;
+        rand uvm_reg_field agg_error_fatal17;
+        rand uvm_reg_field agg_error_fatal18;
+        rand uvm_reg_field agg_error_fatal19;
+        rand uvm_reg_field agg_error_fatal20;
+        rand uvm_reg_field agg_error_fatal21;
+        rand uvm_reg_field agg_error_fatal22;
+        rand uvm_reg_field agg_error_fatal23;
+        rand uvm_reg_field agg_error_fatal24;
+        rand uvm_reg_field agg_error_fatal25;
+        rand uvm_reg_field agg_error_fatal26;
+        rand uvm_reg_field agg_error_fatal27;
+        rand uvm_reg_field agg_error_fatal28;
+        rand uvm_reg_field agg_error_fatal29;
+        rand uvm_reg_field agg_error_fatal30;
+        rand uvm_reg_field agg_error_fatal31;
 
         function new(string name = "mci_reg__AGG_ERROR_FATAL");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -521,103 +641,103 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.agg_error_fatal31 = new("agg_error_fatal31");
-            this.agg_error_fatal31.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal30 = new("agg_error_fatal30");
-            this.agg_error_fatal30.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal29 = new("agg_error_fatal29");
-            this.agg_error_fatal29.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal28 = new("agg_error_fatal28");
-            this.agg_error_fatal28.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal27 = new("agg_error_fatal27");
-            this.agg_error_fatal27.configure(this, 1, 4, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal26 = new("agg_error_fatal26");
-            this.agg_error_fatal26.configure(this, 1, 5, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal25 = new("agg_error_fatal25");
-            this.agg_error_fatal25.configure(this, 1, 6, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal24 = new("agg_error_fatal24");
-            this.agg_error_fatal24.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal23 = new("agg_error_fatal23");
-            this.agg_error_fatal23.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal22 = new("agg_error_fatal22");
-            this.agg_error_fatal22.configure(this, 1, 9, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal21 = new("agg_error_fatal21");
-            this.agg_error_fatal21.configure(this, 1, 10, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal20 = new("agg_error_fatal20");
-            this.agg_error_fatal20.configure(this, 1, 11, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal19 = new("agg_error_fatal19");
-            this.agg_error_fatal19.configure(this, 1, 12, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal18 = new("agg_error_fatal18");
-            this.agg_error_fatal18.configure(this, 1, 13, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal17 = new("agg_error_fatal17");
-            this.agg_error_fatal17.configure(this, 1, 14, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal16 = new("agg_error_fatal16");
-            this.agg_error_fatal16.configure(this, 1, 15, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal15 = new("agg_error_fatal15");
-            this.agg_error_fatal15.configure(this, 1, 16, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal14 = new("agg_error_fatal14");
-            this.agg_error_fatal14.configure(this, 1, 17, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal13 = new("agg_error_fatal13");
-            this.agg_error_fatal13.configure(this, 1, 18, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal12 = new("agg_error_fatal12");
-            this.agg_error_fatal12.configure(this, 1, 19, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal11 = new("agg_error_fatal11");
-            this.agg_error_fatal11.configure(this, 1, 20, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal10 = new("agg_error_fatal10");
-            this.agg_error_fatal10.configure(this, 1, 21, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal9 = new("agg_error_fatal9");
-            this.agg_error_fatal9.configure(this, 1, 22, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal8 = new("agg_error_fatal8");
-            this.agg_error_fatal8.configure(this, 1, 23, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal7 = new("agg_error_fatal7");
-            this.agg_error_fatal7.configure(this, 1, 24, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal6 = new("agg_error_fatal6");
-            this.agg_error_fatal6.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal5 = new("agg_error_fatal5");
-            this.agg_error_fatal5.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal4 = new("agg_error_fatal4");
-            this.agg_error_fatal4.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal3 = new("agg_error_fatal3");
-            this.agg_error_fatal3.configure(this, 1, 28, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal2 = new("agg_error_fatal2");
-            this.agg_error_fatal2.configure(this, 1, 29, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal1 = new("agg_error_fatal1");
-            this.agg_error_fatal1.configure(this, 1, 30, "W1C", 1, 'h0, 1, 1, 0);
             this.agg_error_fatal0 = new("agg_error_fatal0");
-            this.agg_error_fatal0.configure(this, 1, 31, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal0.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal1 = new("agg_error_fatal1");
+            this.agg_error_fatal1.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal2 = new("agg_error_fatal2");
+            this.agg_error_fatal2.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal3 = new("agg_error_fatal3");
+            this.agg_error_fatal3.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal4 = new("agg_error_fatal4");
+            this.agg_error_fatal4.configure(this, 1, 4, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal5 = new("agg_error_fatal5");
+            this.agg_error_fatal5.configure(this, 1, 5, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal6 = new("agg_error_fatal6");
+            this.agg_error_fatal6.configure(this, 1, 6, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal7 = new("agg_error_fatal7");
+            this.agg_error_fatal7.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal8 = new("agg_error_fatal8");
+            this.agg_error_fatal8.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal9 = new("agg_error_fatal9");
+            this.agg_error_fatal9.configure(this, 1, 9, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal10 = new("agg_error_fatal10");
+            this.agg_error_fatal10.configure(this, 1, 10, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal11 = new("agg_error_fatal11");
+            this.agg_error_fatal11.configure(this, 1, 11, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal12 = new("agg_error_fatal12");
+            this.agg_error_fatal12.configure(this, 1, 12, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal13 = new("agg_error_fatal13");
+            this.agg_error_fatal13.configure(this, 1, 13, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal14 = new("agg_error_fatal14");
+            this.agg_error_fatal14.configure(this, 1, 14, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal15 = new("agg_error_fatal15");
+            this.agg_error_fatal15.configure(this, 1, 15, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal16 = new("agg_error_fatal16");
+            this.agg_error_fatal16.configure(this, 1, 16, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal17 = new("agg_error_fatal17");
+            this.agg_error_fatal17.configure(this, 1, 17, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal18 = new("agg_error_fatal18");
+            this.agg_error_fatal18.configure(this, 1, 18, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal19 = new("agg_error_fatal19");
+            this.agg_error_fatal19.configure(this, 1, 19, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal20 = new("agg_error_fatal20");
+            this.agg_error_fatal20.configure(this, 1, 20, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal21 = new("agg_error_fatal21");
+            this.agg_error_fatal21.configure(this, 1, 21, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal22 = new("agg_error_fatal22");
+            this.agg_error_fatal22.configure(this, 1, 22, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal23 = new("agg_error_fatal23");
+            this.agg_error_fatal23.configure(this, 1, 23, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal24 = new("agg_error_fatal24");
+            this.agg_error_fatal24.configure(this, 1, 24, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal25 = new("agg_error_fatal25");
+            this.agg_error_fatal25.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal26 = new("agg_error_fatal26");
+            this.agg_error_fatal26.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal27 = new("agg_error_fatal27");
+            this.agg_error_fatal27.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal28 = new("agg_error_fatal28");
+            this.agg_error_fatal28.configure(this, 1, 28, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal29 = new("agg_error_fatal29");
+            this.agg_error_fatal29.configure(this, 1, 29, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal30 = new("agg_error_fatal30");
+            this.agg_error_fatal30.configure(this, 1, 30, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal31 = new("agg_error_fatal31");
+            this.agg_error_fatal31.configure(this, 1, 31, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(agg_error_fatal31_bit_cg[bt]) agg_error_fatal31_bit_cg[bt] = new();
-                foreach(agg_error_fatal30_bit_cg[bt]) agg_error_fatal30_bit_cg[bt] = new();
-                foreach(agg_error_fatal29_bit_cg[bt]) agg_error_fatal29_bit_cg[bt] = new();
-                foreach(agg_error_fatal28_bit_cg[bt]) agg_error_fatal28_bit_cg[bt] = new();
-                foreach(agg_error_fatal27_bit_cg[bt]) agg_error_fatal27_bit_cg[bt] = new();
-                foreach(agg_error_fatal26_bit_cg[bt]) agg_error_fatal26_bit_cg[bt] = new();
-                foreach(agg_error_fatal25_bit_cg[bt]) agg_error_fatal25_bit_cg[bt] = new();
-                foreach(agg_error_fatal24_bit_cg[bt]) agg_error_fatal24_bit_cg[bt] = new();
-                foreach(agg_error_fatal23_bit_cg[bt]) agg_error_fatal23_bit_cg[bt] = new();
-                foreach(agg_error_fatal22_bit_cg[bt]) agg_error_fatal22_bit_cg[bt] = new();
-                foreach(agg_error_fatal21_bit_cg[bt]) agg_error_fatal21_bit_cg[bt] = new();
-                foreach(agg_error_fatal20_bit_cg[bt]) agg_error_fatal20_bit_cg[bt] = new();
-                foreach(agg_error_fatal19_bit_cg[bt]) agg_error_fatal19_bit_cg[bt] = new();
-                foreach(agg_error_fatal18_bit_cg[bt]) agg_error_fatal18_bit_cg[bt] = new();
-                foreach(agg_error_fatal17_bit_cg[bt]) agg_error_fatal17_bit_cg[bt] = new();
-                foreach(agg_error_fatal16_bit_cg[bt]) agg_error_fatal16_bit_cg[bt] = new();
-                foreach(agg_error_fatal15_bit_cg[bt]) agg_error_fatal15_bit_cg[bt] = new();
-                foreach(agg_error_fatal14_bit_cg[bt]) agg_error_fatal14_bit_cg[bt] = new();
-                foreach(agg_error_fatal13_bit_cg[bt]) agg_error_fatal13_bit_cg[bt] = new();
-                foreach(agg_error_fatal12_bit_cg[bt]) agg_error_fatal12_bit_cg[bt] = new();
-                foreach(agg_error_fatal11_bit_cg[bt]) agg_error_fatal11_bit_cg[bt] = new();
-                foreach(agg_error_fatal10_bit_cg[bt]) agg_error_fatal10_bit_cg[bt] = new();
-                foreach(agg_error_fatal9_bit_cg[bt]) agg_error_fatal9_bit_cg[bt] = new();
-                foreach(agg_error_fatal8_bit_cg[bt]) agg_error_fatal8_bit_cg[bt] = new();
-                foreach(agg_error_fatal7_bit_cg[bt]) agg_error_fatal7_bit_cg[bt] = new();
-                foreach(agg_error_fatal6_bit_cg[bt]) agg_error_fatal6_bit_cg[bt] = new();
-                foreach(agg_error_fatal5_bit_cg[bt]) agg_error_fatal5_bit_cg[bt] = new();
-                foreach(agg_error_fatal4_bit_cg[bt]) agg_error_fatal4_bit_cg[bt] = new();
-                foreach(agg_error_fatal3_bit_cg[bt]) agg_error_fatal3_bit_cg[bt] = new();
-                foreach(agg_error_fatal2_bit_cg[bt]) agg_error_fatal2_bit_cg[bt] = new();
-                foreach(agg_error_fatal1_bit_cg[bt]) agg_error_fatal1_bit_cg[bt] = new();
                 foreach(agg_error_fatal0_bit_cg[bt]) agg_error_fatal0_bit_cg[bt] = new();
+                foreach(agg_error_fatal1_bit_cg[bt]) agg_error_fatal1_bit_cg[bt] = new();
+                foreach(agg_error_fatal2_bit_cg[bt]) agg_error_fatal2_bit_cg[bt] = new();
+                foreach(agg_error_fatal3_bit_cg[bt]) agg_error_fatal3_bit_cg[bt] = new();
+                foreach(agg_error_fatal4_bit_cg[bt]) agg_error_fatal4_bit_cg[bt] = new();
+                foreach(agg_error_fatal5_bit_cg[bt]) agg_error_fatal5_bit_cg[bt] = new();
+                foreach(agg_error_fatal6_bit_cg[bt]) agg_error_fatal6_bit_cg[bt] = new();
+                foreach(agg_error_fatal7_bit_cg[bt]) agg_error_fatal7_bit_cg[bt] = new();
+                foreach(agg_error_fatal8_bit_cg[bt]) agg_error_fatal8_bit_cg[bt] = new();
+                foreach(agg_error_fatal9_bit_cg[bt]) agg_error_fatal9_bit_cg[bt] = new();
+                foreach(agg_error_fatal10_bit_cg[bt]) agg_error_fatal10_bit_cg[bt] = new();
+                foreach(agg_error_fatal11_bit_cg[bt]) agg_error_fatal11_bit_cg[bt] = new();
+                foreach(agg_error_fatal12_bit_cg[bt]) agg_error_fatal12_bit_cg[bt] = new();
+                foreach(agg_error_fatal13_bit_cg[bt]) agg_error_fatal13_bit_cg[bt] = new();
+                foreach(agg_error_fatal14_bit_cg[bt]) agg_error_fatal14_bit_cg[bt] = new();
+                foreach(agg_error_fatal15_bit_cg[bt]) agg_error_fatal15_bit_cg[bt] = new();
+                foreach(agg_error_fatal16_bit_cg[bt]) agg_error_fatal16_bit_cg[bt] = new();
+                foreach(agg_error_fatal17_bit_cg[bt]) agg_error_fatal17_bit_cg[bt] = new();
+                foreach(agg_error_fatal18_bit_cg[bt]) agg_error_fatal18_bit_cg[bt] = new();
+                foreach(agg_error_fatal19_bit_cg[bt]) agg_error_fatal19_bit_cg[bt] = new();
+                foreach(agg_error_fatal20_bit_cg[bt]) agg_error_fatal20_bit_cg[bt] = new();
+                foreach(agg_error_fatal21_bit_cg[bt]) agg_error_fatal21_bit_cg[bt] = new();
+                foreach(agg_error_fatal22_bit_cg[bt]) agg_error_fatal22_bit_cg[bt] = new();
+                foreach(agg_error_fatal23_bit_cg[bt]) agg_error_fatal23_bit_cg[bt] = new();
+                foreach(agg_error_fatal24_bit_cg[bt]) agg_error_fatal24_bit_cg[bt] = new();
+                foreach(agg_error_fatal25_bit_cg[bt]) agg_error_fatal25_bit_cg[bt] = new();
+                foreach(agg_error_fatal26_bit_cg[bt]) agg_error_fatal26_bit_cg[bt] = new();
+                foreach(agg_error_fatal27_bit_cg[bt]) agg_error_fatal27_bit_cg[bt] = new();
+                foreach(agg_error_fatal28_bit_cg[bt]) agg_error_fatal28_bit_cg[bt] = new();
+                foreach(agg_error_fatal29_bit_cg[bt]) agg_error_fatal29_bit_cg[bt] = new();
+                foreach(agg_error_fatal30_bit_cg[bt]) agg_error_fatal30_bit_cg[bt] = new();
+                foreach(agg_error_fatal31_bit_cg[bt]) agg_error_fatal31_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -665,71 +785,71 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal31_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal30_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal29_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal28_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal27_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal26_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal25_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal24_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal23_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal22_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal21_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal20_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal19_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal18_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal17_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal16_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal15_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal14_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal13_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal12_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal11_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal10_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal9_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal8_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal7_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal6_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal5_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal4_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal3_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal2_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal1_bit_cg[1];
         mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal0_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal1_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal2_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal3_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal4_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal5_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal6_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal7_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal8_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal9_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal10_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal11_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal12_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal13_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal14_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal15_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal16_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal17_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal18_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal19_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal20_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal21_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal22_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal23_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal24_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal25_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal26_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal27_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal28_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal29_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal30_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal31_bit_cg[1];
         mci_reg__AGG_ERROR_NON_FATAL_fld_cg fld_cg;
-        rand uvm_reg_field agg_error_non_fatal31;
-        rand uvm_reg_field agg_error_non_fatal30;
-        rand uvm_reg_field agg_error_non_fatal29;
-        rand uvm_reg_field agg_error_non_fatal28;
-        rand uvm_reg_field agg_error_non_fatal27;
-        rand uvm_reg_field agg_error_non_fatal26;
-        rand uvm_reg_field agg_error_non_fatal25;
-        rand uvm_reg_field agg_error_non_fatal24;
-        rand uvm_reg_field agg_error_non_fatal23;
-        rand uvm_reg_field agg_error_non_fatal22;
-        rand uvm_reg_field agg_error_non_fatal21;
-        rand uvm_reg_field agg_error_non_fatal20;
-        rand uvm_reg_field agg_error_non_fatal19;
-        rand uvm_reg_field agg_error_non_fatal18;
-        rand uvm_reg_field agg_error_non_fatal17;
-        rand uvm_reg_field agg_error_non_fatal16;
-        rand uvm_reg_field agg_error_non_fatal15;
-        rand uvm_reg_field agg_error_non_fatal14;
-        rand uvm_reg_field agg_error_non_fatal13;
-        rand uvm_reg_field agg_error_non_fatal12;
-        rand uvm_reg_field agg_error_non_fatal11;
-        rand uvm_reg_field agg_error_non_fatal10;
-        rand uvm_reg_field agg_error_non_fatal9;
-        rand uvm_reg_field agg_error_non_fatal8;
-        rand uvm_reg_field agg_error_non_fatal7;
-        rand uvm_reg_field agg_error_non_fatal6;
-        rand uvm_reg_field agg_error_non_fatal5;
-        rand uvm_reg_field agg_error_non_fatal4;
-        rand uvm_reg_field agg_error_non_fatal3;
-        rand uvm_reg_field agg_error_non_fatal2;
-        rand uvm_reg_field agg_error_non_fatal1;
         rand uvm_reg_field agg_error_non_fatal0;
+        rand uvm_reg_field agg_error_non_fatal1;
+        rand uvm_reg_field agg_error_non_fatal2;
+        rand uvm_reg_field agg_error_non_fatal3;
+        rand uvm_reg_field agg_error_non_fatal4;
+        rand uvm_reg_field agg_error_non_fatal5;
+        rand uvm_reg_field agg_error_non_fatal6;
+        rand uvm_reg_field agg_error_non_fatal7;
+        rand uvm_reg_field agg_error_non_fatal8;
+        rand uvm_reg_field agg_error_non_fatal9;
+        rand uvm_reg_field agg_error_non_fatal10;
+        rand uvm_reg_field agg_error_non_fatal11;
+        rand uvm_reg_field agg_error_non_fatal12;
+        rand uvm_reg_field agg_error_non_fatal13;
+        rand uvm_reg_field agg_error_non_fatal14;
+        rand uvm_reg_field agg_error_non_fatal15;
+        rand uvm_reg_field agg_error_non_fatal16;
+        rand uvm_reg_field agg_error_non_fatal17;
+        rand uvm_reg_field agg_error_non_fatal18;
+        rand uvm_reg_field agg_error_non_fatal19;
+        rand uvm_reg_field agg_error_non_fatal20;
+        rand uvm_reg_field agg_error_non_fatal21;
+        rand uvm_reg_field agg_error_non_fatal22;
+        rand uvm_reg_field agg_error_non_fatal23;
+        rand uvm_reg_field agg_error_non_fatal24;
+        rand uvm_reg_field agg_error_non_fatal25;
+        rand uvm_reg_field agg_error_non_fatal26;
+        rand uvm_reg_field agg_error_non_fatal27;
+        rand uvm_reg_field agg_error_non_fatal28;
+        rand uvm_reg_field agg_error_non_fatal29;
+        rand uvm_reg_field agg_error_non_fatal30;
+        rand uvm_reg_field agg_error_non_fatal31;
 
         function new(string name = "mci_reg__AGG_ERROR_NON_FATAL");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -741,103 +861,103 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.agg_error_non_fatal31 = new("agg_error_non_fatal31");
-            this.agg_error_non_fatal31.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal30 = new("agg_error_non_fatal30");
-            this.agg_error_non_fatal30.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal29 = new("agg_error_non_fatal29");
-            this.agg_error_non_fatal29.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal28 = new("agg_error_non_fatal28");
-            this.agg_error_non_fatal28.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal27 = new("agg_error_non_fatal27");
-            this.agg_error_non_fatal27.configure(this, 1, 4, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal26 = new("agg_error_non_fatal26");
-            this.agg_error_non_fatal26.configure(this, 1, 5, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal25 = new("agg_error_non_fatal25");
-            this.agg_error_non_fatal25.configure(this, 1, 6, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal24 = new("agg_error_non_fatal24");
-            this.agg_error_non_fatal24.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal23 = new("agg_error_non_fatal23");
-            this.agg_error_non_fatal23.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal22 = new("agg_error_non_fatal22");
-            this.agg_error_non_fatal22.configure(this, 1, 9, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal21 = new("agg_error_non_fatal21");
-            this.agg_error_non_fatal21.configure(this, 1, 10, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal20 = new("agg_error_non_fatal20");
-            this.agg_error_non_fatal20.configure(this, 1, 11, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal19 = new("agg_error_non_fatal19");
-            this.agg_error_non_fatal19.configure(this, 1, 12, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal18 = new("agg_error_non_fatal18");
-            this.agg_error_non_fatal18.configure(this, 1, 13, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal17 = new("agg_error_non_fatal17");
-            this.agg_error_non_fatal17.configure(this, 1, 14, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal16 = new("agg_error_non_fatal16");
-            this.agg_error_non_fatal16.configure(this, 1, 15, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal15 = new("agg_error_non_fatal15");
-            this.agg_error_non_fatal15.configure(this, 1, 16, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal14 = new("agg_error_non_fatal14");
-            this.agg_error_non_fatal14.configure(this, 1, 17, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal13 = new("agg_error_non_fatal13");
-            this.agg_error_non_fatal13.configure(this, 1, 18, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal12 = new("agg_error_non_fatal12");
-            this.agg_error_non_fatal12.configure(this, 1, 19, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal11 = new("agg_error_non_fatal11");
-            this.agg_error_non_fatal11.configure(this, 1, 20, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal10 = new("agg_error_non_fatal10");
-            this.agg_error_non_fatal10.configure(this, 1, 21, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal9 = new("agg_error_non_fatal9");
-            this.agg_error_non_fatal9.configure(this, 1, 22, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal8 = new("agg_error_non_fatal8");
-            this.agg_error_non_fatal8.configure(this, 1, 23, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal7 = new("agg_error_non_fatal7");
-            this.agg_error_non_fatal7.configure(this, 1, 24, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal6 = new("agg_error_non_fatal6");
-            this.agg_error_non_fatal6.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal5 = new("agg_error_non_fatal5");
-            this.agg_error_non_fatal5.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal4 = new("agg_error_non_fatal4");
-            this.agg_error_non_fatal4.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal3 = new("agg_error_non_fatal3");
-            this.agg_error_non_fatal3.configure(this, 1, 28, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal2 = new("agg_error_non_fatal2");
-            this.agg_error_non_fatal2.configure(this, 1, 29, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal1 = new("agg_error_non_fatal1");
-            this.agg_error_non_fatal1.configure(this, 1, 30, "W1C", 1, 'h0, 1, 1, 0);
             this.agg_error_non_fatal0 = new("agg_error_non_fatal0");
-            this.agg_error_non_fatal0.configure(this, 1, 31, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal0.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal1 = new("agg_error_non_fatal1");
+            this.agg_error_non_fatal1.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal2 = new("agg_error_non_fatal2");
+            this.agg_error_non_fatal2.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal3 = new("agg_error_non_fatal3");
+            this.agg_error_non_fatal3.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal4 = new("agg_error_non_fatal4");
+            this.agg_error_non_fatal4.configure(this, 1, 4, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal5 = new("agg_error_non_fatal5");
+            this.agg_error_non_fatal5.configure(this, 1, 5, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal6 = new("agg_error_non_fatal6");
+            this.agg_error_non_fatal6.configure(this, 1, 6, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal7 = new("agg_error_non_fatal7");
+            this.agg_error_non_fatal7.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal8 = new("agg_error_non_fatal8");
+            this.agg_error_non_fatal8.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal9 = new("agg_error_non_fatal9");
+            this.agg_error_non_fatal9.configure(this, 1, 9, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal10 = new("agg_error_non_fatal10");
+            this.agg_error_non_fatal10.configure(this, 1, 10, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal11 = new("agg_error_non_fatal11");
+            this.agg_error_non_fatal11.configure(this, 1, 11, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal12 = new("agg_error_non_fatal12");
+            this.agg_error_non_fatal12.configure(this, 1, 12, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal13 = new("agg_error_non_fatal13");
+            this.agg_error_non_fatal13.configure(this, 1, 13, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal14 = new("agg_error_non_fatal14");
+            this.agg_error_non_fatal14.configure(this, 1, 14, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal15 = new("agg_error_non_fatal15");
+            this.agg_error_non_fatal15.configure(this, 1, 15, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal16 = new("agg_error_non_fatal16");
+            this.agg_error_non_fatal16.configure(this, 1, 16, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal17 = new("agg_error_non_fatal17");
+            this.agg_error_non_fatal17.configure(this, 1, 17, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal18 = new("agg_error_non_fatal18");
+            this.agg_error_non_fatal18.configure(this, 1, 18, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal19 = new("agg_error_non_fatal19");
+            this.agg_error_non_fatal19.configure(this, 1, 19, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal20 = new("agg_error_non_fatal20");
+            this.agg_error_non_fatal20.configure(this, 1, 20, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal21 = new("agg_error_non_fatal21");
+            this.agg_error_non_fatal21.configure(this, 1, 21, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal22 = new("agg_error_non_fatal22");
+            this.agg_error_non_fatal22.configure(this, 1, 22, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal23 = new("agg_error_non_fatal23");
+            this.agg_error_non_fatal23.configure(this, 1, 23, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal24 = new("agg_error_non_fatal24");
+            this.agg_error_non_fatal24.configure(this, 1, 24, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal25 = new("agg_error_non_fatal25");
+            this.agg_error_non_fatal25.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal26 = new("agg_error_non_fatal26");
+            this.agg_error_non_fatal26.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal27 = new("agg_error_non_fatal27");
+            this.agg_error_non_fatal27.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal28 = new("agg_error_non_fatal28");
+            this.agg_error_non_fatal28.configure(this, 1, 28, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal29 = new("agg_error_non_fatal29");
+            this.agg_error_non_fatal29.configure(this, 1, 29, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal30 = new("agg_error_non_fatal30");
+            this.agg_error_non_fatal30.configure(this, 1, 30, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal31 = new("agg_error_non_fatal31");
+            this.agg_error_non_fatal31.configure(this, 1, 31, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(agg_error_non_fatal31_bit_cg[bt]) agg_error_non_fatal31_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal30_bit_cg[bt]) agg_error_non_fatal30_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal29_bit_cg[bt]) agg_error_non_fatal29_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal28_bit_cg[bt]) agg_error_non_fatal28_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal27_bit_cg[bt]) agg_error_non_fatal27_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal26_bit_cg[bt]) agg_error_non_fatal26_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal25_bit_cg[bt]) agg_error_non_fatal25_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal24_bit_cg[bt]) agg_error_non_fatal24_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal23_bit_cg[bt]) agg_error_non_fatal23_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal22_bit_cg[bt]) agg_error_non_fatal22_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal21_bit_cg[bt]) agg_error_non_fatal21_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal20_bit_cg[bt]) agg_error_non_fatal20_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal19_bit_cg[bt]) agg_error_non_fatal19_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal18_bit_cg[bt]) agg_error_non_fatal18_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal17_bit_cg[bt]) agg_error_non_fatal17_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal16_bit_cg[bt]) agg_error_non_fatal16_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal15_bit_cg[bt]) agg_error_non_fatal15_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal14_bit_cg[bt]) agg_error_non_fatal14_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal13_bit_cg[bt]) agg_error_non_fatal13_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal12_bit_cg[bt]) agg_error_non_fatal12_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal11_bit_cg[bt]) agg_error_non_fatal11_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal10_bit_cg[bt]) agg_error_non_fatal10_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal9_bit_cg[bt]) agg_error_non_fatal9_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal8_bit_cg[bt]) agg_error_non_fatal8_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal7_bit_cg[bt]) agg_error_non_fatal7_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal6_bit_cg[bt]) agg_error_non_fatal6_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal5_bit_cg[bt]) agg_error_non_fatal5_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal4_bit_cg[bt]) agg_error_non_fatal4_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal3_bit_cg[bt]) agg_error_non_fatal3_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal2_bit_cg[bt]) agg_error_non_fatal2_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal1_bit_cg[bt]) agg_error_non_fatal1_bit_cg[bt] = new();
                 foreach(agg_error_non_fatal0_bit_cg[bt]) agg_error_non_fatal0_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal1_bit_cg[bt]) agg_error_non_fatal1_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal2_bit_cg[bt]) agg_error_non_fatal2_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal3_bit_cg[bt]) agg_error_non_fatal3_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal4_bit_cg[bt]) agg_error_non_fatal4_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal5_bit_cg[bt]) agg_error_non_fatal5_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal6_bit_cg[bt]) agg_error_non_fatal6_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal7_bit_cg[bt]) agg_error_non_fatal7_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal8_bit_cg[bt]) agg_error_non_fatal8_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal9_bit_cg[bt]) agg_error_non_fatal9_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal10_bit_cg[bt]) agg_error_non_fatal10_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal11_bit_cg[bt]) agg_error_non_fatal11_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal12_bit_cg[bt]) agg_error_non_fatal12_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal13_bit_cg[bt]) agg_error_non_fatal13_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal14_bit_cg[bt]) agg_error_non_fatal14_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal15_bit_cg[bt]) agg_error_non_fatal15_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal16_bit_cg[bt]) agg_error_non_fatal16_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal17_bit_cg[bt]) agg_error_non_fatal17_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal18_bit_cg[bt]) agg_error_non_fatal18_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal19_bit_cg[bt]) agg_error_non_fatal19_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal20_bit_cg[bt]) agg_error_non_fatal20_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal21_bit_cg[bt]) agg_error_non_fatal21_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal22_bit_cg[bt]) agg_error_non_fatal22_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal23_bit_cg[bt]) agg_error_non_fatal23_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal24_bit_cg[bt]) agg_error_non_fatal24_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal25_bit_cg[bt]) agg_error_non_fatal25_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal26_bit_cg[bt]) agg_error_non_fatal26_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal27_bit_cg[bt]) agg_error_non_fatal27_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal28_bit_cg[bt]) agg_error_non_fatal28_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal29_bit_cg[bt]) agg_error_non_fatal29_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal30_bit_cg[bt]) agg_error_non_fatal30_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal31_bit_cg[bt]) agg_error_non_fatal31_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -1156,41 +1276,41 @@ package mci_reg_uvm;
             this.mask_agg_error_fatal30 = new("mask_agg_error_fatal30");
             this.mask_agg_error_fatal30.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
             this.mask_agg_error_fatal29 = new("mask_agg_error_fatal29");
-            this.mask_agg_error_fatal29.configure(this, 1, 2, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal29.configure(this, 1, 2, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal28 = new("mask_agg_error_fatal28");
-            this.mask_agg_error_fatal28.configure(this, 1, 3, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal28.configure(this, 1, 3, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal27 = new("mask_agg_error_fatal27");
-            this.mask_agg_error_fatal27.configure(this, 1, 4, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal27.configure(this, 1, 4, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal26 = new("mask_agg_error_fatal26");
-            this.mask_agg_error_fatal26.configure(this, 1, 5, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal26.configure(this, 1, 5, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal25 = new("mask_agg_error_fatal25");
-            this.mask_agg_error_fatal25.configure(this, 1, 6, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal25.configure(this, 1, 6, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal24 = new("mask_agg_error_fatal24");
-            this.mask_agg_error_fatal24.configure(this, 1, 7, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal24.configure(this, 1, 7, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal23 = new("mask_agg_error_fatal23");
-            this.mask_agg_error_fatal23.configure(this, 1, 8, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal23.configure(this, 1, 8, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal22 = new("mask_agg_error_fatal22");
-            this.mask_agg_error_fatal22.configure(this, 1, 9, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal22.configure(this, 1, 9, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal21 = new("mask_agg_error_fatal21");
-            this.mask_agg_error_fatal21.configure(this, 1, 10, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal21.configure(this, 1, 10, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal20 = new("mask_agg_error_fatal20");
-            this.mask_agg_error_fatal20.configure(this, 1, 11, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal20.configure(this, 1, 11, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal19 = new("mask_agg_error_fatal19");
-            this.mask_agg_error_fatal19.configure(this, 1, 12, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal19.configure(this, 1, 12, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal18 = new("mask_agg_error_fatal18");
-            this.mask_agg_error_fatal18.configure(this, 1, 13, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal18.configure(this, 1, 13, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal17 = new("mask_agg_error_fatal17");
-            this.mask_agg_error_fatal17.configure(this, 1, 14, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal17.configure(this, 1, 14, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal16 = new("mask_agg_error_fatal16");
-            this.mask_agg_error_fatal16.configure(this, 1, 15, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal16.configure(this, 1, 15, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal15 = new("mask_agg_error_fatal15");
-            this.mask_agg_error_fatal15.configure(this, 1, 16, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal15.configure(this, 1, 16, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal14 = new("mask_agg_error_fatal14");
-            this.mask_agg_error_fatal14.configure(this, 1, 17, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal14.configure(this, 1, 17, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal13 = new("mask_agg_error_fatal13");
-            this.mask_agg_error_fatal13.configure(this, 1, 18, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal13.configure(this, 1, 18, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal12 = new("mask_agg_error_fatal12");
-            this.mask_agg_error_fatal12.configure(this, 1, 19, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal12.configure(this, 1, 19, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal11 = new("mask_agg_error_fatal11");
             this.mask_agg_error_fatal11.configure(this, 1, 20, "RW", 0, 'h0, 1, 1, 0);
             this.mask_agg_error_fatal10 = new("mask_agg_error_fatal10");
@@ -2380,7 +2500,7 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__DEBUG_IN_bit_cg DATA_bit_cg[1];
+        mci_reg__DEBUG_IN_bit_cg DATA_bit_cg[32];
         mci_reg__DEBUG_IN_fld_cg fld_cg;
         rand uvm_reg_field DATA;
 
@@ -2395,7 +2515,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.DATA = new("DATA");
-            this.DATA.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.DATA.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(DATA_bit_cg[bt]) DATA_bit_cg[bt] = new();
             end
@@ -2410,7 +2530,7 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__DEBUG_OUT_bit_cg DATA_bit_cg[1];
+        mci_reg__DEBUG_OUT_bit_cg DATA_bit_cg[32];
         mci_reg__DEBUG_OUT_fld_cg fld_cg;
         rand uvm_reg_field DATA;
 
@@ -2425,7 +2545,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.DATA = new("DATA");
-            this.DATA.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.DATA.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(DATA_bit_cg[bt]) DATA_bit_cg[bt] = new();
             end
@@ -10378,6 +10498,10 @@ package mci_reg_uvm;
         rand mci_reg__FW_REV_ID FW_REV_ID[2];
         rand mci_reg__HW_CONFIG0 HW_CONFIG0;
         rand mci_reg__HW_CONFIG1 HW_CONFIG1;
+        rand mci_reg__MCU_IFU_AXI_USER MCU_IFU_AXI_USER;
+        rand mci_reg__MCU_LSU_AXI_USER MCU_LSU_AXI_USER;
+        rand mci_reg__MCU_SRAM_CONFIG_AXI_USER MCU_SRAM_CONFIG_AXI_USER;
+        rand mci_reg__MCI_SOC_CONFIG_AXI_USER MCI_SOC_CONFIG_AXI_USER;
         rand mci_reg__FW_FLOW_STATUS FW_FLOW_STATUS;
         rand mci_reg__HW_FLOW_STATUS HW_FLOW_STATUS;
         rand mci_reg__RESET_REASON RESET_REASON;
@@ -10478,153 +10602,173 @@ package mci_reg_uvm;
 
             this.HW_CONFIG1.build();
             this.default_map.add_reg(this.HW_CONFIG1, 'h1c);
+            this.MCU_IFU_AXI_USER = new("MCU_IFU_AXI_USER");
+            this.MCU_IFU_AXI_USER.configure(this);
+
+            this.MCU_IFU_AXI_USER.build();
+            this.default_map.add_reg(this.MCU_IFU_AXI_USER, 'h20);
+            this.MCU_LSU_AXI_USER = new("MCU_LSU_AXI_USER");
+            this.MCU_LSU_AXI_USER.configure(this);
+
+            this.MCU_LSU_AXI_USER.build();
+            this.default_map.add_reg(this.MCU_LSU_AXI_USER, 'h24);
+            this.MCU_SRAM_CONFIG_AXI_USER = new("MCU_SRAM_CONFIG_AXI_USER");
+            this.MCU_SRAM_CONFIG_AXI_USER.configure(this);
+
+            this.MCU_SRAM_CONFIG_AXI_USER.build();
+            this.default_map.add_reg(this.MCU_SRAM_CONFIG_AXI_USER, 'h28);
+            this.MCI_SOC_CONFIG_AXI_USER = new("MCI_SOC_CONFIG_AXI_USER");
+            this.MCI_SOC_CONFIG_AXI_USER.configure(this);
+
+            this.MCI_SOC_CONFIG_AXI_USER.build();
+            this.default_map.add_reg(this.MCI_SOC_CONFIG_AXI_USER, 'h2c);
             this.FW_FLOW_STATUS = new("FW_FLOW_STATUS");
             this.FW_FLOW_STATUS.configure(this);
 
             this.FW_FLOW_STATUS.build();
-            this.default_map.add_reg(this.FW_FLOW_STATUS, 'h20);
+            this.default_map.add_reg(this.FW_FLOW_STATUS, 'h30);
             this.HW_FLOW_STATUS = new("HW_FLOW_STATUS");
             this.HW_FLOW_STATUS.configure(this);
 
             this.HW_FLOW_STATUS.build();
-            this.default_map.add_reg(this.HW_FLOW_STATUS, 'h24);
+            this.default_map.add_reg(this.HW_FLOW_STATUS, 'h34);
             this.RESET_REASON = new("RESET_REASON");
             this.RESET_REASON.configure(this);
 
             this.RESET_REASON.build();
-            this.default_map.add_reg(this.RESET_REASON, 'h28);
+            this.default_map.add_reg(this.RESET_REASON, 'h38);
             this.RESET_STATUS = new("RESET_STATUS");
             this.RESET_STATUS.configure(this);
 
             this.RESET_STATUS.build();
-            this.default_map.add_reg(this.RESET_STATUS, 'h2c);
+            this.default_map.add_reg(this.RESET_STATUS, 'h3c);
             this.SECURITY_STATE = new("SECURITY_STATE");
             this.SECURITY_STATE.configure(this);
 
             this.SECURITY_STATE.build();
-            this.default_map.add_reg(this.SECURITY_STATE, 'h30);
+            this.default_map.add_reg(this.SECURITY_STATE, 'h40);
             this.HW_ERROR_FATAL = new("HW_ERROR_FATAL");
             this.HW_ERROR_FATAL.configure(this);
 
             this.HW_ERROR_FATAL.build();
-            this.default_map.add_reg(this.HW_ERROR_FATAL, 'h40);
+            this.default_map.add_reg(this.HW_ERROR_FATAL, 'h50);
             this.AGG_ERROR_FATAL = new("AGG_ERROR_FATAL");
             this.AGG_ERROR_FATAL.configure(this);
 
             this.AGG_ERROR_FATAL.build();
-            this.default_map.add_reg(this.AGG_ERROR_FATAL, 'h44);
+            this.default_map.add_reg(this.AGG_ERROR_FATAL, 'h54);
             this.HW_ERROR_NON_FATAL = new("HW_ERROR_NON_FATAL");
             this.HW_ERROR_NON_FATAL.configure(this);
 
             this.HW_ERROR_NON_FATAL.build();
-            this.default_map.add_reg(this.HW_ERROR_NON_FATAL, 'h48);
+            this.default_map.add_reg(this.HW_ERROR_NON_FATAL, 'h58);
             this.AGG_ERROR_NON_FATAL = new("AGG_ERROR_NON_FATAL");
             this.AGG_ERROR_NON_FATAL.configure(this);
 
             this.AGG_ERROR_NON_FATAL.build();
-            this.default_map.add_reg(this.AGG_ERROR_NON_FATAL, 'h4c);
+            this.default_map.add_reg(this.AGG_ERROR_NON_FATAL, 'h5c);
             this.FW_ERROR_FATAL = new("FW_ERROR_FATAL");
             this.FW_ERROR_FATAL.configure(this);
 
             this.FW_ERROR_FATAL.build();
-            this.default_map.add_reg(this.FW_ERROR_FATAL, 'h50);
+            this.default_map.add_reg(this.FW_ERROR_FATAL, 'h60);
             this.FW_ERROR_NON_FATAL = new("FW_ERROR_NON_FATAL");
             this.FW_ERROR_NON_FATAL.configure(this);
 
             this.FW_ERROR_NON_FATAL.build();
-            this.default_map.add_reg(this.FW_ERROR_NON_FATAL, 'h54);
+            this.default_map.add_reg(this.FW_ERROR_NON_FATAL, 'h64);
             this.HW_ERROR_ENC = new("HW_ERROR_ENC");
             this.HW_ERROR_ENC.configure(this);
 
             this.HW_ERROR_ENC.build();
-            this.default_map.add_reg(this.HW_ERROR_ENC, 'h58);
+            this.default_map.add_reg(this.HW_ERROR_ENC, 'h68);
             this.FW_ERROR_ENC = new("FW_ERROR_ENC");
             this.FW_ERROR_ENC.configure(this);
 
             this.FW_ERROR_ENC.build();
-            this.default_map.add_reg(this.FW_ERROR_ENC, 'h5c);
+            this.default_map.add_reg(this.FW_ERROR_ENC, 'h6c);
             foreach(this.FW_EXTENDED_ERROR_INFO[i0]) begin
                 this.FW_EXTENDED_ERROR_INFO[i0] = new($sformatf("FW_EXTENDED_ERROR_INFO[%0d]", i0));
                 this.FW_EXTENDED_ERROR_INFO[i0].configure(this);
                 
                 this.FW_EXTENDED_ERROR_INFO[i0].build();
-                this.default_map.add_reg(this.FW_EXTENDED_ERROR_INFO[i0], 'h60 + i0*'h4);
+                this.default_map.add_reg(this.FW_EXTENDED_ERROR_INFO[i0], 'h70 + i0*'h4);
             end
             this.internal_hw_error_fatal_mask = new("internal_hw_error_fatal_mask");
             this.internal_hw_error_fatal_mask.configure(this);
 
             this.internal_hw_error_fatal_mask.build();
-            this.default_map.add_reg(this.internal_hw_error_fatal_mask, 'h80);
+            this.default_map.add_reg(this.internal_hw_error_fatal_mask, 'h90);
             this.internal_hw_error_non_fatal_mask = new("internal_hw_error_non_fatal_mask");
             this.internal_hw_error_non_fatal_mask.configure(this);
 
             this.internal_hw_error_non_fatal_mask.build();
-            this.default_map.add_reg(this.internal_hw_error_non_fatal_mask, 'h84);
+            this.default_map.add_reg(this.internal_hw_error_non_fatal_mask, 'h94);
             this.internal_agg_error_fatal_mask = new("internal_agg_error_fatal_mask");
             this.internal_agg_error_fatal_mask.configure(this);
 
             this.internal_agg_error_fatal_mask.build();
-            this.default_map.add_reg(this.internal_agg_error_fatal_mask, 'h88);
+            this.default_map.add_reg(this.internal_agg_error_fatal_mask, 'h98);
             this.internal_agg_error_non_fatal_mask = new("internal_agg_error_non_fatal_mask");
             this.internal_agg_error_non_fatal_mask.configure(this);
 
             this.internal_agg_error_non_fatal_mask.build();
-            this.default_map.add_reg(this.internal_agg_error_non_fatal_mask, 'h8c);
+            this.default_map.add_reg(this.internal_agg_error_non_fatal_mask, 'h9c);
             this.internal_fw_error_fatal_mask = new("internal_fw_error_fatal_mask");
             this.internal_fw_error_fatal_mask.configure(this);
 
             this.internal_fw_error_fatal_mask.build();
-            this.default_map.add_reg(this.internal_fw_error_fatal_mask, 'h90);
+            this.default_map.add_reg(this.internal_fw_error_fatal_mask, 'ha0);
             this.internal_fw_error_non_fatal_mask = new("internal_fw_error_non_fatal_mask");
             this.internal_fw_error_non_fatal_mask.configure(this);
 
             this.internal_fw_error_non_fatal_mask.build();
-            this.default_map.add_reg(this.internal_fw_error_non_fatal_mask, 'h94);
+            this.default_map.add_reg(this.internal_fw_error_non_fatal_mask, 'ha4);
             this.WDT_TIMER1_EN = new("WDT_TIMER1_EN");
             this.WDT_TIMER1_EN.configure(this);
 
             this.WDT_TIMER1_EN.build();
-            this.default_map.add_reg(this.WDT_TIMER1_EN, 'ha0);
+            this.default_map.add_reg(this.WDT_TIMER1_EN, 'hb0);
             this.WDT_TIMER1_CTRL = new("WDT_TIMER1_CTRL");
             this.WDT_TIMER1_CTRL.configure(this);
 
             this.WDT_TIMER1_CTRL.build();
-            this.default_map.add_reg(this.WDT_TIMER1_CTRL, 'ha4);
+            this.default_map.add_reg(this.WDT_TIMER1_CTRL, 'hb4);
             foreach(this.WDT_TIMER1_TIMEOUT_PERIOD[i0]) begin
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0] = new($sformatf("WDT_TIMER1_TIMEOUT_PERIOD[%0d]", i0));
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0].configure(this);
                 
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0].build();
-                this.default_map.add_reg(this.WDT_TIMER1_TIMEOUT_PERIOD[i0], 'ha8 + i0*'h4);
+                this.default_map.add_reg(this.WDT_TIMER1_TIMEOUT_PERIOD[i0], 'hb8 + i0*'h4);
             end
             this.WDT_TIMER2_EN = new("WDT_TIMER2_EN");
             this.WDT_TIMER2_EN.configure(this);
 
             this.WDT_TIMER2_EN.build();
-            this.default_map.add_reg(this.WDT_TIMER2_EN, 'hb0);
+            this.default_map.add_reg(this.WDT_TIMER2_EN, 'hc0);
             this.WDT_TIMER2_CTRL = new("WDT_TIMER2_CTRL");
             this.WDT_TIMER2_CTRL.configure(this);
 
             this.WDT_TIMER2_CTRL.build();
-            this.default_map.add_reg(this.WDT_TIMER2_CTRL, 'hb4);
+            this.default_map.add_reg(this.WDT_TIMER2_CTRL, 'hc4);
             foreach(this.WDT_TIMER2_TIMEOUT_PERIOD[i0]) begin
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0] = new($sformatf("WDT_TIMER2_TIMEOUT_PERIOD[%0d]", i0));
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0].configure(this);
                 
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0].build();
-                this.default_map.add_reg(this.WDT_TIMER2_TIMEOUT_PERIOD[i0], 'hb8 + i0*'h4);
+                this.default_map.add_reg(this.WDT_TIMER2_TIMEOUT_PERIOD[i0], 'hc8 + i0*'h4);
             end
             this.WDT_STATUS = new("WDT_STATUS");
             this.WDT_STATUS.configure(this);
 
             this.WDT_STATUS.build();
-            this.default_map.add_reg(this.WDT_STATUS, 'hc0);
+            this.default_map.add_reg(this.WDT_STATUS, 'hd0);
             foreach(this.WDT_CFG[i0]) begin
                 this.WDT_CFG[i0] = new($sformatf("WDT_CFG[%0d]", i0));
                 this.WDT_CFG[i0].configure(this);
                 
                 this.WDT_CFG[i0].build();
-                this.default_map.add_reg(this.WDT_CFG[i0], 'hd0 + i0*'h4);
+                this.default_map.add_reg(this.WDT_CFG[i0], 'hd4 + i0*'h4);
             end
             this.MCU_TIMER_CONFIG = new("MCU_TIMER_CONFIG");
             this.MCU_TIMER_CONFIG.configure(this);

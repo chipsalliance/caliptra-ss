@@ -240,54 +240,54 @@ module caliptra_wrapper_top #(
     output  wire M_AXI_MCI_RREADY,
 
 
-    //-------------------------- LSU AXI signals--------------------------
+    //-------------------------- MCU LSU AXI signals--------------------------
     // AXI Write Channels
-    output wire                      M_AXI_MCU_LSU_AWVALID,
-    input  wire                      M_AXI_MCU_LSU_AWREADY,
-    output wire [18:0]              M_AXI_MCU_LSU_AWID,
-    output wire [              31:0] M_AXI_MCU_LSU_AWADDR,
-    output wire [               3:0] M_AXI_MCU_LSU_AWREGION,
-    output wire [               7:0] M_AXI_MCU_LSU_AWLEN,
-    output wire [               2:0] M_AXI_MCU_LSU_AWSIZE,
-    output wire [               1:0] M_AXI_MCU_LSU_AWBURST,
-    output wire                      M_AXI_MCU_LSU_AWLOCK,
-    output wire [               3:0] M_AXI_MCU_LSU_AWCACHE,
-    output wire [               2:0] M_AXI_MCU_LSU_AWPROT,
-    output wire [               3:0] M_AXI_MCU_LSU_AWQOS,
+    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_LSU_AWVALID,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_LSU_AWREADY,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [18:0]              M_AXI_MCU_LSU_AWID,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [              31:0] M_AXI_MCU_LSU_AWADDR,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               3:0] M_AXI_MCU_LSU_AWREGION,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               7:0] M_AXI_MCU_LSU_AWLEN,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               2:0] M_AXI_MCU_LSU_AWSIZE,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               1:0] M_AXI_MCU_LSU_AWBURST,
+    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_LSU_AWLOCK,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               3:0] M_AXI_MCU_LSU_AWCACHE,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               2:0] M_AXI_MCU_LSU_AWPROT,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               3:0] M_AXI_MCU_LSU_AWQOS,
 
-    output wire                      M_AXI_MCU_LSU_WVALID,
-    input  wire                      M_AXI_MCU_LSU_WREADY,
-    output wire [63:0]               M_AXI_MCU_LSU_WDATA,
-    output wire [ 7:0]               M_AXI_MCU_LSU_WSTRB,
-    output wire                      M_AXI_MCU_LSU_WLAST,
+    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_LSU_WVALID,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_LSU_WREADY,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [63:0]               M_AXI_MCU_LSU_WDATA,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [ 7:0]               M_AXI_MCU_LSU_WSTRB,
+    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_LSU_WLAST,
 
-    input  wire                      M_AXI_MCU_LSU_BVALID,
-    output wire                      M_AXI_MCU_LSU_BREADY,
-    input  wire [               1:0] M_AXI_MCU_LSU_BRESP,
-    input  wire [18:0]              M_AXI_MCU_LSU_BID,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_LSU_BVALID,
+    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_LSU_BREADY,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire [               1:0] M_AXI_MCU_LSU_BRESP,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire [18:0]              M_AXI_MCU_LSU_BID,
 
     // AXI Read Channels
-    output wire                      M_AXI_MCU_LSU_ARVALID,
-    input  wire                      M_AXI_MCU_LSU_ARREADY,
-    output wire [18:0]              M_AXI_MCU_LSU_ARID,
-    output wire [              31:0] M_AXI_MCU_LSU_ARADDR,
-    output wire [               3:0] M_AXI_MCU_LSU_ARREGION,
-    output wire [               7:0] M_AXI_MCU_LSU_ARLEN,
-    output wire [               2:0] M_AXI_MCU_LSU_ARSIZE,
-    output wire [               1:0] M_AXI_MCU_LSU_ARBURST,
-    output wire                      M_AXI_MCU_LSU_ARLOCK,
-    output wire [               3:0] M_AXI_MCU_LSU_ARCACHE,
-    output wire [               2:0] M_AXI_MCU_LSU_ARPROT,
-    output wire [               3:0] M_AXI_MCU_LSU_ARQOS,
+    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_LSU_ARVALID,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_LSU_ARREADY,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [18:0]              M_AXI_MCU_LSU_ARID,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [              31:0] M_AXI_MCU_LSU_ARADDR,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               3:0] M_AXI_MCU_LSU_ARREGION,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               7:0] M_AXI_MCU_LSU_ARLEN,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               2:0] M_AXI_MCU_LSU_ARSIZE,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               1:0] M_AXI_MCU_LSU_ARBURST,
+    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_LSU_ARLOCK,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               3:0] M_AXI_MCU_LSU_ARCACHE,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               2:0] M_AXI_MCU_LSU_ARPROT,
+    (* syn_keep = "true", mark_debug = "true" *) output wire [               3:0] M_AXI_MCU_LSU_ARQOS,
 
-    input  wire                      M_AXI_MCU_LSU_RVALID,
-    output wire                      M_AXI_MCU_LSU_RREADY,
-    input  wire [18:0]              M_AXI_MCU_LSU_RID,
-    input  wire [              63:0] M_AXI_MCU_LSU_RDATA,
-    input  wire [               1:0] M_AXI_MCU_LSU_RRESP,
-    input  wire                      M_AXI_MCU_LSU_RLAST,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_LSU_RVALID,
+    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_LSU_RREADY,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire [18:0]              M_AXI_MCU_LSU_RID,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire [              63:0] M_AXI_MCU_LSU_RDATA,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire [               1:0] M_AXI_MCU_LSU_RRESP,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_LSU_RLAST,
 
-    //-------------------------- IFU AXI signals--------------------------
+    //-------------------------- MCU IFU AXI signals--------------------------
     // AXI Write Channels
     output wire                      M_AXI_MCU_IFU_AWVALID,
     input  wire                      M_AXI_MCU_IFU_AWREADY,
@@ -333,6 +333,53 @@ module caliptra_wrapper_top #(
     input  wire [              63:0] M_AXI_MCU_IFU_RDATA,
     input  wire [               1:0] M_AXI_MCU_IFU_RRESP,
     input  wire                      M_AXI_MCU_IFU_RLAST,
+
+    //-------------------------- MCU SB AXI signals--------------------------
+    // AXI Write Channels
+    output wire                      M_AXI_MCU_SB_AWVALID,
+    input  wire                      M_AXI_MCU_SB_AWREADY,
+    output wire [18:0]               M_AXI_MCU_SB_AWID,
+    output wire [              31:0] M_AXI_MCU_SB_AWADDR,
+    output wire [               3:0] M_AXI_MCU_SB_AWREGION,
+    output wire [               7:0] M_AXI_MCU_SB_AWLEN,
+    output wire [               2:0] M_AXI_MCU_SB_AWSIZE,
+    output wire [               1:0] M_AXI_MCU_SB_AWBURST,
+    output wire                      M_AXI_MCU_SB_AWLOCK,
+    output wire [               3:0] M_AXI_MCU_SB_AWCACHE,
+    output wire [               2:0] M_AXI_MCU_SB_AWPROT,
+    output wire [               3:0] M_AXI_MCU_SB_AWQOS,
+
+    output wire                      M_AXI_MCU_SB_WVALID,
+    input  wire                      M_AXI_MCU_SB_WREADY,
+    output wire [63:0]               M_AXI_MCU_SB_WDATA,
+    output wire [ 7:0]               M_AXI_MCU_SB_WSTRB,
+    output wire                      M_AXI_MCU_SB_WLAST,
+
+    input  wire                      M_AXI_MCU_SB_BVALID,
+    output wire                      M_AXI_MCU_SB_BREADY,
+    input  wire [               1:0] M_AXI_MCU_SB_BRESP,
+    input  wire [18:0]               M_AXI_MCU_SB_BID,
+
+    // AXI Read Channels
+    output wire                      M_AXI_MCU_SB_ARVALID,
+    input  wire                      M_AXI_MCU_SB_ARREADY,
+    output wire [18:0]              M_AXI_MCU_SB_ARID,
+    output wire [              31:0] M_AXI_MCU_SB_ARADDR,
+    output wire [               3:0] M_AXI_MCU_SB_ARREGION,
+    output wire [               7:0] M_AXI_MCU_SB_ARLEN,
+    output wire [               2:0] M_AXI_MCU_SB_ARSIZE,
+    output wire [               1:0] M_AXI_MCU_SB_ARBURST,
+    output wire                      M_AXI_MCU_SB_ARLOCK,
+    output wire [               3:0] M_AXI_MCU_SB_ARCACHE,
+    output wire [               2:0] M_AXI_MCU_SB_ARPROT,
+    output wire [               3:0] M_AXI_MCU_SB_ARQOS,
+
+    input  wire                      M_AXI_MCU_SB_RVALID,
+    output wire                      M_AXI_MCU_SB_RREADY,
+    input  wire [18:0]              M_AXI_MCU_SB_RID,
+    input  wire [              63:0] M_AXI_MCU_SB_RDATA,
+    input  wire [               1:0] M_AXI_MCU_SB_RRESP,
+    input  wire                      M_AXI_MCU_SB_RLAST,
 
     // I3C
     input	wire                      S_AXI_I3C_AWVALID,
@@ -578,6 +625,23 @@ module caliptra_wrapper_top #(
     logic imem_cs;
     logic [`CALIPTRA_IMEM_ADDR_WIDTH-1:0] imem_addr;
     logic [`CALIPTRA_IMEM_DATA_WIDTH-1:0] imem_rdata;
+
+    logic [255:0]                              cptra_obf_key;
+    (* syn_keep = "true", mark_debug = "true" *) logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_csr_hmac_key;
+    assign cptra_obf_key =
+        {hwif_out.interface_regs.cptra_obf_key[7].value.value,
+         hwif_out.interface_regs.cptra_obf_key[6].value.value,
+         hwif_out.interface_regs.cptra_obf_key[5].value.value,
+         hwif_out.interface_regs.cptra_obf_key[4].value.value,
+         hwif_out.interface_regs.cptra_obf_key[3].value.value,
+         hwif_out.interface_regs.cptra_obf_key[2].value.value,
+         hwif_out.interface_regs.cptra_obf_key[1].value.value,
+         hwif_out.interface_regs.cptra_obf_key[0].value.value};
+    always_comb begin
+      for (int dword = 0; dword < `CLP_CSR_HMAC_KEY_DWORDS; dword++) begin
+         cptra_csr_hmac_key[dword] = hwif_out.interface_regs.cptra_csr_hmac_key[dword].value.value;
+      end
+    end
 
     jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i;
     assign cptra_ss_lc_ctrl_jtag_i.tck = lc_jtag_tck_i;
@@ -1512,6 +1576,69 @@ I think this is the one that isn't used
     assign cptra_ss_mcu_ifu_m_axi_if.rlast =    M_AXI_MCU_IFU_RLAST;
     assign cptra_ss_mcu_ifu_m_axi_if.rvalid =   M_AXI_MCU_IFU_RVALID;
     assign M_AXI_MCU_IFU_RREADY = cptra_ss_mcu_ifu_m_axi_if.rready;
+    
+    // MCU SB AXI Manager
+    axi_if #(
+        .AW(32),//`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+        .DW(`CALIPTRA_AXI_DATA_WIDTH),
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_mcu_sb_m_axi_if (.clk(core_clk), .rst_n(hwif_out.interface_regs.control.cptra_ss_rst_b.value));
+
+    // AW
+    assign M_AXI_MCU_SB_AWADDR =  cptra_ss_mcu_sb_m_axi_if.awaddr;
+    assign M_AXI_MCU_SB_AWBURST = cptra_ss_mcu_sb_m_axi_if.awburst;
+    assign M_AXI_MCU_SB_AWSIZE =  cptra_ss_mcu_sb_m_axi_if.awsize;
+    assign M_AXI_MCU_SB_AWLEN =   cptra_ss_mcu_sb_m_axi_if.awlen;
+    assign M_AXI_MCU_SB_AWUSER =  cptra_ss_mcu_sb_m_axi_if.awuser;
+    assign M_AXI_MCU_SB_AWID = cptra_ss_mcu_sb_m_axi_if.awid;
+    assign M_AXI_MCU_SB_AWLOCK = cptra_ss_mcu_sb_m_axi_if.awlock;
+    assign M_AXI_MCU_SB_AWVALID = cptra_ss_mcu_sb_m_axi_if.awvalid;
+    assign cptra_ss_mcu_sb_m_axi_if.awready = M_AXI_MCU_SB_AWREADY;
+    // W
+    assign M_AXI_MCU_SB_WDATA =   cptra_ss_mcu_sb_m_axi_if.wdata;
+    assign M_AXI_MCU_SB_WSTRB =   cptra_ss_mcu_sb_m_axi_if.wstrb;
+    assign M_AXI_MCU_SB_WVALID =  cptra_ss_mcu_sb_m_axi_if.wvalid;
+    assign cptra_ss_mcu_sb_m_axi_if.wready = M_AXI_MCU_SB_WREADY;
+    assign M_AXI_MCU_SB_WLAST =   cptra_ss_mcu_sb_m_axi_if.wlast;
+    // B
+    assign cptra_ss_mcu_sb_m_axi_if.bresp =    M_AXI_MCU_SB_BRESP;
+    assign cptra_ss_mcu_sb_m_axi_if.bid =      M_AXI_MCU_SB_BID;
+    assign cptra_ss_mcu_sb_m_axi_if.bvalid =   M_AXI_MCU_SB_BVALID;
+    assign M_AXI_MCU_SB_BREADY = cptra_ss_mcu_sb_m_axi_if.bready;
+    // AR
+    assign M_AXI_MCU_SB_ARADDR = cptra_ss_mcu_sb_m_axi_if.araddr;
+    assign M_AXI_MCU_SB_ARBURST = cptra_ss_mcu_sb_m_axi_if.arburst;
+    assign M_AXI_MCU_SB_ARSIZE = cptra_ss_mcu_sb_m_axi_if.arsize;
+    assign M_AXI_MCU_SB_ARLEN = cptra_ss_mcu_sb_m_axi_if.arlen;
+    assign M_AXI_MCU_SB_ARUSER = cptra_ss_mcu_sb_m_axi_if.aruser;
+    assign M_AXI_MCU_SB_ARID = cptra_ss_mcu_sb_m_axi_if.arid;
+    assign M_AXI_MCU_SB_ARLOCK = cptra_ss_mcu_sb_m_axi_if.arlock;
+    assign M_AXI_MCU_SB_ARVALID = cptra_ss_mcu_sb_m_axi_if.arvalid;
+    assign cptra_ss_mcu_sb_m_axi_if.arready = M_AXI_MCU_SB_ARREADY;
+    // R
+    assign cptra_ss_mcu_sb_m_axi_if.rdata =    M_AXI_MCU_SB_RDATA;
+    assign cptra_ss_mcu_sb_m_axi_if.rresp =    M_AXI_MCU_SB_RRESP;
+    assign cptra_ss_mcu_sb_m_axi_if.rid =      M_AXI_MCU_SB_RID;
+    assign cptra_ss_mcu_sb_m_axi_if.rlast =    M_AXI_MCU_SB_RLAST;
+    assign cptra_ss_mcu_sb_m_axi_if.rvalid =   M_AXI_MCU_SB_RVALID;
+    assign M_AXI_MCU_SB_RREADY = cptra_ss_mcu_sb_m_axi_if.rready;
+
+    // CDC for user signal to I3C
+    logic [`CALIPTRA_AXI_USER_WIDTH-1:0] i3c_user_synch;
+    xpm_cdc_array_single #(
+        .DEST_SYNC_FF(4),   // DECIMAL; range: 2-10
+        .INIT_SYNC_FF(0),   // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
+        .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .SRC_INPUT_REG(1),  // DECIMAL; 0=do not register input, 1=register input
+        .WIDTH(`CALIPTRA_AXI_USER_WIDTH) // DECIMAL; range: 1-1024
+    )
+    xpm_cdc_array_single_inst (
+        .dest_out(i3c_user_synch),
+        .dest_clk(i3c_clk),
+        .src_clk(core_clk),
+        .src_in(hwif_out.interface_regs.pauser.pauser.value)
+    );
 
     // I3C AXI Subordinate
     axi_if #(
@@ -1526,7 +1653,7 @@ I think this is the one that isn't used
     assign cptra_ss_i3c_s_axi_if.awburst  = S_AXI_I3C_AWBURST;
     assign cptra_ss_i3c_s_axi_if.awsize   = S_AXI_I3C_AWSIZE;
     assign cptra_ss_i3c_s_axi_if.awlen    = S_AXI_I3C_AWLEN;
-    assign cptra_ss_i3c_s_axi_if.awuser   = hwif_out.interface_regs.pauser.pauser.value; //S_AXI_I3C_AWUSER;
+    assign cptra_ss_i3c_s_axi_if.awuser   = i3c_user_synch; //S_AXI_I3C_AWUSER;
     assign cptra_ss_i3c_s_axi_if.awid     = S_AXI_I3C_AWID;
     assign cptra_ss_i3c_s_axi_if.awlock   = S_AXI_I3C_AWLOCK;
     assign cptra_ss_i3c_s_axi_if.awvalid  = S_AXI_I3C_AWVALID;
@@ -1547,7 +1674,7 @@ I think this is the one that isn't used
     assign cptra_ss_i3c_s_axi_if.arburst = S_AXI_I3C_ARBURST;
     assign cptra_ss_i3c_s_axi_if.arsize  = S_AXI_I3C_ARSIZE;
     assign cptra_ss_i3c_s_axi_if.arlen   = S_AXI_I3C_ARLEN;
-    assign cptra_ss_i3c_s_axi_if.aruser  = hwif_out.interface_regs.pauser.pauser.value; // S_AXI_I3C_ARUSER;
+    assign cptra_ss_i3c_s_axi_if.aruser  = i3c_user_synch; // S_AXI_I3C_ARUSER;
     assign cptra_ss_i3c_s_axi_if.arid    = S_AXI_I3C_ARID;
     assign cptra_ss_i3c_s_axi_if.arlock  = S_AXI_I3C_ARLOCK;
     assign cptra_ss_i3c_s_axi_if.arvalid = S_AXI_I3C_ARVALID;
@@ -1689,14 +1816,6 @@ I think this is the one that isn't used
         .rdata_o        ( cptra_ss_fuse_macro_outputs_tb.rdata_o ),
         .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
     );
-
-    // CSR HMAC KEY - TODO: Copying initialization from soc_bfm. Should probably connect to SW
-    logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_ss_cptra_csr_hmac_key_i;
-    initial begin
-      for (int dword = 0; dword < `CLP_CSR_HMAC_KEY_DWORDS; dword++) begin
-         cptra_ss_cptra_csr_hmac_key_i[dword] = '1; //FIXME
-      end
-    end
     
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export ();
 
@@ -1725,7 +1844,7 @@ I think this is the one that isn't used
     (* syn_keep = "true", mark_debug = "true" *) logic i3c_core_scl_o;
     (* syn_keep = "true", mark_debug = "true" *) logic i3c_core_sda_o;
 
-
+/*
     always_comb begin
         //     i3c-core                             | AXI I3C
         case ({i3c_core_sel_od_pp_o, i3c_core_scl_o, axi_i3c_scl_pullup_en, ~axi_i3c_scl_t, axi_i3c_scl_o
@@ -1773,6 +1892,8 @@ I think this is the one that isn't used
         default: SCL = 1'b1;
         endcase
     end
+*/
+
 
     always_comb begin
         //     i3c-core                             | AXI I3C
@@ -1831,8 +1952,8 @@ logic cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu;
 caliptra_ss_top caliptra_ss_top_0 (
 
     // TODO: I can't figure out the LCC and debug interactions right now. Try forcing these bits
-    .force_mcu_dmi_core_enable(hwif_out.interface_regs.control.force_mcu_dmi_core_enable.value),
-    .force_mcu_dmi_uncore_enable(hwif_out.interface_regs.control.force_mcu_dmi_uncore_enable.value),
+    //.force_mcu_dmi_core_enable(hwif_out.interface_regs.control.force_mcu_dmi_core_enable.value),
+    //.force_mcu_dmi_uncore_enable(hwif_out.interface_regs.control.force_mcu_dmi_uncore_enable.value),
 
     .cptra_ss_clk_i(core_clk),
     .cptra_i3c_clk_i(i3c_clk),
@@ -1842,24 +1963,60 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mci_cptra_rst_b_o(cptra_rst_b),
 
     // Caliptra Core AXI Sub Interface
-    .cptra_ss_cptra_core_s_axi_if(cptra_core_s_axi),
+    .cptra_ss_cptra_core_s_axi_if_w_sub(cptra_core_s_axi.w_sub),
+    .cptra_ss_cptra_core_s_axi_if_r_sub(cptra_core_s_axi.r_sub),
 
     // Caliptra Core AXI Manager Interface
-    .cptra_ss_cptra_core_m_axi_if(cptra_core_m_axi),
+    .cptra_ss_cptra_core_m_axi_if_w_mgr(cptra_core_m_axi.w_mgr),
+    .cptra_ss_cptra_core_m_axi_if_r_mgr(cptra_core_m_axi.r_mgr),
 
     // Caliptra SS MCI AXI Sub Interface
-    .cptra_ss_mci_s_axi_if(cptra_ss_mci_s_axi),
+    .cptra_ss_mci_s_axi_if_w_sub(cptra_ss_mci_s_axi.w_sub),
+    .cptra_ss_mci_s_axi_if_r_sub(cptra_ss_mci_s_axi.r_sub),
 
     // Caliptra SS MCU ROM AXI Sub Interface
-    .cptra_ss_mcu_rom_s_axi_if,
+    .cptra_ss_mcu_rom_s_axi_if_w_sub(cptra_ss_mcu_rom_s_axi_if.w_sub),
+    .cptra_ss_mcu_rom_s_axi_if_r_sub(cptra_ss_mcu_rom_s_axi_if.r_sub),
     .mcu_rom_mem_export_if,
 
     // Caliptra SS MCU LSU/IFU AXI Manager Interface
-    .cptra_ss_mcu_lsu_m_axi_if,
-    .cptra_ss_mcu_ifu_m_axi_if,
+    // LSU
+    .cptra_ss_mcu_lsu_m_axi_if_w_mgr(cptra_ss_mcu_lsu_m_axi_if.w_mgr),
+    .cptra_ss_mcu_lsu_m_axi_if_r_mgr(cptra_ss_mcu_lsu_m_axi_if.r_mgr),
+    .cptra_ss_mcu_lsu_m_axi_if_awcache(M_AXI_MCU_LSU_AWCACHE),
+    .cptra_ss_mcu_lsu_m_axi_if_arcache(M_AXI_MCU_LSU_ARCACHE),
+    .cptra_ss_mcu_lsu_m_axi_if_awprot(M_AXI_MCU_LSU_AWPROT),
+    .cptra_ss_mcu_lsu_m_axi_if_arprot(M_AXI_MCU_LSU_ARPROT),
+    .cptra_ss_mcu_lsu_m_axi_if_awregion(M_AXI_MCU_LSU_AWREGION),
+    .cptra_ss_mcu_lsu_m_axi_if_arregion(M_AXI_MCU_LSU_ARREGION),
+    .cptra_ss_mcu_lsu_m_axi_if_awqos(M_AXI_MCU_LSU_AWQOS),
+    .cptra_ss_mcu_lsu_m_axi_if_arqos(M_AXI_MCU_LSU_ARQOS),
+    // IFU
+    .cptra_ss_mcu_ifu_m_axi_if_w_mgr(cptra_ss_mcu_ifu_m_axi_if.w_mgr),
+    .cptra_ss_mcu_ifu_m_axi_if_r_mgr(cptra_ss_mcu_ifu_m_axi_if.r_mgr),
+    .cptra_ss_mcu_ifu_m_axi_if_awcache(M_AXI_MCU_IFU_AWCACHE),
+    .cptra_ss_mcu_ifu_m_axi_if_arcache(M_AXI_MCU_IFU_ARCACHE),
+    .cptra_ss_mcu_ifu_m_axi_if_awprot(M_AXI_MCU_IFU_AWPROT),
+    .cptra_ss_mcu_ifu_m_axi_if_arprot(M_AXI_MCU_IFU_ARPROT),
+    .cptra_ss_mcu_ifu_m_axi_if_awregion(M_AXI_MCU_IFU_AWREGION),
+    .cptra_ss_mcu_ifu_m_axi_if_arregion(M_AXI_MCU_IFU_ARREGION),
+    .cptra_ss_mcu_ifu_m_axi_if_awqos(M_AXI_MCU_IFU_AWQOS),
+    .cptra_ss_mcu_ifu_m_axi_if_arqos(M_AXI_MCU_IFU_ARQOS),
+    // SB
+    .cptra_ss_mcu_sb_m_axi_if_w_mgr(cptra_ss_mcu_sb_m_axi_if.w_mgr),
+    .cptra_ss_mcu_sb_m_axi_if_r_mgr(cptra_ss_mcu_sb_m_axi_if.r_mgr),
+    .cptra_ss_mcu_sb_m_axi_if_awcache(M_AXI_MCU_SB_AWCACHE),
+    .cptra_ss_mcu_sb_m_axi_if_arcache(M_AXI_MCU_SB_ARCACHE),
+    .cptra_ss_mcu_sb_m_axi_if_awprot(M_AXI_MCU_SB_AWPROT),
+    .cptra_ss_mcu_sb_m_axi_if_arprot(M_AXI_MCU_SB_ARPROT),
+    .cptra_ss_mcu_sb_m_axi_if_awregion(M_AXI_MCU_SB_AWREGION),
+    .cptra_ss_mcu_sb_m_axi_if_arregion(M_AXI_MCU_SB_ARREGION),
+    .cptra_ss_mcu_sb_m_axi_if_awqos(M_AXI_MCU_SB_AWQOS),
+    .cptra_ss_mcu_sb_m_axi_if_arqos(M_AXI_MCU_SB_ARQOS),
 
     // Caliptra SS I3C AXI Sub Interface
-    .cptra_ss_i3c_s_axi_if,
+    .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
+    .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
 
     // Caliptra SS LC Controller AXI Sub Interface
     .cptra_ss_lc_axi_wr_req_i,
@@ -1876,15 +2033,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     //--------------------
     // caliptra core Obf Key & CSR Signing Key
     //--------------------
-    .cptra_ss_cptra_obf_key_i({hwif_out.interface_regs.cptra_obf_key[7].value.value,
-                               hwif_out.interface_regs.cptra_obf_key[6].value.value,
-                               hwif_out.interface_regs.cptra_obf_key[5].value.value,
-                               hwif_out.interface_regs.cptra_obf_key[4].value.value,
-                               hwif_out.interface_regs.cptra_obf_key[3].value.value,
-                               hwif_out.interface_regs.cptra_obf_key[2].value.value,
-                               hwif_out.interface_regs.cptra_obf_key[1].value.value,
-                               hwif_out.interface_regs.cptra_obf_key[0].value.value}),
-    .cptra_ss_cptra_csr_hmac_key_i,
+    .cptra_ss_cptra_obf_key_i(cptra_obf_key),
+    .cptra_ss_cptra_csr_hmac_key_i(cptra_csr_hmac_key),
 
     // Caliptra JTAG Interface
     .cptra_ss_cptra_core_jtag_tck_i(jtag_tck),
@@ -1943,7 +2093,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mci_mcu_sram_req_if,
     .cptra_ss_mcu_mbox0_sram_req_if,
     .cptra_ss_mcu_mbox1_sram_req_if,
-    .cptra_ss_mcu0_el2_mem_export,
+    .cptra_ss_mcu0_el2_mem_export, // TODO this changed
+    //css_mcu0_el2_mem_if.veer_sram_icache_src cptra_ss_mcu0_el2_mem_export,
     
     .cptra_ss_mci_generic_input_wires_i({hwif_out.interface_regs.mci_generic_input_wires[0].value.value, hwif_out.interface_regs.mci_generic_input_wires[1].value.value}),
     .cptra_ss_mci_generic_output_wires_o({hwif_in.interface_regs.mci_generic_output_wires[0].value.next, hwif_in.interface_regs.mci_generic_output_wires[1].value.next}),

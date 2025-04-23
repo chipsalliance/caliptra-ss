@@ -20,6 +20,7 @@ package tb_top_pkg;
     // -----------------------------------------------------------
     // Parameters
     // -----------------------------------------------------------
+    // MCU SRAM
     localparam MCU_SRAM_SIZE_KB = 512;
     localparam MCU_SRAM_DATA_WIDTH   = 32;
     localparam MCU_SRAM_DATA_WIDTH_BYTES = MCU_SRAM_DATA_WIDTH / 8;
@@ -28,7 +29,7 @@ package tb_top_pkg;
     localparam MCU_SRAM_DEPTH   = (MCU_SRAM_SIZE_KB * 1024) / MCU_SRAM_DATA_WIDTH_BYTES;
     localparam MCU_SRAM_ADDR_WIDTH = $clog2(MCU_SRAM_DEPTH);
 
-
+    // MCU Mailbox 0
     localparam MCU_MBOX0_SIZE_KB = 256;
     localparam MCU_MBOX0_DATA_W = 32;
     localparam MCU_MBOX0_ECC_DATA_W = 7;
@@ -41,7 +42,7 @@ package tb_top_pkg;
     localparam [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
     localparam [4:0][31:0] MCU_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
 
-
+    // MCU Mailbox 1
     localparam MCU_MBOX1_SIZE_KB = 256;
     localparam MCU_MBOX1_DATA_W = 32;
     localparam MCU_MBOX1_ECC_DATA_W = 7;
@@ -97,5 +98,14 @@ package tb_top_pkg;
         logic dccm_double_bit_error;
         logic dccm_single_bit_error;
     } veer_sram_error_injection_mode_t;
+
+    typedef struct packed {
+        //  [2] - Randomize when writes are injected
+        //  [1] - Double bit, Mbox SRAM Error Injection
+        //  [0] - Single bit, Mbox SRAM Error Injection
+        logic randomize;
+        logic double_bit_error;
+        logic single_bit_error;
+    } mcu_mbox_sram_error_injection_mode_t;
 
 endpackage

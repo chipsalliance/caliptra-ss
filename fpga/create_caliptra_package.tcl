@@ -73,6 +73,7 @@ add_files [ glob $ssrtlDir/src/*/rtl/*.sv ]
 set i3cDir $fpgaDir/../third_party/i3c-core
 # Include headers and packages first
 add_files [ glob $i3cDir/src/*.svh ]
+add_files [ glob $i3cDir/src/libs/*.svh ]
 add_files [ glob $i3cDir/src/*/*/*_pkg.sv ]
 add_files [ glob $i3cDir/src/*/*_pkg.sv ]
 add_files [ glob $i3cDir/src/*_pkg.sv ]
@@ -82,7 +83,8 @@ add_files [ glob $i3cDir/src/*/*/*.sv ]
 add_files [ glob $i3cDir/src/*/*.sv ]
 add_files [ glob $i3cDir/src/*.sv ]
 # Remove the i3c-core versions of the AXI modules, so that it uses the caliptra-rtl versions instead
-#remove_files [ glob $i3cDir/src/libs/axi/*.sv ]
+#remove_files [ glob $i3cDir/src/libs/*.svh ]
+#remove_files [ glob $i3cDir/src/libs/axi_sub/*.sv ]
 
 # Remove spi_host files that aren't used yet and are flagged as having syntax errors
 # TODO: Re-include these files when spi_host is used.
@@ -163,6 +165,7 @@ ipx::associate_bus_interfaces -busif mcu_rom_backdoor -clock mcu_rom_backdoor_cl
 
 ipx::associate_bus_interfaces -busif M_AXI_MCU_IFU -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif M_AXI_MCU_LSU -clock core_clk [ipx::current_core]
+ipx::associate_bus_interfaces -busif M_AXI_MCU_SB -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif M_AXI_MCI -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif S_AXI_MCI -clock core_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif S_AXI_MCU_ROM -clock core_clk [ipx::current_core]
