@@ -22,7 +22,10 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/mcu/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src
++incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi
++incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub
++incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/../src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl
@@ -32,7 +35,6 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/mci/rtl
-+incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/datavault/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/ahb_lite_bus/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha256/rtl
@@ -339,6 +341,10 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/i3c_phy.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/i3c_io.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/csr/I3CCSR.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/interrupt.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_arb.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_rd.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_wr.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/hci/queues/read_queue.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/hci/queues/write_queue.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/hci/ahb_if.sv
@@ -382,6 +388,8 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/controller.
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/stable_high_detector.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/i3c.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/i3c_wrapper.sv
+${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
+${CALIPTRA_SS_ROOT}/src/libs/rtl/caliptra_ss_prim_assert_sec_cm.svh
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_core_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_prim_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_dai.sv
@@ -448,7 +456,6 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_dmi_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_trace_buffer_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/trace_buffer_csr_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox_csr_pkg.sv
-${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_top.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_axi_sub_decode.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_axi_sub_top.sv

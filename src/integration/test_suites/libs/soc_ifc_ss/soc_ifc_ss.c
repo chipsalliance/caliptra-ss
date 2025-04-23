@@ -306,3 +306,45 @@ uint32_t cptra_mcu_mbox_read_target_user_valid(uint32_t mbox_num) {
     VPRINTF(LOW, "CALIPTRA: Reading Mbox%x TARGET_USER_VALID: 0x%x\n", mbox_num, data);
     return data;
 }
+
+bool cptra_wait_for_cptra_mbox_execute(uint32_t attempt_count) {
+    VPRINTF(LOW, "CALIPTRA: Waiting for Caliptra MBOX execute\n");
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        if((lsu_read_32(CLP_MBOX_CSR_MBOX_EXECUTE) & MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK) == MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK){
+            VPRINTF(LOW, "CALIPTRA: Caliptra MBOX execute set\n");
+            return true;
+        }
+    }
+    return false;
+}
+
+void cptra_wait_mcu_reset_req_interrupt_clear(uint32_t attempt_count) {
+    VPRINTF(LOW, "CALIPTRA: Waiting for MCI Reset Request interrupt to be cleared\n");
+    uint32_t status;
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        status = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_MASK;
+
+        if(!status){
+            VPRINTF(LOW, "CALIPTRA: MCI Reset Request interrupt cleared\n");
+            return;
+        }
+    }   
+    VPRINTF(FATAL, "CALIPTRA: MCI Reset Request interrupt not cleared");
+    SEND_STDOUT_CTRL(0x1);
+    while(1);
+}
+
+void cptra_wait_mcu_reset_status_set(uint32_t attempt_count) {
+    VPRINTF(LOW, "CALIPTRA: Waiting for MCU Reset Status to be set\n");
+    uint32_t status;
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        status = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_RESET_STATUS) & MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK;
+        if(status){
+            VPRINTF(LOW, "CALIPTRA: MCU Reset Status Set\n");
+            return;
+        }
+    }   
+    VPRINTF(FATAL, "CALIPTRA: MCU Reset Status Not Set");
+    SEND_STDOUT_CTRL(0x1);
+    while(1);
+}

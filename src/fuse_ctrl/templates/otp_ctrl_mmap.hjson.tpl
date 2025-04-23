@@ -360,11 +360,6 @@
             lc_phase:     "LcStTestUnlocked0",
             items: [
                 {
-                    name: "CPTRA_SS_TEST_UNLOCK_TOKEN_0",
-                    inv_default: "<random>",
-                    size: "16"
-                },
-                {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_1",
                     inv_default: "<random>",
                     size: "16"
@@ -415,14 +410,22 @@
                     Used to transition the device from MANUF to PROD state.
                     '''
                 },
-               {
+                {
                     name: "CPTRA_SS_PROD_TO_PROD_END_TOKEN",
                     inv_default: "<random>",
                     size: "16",
                     desc: '''
                     Used to transition the device from PROD to PROD_END state.
                     '''
-                },                                    
+                },
+                {
+                    name: "CPTRA_SS_RMA_TOKEN",
+                    inv_default: "<random>",
+                    size: "16",
+                    desc: '''
+                    Used to transition the device to the RMA state.
+                    '''
+                },                                        
             ],
             desc: '''Secret life-cycle unlock token partition.
             '''

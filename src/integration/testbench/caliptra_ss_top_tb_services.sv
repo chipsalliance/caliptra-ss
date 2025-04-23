@@ -35,6 +35,7 @@ import tb_top_pkg::*;
   input  logic                       clk,
   input  logic                       rst_l,
   input  int                         cycleCnt,
+  input logic                        cptra_ss_rdc_clk_cg_o,
   caliptra_ss_bfm_services_if.tb_services soc_bfm_if,
   css_mcu0_el2_mem_if                cptra_ss_mcu0_el2_mem_export,
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
@@ -209,7 +210,7 @@ import tb_top_pkg::*;
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
                 if($test$plusargs("AVY_TEST")) begin
-                    if($value$plusargs("i3c_run_time=%0t", i3c_run_time)) begin
+                    if($value$plusargs("i3c_run_time=%0d", i3c_run_time)) begin
                         $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
                         #i3c_run_time;
                     end else begin
@@ -681,7 +682,7 @@ end
     )
     mcu_mbox0_ram
     (
-        .clk_i(clk),
+        .clk_i(cptra_ss_rdc_clk_cg_o),
 
         .cs_i(cptra_ss_mcu_mbox0_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox0_sram_req_if.req.we),
@@ -698,7 +699,7 @@ end
     )
     mcu_mbox1_ram
     (
-        .clk_i(clk),
+        .clk_i(cptra_ss_rdc_clk_cg_o),
 
         .cs_i(cptra_ss_mcu_mbox1_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox1_sram_req_if.req.we),
@@ -726,7 +727,7 @@ end
         .DATA_WIDTH(MCU_SRAM_DATA_TOTAL_WIDTH),
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
    ) lmem (
-       .clk_i   (clk),
+       .clk_i   (cptra_ss_rdc_clk_cg_o),
        .cs_i    (cptra_ss_mci_mcu_sram_req_if.req.cs),
        .we_i    (cptra_ss_mci_mcu_sram_req_if.req.we),
        .addr_i  (cptra_ss_mci_mcu_sram_req_if.req.addr),

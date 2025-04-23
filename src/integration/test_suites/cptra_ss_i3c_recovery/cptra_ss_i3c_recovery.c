@@ -388,15 +388,3 @@ void main (void) {
 
     SEND_STDOUT_CTRL(0xff);
 }
-
-
-
-
-//-- Junk code
-    // i3c_reg_data = 0x00000000;
-    // i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_TTI_TX_DATA_PORT);
-    // VPRINTF(LOW, "TTI TX DATA PORT: %x\n", i3c_reg_data);
-
-    // i3c_reg_data = 0x00000000;
-    // i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_TTI_RX_DATA_PORT);
-    // VPRINTF(LOW, "TTI RX DATA PORT: %x\n", i3c_reg_data);
