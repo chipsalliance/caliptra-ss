@@ -137,6 +137,7 @@ module fc_lcc_tb_services (
             // XXX: The AXI controller blocks when observing a write response error.
             // This manually pulls the signal down to allow for program continuation.
             force `LCC_PATH.axi_wr_rsp.bresp = '0;
+          end
           CMD_LC_FAULT_CNTR: begin
             $display("fc_lcc_tb_services: fault lcc cntr fuse");
           force `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.lc_cnt_i[0] = '0;
