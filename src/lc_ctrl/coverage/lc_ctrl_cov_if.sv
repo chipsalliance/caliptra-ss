@@ -196,6 +196,17 @@ interface lc_ctrl_cov_if
                 lc_ctrl_transitions_cg[i][j] = new(lc_states[i], lc_states[j], TransTokenIdxMatrix[i][j]);
     end
 
+    logic volatile_raw_unlock_i = lc_ctrl.u_lc_ctrl_fsm.volatile_raw_unlock_i;
+    lc_state_e lc_state_q = lc_ctrl.u_lc_ctrl_fsm.lc_state_q;
+
+    // Make sure we observe a successful volatile raw unlock transition.
+    covergroup lc_ctrl_volatile_raw_unlock_transition_cg @(posedge clk_i);
+        lc_ctrl_volatile_raw_unlock_transition_cp: coverpoint lc_state_q iff (sec_volatile_raw_unlock && volatile_raw_unlock_i)
+        {
+            bins VolatileRawUnlockTransition = ( LcStRaw => LcStTestUnlocked0);
+        }
+    endgroup
+
 endinterface
 
 `endif
