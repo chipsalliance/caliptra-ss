@@ -39,7 +39,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_byte_write/smoke_test_mcu_sram_byte_write: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_debug_stress/smoke_test_mcu_sram_debug_stress: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_ecc_db/smoke_test_mcu_sram_ecc_db: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_ecc_db/smoke_test_mcu_sram_ecc_sb: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_ecc_sb/smoke_test_mcu_sram_ecc_sb: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_single: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_random: { weight: 100 }
