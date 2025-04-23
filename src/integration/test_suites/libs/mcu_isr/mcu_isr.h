@@ -70,10 +70,21 @@ inline void service_mci_intr() {
             lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R, sts_err);
             mcu_intr_rcv.mci_error1 |= sts_err;
             break;
+        case MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS1_MASK | MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS0_MASK:
+            sts_err = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R);
+            /* Write 1 to Clear the pending interrupt */
+            // TODO should handle on a per-intr basis
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R, sts_err);
+            mcu_intr_rcv.mci_error1 |= sts_err;
+            sts_err = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R);
+            /* Write 1 to Clear the pending interrupt */
+            // TODO should handle on a per-intr basis
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R, sts_err);
+            mcu_intr_rcv.mci_error0 |= sts_err;
+            break;
         default:
-            VPRINTF(FATAL, "Bad glbl err intr 0x%x\n", which);
-            SEND_STDOUT_CTRL(0x1);
-            while(1);
+            VPRINTF(HIGH, "MCU: MCI error intr: 0x%x\n", which);
+            break;
     }
     which = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R);
     switch (which) {
@@ -91,10 +102,21 @@ inline void service_mci_intr() {
             lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R, sts_ntf);
             mcu_intr_rcv.mci_notif1 |= sts_ntf;
             break;
+        case MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS1_MASK | MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS0_MASK:
+            sts_ntf = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R);
+            /* Write 1 to Clear the pending interrupt */
+            // TODO should handle on a per-intr basis
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R, sts_ntf);
+            mcu_intr_rcv.mci_notif1 |= sts_ntf;
+            sts_ntf = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
+            /* Write 1 to Clear the pending interrupt */
+            // TODO should handle on a per-intr basis
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, sts_ntf);
+            mcu_intr_rcv.mci_notif0 |= sts_ntf;
+            break;
         default:
-            VPRINTF(FATAL, "Bad glbl ntf intr 0x%x\n", which);
-            SEND_STDOUT_CTRL(0x1);
-            while(1);
+            VPRINTF(HIGH, "MCU: MCI notif intr: 0x%x\n", which);
+            break;
     }
     if (!sts_err && !sts_ntf) {
         VPRINTF(ERROR,"bad mci_intr sts:%x %x\n", sts_err, sts_ntf);
