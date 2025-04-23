@@ -1017,7 +1017,7 @@ xpm_cdc_single_i3c_escalated_reset_inst (
         .peripheral_reset_o(i3c_peripheral_reset_presync),
         .peripheral_reset_done_i(1'b1),
         .escalated_reset_o(i3c_escalated_reset_presync),
-        .irq_o(i3c_irq_o)
+        .irq_o(i3c_irq_o),
 
         //-- AXI USER ID FILTERING
         .disable_id_filtering_i(1'b1), // -- FIXME : ENABLE THIS FEATURE
