@@ -37,10 +37,12 @@ module caliptra_ss_top
     ,parameter MCU_SRAM_SIZE_KB = 512
 ) (
     input logic cptra_ss_clk_i,
+    output logic cptra_ss_rdc_clk_cg_o,
     input logic cptra_ss_pwrgood_i,
     input logic cptra_ss_rst_b_i,
     input  logic cptra_ss_mci_cptra_rst_b_i,
     output logic cptra_ss_mci_cptra_rst_b_o,
+    output logic cptra_ss_rst_b_o,
 
 // Caliptra Core AXI Sub Interface
     axi_if.w_sub cptra_ss_cptra_core_s_axi_if_w_sub,
@@ -298,8 +300,6 @@ module caliptra_ss_top
     logic                       wb_csr_valid;
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
-
-    logic cptra_ss_rst_b_o;
 
     logic mcu_clk_cg;
 
@@ -981,7 +981,7 @@ module caliptra_ss_top
 
         .clk(cptra_ss_clk_i),
         .mcu_clk_cg(mcu_clk_cg),
-        .cptra_ss_rdc_clk_cg(), // Unused since no IPs on warm reset. MCU has different clock and Cptra has its own RDC.
+        .cptra_ss_rdc_clk_cg(cptra_ss_rdc_clk_cg_o), 
 
 
         .mci_rst_b(cptra_ss_rst_b_i),

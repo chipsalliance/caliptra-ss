@@ -60,6 +60,7 @@ module caliptra_ss_top_tb
     logic                       cptra_ss_pwrgood_i;
     logic                       cptra_ss_rst_b_i;
     logic                       cptra_ss_mci_cptra_rst_b_o;
+    logic                       cptra_ss_rdc_clk_cg_o;
 
     logic        [31:0]         trace_rv_i_insn_ip;
     logic        [31:0]         trace_rv_i_address_ip;
@@ -1503,6 +1504,7 @@ module caliptra_ss_top_tb
     caliptra_ss_dut (
 
         .cptra_ss_clk_i(core_clk),
+        .cptra_ss_rdc_clk_cg_o,
         .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i),
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
@@ -1732,6 +1734,7 @@ module caliptra_ss_top_tb
     caliptra_ss_top_tb_services u_caliptra_ss_top_tb_services (
         .clk                         (core_clk                    ),
         .rst_l                       (cptra_ss_rst_b_i            ),
+        .cptra_ss_rdc_clk_cg_o,
         .cycleCnt                    (cycleCnt                    ),
         .cptra_ss_mcu0_el2_mem_export(cptra_ss_mcu0_el2_mem_export),
         .soc_bfm_if(i_caliptra_ss_bfm_services_if.tb_services),

@@ -26,7 +26,7 @@ def inc_ptr(x):
     return ptr
 %>
 
-addrmap caliptra_otp_ctrl {
+addrmap otp_ctrl {
     reg {
         field {
             sw = rw;
