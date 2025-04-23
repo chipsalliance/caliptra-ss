@@ -18,6 +18,7 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_pwrgood_i;
     logic cptra_ss_rst_b_i;
     logic cptra_ss_mci_cptra_rst_b_o;
+    logic cptra_ss_rdc_clk_cg_o;
 
 
     `define AXI_M_IF_TIE_OFF(_sig_name) \
@@ -349,6 +350,7 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i), //fixme
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o(cptra_ss_mci_cptra_rst_b_o),
+        .cptra_ss_rdc_clk_cg_o(cptra_ss_rdc_clk_cg_o),
     
     //SoC AXI Interface
         .cptra_ss_cptra_core_s_axi_if_r_sub(cptra_ss_cptra_core_s_axi_if.r_sub),
