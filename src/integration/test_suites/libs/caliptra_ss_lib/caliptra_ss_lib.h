@@ -233,15 +233,22 @@ static inline void mcu_mbox_set_execute(uint32_t mbox_num) {
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x1);
 }
 
+static inline uint32_t mcu_mbox_read_execute(uint32_t mbox_num) {
+    uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "MCU: Mbox%x Reading Execute: 0x%x\n", mbox_num, rd_data);
+}
+
 static inline void mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t cmd) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x command: 0%x\n", mbox_num, cmd); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, cmd);
 }
+
 static inline uint32_t mcu_mbox_read_cmd(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading CMD: 0x%x\n", mbox_num, rd_data); 
     return rd_data;
 }
+
 static inline void mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t dlen) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x DLEN: 0x%x\n", mbox_num, dlen); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, dlen);
@@ -312,6 +319,11 @@ static inline uint32_t mcu_mbox_read_target_user_valid(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading TARGET_USER_VALID: 0x%x\n", mbox_num, rd_data);
     return rd_data;
+}
+
+static inline void mcu_mbox_write_target_status(uint32_t mbox_num, uint32_t axi_id) {
+    VPRINTF(LOW, "MCU: Writing to MBOX%x TARGET_USER: 0%x\n", mbox_num, axi_id); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, axi_id);    
 }
 
 inline uint32_t mcu_mbox_read_target_status(uint32_t mbox_num) {

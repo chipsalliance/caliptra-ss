@@ -1,0 +1,6 @@
+---
+seed: 1
+testname: smoke_test_mcu_mbox1_csrs_warm_rst
+pre-exec: |
+  echo "Running pre_exec for [smoke_test_mcu_mbox_csrs_warm_rst]"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_mcu_mbox_csrs_warm_rst BUILD_CFLAGS="-DMCU_MBOX_VALID_VECTOR=0x2" mcu_program.hex
