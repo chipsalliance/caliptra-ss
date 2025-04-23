@@ -794,7 +794,7 @@ endgenerate
 
  // DUT instantiation
 mci_lcc_st_trans LCC_state_translator (
-    .clk_i(clk),
+    .clk_i(cptra_ss_rdc_clk_cg),
     .rst_ni(cptra_ss_rst_b_o),
     .state_error(lc_fatal_state_error_i),  
     .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
