@@ -94,6 +94,9 @@ localparam CMD_LC_ENABLE_SVA                = FC_LCC_CMD_OFFSET + 8'h15;
 localparam CMD_FC_LCC_CORRECTABLE_FAULT     = FC_LCC_CMD_OFFSET + 8'h16;
 localparam CMD_FC_LCC_UNCORRECTABLE_FAULT   = FC_LCC_CMD_OFFSET + 8'h17;
 localparam CMD_LCC_FATAL_BUS_INTEG_ERROR    = FC_LCC_CMD_OFFSET + 8'h18;
+localparam CMD_LC_FAULT_CNTR                = FC_LCC_CMD_OFFSET + 8'h19;
+localparam CMD_DISABLE_CLK_BYP_ACK          = FC_LCC_CMD_OFFSET + 8'h1A;
+
 
 localparam TB_DISABLE_MCU_SRAM_PROT_ASSERTS = 8'hc0;
 
