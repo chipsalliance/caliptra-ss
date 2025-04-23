@@ -102,6 +102,7 @@ localparam TB_CMD_INJECT_MCI_ERROR_FATAL = 8'he8;
 localparam TB_CMD_INJECT_MCI_ERROR_NON_FATAL = 8'he9;
 localparam TB_CMD_INJECT_AGG_ERROR_FATAL = 8'hea;
 localparam TB_CMD_INJECT_AGG_ERROR_NON_FATAL = 8'heb;
+localparam TB_CMD_INJECT_NOTIF0 = 8'hec;
 
 localparam TB_CMD_COLD_RESET                  = 8'hF5;
 localparam TB_CMD_WARM_RESET                  = 8'hF6;

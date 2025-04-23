@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include "caliptra_ss_lib.h"
 #include "wdt.h"
+#include "veer-csr.h"
 
 // volatile uint32_t* stdout           = (uint32_t *)STDOUT;
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
@@ -34,13 +35,16 @@ volatile uint32_t  rst_count  = 0;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#ifdef MY_RANDOM_SEED
-    unsigned time = (unsigned) MY_RANDOM_SEED;
+#ifdef PLAYBOOK_RANDOM_SEED
+    unsigned time = (unsigned) PLAYBOOK_RANDOM_SEED;
 #else
     unsigned time = 0;
 #endif
 
-volatile uint32_t * soc_intr_en         = (uint32_t *) SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R; //TODO: confirm
+volatile uint32_t * mci_error0_intr_en  = (uint32_t *) SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R; //TODO: confirm
+volatile uint32_t * mci_error1_intr_en  = (uint32_t *) SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R;
+volatile uint32_t * mci_notif0_intr_en  = (uint32_t *) SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R;
+volatile uint32_t * mci_notif1_intr_en  = (uint32_t *) SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R;
 volatile uint32_t * mci_global_intr_en  = (uint32_t *) SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R;
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
@@ -95,7 +99,16 @@ void service_agg_error_non_fatal_intr() {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R, data);
 }
 
-void main(void) {
+void service_notif0_intr() {
+    uint32_t data = 0;
+    while (!data) {
+        data = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
+    }
+    printf("\nnotif0 intr data = %x\n", data);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, data);
+}
+
+uint32_t main(void) {
     uint8_t rand_mask_sel;
     uint32_t data = 0;
 
@@ -106,7 +119,10 @@ void main(void) {
     srand(time);
 
     //Enable SOC notif interrupt
-    *soc_intr_en = MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_INTERNAL_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_ECC_UNC_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_ECC_UNC_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER1_TIMEOUT_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER2_TIMEOUT_EN_MASK;
+    *mci_error0_intr_en = MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_INTERNAL_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_ECC_UNC_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_ECC_UNC_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER1_TIMEOUT_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER2_TIMEOUT_EN_MASK;
+    *mci_error1_intr_en = 0xffff;
+    *mci_notif0_intr_en = 0xffff;
+    *mci_notif1_intr_en = 0xffff;
     *mci_global_intr_en = MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK | MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MCU_NMI_VECTOR, (uint32_t) (nmi_handler));
 
@@ -120,9 +136,11 @@ void main(void) {
         for (uint8_t i = 0; i < 100; i++); //wait for all error injections to be done
         //service intr
         service_dmi_axi_collision_error_intr();
-        printf("done servicing collision err bit\n");
+        printf("done servicing collision err bit");
 
         SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
+        //halt core function
+        csr_write_mpmc_halt();
     }
     else if (rst_count == 2) {
         VPRINTF(LOW, "------------\nMCI err with mask\n------------\n");
@@ -137,6 +155,7 @@ void main(void) {
 
         // for (uint8_t i = 0; i < 10; i++);
         SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
+        csr_write_mpmc_halt();
     }
     else if (rst_count == 3) {
         VPRINTF(LOW, "------------\nMCI non-ftl err without mask\n------------\n");
@@ -165,8 +184,9 @@ void main(void) {
         service_agg_error_fatal_intr();
         printf("Done servicing agg err ftl\n");
 
-        //issue warm reset to clear fatal flag
-        SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
+        //issue cold reset to clear fatal flag
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
+        csr_write_mpmc_halt();
     }
     else if (rst_count == 4) {
         VPRINTF(LOW, "-------------\nAggregate ftl err with mask\n---------------\n");
@@ -179,6 +199,7 @@ void main(void) {
 
         //issue warm reset to clear fatal flag
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
+        csr_write_mpmc_halt();
     }
     else if (rst_count == 5) {
         VPRINTF(LOW, "-------------\nAggregate non ftl err without mask\n---------------\n");
@@ -189,6 +210,7 @@ void main(void) {
 
         //issue warm reset to clear fatal flag
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
+        csr_write_mpmc_halt();
     }
     else if (rst_count == 6) {
         VPRINTF(LOW, "-------------\nAggregate non ftl err with mask\n---------------\n");
@@ -201,8 +223,44 @@ void main(void) {
 
         //issue warm reset to clear fatal flag
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
+        csr_write_mpmc_halt();
     }
-    else {
+    else if (rst_count == 7) {
+        VPRINTF(LOW, "-------------\nFW ftl/non-ftl err without mask\n---------------\n");
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_FATAL, rand());
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL, rand());
+
+        for(uint8_t i = 0; i < 10; i++);
+        SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
+        csr_write_mpmc_halt();
+    }
+    else if (rst_count == 8) {
+        VPRINTF(LOW, "-------------\nFW ftl/non-ftl err with mask\n---------------\n");
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK, 0xffff);
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK, 0xffff);
+
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_FATAL, rand());
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL, rand());
+
+        for(uint8_t i = 0; i < 10; i++);
+        SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
+        csr_write_mpmc_halt();
+    } 
+    else { //if (rst_count == 9) {
+        VPRINTF(LOW, "-------------\nNotif0 conditions\n---------------\n");
+        SEND_STDOUT_CTRL(TB_CMD_INJECT_NOTIF0);
+        service_notif0_intr();
+
+        // printf("Write to generic input wires 0\n");
+        // lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0, rand());
+        // service_notif0_intr();
+
+        // printf("Write to generic input wires 1\n");
+        // lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1, rand());
+        // service_notif0_intr();
+    // }
+    // else {
         SEND_STDOUT_CTRL(0xFF);
+        csr_write_mpmc_halt();
     }
 }

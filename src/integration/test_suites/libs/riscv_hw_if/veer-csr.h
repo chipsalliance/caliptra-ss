@@ -17,7 +17,7 @@
 #ifndef VEER_CSR_H
 #define VEER_CSR_H
 
-#include "caliptra_defines.h"
+// #include "caliptra_defines.h"
 #include "riscv-csr.h" /* for __riscv_xlen */
 
 //////////////////////////////////////////////////////////////////////////////

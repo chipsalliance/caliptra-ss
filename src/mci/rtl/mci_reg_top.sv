@@ -240,6 +240,7 @@ logic mcu_mbox0_target_user_done_p;
 logic mcu_mbox1_target_user_done_d;
 logic mcu_mbox1_target_user_done_p;
 
+logic strap_we_sticky;
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
 ///////////////////////////////////////////////
