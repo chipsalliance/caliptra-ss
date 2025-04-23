@@ -55,6 +55,14 @@
 //         8'he0        - Disable ECC Error Injection
 //         8'he2        - Inject Single-bit ECC errors into MCU DCCM
 //         8'he3        - Inject Double-bit ECC errors into MCU DCCM
+//         8'he4        - Inject Single-bit ECC errors into MCU MBOX 
+//         8'he5        - Inject Double-bit ECC errors into MCU MBOX 
+//         8'he6        - Disable ECC Error Injection MCU MBOX
+//         8'he7        - Inject random ECC errors into MCU MBOX
+//         8'he8        - Inject Single-bit ECC errors into MCU SRAM 
+//         8'he9        - Inject Double-bit ECC errors into MCU SRAM 
+//         8'hea        - Disable ECC Error Injection MCU SRAM
+//         8'heb        - Inject random ECC errors into MCU SRAM
 //         --
 //         8'hff        - End the simulation with a Success status
 localparam TB_SERVICE_CMD_NOPE              = 8'h00;
