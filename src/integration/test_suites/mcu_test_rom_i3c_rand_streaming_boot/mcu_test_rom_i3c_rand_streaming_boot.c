@@ -17,6 +17,7 @@
 #include "caliptra_ss_lib.h"
 #include "string.h"
 #include "stdint.h"
+#include "veer-csr.h"
 
 #define STATUS_CHECK_LOOP_COUNT_FOR_RECOVERY 20
 
@@ -45,11 +46,6 @@ void main (void) {
     wait_for_cptra_ready_for_mb_processing();
     configure_captra_axi_user();
 
-    for(uint8_t ii=0; ii<10000; ii++) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop");
-        }    
-    }
-
-    SEND_STDOUT_CTRL(0xff);
+    //Halt the core to wait for Caliptra to finish the test
+    csr_write_mpmc_halt();
 }
