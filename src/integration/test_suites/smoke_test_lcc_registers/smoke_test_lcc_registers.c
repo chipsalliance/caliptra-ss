@@ -40,126 +40,108 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
+// This function writes to a read-only register and checks whether the expected
+// reset value is still present after the write.
+void check_read_only_register(uintptr_t addr, uint32_t expected_value, uint32_t mask) {
+    // Perform the write.
+    lsu_write_32(addr, 0xdeadbeef);
+
+    // Wait a bit before reading out the value.
+    for (uint8_t ii = 0; ii < 160; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+
+    uint32_t value = lsu_read_32(addr) & mask;
+
+    if (expected_value != value) {
+        VPRINTF(LOW, "ERROR: incorrect value: exp: %d, act: %d\n", expected_value, value);
+        exit(1);
+    }
+}
+
 void test_read_only_registers(void) {
     VPRINTF(LOW, "============\nMCU: TESTING RO LCC REGISTERS\n============\n\n");
 
     // STATUS register.
     // Read-only 32-bit register.
-    uint32_t status_exp = 3; // Ready and init is set.
     uint32_t status = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    if (status != status_exp) {
-        VPRINTF(LOW, "ERROR: incorrect status: exp: %d, act: %d\n", status_exp, status);
-        exit(1);
-    }
+    check_read_only_register(LC_CTRL_STATUS_OFFSET, status, 0xFFFFFFFF);
 
     // TRANSITION_REGWEN register.
     // Read-only 1-bit register.
-    uint32_t transition_regwen_exp = 0;
-    uint32_t transition_regwen = lsu_read_32(LC_CTRL_TRANSITION_REGWEN_OFFSET);
-    if (transition_regwen != transition_regwen_exp) {
-        VPRINTF(LOW, "ERROR: incorrect transition_regwen: exp: %d, act: %d\n", transition_regwen_exp, transition_regwen);
-        exit(1);
-    }
+    uint32_t transition_regwen = lsu_read_32(LC_CTRL_TRANSITION_REGWEN_OFFSET) & 0x1;
+    check_read_only_register(LC_CTRL_TRANSITION_REGWEN_OFFSET, transition_regwen, 0x1);
 
     // OTP_VENDOR_TEST_STATUS register.
     // Read-only 32-bit register.
-    // Tied to '0 in otp_ctrl.
-    uint32_t otp_vendor_test_status_exp = 0;
     uint32_t otp_vendor_test_status = lsu_read_32(LC_CTRL_OTP_VENDOR_TEST_STATUS_OFFSET);
-    if (otp_vendor_test_status != otp_vendor_test_status_exp) {
-        VPRINTF(LOW, "ERROR: incorrect otp_vendor_test_status: exp: %d, act: %d\n", otp_vendor_test_status_exp, otp_vendor_test_status);
-        exit(1);
-    }
+    check_read_only_register(LC_CTRL_OTP_VENDOR_TEST_STATUS_OFFSET, otp_vendor_test_status, 0xFFFFFFFF);
 
     // LC_STATE register.
     // Read-only 30-bit register.
-    // Expecting RAW (0x0000) as we haven't done a transition yet.
-    uint32_t lc_state_exp = 0;
     uint32_t lc_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET) & 0x3FFFFFFF;
-    if (lc_state != lc_state_exp) {
-        VPRINTF(LOW, "ERROR: incorrect lc_state: exp: %d, act: %d\n", lc_state_exp, lc_state);
-        exit(1);
-    }
+    check_read_only_register(LC_CTRL_LC_STATE_OFFSET, lc_state, 0x3FFFFFFF);
 
     // LC_TRANSITION_CNT register.
     // Read-only 5-bit register.
-    // Expecting 0 as we haven't done a transition yet.
-    uint32_t lc_transition_cnt_exp = 0;
     uint32_t lc_transition_cnt = lsu_read_32(LC_CTRL_LC_TRANSITION_CNT_OFFSET) & 0x1F;
-    if (lc_transition_cnt != lc_transition_cnt_exp) {
-        VPRINTF(LOW, "ERROR: incorrect lc_transition_cnt: exp: %d, act: %d\n", lc_transition_cnt_exp, lc_transition_cnt);
-        exit(1);
-    }
+    check_read_only_register(LC_CTRL_LC_TRANSITION_CNT_OFFSET, lc_transition_cnt, 0x1F);
 
     // LC_ID_STATE register.
     // Read-only 32-bit register.
-    // DecLcIdBlank is the default value when the secrets are not yet initialized.
-    uint32_t lc_id_state_exp = 0;
     uint32_t lc_id_state = lsu_read_32(LC_CTRL_LC_ID_STATE_OFFSET);
-    if (lc_id_state != lc_id_state_exp) {
-        VPRINTF(LOW, "ERROR: incorrect lc_id_state: exp: %d, act: %d\n", lc_id_state_exp, lc_id_state);
-        exit(1);
-    }
+    check_read_only_register(LC_CTRL_LC_ID_STATE_OFFSET, lc_id_state, 0xFFFFFFFF);
 
     // LC_CTRL_HW_REVISION0 register.
     // Read-only 32-bit register.
     // SILICON_CREATOR_ID and the PRODUCT_ID.
-    // These values are parameterized in lc_ctrl and set to 0 by default.
-    uint32_t product_id_exp = 0;
-    uint32_t silicon_creater_id_exp = 0;
     uint32_t hw_revision0 = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET);
-    uint32_t product_id = hw_revision0 & 0xffff;
-    uint32_t silicon_creater_id = (hw_revision0 >> 16) & 0xffff;
-    if (product_id != product_id_exp) {
-        VPRINTF(LOW, "ERROR: incorrect product_id: exp: %d, act: %d\n", product_id_exp, product_id);
-        exit(1);
-    }
-    if (silicon_creater_id != silicon_creater_id_exp) {
-        VPRINTF(LOW, "ERROR: incorrect silicon_creater_id: exp: %d, act: %d\n", silicon_creater_id_exp, silicon_creater_id);
-        exit(1);
-    }
+    check_read_only_register(LC_CTRL_HW_REVISION0_OFFSET, hw_revision0, 0xFFFFFFFF);
 
     // LC_CTRL_HW_REVISION1 register.
     // Read-only 32-bit register.
     // PRODUCT_REVISION_ID and the RESERVED.
-    // These values are parameterized in lc_ctrl and set to 0 by default.
-    uint32_t product_revision_id_exp = 0;
-    uint32_t reserved_exp = 0;
     uint32_t hw_revision1 = lsu_read_32(LC_CTRL_HW_REVISION1_OFFSET);
-    uint32_t product_revision_id = hw_revision1 & 0xff;
-    uint32_t reserved = (hw_revision1 >> 8) & 0xffffff;
-    if (product_revision_id != product_revision_id_exp) {
-        VPRINTF(LOW, "ERROR: incorrect product_revision_id: exp: %d, act: %d\n", product_revision_id_exp, product_revision_id);
-        exit(1);
-    }
-    if (reserved != reserved_exp) {
-        VPRINTF(LOW, "ERROR: incorrect reserved: exp: %d, act: %d\n", reserved_exp, reserved);
-        exit(1);
-    }
+    check_read_only_register(LC_CTRL_HW_REVISION1_OFFSET, hw_revision1, 0xFFFFFFFF);
 
     // LC_CTRL_DEVICE_ID register.
     // Read-only 256-bit register.
-    // Currently tied to '0 in caliptra_ss_top.
-    uint32_t device_id_exp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    for (uint8_t it = 0; it < 8; it++) {
-        uint32_t device_id = lsu_read_32(LC_CTRL_DEVICE_ID_0_OFFSET);
-        if (device_id != device_id_exp[it]) {
-            VPRINTF(LOW, "ERROR: incorrect device_id: exp: %d, act: %d\n", device_id_exp[it], device_id);
-            exit(1);
-        }
-    }
+    uint32_t device_id = lsu_read_32(LC_CTRL_DEVICE_ID_0_OFFSET);
+    check_read_only_register(LC_CTRL_DEVICE_ID_0_OFFSET, device_id, 0xFFFFFFFF);
+    device_id = lsu_read_32(LC_CTRL_DEVICE_ID_1_OFFSET);
+    check_read_only_register(LC_CTRL_DEVICE_ID_1_OFFSET, device_id, 0xFFFFFFFF);
+    device_id = lsu_read_32(LC_CTRL_DEVICE_ID_2_OFFSET);
+    check_read_only_register(LC_CTRL_DEVICE_ID_2_OFFSET, device_id, 0xFFFFFFFF);
+    device_id = lsu_read_32(LC_CTRL_DEVICE_ID_3_OFFSET);
+    check_read_only_register(LC_CTRL_DEVICE_ID_3_OFFSET, device_id, 0xFFFFFFFF);
+    device_id = lsu_read_32(LC_CTRL_DEVICE_ID_4_OFFSET);
+    check_read_only_register(LC_CTRL_DEVICE_ID_4_OFFSET, device_id, 0xFFFFFFFF);
+    device_id = lsu_read_32(LC_CTRL_DEVICE_ID_5_OFFSET);
+    check_read_only_register(LC_CTRL_DEVICE_ID_5_OFFSET, device_id, 0xFFFFFFFF);
+    device_id = lsu_read_32(LC_CTRL_DEVICE_ID_6_OFFSET);
+    check_read_only_register(LC_CTRL_DEVICE_ID_6_OFFSET, device_id, 0xFFFFFFFF);
+    device_id = lsu_read_32(LC_CTRL_DEVICE_ID_7_OFFSET);
+    check_read_only_register(LC_CTRL_DEVICE_ID_7_OFFSET, device_id, 0xFFFFFFFF);
 
     // LC_CTRL_MANUF_STATE register.
     // Read-only 256-bit register.
-    // Currently tied to '0 in caliptra_ss_top.
-     uint32_t manuf_state_exp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    for (uint8_t it = 0; it < 8; it++) {
-        uint32_t manuf_state = lsu_read_32(LC_CTRL_MANUF_STATE_0_OFFSET);
-         if (manuf_state != manuf_state_exp[it]) {
-            VPRINTF(LOW, "ERROR: incorrect manuf_state: exp: %d, act: %d\n", manuf_state_exp[it], manuf_state);
-            exit(1);
-        }
-    }
+    uint32_t manuf_state = lsu_read_32(LC_CTRL_MANUF_STATE_0_OFFSET);
+    check_read_only_register(LC_CTRL_MANUF_STATE_0_OFFSET, manuf_state, 0xFFFFFFFF);
+    manuf_state = lsu_read_32(LC_CTRL_MANUF_STATE_1_OFFSET);
+    check_read_only_register(LC_CTRL_MANUF_STATE_1_OFFSET, manuf_state, 0xFFFFFFFF);
+    manuf_state = lsu_read_32(LC_CTRL_MANUF_STATE_2_OFFSET);
+    check_read_only_register(LC_CTRL_MANUF_STATE_2_OFFSET, manuf_state, 0xFFFFFFFF);
+    manuf_state = lsu_read_32(LC_CTRL_MANUF_STATE_3_OFFSET);
+    check_read_only_register(LC_CTRL_MANUF_STATE_3_OFFSET, manuf_state, 0xFFFFFFFF);
+    manuf_state = lsu_read_32(LC_CTRL_MANUF_STATE_4_OFFSET);
+    check_read_only_register(LC_CTRL_MANUF_STATE_4_OFFSET, manuf_state, 0xFFFFFFFF);
+    manuf_state = lsu_read_32(LC_CTRL_MANUF_STATE_5_OFFSET);
+    check_read_only_register(LC_CTRL_MANUF_STATE_5_OFFSET, manuf_state, 0xFFFFFFFF);
+    manuf_state = lsu_read_32(LC_CTRL_MANUF_STATE_6_OFFSET);
+    check_read_only_register(LC_CTRL_MANUF_STATE_6_OFFSET, manuf_state, 0xFFFFFFFF);
+    manuf_state = lsu_read_32(LC_CTRL_MANUF_STATE_7_OFFSET);
+    check_read_only_register(LC_CTRL_MANUF_STATE_7_OFFSET, manuf_state, 0xFFFFFFFF);
+
     VPRINTF(LOW, "============\nMCU: TESTING RO LCC REGISTERS FINISHED\n============\n\n");
 }
 
@@ -168,8 +150,22 @@ void test_write_only_registers(void) {
 
     // ALERT_TEST_OFFSET register.
     // Write-only 3-bit register.
-    lsu_write_32(LC_CTRL_ALERT_TEST_OFFSET, 0x7);
-    lsu_write_32(LC_CTRL_ALERT_TEST_OFFSET, 0x0);
+    // First try to read from the register.
+    uint32_t reg_value = lsu_read_32(LC_CTRL_ALERT_TEST_OFFSET) & 0x7;
+    // Now write a value into the register.
+    uint32_t reg_write_value = (~reg_value) & 0x7;
+    lsu_write_32(LC_CTRL_ALERT_TEST_OFFSET, reg_write_value);
+    // Wait a bit before reading out the value.
+    for (uint8_t ii = 0; ii < 160; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+    // Read out value.
+    reg_value = lsu_read_32(LC_CTRL_ALERT_TEST_OFFSET) & 0x7;
+    // Value should not be reg_write_value.
+    if (reg_value == reg_write_value) {
+        VPRINTF(LOW, "ERROR: read from write only register worked\n");
+        exit(1);
+    }
 
     VPRINTF(LOW, "============\nMCU: TESTING WO LCC REGISTERS FINISHED\n============\n\n");
 }

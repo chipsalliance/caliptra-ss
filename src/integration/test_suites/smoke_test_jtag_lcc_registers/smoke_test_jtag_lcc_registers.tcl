@@ -44,15 +44,25 @@ array set tokens {
 
 #––– Initialize the controller and re‑read state –––
 lcc_initialization
-# test_read_only_registers
-# test_write_only_registers
-# test_transition_cmd_ctrl_registers
-# test_read_write_registers 0
+
+test_read_only_registers
+test_write_only_registers
+test_transition_cmd_ctrl_registers
+test_read_write_registers 0
 test_transition_if 0
 test_read_write_registers 1
-test_transition_if 1
-test_transition_if 0
+# Skip this test as it activates the CLAIM_TRANSITION_IF_REGWEN
+# which we cannot revert.
+#test_transition_if 1
+
+# Claim the TRANSITION_IF mutex.
+riscv dmi_write $LC_CTRL_CLAIM_TRANSITION_IF_OFFSET $MUBITRUE
+# Write the magic token that the smoke_test_jtag_lcc_registers
+# C program is waiting for.
 riscv dmi_write $LC_CTRL_TRANSITION_TOKEN_0_OFFSET 0xABCDEFCA
 set t0 [riscv dmi_read $LC_CTRL_TRANSITION_TOKEN_0_OFFSET]
 puts "Info: The test complete cmd was triggered: $t0"
+# Releate the TRANSITION_IF mutex. 
+riscv dmi_write $LC_CTRL_CLAIM_TRANSITION_IF_OFFSET 0
+
 shutdown

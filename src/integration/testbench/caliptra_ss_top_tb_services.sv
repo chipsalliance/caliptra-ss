@@ -35,6 +35,7 @@ import tb_top_pkg::*;
   input  logic                       clk,
   input  logic                       rst_l,
   input  int                         cycleCnt,
+  input logic                        cptra_ss_rdc_clk_cg_o,
   caliptra_ss_bfm_services_if.tb_services soc_bfm_if,
   css_mcu0_el2_mem_if                cptra_ss_mcu0_el2_mem_export,
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
@@ -813,7 +814,7 @@ end
     )
     mcu_mbox0_ram
     (
-        .clk_i(clk),
+        .clk_i(cptra_ss_rdc_clk_cg_o),
 
         .cs_i(cptra_ss_mcu_mbox0_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox0_sram_req_if.req.we),
@@ -830,7 +831,7 @@ end
     )
     mcu_mbox1_ram
     (
-        .clk_i(clk),
+        .clk_i(cptra_ss_rdc_clk_cg_o),
 
         .cs_i(cptra_ss_mcu_mbox1_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox1_sram_req_if.req.we),
@@ -858,7 +859,7 @@ end
         .DATA_WIDTH(MCU_SRAM_DATA_TOTAL_WIDTH),
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
    ) lmem (
-       .clk_i   (clk),
+       .clk_i   (cptra_ss_rdc_clk_cg_o),
        .cs_i    (cptra_ss_mci_mcu_sram_req_if.req.cs),
        .we_i    (cptra_ss_mci_mcu_sram_req_if.req.we),
        .addr_i  (cptra_ss_mci_mcu_sram_req_if.req.addr),

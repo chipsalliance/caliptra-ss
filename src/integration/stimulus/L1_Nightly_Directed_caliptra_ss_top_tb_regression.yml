@@ -6,7 +6,7 @@ contents:
       tags: ["L1", "caliptra_ss_top_tb", "Directed", "Nightly"]
       path: ""
       weight: 100
-      generations: 480
+      generations: 490
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
@@ -51,11 +51,12 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_ecc/smoke_test_mcu_mbox1_ecc: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_strb_wr_csr/smoke_test_mcu_mbox0_strb_wr_csr: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_strb_wr_csr/smoke_test_mcu_mbox1_strb_wr_csr: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_kmac_kat/smoke_test_lcc_kmac_kat: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans/caliptra_ss_lcc_st_trans: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_hitless/smoke_test_mcu_hitless: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_escalation/caliptra_ss_lcc_escalation: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_registers/smoke_test_lcc_registers: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_bus_ecc_error/caliptra_ss_fuse_ctrl_bus_ecc_error: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_wdt_rst/smoke_test_wdt_rst: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_st_trans/smoke_test_lcc_st_trans: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock/caliptra_ss_lcc_volatile_unlock: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_alert/caliptra_ss_lcc_alert: { weight: 100 }

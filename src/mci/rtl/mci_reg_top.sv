@@ -143,7 +143,8 @@ module mci_reg_top
     output logic [31:0] mcu_nmi_vector,
 
     // MISC 
-    input logic mcu_sram_fw_exec_region_lock,
+    input  logic mcu_sram_fw_exec_region_lock,
+    output logic mcu_sram_fw_exec_region_lock_dmi_override,
 
     // MCU SRAM specific signals
     input  logic        mcu_sram_single_ecc_error,
@@ -188,6 +189,7 @@ logic mcu_dmi_uncore_locked_wr_en  ;
 // unused in 2.0 logic mcu_dmi_uncore_mbox0_din_access_f;
 // unused in 2.0 logic mcu_dmi_uncore_mbox1_dout_access_f;
 // unused in 2.0 logic mcu_dmi_uncore_mbox1_din_access_f;
+MCI_DMI_MCI_HW_OVERRIDE_REG_t MCI_DMI_MCI_HW_OVERRIDE_REG;
 
 logic [31:0] mcu_dmi_uncore_dbg_unlocked_rdata_in;
 logic [31:0] mcu_dmi_uncore_locked_rdata_in;
@@ -276,7 +278,7 @@ endgenerate
 ///////////////////////////////////////////////
 caliptra_prim_flop_2sync #(
   .Width(64)
-) u_prim_flop_2sync_mcu_sram_fw_exec_region_lock (
+) u_prim_flop_2sync_mic_generic_wire_in (
   .clk_i(clk),
   .rst_ni(mci_rst_b),
   .d_i(mci_generic_input_wires),
@@ -372,7 +374,19 @@ always_comb begin
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR));
 end
 
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        MCI_DMI_MCI_HW_OVERRIDE_REG <= '0;
+    end
+    else begin
+        if(mcu_dmi_uncore_dbg_unlocked_wr_en & 
+            (mcu_dmi_uncore_addr == MCI_DMI_MCI_HW_OVERRIDE)) begin
+            MCI_DMI_MCI_HW_OVERRIDE_REG <= mcu_dmi_uncore_wdata;
+        end
+    end
+end
 
+assign mcu_sram_fw_exec_region_lock_dmi_override = MCI_DMI_MCI_HW_OVERRIDE_REG.mcu_sram_fw_exec_region_lock;
 
 
 assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value;
@@ -490,7 +504,8 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT            )}}   &  32'(mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value) )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE             )}}   &  32'(mci_reg_hwif_out.SS_CONFIG_DONE.done.value)          )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE_STICKY      )}}   &  32'(mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value)   )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  32'(mci_reg_hwif_out.MCU_NMI_VECTOR.vec.value)           )  ;
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  32'(mci_reg_hwif_out.MCU_NMI_VECTOR.vec.value)           )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_HW_OVERRIDE            )}}   &  32'(MCI_DMI_MCI_HW_OVERRIDE_REG)                             )  ;
 
 
 // Registers accessable while in a locked state
@@ -639,7 +654,7 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
         mcu_sram_fw_exec_region_lock_prev <= 0;
     end
-    else if(!Warm_Reset_Capture_Flag) begin
+    else begin
         mcu_sram_fw_exec_region_lock_prev <= mcu_sram_fw_exec_region_lock;
     end
 end
