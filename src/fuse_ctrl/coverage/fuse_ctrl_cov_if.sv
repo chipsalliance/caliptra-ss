@@ -214,10 +214,30 @@ interface fuse_ctrl_cov_if
 
     endgroup
 
+    logic intr_otp_operation_done_o = `FC_PATH.intr_otp_operation_done_o;
+    logic intr_otp_error_o = `FC_PATH.intr_otp_error_o;
+
+    covergroup fuse_ctrl_interrupts_cg @(posedge clk_i);
+      option.per_instance = 1;
+
+      fuse_ctrl_intr_otp_operation_done_cp: coverpoint intr_otp_operation_done_o
+      {
+          bins Active =   { 1'b1 };
+          bins Inactive = { 1'b0 };
+      }
+
+      fuse_ctrl_intr_otp_error_cp: coverpoint intr_otp_error_o
+      {
+          bins Active =   { 1'b1 };
+          bins Inactive = { 1'b0 };
+      }
+    endgroup
+
     initial begin
         fuse_ctrl_filter_cg fuse_ctrl_filter_cg1 = new();
         fuse_ctrl_test_unlock_tokens_cg fuse_ctrl_test_unlock_tokens_cg1 = new();
         fuse_ctrl_core_tl_i_cg fuse_ctrl_core_tl_i_cg1 = new();
+        fuse_ctrl_interrupts_cg fuse_ctrl_interrupts_cg1 = new();
     end
 
 endinterface

@@ -292,4 +292,26 @@ module caliptra_ss_top_sva
     (`LCC_PATH.lc_dft_en_o && `LCC_PATH.lc_hw_debug_en_o)
   )
 
+  ////////////////////////////////////////////////////
+  // fuse_ctrl interrupts
+  ////////////////////////////////////////////////////
+
+  // Make sure an `otp_operation_done` interrupt is raised, when enabled, upon a successful DAI operation.
+  `CALIPTRA_ASSERT(FcOtpOperationDoneInterrupt_A,
+    (`FC_PATH.u_reg_core.u_intr_enable_otp_operation_done.q &&
+     $fell(`FC_PATH.otp_operation_done) &&
+     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == NoError)
+    |=> ##2
+    (`FC_PATH.intr_otp_operation_done_o && !`FC_PATH.intr_otp_error_o)
+  )
+
+  // Make sure an `otp_error` interrupt is raised, when enabled, upon a failed DAI operation.
+  `CALIPTRA_ASSERT(FcOtpErrorInterrupt_A,
+    (`FC_PATH.u_reg_core.u_intr_enable_otp_error.q &&
+     $fell(`FC_PATH.otp_operation_done) &&
+     otp_err_e'(`FC_PATH.part_error[DaiIdx]) != NoError)
+    |=> ##2
+    (`FC_PATH.intr_otp_error_o)
+  )
+
 endmodule
