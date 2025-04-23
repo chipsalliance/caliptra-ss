@@ -13,6 +13,7 @@
 #include "caliptra_ss_lib.h"
 #include "string.h"
 #include "stdint.h"
+#include "veer-csr.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 // volatile char* stdout = (char *)0xd0580000;
@@ -37,12 +38,7 @@ void main (void) {
     trigger_caliptra_go();
     wait_for_cptra_ready_for_mb_processing();
     configure_captra_axi_user();
-
-    for(uint8_t ii=0; ii<10000; ii++) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop");
-        }    
-    }
-
-    SEND_STDOUT_CTRL(0xff);
+    
+    //Halt the core to wait for Caliptra to finish the test
+    csr_write_mpmc_halt();
 }
