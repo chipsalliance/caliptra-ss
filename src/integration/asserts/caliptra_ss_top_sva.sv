@@ -59,63 +59,63 @@ module caliptra_ss_top_sva
   //WDT checks:
   cascade_wdt_t1_pet: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`WDT_PATH.timer1_restart && !`WDT_PATH.timer2_en && !`WDT_PATH.t1_timeout) |=> (`WDT_PATH.timer1_count == 'h0)
+    (`MCI_WDT_PATH.timer1_restart && !`MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t1_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
   )
   else $display("SVA ERROR: [Cascade] WDT Timer1 did not restart on pet");
 
   cascade_wdt_t2_pet: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`WDT_PATH.timer2_restart && !`WDT_PATH.timer2_en && !`WDT_PATH.t2_timeout) |=> (`WDT_PATH.timer2_count == 'h0)
+    (`MCI_WDT_PATH.timer2_restart && !`MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t2_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer2_count == 'h0)
   )
   else $display("SVA ERROR: [Cascade] WDT Timer2 did not restart on pet");
 
   cascade_wdt_t1_service: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`WDT_PATH.wdt_timer1_timeout_serviced_qual && !`WDT_PATH.timer2_en && !`WDT_PATH.t2_timeout) |=> (`WDT_PATH.timer1_count == 'h0)
+    (`MCI_WDT_PATH.i_wdt.wdt_timer1_timeout_serviced_qual && !`MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t2_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
   )
   else $display("SVA ERROR: [Cascade] WDT Timer1 did not restart after interrupt service");
 
   cascade_wdt_t2_service: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`WDT_PATH.wdt_timer2_timeout_serviced_qual && !`WDT_PATH.timer2_en) |=> (`WDT_PATH.timer2_count == 'h0)
+    (`MCI_WDT_PATH.i_wdt.wdt_timer2_timeout_serviced_qual && !`MCI_WDT_PATH.timer2_en) |=> (`MCI_WDT_PATH.i_wdt.timer2_count == 'h0)
   )
   else $display("SVA ERROR: [Cascade] WDT Timer2 did not restart after interrupt service");
 
   independent_wdt_t1_pet: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`WDT_PATH.timer1_restart && `WDT_PATH.timer2_en) |=> (`WDT_PATH.timer1_count == 'h0)
+    (`MCI_WDT_PATH.timer1_restart && `MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t1_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
   )
   else $display("SVA ERROR: [Independent] WDT Timer1 did not restart on pet");
 
   independent_wdt_t2_pet: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`WDT_PATH.timer2_restart && `WDT_PATH.timer2_en) |=> (`WDT_PATH.timer2_count == 'h0)
+    (`MCI_WDT_PATH.timer2_restart && `MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t2_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer2_count == 'h0)
   )
   else $display("SVA ERROR: [Independent] WDT Timer2 did not restart on pet");
 
   independent_wdt_t1_service: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`WDT_PATH.wdt_timer1_timeout_serviced_qual && `WDT_PATH.timer2_en && !`WDT_PATH.t2_timeout) |=> (`WDT_PATH.timer1_count == 'h0)
+    (`MCI_WDT_PATH.i_wdt.wdt_timer1_timeout_serviced_qual && `MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t2_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
   )
   else $display("SVA ERROR: [Independent] WDT Timer1 did not restart after interrupt service");
 
   independent_wdt_t2_service: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`WDT_PATH.wdt_timer2_timeout_serviced_qual && `WDT_PATH.timer2_en) |=> (`WDT_PATH.timer2_count == 'h0)
+    (`MCI_WDT_PATH.i_wdt.wdt_timer2_timeout_serviced_qual && `MCI_WDT_PATH.timer2_en) |=> (`MCI_WDT_PATH.i_wdt.timer2_count == 'h0)
   )
   else $display("SVA ERROR: [Independent] WDT Timer2 did not restart after interrupt service");
 
   wdt_status_t1_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (~`CPTRA_SS_TB_TOP_NAME.cptra_ss_rst_b_i)
-    $rose(`WDT_PATH.t1_timeout) |=> $rose(`MCI_PATH.mci_reg_hwif_out.WDT_STATUS.t1_timeout.value)
+    $rose(`MCI_WDT_PATH.t1_timeout) |=> $rose(`MCI_PATH.mci_reg_hwif_out.WDT_STATUS.t1_timeout.value)
   )
   else $display("SVA ERROR: WDT Status bit not set on t1 expiry!");
 
   wdt_status_t2_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (~`CPTRA_SS_TB_TOP_NAME.cptra_ss_rst_b_i)
-    $rose(`WDT_PATH.t2_timeout) |=> $rose(`MCI_PATH.mci_reg_hwif_out.WDT_STATUS.t2_timeout.value)
+    $rose(`MCI_WDT_PATH.t2_timeout) |=> $rose(`MCI_PATH.mci_reg_hwif_out.WDT_STATUS.t2_timeout.value)
   )
   else $display("SVA ERROR: WDT Status bit not set on t2 expiry!");
 
