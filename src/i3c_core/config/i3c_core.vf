@@ -75,6 +75,7 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/recovery/recover
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_timers.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_monitor.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/i3c_bus_monitor.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/ccc_entdaa.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/ccc.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_rx_flow.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_tx.sv

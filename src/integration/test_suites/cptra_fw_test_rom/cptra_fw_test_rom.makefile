@@ -20,7 +20,7 @@ today=$(shell date +%Y%m%d)
 # Define test name
 TESTNAME ?= cptra_fw_test_rom
 TESTNAME_fw = $(TESTNAME)_fw
-TEST_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites/$(TESTNAME)
+TEST_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(TESTNAME)
 
 VPATH = $(TEST_DIR) $(BUILD_DIR)
 
@@ -79,10 +79,16 @@ owner_pk_hash_val.hex: owner_pk_val.bin
 owner_pk_val.bin: $(BUILD_DIR)/$(TESTNAME).extracted
 	dd ibs=1 obs=1 if=$(BUILD_DIR)/$(TESTNAME_fw) of=owner_pk_val.bin skip=$(OWNER_ECC_PK_ROM_OFFSET) count=$(OWNER_PK_LENGTH)
 
-$(BUILD_DIR)/$(TESTNAME).extracted: $(TEST_DIR)/$(TESTNAME).bin $(TEST_DIR)/$(TESTNAME_fw)
+$(BUILD_DIR)/$(TESTNAME).extracted: $(TEST_DIR)/$(TESTNAME).bin $(TEST_DIR)/$(TESTNAME_fw) copy_caliptra_hex_files
 	 cp $(TEST_DIR)/$(TESTNAME).bin $(BUILD_DIR)/$(TESTNAME)
 	 cp $(TEST_DIR)/$(TESTNAME_fw) $(BUILD_DIR)/$(TESTNAME_fw)
 	 touch $(BUILD_DIR)/$(TESTNAME).extracted
+
+#-- following two files copied to build directory to support csr_write_mpmc_halt() at the end of the test
+copy_caliptra_hex_files:
+	 cp $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/includes/caliptra_defines.h $(BUILD_DIR)
+	 cp $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/includes/defines.h $(BUILD_DIR)
+	 cp $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg.h $(BUILD_DIR)
 
 help:
 	@echo Make sure the environment variable RV_ROOT is set.
