@@ -269,38 +269,59 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 			// 0xf: Invalid component address space
 
 			//-- BIT 0-3 : Recovery Status Code
-			data[0] = data[0] & 'hf;
+			//-- BIT 4-7 : Image Index
+			test_log.substep($psprintf("Recovery Status Code : 0x%0h", data[0]));
 
 			case (data[0])
-				'h0: test_log.substep("Not in recovery mode");
-				'h1: begin
+				'h0: 
+					begin
+						test_log.substep("Recovery Status Code : 0x0: Not in recovery mode");
+						break;
+					end
+				'h1: 
+					begin
 						test_log.substep($psprintf("Awaiting recovery image.. wait loop count : 'd %0d", i));
-						end
-				'h2: test_log.substep($psprintf("Booting recovery image .. wait loop count : 'd %0d", i));
-				'h3: begin
+					end
+				'h2:
+					begin
+						test_log.substep($psprintf("Booting recovery image .. wait loop count : 'd %0d", i));
+					end
+				'h3: 
+					begin
 						test_log.substep("Recovery successful");
 						break;
-						end
-				'hc: begin
+					end
+				'hc: 
+					begin
 						test_log.substep("Recovery failed");
 						break;
-						end
-				'hd: begin
+					end
+				'hd: 
+					begin
 						test_log.substep("Recovery image authentication error");
 						break;
-						end
-				'he: begin
+					end
+				'he: 
+					begin
 						test_log.substep("Error entering  Recovery mode (might be administratively disabled)");
 						break;
-						end
-				'hf: begin
+					end
+				'hf: 
+					begin
 						test_log.substep("Invalid component address space");
 						break;
-						end
-				default: begin 
-						test_log.substep("Unknown status");
+					end
+				'h11: 
+					begin
+						test_log.substep("Recovery Image Authentication : Successful, waiting for new image");
+						test_log.substep($psprintf("Recovery Status Data Byte[0] : 0x%0h", data[0]));
 						break;
-						end
+					end	
+				default: 
+					begin 
+						test_log.substep($psprintf("Unknown recovery status : 0x%0h", data[0]));
+						break;
+					end
 			endcase
 
 			#1us;

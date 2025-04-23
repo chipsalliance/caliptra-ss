@@ -152,27 +152,34 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 		test_log.step("Dynamic Address Assignment and Bus Initialization done");
 		test_log.sample(AI3C_5_1_2_1n3);
 		test_log.sample(AI3C_5_1_2_2n1);
+		
+		`ifndef I3C_BOOT_USING_ENTDAA 
+			//-- grabbing dynamic address for the I3C core
+			test_log.step($sformatf("I3C device count: %0d", sys_agt.mgr.dev_infos.size()));
+			foreach (sys_agt.mgr.dev_infos[i]) begin
+				case(sys_agt.mgr.dev_infos[i].sa)
+					'h5A: begin
+						// general_target_addr= sys_agt.mgr.i3c_dev_das[i];
+						general_target_addr= sys_agt.mgr.dev_infos[i].da;
+						test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, general_target_addr));
+					end
+					'h5B: begin
+						// recovery_target_addr = sys_agt.mgr.i3c_dev_das[i];
+						recovery_target_addr = sys_agt.mgr.dev_infos[i].da;
+						test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, recovery_target_addr));
+					end
+					default: begin
+						//-- print error message if the static address is not 0x5A or 0x5B
+						test_log.substep($sformatf(" ERROR : I3C device %0d: static addr 'h %0h is not 0x5A or 0x5B", i, sys_agt.mgr.dev_infos[i].sa));
+					end
+				endcase
+			end
+		`else
+			test_log.step($sformatf("ENTDAA is used for booting"));
+			general_target_addr= sys_agt.mgr.dev_infos[0].da;
+			recovery_target_addr = sys_agt.mgr.dev_infos[1].da;
+		`endif
 
-		//-- grabbing dynamic address for the I3C core
-		test_log.step($sformatf("I3C device count: %0d", sys_agt.mgr.dev_infos.size()));
-		foreach (sys_agt.mgr.dev_infos[i]) begin
-			case(sys_agt.mgr.dev_infos[i].sa)
-				'h5A: begin
-					// general_target_addr= sys_agt.mgr.i3c_dev_das[i];
-					general_target_addr= sys_agt.mgr.dev_infos[i].da;
-					test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, general_target_addr));
-				end
-				'h5B: begin
-					// recovery_target_addr = sys_agt.mgr.i3c_dev_das[i];
-					recovery_target_addr = sys_agt.mgr.dev_infos[i].da;
-					test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, recovery_target_addr));
-				end
-				default: begin
-					//-- print error message if the static address is not 0x5A or 0x5B
-					test_log.substep($sformatf(" ERROR : I3C device %0d: static addr 'h %0h is not 0x5A or 0x5B", i, sys_agt.mgr.dev_infos[i].sa));
-				end
-			endcase
-		end
 		test_log.substep($sformatf("I3C Subordinate Recovery addr 'h %0h", recovery_target_addr));
 		test_log.substep($sformatf("I3C Subordinate General addr 'h %0h", general_target_addr));
 
