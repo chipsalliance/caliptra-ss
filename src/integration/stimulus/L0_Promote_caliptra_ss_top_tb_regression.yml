@@ -42,6 +42,7 @@ contents:
         - ../test_suites/smoke_test_mcu_mbox_ecc/smoke_test_mcu_mbox0_ecc.yml
         - ../test_suites/smoke_test_mcu_mbox_strb_wr_csr/smoke_test_mcu_mbox0_strb_wr_csr.yml
         - ../test_suites/smoke_test_mcu_hitless/smoke_test_mcu_hitless.yml
+        - ../test_suites/smoke_test_mcu_mbox_burst/smoke_test_mcu_mbox0_burst.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_external_clock/caliptra_ss_fuse_ctrl_external_clock.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check.yml
         - ../test_suites/smoke_test_lcc_registers/smoke_test_lcc_registers.yml
