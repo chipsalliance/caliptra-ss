@@ -57,6 +57,9 @@
 //         8'he3        - Inject Double-bit ECC errors into MCU DCCM
 //         8'he8        - Inject MCI error fatal (nmi, mcu_sram_ecc_unc, mcu_sram_dmi_axi_collision)
 //         8'he9        - Inject MCI error non fatal (mbox0/mbox1_ecc_unc)
+//         8'hea        - Inject aggregate error fatal
+//         8'heb        - Inject aggregate error non-fatal
+//         8'hec        - Inject notif0 intr conditions
 //         --
 //         8'hff        - End the simulation with a Success status
 localparam TB_SERVICE_CMD_NOPE              = 8'h00;
