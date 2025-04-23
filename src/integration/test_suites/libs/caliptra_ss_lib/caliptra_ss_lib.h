@@ -22,6 +22,9 @@
 #include "stdint.h"
 #include <stdbool.h>
 
+#define TB_CMD_TEST_FAIL   0x01
+#define TB_CMD_TEST_PASS   0xFF
+
 #define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
 
 #define FC_LCC_CMD_OFFSET 0x90
@@ -58,6 +61,10 @@
 #define TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR  0xe5
 #define TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION 0xe6
 #define TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION 0xe7
+#define TB_CMD_INJECT_MCU_SRAM_SINGLE_ECC_ERROR  0xe8
+#define TB_CMD_INJECT_MCU_SRAM_DOUBLE_ECC_ERROR  0xe9
+#define TB_CMD_DISABLE_MCU_SRAM_ECC_ERROR_INJECTION 0xea
+#define TB_CMD_RANDOMIZE_MCU_SRAM_ECC_ERROR_INJECTION 0xeb
 
 
 
@@ -116,6 +123,9 @@ typedef struct {
 // TO LOAD FUSES!!!
 void mcu_cptra_init(mcu_cptra_init_args args);
 #define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){mcu_cptra_init_arg_defaults __VA_OPT__(,) __VA_ARGS__});
+
+
+void handle_error(const char *format, ...);
 
 uint32_t xorshift32(void);
 
@@ -225,28 +235,6 @@ static inline void mcu_mbox_write_cmd_status(uint32_t mbox_num, enum mcu_mbox_cm
     VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS: 0%x\n", mbox_num, cmd_status); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, (cmd_status & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK));    
 }
-
-#define FC_LCC_CMD_OFFSET 0x90
-#define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
-#define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
-#define CMD_FORCE_FC_AWUSER_MCU         FC_LCC_CMD_OFFSET + 0x04
-#define CMD_RELEASE_AWUSER              FC_LCC_CMD_OFFSET + 0x05
-#define CMD_FC_FORCE_ZEROIZATION        FC_LCC_CMD_OFFSET + 0x06
-#define CMD_FC_FORCE_ZEROIZATION_RESET  FC_LCC_CMD_OFFSET + 0x07
-#define CMD_RELEASE_ZEROIZATION         FC_LCC_CMD_OFFSET + 0x08
-#define CMD_FORCE_LC_TOKENS             FC_LCC_CMD_OFFSET + 0x09
-#define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 0x0a
-#define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 0x0b
-#define CMD_FC_LCC_EXT_CLK_500MHZ       FC_LCC_CMD_OFFSET + 0x0c
-#define CMD_FC_LCC_EXT_CLK_160MHZ       FC_LCC_CMD_OFFSET + 0x0d
-#define CMD_FC_LCC_EXT_CLK_400MHZ       FC_LCC_CMD_OFFSET + 0x0e
-#define CMD_FC_LCC_EXT_CLK_1000MHZ      FC_LCC_CMD_OFFSET + 0x0f
-#define CMD_FC_LCC_FAULT_DIGEST         FC_LCC_CMD_OFFSET + 0x10
-#define CMD_FC_LCC_FAULT_BUS_ECC        FC_LCC_CMD_OFFSET + 0x11
-#define CMD_LC_TRIGGER_ESCALATION0      FC_LCC_CMD_OFFSET + 0x12
-#define CMD_LC_TRIGGER_ESCALATION1      FC_LCC_CMD_OFFSET + 0x13
-#define CMD_FC_LCC_CORRECTABLE_FAULT    FC_LCC_CMD_OFFSET + 0x14
-#define CMD_FC_LCC_UNCORRECTABLE_FAULT  FC_LCC_CMD_OFFSET + 0x15
 
 static inline uint32_t mcu_mbox_read_cmd_status(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
