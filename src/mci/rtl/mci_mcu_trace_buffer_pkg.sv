@@ -15,7 +15,7 @@
 package mci_mcu_trace_buffer_pkg;
 
   typedef struct packed {
-    logic [20:0] reserved; 
+    logic [24:0] reserved; 
     logic        trace_rv_i_interrupt_ip;
     logic [ 4:0] trace_rv_i_ecause_ip;
     logic        trace_rv_i_exception_ip;

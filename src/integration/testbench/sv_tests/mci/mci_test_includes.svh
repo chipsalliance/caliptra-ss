@@ -16,5 +16,9 @@
 
 
 `include "mci_common_tasks.svh"
+`include "mci_mcu_trace_buffer_mon.svh"
 `include "smoke_test_mcu_sram_execution_region.svh"
 `include "smoke_test_mcu_sram_debug_stress.svh"
+`include "smoke_test_mcu_trace_buffer.svh"
+`include "mcu_mbox_soc_agent_write_fw_image.svh"
+`include "smoke_test_mcu_trace_buffer_no_debug.svh"

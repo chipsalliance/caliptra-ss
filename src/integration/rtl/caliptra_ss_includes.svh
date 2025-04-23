@@ -31,9 +31,7 @@ parameter CPTRA_SS_ROM_MEM_ADDR_W = $clog2(CPTRA_SS_ROM_DEPTH);
 // Interrupt Assignments
 // NOTE Vector 0 is reserved by VeeR
 `define VEER_INTR_VEC_MCI                 1
-`define VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL 2
-`define VEER_INTR_VEC_I3C                 3
-`define VEER_INTR_VEC_FC                  4
-`define VEER_INTR_EXT_LSB                 5
+`define VEER_INTR_VEC_I3C                 2
+`define VEER_INTR_EXT_LSB                 3
     
 `endif // CPTRA_SS_INCLUDES_SVH

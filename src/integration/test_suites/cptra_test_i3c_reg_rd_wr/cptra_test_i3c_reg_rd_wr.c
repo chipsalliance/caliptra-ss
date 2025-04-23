@@ -46,22 +46,19 @@ void wait(uint32_t wait_time) {
     }
 }
 
-
-
-void wait_for_write_to_i3c_fifo(){
+void wait_for_write_to_prot_cap_0(){
     // reading INDIRECT_FIFO_STATUS
     uint32_t i3c_reg_data;
     while (1) {
         i3c_reg_data = 0x00000000;
-        soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_STATUS_0, 0, &i3c_reg_data, 4, 0);
+        soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, 0, &i3c_reg_data, 4, 0);
         VPRINTF(LOW, "CPTRA: INDIRECT_FIFO_STATUS is 'h %0x\n", i3c_reg_data);
         //-- check if FIFO is empty by reading bit 0 as 1'b1
-        i3c_reg_data = i3c_reg_data & 0x00000001;
-        if (i3c_reg_data == 0x00000001) {
-            VPRINTF(LOW, "CPTRA: INDIRECT FIFO DATA is empty\n");
+        if (i3c_reg_data == 0x00000000) {
+            VPRINTF(LOW, "CPTRA: PROT_CAP_0 is zero\n");
             wait(100);
         } else {
-            VPRINTF(LOW, "CPTRA: INDIRECT FIFO DATA is available\n");
+            VPRINTF(LOW, "CPTRA: PROT_CAP_0 is updated\n");
             break;
         }
     }
@@ -125,21 +122,19 @@ void main(void) {
 
     // Send data through AHB interface to AXI_DMA, target the AXI SRAM
     VPRINTF(LOW, "Sending payload via AHB i/f\n");
-    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, &send_payload, 16, 0);
+    soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, send_payload, 16, 0);
     
     // Move data from one address to another in AXI SRAM
     // Use the block-size feature
     VPRINTF(LOW, "Reading payload at SRAM via AHB i/f\n");
-    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, &read_payload, 16, 0);
+    soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, read_payload, 16, 0);
 
     //set ready for FW so tb will push FW
     soc_ifc_set_flow_status_field(SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK);
-
-    // FIXME : Read I3C Register via Caliptra TEST ROM
-    // // Wait for I3C VIP Sequence to write the INDIRECT_FIFO_DATA Register
-    // wait_for_write_to_i3c_fifo();
-    // read_i3c_registers();
-
+    
+    // Read I3C registers
+    wait_for_write_to_prot_cap_0();
+    read_i3c_registers();
     wait(100000);
 
     VPRINTF(LOW, "End of Caliptra Test\n");

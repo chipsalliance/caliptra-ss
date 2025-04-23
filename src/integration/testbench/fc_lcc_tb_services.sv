@@ -27,15 +27,22 @@ module fc_lcc_tb_services (
   `include "caliptra_ss_tb_cmd_list.svh"
   `include "caliptra_ss_includes.svh"
 
-  logic [1:0] freq_sel;
-  assign freq_sel = '0;
   logic disable_lcc_sva;
 
-  logic ecc_fault_en;
-  assign ecc_fault_en = 1'b0;
+  logic ecc_fault_en = 1'b0;
+  logic lcc_external_clk_req = '0;
+
+
  
   always_ff @(posedge clk or negedge cptra_rst_b) begin
-    if (cptra_rst_b) begin
+    if (!cptra_rst_b) begin
+      `CPTRA_SS_TB_TOP_NAME.lcc_clock_selection   <= 1000;
+      lcc_external_clk_req                        <= 1'b0;  
+    end
+    else begin
+      if (`CPTRA_SS_TB_TOP_NAME.lcc_clock_switch_req) begin
+        lcc_external_clk_req <= 0;
+      end 
       if (tb_service_cmd_valid) begin
         case (tb_service_cmd)
           CMD_FORCE_FC_AWUSER_CPTR_CORE: begin
@@ -87,20 +94,24 @@ module fc_lcc_tb_services (
             force `FC_PATH.lc_escalate_en_i = lc_ctrl_pkg::On;     
           end
           CMD_FC_LCC_EXT_CLK_500MHZ: begin
-            $display("fc_lcc_tb_services: setting ext clock frequency to 500 mhz");
-            force freq_sel = 2'b00;
+            $display("fc_lcc_tb_services: setting ext clock frequency to 500 mhz");       
+            `CPTRA_SS_TB_TOP_NAME.lcc_clock_selection   <= 500;
+            lcc_external_clk_req                        <= 1;
           end
           CMD_FC_LCC_EXT_CLK_160MHZ: begin
-            $display("fc_lcc_tb_services: setting ext clock frequency to 160 mhz");
-            force freq_sel = 2'b01;
+            $display("fc_lcc_tb_services: setting ext clock frequency to 160 mhz");     
+            `CPTRA_SS_TB_TOP_NAME.lcc_clock_selection   <= 160; 
+            lcc_external_clk_req                        <= 1;
           end
           CMD_FC_LCC_EXT_CLK_400MHZ: begin
-            $display("fc_lcc_tb_services: setting ext clock frequency to 400 mhz");
-            force freq_sel = 2'b10;
+            $display("fc_lcc_tb_services: setting ext clock frequency to 400 mhz");       
+            `CPTRA_SS_TB_TOP_NAME.lcc_clock_selection   <= 400; 
+            lcc_external_clk_req                        <= 1;
           end
           CMD_FC_LCC_EXT_CLK_1000MHZ: begin
-            $display("fc_lcc_tb_services: setting ext clock frequency to 1000 mhz");
-            force freq_sel = 2'b11;
+            $display("fc_lcc_tb_services: setting ext clock frequency to 1000 mhz");      
+            `CPTRA_SS_TB_TOP_NAME.lcc_clock_selection   <= 1000; 
+            lcc_external_clk_req                        <= 1;
           end
           CMD_FC_LCC_FAULT_DIGEST: begin
             $display("fc_lcc_tb_services: fault the transition tokens partition digest");
@@ -138,44 +149,9 @@ module fc_lcc_tb_services (
     end
   end
 
-  bit clk_160;
-  bit clk_400;
-  bit clk_500;
-  bit clk_1000;
 
-  initial begin
-    clk_500 = 0;
-    forever clk_500 = #(1.00) ~clk_500;
-  end
+  assign `CPTRA_SS_TB_TOP_NAME.lcc_clock_switch_req = (`LCC_PATH.lc_clk_byp_ack_i == lc_ctrl_pkg::On) & lcc_external_clk_req;
 
-  initial begin
-    clk_400 = 0;
-    forever clk_400 = #(1.25) ~clk_400;
-  end
-
-  initial begin
-    clk_160 = 0;
-    forever clk_160 = #(3.125) ~clk_160;
-  end
-
-  initial begin
-    clk_1000 = 0;
-    forever clk_1000 = #(0.5) ~clk_1000;
-  end
-
-  bit clk_sel;
-  assign clk_sel = freq_sel == 2'b00 ? clk_500 :
-                   freq_sel == 2'b01 ? clk_160 :
-                   freq_sel == 2'b10 ? clk_400 : 
-                   freq_sel == 2'b11 ? clk_1000 : clk_500;
-
-  always_comb begin
-    if (`LCC_PATH.lc_clk_byp_ack_i == lc_ctrl_pkg::On) begin
-      force `CPTRA_SS_TB_TOP_NAME.core_clk = clk_sel;
-    end else begin
-      force `CPTRA_SS_TB_TOP_NAME.core_clk = clk_500;
-    end
-  end
 
   //-------------------------------------------------------------------------
   // Top-level service: Force FC, LCC reset for 10 cycles then release it.

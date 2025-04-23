@@ -6,20 +6,25 @@ contents:
       tags: ["L1", "caliptra_ss_top_tb", "Directed", "Nightly"]
       path: ""
       weight: 100
-      generations: 430
+      generations: 470
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
       templates:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/cptra_ss_i3c_recovery/cptra_ss_i3c_recovery: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/i3c_smoke/i3c_smoke: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_hello_world/mcu_hello_world: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_lmem_exe/mcu_lmem_exe: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_scrap/smoke_test_lcc_scrap: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_manuf_prod_prov/caliptra_ss_fuse_ctrl_manuf_prod_prov: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_unlock_transitions/smoke_test_fc_unlock_transitions: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_reg_rd_wr/mcu_test_rom_i3c_reg_rd_wr: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_prod_rom_i3c_streaming_boot/mcu_prod_rom_i3c_streaming_boot: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_mctp_smoke_test/mcu_mctp_smoke_test: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_rand_streaming_boot/mcu_test_rom_i3c_rand_streaming_boot: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_setmrl/mcu_test_rom_i3c_setmrl: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_streaming_boot/mcu_test_rom_i3c_streaming_boot: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_streaming_boot_sram/mcu_test_rom_i3c_streaming_boot_sram: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_i3c_reg_rd_wr_cptra_i3c_strap/mcu_i3c_reg_rd_wr_cptra_i3c_strap: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox0: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox1: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_zeroize/smoke_test_mcu_mbox0_zeroize: { weight: 100 }
@@ -46,8 +51,8 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_ecc/smoke_test_mcu_mbox1_ecc: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_strb_wr_csr/smoke_test_mcu_mbox0_strb_wr_csr: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_strb_wr_csr/smoke_test_mcu_mbox1_strb_wr_csr: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_kmac_kat/smoke_test_lcc_kmac_kat: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans/caliptra_ss_lcc_st_trans: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_hitless/smoke_test_mcu_hitless: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_escalation/caliptra_ss_lcc_escalation: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_registers/smoke_test_lcc_registers: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_bus_ecc_error/caliptra_ss_fuse_ctrl_bus_ecc_error: { weight: 100 }
