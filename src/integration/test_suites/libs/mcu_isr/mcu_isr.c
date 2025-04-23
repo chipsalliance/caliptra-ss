@@ -213,7 +213,7 @@ void init_interrupts(void) {
     // MEIPL_S - assign interrupt priorities
     meipls[CSS_MCU0_VEER_INTR_VEC_MCI] = CSS_MCU0_VEER_INTR_PRIO_MCI; __asm__ volatile ("fence");
     meipls[CSS_MCU0_VEER_INTR_VEC_I3C] = CSS_MCU0_VEER_INTR_PRIO_I3C; __asm__ volatile ("fence");
-    for (uint8_t undef = CSS_MCU0_VEER_INTR_EXT_LSB; undef <= CSS_MCU0_RV_PIC_TOTAL_INT; undef++) {
+    for (uint32_t undef = CSS_MCU0_VEER_INTR_EXT_LSB; undef <= CSS_MCU0_RV_PIC_TOTAL_INT; undef++) {
         meipls[undef] = 0; __asm__ volatile ("fence"); // Set to 0 meaning NEVER interrupt
     }
 
@@ -231,7 +231,7 @@ void init_interrupts(void) {
                       : "i" (VEER_CSR_MEICURPL), "i" (0x00)  /* input : immediate  */ \
                       : /* clobbers: none */);
 
-    for (uint8_t vec = 1; vec <= CSS_MCU0_RV_PIC_TOTAL_INT; vec++) {
+    for (uint32_t vec = 1; vec <= CSS_MCU0_RV_PIC_TOTAL_INT; vec++) {
         // MEIGWCTRL_S
         meigwctrls[vec] = VEER_MEIGWCTRL_ACTIVE_HI_LEVEL;  __asm__ volatile ("fence");
 
@@ -332,6 +332,12 @@ void init_interrupts(void) {
                                                                         MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL2_EN_MASK  |
                                                                         MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL1_EN_MASK  |
                                                                         MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R_NOTIF_AGG_ERROR_NON_FATAL0_EN_MASK;
+    // Clear DEBUG locked, which is always set on reset deassertion due to rst_val != TB input val
+    mci_reg[MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R /sizeof(uint32_t)] = MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_MASK;
+    mci_reg[MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R /sizeof(uint32_t)] = MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_SCAN_MODE_STS_MASK;
+    // Also clear the statistics counter for DEBUG locked
+    mci_reg[MCI_REG_INTR_BLOCK_RF_NOTIF_DEBUG_LOCKED_INTR_COUNT_R /sizeof(uint32_t)] = 0;
+    mci_reg[MCI_REG_INTR_BLOCK_RF_NOTIF_SCAN_MODE_INTR_COUNT_R /sizeof(uint32_t)] = 0;
     mci_reg[MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R/sizeof(uint32_t)] = MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_ERROR_EN_MASK |
                                                                        MCI_REG_INTR_BLOCK_RF_GLOBAL_INTR_EN_R_NOTIF_EN_MASK;
 
