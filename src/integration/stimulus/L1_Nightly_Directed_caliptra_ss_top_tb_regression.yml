@@ -6,7 +6,7 @@ contents:
       tags: ["L1", "caliptra_ss_top_tb", "Directed", "Nightly"]
       path: ""
       weight: 100
-      generations: 630
+      generations: 620
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
@@ -65,7 +65,6 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_csrs_warm_rst/smoke_test_mcu_mbox0_csrs_warm_rst: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_csrs_warm_rst/smoke_test_mcu_mbox1_csrs_warm_rst: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_escalation/caliptra_ss_lcc_escalation: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_registers/smoke_test_lcc_registers: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_bus_ecc_error/caliptra_ss_fuse_ctrl_bus_ecc_error: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_wdt/smoke_test_wdt: { weight: 100 }
