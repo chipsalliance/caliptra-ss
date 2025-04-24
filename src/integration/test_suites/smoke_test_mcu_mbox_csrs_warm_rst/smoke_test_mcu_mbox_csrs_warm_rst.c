@@ -174,5 +174,7 @@ void main (void) {
 
         // Initiate warm_reset
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
+
+        while(1);
     }
 }
