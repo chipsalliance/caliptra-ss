@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include "caliptra_ss_clk_freq.h"
 #include "caliptra_ss_lib.h"
 #include <stdbool.h>
+#include <stdarg.h> // For va_list, va_start, va_end
 
 #ifdef MCU_MBOX_VALID_VECTOR
     uint32_t valid_mbox_instances = MCU_MBOX_VALID_VECTOR;
@@ -41,6 +42,16 @@
 #else
     uint32_t state = 0;
 #endif
+
+void handle_error(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    VPRINTF(FATAL, format, args); // Pass the variable arguments to VPRINTF
+    va_end(args);
+
+    SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
+    while (1); // Infinite loop to halt execution
+}
 
 uint32_t xorshift32(void)
 {
