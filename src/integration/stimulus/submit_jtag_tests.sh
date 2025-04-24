@@ -17,8 +17,18 @@
 
 set -euo pipefail
 
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_uds_prog        -op -sb -to 520000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_manuf_dbg       -op -sb -to 520000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_prod_dbg          -op -sb -to 10000000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_lcc_registers     -op -sb -to 185000
-submit --interactive --name css_regress --project Caliptra ss_build -tc caliptra_ss_jtag_lcc_st_trans     -op -sb -to 220000
+if [ -z "${COVERAGE_DIR_PATH}" ]; then
+  echo "COVERAGE_DIR_PATH is not defined."
+else
+  echo "COVERAGE_DIR_PATH is defined as: ${COVERAGE_DIR_PATH}"
+  COV_CMD="-cov_dir ${COVERAGE_DIR_PATH}"
+
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_uds_prog      ${COV_CMD} -op -sb -to 520000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_manuf_dbg     ${COV_CMD} -op -sb -to 520000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_prod_dbg      ${COV_CMD} -op -sb -to 10000000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_lcc_registers ${COV_CMD} -op -sb -to 185000
+submit --interactive --name css_regress --project Caliptra ss_build -tc caliptra_ss_jtag_lcc_st_trans ${COV_CMD} -op -sb -to 220000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_bp        ${COV_CMD} -op -sb -to 220000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_intent    ${COV_CMD} -op -sb -to 220000
+#assertion fails in lcc state translator - put back after fixed
+#submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_unlock    ${COV_CMD} -op -sb -to 220000
