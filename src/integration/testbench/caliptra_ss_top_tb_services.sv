@@ -239,12 +239,12 @@ import tb_top_pkg::*;
                     release `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_double_error;
                 end
                 2: begin
-                    force `CPTRA_SS_TOP_PATH.lc_alerts_o = $urandom_range(0,(2**lc_ctrl_reg_pkg::NumAlerts)-1);
+                    force `CPTRA_SS_TOP_PATH.lc_alerts_o = $urandom_range(1,(2**lc_ctrl_reg_pkg::NumAlerts)-1);
                     @(negedge clk);
                     release `CPTRA_SS_TOP_PATH.lc_alerts_o;
                 end
                 3: begin
-                    force `CPTRA_SS_TOP_PATH.fc_alerts = $urandom_range(0, (2**otp_ctrl_reg_pkg::NumAlerts)-1);
+                    force `CPTRA_SS_TOP_PATH.fc_alerts = $urandom_range(1, (2**otp_ctrl_reg_pkg::NumAlerts)-1);
                     @(negedge clk);
                     release `CPTRA_SS_TOP_PATH.fc_alerts;
                 end
@@ -280,12 +280,12 @@ import tb_top_pkg::*;
                     release `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_single_error;
                 end
                 2: begin
-                    force `CPTRA_SS_TOP_PATH.lc_alerts_o = $urandom_range(0,(2**lc_ctrl_reg_pkg::NumAlerts)-1);
+                    force `CPTRA_SS_TOP_PATH.lc_alerts_o = $urandom_range(1,(2**lc_ctrl_reg_pkg::NumAlerts)-1);
                     @(negedge clk);
                     release `CPTRA_SS_TOP_PATH.lc_alerts_o;
                 end
                 3: begin
-                    force `CPTRA_SS_TOP_PATH.fc_alerts = $urandom_range(0, (2**otp_ctrl_reg_pkg::NumAlerts)-1);
+                    force `CPTRA_SS_TOP_PATH.fc_alerts = $urandom_range(1, (2**otp_ctrl_reg_pkg::NumAlerts)-1);
                     @(negedge clk);
                     release `CPTRA_SS_TOP_PATH.fc_alerts;
                 end
