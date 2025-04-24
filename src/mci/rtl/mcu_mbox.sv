@@ -110,7 +110,6 @@ logic mbox_sram_zero_in_progress;
 logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_max_dlen;
 logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_sram_zero_end_addr_bytes;
 logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_sram_zero_end_addr;
-logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_sram_zero_wr_addr;
 logic [MCU_MBOX_SRAM_DATA_W-1:0] mcu_mbox_sram_wr_data;
 logic [MCU_MBOX_SRAM_ADDR_W-1:0] mcu_mbox_sram_req_addr;
 logic mcu_mbox_sram_req_cs;

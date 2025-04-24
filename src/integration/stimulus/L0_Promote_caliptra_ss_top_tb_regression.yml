@@ -35,6 +35,7 @@ contents:
         - ../test_suites/smoke_test_mcu_mbox_invalid_axi/smoke_test_mcu_mbox0_invalid_axi.yml
         - ../test_suites/smoke_test_mcu_mbox_ecc/smoke_test_mcu_mbox0_ecc.yml
         - ../test_suites/smoke_test_mcu_mbox_strb_wr_csr/smoke_test_mcu_mbox0_strb_wr_csr.yml
+        - ../test_suites/smoke_test_mcu_mbox_csrs_warm_rst/smoke_test_mcu_mbox0_csrs_warm_rst.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check.yml
         - ../test_suites/smoke_test_lcc_registers/smoke_test_lcc_registers.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_bus_ecc_error/caliptra_ss_fuse_ctrl_bus_ecc_error.yml
