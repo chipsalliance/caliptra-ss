@@ -23,6 +23,7 @@ if [ -z "${COVERAGE_DIR_PATH}" ]; then
 else
   echo "COVERAGE_DIR_PATH is defined as: ${COVERAGE_DIR_PATH}"
   COV_CMD="-cov_dir ${COVERAGE_DIR_PATH}"
+fi
 
 submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_uds_prog      ${COV_CMD} -op -sb -to 520000
 submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_manuf_dbg     ${COV_CMD} -op -sb -to 520000
