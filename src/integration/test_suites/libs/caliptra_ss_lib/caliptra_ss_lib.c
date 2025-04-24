@@ -203,7 +203,7 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     // 4. Always enabled unless overridden:
     //    - Add a cfg_override_<feature>.
     //    - Add a <feature_value>.
-    //    - Use when most tests whant the feature.
+    //    - Use when most tests want the feature.
     //    - Always configure to a default value. If cfg_override_<feature> is set, 
     //      write the <feature_value> into the register.
 

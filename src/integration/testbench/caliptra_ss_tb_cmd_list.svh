@@ -64,6 +64,9 @@
 //         8'hea        - Disable ECC Error Injection MCU SRAM
 //         8'heb        - Inject random ECC errors into MCU SRAM
 //         --
+//         8'hfb        - Set the isr_active bit
+//         8'hfc        - Clear the isr_active bit
+//         --
 //         8'hff        - End the simulation with a Success status
 localparam TB_SERVICE_CMD_NOPE              = 8'h00;
 localparam TB_CMD_END_SIM_WITH_FAILURE      = 8'h01;
@@ -115,6 +118,8 @@ localparam TB_CMD_RANDOMIZE_MCU_SRAM_ECC_ERROR_INJECTION = 8'heb;
 localparam TB_CMD_COLD_RESET                  = 8'hF5;
 localparam TB_CMD_WARM_RESET                  = 8'hF6;
 
+localparam TB_CMD_INCR_INTR_ACTIVE            = 8'hFB;
+localparam TB_CMD_DECR_INTR_ACTIVE            = 8'hFC;
 localparam TB_CMD_END_SIM_WITH_SUCCESS        = 8'hFF;
 
 `endif // CALIPTRA_SS_TB_CMD_LIST_SVH
