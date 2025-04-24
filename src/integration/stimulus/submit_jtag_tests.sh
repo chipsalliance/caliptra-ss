@@ -19,6 +19,7 @@ set -euo pipefail
 
 if [ -z "${COVERAGE_DIR_PATH}" ]; then
   echo "COVERAGE_DIR_PATH is not defined."
+  COV_CMD=""
 else
   echo "COVERAGE_DIR_PATH is defined as: ${COVERAGE_DIR_PATH}"
   COV_CMD="-cov_dir ${COVERAGE_DIR_PATH}"
