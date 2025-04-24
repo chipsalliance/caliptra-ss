@@ -67,11 +67,7 @@ void sha_accel_set_cmd(uint64_t base_addr, enum sha_accel_mode_e mode, uint32_t 
 
 void sha_accel_push_datain(uint64_t mcu_sram_addr, uint64_t sha_acc_addr, uint32_t dlen) {
     VPRINTF(MEDIUM, "FW: Arm transfer to SHA DATAIN\n");
-    //FIXME this burst request requires proper data-width conversion in AXI interconnect
-    //soc_ifc_axi_dma_send_axi_to_axi(mcu_sram_addr + 0x400, 0, sha_acc_addr + SHA512_ACC_CSR_DATAIN, 1, dlen, 0);
-    for (uint32_t byt = 0; byt < dlen; byt+=4) {
-        soc_ifc_axi_dma_send_axi_to_axi(mcu_sram_addr + 0x400 + byt, 0, sha_acc_addr + SHA512_ACC_CSR_DATAIN, 1, 4, 0);
-    }
+    soc_ifc_axi_dma_send_axi_to_axi(mcu_sram_addr + 0x400, 0, sha_acc_addr + SHA512_ACC_CSR_DATAIN, 1, dlen, 0);
 }
 
 void sha_accel_execute(uint64_t base_addr) {
@@ -98,11 +94,7 @@ void sha_accel_poll_status(uint64_t base_addr) {
 
 void sha_accel_read_result(uint64_t base_addr, uint8_t dw_cnt, uint32_t * digest) {
     VPRINTF(MEDIUM, "FW: Read SHA Digest\n");
-    //FIXME this burst request requires proper data-width conversion in AXI interconnect
-    //soc_ifc_axi_dma_read_ahb_payload(base_addr + SHA512_ACC_CSR_DIGEST_0, 0, digest, dw_cnt << 2, 0);
-    for (uint32_t byt = 0; byt < (dw_cnt<<2); byt+=4) {
-        soc_ifc_axi_dma_read_ahb_payload(base_addr + SHA512_ACC_CSR_DIGEST_0 + byt, 0, &digest[byt>>2], 4, 0);
-    }
+    soc_ifc_axi_dma_read_ahb_payload(base_addr + SHA512_ACC_CSR_DIGEST_0, 0, digest, dw_cnt << 2, 0);
 }
 
 uint8_t sha_accel_check_result(uint8_t dw_cnt, uint32_t * digest, uint32_t * exp_digest) {
@@ -155,12 +147,7 @@ void main () {
     // Read parameters for SHA test case to run
     soc_ifc_axi_dma_read_ahb_payload(mcu_sram_addr + 0    , 0, &mode     ,  4, 0);
     soc_ifc_axi_dma_read_ahb_payload(mcu_sram_addr + 4    , 0, &dlen     ,  4, 0);
-    // FIXME this burst requires AXI interconnect dwidth conversion
-    //       for now, do 1 dw at a time...
-    //soc_ifc_axi_dma_read_ahb_payload(mcu_sram_addr + 0x100, 0, exp_digest, 64, 0); // MSB stored to index 0, which matches how we'll read the result later
-    for (uint32_t dw = 0; dw < 16; dw++) {
-        soc_ifc_axi_dma_read_ahb_payload(mcu_sram_addr + 0x100 + (dw<<2), 0, &exp_digest[dw], 4, 0); // MSB stored to index 0, which matches how we'll read the result later
-    }
+    soc_ifc_axi_dma_read_ahb_payload(mcu_sram_addr + 0x100, 0, exp_digest, 64, 0); // MSB stored to index 0, which matches how we'll read the result later
     VPRINTF(LOW, "FW: Running sha accel test with SHA512_mode: %d dlen: 0x%x\n", mode, dlen);
     VPRINTF(HIGH, "FW: Exp Digest [%d]: 0x%x\n", 0 , exp_digest[0]);
     VPRINTF(HIGH, "FW: Exp Digest [%d]: 0x%x\n", 1 , exp_digest[1]);
