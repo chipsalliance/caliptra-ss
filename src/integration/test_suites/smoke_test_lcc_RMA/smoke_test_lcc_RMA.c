@@ -14,7 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //********************************************************************************
-
 #include "soc_address_map.h"
 #include "printf.h"
 #include "riscv_hw_if.h"
