@@ -54,12 +54,14 @@ uint32_t cptra_mcu_mbox_read_cmd(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_mbox_user(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_dlen(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_dword_sram(uint32_t mbox_num, uint32_t dword_addr);
+void cptra_mcu_mbox_write_dword_sram_burst(uint32_t mbox_num, uint32_t dword_addr, uint32_t * payload, uint32_t size_in_bytes, uint16_t block_size);
 uint32_t cptra_mcu_mbox_read_cmd_status(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_execute(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_target_user(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_target_user_valid(uint32_t mbox_num);
 
 void cptra_mcu_mbox_write_dword_sram(uint32_t mbox_num, uint32_t dword_addr, uint32_t data);
+void cptra_mcu_mbox_read_dword_sram_burst(uint32_t mbox_num, uint32_t dword_addr, uint32_t * payload, uint32_t size_in_bytes, uint16_t block_size);
 void cptra_mcu_mbox_write_execute(uint32_t mbox_num, uint32_t data);
 void cptra_mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t data);
 void cptra_mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t data);

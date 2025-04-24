@@ -61,6 +61,9 @@
 //         8'heb        - Inject aggregate error non-fatal
 //         8'hec        - Inject notif0 intr conditions
 //         --
+//         8'hfb        - Set the isr_active bit
+//         8'hfc        - Clear the isr_active bit
+//         --
 //         8'hff        - End the simulation with a Success status
 localparam TB_SERVICE_CMD_NOPE              = 8'h00;
 localparam TB_CMD_END_SIM_WITH_FAILURE      = 8'h01;
@@ -113,6 +116,9 @@ localparam TB_CMD_INJECT_NOTIF0 = 8'hec;
 localparam TB_CMD_COLD_RESET                  = 8'hF5;
 localparam TB_CMD_WARM_RESET                  = 8'hF6;
 
-localparam TB_CMD_END_SIM_WITH_SUCCESS         = 8'hFF;
+localparam TB_CMD_INCR_INTR_ACTIVE            = 8'hFB;
+localparam TB_CMD_DECR_INTR_ACTIVE            = 8'hFC;
+
+localparam TB_CMD_END_SIM_WITH_SUCCESS        = 8'hFF;
 
 `endif // CALIPTRA_SS_TB_CMD_LIST_SVH
