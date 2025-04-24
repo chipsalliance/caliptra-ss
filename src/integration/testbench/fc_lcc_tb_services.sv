@@ -138,6 +138,14 @@ module fc_lcc_tb_services (
             // This manually pulls the signal down to allow for program continuation.
             force `LCC_PATH.axi_wr_rsp.bresp = '0;
           end
+          CMD_LC_FAULT_CNTR: begin
+            $display("fc_lcc_tb_services: fault lcc cntr fuse");
+          force `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.lc_cnt_i[0] = '0;
+          end
+          CMD_DISABLE_CLK_BYP_ACK: begin
+            $display("fc_lcc_tb_services: disable clk_byp_ack");
+          force `LCC_PATH.lc_clk_byp_ack_i = '0;
+          end
           default: begin
             // No action for unrecognized commands.
           end

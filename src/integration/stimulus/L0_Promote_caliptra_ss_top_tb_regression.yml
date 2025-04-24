@@ -51,3 +51,4 @@ contents:
         - ../test_suites/smoke_test_error_handling/smoke_test_error_handling.yml
         - ../test_suites/caliptra_ss_lcc_volatile_unlock/caliptra_ss_lcc_volatile_unlock.yml
         - ../test_suites/caliptra_ss_lcc_alert/caliptra_ss_lcc_alert.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_interrupts/caliptra_ss_fuse_ctrl_interrupts.yml
