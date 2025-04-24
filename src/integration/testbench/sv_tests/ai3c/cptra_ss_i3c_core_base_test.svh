@@ -70,6 +70,7 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 	int wr_count_4B;
 	int wr_count_1B;
 	int r;
+	int err_count;
 	
 	
 	bit [31:0] remaining_img_sz_in_bytes;
@@ -152,27 +153,34 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 		test_log.step("Dynamic Address Assignment and Bus Initialization done");
 		test_log.sample(AI3C_5_1_2_1n3);
 		test_log.sample(AI3C_5_1_2_2n1);
+		
+		`ifndef I3C_BOOT_USING_ENTDAA 
+			//-- grabbing dynamic address for the I3C core
+			test_log.step($sformatf("I3C device count: %0d", sys_agt.mgr.dev_infos.size()));
+			foreach (sys_agt.mgr.dev_infos[i]) begin
+				case(sys_agt.mgr.dev_infos[i].sa)
+					'h5A: begin
+						// general_target_addr= sys_agt.mgr.i3c_dev_das[i];
+						general_target_addr= sys_agt.mgr.dev_infos[i].da;
+						test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, general_target_addr));
+					end
+					'h5B: begin
+						// recovery_target_addr = sys_agt.mgr.i3c_dev_das[i];
+						recovery_target_addr = sys_agt.mgr.dev_infos[i].da;
+						test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, recovery_target_addr));
+					end
+					default: begin
+						//-- print error message if the static address is not 0x5A or 0x5B
+						test_log.substep($sformatf(" ERROR : I3C device %0d: static addr 'h %0h is not 0x5A or 0x5B", i, sys_agt.mgr.dev_infos[i].sa));
+					end
+				endcase
+			end
+		`else
+			test_log.step($sformatf("ENTDAA is used for booting"));
+			general_target_addr= sys_agt.mgr.dev_infos[0].da;
+			recovery_target_addr = sys_agt.mgr.dev_infos[1].da;
+		`endif
 
-		//-- grabbing dynamic address for the I3C core
-		test_log.step($sformatf("I3C device count: %0d", sys_agt.mgr.dev_infos.size()));
-		foreach (sys_agt.mgr.dev_infos[i]) begin
-			case(sys_agt.mgr.dev_infos[i].sa)
-				'h5A: begin
-					// general_target_addr= sys_agt.mgr.i3c_dev_das[i];
-					general_target_addr= sys_agt.mgr.dev_infos[i].da;
-					test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, general_target_addr));
-				end
-				'h5B: begin
-					// recovery_target_addr = sys_agt.mgr.i3c_dev_das[i];
-					recovery_target_addr = sys_agt.mgr.dev_infos[i].da;
-					test_log.substep($sformatf("I3C device 'd %0d: static addr 'h %0h, dynamic addr 'h %0h", i,sys_agt.mgr.dev_infos[i].sa, recovery_target_addr));
-				end
-				default: begin
-					//-- print error message if the static address is not 0x5A or 0x5B
-					test_log.substep($sformatf(" ERROR : I3C device %0d: static addr 'h %0h is not 0x5A or 0x5B", i, sys_agt.mgr.dev_infos[i].sa));
-				end
-			endcase
-		end
 		test_log.substep($sformatf("I3C Subordinate Recovery addr 'h %0h", recovery_target_addr));
 		test_log.substep($sformatf("I3C Subordinate General addr 'h %0h", general_target_addr));
 
@@ -416,8 +424,10 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
         test_log.substep($psprintf("PEC recvd : 'h %0h", msg.data_bytes[2+len]));
         test_log.substep($psprintf("PEC calcd : 'h %0h", pec));
 
-        if (pec != msg.data_bytes[2+len])
-            test_log.substep("Received PEC mismatch!");
+        if (pec != msg.data_bytes[2+len]) begin
+            test_log.substep("Error : Received PEC mismatch!");
+			err_count++;
+		end
 			
 		chk_tr(tr);
 		test_log.step($psprintf("I3C rd txfer completed at.: addr = 'h %0h, len = 'd %0d", addr, len));
@@ -432,9 +442,28 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
         for (int i = 0; i < len; i++) begin
             if (data[i] != expected_data[i]) begin
                 test_log.substep($psprintf("Error : Data mismatch at index %0d: expected 'h %0h, got 'h %0h", i, expected_data[i], data[i]));
+				err_count++;
             end
         end
     endtask
+
+	virtual task log_test_passed();
+		test_log.step("* TESTCASE PASSED");
+	endtask
+
+	virtual task log_test_failed();
+		test_log.step("* TESTCASE FAILED");
+		test_log.step($psprintf("Error Count: %0d", err_count));
+	endtask
+
+	virtual task process_test_result();
+		test_log.step("I3C base test processing test result...");
+		if (err_count > 0) begin
+			log_test_failed();
+		end else begin
+			log_test_passed();
+		end
+	endtask
 
 	virtual task test_body();
 
