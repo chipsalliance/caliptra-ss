@@ -353,7 +353,7 @@ always_comb begin
     // STRAPS with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR));
     
     // REGISTERS WITH TAP ACCESS
