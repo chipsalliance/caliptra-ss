@@ -102,20 +102,20 @@ void write_random_data_to_sram() {
 }
 
 void check_ecc_error_status() {
-    VPRINTF(LOW, "Checking ECC error status...\n");
+    VPRINTF(LOW, "Checking ECC err status...\n");
 
     uint32_t notif_reg = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
     if (!(notif_reg & MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MCU_SRAM_ECC_COR_STS_MASK)) {
         handle_error("Expected ECC correctable error status not set in NOTIF0_INTR_T.");
     } else {
-        VPRINTF(LOW, "ECC correctable error status set as expected.\n");
+        VPRINTF(LOW, "ECC correctable err status set as expected.\n");
     }
 
-    VPRINTF(LOW, "Finished checking ECC error status.\n");
+    VPRINTF(LOW, "Finished checking ECC err status.\n");
 }
 
 void clear_ecc_error_status() {
-    VPRINTF(LOW, "Clearing ECC error status...\n");
+    VPRINTF(LOW, "Clearing ECC err status...\n");
 
     // Clear the ECC error status registers
     lsu_write_32((uintptr_t)SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, 
@@ -127,7 +127,7 @@ void clear_ecc_error_status() {
         handle_error("Failed to clear ECC correctable error status in SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R.");
     }
 
-    VPRINTF(LOW, "ECC error status cleared successfully.\n");
+    VPRINTF(LOW, "ECC err status cleared successfully.\n");
 }
 
 void main (void) {
