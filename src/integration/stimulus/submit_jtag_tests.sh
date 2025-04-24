@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 # 
 #
@@ -15,13 +14,13 @@
 # limitations under the License."
 
 
-set -euo pipefail
+set -eo pipefail
 
 if [ -z "${COVERAGE_DIR_PATH}" ]; then
-  echo "COVERAGE_DIR_PATH is not defined."
+  echo "COVERAGE_DIR_PATH is not defined."
   COV_CMD=""
 else
-  echo "COVERAGE_DIR_PATH is defined as: ${COVERAGE_DIR_PATH}"
+  echo "COVERAGE_DIR_PATH is defined as: ${COVERAGE_DIR_PATH}"
   COV_CMD="-cov_dir ${COVERAGE_DIR_PATH}"
 fi
 
