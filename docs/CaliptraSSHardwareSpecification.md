@@ -114,10 +114,9 @@
     - [MCI Debug Access](#mci-debug-access)
       - [MCI DMI](#mci-dmi)
         - [MCU DMI Enable Control](#mcu-dmi-enable-control)
-        - [MCI DMI Memory Map](#mci-dmi-memory-map)
-          - [DMI Only Registers](#dmi-only-registers)
         - [MCI DMI Interface](#mci-dmi-interface)
         - [MCI DMI Memory Map](#mci-dmi-memory-map)
+          - [DMI Only Registers](#dmi-only-registers)
         - [DMI MCU SRAM Access](#dmi-mcu-sram-access)
         - [DMI MCU Trace Buffer Access](#dmi-mcu-trace-buffer-access)
     - [MCI Boot FSM Breakpoint](#mci-boot-fsm-breakpoint)
@@ -1036,10 +1035,12 @@ MCI has the following types of straps:
 | :---------     | :---------| :---------| 
 | **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These shall be constant non-configurable inputs to CSS/MCI. Inside MCI these are not overridable by SW.| 
 | **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
-| **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
+| **Configurable Sampled** | Sampled**  | Sampled once per warm boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
 
 
 *NOTE: Strap sampling occurs when mci_rst_b is deasserted and is typically performed once per cold boot. This process is controlled by the SS_CONFIG_DONE_STICKY register; when set, sampling is skipped. If a warm reset happens before SS_CONFIG_DONE_STICKY is set, the straps will be sampled again, although this is not the usual behavior.
+
+**NOTE: Strap sampling occurs when mci_rst_b is deasserted.
 
 | **Strap Name**     | **Strap Type**|**Description**     | 
 | :---------     | :---------| :---------| 
@@ -1449,6 +1450,22 @@ MCI provides the logic for these enables. When the following condition(s) are me
 
 *Note: These are the exact same controls Calipitra Core uses for DMI enable* 
 
+
+##### MCI DMI Interface
+
+The MCI DMI Interface gives select access to the blocks inside MCI.
+
+Access to MCI's DMI space is split into two different levels of security:
+
+| **Access** 	| **Description** 	| 
+| :--------- 	| :--------- 	| 
+| **Debug Intent/Manufacture Mode**|  Always accessable over DMI whenever [MCU uncore DMI enabled](#mcu-dmi-enable-control).| 
+| **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked| 
+
+Illegal accesses will result in writes being dropped and reads returning 0.
+
+*NOTE: MCI DMI address space is different than MCI AXI address space.*
+
 ##### MCI DMI Memory Map
 
 | Register Name | DMI Address | Access Type | Debug Intent Access | Manufacture Mode Access | Debug Unlock Access |
@@ -1507,71 +1524,6 @@ MCI\_DMI\_MCU\_HW\_OVERRIDE
 | :----      | :---- | :----       | :----       | 
 | `mcu_sram_fw_exec_region_lock`      | [0]  | RW          | mcu_sram_fw_exec_region_lock control. ORed with input signal giving debugger control if Caliptra Core in reset while attempting MCU reset flow.         |
 | `reserved`      | [31:1]  | RW          | Reserved         |
-
-
-##### MCI DMI Interface
-
-The MCI DMI Interface gives select access to the blocks inside MCI.
-
-Access to MCI's DMI space is split into two different levels of security:
-
-| **Access** 	| **Description** 	| 
-| :--------- 	| :--------- 	| 
-| **Debug Intent/Manufacture Mode**|  Always accessable over DMI whenever [MCU uncore DMI enabled](#mcu-dmi-enable-control).| 
-| **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked| 
-
-Illegal accesses will result in writes being dropped and reads returning 0.
-
-*NOTE: MCI DMI address space is different than MCI AXI address space.*
-
-##### MCI DMI Memory Map
-
-| Register Name | DMI Address | Access Type | Debug Intent/Manufacture Mode Access | Debug Unlock Access |
-| :---- | :---- | :---- | :---- |  :---- |
-| **NOT ENABLED IN 2.0** MBOX0\_DLEN | 0x50 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX0\_DOUT | 0x51 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX0\_STATUS | 0x52 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX0\_DIN | 0x53 | WO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX1\_DLEN | 0x54 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX1\_DOUT | 0x55 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX1\_STATUS | 0x56 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX1\_DIN | 0x57 | WO | Yes |  |
-| MCU\_SRAM\_ADDR | 0x58 | RW |  | Yes |
-| MCU\_SRAM\_DATA | 0x59 | RW |  | Yes |
-| MCU\_TRACE\_STATUS | 0x5A | RO |  | Yes |
-| MCU\_TRACE\_CONFIG | 0x5B | RO |  | Yes |
-| MCU\_TRACE\_WR\_PTR | 0x5C | RO |  | Yes |
-| MCU\_TRACE\_RD\_PTR | 0x5D | RW |  | Yes |
-| MCU\_TRACE\_DATA | 0x5E | RO |  | Yes |
-| HW\_FLOW\_STATUS | 0x5F | RO | Yes |  |
-| RESET\_REASON | 0x60 | RO | Yes |  |
-| RESET\_STATUS | 0x61 | RO | Yes |  |
-| FW\_FLOW\_STATUS | 0x62 | RO | Yes |  |
-| HW\_ERROR\_FATAL | 0x63 | RO | Yes |  |
-| AGG\_ERROR\_FATAL | 0x64 | RO | Yes |  |
-| HW\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |
-| AGG\_ERROR\_NON\_FATAL | 0x66 | RO | Yes |  |
-| FW\_ERROR\_FATAL | 0x67 | RO | Yes |  |
-| FW\_ERROR\_NON\_FATAL | 0x68 | RO | Yes |  |
-| HW\_ERROR\_ENC | 0x69 | RO | Yes |  |
-| FW\_ERROR\_ENC | 0x6A | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_0 | 0x6B | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_1 | 0x6C | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_2 | 0x6D | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_3 | 0x6E | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_4 | 0x6F | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_5 | 0x70 | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_6 | 0x71 | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_7 | 0x72 | RO | Yes |  |
-| RESET\_REQUEST | 0x73 | RW |  | Yes |
-| MCI\_BOOTFSM\_GO | 0x74 | RW | Yes |  |
-| CPTRA\_BOOT\_GO | 0x75 | RW |  | Yes |
-| FW\_SRAM\_EXEC\_REGION\_SIZE | 0x76 | RW |  | Yes |
-| MCU\_RESET\_VECTOR | 0x77 | RW |  | Yes |
-| SS\_DEBUG\_INTENT | 0x78 | RW |  | Yes |
-| SS\_CONFIG\_DONE | 0x79 | RW |  | Yes |
-| SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  | Yes |
-| MCU\_NMI\_VECTOR | 0x7B | RW |  | Yes |
 
 
 ##### DMI MCU SRAM Access
