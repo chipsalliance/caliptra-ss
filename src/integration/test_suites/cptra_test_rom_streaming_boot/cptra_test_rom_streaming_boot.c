@@ -152,7 +152,7 @@ void poll_for_payload_available() {
         VPRINTF(LOW, "CPTRA: Payload Available is 'h %0x\n", reg_data);
         if (reg_data == 0) {
             VPRINTF(LOW, "CPTRA: Waiting before reading Payload available status again\n");
-            for (uint8_t ii = 0; ii < 160; ii++) {
+            for (uint8_t ii = 0; ii < 1000; ii++) {
                 __asm__ volatile ("nop");
             }
         } else {

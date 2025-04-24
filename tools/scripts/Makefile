@@ -19,7 +19,12 @@ TEST_CFLAGS = -g -O3 -DMY_RANDOM_SEED=$(PLAYBOOK_RANDOM_SEED) $(BUILD_CFLAGS)
 VERILATOR = verilator
 GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
-CALIPTRA_SS_CLK_FREQ ?= 1000
+
+ifndef CALIPTRA_SS_CLK_FREQ
+# FIXME : Support 170MHz, 200MHz, 400MHz
+#CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 3 + 1))), 170 200 400)
+CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 3 + 1))), 400 400 400)
+endif
 
 # Ensure that RISC-V toolchain is installed
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
