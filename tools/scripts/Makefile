@@ -50,9 +50,10 @@ INCLUDES_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/includes
 RTL_DIR = $(CALIPTRA_SS_ROOT)/src/integration/rtl
 TBDIR ?= $(CALIPTRA_SS_ROOT)/src/integration/testbench
 RISCV_HW_IF_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/riscv_hw_if
-#ISR_DIR    = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
+ISR_DIR    = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/mcu_isr
 PRINTF_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/printf
 LIBS_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs
+CSS_MCU0_DEFINES_DIR = $(CALIPTRA_SS_ROOT)/src/riscv_core/veer_el2/rtl/defines
 
 
 DUT ?= caliptra_ss_top_tb
@@ -77,12 +78,14 @@ COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
 		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
+		$(INCLUDES_DIR)/caliptra_ss_defines.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(RISCV_HW_IF_DIR)/riscv-csr.h \
 		$(RISCV_HW_IF_DIR)/veer-csr.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
+		$(CSS_MCU0_DEFINES_DIR)/css_mcu0_defines.h \
 		$(BUILD_DIR)/caliptra_ss_clk_freq.h \
 		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
@@ -101,12 +104,27 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILE_CRT := mcu_crt0.o
 endif
 OFILES += $(TESTNAME).o
-# Assume all C tests will import our printf lib, but not assembly
+# Assume all C tests will import our printf and ISR libs, but assembly
+# tests will not
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += printf.o
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
+endif
+
+# Only build the mcu_isr lib (which consumes a large block of DCCM) if it is
+# included by the test code.
+ifeq (0,$(shell grep -e '\#include "mcu_isr.h"' $(TEST_DIR)/$(TESTNAME).c > /dev/null && echo $$?))
+	OFILES += mcu_isr.o
+# Tests might have a local variant of mcu_isr header
+# If not, use the default
+ifeq (0,$(shell test -e $(TEST_DIR)/mcu_isr.h && echo $$?))
+	HEADER_FILES += $(TEST_DIR)/mcu_isr.h
+else
+	HEADER_FILES += $(ISR_DIR)/mcu_isr.h
+endif
+HEADER_FILES += $(ISR_DIR)/riscv-interrupts.h
 endif
 
 # Verilator trace format
@@ -135,7 +153,7 @@ else
 	LINK = $(TEST_DIR)/$(TESTNAME).ld
 endif
 
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(COMP_LIBS)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(ISR_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
 $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
