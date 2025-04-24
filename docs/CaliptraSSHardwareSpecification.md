@@ -117,7 +117,7 @@
         - [MCI DMI Memory Map](#mci-dmi-memory-map)
           - [DMI Only Registers](#dmi-only-registers)
         - [MCI DMI Interface](#mci-dmi-interface)
-        - [MCI DMI Memory Map](#mci-dmi-memory-map)
+        - [MCI DMI Memory Map](#mci-dmi-memory-map-1)
         - [DMI MCU SRAM Access](#dmi-mcu-sram-access)
         - [DMI MCU Trace Buffer Access](#dmi-mcu-trace-buffer-access)
     - [MCI Boot FSM Breakpoint](#mci-boot-fsm-breakpoint)
@@ -1036,10 +1036,12 @@ MCI has the following types of straps:
 | :---------     | :---------| :---------| 
 | **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These shall be constant non-configurable inputs to CSS/MCI. Inside MCI these are not overridable by SW.| 
 | **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
-| **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
+| **Configurable Sampled** | Sampled**  | Sampled once per warm boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
 
 
 *NOTE: Strap sampling occurs when mci_rst_b is deasserted and is typically performed once per cold boot. This process is controlled by the SS_CONFIG_DONE_STICKY register; when set, sampling is skipped. If a warm reset happens before SS_CONFIG_DONE_STICKY is set, the straps will be sampled again, although this is not the usual behavior.
+
+**NOTE: Strap sampling occurs when mci_rst_b is deasserted.
 
 | **Strap Name**     | **Strap Type**|**Description**     | 
 | :---------     | :---------| :---------| 

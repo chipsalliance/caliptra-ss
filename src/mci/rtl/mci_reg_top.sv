@@ -329,7 +329,7 @@ assign strap_we_sticky = strap_we & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done
 always_comb begin
     // STRAP with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = strap_we_sticky ? ss_debug_intent : mcu_dmi_uncore_wdata[0];
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we_sticky ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
 
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.next          = mcu_dmi_uncore_wdata[0] ; 
