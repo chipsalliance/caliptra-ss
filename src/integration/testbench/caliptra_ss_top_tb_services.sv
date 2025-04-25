@@ -290,28 +290,28 @@ import tb_top_pkg::*;
                 // ============= SHA test setup =============
                 // Randomize test parameters
                 if (!std::randomize(sha512_mode)) $fatal("Failed to randomize sha mode");
-                if (!std::randomize(test_case) with {test_case inside {[1:255]};}) $fatal("Failed to randomize test_case");
+                if (!std::randomize(test_case) with {test_case inside {[1:256]};}) $fatal("Failed to randomize test_case");
                 if (sha512_mode) begin
                     case(test_case) inside
-                    [0:127]: begin
+                    [0:128]: begin
                       file_name = "./SHA512ShortMsg.rsp";
                       line_skip = test_case * 4 + 7;
                     end
-                    [128:255]: begin
+                    [129:256]: begin
                       file_name = "./SHA512LongMsg.rsp";
-                      line_skip = (test_case - 128) * 4 + 7;
+                      line_skip = (test_case - 129) * 4 + 7;
                     end
                   endcase
                 end
                 else begin
                     case(test_case) inside
-                    [0:127]: begin
+                    [0:128]: begin
                         file_name = "./SHA384ShortMsg.rsp";
                         line_skip = test_case * 4 + 7;
                     end
-                    [128:255]: begin
+                    [129:256]: begin
                       file_name = "./SHA384LongMsg.rsp";
-                      line_skip = (test_case - 128) * 4 + 7;
+                      line_skip = (test_case - 129) * 4 + 7;
                     end
                   endcase
                 end
