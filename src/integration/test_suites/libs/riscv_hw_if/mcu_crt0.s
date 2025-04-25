@@ -33,7 +33,6 @@ _start:
         // MRAC
         // Disable Caches on all regions except...
         //  - Set cacheable for ROM to improve perf
-        //  - Set cacheable for MCI to test MCU SRAM caching
         // Set side-effects (SE) at peripheral address regions:
         //  - [UNMAPPED] @ 0x0000_0000:    SE
         //  - [UNMAPPED] @ 0x1000_0000:    SE
