@@ -72,7 +72,7 @@ interface mci_top_cov_if
     input logic [ 6:0] mcu_dmi_uncore_addr,
     input logic [31:0] mcu_dmi_uncore_wdata,
     input logic [31:0] mcu_dmi_uncore_rdata,
-    input logic        mcu_dmi_active, // FIXME: This is not used in the design
+    input logic        mcu_dmi_active, 
 
     // MCU Trace
     input logic [31:0] mcu_trace_rv_i_insn_ip,
@@ -213,6 +213,7 @@ interface mci_top_cov_if
     endgroup
 
     mci_top_cg mci_top_cg1 = new();
+    mci_boot_seqr_cg mci_boot_seqr_cg1 = new();
     
     generic_wires_cg giw_cg[64];
     generic_wires_cg gow_cg[64];

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include "caliptra_ss_clk_freq.h"
 #include "caliptra_ss_lib.h"
 #include <stdbool.h>
+#include <stdarg.h> // For va_list, va_start, va_end
 
 #ifdef MCU_MBOX_VALID_VECTOR
     uint32_t valid_mbox_instances = MCU_MBOX_VALID_VECTOR;
@@ -41,6 +42,16 @@
 #else
     uint32_t state = 0;
 #endif
+
+void handle_error(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    VPRINTF(FATAL, format, args); // Pass the variable arguments to VPRINTF
+    va_end(args);
+
+    SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
+    while (1); // Infinite loop to halt execution
+}
 
 uint32_t xorshift32(void)
 {
@@ -192,7 +203,7 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     // 4. Always enabled unless overridden:
     //    - Add a cfg_override_<feature>.
     //    - Add a <feature_value>.
-    //    - Use when most tests whant the feature.
+    //    - Use when most tests want the feature.
     //    - Always configure to a default value. If cfg_override_<feature> is set, 
     //      write the <feature_value> into the register.
 
@@ -396,6 +407,42 @@ bool is_mcu_mbox_clear_soc_req_while_mcu_lock_interrupt_set(uint32_t mbox_num) {
     return false;
 }
 
+bool mcu_mbox_wait_for_soc_data_avail_interrupt(uint32_t mbox_num, uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for SoC data available interrupt for mbox%x\n", mbox_num);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        if(is_mcu_mbox_soc_data_avail_interrupt_set(mbox_num)){
+            VPRINTF(LOW, "MCU: SoC agent data available for mbox%x\n", mbox_num);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool is_mcu_mbox_soc_data_avail_interrupt_set(uint32_t mbox_num) {
+    // Check that Mailbox SoC data available interrupt has been set
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK << mbox_num)) != 0) {
+            VPRINTF(LOW, "MCU: Mbox%x SoC data available interrupt set\n", mbox_num);
+            return true;
+    }
+    return false;
+}
+
+void clear_mcu_mbox_soc_data_avail_interrupt(uint32_t mbox_num) {
+    VPRINTF(LOW, "MCU: RW1C SoC data available interrupt Mbox%x\n", mbox_num);
+    uint32_t internal_intr = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
+    internal_intr = MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK << mbox_num;
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, internal_intr);
+
+    // Check that Mailbox SoC data available interrupt has been cleared
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+        (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK << mbox_num)) != 0) {
+            VPRINTF(FATAL, "MCU: Mbox%x SoC data available interrupt not cleared\n", mbox_num);
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+    }
+}
+
 bool is_only_mcu_mbox_sb_ecc_interrupt_set(uint32_t mbox_num) {
     // Check that Mailbox SB ECC interrupt has been set
     if(lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) ==
@@ -493,6 +540,40 @@ bool mcu_mbox_acquire_lock(uint32_t mbox_num, uint32_t attempt_count) {
     return false;
 }
 
+bool mcu_cptra_mbox_acquire_lock(uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for CPTRA Mbox lock acquired\n");
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        if(!(lsu_read_32(SOC_MBOX_CSR_MBOX_LOCK) & MBOX_CSR_MBOX_LOCK_LOCK_MASK)){
+            VPRINTF(LOW, "MCU: CPTRA Mbox lock acquired\n");
+            return true;
+        }
+    }
+    return false;
+}
+
+bool mcu_cptra_mbox_wait_for_status(uint32_t attempt_count, enum mbox_status_e status) {
+    VPRINTF(LOW, "MCU: Waiting for CPTRA Mbox status: 0x%x\n", status);
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        uint32_t reg_data = lsu_read_32(SOC_MBOX_CSR_MBOX_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK;
+        if(reg_data == status){
+            VPRINTF(LOW, "MCU: CPTRA Mbox status: 0x%x\n", status);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool mcu_wait_for_mcu_reset_req_interrupt(uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for CPTRA MCU Reset Request interrupt\n");
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        if(lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_MASK){
+            VPRINTF(LOW, "MCU: CPTRA MCU Reset Request interrupt set\n");
+            return true;
+        }
+    }
+    return false;
+}
+
 bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count) {
     // TODO: update with MCU Root Strap Value
     VPRINTF(LOW, "MCU: Wait for Lock to Reflect MBOX USER\n");
@@ -540,6 +621,20 @@ void mcu_mbox_clear_target_done_interrupt(uint32_t mbox_num) {
     if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
         (MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_TARGET_DONE_STS_MASK << mbox_num)) != 0) {
         VPRINTF(FATAL, "MCU: Mbox%x Target Done interrupt not cleared\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+}
+
+void mcu_clear_reset_req_interrupt() {
+    VPRINTF(LOW, "MCU: RW1C Reset Request interrupt\n");
+    uint32_t internal_intr = MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_MASK;
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, internal_intr);
+
+    // Check that Mailbox Target Done interrupt has been cleared
+    if((lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & 
+        MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_MASK) != 0) {
+        VPRINTF(FATAL, "MCU: Reset Request interrupt not cleared\n");
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -716,15 +811,23 @@ void boot_i3c_socmgmt_if(void) {
     switch (clk_freq) {
         case 160:
             //-- for 160 MHz
-            write_i3c_socmgmtif_registers(0x00000002, 0x00000002, 0x00000003, 0x00000001);
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+            break;
+        case 167:
+            //-- for 167 MHz
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+            break;
+        case 170:
+            //-- for 170 MHz
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
             break;
         case 400:
             //-- for 400 MHz
-            write_i3c_socmgmtif_registers(0x00000005, 0x00000005, 0x00000006, 0x00000002);
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
             break;
         case 500:
             //-- for 500 MHz
-            write_i3c_socmgmtif_registers(0x00000006, 0x00000006, 0x00000007, 0x00000003);
+            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
             break;
         case 1000:
             //-- for 1000 MHz

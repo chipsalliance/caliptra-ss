@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+// 
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 `include "caliptra_ss_includes.svh"
 `include "config_defines.svh"
 `include "caliptra_macros.svh"
@@ -18,6 +34,7 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_pwrgood_i;
     logic cptra_ss_rst_b_i;
     logic cptra_ss_mci_cptra_rst_b_o;
+    logic cptra_ss_rdc_clk_cg_o;
 
 
     `define AXI_M_IF_TIE_OFF(_sig_name) \
@@ -349,6 +366,7 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i), //fixme
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o(cptra_ss_mci_cptra_rst_b_o),
+        .cptra_ss_rdc_clk_cg_o(cptra_ss_rdc_clk_cg_o),
     
     //SoC AXI Interface
         .cptra_ss_cptra_core_s_axi_if_r_sub(cptra_ss_cptra_core_s_axi_if.r_sub),

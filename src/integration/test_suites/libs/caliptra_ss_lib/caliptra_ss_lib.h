@@ -19,8 +19,12 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_address_map.h"
+#include "soc_ifc.h"
 #include "stdint.h"
 #include <stdbool.h>
+
+#define TB_CMD_TEST_FAIL   0x01
+#define TB_CMD_TEST_PASS   0xFF
 
 #define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
 
@@ -47,6 +51,10 @@
 #define CMD_LC_ENABLE_SVA               FC_LCC_CMD_OFFSET + 0x15
 #define CMD_FC_LCC_CORRECTABLE_FAULT    FC_LCC_CMD_OFFSET + 0x16
 #define CMD_FC_LCC_UNCORRECTABLE_FAULT  FC_LCC_CMD_OFFSET + 0x17
+#define CMD_LCC_FATAL_BUS_INTEG_ERROR   FC_LCC_CMD_OFFSET + 0x18
+#define CMD_LC_FAULT_CNTR               FC_LCC_CMD_OFFSET + 0x19
+#define CMD_DISABLE_CLK_BYP_ACK         FC_LCC_CMD_OFFSET + 0x1A
+
 
 
 #define TB_CMD_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
@@ -58,18 +66,24 @@
 #define TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR  0xe5
 #define TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION 0xe6
 #define TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION 0xe7
-
-
+#define TB_CMD_INJECT_MCU_SRAM_SINGLE_ECC_ERROR  0xe8
+#define TB_CMD_INJECT_MCU_SRAM_DOUBLE_ECC_ERROR  0xe9
+#define TB_CMD_DISABLE_MCU_SRAM_ECC_ERROR_INJECTION 0xea
+#define TB_CMD_RANDOMIZE_MCU_SRAM_ECC_ERROR_INJECTION 0xeb
 
 #define TB_CMD_COLD_RESET 0xF5
 #define TB_CMD_WARM_RESET 0xF6
 
-
+#define TB_CMD_INCR_INTR_ACTIVE 0xFB
+#define TB_CMD_DECR_INTR_ACTIVE 0xFC
+#define TB_CMD_END_SIM_WITH_SUCCESS     0xFF 
 
 #define MCU_MBOX_NUM_STRIDE             (SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR - SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR)
 #define MCU_MBOX_AXI_CFG_STRIDE         (SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0 - SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0)
 #define MCU_MBOX_MAX_SIZE_KB            2048
 #define MCU_MBOX_MAX_NUM                2
+
+#define TB_CMD_END_SIM_WITH_SUCCESS     0xFF 
 
 extern uint32_t state;
 
@@ -133,6 +147,9 @@ typedef struct {
 // TO LOAD FUSES!!!
 void mcu_cptra_init(mcu_cptra_init_args args);
 #define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){mcu_cptra_init_arg_defaults __VA_OPT__(,) __VA_ARGS__});
+
+
+void handle_error(const char *format, ...);
 
 uint32_t xorshift32(void);
 
@@ -211,6 +228,13 @@ void cptra_prod_rom_boot_go(void);
 void configure_captra_axi_user(void); //-- FIXME : DELETE THIS FUNCTION
 void wait_for_cptra_ready_for_mb_processing(void); //-- FIXME : DELETE THIS FUNCTION
 void trigger_caliptra_go(void); //-- FIXME : DELETE THIS FUNCTION
+bool mcu_mbox_wait_for_soc_data_avail_interrupt(uint32_t mbox_num, uint32_t attempt_count);
+bool is_mcu_mbox_soc_data_avail_interrupt_set(uint32_t mbox_num);
+void clear_mcu_mbox_soc_data_avail_interrupt(uint32_t mbox_num);
+bool mcu_cptra_mbox_acquire_lock(uint32_t attempt_count);
+bool mcu_cptra_mbox_wait_for_status(uint32_t attempt_count, enum mbox_status_e status);
+bool mcu_wait_for_mcu_reset_req_interrupt(uint32_t attempt_count);
+void mcu_clear_reset_req_interrupt();
 
 ///////////////////////////////////////////////////
 // MCU Mbox Read/Write SRAM and CSR functions
@@ -225,15 +249,22 @@ static inline void mcu_mbox_set_execute(uint32_t mbox_num) {
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x1);
 }
 
+static inline uint32_t mcu_mbox_read_execute(uint32_t mbox_num) {
+    uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num);
+    VPRINTF(LOW, "MCU: Mbox%x Reading Execute: 0x%x\n", mbox_num, rd_data);
+}
+
 static inline void mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t cmd) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x command: 0%x\n", mbox_num, cmd); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, cmd);
 }
+
 static inline uint32_t mcu_mbox_read_cmd(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading CMD: 0x%x\n", mbox_num, rd_data); 
     return rd_data;
 }
+
 static inline void mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t dlen) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x DLEN: 0x%x\n", mbox_num, dlen); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, dlen);
@@ -304,6 +335,11 @@ static inline uint32_t mcu_mbox_read_target_user_valid(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading TARGET_USER_VALID: 0x%x\n", mbox_num, rd_data);
     return rd_data;
+}
+
+static inline void mcu_mbox_write_target_status(uint32_t mbox_num, uint32_t axi_id) {
+    VPRINTF(LOW, "MCU: Writing to MBOX%x TARGET_USER: 0%x\n", mbox_num, axi_id); 
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, axi_id);    
 }
 
 inline uint32_t mcu_mbox_read_target_status(uint32_t mbox_num) {

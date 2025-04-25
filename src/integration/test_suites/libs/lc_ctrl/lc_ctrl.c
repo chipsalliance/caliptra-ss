@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,31 @@
 
 #define CLAIM_TRANS_VAL 0x96 // Tried to match MuBi8True
 
+lc_token_type_t trans_matrix[NUM_LC_STATES][NUM_LC_STATES] = {
+/*          RAW  TU0  TL0  TU1  TL1  TU2  TL2  TU3  TL3  TU4  TL4  TU5  TL5  TU6  TL6  TU7  DEV  PRD  PRE  RMA  SCR */
+/* RAW */ { INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, INV, INV, INV, ZER },
+/* TU0 */ { INV, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
+/* TL0 */ { INV, INV, INV, TU1, INV, TU2, INV, TU3, INV, TU4, INV, TU5, INV, TU6, INV, TU7, TEX, DEX, PEX, INV, ZER }, 
+/* TU1 */ { INV, INV, INV, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
+/* TL1 */ { INV, INV, INV, INV, INV, TU2, INV, TU3, INV, TU4, INV, TU5, INV, TU6, INV, TU7, TEX, DEX, PEX, INV, ZER },
+/* TU2 */ { INV, INV, INV, INV, INV, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
+/* TL2 */ { INV, INV, INV, INV, INV, INV, INV, TU3, INV, TU4, INV, TU5, INV, TU6, INV, TU7, TEX, DEX, PEX, INV, ZER },
+/* TU3 */ { INV, INV, INV, INV, INV, INV, INV, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
+/* TL3 */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, TU4, INV, TU5, INV, TU6, INV, TU7, TEX, DEX, PEX, INV, ZER },
+/* TU4 */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, ZER, INV, ZER, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
+/* TL4 */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, TU5, INV, TU6, INV, TU7, TEX, DEX, PEX, INV, ZER },
+/* TU5 */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, ZER, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
+/* TL5 */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, TU6, INV, TU7, TEX, DEX, PEX, INV, ZER },
+/* TU6 */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
+/* TL6 */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, TU7, TEX, DEX, PEX, INV, ZER },
+/* TU7 */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, TEX, DEX, PEX, ZER, ZER },
+/* DEV */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, DEX, PEX, RMU, ZER },
+/* PRD */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, PEX, RMU, ZER },
+/* PRE */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, ZER },
+/* RMA */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, ZER },
+/* SCR */ { INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV, INV }
+};
+
 // The *decoded* enumeration values you gave in the source code
 // LcStRaw=0, LcStTestUnlocked0=1, LcStTestLocked0=2, etc.
 // The final step is to go to Scrap (20).
@@ -51,6 +76,7 @@ uint32_t state_sequence[] = {
     16, // LcStDev
     17, // LcStProd
     18, // LcStProdEnd
+    19, // LcStRma
     20  // LcStScrap
 };
 
@@ -78,6 +104,7 @@ uint8_t use_token[] = {
     1, // from TestUnlocked7 -> MANUF
     1, // from MANUF -> PROD
     1, // from PROD -> PROD_END
+    1, // from PROD -> RMA
     0  // from PROD -> SCRAP
 };
 
@@ -265,7 +292,7 @@ void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
     // We start at index0=0 (Raw). We do transitions *from* each state
     // to the *next* in the sequence. So we loop from i=0 to i=(N-2).
     int n_states = sizeof(state_sequence)/sizeof(state_sequence[0]);
-    for (int i = 0; i < (n_states - 2); i++) {
+    for (int i = 0; i < (n_states - 3); i++) {
         uint32_t from_state = state_sequence[i];
         uint32_t to_state   = state_sequence[i+1];
         VPRINTF(LOW, "\n=== Transition from %08d to %08d ===\n", 

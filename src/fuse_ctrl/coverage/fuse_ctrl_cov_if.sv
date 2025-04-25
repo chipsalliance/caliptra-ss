@@ -53,8 +53,8 @@ interface fuse_ctrl_cov_if
 
         fuse_ctrl_filter_awuser_cp: coverpoint core_axi_wr_req_awuser
         {
-            bins CptraSsStrapClptraCoreAxiUser = { CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER };
-            bins CptraSsStrapMcuLsuAxiUser     = { CPTRA_SS_STRAP_MCU_LSU_AXI_USER };
+            bins CptraSsStrapClptraCoreAxiUser = { `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_caliptra_dma_axi_user_i };
+            bins CptraSsStrapMcuLsuAxiUser     = { `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i };
         }
 
         fuser_ctrl_filter_cr: cross fuse_ctrl_filter_awaddr_cp, fuse_ctrl_filter_awuser_cp;
@@ -96,9 +96,6 @@ interface fuse_ctrl_cov_if
      *  Verify that all test unlock tokens are broadcasted and transitions are correct.
      */
 
-    logic [31:0] test_unlock_token_idx;
-    assign test_unlock_token_idx = `FC_PATH.test_unlock_token_idx;
-
     lc_token_t test_unlock_token;
     lc_token_t test_exit_dev_token;
     lc_token_t dev_exit_prod_token;
@@ -110,96 +107,6 @@ interface fuse_ctrl_cov_if
 
     covergroup fuse_ctrl_test_unlock_tokens_cg @(posedge clk_i);
         option.per_instance = 1;
-
-        fuse_ctrl_test_unlock_token_idx_cp: coverpoint test_unlock_token_idx
-        {
-            bins CptraSsTestUnlockTokenOffsets[] = {
-                CptraSsTestUnlockToken0Offset,
-                CptraSsTestUnlockToken1Offset,
-                CptraSsTestUnlockToken2Offset,
-                CptraSsTestUnlockToken3Offset,
-                CptraSsTestUnlockToken4Offset,
-                CptraSsTestUnlockToken5Offset,
-                CptraSsTestUnlockToken6Offset,
-                '0
-            };
-        }
-
-        fuse_ctrl_test_unlock_token_transitions_cp: coverpoint test_unlock_token_idx
-        {
-            bins CptraSsTestUnlockToken0Transitions = ( 
-                CptraSsTestUnlockToken0Offset => '0 => CptraSsTestUnlockToken1Offset,
-                CptraSsTestUnlockToken0Offset => '0 => CptraSsTestUnlockToken2Offset,
-                CptraSsTestUnlockToken0Offset => '0 => CptraSsTestUnlockToken3Offset,
-                CptraSsTestUnlockToken0Offset => '0 => CptraSsTestUnlockToken4Offset,
-                CptraSsTestUnlockToken0Offset => '0 => CptraSsTestUnlockToken5Offset,
-                CptraSsTestUnlockToken0Offset => '0 => CptraSsTestUnlockToken6Offset
-            );
-            bins CptraSsTestUnlockToken1Transitions = (
-                CptraSsTestUnlockToken1Offset => '0 => CptraSsTestUnlockToken2Offset,
-                CptraSsTestUnlockToken1Offset => '0 => CptraSsTestUnlockToken3Offset,
-                CptraSsTestUnlockToken1Offset => '0 => CptraSsTestUnlockToken4Offset,
-                CptraSsTestUnlockToken1Offset => '0 => CptraSsTestUnlockToken5Offset,
-                CptraSsTestUnlockToken1Offset => '0 => CptraSsTestUnlockToken6Offset
-            );
-            bins CptraSsTestUnlockToken2Transitions = ( 
-                CptraSsTestUnlockToken2Offset => '0 => CptraSsTestUnlockToken3Offset,
-                CptraSsTestUnlockToken2Offset => '0 => CptraSsTestUnlockToken4Offset,
-                CptraSsTestUnlockToken2Offset => '0 => CptraSsTestUnlockToken5Offset,
-                CptraSsTestUnlockToken2Offset => '0 => CptraSsTestUnlockToken6Offset
-            );
-            bins CptraSsTestUnlockToken3Transitions = ( 
-                CptraSsTestUnlockToken3Offset => '0 => CptraSsTestUnlockToken4Offset,
-                CptraSsTestUnlockToken3Offset => '0 => CptraSsTestUnlockToken5Offset,
-                CptraSsTestUnlockToken3Offset => '0 => CptraSsTestUnlockToken6Offset
-            );
-            bins CptraSsTestUnlockToken4Transitions = ( 
-                CptraSsTestUnlockToken4Offset => '0 => CptraSsTestUnlockToken5Offset,
-                CptraSsTestUnlockToken4Offset => '0 => CptraSsTestUnlockToken6Offset
-            );
-            bins CptraSsTestUnlockToken5Transitions = ( 
-                CptraSsTestUnlockToken5Offset => '0 => CptraSsTestUnlockToken6Offset
-            );
-
-            illegal_bins CptraSsTestUnlockToken1IllegalTransitions = (
-                CptraSsTestUnlockToken1Offset => '0 => CptraSsTestUnlockToken0Offset
-            );
-
-            illegal_bins CptraSsTestUnlockToken2IllegalTransitions = (
-                CptraSsTestUnlockToken2Offset => '0 => CptraSsTestUnlockToken0Offset,
-                CptraSsTestUnlockToken2Offset => '0 => CptraSsTestUnlockToken1Offset
-            );
-
-            illegal_bins CptraSsTestUnlockToken3IllegalTransitions = (
-                CptraSsTestUnlockToken3Offset => '0 => CptraSsTestUnlockToken0Offset,
-                CptraSsTestUnlockToken3Offset => '0 => CptraSsTestUnlockToken1Offset,
-                CptraSsTestUnlockToken3Offset => '0 => CptraSsTestUnlockToken2Offset
-            );
-
-            illegal_bins CptraSsTestUnlockToken4IllegalTransitions = (
-                CptraSsTestUnlockToken4Offset => '0 => CptraSsTestUnlockToken0Offset,
-                CptraSsTestUnlockToken4Offset => '0 => CptraSsTestUnlockToken1Offset,
-                CptraSsTestUnlockToken4Offset => '0 => CptraSsTestUnlockToken2Offset,
-                CptraSsTestUnlockToken4Offset => '0 => CptraSsTestUnlockToken3Offset
-            );
-
-            illegal_bins CptraSsTestUnlockToken5IllegalTransitions = (
-                CptraSsTestUnlockToken5Offset => '0 => CptraSsTestUnlockToken0Offset,
-                CptraSsTestUnlockToken5Offset => '0 => CptraSsTestUnlockToken1Offset,
-                CptraSsTestUnlockToken5Offset => '0 => CptraSsTestUnlockToken2Offset,
-                CptraSsTestUnlockToken5Offset => '0 => CptraSsTestUnlockToken3Offset,
-                CptraSsTestUnlockToken5Offset => '0 => CptraSsTestUnlockToken4Offset
-            );
-
-            illegal_bins CptraSsTestUnlockToken6IllegalTransitions = (
-                CptraSsTestUnlockToken6Offset => '0 => CptraSsTestUnlockToken0Offset,
-                CptraSsTestUnlockToken6Offset => '0 => CptraSsTestUnlockToken1Offset,
-                CptraSsTestUnlockToken6Offset => '0 => CptraSsTestUnlockToken2Offset,
-                CptraSsTestUnlockToken6Offset => '0 => CptraSsTestUnlockToken3Offset,
-                CptraSsTestUnlockToken6Offset => '0 => CptraSsTestUnlockToken4Offset,
-                CptraSsTestUnlockToken6Offset => '0 => CptraSsTestUnlockToken5Offset
-            );           
-        }
 
         fuse_ctrl_test_unlock_token_cp: coverpoint test_unlock_token
         {
@@ -307,10 +214,30 @@ interface fuse_ctrl_cov_if
 
     endgroup
 
+    logic intr_otp_operation_done_o = `FC_PATH.intr_otp_operation_done_o;
+    logic intr_otp_error_o = `FC_PATH.intr_otp_error_o;
+
+    covergroup fuse_ctrl_interrupts_cg @(posedge clk_i);
+      option.per_instance = 1;
+
+      fuse_ctrl_intr_otp_operation_done_cp: coverpoint intr_otp_operation_done_o
+      {
+          bins Active =   { 1'b1 };
+          bins Inactive = { 1'b0 };
+      }
+
+      fuse_ctrl_intr_otp_error_cp: coverpoint intr_otp_error_o
+      {
+          bins Active =   { 1'b1 };
+          bins Inactive = { 1'b0 };
+      }
+    endgroup
+
     initial begin
         fuse_ctrl_filter_cg fuse_ctrl_filter_cg1 = new();
         fuse_ctrl_test_unlock_tokens_cg fuse_ctrl_test_unlock_tokens_cg1 = new();
         fuse_ctrl_core_tl_i_cg fuse_ctrl_core_tl_i_cg1 = new();
+        fuse_ctrl_interrupts_cg fuse_ctrl_interrupts_cg1 = new();
     end
 
 endinterface

@@ -37,10 +37,12 @@ module caliptra_ss_top
     ,parameter MCU_SRAM_SIZE_KB = 512
 ) (
     input logic cptra_ss_clk_i,
+    output logic cptra_ss_rdc_clk_cg_o,
     input logic cptra_ss_pwrgood_i,
     input logic cptra_ss_rst_b_i,
     input  logic cptra_ss_mci_cptra_rst_b_i,
     output logic cptra_ss_mci_cptra_rst_b_o,
+    output logic cptra_ss_rst_b_o,
 
 // Caliptra Core AXI Sub Interface
     axi_if.w_sub cptra_ss_cptra_core_s_axi_if_w_sub,
@@ -298,8 +300,6 @@ module caliptra_ss_top
     logic                       wb_csr_valid;
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
-
-    logic cptra_ss_rst_b_o;
 
     logic mcu_clk_cg;
 
@@ -934,9 +934,8 @@ module caliptra_ss_top
         .escalated_reset_o(i3c_escalated_reset),
         .irq_o(i3c_irq_o),
 
-        //-- AXI USER ID FILTERING
-        .disable_id_filtering_i(1'b1), // -- FIXME : ENABLE THIS FEATURE
-        .priv_ids_i('{32'b0, 32'b0, 32'b0, 32'b0}) // -- FIXME : ENABLE THIS FEATURE
+        .disable_id_filtering_i(1'b0),
+        .priv_ids_i('{cptra_ss_strap_mcu_lsu_axi_user_i, cptra_ss_strap_caliptra_dma_axi_user_i, 32'b0, 32'b0}) // -- FIXME : ENABLE THIS FEATURE
 
     );
 
@@ -982,7 +981,7 @@ module caliptra_ss_top
 
         .clk(cptra_ss_clk_i),
         .mcu_clk_cg(mcu_clk_cg),
-        .cptra_ss_rdc_clk_cg(), // Unused since no IPs on warm reset. MCU has different clock and Cptra has its own RDC.
+        .cptra_ss_rdc_clk_cg(cptra_ss_rdc_clk_cg_o), 
 
 
         .mci_rst_b(cptra_ss_rst_b_i),
@@ -1235,11 +1234,6 @@ module caliptra_ss_top
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
 	); 
-
-    // assign fuse_ctrl_rdy = 1;
-    // De-assert cptra_rst_b only after fuse_ctrl has initialized
-    logic cptra_rst_b; //fixme resets
-    assign cptra_rst_b = cptra_ss_rst_b_i;//fuse_ctrl_rdy ? cptra_soc_bfm_rst_b : 1'b0;
 
     `CALIPTRA_ASSERT(i3c_payload_available, ($rose(payload_available_o) |-> ##[1:50] payload_available_o == 0),cptra_ss_clk_i, cptra_ss_rst_b_i)
     `CALIPTRA_ASSERT(i3c_image_activated, ($rose(image_activated_o) |-> ##[1:50] image_activated_o == 0), cptra_ss_clk_i, cptra_ss_rst_b_i)

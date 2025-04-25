@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #include "soc_ifc_ss.h"
 #include "soc_address_map.h"
 #include "soc_ifc.h"
@@ -257,10 +273,25 @@ void cptra_mcu_mbox_write_dword_sram(uint32_t mbox_num, uint32_t dword_addr, uin
     cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num, data);
 }
 
+void cptra_mcu_mbox_write_dword_sram_burst(uint32_t mbox_num, uint32_t dword_addr, uint32_t * payload, uint32_t size_in_bytes, uint16_t block_size) {
+    VPRINTF(LOW, "CALIPTRA: Write burst to MBOX%x starting at SRAM[%d], size in bytes: 0x%x\n", mbox_num, dword_addr, size_in_bytes); 
+    uint8_t status;
+    status = soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num,
+                                             0, payload, size_in_bytes, block_size);
+}    
+
 uint32_t cptra_mcu_mbox_read_dword_sram(uint32_t mbox_num, uint32_t dword_addr) {
     uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "CALIPTRA: Reading Mbox%x SRAM[%d]: 0x%x\n", mbox_num, dword_addr, data);
     return data;
+}
+
+void cptra_mcu_mbox_read_dword_sram_burst(uint32_t mbox_num, uint32_t dword_addr, uint32_t * payload, uint32_t size_in_bytes, uint16_t block_size) {
+    VPRINTF(LOW, "CALIPTRA: Read burst to MBOX%x starting at SRAM[%d], size in bytes: 0x%x\n", mbox_num, dword_addr, size_in_bytes); 
+    uint8_t status;
+    status = soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num,
+                                             0, payload, size_in_bytes, block_size);
+
 }
 
 void cptra_mcu_mbox_write_cmd_status(uint32_t mbox_num, uint32_t data) {
@@ -305,4 +336,46 @@ uint32_t cptra_mcu_mbox_read_target_user_valid(uint32_t mbox_num) {
     uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "CALIPTRA: Reading Mbox%x TARGET_USER_VALID: 0x%x\n", mbox_num, data);
     return data;
+}
+
+bool cptra_wait_for_cptra_mbox_execute(uint32_t attempt_count) {
+    VPRINTF(LOW, "CALIPTRA: Waiting for Caliptra MBOX execute\n");
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        if((lsu_read_32(CLP_MBOX_CSR_MBOX_EXECUTE) & MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK) == MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK){
+            VPRINTF(LOW, "CALIPTRA: Caliptra MBOX execute set\n");
+            return true;
+        }
+    }
+    return false;
+}
+
+void cptra_wait_mcu_reset_req_interrupt_clear(uint32_t attempt_count) {
+    VPRINTF(LOW, "CALIPTRA: Waiting for MCI Reset Request interrupt to be cleared\n");
+    uint32_t status;
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        status = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_MASK;
+
+        if(!status){
+            VPRINTF(LOW, "CALIPTRA: MCI Reset Request interrupt cleared\n");
+            return;
+        }
+    }   
+    VPRINTF(FATAL, "CALIPTRA: MCI Reset Request interrupt not cleared");
+    SEND_STDOUT_CTRL(0x1);
+    while(1);
+}
+
+void cptra_wait_mcu_reset_status_set(uint32_t attempt_count) {
+    VPRINTF(LOW, "CALIPTRA: Waiting for MCU Reset Status to be set\n");
+    uint32_t status;
+    for(uint32_t ii=0; ii<attempt_count; ii++) {
+        status = cptra_axi_dword_read(SOC_MCI_TOP_MCI_REG_RESET_STATUS) & MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK;
+        if(status){
+            VPRINTF(LOW, "CALIPTRA: MCU Reset Status Set\n");
+            return;
+        }
+    }   
+    VPRINTF(FATAL, "CALIPTRA: MCU Reset Status Not Set");
+    SEND_STDOUT_CTRL(0x1);
+    while(1);
 }

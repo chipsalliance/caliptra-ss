@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,28 @@
 
 #include <stdint.h>
 #include "caliptra_ss_lib.h"
+
+#define NUM_LC_STATES 21
+#define NUM_TOKENS 12
+
+typedef enum {
+    RAU, // RAW_UNLOCK
+    TU1, // TEST_UNLOCKED1
+    TU2, // TEST_UNLOCKED2
+    TU3, // TEST_UNLOCKED3
+    TU4, // TEST_UNLOCKED4
+    TU5, // TEST_UNLOCKED5
+    TU6, // TEST_UNLOCKED6
+    TU7, // TEST_UNLOCKED7
+    TEX, // TEST_EXIT
+    DEX, // DEV_EXIT
+    PEX, // PROD_EXIT
+    RMU, // RAW
+    ZER, // ZERO
+    INV  // INVALID
+} lc_token_type_t;
+
+extern lc_token_type_t trans_matrix[NUM_LC_STATES][NUM_LC_STATES];
 
 extern uint32_t state_sequence[];
 extern uint8_t use_token[];

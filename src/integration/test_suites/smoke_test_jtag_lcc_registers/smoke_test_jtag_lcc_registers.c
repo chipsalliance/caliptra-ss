@@ -1,6 +1,6 @@
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
 
+#define CLAIM_TRANS_VAL 0x96 // Tried to match MuBi8True
+
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
@@ -46,8 +48,26 @@ void main (void)
     }
 
     uint32_t finish_flag = lsu_read_32(LC_CTRL_TRANSITION_TOKEN_0_OFFSET);
+    VPRINTF(LOW, "MCU: waits in loop until JTAG done!\n");
     while(finish_flag != 0xABCDEFCA){
+        // Claim the TRANSITION_IF mutex.
+        uint32_t loop_ctrl = 0;
+        while (loop_ctrl != 0x96) {
+            lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, CLAIM_TRANS_VAL);
+            uint32_t reg_value = lsu_read_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET);
+            loop_ctrl = reg_value & 0xff;
+        }
+
+        // Read the flag.
         finish_flag = lsu_read_32(LC_CTRL_TRANSITION_TOKEN_0_OFFSET);
+
+        // Release the TRANSITION_IF mutex.
+        lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, 0x0);
+
+        // Wait a bit before trying again.
+        for (uint32_t ii = 0; ii < 500; ii++) {
+            __asm__ volatile ("nop"); // Sleep loop as "nop"
+        }
     }
 
     SEND_STDOUT_CTRL(0xff);

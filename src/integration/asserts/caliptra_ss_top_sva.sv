@@ -47,7 +47,7 @@ module caliptra_ss_top_sva
     ((`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) && 
      (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr == 32'h7000_0060) &&
      (`FC_PATH.dai_addr < 12'h090) &&
-     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser == CPTRA_SS_STRAP_MCU_LSU_AXI_USER))
+     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser == `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i))
      |-> ##2
      `FC_PATH.discard_fuse_write)
 
@@ -153,8 +153,9 @@ module caliptra_ss_top_sva
       ($rose(`LCC_PATH.u_lc_ctrl_fsm.trans_cmd_i)
         && (`LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.dec_lc_state_i != {DecLcStateNumRep{DecLcStScrap}})
         && (`LCC_PATH.u_lc_ctrl_fsm.trans_target_i == {DecLcStateNumRep{DecLcStRma}}
-            || `LCC_PATH.u_lc_ctrl_fsm.trans_target_i == {DecLcStateNumRep{DecLcStScrap}}))
-          |-> (`LCC_PATH.Allow_RMA_or_SCRAP_on_PPD throughout (!`LCC_PATH.trans_success_q));
+            || `LCC_PATH.u_lc_ctrl_fsm.trans_target_i == {DecLcStateNumRep{DecLcStScrap}})
+        && (`LCC_PATH.trans_success_q)
+        |-> `LCC_PATH.Allow_RMA_or_SCRAP_on_PPD);
   endproperty
   
   assert property (Allow_PPD_check_in_LCC)
@@ -287,9 +288,49 @@ module caliptra_ss_top_sva
   // Assert that a successful volatile raw unlock will assert the dft output port.
   `CALIPTRA_ASSERT(LccVolatileRawUnlockDftEn_A,
     (`LCC_PATH.SecVolatileRawUnlockEn &&
+     `LCC_PATH.volatile_raw_unlock_q &&
      `LCC_PATH.trans_success_q)
     |=>
     (`LCC_PATH.lc_dft_en_o && `LCC_PATH.lc_hw_debug_en_o)
+  )
+
+  ////////////////////////////////////////////////////
+  // lcc volatile raw unlock decoding
+  ////////////////////////////////////////////////////
+
+  `CALIPTRA_ASSERT(LccVolatileRawUnlockDecoding_A,
+    (`LCC_PATH.SecVolatileRawUnlockEn &&
+     `LCC_PATH.volatile_raw_unlock_q &&
+     `LCC_PATH.trans_success_q)
+    |->
+    (dec_lc_state_e'(`LCC_PATH.dec_lc_state[0]) == DecLcStTestUnlocked0 &&
+     dec_lc_state_e'(`LCC_PATH.dec_lc_state[1]) == DecLcStTestUnlocked0 &&
+     dec_lc_state_e'(`LCC_PATH.dec_lc_state[2]) == DecLcStTestUnlocked0 &&
+     dec_lc_state_e'(`LCC_PATH.dec_lc_state[3]) == DecLcStTestUnlocked0 &&
+     dec_lc_state_e'(`LCC_PATH.dec_lc_state[4]) == DecLcStTestUnlocked0 &&
+     dec_lc_state_e'(`LCC_PATH.dec_lc_state[5]) == DecLcStTestUnlocked0)
+  )
+
+  ////////////////////////////////////////////////////
+  // fuse_ctrl interrupts
+  ////////////////////////////////////////////////////
+
+  // Make sure an `otp_operation_done` interrupt is raised, when enabled, upon a successful DAI operation.
+  `CALIPTRA_ASSERT(FcOtpOperationDoneInterrupt_A,
+    (`FC_PATH.u_reg_core.u_intr_enable_otp_operation_done.q &&
+     $fell(`FC_PATH.otp_operation_done) &&
+     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == NoError)
+    |=> ##2
+    (`FC_PATH.intr_otp_operation_done_o && !`FC_PATH.intr_otp_error_o)
+  )
+
+  // Make sure an `otp_error` interrupt is raised, when enabled, upon a failed DAI operation.
+  `CALIPTRA_ASSERT(FcOtpErrorInterrupt_A,
+    (`FC_PATH.u_reg_core.u_intr_enable_otp_error.q &&
+     $fell(`FC_PATH.otp_operation_done) &&
+     otp_err_e'(`FC_PATH.part_error[DaiIdx]) != NoError)
+    |=> ##2
+    (`FC_PATH.intr_otp_error_o)
   )
 
 endmodule

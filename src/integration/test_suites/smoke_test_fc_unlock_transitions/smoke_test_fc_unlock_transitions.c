@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+// 
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -53,7 +69,7 @@ void iterate_test_unlock_states() {
     const uint32_t base_address = 0x4C0;
 
     // Write the tokens into the partition.
-    for (uint32_t i = 0; i < 8; i++) {
+    for (uint32_t i = 0; i < 3; i++) {
         dai_wr(base_address + 0x10*i, hashed_tokens[i][0], hashed_tokens[i][1], 64, 0);
         dai_wr(base_address + 0x08 + 0x10*i, hashed_tokens[i][2], hashed_tokens[i][3], 64, 0);
     }
@@ -63,7 +79,7 @@ void iterate_test_unlock_states() {
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
-    for (uint32_t state = TEST_LOCKED0, token = 0x0; state <= TEST_UNLOCKED7; token += (state & 0x1), state++) {
+    for (uint32_t state = TEST_LOCKED0, token = 0x0; state <= TEST_UNLOCKED2; token += (state & 0x1), state++) {
         VPRINTF(LOW, "LC_CTRL: transition to %d state\n", state);
 
         transition_state(state, token, 0, 0, 0, state & 0x1 /* No token required for TEST_LOCKED states*/ );

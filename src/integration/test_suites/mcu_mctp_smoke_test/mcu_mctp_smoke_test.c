@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 // Description: I3C Smoke test for Caliptra Subsystem
 // Author     : Nilesh Patel
 // Created    : 2025-01-14
@@ -13,6 +29,7 @@
 #include "caliptra_ss_lib.h"
 #include "string.h"
 #include "stdint.h"
+#include "veer-csr.h"
 
 #define STATUS_CHECK_LOOP_COUNT_FOR_RECOVERY 20
 
@@ -58,6 +75,7 @@ void main (void) {
     int argc=0;
     char *argv[1];
     uint32_t i3c_reg_data;
+    uint32_t error_status = 0;
 
     //-- Boot MCU
     VPRINTF(LOW, "MCU: Booting... \n");
@@ -121,6 +139,7 @@ void main (void) {
             if (i3c_reg_data != (global_data[ii + (mctp_packet*20)])) // && ii != dword_count - 1) -- Exception For PEC
             {
                 VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data mismatch\n", ii);
+                error_status = 1;
 
             } else {
                 VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data match\n", ii);
@@ -132,5 +151,11 @@ void main (void) {
     
     VPRINTF(LOW, "MCU: End of I3C MCTP smoke test\n");
     
-    SEND_STDOUT_CTRL(0xff);
+    if(error_status) {
+        VPRINTF(LOW, "MCU: I3C MCTP smoke test failed\n");
+        SEND_STDOUT_CTRL(0x01);
+    } else {
+        VPRINTF(LOW, "MCU: I3C MCTP smoke test passed\n");
+        SEND_STDOUT_CTRL(0xff);
+    }
 }
