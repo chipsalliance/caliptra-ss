@@ -46,6 +46,7 @@ module mcu_mbox
     ,localparam MCU_MBOX_SRAM_DATA_W = 32 // ECC not parametrized so can't expose this parameter
     ,localparam MCU_MBOX_SRAM_DATA_W_BYTES = MCU_MBOX_SRAM_DATA_W / BITS_IN_BYTE
     ,localparam MCU_MBOX_SRAM_DEPTH = MCU_MBOX_SRAM_SIZE_BYTES / MCU_MBOX_SRAM_DATA_W_BYTES
+    ,localparam MCU_MBOX_BYTE_ADDR_W = $clog2(MCU_MBOX_SRAM_SIZE_BYTES)
     ,localparam MCU_MBOX_SRAM_ADDR_W = $clog2(MCU_MBOX_SRAM_DEPTH)
 
 
@@ -109,7 +110,6 @@ logic mbox_sram_zero_in_progress;
 logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_max_dlen;
 logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_sram_zero_end_addr_bytes;
 logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_sram_zero_end_addr;
-logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_sram_zero_wr_addr;
 logic [MCU_MBOX_SRAM_DATA_W-1:0] mcu_mbox_sram_wr_data;
 logic [MCU_MBOX_SRAM_ADDR_W-1:0] mcu_mbox_sram_req_addr;
 logic mcu_mbox_sram_req_cs;
@@ -246,7 +246,7 @@ end
 
 always_comb begin
     mbox_sram_zero_end_addr_bytes = mbox_max_dlen - 1;
-    mbox_sram_zero_end_addr = {2'b0, mbox_sram_zero_end_addr_bytes[MCU_MBOX_SRAM_ADDR_W-1:2]};
+    mbox_sram_zero_end_addr = mbox_sram_zero_end_addr_bytes[MCU_MBOX_BYTE_ADDR_W-1:2];
 end
 
 // Release the mailbox after execute has had 0 written to it
@@ -303,7 +303,7 @@ assign valid_sram_addr = !invalid_sram_addr;
 // SRAM Controls
 /////
 // Only send request if the address is valid and proper user access
-assign mcu_mbox_sram_req_addr = {MCU_MBOX_SRAM_ADDR_W{(valid_requester_target_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.addr[MCU_MBOX_SRAM_ADDR_W-1:2];
+assign mcu_mbox_sram_req_addr = {MCU_MBOX_SRAM_ADDR_W{(valid_requester_target_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.addr[MCU_MBOX_BYTE_ADDR_W-1:2];
 assign mcu_mbox_sram_req_cs = (valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req);
 assign mcu_mbox_sram_req_we = (mcu_mbox_sram_req_cs & hwif_out.MBOX_SRAM.req_is_wr);
 

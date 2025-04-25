@@ -3,7 +3,9 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src
++incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi
++incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_sva.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_macros.svh
@@ -50,6 +52,10 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/i3c_phy.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/i3c_io.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/csr/I3CCSR.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/interrupt.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_arb.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_rd.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_wr.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/hci/queues/read_queue.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/hci/queues/write_queue.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/hci/ahb_if.sv
@@ -69,6 +75,7 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/recovery/recover
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_timers.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_monitor.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/i3c_bus_monitor.sv
+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/ccc_entdaa.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/ccc.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_rx_flow.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_tx.sv

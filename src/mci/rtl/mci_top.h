@@ -62,19 +62,35 @@
 #define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_LOW                                                        (5)
 #define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_MASK                                                       (0x1ffe0)
 #endif
-#define MCI_TOP_MCI_REG_FW_FLOW_STATUS                                                              (0x20)
-#ifndef MCI_REG_FW_FLOW_STATUS
-#define MCI_REG_FW_FLOW_STATUS                                                                      (0x20)
+#define MCI_TOP_MCI_REG_MCU_IFU_AXI_USER                                                            (0x20)
+#ifndef MCI_REG_MCU_IFU_AXI_USER
+#define MCI_REG_MCU_IFU_AXI_USER                                                                    (0x20)
 #endif
-#define MCI_TOP_MCI_REG_HW_FLOW_STATUS                                                              (0x24)
+#define MCI_TOP_MCI_REG_MCU_LSU_AXI_USER                                                            (0x24)
+#ifndef MCI_REG_MCU_LSU_AXI_USER
+#define MCI_REG_MCU_LSU_AXI_USER                                                                    (0x24)
+#endif
+#define MCI_TOP_MCI_REG_MCU_SRAM_CONFIG_AXI_USER                                                    (0x28)
+#ifndef MCI_REG_MCU_SRAM_CONFIG_AXI_USER
+#define MCI_REG_MCU_SRAM_CONFIG_AXI_USER                                                            (0x28)
+#endif
+#define MCI_TOP_MCI_REG_MCI_SOC_CONFIG_AXI_USER                                                     (0x2c)
+#ifndef MCI_REG_MCI_SOC_CONFIG_AXI_USER
+#define MCI_REG_MCI_SOC_CONFIG_AXI_USER                                                             (0x2c)
+#endif
+#define MCI_TOP_MCI_REG_FW_FLOW_STATUS                                                              (0x30)
+#ifndef MCI_REG_FW_FLOW_STATUS
+#define MCI_REG_FW_FLOW_STATUS                                                                      (0x30)
+#endif
+#define MCI_TOP_MCI_REG_HW_FLOW_STATUS                                                              (0x34)
 #ifndef MCI_REG_HW_FLOW_STATUS
-#define MCI_REG_HW_FLOW_STATUS                                                                      (0x24)
+#define MCI_REG_HW_FLOW_STATUS                                                                      (0x34)
 #define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW                                                         (0)
 #define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK                                                        (0xf)
 #endif
-#define MCI_TOP_MCI_REG_RESET_REASON                                                                (0x28)
+#define MCI_TOP_MCI_REG_RESET_REASON                                                                (0x38)
 #ifndef MCI_REG_RESET_REASON
-#define MCI_REG_RESET_REASON                                                                        (0x28)
+#define MCI_REG_RESET_REASON                                                                        (0x38)
 #define MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_LOW                                               (0)
 #define MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_MASK                                              (0x1)
 #define MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_LOW                                                  (1)
@@ -82,17 +98,17 @@
 #define MCI_REG_RESET_REASON_WARM_RESET_LOW                                                         (2)
 #define MCI_REG_RESET_REASON_WARM_RESET_MASK                                                        (0x4)
 #endif
-#define MCI_TOP_MCI_REG_RESET_STATUS                                                                (0x2c)
+#define MCI_TOP_MCI_REG_RESET_STATUS                                                                (0x3c)
 #ifndef MCI_REG_RESET_STATUS
-#define MCI_REG_RESET_STATUS                                                                        (0x2c)
+#define MCI_REG_RESET_STATUS                                                                        (0x3c)
 #define MCI_REG_RESET_STATUS_CPTRA_RESET_STS_LOW                                                    (0)
 #define MCI_REG_RESET_STATUS_CPTRA_RESET_STS_MASK                                                   (0x1)
 #define MCI_REG_RESET_STATUS_MCU_RESET_STS_LOW                                                      (1)
 #define MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK                                                     (0x2)
 #endif
-#define MCI_TOP_MCI_REG_SECURITY_STATE                                                              (0x30)
+#define MCI_TOP_MCI_REG_SECURITY_STATE                                                              (0x40)
 #ifndef MCI_REG_SECURITY_STATE
-#define MCI_REG_SECURITY_STATE                                                                      (0x30)
+#define MCI_REG_SECURITY_STATE                                                                      (0x40)
 #define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_LOW                                                 (0)
 #define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_MASK                                                (0x3)
 #define MCI_REG_SECURITY_STATE_DEBUG_LOCKED_LOW                                                     (2)
@@ -100,9 +116,9 @@
 #define MCI_REG_SECURITY_STATE_SCAN_MODE_LOW                                                        (3)
 #define MCI_REG_SECURITY_STATE_SCAN_MODE_MASK                                                       (0x8)
 #endif
-#define MCI_TOP_MCI_REG_HW_ERROR_FATAL                                                              (0x40)
+#define MCI_TOP_MCI_REG_HW_ERROR_FATAL                                                              (0x50)
 #ifndef MCI_REG_HW_ERROR_FATAL
-#define MCI_REG_HW_ERROR_FATAL                                                                      (0x40)
+#define MCI_REG_HW_ERROR_FATAL                                                                      (0x50)
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_LOW                                                 (0)
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_MASK                                                (0x1)
 #define MCI_REG_HW_ERROR_FATAL_NMI_PIN_LOW                                                          (1)
@@ -110,9 +126,9 @@
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_LOW                                       (2)
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (0x4)
 #endif
-#define MCI_TOP_MCI_REG_AGG_ERROR_FATAL                                                             (0x44)
+#define MCI_TOP_MCI_REG_AGG_ERROR_FATAL                                                             (0x54)
 #ifndef MCI_REG_AGG_ERROR_FATAL
-#define MCI_REG_AGG_ERROR_FATAL                                                                     (0x44)
+#define MCI_REG_AGG_ERROR_FATAL                                                                     (0x54)
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_LOW                                               (0)
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_MASK                                              (0x1)
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL30_LOW                                               (1)
@@ -178,17 +194,17 @@
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL0_LOW                                                (31)
 #define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL0_MASK                                               (0x80000000)
 #endif
-#define MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL                                                          (0x48)
+#define MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL                                                          (0x58)
 #ifndef MCI_REG_HW_ERROR_NON_FATAL
-#define MCI_REG_HW_ERROR_NON_FATAL                                                                  (0x48)
+#define MCI_REG_HW_ERROR_NON_FATAL                                                                  (0x58)
 #define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_LOW                                                (0)
 #define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_MASK                                               (0x1)
 #define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_ECC_UNC_LOW                                                (1)
 #define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_ECC_UNC_MASK                                               (0x2)
 #endif
-#define MCI_TOP_MCI_REG_AGG_ERROR_NON_FATAL                                                         (0x4c)
+#define MCI_TOP_MCI_REG_AGG_ERROR_NON_FATAL                                                         (0x5c)
 #ifndef MCI_REG_AGG_ERROR_NON_FATAL
-#define MCI_REG_AGG_ERROR_NON_FATAL                                                                 (0x4c)
+#define MCI_REG_AGG_ERROR_NON_FATAL                                                                 (0x5c)
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_LOW                                       (0)
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_MASK                                      (0x1)
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL30_LOW                                       (1)
@@ -254,57 +270,57 @@
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL0_LOW                                        (31)
 #define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL0_MASK                                       (0x80000000)
 #endif
-#define MCI_TOP_MCI_REG_FW_ERROR_FATAL                                                              (0x50)
+#define MCI_TOP_MCI_REG_FW_ERROR_FATAL                                                              (0x60)
 #ifndef MCI_REG_FW_ERROR_FATAL
-#define MCI_REG_FW_ERROR_FATAL                                                                      (0x50)
+#define MCI_REG_FW_ERROR_FATAL                                                                      (0x60)
 #endif
-#define MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL                                                          (0x54)
+#define MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL                                                          (0x64)
 #ifndef MCI_REG_FW_ERROR_NON_FATAL
-#define MCI_REG_FW_ERROR_NON_FATAL                                                                  (0x54)
+#define MCI_REG_FW_ERROR_NON_FATAL                                                                  (0x64)
 #endif
-#define MCI_TOP_MCI_REG_HW_ERROR_ENC                                                                (0x58)
+#define MCI_TOP_MCI_REG_HW_ERROR_ENC                                                                (0x68)
 #ifndef MCI_REG_HW_ERROR_ENC
-#define MCI_REG_HW_ERROR_ENC                                                                        (0x58)
+#define MCI_REG_HW_ERROR_ENC                                                                        (0x68)
 #endif
-#define MCI_TOP_MCI_REG_FW_ERROR_ENC                                                                (0x5c)
+#define MCI_TOP_MCI_REG_FW_ERROR_ENC                                                                (0x6c)
 #ifndef MCI_REG_FW_ERROR_ENC
-#define MCI_REG_FW_ERROR_ENC                                                                        (0x5c)
+#define MCI_REG_FW_ERROR_ENC                                                                        (0x6c)
 #endif
-#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                    (0x60)
+#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                    (0x70)
 #ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_0
-#define MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                            (0x60)
+#define MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                            (0x70)
 #endif
-#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                    (0x64)
+#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                    (0x74)
 #ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_1
-#define MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                            (0x64)
+#define MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                            (0x74)
 #endif
-#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                    (0x68)
+#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                    (0x78)
 #ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_2
-#define MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                            (0x68)
+#define MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                            (0x78)
 #endif
-#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                    (0x6c)
+#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                    (0x7c)
 #ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_3
-#define MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                            (0x6c)
+#define MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                            (0x7c)
 #endif
-#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                    (0x70)
+#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                    (0x80)
 #ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_4
-#define MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                            (0x70)
+#define MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                            (0x80)
 #endif
-#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                    (0x74)
+#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                    (0x84)
 #ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_5
-#define MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                            (0x74)
+#define MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                            (0x84)
 #endif
-#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                    (0x78)
+#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                    (0x88)
 #ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_6
-#define MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                            (0x78)
+#define MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                            (0x88)
 #endif
-#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                    (0x7c)
+#define MCI_TOP_MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                    (0x8c)
 #ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_7
-#define MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                            (0x7c)
+#define MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                            (0x8c)
 #endif
-#define MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                (0x80)
+#define MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                (0x90)
 #ifndef MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK
-#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                        (0x80)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                        (0x90)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_ECC_UNC_LOW                              (0)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_ECC_UNC_MASK                             (0x1)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_NMI_PIN_LOW                                       (1)
@@ -312,17 +328,17 @@
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_LOW                    (2)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (0x4)
 #endif
-#define MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                            (0x84)
+#define MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                            (0x94)
 #ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK
-#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (0x84)
+#define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (0x94)
 #define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_ECC_UNC_LOW                             (0)
 #define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_ECC_UNC_MASK                            (0x1)
 #define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_ECC_UNC_LOW                             (1)
 #define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_ECC_UNC_MASK                            (0x2)
 #endif
-#define MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                               (0x88)
+#define MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                               (0x98)
 #ifndef MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK
-#define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                                       (0x88)
+#define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                                       (0x98)
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL31_LOW                            (0)
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL31_MASK                           (0x1)
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL30_LOW                            (1)
@@ -388,9 +404,9 @@
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL0_LOW                             (31)
 #define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL0_MASK                            (0x80000000)
 #endif
-#define MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                           (0x8c)
+#define MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                           (0x9c)
 #ifndef MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK
-#define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                                   (0x8c)
+#define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                                   (0x9c)
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL31_LOW                    (0)
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL31_MASK                   (0x1)
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL30_LOW                    (1)
@@ -456,69 +472,69 @@
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL0_LOW                     (31)
 #define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL0_MASK                    (0x80000000)
 #endif
-#define MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                (0x90)
+#define MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                (0xa0)
 #ifndef MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK
-#define MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                        (0x90)
+#define MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                        (0xa0)
 #endif
-#define MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                            (0x94)
+#define MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                            (0xa4)
 #ifndef MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK
-#define MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                                    (0x94)
+#define MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                                    (0xa4)
 #endif
-#define MCI_TOP_MCI_REG_WDT_TIMER1_EN                                                               (0xa0)
+#define MCI_TOP_MCI_REG_WDT_TIMER1_EN                                                               (0xb0)
 #ifndef MCI_REG_WDT_TIMER1_EN
-#define MCI_REG_WDT_TIMER1_EN                                                                       (0xa0)
+#define MCI_REG_WDT_TIMER1_EN                                                                       (0xb0)
 #define MCI_REG_WDT_TIMER1_EN_TIMER1_EN_LOW                                                         (0)
 #define MCI_REG_WDT_TIMER1_EN_TIMER1_EN_MASK                                                        (0x1)
 #endif
-#define MCI_TOP_MCI_REG_WDT_TIMER1_CTRL                                                             (0xa4)
+#define MCI_TOP_MCI_REG_WDT_TIMER1_CTRL                                                             (0xb4)
 #ifndef MCI_REG_WDT_TIMER1_CTRL
-#define MCI_REG_WDT_TIMER1_CTRL                                                                     (0xa4)
+#define MCI_REG_WDT_TIMER1_CTRL                                                                     (0xb4)
 #define MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_LOW                                                  (0)
 #define MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_MASK                                                 (0x1)
 #endif
-#define MCI_TOP_MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                 (0xa8)
+#define MCI_TOP_MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                 (0xb8)
 #ifndef MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0
-#define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                         (0xa8)
+#define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                         (0xb8)
 #endif
-#define MCI_TOP_MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                 (0xac)
+#define MCI_TOP_MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                 (0xbc)
 #ifndef MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1
-#define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                         (0xac)
+#define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                         (0xbc)
 #endif
-#define MCI_TOP_MCI_REG_WDT_TIMER2_EN                                                               (0xb0)
+#define MCI_TOP_MCI_REG_WDT_TIMER2_EN                                                               (0xc0)
 #ifndef MCI_REG_WDT_TIMER2_EN
-#define MCI_REG_WDT_TIMER2_EN                                                                       (0xb0)
+#define MCI_REG_WDT_TIMER2_EN                                                                       (0xc0)
 #define MCI_REG_WDT_TIMER2_EN_TIMER2_EN_LOW                                                         (0)
 #define MCI_REG_WDT_TIMER2_EN_TIMER2_EN_MASK                                                        (0x1)
 #endif
-#define MCI_TOP_MCI_REG_WDT_TIMER2_CTRL                                                             (0xb4)
+#define MCI_TOP_MCI_REG_WDT_TIMER2_CTRL                                                             (0xc4)
 #ifndef MCI_REG_WDT_TIMER2_CTRL
-#define MCI_REG_WDT_TIMER2_CTRL                                                                     (0xb4)
+#define MCI_REG_WDT_TIMER2_CTRL                                                                     (0xc4)
 #define MCI_REG_WDT_TIMER2_CTRL_TIMER2_RESTART_LOW                                                  (0)
 #define MCI_REG_WDT_TIMER2_CTRL_TIMER2_RESTART_MASK                                                 (0x1)
 #endif
-#define MCI_TOP_MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                 (0xb8)
+#define MCI_TOP_MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                 (0xc8)
 #ifndef MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0
-#define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                         (0xb8)
+#define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                         (0xc8)
 #endif
-#define MCI_TOP_MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                 (0xbc)
+#define MCI_TOP_MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                 (0xcc)
 #ifndef MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1
-#define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                         (0xbc)
+#define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                         (0xcc)
 #endif
-#define MCI_TOP_MCI_REG_WDT_STATUS                                                                  (0xc0)
+#define MCI_TOP_MCI_REG_WDT_STATUS                                                                  (0xd0)
 #ifndef MCI_REG_WDT_STATUS
-#define MCI_REG_WDT_STATUS                                                                          (0xc0)
+#define MCI_REG_WDT_STATUS                                                                          (0xd0)
 #define MCI_REG_WDT_STATUS_T1_TIMEOUT_LOW                                                           (0)
 #define MCI_REG_WDT_STATUS_T1_TIMEOUT_MASK                                                          (0x1)
 #define MCI_REG_WDT_STATUS_T2_TIMEOUT_LOW                                                           (1)
 #define MCI_REG_WDT_STATUS_T2_TIMEOUT_MASK                                                          (0x2)
 #endif
-#define MCI_TOP_MCI_REG_WDT_CFG_0                                                                   (0xd0)
+#define MCI_TOP_MCI_REG_WDT_CFG_0                                                                   (0xd4)
 #ifndef MCI_REG_WDT_CFG_0
-#define MCI_REG_WDT_CFG_0                                                                           (0xd0)
+#define MCI_REG_WDT_CFG_0                                                                           (0xd4)
 #endif
-#define MCI_TOP_MCI_REG_WDT_CFG_1                                                                   (0xd4)
+#define MCI_TOP_MCI_REG_WDT_CFG_1                                                                   (0xd8)
 #ifndef MCI_REG_WDT_CFG_1
-#define MCI_REG_WDT_CFG_1                                                                           (0xd4)
+#define MCI_REG_WDT_CFG_1                                                                           (0xd8)
 #endif
 #define MCI_TOP_MCI_REG_MCU_TIMER_CONFIG                                                            (0xe0)
 #ifndef MCI_REG_MCU_TIMER_CONFIG
@@ -719,14 +735,10 @@
 #define MCI_TOP_MCI_REG_DEBUG_IN                                                                    (0x410)
 #ifndef MCI_REG_DEBUG_IN
 #define MCI_REG_DEBUG_IN                                                                            (0x410)
-#define MCI_REG_DEBUG_IN_DATA_LOW                                                                   (0)
-#define MCI_REG_DEBUG_IN_DATA_MASK                                                                  (0x1)
 #endif
 #define MCI_TOP_MCI_REG_DEBUG_OUT                                                                   (0x414)
 #ifndef MCI_REG_DEBUG_OUT
 #define MCI_REG_DEBUG_OUT                                                                           (0x414)
-#define MCI_REG_DEBUG_OUT_DATA_LOW                                                                  (0)
-#define MCI_REG_DEBUG_OUT_DATA_MASK                                                                 (0x1)
 #endif
 #define MCI_TOP_MCI_REG_SS_DEBUG_INTENT                                                             (0x418)
 #ifndef MCI_REG_SS_DEBUG_INTENT
@@ -1254,6 +1266,8 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_MASK                     (0x1000)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_LOW                      (13)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK                     (0x2000)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_OTP_OPERATION_DONE_EN_LOW                      (14)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_OTP_OPERATION_DONE_EN_MASK                     (0x4000)
 #endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R                                              (0x1010)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R
@@ -1454,6 +1468,8 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK              (0x1000)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_LOW               (13)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_MASK              (0x2000)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_OTP_OPERATION_DONE_STS_LOW               (14)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_OTP_OPERATION_DONE_STS_MASK              (0x4000)
 #endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R                                        (0x1028)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R
@@ -1638,6 +1654,8 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_MASK                 (0x1000)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_LOW                  (13)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_MASK                 (0x2000)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_OTP_OPERATION_DONE_TRIG_LOW                  (14)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_OTP_OPERATION_DONE_TRIG_MASK                 (0x4000)
 #endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R                                            (0x1038)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R
@@ -2042,6 +2060,10 @@
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                         (0x12b4)
 #ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (0x12b4)
+#endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_R                         (0x12b8)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_R                                 (0x12b8)
 #endif
 #define MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R                              (0x1300)
 #ifndef MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R
@@ -2547,6 +2569,12 @@
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
 #define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_MASK                 (0x1)
 #endif
+#define MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_INCR_R                    (0x1450)
+#ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_INCR_R
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_INCR_R                            (0x1450)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
+#define MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_INCR_R_PULSE_MASK                 (0x1)
+#endif
 #define MCI_TOP_MCU_TRACE_BUFFER_CSR_BASE_ADDR                                                      (0x10000)
 #define MCI_TOP_MCU_TRACE_BUFFER_CSR_STATUS                                                         (0x10000)
 #ifndef MCU_TRACE_BUFFER_CSR_STATUS
@@ -2572,44 +2600,44 @@
 #ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 #define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (0x10)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR                                                             (0x200000)
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR                                                   (0x200000)
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_END_ADDR                                                    (0x3fffff)
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK                                                             (0x400000)
+#define MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR                                                             (0x400000)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR                                                   (0x400000)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_END_ADDR                                                    (0x5fffff)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK                                                             (0x600000)
 #ifndef MCU_MBOX0_CSR_MBOX_LOCK
 #define MCU_MBOX0_CSR_MBOX_LOCK                                                                     (0x200000)
 #define MCU_MBOX0_CSR_MBOX_LOCK_LOCK_LOW                                                            (0)
 #define MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK                                                           (0x1)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_USER                                                             (0x400004)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_USER                                                             (0x600004)
 #ifndef MCU_MBOX0_CSR_MBOX_USER
 #define MCU_MBOX0_CSR_MBOX_USER                                                                     (0x200004)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER                                                      (0x400008)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER                                                      (0x600008)
 #ifndef MCU_MBOX0_CSR_MBOX_TARGET_USER
 #define MCU_MBOX0_CSR_MBOX_TARGET_USER                                                              (0x200008)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID                                                (0x40000c)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID                                                (0x60000c)
 #ifndef MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID
 #define MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID                                                        (0x20000c)
 #define MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_LOW                                              (0)
 #define MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK                                             (0x1)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD                                                              (0x400010)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD                                                              (0x600010)
 #ifndef MCU_MBOX0_CSR_MBOX_CMD
 #define MCU_MBOX0_CSR_MBOX_CMD                                                                      (0x200010)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN                                                             (0x400014)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN                                                             (0x600014)
 #ifndef MCU_MBOX0_CSR_MBOX_DLEN
 #define MCU_MBOX0_CSR_MBOX_DLEN                                                                     (0x200014)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE                                                          (0x400018)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE                                                          (0x600018)
 #ifndef MCU_MBOX0_CSR_MBOX_EXECUTE
 #define MCU_MBOX0_CSR_MBOX_EXECUTE                                                                  (0x200018)
 #define MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                      (0)
 #define MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                     (0x1)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                    (0x40001c)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                    (0x60001c)
 #ifndef MCU_MBOX0_CSR_MBOX_TARGET_STATUS
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                            (0x20001c)
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
@@ -2617,13 +2645,13 @@
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (0x10)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                       (0x400020)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                       (0x600020)
 #ifndef MCU_MBOX0_CSR_MBOX_CMD_STATUS
 #define MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                               (0x200020)
 #define MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_LOW                                                    (0)
 #define MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK                                                   (0xf)
 #endif
-#define MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS                                                        (0x400024)
+#define MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS                                                        (0x600024)
 #ifndef MCU_MBOX0_CSR_MBOX_HW_STATUS
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS                                                                (0x200024)
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_LOW                                           (0)
@@ -2631,44 +2659,44 @@
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (0x2)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR                                                             (0x600000)
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_BASE_ADDR                                                   (0x600000)
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_END_ADDR                                                    (0x7fffff)
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_LOCK                                                             (0x800000)
+#define MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR                                                             (0x800000)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_BASE_ADDR                                                   (0x800000)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_END_ADDR                                                    (0x9fffff)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_LOCK                                                             (0xa00000)
 #ifndef MCU_MBOX1_CSR_MBOX_LOCK
 #define MCU_MBOX1_CSR_MBOX_LOCK                                                                     (0x200000)
 #define MCU_MBOX1_CSR_MBOX_LOCK_LOCK_LOW                                                            (0)
 #define MCU_MBOX1_CSR_MBOX_LOCK_LOCK_MASK                                                           (0x1)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_USER                                                             (0x800004)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_USER                                                             (0xa00004)
 #ifndef MCU_MBOX1_CSR_MBOX_USER
 #define MCU_MBOX1_CSR_MBOX_USER                                                                     (0x200004)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER                                                      (0x800008)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER                                                      (0xa00008)
 #ifndef MCU_MBOX1_CSR_MBOX_TARGET_USER
 #define MCU_MBOX1_CSR_MBOX_TARGET_USER                                                              (0x200008)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID                                                (0x80000c)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID                                                (0xa0000c)
 #ifndef MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID
 #define MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID                                                        (0x20000c)
 #define MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID_VALID_LOW                                              (0)
 #define MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID_VALID_MASK                                             (0x1)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD                                                              (0x800010)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD                                                              (0xa00010)
 #ifndef MCU_MBOX1_CSR_MBOX_CMD
 #define MCU_MBOX1_CSR_MBOX_CMD                                                                      (0x200010)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_DLEN                                                             (0x800014)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_DLEN                                                             (0xa00014)
 #ifndef MCU_MBOX1_CSR_MBOX_DLEN
 #define MCU_MBOX1_CSR_MBOX_DLEN                                                                     (0x200014)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_EXECUTE                                                          (0x800018)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_EXECUTE                                                          (0xa00018)
 #ifndef MCU_MBOX1_CSR_MBOX_EXECUTE
 #define MCU_MBOX1_CSR_MBOX_EXECUTE                                                                  (0x200018)
 #define MCU_MBOX1_CSR_MBOX_EXECUTE_EXECUTE_LOW                                                      (0)
 #define MCU_MBOX1_CSR_MBOX_EXECUTE_EXECUTE_MASK                                                     (0x1)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                    (0x80001c)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                    (0xa0001c)
 #ifndef MCU_MBOX1_CSR_MBOX_TARGET_STATUS
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                            (0x20001c)
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
@@ -2676,13 +2704,13 @@
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (0x10)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                       (0x800020)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                       (0xa00020)
 #ifndef MCU_MBOX1_CSR_MBOX_CMD_STATUS
 #define MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                               (0x200020)
 #define MCU_MBOX1_CSR_MBOX_CMD_STATUS_STATUS_LOW                                                    (0)
 #define MCU_MBOX1_CSR_MBOX_CMD_STATUS_STATUS_MASK                                                   (0xf)
 #endif
-#define MCI_TOP_MCU_MBOX1_CSR_MBOX_HW_STATUS                                                        (0x800024)
+#define MCI_TOP_MCU_MBOX1_CSR_MBOX_HW_STATUS                                                        (0xa00024)
 #ifndef MCU_MBOX1_CSR_MBOX_HW_STATUS
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS                                                                (0x200024)
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_LOW                                           (0)
@@ -2690,8 +2718,8 @@
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (0x2)
 #endif
-#define MCI_TOP_MCU_SRAM_BASE_ADDR                                                                  (0xa00000)
-#define MCI_TOP_MCU_SRAM_END_ADDR                                                                   (0xbfffff)
+#define MCI_TOP_MCU_SRAM_BASE_ADDR                                                                  (0xc00000)
+#define MCI_TOP_MCU_SRAM_END_ADDR                                                                   (0xdfffff)
 
 
 #endif

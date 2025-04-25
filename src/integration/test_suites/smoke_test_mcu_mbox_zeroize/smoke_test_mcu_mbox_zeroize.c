@@ -1,6 +1,6 @@
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,19 +59,13 @@ void main (void) {
     uint32_t mbox_num = decode_single_valid_mbox();
 
     VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
-    mcu_mci_boot_go();
-    
-
     VPRINTF(LOW, "MCU: Caliptra bringup\n")
 
-    mcu_cptra_fuse_init();
+    mcu_cptra_init_d();
 
     ////////////////////////////////////
     // Mailbox command test
     //
-
-    mcu_cptra_poll_mb_ready();
-    mcu_cptra_user_init();
 
     // MBOX: clear the lock on MBOX that is there from reset
     mcu_mbox_clear_lock_out_of_reset(mbox_num);

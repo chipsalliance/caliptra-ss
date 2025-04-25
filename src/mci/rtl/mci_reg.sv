@@ -73,6 +73,10 @@ module mci_reg (
         logic [2-1:0]FW_REV_ID;
         logic HW_CONFIG0;
         logic HW_CONFIG1;
+        logic MCU_IFU_AXI_USER;
+        logic MCU_LSU_AXI_USER;
+        logic MCU_SRAM_CONFIG_AXI_USER;
+        logic MCI_SOC_CONFIG_AXI_USER;
         logic FW_FLOW_STATUS;
         logic HW_FLOW_STATUS;
         logic RESET_REASON;
@@ -228,6 +232,7 @@ module mci_reg (
             logic notif_scan_mode_intr_count_r;
             logic notif_mbox0_soc_req_lock_intr_count_r;
             logic notif_mbox1_soc_req_lock_intr_count_r;
+            logic notif_otp_operation_done_intr_count_r;
             logic error_internal_intr_count_incr_r;
             logic error_mbox0_ecc_unc_intr_count_incr_r;
             logic error_mbox1_ecc_unc_intr_count_incr_r;
@@ -312,6 +317,7 @@ module mci_reg (
             logic notif_scan_mode_intr_count_incr_r;
             logic notif_mbox0_soc_req_lock_intr_count_incr_r;
             logic notif_mbox1_soc_req_lock_intr_count_incr_r;
+            logic notif_otp_operation_done_intr_count_incr_r;
         } intr_block_rf;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
@@ -330,41 +336,45 @@ module mci_reg (
         end
         decoded_reg_strb.HW_CONFIG0 = cpuif_req_masked & (cpuif_addr == 13'h18);
         decoded_reg_strb.HW_CONFIG1 = cpuif_req_masked & (cpuif_addr == 13'h1c);
-        decoded_reg_strb.FW_FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 13'h20);
-        decoded_reg_strb.HW_FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 13'h24);
-        decoded_reg_strb.RESET_REASON = cpuif_req_masked & (cpuif_addr == 13'h28);
-        decoded_reg_strb.RESET_STATUS = cpuif_req_masked & (cpuif_addr == 13'h2c);
-        decoded_reg_strb.SECURITY_STATE = cpuif_req_masked & (cpuif_addr == 13'h30);
-        decoded_reg_strb.HW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 13'h40);
-        decoded_reg_strb.AGG_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 13'h44);
-        decoded_reg_strb.HW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 13'h48);
-        decoded_reg_strb.AGG_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 13'h4c);
-        decoded_reg_strb.FW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 13'h50);
-        decoded_reg_strb.FW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 13'h54);
-        decoded_reg_strb.HW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 13'h58);
-        decoded_reg_strb.FW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 13'h5c);
+        decoded_reg_strb.MCU_IFU_AXI_USER = cpuif_req_masked & (cpuif_addr == 13'h20);
+        decoded_reg_strb.MCU_LSU_AXI_USER = cpuif_req_masked & (cpuif_addr == 13'h24);
+        decoded_reg_strb.MCU_SRAM_CONFIG_AXI_USER = cpuif_req_masked & (cpuif_addr == 13'h28);
+        decoded_reg_strb.MCI_SOC_CONFIG_AXI_USER = cpuif_req_masked & (cpuif_addr == 13'h2c);
+        decoded_reg_strb.FW_FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 13'h30);
+        decoded_reg_strb.HW_FLOW_STATUS = cpuif_req_masked & (cpuif_addr == 13'h34);
+        decoded_reg_strb.RESET_REASON = cpuif_req_masked & (cpuif_addr == 13'h38);
+        decoded_reg_strb.RESET_STATUS = cpuif_req_masked & (cpuif_addr == 13'h3c);
+        decoded_reg_strb.SECURITY_STATE = cpuif_req_masked & (cpuif_addr == 13'h40);
+        decoded_reg_strb.HW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 13'h50);
+        decoded_reg_strb.AGG_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 13'h54);
+        decoded_reg_strb.HW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 13'h58);
+        decoded_reg_strb.AGG_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 13'h5c);
+        decoded_reg_strb.FW_ERROR_FATAL = cpuif_req_masked & (cpuif_addr == 13'h60);
+        decoded_reg_strb.FW_ERROR_NON_FATAL = cpuif_req_masked & (cpuif_addr == 13'h64);
+        decoded_reg_strb.HW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 13'h68);
+        decoded_reg_strb.FW_ERROR_ENC = cpuif_req_masked & (cpuif_addr == 13'h6c);
         for(int i0=0; i0<8; i0++) begin
-            decoded_reg_strb.FW_EXTENDED_ERROR_INFO[i0] = cpuif_req_masked & (cpuif_addr == 13'h60 + i0*13'h4);
+            decoded_reg_strb.FW_EXTENDED_ERROR_INFO[i0] = cpuif_req_masked & (cpuif_addr == 13'h70 + i0*13'h4);
         end
-        decoded_reg_strb.internal_hw_error_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h80);
-        decoded_reg_strb.internal_hw_error_non_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h84);
-        decoded_reg_strb.internal_agg_error_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h88);
-        decoded_reg_strb.internal_agg_error_non_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h8c);
-        decoded_reg_strb.internal_fw_error_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h90);
-        decoded_reg_strb.internal_fw_error_non_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h94);
-        decoded_reg_strb.WDT_TIMER1_EN = cpuif_req_masked & (cpuif_addr == 13'ha0);
-        decoded_reg_strb.WDT_TIMER1_CTRL = cpuif_req_masked & (cpuif_addr == 13'ha4);
+        decoded_reg_strb.internal_hw_error_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h90);
+        decoded_reg_strb.internal_hw_error_non_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h94);
+        decoded_reg_strb.internal_agg_error_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h98);
+        decoded_reg_strb.internal_agg_error_non_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'h9c);
+        decoded_reg_strb.internal_fw_error_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'ha0);
+        decoded_reg_strb.internal_fw_error_non_fatal_mask = cpuif_req_masked & (cpuif_addr == 13'ha4);
+        decoded_reg_strb.WDT_TIMER1_EN = cpuif_req_masked & (cpuif_addr == 13'hb0);
+        decoded_reg_strb.WDT_TIMER1_CTRL = cpuif_req_masked & (cpuif_addr == 13'hb4);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.WDT_TIMER1_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 13'ha8 + i0*13'h4);
+            decoded_reg_strb.WDT_TIMER1_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 13'hb8 + i0*13'h4);
         end
-        decoded_reg_strb.WDT_TIMER2_EN = cpuif_req_masked & (cpuif_addr == 13'hb0);
-        decoded_reg_strb.WDT_TIMER2_CTRL = cpuif_req_masked & (cpuif_addr == 13'hb4);
+        decoded_reg_strb.WDT_TIMER2_EN = cpuif_req_masked & (cpuif_addr == 13'hc0);
+        decoded_reg_strb.WDT_TIMER2_CTRL = cpuif_req_masked & (cpuif_addr == 13'hc4);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.WDT_TIMER2_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 13'hb8 + i0*13'h4);
+            decoded_reg_strb.WDT_TIMER2_TIMEOUT_PERIOD[i0] = cpuif_req_masked & (cpuif_addr == 13'hc8 + i0*13'h4);
         end
-        decoded_reg_strb.WDT_STATUS = cpuif_req_masked & (cpuif_addr == 13'hc0);
+        decoded_reg_strb.WDT_STATUS = cpuif_req_masked & (cpuif_addr == 13'hd0);
         for(int i0=0; i0<2; i0++) begin
-            decoded_reg_strb.WDT_CFG[i0] = cpuif_req_masked & (cpuif_addr == 13'hd0 + i0*13'h4);
+            decoded_reg_strb.WDT_CFG[i0] = cpuif_req_masked & (cpuif_addr == 13'hd4 + i0*13'h4);
         end
         decoded_reg_strb.MCU_TIMER_CONFIG = cpuif_req_masked & (cpuif_addr == 13'he0);
         decoded_reg_strb.MCU_RV_MTIME_L = cpuif_req_masked & (cpuif_addr == 13'he4);
@@ -514,6 +524,7 @@ module mci_reg (
         decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h12ac);
         decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h12b0);
         decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h12b4);
+        decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_r = cpuif_req_masked & (cpuif_addr == 13'h12b8);
         decoded_reg_strb.intr_block_rf.error_internal_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1300);
         decoded_reg_strb.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1304);
         decoded_reg_strb.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1308);
@@ -598,6 +609,7 @@ module mci_reg (
         decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1444);
         decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1448);
         decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h144c);
+        decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_incr_r = cpuif_req_masked & (cpuif_addr == 13'h1450);
     end
 
     // Pass down signals to next stage
@@ -688,123 +700,7 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } agg_error_fatal31;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal30;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal29;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal28;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal27;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal26;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal25;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal24;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal23;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal22;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal21;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal20;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal19;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal18;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal17;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal16;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal15;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal14;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal13;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal12;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal11;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal10;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal9;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal8;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal7;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal6;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal5;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal4;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal3;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_fatal2;
+            } agg_error_fatal0;
             struct packed{
                 logic next;
                 logic load_next;
@@ -812,7 +708,123 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } agg_error_fatal0;
+            } agg_error_fatal2;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal3;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal4;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal5;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal6;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal7;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal8;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal9;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal10;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal11;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal12;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal13;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal14;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal15;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal16;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal17;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal18;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal19;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal20;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal21;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal22;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal23;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal24;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal25;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal26;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal27;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal28;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal29;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal30;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_fatal31;
         } AGG_ERROR_FATAL;
         struct packed{
             struct packed{
@@ -828,123 +840,7 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } agg_error_non_fatal31;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal30;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal29;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal28;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal27;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal26;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal25;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal24;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal23;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal22;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal21;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal20;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal19;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal18;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal17;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal16;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal15;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal14;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal13;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal12;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal11;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal10;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal9;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal8;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal7;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal6;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal5;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal4;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal3;
-            struct packed{
-                logic next;
-                logic load_next;
-            } agg_error_non_fatal2;
+            } agg_error_non_fatal0;
             struct packed{
                 logic next;
                 logic load_next;
@@ -952,7 +848,123 @@ module mci_reg (
             struct packed{
                 logic next;
                 logic load_next;
-            } agg_error_non_fatal0;
+            } agg_error_non_fatal2;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal3;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal4;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal5;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal6;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal7;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal8;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal9;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal10;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal11;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal12;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal13;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal14;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal15;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal16;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal17;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal18;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal19;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal20;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal21;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal22;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal23;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal24;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal25;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal26;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal27;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal28;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal29;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal30;
+            struct packed{
+                logic next;
+                logic load_next;
+            } agg_error_non_fatal31;
         } AGG_ERROR_NON_FATAL;
         struct packed{
             struct packed{
@@ -1464,13 +1476,13 @@ module mci_reg (
         } [2-1:0]GENERIC_OUTPUT_WIRES;
         struct packed{
             struct packed{
-                logic next;
+                logic [31:0] next;
                 logic load_next;
             } DATA;
         } DEBUG_IN;
         struct packed{
             struct packed{
-                logic next;
+                logic [31:0] next;
                 logic load_next;
             } DATA;
         } DEBUG_OUT;
@@ -1722,6 +1734,10 @@ module mci_reg (
                     logic next;
                     logic load_next;
                 } notif_mbox1_soc_req_lock_en;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_otp_operation_done_en;
             } notif0_intr_en_r;
             struct packed{
                 struct packed{
@@ -2086,6 +2102,10 @@ module mci_reg (
                     logic next;
                     logic load_next;
                 } notif_mbox1_soc_req_lock_sts;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_otp_operation_done_sts;
             } notif0_internal_intr_r;
             struct packed{
                 struct packed{
@@ -2430,6 +2450,10 @@ module mci_reg (
                     logic next;
                     logic load_next;
                 } notif_mbox1_soc_req_lock_trig;
+                struct packed{
+                    logic next;
+                    logic load_next;
+                } notif_otp_operation_done_trig;
             } notif0_intr_trig_r;
             struct packed{
                 struct packed{
@@ -3235,6 +3259,14 @@ module mci_reg (
             } notif_mbox1_soc_req_lock_intr_count_r;
             struct packed{
                 struct packed{
+                    logic [31:0] next;
+                    logic load_next;
+                    logic incrthreshold;
+                    logic incrsaturate;
+                } cnt;
+            } notif_otp_operation_done_intr_count_r;
+            struct packed{
+                struct packed{
                     logic next;
                     logic load_next;
                     logic decrthreshold;
@@ -3905,6 +3937,14 @@ module mci_reg (
                     logic underflow;
                 } pulse;
             } notif_mbox1_soc_req_lock_intr_count_incr_r;
+            struct packed{
+                struct packed{
+                    logic next;
+                    logic load_next;
+                    logic decrthreshold;
+                    logic underflow;
+                } pulse;
+            } notif_otp_operation_done_intr_count_incr_r;
         } intr_block_rf;
     } field_combo_t;
     field_combo_t field_combo;
@@ -3973,100 +4013,100 @@ module mci_reg (
         struct packed{
             struct packed{
                 logic value;
-            } agg_error_fatal31;
-            struct packed{
-                logic value;
-            } agg_error_fatal30;
-            struct packed{
-                logic value;
-            } agg_error_fatal29;
-            struct packed{
-                logic value;
-            } agg_error_fatal28;
-            struct packed{
-                logic value;
-            } agg_error_fatal27;
-            struct packed{
-                logic value;
-            } agg_error_fatal26;
-            struct packed{
-                logic value;
-            } agg_error_fatal25;
-            struct packed{
-                logic value;
-            } agg_error_fatal24;
-            struct packed{
-                logic value;
-            } agg_error_fatal23;
-            struct packed{
-                logic value;
-            } agg_error_fatal22;
-            struct packed{
-                logic value;
-            } agg_error_fatal21;
-            struct packed{
-                logic value;
-            } agg_error_fatal20;
-            struct packed{
-                logic value;
-            } agg_error_fatal19;
-            struct packed{
-                logic value;
-            } agg_error_fatal18;
-            struct packed{
-                logic value;
-            } agg_error_fatal17;
-            struct packed{
-                logic value;
-            } agg_error_fatal16;
-            struct packed{
-                logic value;
-            } agg_error_fatal15;
-            struct packed{
-                logic value;
-            } agg_error_fatal14;
-            struct packed{
-                logic value;
-            } agg_error_fatal13;
-            struct packed{
-                logic value;
-            } agg_error_fatal12;
-            struct packed{
-                logic value;
-            } agg_error_fatal11;
-            struct packed{
-                logic value;
-            } agg_error_fatal10;
-            struct packed{
-                logic value;
-            } agg_error_fatal9;
-            struct packed{
-                logic value;
-            } agg_error_fatal8;
-            struct packed{
-                logic value;
-            } agg_error_fatal7;
-            struct packed{
-                logic value;
-            } agg_error_fatal6;
-            struct packed{
-                logic value;
-            } agg_error_fatal5;
-            struct packed{
-                logic value;
-            } agg_error_fatal4;
-            struct packed{
-                logic value;
-            } agg_error_fatal3;
-            struct packed{
-                logic value;
-            } agg_error_fatal2;
+            } agg_error_fatal0;
             struct packed{
                 logic value;
             } agg_error_fatal1;
             struct packed{
                 logic value;
-            } agg_error_fatal0;
+            } agg_error_fatal2;
+            struct packed{
+                logic value;
+            } agg_error_fatal3;
+            struct packed{
+                logic value;
+            } agg_error_fatal4;
+            struct packed{
+                logic value;
+            } agg_error_fatal5;
+            struct packed{
+                logic value;
+            } agg_error_fatal6;
+            struct packed{
+                logic value;
+            } agg_error_fatal7;
+            struct packed{
+                logic value;
+            } agg_error_fatal8;
+            struct packed{
+                logic value;
+            } agg_error_fatal9;
+            struct packed{
+                logic value;
+            } agg_error_fatal10;
+            struct packed{
+                logic value;
+            } agg_error_fatal11;
+            struct packed{
+                logic value;
+            } agg_error_fatal12;
+            struct packed{
+                logic value;
+            } agg_error_fatal13;
+            struct packed{
+                logic value;
+            } agg_error_fatal14;
+            struct packed{
+                logic value;
+            } agg_error_fatal15;
+            struct packed{
+                logic value;
+            } agg_error_fatal16;
+            struct packed{
+                logic value;
+            } agg_error_fatal17;
+            struct packed{
+                logic value;
+            } agg_error_fatal18;
+            struct packed{
+                logic value;
+            } agg_error_fatal19;
+            struct packed{
+                logic value;
+            } agg_error_fatal20;
+            struct packed{
+                logic value;
+            } agg_error_fatal21;
+            struct packed{
+                logic value;
+            } agg_error_fatal22;
+            struct packed{
+                logic value;
+            } agg_error_fatal23;
+            struct packed{
+                logic value;
+            } agg_error_fatal24;
+            struct packed{
+                logic value;
+            } agg_error_fatal25;
+            struct packed{
+                logic value;
+            } agg_error_fatal26;
+            struct packed{
+                logic value;
+            } agg_error_fatal27;
+            struct packed{
+                logic value;
+            } agg_error_fatal28;
+            struct packed{
+                logic value;
+            } agg_error_fatal29;
+            struct packed{
+                logic value;
+            } agg_error_fatal30;
+            struct packed{
+                logic value;
+            } agg_error_fatal31;
         } AGG_ERROR_FATAL;
         struct packed{
             struct packed{
@@ -4079,100 +4119,100 @@ module mci_reg (
         struct packed{
             struct packed{
                 logic value;
-            } agg_error_non_fatal31;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal30;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal29;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal28;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal27;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal26;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal25;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal24;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal23;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal22;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal21;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal20;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal19;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal18;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal17;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal16;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal15;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal14;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal13;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal12;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal11;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal10;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal9;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal8;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal7;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal6;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal5;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal4;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal3;
-            struct packed{
-                logic value;
-            } agg_error_non_fatal2;
+            } agg_error_non_fatal0;
             struct packed{
                 logic value;
             } agg_error_non_fatal1;
             struct packed{
                 logic value;
-            } agg_error_non_fatal0;
+            } agg_error_non_fatal2;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal3;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal4;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal5;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal6;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal7;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal8;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal9;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal10;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal11;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal12;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal13;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal14;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal15;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal16;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal17;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal18;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal19;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal20;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal21;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal22;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal23;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal24;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal25;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal26;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal27;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal28;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal29;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal30;
+            struct packed{
+                logic value;
+            } agg_error_non_fatal31;
         } AGG_ERROR_NON_FATAL;
         struct packed{
             struct packed{
@@ -4574,12 +4614,12 @@ module mci_reg (
         } [2-1:0]GENERIC_OUTPUT_WIRES;
         struct packed{
             struct packed{
-                logic value;
+                logic [31:0] value;
             } DATA;
         } DEBUG_IN;
         struct packed{
             struct packed{
-                logic value;
+                logic [31:0] value;
             } DATA;
         } DEBUG_OUT;
         struct packed{
@@ -4772,6 +4812,9 @@ module mci_reg (
                 struct packed{
                     logic value;
                 } notif_mbox1_soc_req_lock_en;
+                struct packed{
+                    logic value;
+                } notif_otp_operation_done_en;
             } notif0_intr_en_r;
             struct packed{
                 struct packed{
@@ -5048,6 +5091,9 @@ module mci_reg (
                 struct packed{
                     logic value;
                 } notif_mbox1_soc_req_lock_sts;
+                struct packed{
+                    logic value;
+                } notif_otp_operation_done_sts;
             } notif0_internal_intr_r;
             struct packed{
                 struct packed{
@@ -5308,6 +5354,9 @@ module mci_reg (
                 struct packed{
                     logic value;
                 } notif_mbox1_soc_req_lock_trig;
+                struct packed{
+                    logic value;
+                } notif_otp_operation_done_trig;
             } notif0_intr_trig_r;
             struct packed{
                 struct packed{
@@ -5829,6 +5878,11 @@ module mci_reg (
             } notif_mbox1_soc_req_lock_intr_count_r;
             struct packed{
                 struct packed{
+                    logic [31:0] value;
+                } cnt;
+            } notif_otp_operation_done_intr_count_r;
+            struct packed{
+                struct packed{
                     logic value;
                 } pulse;
             } error_internal_intr_count_incr_r;
@@ -6247,6 +6301,11 @@ module mci_reg (
                     logic value;
                 } pulse;
             } notif_mbox1_soc_req_lock_intr_count_incr_r;
+            struct packed{
+                struct packed{
+                    logic value;
+                } pulse;
+            } notif_otp_operation_done_intr_count_incr_r;
         } intr_block_rf;
     } field_storage_t;
     field_storage_t field_storage;
@@ -6381,10 +6440,10 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value;
         load_next_c = '0;
-        
-        // HW Write
-        next_c = hwif_in.RESET_REASON.FW_HITLESS_UPD_RESET.next;
-        load_next_c = '1;
+        if(decoded_reg_strb.RESET_REASON && decoded_req_is_wr && hwif_in.axi_mcu_or_mcu_sram_config_req) begin // SW write
+            next_c = (field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end
         field_combo.RESET_REASON.FW_HITLESS_UPD_RESET.next = next_c;
         field_combo.RESET_REASON.FW_HITLESS_UPD_RESET.load_next = load_next_c;
     end
@@ -6402,10 +6461,10 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value;
         load_next_c = '0;
-        
-        // HW Write
-        next_c = hwif_in.RESET_REASON.FW_BOOT_UPD_RESET.next;
-        load_next_c = '1;
+        if(decoded_reg_strb.RESET_REASON && decoded_req_is_wr && hwif_in.axi_mcu_or_mcu_sram_config_req) begin // SW write
+            next_c = (field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end
         field_combo.RESET_REASON.FW_BOOT_UPD_RESET.next = next_c;
         field_combo.RESET_REASON.FW_BOOT_UPD_RESET.load_next = load_next_c;
     end
@@ -6423,10 +6482,13 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.RESET_REASON.WARM_RESET.value;
         load_next_c = '0;
-        
-        // HW Write
-        next_c = hwif_in.RESET_REASON.WARM_RESET.next;
-        load_next_c = '1;
+        if(decoded_reg_strb.RESET_REASON && decoded_req_is_wr && hwif_in.axi_mcu_or_mcu_sram_config_req) begin // SW write
+            next_c = (field_storage.RESET_REASON.WARM_RESET.value & ~decoded_wr_biten[2:2]) | (decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end else if(hwif_in.RESET_REASON.WARM_RESET.we) begin // HW Write - we
+            next_c = hwif_in.RESET_REASON.WARM_RESET.next;
+            load_next_c = '1;
+        end
         field_combo.RESET_REASON.WARM_RESET.next = next_c;
         field_combo.RESET_REASON.WARM_RESET.load_next = load_next_c;
     end
@@ -6552,750 +6614,6 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value = field_storage.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal31
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal31.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal31.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal31.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal31.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal31.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal30
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value & ~(decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal30.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal30.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal30.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal30.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal30.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal29
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value & ~(decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal29.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal29.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal29.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal29.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal29.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal28
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value & ~(decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal28.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal28.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal28.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal28.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal28.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal27
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal27.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal27.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal27.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal27.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal27.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal26
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value & ~(decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal26.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal26.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal26.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal26.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal26.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal25
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value & ~(decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal25.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal25.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal25.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal25.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal25.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal24
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value & ~(decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal24.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal24.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal24.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal24.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal24.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal23
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value & ~(decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal23.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal23.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal23.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal23.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal23.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal22
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value & ~(decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal22.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal22.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal22.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal22.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal22.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal21
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value & ~(decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal21.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal21.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal21.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal21.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal21.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal20
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value & ~(decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal20.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal20.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal20.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal20.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal20.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal19
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value & ~(decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal19.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal19.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal19.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal19.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal19.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal18
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value & ~(decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal18.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal18.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal18.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal18.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal18.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal17
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal17.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal17.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal17.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal17.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal17.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal16
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value & ~(decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal16.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal16.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal16.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal16.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal16.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal15
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value & ~(decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal15.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal15.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal15.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal15.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal15.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal14
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value & ~(decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal14.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal14.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal14.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal14.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal14.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal13
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value & ~(decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal13.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal13.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal13.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal13.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal13.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal12
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value & ~(decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal12.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal12.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal12.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal12.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal12.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal11
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value & ~(decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal11.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal11.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal11.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal11.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal11.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal10
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value & ~(decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal10.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal10.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal10.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal10.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal10.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal9
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value & ~(decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal9.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal9.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal9.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal9.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal9.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal8
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value & ~(decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal8.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal8.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal8.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal8.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal8.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal7
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value & ~(decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal7.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal7.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal7.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal7.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal7.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal6
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value & ~(decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal6.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal6.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal6.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal6.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal6.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal5
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value & ~(decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal5.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal5.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal5.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal5.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal5.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal4
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value & ~(decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal4.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal4.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal4.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal4.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal4.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal3
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value & ~(decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal3.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal3.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal3.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal3.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal3.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal2
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value & ~(decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal2.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal2.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal2.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal2.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal2.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value;
-    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal1
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value & ~(decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal1.next = next_c;
-        field_combo.AGG_ERROR_FATAL.agg_error_fatal1.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal1.load_next) begin
-            field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal1.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal1.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value;
     // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal0
     always_comb begin
         automatic logic [0:0] next_c;
@@ -7303,7 +6621,7 @@ module mci_reg (
         next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value;
         load_next_c = '0;
         if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value & ~(decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.we) begin // HW Write - we
             next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.next;
@@ -7320,6 +6638,750 @@ module mci_reg (
         end
     end
     assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal0.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal1
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value & ~(decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal1.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal1.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal1.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal1.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal1.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal2
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value & ~(decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal2.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal2.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal2.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal2.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal2.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal3
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value & ~(decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal3.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal3.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal3.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal3.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal3.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal4
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal4.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal4.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal4.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal4.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal4.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal5
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value & ~(decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal5.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal5.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal5.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal5.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal5.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal6
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value & ~(decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal6.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal6.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal6.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal6.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal6.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal7
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value & ~(decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal7.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal7.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal7.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal7.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal7.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal8
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value & ~(decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal8.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal8.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal8.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal8.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal8.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal9
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value & ~(decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal9.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal9.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal9.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal9.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal9.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal10
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value & ~(decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal10.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal10.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal10.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal10.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal10.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal11
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value & ~(decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal11.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal11.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal11.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal11.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal11.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal12
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value & ~(decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal12.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal12.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal12.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal12.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal12.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal13
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value & ~(decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal13.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal13.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal13.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal13.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal13.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal14
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal14.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal14.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal14.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal14.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal14.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal15
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value & ~(decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal15.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal15.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal15.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal15.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal15.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal16
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value & ~(decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal16.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal16.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal16.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal16.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal16.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal17
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value & ~(decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal17.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal17.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal17.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal17.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal17.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal18
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value & ~(decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal18.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal18.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal18.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal18.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal18.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal19
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value & ~(decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal19.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal19.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal19.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal19.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal19.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal20
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value & ~(decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal20.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal20.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal20.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal20.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal20.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal21
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value & ~(decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal21.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal21.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal21.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal21.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal21.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal22
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value & ~(decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal22.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal22.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal22.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal22.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal22.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal23
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value & ~(decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal23.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal23.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal23.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal23.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal23.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal24
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value & ~(decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal24.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal24.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal24.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal24.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal24.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal25
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value & ~(decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal25.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal25.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal25.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal25.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal25.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal26
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value & ~(decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal26.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal26.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal26.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal26.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal26.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal27
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value & ~(decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal27.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal27.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal27.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal27.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal27.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal28
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value & ~(decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal28.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal28.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal28.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal28.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal28.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal29
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value & ~(decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal29.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal29.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal29.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal29.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal29.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal30
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value & ~(decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal30.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal30.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal30.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal30.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal30.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value;
+    // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal31
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value & ~(decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal31.next = next_c;
+        field_combo.AGG_ERROR_FATAL.agg_error_fatal31.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_FATAL.agg_error_fatal31.load_next) begin
+            field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value <= field_combo.AGG_ERROR_FATAL.agg_error_fatal31.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_FATAL.agg_error_fatal31.value = field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value;
     // Field: mci_reg.HW_ERROR_NON_FATAL.mbox0_ecc_unc
     always_comb begin
         automatic logic [0:0] next_c;
@@ -7368,750 +7430,6 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value = field_storage.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal31
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal30
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value & ~(decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal29
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value & ~(decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal28
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value & ~(decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal27
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal26
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value & ~(decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal25
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value & ~(decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal24
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value & ~(decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal23
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value & ~(decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal22
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value & ~(decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal21
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value & ~(decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal20
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value & ~(decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal19
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value & ~(decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal18
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value & ~(decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal17
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal16
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value & ~(decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal15
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value & ~(decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal14
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value & ~(decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal13
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value & ~(decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal12
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value & ~(decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal11
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value & ~(decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal10
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value & ~(decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal9
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value & ~(decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal8
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value & ~(decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal7
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value & ~(decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal6
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value & ~(decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal5
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value & ~(decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal4
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value & ~(decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal3
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value & ~(decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal2
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value & ~(decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value;
-    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal1
-    always_comb begin
-        automatic logic [0:0] next_c;
-        automatic logic load_next_c;
-        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value;
-        load_next_c = '0;
-        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value & ~(decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
-            load_next_c = '1;
-        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.we) begin // HW Write - we
-            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next;
-            load_next_c = '1;
-        end
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next = next_c;
-        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.load_next = load_next_c;
-    end
-    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
-        if(~hwif_in.mci_pwrgood) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value <= 1'h0;
-        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.load_next) begin
-            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next;
-        end
-    end
-    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value;
     // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal0
     always_comb begin
         automatic logic [0:0] next_c;
@@ -8119,7 +7437,7 @@ module mci_reg (
         next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value;
         load_next_c = '0;
         if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
-            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value & ~(decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value & ~(decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.we) begin // HW Write - we
             next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.next;
@@ -8136,6 +7454,750 @@ module mci_reg (
         end
     end
     assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal1
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value & ~(decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal2
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value & ~(decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal3
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value & ~(decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal4
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal5
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value & ~(decoded_wr_data[5:5] & decoded_wr_biten[5:5]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal6
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value & ~(decoded_wr_data[6:6] & decoded_wr_biten[6:6]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal7
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value & ~(decoded_wr_data[7:7] & decoded_wr_biten[7:7]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal8
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value & ~(decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal9
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value & ~(decoded_wr_data[9:9] & decoded_wr_biten[9:9]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal10
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value & ~(decoded_wr_data[10:10] & decoded_wr_biten[10:10]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal11
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value & ~(decoded_wr_data[11:11] & decoded_wr_biten[11:11]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal12
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value & ~(decoded_wr_data[12:12] & decoded_wr_biten[12:12]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal13
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value & ~(decoded_wr_data[13:13] & decoded_wr_biten[13:13]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal14
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal15
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value & ~(decoded_wr_data[15:15] & decoded_wr_biten[15:15]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal16
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value & ~(decoded_wr_data[16:16] & decoded_wr_biten[16:16]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal17
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value & ~(decoded_wr_data[17:17] & decoded_wr_biten[17:17]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal18
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value & ~(decoded_wr_data[18:18] & decoded_wr_biten[18:18]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal19
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value & ~(decoded_wr_data[19:19] & decoded_wr_biten[19:19]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal20
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value & ~(decoded_wr_data[20:20] & decoded_wr_biten[20:20]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal21
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value & ~(decoded_wr_data[21:21] & decoded_wr_biten[21:21]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal22
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value & ~(decoded_wr_data[22:22] & decoded_wr_biten[22:22]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal23
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value & ~(decoded_wr_data[23:23] & decoded_wr_biten[23:23]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal24
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value & ~(decoded_wr_data[24:24] & decoded_wr_biten[24:24]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal25
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value & ~(decoded_wr_data[25:25] & decoded_wr_biten[25:25]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal26
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value & ~(decoded_wr_data[26:26] & decoded_wr_biten[26:26]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal27
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value & ~(decoded_wr_data[27:27] & decoded_wr_biten[27:27]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal28
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value & ~(decoded_wr_data[28:28] & decoded_wr_biten[28:28]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal29
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value & ~(decoded_wr_data[29:29] & decoded_wr_biten[29:29]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal30
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value & ~(decoded_wr_data[30:30] & decoded_wr_biten[30:30]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value;
+    // Field: mci_reg.AGG_ERROR_NON_FATAL.agg_error_non_fatal31
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.AGG_ERROR_NON_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value & ~(decoded_wr_data[31:31] & decoded_wr_biten[31:31]);
+            load_next_c = '1;
+        end else if(hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.we) begin // HW Write - we
+            next_c = hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next;
+            load_next_c = '1;
+        end
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next = next_c;
+        field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value <= 1'h0;
+        end else if(field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.load_next) begin
+            field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value <= field_combo.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next;
+        end
+    end
+    assign hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value = field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value;
     // Field: mci_reg.FW_ERROR_FATAL.error_code
     always_comb begin
         automatic logic [31:0] next_c;
@@ -8264,8 +8326,8 @@ module mci_reg (
         field_combo.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.next = next_c;
         field_combo.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value <= 1'h0;
         end else if(field_combo.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.load_next) begin
             field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value <= field_combo.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.next;
@@ -8285,8 +8347,8 @@ module mci_reg (
         field_combo.internal_hw_error_fatal_mask.mask_nmi_pin.next = next_c;
         field_combo.internal_hw_error_fatal_mask.mask_nmi_pin.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_hw_error_fatal_mask.mask_nmi_pin.value <= 1'h0;
         end else if(field_combo.internal_hw_error_fatal_mask.mask_nmi_pin.load_next) begin
             field_storage.internal_hw_error_fatal_mask.mask_nmi_pin.value <= field_combo.internal_hw_error_fatal_mask.mask_nmi_pin.next;
@@ -8306,8 +8368,8 @@ module mci_reg (
         field_combo.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.next = next_c;
         field_combo.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value <= 1'h0;
         end else if(field_combo.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.load_next) begin
             field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value <= field_combo.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.next;
@@ -8327,8 +8389,8 @@ module mci_reg (
         field_combo.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.next = next_c;
         field_combo.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.value <= 1'h0;
         end else if(field_combo.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.load_next) begin
             field_storage.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.value <= field_combo.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.next;
@@ -8348,8 +8410,8 @@ module mci_reg (
         field_combo.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.next = next_c;
         field_combo.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.value <= 1'h0;
         end else if(field_combo.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.load_next) begin
             field_storage.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.value <= field_combo.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.next;
@@ -8369,8 +8431,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal31.next;
@@ -8390,8 +8452,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal30.next;
@@ -8411,9 +8473,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal29.next;
         end
@@ -8432,9 +8494,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal28.next;
         end
@@ -8453,9 +8515,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal27.next;
         end
@@ -8474,9 +8536,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal26.next;
         end
@@ -8495,9 +8557,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal25.next;
         end
@@ -8516,9 +8578,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal24.next;
         end
@@ -8537,9 +8599,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal23.next;
         end
@@ -8558,9 +8620,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal22.next;
         end
@@ -8579,9 +8641,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal21.next;
         end
@@ -8600,9 +8662,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal20.next;
         end
@@ -8621,9 +8683,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal19.next;
         end
@@ -8642,9 +8704,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal18.next;
         end
@@ -8663,9 +8725,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal17.next;
         end
@@ -8684,9 +8746,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal16.next;
         end
@@ -8705,9 +8767,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal15.next;
         end
@@ -8726,9 +8788,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal14.next;
         end
@@ -8747,9 +8809,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal13.next;
         end
@@ -8768,9 +8830,9 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
-            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= 1'h0;
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= 1'h1;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal12.next;
         end
@@ -8789,8 +8851,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal11.next;
@@ -8810,8 +8872,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal10.next;
@@ -8831,8 +8893,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal9.next;
@@ -8852,8 +8914,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal8.next;
@@ -8873,8 +8935,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal7.next;
@@ -8894,8 +8956,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal6.next;
@@ -8915,8 +8977,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal5.next;
@@ -8936,8 +8998,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal4.next;
@@ -8957,8 +9019,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal3.next;
@@ -8978,8 +9040,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal2.next;
@@ -8999,8 +9061,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal1.next;
@@ -9020,8 +9082,8 @@ module mci_reg (
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal0.next = next_c;
         field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal0.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value <= 1'h0;
         end else if(field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal0.load_next) begin
             field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value <= field_combo.internal_agg_error_fatal_mask.mask_agg_error_fatal0.next;
@@ -9041,8 +9103,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.next;
@@ -9062,8 +9124,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.next;
@@ -9083,8 +9145,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.next;
@@ -9104,8 +9166,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.next;
@@ -9125,8 +9187,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.next;
@@ -9146,8 +9208,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.next;
@@ -9167,8 +9229,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.next;
@@ -9188,8 +9250,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.next;
@@ -9209,8 +9271,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.next;
@@ -9230,8 +9292,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.next;
@@ -9251,8 +9313,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.next;
@@ -9272,8 +9334,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.next;
@@ -9293,8 +9355,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.next;
@@ -9314,8 +9376,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.next;
@@ -9335,8 +9397,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.next;
@@ -9356,8 +9418,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.next;
@@ -9377,8 +9439,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.next;
@@ -9398,8 +9460,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.next;
@@ -9419,8 +9481,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.next;
@@ -9440,8 +9502,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.next;
@@ -9461,8 +9523,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.next;
@@ -9482,8 +9544,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.next;
@@ -9503,8 +9565,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.next;
@@ -9524,8 +9586,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.next;
@@ -9545,8 +9607,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.next;
@@ -9566,8 +9628,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.next;
@@ -9587,8 +9649,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.next;
@@ -9608,8 +9670,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.next;
@@ -9629,8 +9691,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.next;
@@ -9650,8 +9712,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.next;
@@ -9671,8 +9733,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.next;
@@ -9692,8 +9754,8 @@ module mci_reg (
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.next = next_c;
         field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value <= 1'h0;
         end else if(field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.load_next) begin
             field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value <= field_combo.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.next;
@@ -9713,8 +9775,8 @@ module mci_reg (
         field_combo.internal_fw_error_fatal_mask.mask.next = next_c;
         field_combo.internal_fw_error_fatal_mask.mask.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_fw_error_fatal_mask.mask.value <= 32'h0;
         end else if(field_combo.internal_fw_error_fatal_mask.mask.load_next) begin
             field_storage.internal_fw_error_fatal_mask.mask.value <= field_combo.internal_fw_error_fatal_mask.mask.next;
@@ -9734,8 +9796,8 @@ module mci_reg (
         field_combo.internal_fw_error_non_fatal_mask.mask.next = next_c;
         field_combo.internal_fw_error_non_fatal_mask.mask.load_next = load_next_c;
     end
-    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
-        if(~hwif_in.mci_rst_b) begin
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
             field_storage.internal_fw_error_non_fatal_mask.mask.value <= 32'h0;
         end else if(field_combo.internal_fw_error_non_fatal_mask.mask.load_next) begin
             field_storage.internal_fw_error_non_fatal_mask.mask.value <= field_combo.internal_fw_error_non_fatal_mask.mask.next;
@@ -10442,12 +10504,12 @@ module mci_reg (
     end
     // Field: mci_reg.DEBUG_IN.DATA
     always_comb begin
-        automatic logic [0:0] next_c;
+        automatic logic [31:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.DEBUG_IN.DATA.value;
         load_next_c = '0;
         if(decoded_reg_strb.DEBUG_IN && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.DEBUG_IN.DATA.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            next_c = (field_storage.DEBUG_IN.DATA.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
         field_combo.DEBUG_IN.DATA.next = next_c;
@@ -10455,19 +10517,19 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.DEBUG_IN.DATA.value <= 1'h0;
+            field_storage.DEBUG_IN.DATA.value <= 32'h0;
         end else if(field_combo.DEBUG_IN.DATA.load_next) begin
             field_storage.DEBUG_IN.DATA.value <= field_combo.DEBUG_IN.DATA.next;
         end
     end
     // Field: mci_reg.DEBUG_OUT.DATA
     always_comb begin
-        automatic logic [0:0] next_c;
+        automatic logic [31:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.DEBUG_OUT.DATA.value;
         load_next_c = '0;
         if(decoded_reg_strb.DEBUG_OUT && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.DEBUG_OUT.DATA.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            next_c = (field_storage.DEBUG_OUT.DATA.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end
         field_combo.DEBUG_OUT.DATA.next = next_c;
@@ -10475,7 +10537,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.DEBUG_OUT.DATA.value <= 1'h0;
+            field_storage.DEBUG_OUT.DATA.value <= 32'h0;
         end else if(field_combo.DEBUG_OUT.DATA.load_next) begin
             field_storage.DEBUG_OUT.DATA.value <= field_combo.DEBUG_OUT.DATA.next;
         end
@@ -11654,6 +11716,26 @@ module mci_reg (
             field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value <= 1'h0;
         end else if(field_combo.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.load_next) begin
             field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value <= field_combo.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.notif0_intr_en_r && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value & ~decoded_wr_biten[14:14]) | (decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.next = next_c;
+        field_combo.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.load_next) begin
+            field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value <= field_combo.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.next;
         end
     end
     // Field: mci_reg.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal31_en
@@ -13776,6 +13858,32 @@ module mci_reg (
             field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.value <= field_combo.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.next;
         end
     end
+    // Field: mci_reg.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value;
+        load_next_c = '0;
+        if(field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value != '0) begin // stickybit
+            next_c = field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value | field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end else if(decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write 1 clear
+            next_c = field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value & ~(decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.next = next_c;
+        field_combo.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.load_next) begin
+            field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value <= field_combo.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.next;
+        end
+    end
     assign hwif_out.intr_block_rf.notif0_internal_intr_r.intr =
         |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_mcu_sram_ecc_cor_en.value)
         || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_cptra_mcu_reset_req_en.value)
@@ -13790,7 +13898,8 @@ module mci_reg (
         || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_debug_locked_en.value)
         || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_scan_mode_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_scan_mode_en.value)
         || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_soc_req_lock_en.value)
-        || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value);
+        || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value)
+        || |(field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value & field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value);
     // Field: mci_reg.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal31_sts
     always_comb begin
         automatic logic [0:0] next_c;
@@ -15850,6 +15959,29 @@ module mci_reg (
             field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.value <= 1'h0;
         end else if(field_combo.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.load_next) begin
             field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.value <= field_combo.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.next;
+        end
+    end
+    // Field: mci_reg.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write 1 set
+            next_c = field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value | (decoded_wr_data[14:14] & decoded_wr_biten[14:14]);
+            load_next_c = '1;
+        end else begin // singlepulse clears back to 0
+            next_c = '0;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.next = next_c;
+        field_combo.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.load_next) begin
+            field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value <= field_combo.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.next;
         end
     end
     // Field: mci_reg.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal31_trig
@@ -19444,6 +19576,40 @@ module mci_reg (
             field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r.cnt.value <= field_combo.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r.cnt.next;
         end
     end
+    // Field: mci_reg.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt
+    always_comb begin
+        automatic logic [31:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_r && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value) begin // increment
+            if(((33)'(next_c) + 32'h1) > 32'hffffffff) begin // up-counter saturated
+                next_c = 32'hffffffff;
+            end else begin
+                next_c = next_c + 32'h1;
+            end
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.incrthreshold = (field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value >= 32'hffffffff);
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.incrsaturate = (field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value >= 32'hffffffff);
+        if(next_c > 32'hffffffff) begin
+            next_c = 32'hffffffff;
+            load_next_c = '1;
+        end
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.next = next_c;
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value <= 32'h0;
+        end else if(field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.load_next) begin
+            field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value <= field_combo.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.next;
+        end
+    end
     // Field: mci_reg.intr_block_rf.error_internal_intr_count_incr_r.pulse
     always_comb begin
         automatic logic [0:0] next_c;
@@ -22048,6 +22214,37 @@ module mci_reg (
             field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r.pulse.value <= field_combo.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r.pulse.next;
         end
     end
+    // Field: mci_reg.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value;
+        load_next_c = '0;
+        if(field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value) begin // HW Write - we
+            next_c = field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value;
+            load_next_c = '1;
+        end else if(hwif_in.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.hwset) begin // HW Set
+            next_c = '1;
+            load_next_c = '1;
+        end
+        if(field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value) begin // decrement
+            field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.underflow = (next_c < (1'h1));
+            next_c = next_c - 1'h1;
+            load_next_c = '1;
+        end else begin
+            field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.underflow = '0;
+        end
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.decrthreshold = (field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value <= 1'd0);
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.next = next_c;
+        field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value <= 1'h0;
+        end else if(field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.load_next) begin
+            field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value <= field_combo.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.next;
+        end
+    end
 
     //--------------------------------------------------------------------------
     // Write response
@@ -22065,7 +22262,7 @@ module mci_reg (
     logic [31:0] readback_data;
 
     // Assign readback values to a flattened array
-    logic [372-1:0][31:0] readback_array;
+    logic [378-1:0][31:0] readback_array;
     assign readback_array[0][31:0] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.cap.value : '0;
     assign readback_array[1][31:0] = (decoded_reg_strb.FW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.FW_CAPABILITIES.cap.value : '0;
     assign readback_array[2][0:0] = (decoded_reg_strb.CAP_LOCK && !decoded_req_is_wr) ? field_storage.CAP_LOCK.lock.value : '0;
@@ -22081,770 +22278,778 @@ module mci_reg (
     assign readback_array[7][4:0] = (decoded_reg_strb.HW_CONFIG1 && !decoded_req_is_wr) ? hwif_in.HW_CONFIG1.MIN_MCU_RST_COUNTER_WIDTH.next : '0;
     assign readback_array[7][16:5] = (decoded_reg_strb.HW_CONFIG1 && !decoded_req_is_wr) ? hwif_in.HW_CONFIG1.MCU_SRAM_SIZE.next : '0;
     assign readback_array[7][31:17] = '0;
-    assign readback_array[8][31:0] = (decoded_reg_strb.FW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.FW_FLOW_STATUS.status.value : '0;
-    assign readback_array[9][3:0] = (decoded_reg_strb.HW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.HW_FLOW_STATUS.boot_fsm.value : '0;
-    assign readback_array[9][31:4] = '0;
-    assign readback_array[10][0:0] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value : '0;
-    assign readback_array[10][1:1] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value : '0;
-    assign readback_array[10][2:2] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.WARM_RESET.value : '0;
-    assign readback_array[10][31:3] = '0;
-    assign readback_array[11][0:0] = (decoded_reg_strb.RESET_STATUS && !decoded_req_is_wr) ? field_storage.RESET_STATUS.cptra_reset_sts.value : '0;
-    assign readback_array[11][1:1] = (decoded_reg_strb.RESET_STATUS && !decoded_req_is_wr) ? field_storage.RESET_STATUS.mcu_reset_sts.value : '0;
-    assign readback_array[11][31:2] = '0;
-    assign readback_array[12][1:0] = (decoded_reg_strb.SECURITY_STATE && !decoded_req_is_wr) ? hwif_in.SECURITY_STATE.device_lifecycle.next : '0;
-    assign readback_array[12][2:2] = (decoded_reg_strb.SECURITY_STATE && !decoded_req_is_wr) ? hwif_in.SECURITY_STATE.debug_locked.next : '0;
-    assign readback_array[12][3:3] = (decoded_reg_strb.SECURITY_STATE && !decoded_req_is_wr) ? hwif_in.SECURITY_STATE.scan_mode.next : '0;
-    assign readback_array[12][31:4] = '0;
-    assign readback_array[13][0:0] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_sram_ecc_unc.value : '0;
-    assign readback_array[13][1:1] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.nmi_pin.value : '0;
-    assign readback_array[13][2:2] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value : '0;
-    assign readback_array[13][31:3] = '0;
-    assign readback_array[14][0:0] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value : '0;
-    assign readback_array[14][1:1] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value : '0;
-    assign readback_array[14][2:2] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value : '0;
-    assign readback_array[14][3:3] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value : '0;
-    assign readback_array[14][4:4] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value : '0;
-    assign readback_array[14][5:5] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value : '0;
-    assign readback_array[14][6:6] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value : '0;
-    assign readback_array[14][7:7] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value : '0;
-    assign readback_array[14][8:8] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value : '0;
-    assign readback_array[14][9:9] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value : '0;
-    assign readback_array[14][10:10] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value : '0;
-    assign readback_array[14][11:11] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value : '0;
-    assign readback_array[14][12:12] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value : '0;
-    assign readback_array[14][13:13] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value : '0;
-    assign readback_array[14][14:14] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value : '0;
-    assign readback_array[14][15:15] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value : '0;
-    assign readback_array[14][16:16] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value : '0;
-    assign readback_array[14][17:17] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value : '0;
-    assign readback_array[14][18:18] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value : '0;
-    assign readback_array[14][19:19] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value : '0;
-    assign readback_array[14][20:20] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value : '0;
-    assign readback_array[14][21:21] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value : '0;
-    assign readback_array[14][22:22] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value : '0;
-    assign readback_array[14][23:23] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value : '0;
-    assign readback_array[14][24:24] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value : '0;
-    assign readback_array[14][25:25] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value : '0;
-    assign readback_array[14][26:26] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value : '0;
-    assign readback_array[14][27:27] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value : '0;
-    assign readback_array[14][28:28] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value : '0;
-    assign readback_array[14][29:29] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value : '0;
-    assign readback_array[14][30:30] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value : '0;
-    assign readback_array[14][31:31] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value : '0;
-    assign readback_array[15][0:0] = (decoded_reg_strb.HW_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_NON_FATAL.mbox0_ecc_unc.value : '0;
-    assign readback_array[15][1:1] = (decoded_reg_strb.HW_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value : '0;
+    assign readback_array[8][31:0] = (decoded_reg_strb.MCU_IFU_AXI_USER && !decoded_req_is_wr) ? hwif_in.MCU_IFU_AXI_USER.value.next : '0;
+    assign readback_array[9][31:0] = (decoded_reg_strb.MCU_LSU_AXI_USER && !decoded_req_is_wr) ? hwif_in.MCU_LSU_AXI_USER.value.next : '0;
+    assign readback_array[10][31:0] = (decoded_reg_strb.MCU_SRAM_CONFIG_AXI_USER && !decoded_req_is_wr) ? hwif_in.MCU_SRAM_CONFIG_AXI_USER.value.next : '0;
+    assign readback_array[11][31:0] = (decoded_reg_strb.MCI_SOC_CONFIG_AXI_USER && !decoded_req_is_wr) ? hwif_in.MCI_SOC_CONFIG_AXI_USER.value.next : '0;
+    assign readback_array[12][31:0] = (decoded_reg_strb.FW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.FW_FLOW_STATUS.status.value : '0;
+    assign readback_array[13][3:0] = (decoded_reg_strb.HW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.HW_FLOW_STATUS.boot_fsm.value : '0;
+    assign readback_array[13][31:4] = '0;
+    assign readback_array[14][0:0] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value : '0;
+    assign readback_array[14][1:1] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value : '0;
+    assign readback_array[14][2:2] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.WARM_RESET.value : '0;
+    assign readback_array[14][31:3] = '0;
+    assign readback_array[15][0:0] = (decoded_reg_strb.RESET_STATUS && !decoded_req_is_wr) ? field_storage.RESET_STATUS.cptra_reset_sts.value : '0;
+    assign readback_array[15][1:1] = (decoded_reg_strb.RESET_STATUS && !decoded_req_is_wr) ? field_storage.RESET_STATUS.mcu_reset_sts.value : '0;
     assign readback_array[15][31:2] = '0;
-    assign readback_array[16][0:0] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value : '0;
-    assign readback_array[16][1:1] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value : '0;
-    assign readback_array[16][2:2] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value : '0;
-    assign readback_array[16][3:3] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value : '0;
-    assign readback_array[16][4:4] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value : '0;
-    assign readback_array[16][5:5] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value : '0;
-    assign readback_array[16][6:6] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value : '0;
-    assign readback_array[16][7:7] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value : '0;
-    assign readback_array[16][8:8] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value : '0;
-    assign readback_array[16][9:9] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value : '0;
-    assign readback_array[16][10:10] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value : '0;
-    assign readback_array[16][11:11] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value : '0;
-    assign readback_array[16][12:12] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value : '0;
-    assign readback_array[16][13:13] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value : '0;
-    assign readback_array[16][14:14] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value : '0;
-    assign readback_array[16][15:15] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value : '0;
-    assign readback_array[16][16:16] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value : '0;
-    assign readback_array[16][17:17] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value : '0;
-    assign readback_array[16][18:18] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value : '0;
-    assign readback_array[16][19:19] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value : '0;
-    assign readback_array[16][20:20] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value : '0;
-    assign readback_array[16][21:21] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value : '0;
-    assign readback_array[16][22:22] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value : '0;
-    assign readback_array[16][23:23] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value : '0;
-    assign readback_array[16][24:24] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value : '0;
-    assign readback_array[16][25:25] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value : '0;
-    assign readback_array[16][26:26] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value : '0;
-    assign readback_array[16][27:27] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value : '0;
-    assign readback_array[16][28:28] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value : '0;
-    assign readback_array[16][29:29] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value : '0;
-    assign readback_array[16][30:30] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value : '0;
-    assign readback_array[16][31:31] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value : '0;
-    assign readback_array[17][31:0] = (decoded_reg_strb.FW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.FW_ERROR_FATAL.error_code.value : '0;
-    assign readback_array[18][31:0] = (decoded_reg_strb.FW_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.FW_ERROR_NON_FATAL.error_code.value : '0;
-    assign readback_array[19][31:0] = (decoded_reg_strb.HW_ERROR_ENC && !decoded_req_is_wr) ? field_storage.HW_ERROR_ENC.error_code.value : '0;
-    assign readback_array[20][31:0] = (decoded_reg_strb.FW_ERROR_ENC && !decoded_req_is_wr) ? field_storage.FW_ERROR_ENC.error_code.value : '0;
+    assign readback_array[16][1:0] = (decoded_reg_strb.SECURITY_STATE && !decoded_req_is_wr) ? hwif_in.SECURITY_STATE.device_lifecycle.next : '0;
+    assign readback_array[16][2:2] = (decoded_reg_strb.SECURITY_STATE && !decoded_req_is_wr) ? hwif_in.SECURITY_STATE.debug_locked.next : '0;
+    assign readback_array[16][3:3] = (decoded_reg_strb.SECURITY_STATE && !decoded_req_is_wr) ? hwif_in.SECURITY_STATE.scan_mode.next : '0;
+    assign readback_array[16][31:4] = '0;
+    assign readback_array[17][0:0] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_sram_ecc_unc.value : '0;
+    assign readback_array[17][1:1] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.nmi_pin.value : '0;
+    assign readback_array[17][2:2] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value : '0;
+    assign readback_array[17][31:3] = '0;
+    assign readback_array[18][0:0] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value : '0;
+    assign readback_array[18][1:1] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value : '0;
+    assign readback_array[18][2:2] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value : '0;
+    assign readback_array[18][3:3] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal3.value : '0;
+    assign readback_array[18][4:4] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal4.value : '0;
+    assign readback_array[18][5:5] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal5.value : '0;
+    assign readback_array[18][6:6] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal6.value : '0;
+    assign readback_array[18][7:7] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal7.value : '0;
+    assign readback_array[18][8:8] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal8.value : '0;
+    assign readback_array[18][9:9] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal9.value : '0;
+    assign readback_array[18][10:10] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal10.value : '0;
+    assign readback_array[18][11:11] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal11.value : '0;
+    assign readback_array[18][12:12] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal12.value : '0;
+    assign readback_array[18][13:13] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal13.value : '0;
+    assign readback_array[18][14:14] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal14.value : '0;
+    assign readback_array[18][15:15] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal15.value : '0;
+    assign readback_array[18][16:16] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal16.value : '0;
+    assign readback_array[18][17:17] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal17.value : '0;
+    assign readback_array[18][18:18] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal18.value : '0;
+    assign readback_array[18][19:19] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal19.value : '0;
+    assign readback_array[18][20:20] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal20.value : '0;
+    assign readback_array[18][21:21] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal21.value : '0;
+    assign readback_array[18][22:22] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal22.value : '0;
+    assign readback_array[18][23:23] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal23.value : '0;
+    assign readback_array[18][24:24] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal24.value : '0;
+    assign readback_array[18][25:25] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal25.value : '0;
+    assign readback_array[18][26:26] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal26.value : '0;
+    assign readback_array[18][27:27] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal27.value : '0;
+    assign readback_array[18][28:28] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal28.value : '0;
+    assign readback_array[18][29:29] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal29.value : '0;
+    assign readback_array[18][30:30] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal30.value : '0;
+    assign readback_array[18][31:31] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal31.value : '0;
+    assign readback_array[19][0:0] = (decoded_reg_strb.HW_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_NON_FATAL.mbox0_ecc_unc.value : '0;
+    assign readback_array[19][1:1] = (decoded_reg_strb.HW_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value : '0;
+    assign readback_array[19][31:2] = '0;
+    assign readback_array[20][0:0] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value : '0;
+    assign readback_array[20][1:1] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value : '0;
+    assign readback_array[20][2:2] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.value : '0;
+    assign readback_array[20][3:3] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.value : '0;
+    assign readback_array[20][4:4] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.value : '0;
+    assign readback_array[20][5:5] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.value : '0;
+    assign readback_array[20][6:6] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.value : '0;
+    assign readback_array[20][7:7] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.value : '0;
+    assign readback_array[20][8:8] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.value : '0;
+    assign readback_array[20][9:9] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.value : '0;
+    assign readback_array[20][10:10] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.value : '0;
+    assign readback_array[20][11:11] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.value : '0;
+    assign readback_array[20][12:12] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.value : '0;
+    assign readback_array[20][13:13] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.value : '0;
+    assign readback_array[20][14:14] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.value : '0;
+    assign readback_array[20][15:15] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.value : '0;
+    assign readback_array[20][16:16] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.value : '0;
+    assign readback_array[20][17:17] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.value : '0;
+    assign readback_array[20][18:18] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.value : '0;
+    assign readback_array[20][19:19] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.value : '0;
+    assign readback_array[20][20:20] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.value : '0;
+    assign readback_array[20][21:21] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.value : '0;
+    assign readback_array[20][22:22] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.value : '0;
+    assign readback_array[20][23:23] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.value : '0;
+    assign readback_array[20][24:24] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.value : '0;
+    assign readback_array[20][25:25] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.value : '0;
+    assign readback_array[20][26:26] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.value : '0;
+    assign readback_array[20][27:27] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.value : '0;
+    assign readback_array[20][28:28] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.value : '0;
+    assign readback_array[20][29:29] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.value : '0;
+    assign readback_array[20][30:30] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.value : '0;
+    assign readback_array[20][31:31] = (decoded_reg_strb.AGG_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.value : '0;
+    assign readback_array[21][31:0] = (decoded_reg_strb.FW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.FW_ERROR_FATAL.error_code.value : '0;
+    assign readback_array[22][31:0] = (decoded_reg_strb.FW_ERROR_NON_FATAL && !decoded_req_is_wr) ? field_storage.FW_ERROR_NON_FATAL.error_code.value : '0;
+    assign readback_array[23][31:0] = (decoded_reg_strb.HW_ERROR_ENC && !decoded_req_is_wr) ? field_storage.HW_ERROR_ENC.error_code.value : '0;
+    assign readback_array[24][31:0] = (decoded_reg_strb.FW_ERROR_ENC && !decoded_req_is_wr) ? field_storage.FW_ERROR_ENC.error_code.value : '0;
     for(genvar i0=0; i0<8; i0++) begin
-        assign readback_array[i0*1 + 21][31:0] = (decoded_reg_strb.FW_EXTENDED_ERROR_INFO[i0] && !decoded_req_is_wr) ? field_storage.FW_EXTENDED_ERROR_INFO[i0].error_info.value : '0;
+        assign readback_array[i0*1 + 25][31:0] = (decoded_reg_strb.FW_EXTENDED_ERROR_INFO[i0] && !decoded_req_is_wr) ? field_storage.FW_EXTENDED_ERROR_INFO[i0].error_info.value : '0;
     end
-    assign readback_array[29][0:0] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value : '0;
-    assign readback_array[29][1:1] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_nmi_pin.value : '0;
-    assign readback_array[29][2:2] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value : '0;
-    assign readback_array[29][31:3] = '0;
-    assign readback_array[30][0:0] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.value : '0;
-    assign readback_array[30][1:1] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.value : '0;
-    assign readback_array[30][31:2] = '0;
-    assign readback_array[31][0:0] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value : '0;
-    assign readback_array[31][1:1] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value : '0;
-    assign readback_array[31][2:2] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value : '0;
-    assign readback_array[31][3:3] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value : '0;
-    assign readback_array[31][4:4] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value : '0;
-    assign readback_array[31][5:5] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value : '0;
-    assign readback_array[31][6:6] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value : '0;
-    assign readback_array[31][7:7] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value : '0;
-    assign readback_array[31][8:8] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value : '0;
-    assign readback_array[31][9:9] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value : '0;
-    assign readback_array[31][10:10] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value : '0;
-    assign readback_array[31][11:11] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value : '0;
-    assign readback_array[31][12:12] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value : '0;
-    assign readback_array[31][13:13] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value : '0;
-    assign readback_array[31][14:14] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value : '0;
-    assign readback_array[31][15:15] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value : '0;
-    assign readback_array[31][16:16] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value : '0;
-    assign readback_array[31][17:17] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value : '0;
-    assign readback_array[31][18:18] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value : '0;
-    assign readback_array[31][19:19] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value : '0;
-    assign readback_array[31][20:20] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value : '0;
-    assign readback_array[31][21:21] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value : '0;
-    assign readback_array[31][22:22] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value : '0;
-    assign readback_array[31][23:23] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value : '0;
-    assign readback_array[31][24:24] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value : '0;
-    assign readback_array[31][25:25] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value : '0;
-    assign readback_array[31][26:26] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value : '0;
-    assign readback_array[31][27:27] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value : '0;
-    assign readback_array[31][28:28] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value : '0;
-    assign readback_array[31][29:29] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value : '0;
-    assign readback_array[31][30:30] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value : '0;
-    assign readback_array[31][31:31] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value : '0;
-    assign readback_array[32][0:0] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value : '0;
-    assign readback_array[32][1:1] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value : '0;
-    assign readback_array[32][2:2] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value : '0;
-    assign readback_array[32][3:3] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value : '0;
-    assign readback_array[32][4:4] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value : '0;
-    assign readback_array[32][5:5] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value : '0;
-    assign readback_array[32][6:6] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value : '0;
-    assign readback_array[32][7:7] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value : '0;
-    assign readback_array[32][8:8] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value : '0;
-    assign readback_array[32][9:9] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value : '0;
-    assign readback_array[32][10:10] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value : '0;
-    assign readback_array[32][11:11] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value : '0;
-    assign readback_array[32][12:12] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value : '0;
-    assign readback_array[32][13:13] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value : '0;
-    assign readback_array[32][14:14] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value : '0;
-    assign readback_array[32][15:15] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value : '0;
-    assign readback_array[32][16:16] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value : '0;
-    assign readback_array[32][17:17] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value : '0;
-    assign readback_array[32][18:18] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value : '0;
-    assign readback_array[32][19:19] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value : '0;
-    assign readback_array[32][20:20] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value : '0;
-    assign readback_array[32][21:21] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value : '0;
-    assign readback_array[32][22:22] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value : '0;
-    assign readback_array[32][23:23] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value : '0;
-    assign readback_array[32][24:24] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value : '0;
-    assign readback_array[32][25:25] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value : '0;
-    assign readback_array[32][26:26] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value : '0;
-    assign readback_array[32][27:27] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value : '0;
-    assign readback_array[32][28:28] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value : '0;
-    assign readback_array[32][29:29] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value : '0;
-    assign readback_array[32][30:30] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value : '0;
-    assign readback_array[32][31:31] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value : '0;
-    assign readback_array[33][31:0] = (decoded_reg_strb.internal_fw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_fw_error_fatal_mask.mask.value : '0;
-    assign readback_array[34][31:0] = (decoded_reg_strb.internal_fw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_fw_error_non_fatal_mask.mask.value : '0;
-    assign readback_array[35][0:0] = (decoded_reg_strb.WDT_TIMER1_EN && !decoded_req_is_wr) ? field_storage.WDT_TIMER1_EN.timer1_en.value : '0;
-    assign readback_array[35][31:1] = '0;
-    assign readback_array[36][0:0] = (decoded_reg_strb.WDT_TIMER1_CTRL && !decoded_req_is_wr) ? field_storage.WDT_TIMER1_CTRL.timer1_restart.value : '0;
-    assign readback_array[36][31:1] = '0;
-    for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 37][31:0] = (decoded_reg_strb.WDT_TIMER1_TIMEOUT_PERIOD[i0] && !decoded_req_is_wr) ? field_storage.WDT_TIMER1_TIMEOUT_PERIOD[i0].timer1_timeout_period.value : '0;
-    end
-    assign readback_array[39][0:0] = (decoded_reg_strb.WDT_TIMER2_EN && !decoded_req_is_wr) ? field_storage.WDT_TIMER2_EN.timer2_en.value : '0;
+    assign readback_array[33][0:0] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value : '0;
+    assign readback_array[33][1:1] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_nmi_pin.value : '0;
+    assign readback_array[33][2:2] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value : '0;
+    assign readback_array[33][31:3] = '0;
+    assign readback_array[34][0:0] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.value : '0;
+    assign readback_array[34][1:1] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.value : '0;
+    assign readback_array[34][31:2] = '0;
+    assign readback_array[35][0:0] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal31.value : '0;
+    assign readback_array[35][1:1] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal30.value : '0;
+    assign readback_array[35][2:2] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal29.value : '0;
+    assign readback_array[35][3:3] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal28.value : '0;
+    assign readback_array[35][4:4] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal27.value : '0;
+    assign readback_array[35][5:5] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal26.value : '0;
+    assign readback_array[35][6:6] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal25.value : '0;
+    assign readback_array[35][7:7] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal24.value : '0;
+    assign readback_array[35][8:8] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal23.value : '0;
+    assign readback_array[35][9:9] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal22.value : '0;
+    assign readback_array[35][10:10] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal21.value : '0;
+    assign readback_array[35][11:11] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal20.value : '0;
+    assign readback_array[35][12:12] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal19.value : '0;
+    assign readback_array[35][13:13] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal18.value : '0;
+    assign readback_array[35][14:14] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal17.value : '0;
+    assign readback_array[35][15:15] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal16.value : '0;
+    assign readback_array[35][16:16] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal15.value : '0;
+    assign readback_array[35][17:17] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal14.value : '0;
+    assign readback_array[35][18:18] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal13.value : '0;
+    assign readback_array[35][19:19] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal12.value : '0;
+    assign readback_array[35][20:20] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal11.value : '0;
+    assign readback_array[35][21:21] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal10.value : '0;
+    assign readback_array[35][22:22] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal9.value : '0;
+    assign readback_array[35][23:23] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal8.value : '0;
+    assign readback_array[35][24:24] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal7.value : '0;
+    assign readback_array[35][25:25] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal6.value : '0;
+    assign readback_array[35][26:26] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal5.value : '0;
+    assign readback_array[35][27:27] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal4.value : '0;
+    assign readback_array[35][28:28] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal3.value : '0;
+    assign readback_array[35][29:29] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal2.value : '0;
+    assign readback_array[35][30:30] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal1.value : '0;
+    assign readback_array[35][31:31] = (decoded_reg_strb.internal_agg_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_fatal_mask.mask_agg_error_fatal0.value : '0;
+    assign readback_array[36][0:0] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31.value : '0;
+    assign readback_array[36][1:1] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30.value : '0;
+    assign readback_array[36][2:2] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29.value : '0;
+    assign readback_array[36][3:3] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28.value : '0;
+    assign readback_array[36][4:4] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27.value : '0;
+    assign readback_array[36][5:5] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26.value : '0;
+    assign readback_array[36][6:6] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25.value : '0;
+    assign readback_array[36][7:7] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24.value : '0;
+    assign readback_array[36][8:8] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23.value : '0;
+    assign readback_array[36][9:9] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22.value : '0;
+    assign readback_array[36][10:10] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21.value : '0;
+    assign readback_array[36][11:11] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20.value : '0;
+    assign readback_array[36][12:12] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19.value : '0;
+    assign readback_array[36][13:13] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18.value : '0;
+    assign readback_array[36][14:14] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17.value : '0;
+    assign readback_array[36][15:15] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16.value : '0;
+    assign readback_array[36][16:16] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15.value : '0;
+    assign readback_array[36][17:17] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14.value : '0;
+    assign readback_array[36][18:18] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13.value : '0;
+    assign readback_array[36][19:19] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12.value : '0;
+    assign readback_array[36][20:20] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11.value : '0;
+    assign readback_array[36][21:21] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10.value : '0;
+    assign readback_array[36][22:22] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9.value : '0;
+    assign readback_array[36][23:23] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8.value : '0;
+    assign readback_array[36][24:24] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7.value : '0;
+    assign readback_array[36][25:25] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6.value : '0;
+    assign readback_array[36][26:26] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5.value : '0;
+    assign readback_array[36][27:27] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4.value : '0;
+    assign readback_array[36][28:28] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3.value : '0;
+    assign readback_array[36][29:29] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2.value : '0;
+    assign readback_array[36][30:30] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value : '0;
+    assign readback_array[36][31:31] = (decoded_reg_strb.internal_agg_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value : '0;
+    assign readback_array[37][31:0] = (decoded_reg_strb.internal_fw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_fw_error_fatal_mask.mask.value : '0;
+    assign readback_array[38][31:0] = (decoded_reg_strb.internal_fw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_fw_error_non_fatal_mask.mask.value : '0;
+    assign readback_array[39][0:0] = (decoded_reg_strb.WDT_TIMER1_EN && !decoded_req_is_wr) ? field_storage.WDT_TIMER1_EN.timer1_en.value : '0;
     assign readback_array[39][31:1] = '0;
-    assign readback_array[40][0:0] = (decoded_reg_strb.WDT_TIMER2_CTRL && !decoded_req_is_wr) ? field_storage.WDT_TIMER2_CTRL.timer2_restart.value : '0;
+    assign readback_array[40][0:0] = (decoded_reg_strb.WDT_TIMER1_CTRL && !decoded_req_is_wr) ? field_storage.WDT_TIMER1_CTRL.timer1_restart.value : '0;
     assign readback_array[40][31:1] = '0;
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 41][31:0] = (decoded_reg_strb.WDT_TIMER2_TIMEOUT_PERIOD[i0] && !decoded_req_is_wr) ? field_storage.WDT_TIMER2_TIMEOUT_PERIOD[i0].timer2_timeout_period.value : '0;
+        assign readback_array[i0*1 + 41][31:0] = (decoded_reg_strb.WDT_TIMER1_TIMEOUT_PERIOD[i0] && !decoded_req_is_wr) ? field_storage.WDT_TIMER1_TIMEOUT_PERIOD[i0].timer1_timeout_period.value : '0;
     end
-    assign readback_array[43][0:0] = (decoded_reg_strb.WDT_STATUS && !decoded_req_is_wr) ? field_storage.WDT_STATUS.t1_timeout.value : '0;
-    assign readback_array[43][1:1] = (decoded_reg_strb.WDT_STATUS && !decoded_req_is_wr) ? field_storage.WDT_STATUS.t2_timeout.value : '0;
-    assign readback_array[43][31:2] = '0;
+    assign readback_array[43][0:0] = (decoded_reg_strb.WDT_TIMER2_EN && !decoded_req_is_wr) ? field_storage.WDT_TIMER2_EN.timer2_en.value : '0;
+    assign readback_array[43][31:1] = '0;
+    assign readback_array[44][0:0] = (decoded_reg_strb.WDT_TIMER2_CTRL && !decoded_req_is_wr) ? field_storage.WDT_TIMER2_CTRL.timer2_restart.value : '0;
+    assign readback_array[44][31:1] = '0;
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 44][31:0] = (decoded_reg_strb.WDT_CFG[i0] && !decoded_req_is_wr) ? field_storage.WDT_CFG[i0].TIMEOUT.value : '0;
+        assign readback_array[i0*1 + 45][31:0] = (decoded_reg_strb.WDT_TIMER2_TIMEOUT_PERIOD[i0] && !decoded_req_is_wr) ? field_storage.WDT_TIMER2_TIMEOUT_PERIOD[i0].timer2_timeout_period.value : '0;
     end
-    assign readback_array[46][31:0] = (decoded_reg_strb.MCU_TIMER_CONFIG && !decoded_req_is_wr) ? field_storage.MCU_TIMER_CONFIG.clk_period.value : '0;
-    assign readback_array[47][31:0] = (decoded_reg_strb.MCU_RV_MTIME_L && !decoded_req_is_wr) ? field_storage.MCU_RV_MTIME_L.count_l.value : '0;
-    assign readback_array[48][31:0] = (decoded_reg_strb.MCU_RV_MTIME_H && !decoded_req_is_wr) ? field_storage.MCU_RV_MTIME_H.count_h.value : '0;
-    assign readback_array[49][31:0] = (decoded_reg_strb.MCU_RV_MTIMECMP_L && !decoded_req_is_wr) ? field_storage.MCU_RV_MTIMECMP_L.compare_l.value : '0;
-    assign readback_array[50][31:0] = (decoded_reg_strb.MCU_RV_MTIMECMP_H && !decoded_req_is_wr) ? field_storage.MCU_RV_MTIMECMP_H.compare_h.value : '0;
-    assign readback_array[51][0:0] = (decoded_reg_strb.RESET_REQUEST && !decoded_req_is_wr) ? field_storage.RESET_REQUEST.mcu_req.value : '0;
-    assign readback_array[51][31:1] = '0;
-    assign readback_array[52][0:0] = (decoded_reg_strb.MCI_BOOTFSM_GO && !decoded_req_is_wr) ? field_storage.MCI_BOOTFSM_GO.go.value : '0;
-    assign readback_array[52][31:1] = '0;
-    assign readback_array[53][0:0] = (decoded_reg_strb.CPTRA_BOOT_GO && !decoded_req_is_wr) ? field_storage.CPTRA_BOOT_GO.go.value : '0;
-    assign readback_array[53][31:1] = '0;
-    assign readback_array[54][15:0] = (decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE && !decoded_req_is_wr) ? field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value : '0;
-    assign readback_array[54][31:16] = '0;
-    assign readback_array[55][31:0] = (decoded_reg_strb.MCU_NMI_VECTOR && !decoded_req_is_wr) ? field_storage.MCU_NMI_VECTOR.vec.value : '0;
-    assign readback_array[56][31:0] = (decoded_reg_strb.MCU_RESET_VECTOR && !decoded_req_is_wr) ? field_storage.MCU_RESET_VECTOR.vec.value : '0;
+    assign readback_array[47][0:0] = (decoded_reg_strb.WDT_STATUS && !decoded_req_is_wr) ? field_storage.WDT_STATUS.t1_timeout.value : '0;
+    assign readback_array[47][1:1] = (decoded_reg_strb.WDT_STATUS && !decoded_req_is_wr) ? field_storage.WDT_STATUS.t2_timeout.value : '0;
+    assign readback_array[47][31:2] = '0;
+    for(genvar i0=0; i0<2; i0++) begin
+        assign readback_array[i0*1 + 48][31:0] = (decoded_reg_strb.WDT_CFG[i0] && !decoded_req_is_wr) ? field_storage.WDT_CFG[i0].TIMEOUT.value : '0;
+    end
+    assign readback_array[50][31:0] = (decoded_reg_strb.MCU_TIMER_CONFIG && !decoded_req_is_wr) ? field_storage.MCU_TIMER_CONFIG.clk_period.value : '0;
+    assign readback_array[51][31:0] = (decoded_reg_strb.MCU_RV_MTIME_L && !decoded_req_is_wr) ? field_storage.MCU_RV_MTIME_L.count_l.value : '0;
+    assign readback_array[52][31:0] = (decoded_reg_strb.MCU_RV_MTIME_H && !decoded_req_is_wr) ? field_storage.MCU_RV_MTIME_H.count_h.value : '0;
+    assign readback_array[53][31:0] = (decoded_reg_strb.MCU_RV_MTIMECMP_L && !decoded_req_is_wr) ? field_storage.MCU_RV_MTIMECMP_L.compare_l.value : '0;
+    assign readback_array[54][31:0] = (decoded_reg_strb.MCU_RV_MTIMECMP_H && !decoded_req_is_wr) ? field_storage.MCU_RV_MTIMECMP_H.compare_h.value : '0;
+    assign readback_array[55][0:0] = (decoded_reg_strb.RESET_REQUEST && !decoded_req_is_wr) ? field_storage.RESET_REQUEST.mcu_req.value : '0;
+    assign readback_array[55][31:1] = '0;
+    assign readback_array[56][0:0] = (decoded_reg_strb.MCI_BOOTFSM_GO && !decoded_req_is_wr) ? field_storage.MCI_BOOTFSM_GO.go.value : '0;
+    assign readback_array[56][31:1] = '0;
+    assign readback_array[57][0:0] = (decoded_reg_strb.CPTRA_BOOT_GO && !decoded_req_is_wr) ? field_storage.CPTRA_BOOT_GO.go.value : '0;
+    assign readback_array[57][31:1] = '0;
+    assign readback_array[58][15:0] = (decoded_reg_strb.FW_SRAM_EXEC_REGION_SIZE && !decoded_req_is_wr) ? field_storage.FW_SRAM_EXEC_REGION_SIZE.size.value : '0;
+    assign readback_array[58][31:16] = '0;
+    assign readback_array[59][31:0] = (decoded_reg_strb.MCU_NMI_VECTOR && !decoded_req_is_wr) ? field_storage.MCU_NMI_VECTOR.vec.value : '0;
+    assign readback_array[60][31:0] = (decoded_reg_strb.MCU_RESET_VECTOR && !decoded_req_is_wr) ? field_storage.MCU_RESET_VECTOR.vec.value : '0;
     for(genvar i0=0; i0<5; i0++) begin
-        assign readback_array[i0*1 + 57][31:0] = (decoded_reg_strb.MBOX0_VALID_AXI_USER[i0] && !decoded_req_is_wr) ? field_storage.MBOX0_VALID_AXI_USER[i0].AXI_USER.value : '0;
+        assign readback_array[i0*1 + 61][31:0] = (decoded_reg_strb.MBOX0_VALID_AXI_USER[i0] && !decoded_req_is_wr) ? field_storage.MBOX0_VALID_AXI_USER[i0].AXI_USER.value : '0;
     end
     for(genvar i0=0; i0<5; i0++) begin
-        assign readback_array[i0*1 + 62][0:0] = (decoded_reg_strb.MBOX0_AXI_USER_LOCK[i0] && !decoded_req_is_wr) ? field_storage.MBOX0_AXI_USER_LOCK[i0].LOCK.value : '0;
-        assign readback_array[i0*1 + 62][31:1] = '0;
+        assign readback_array[i0*1 + 66][0:0] = (decoded_reg_strb.MBOX0_AXI_USER_LOCK[i0] && !decoded_req_is_wr) ? field_storage.MBOX0_AXI_USER_LOCK[i0].LOCK.value : '0;
+        assign readback_array[i0*1 + 66][31:1] = '0;
     end
     for(genvar i0=0; i0<5; i0++) begin
-        assign readback_array[i0*1 + 67][31:0] = (decoded_reg_strb.MBOX1_VALID_AXI_USER[i0] && !decoded_req_is_wr) ? field_storage.MBOX1_VALID_AXI_USER[i0].AXI_USER.value : '0;
+        assign readback_array[i0*1 + 71][31:0] = (decoded_reg_strb.MBOX1_VALID_AXI_USER[i0] && !decoded_req_is_wr) ? field_storage.MBOX1_VALID_AXI_USER[i0].AXI_USER.value : '0;
     end
     for(genvar i0=0; i0<5; i0++) begin
-        assign readback_array[i0*1 + 72][0:0] = (decoded_reg_strb.MBOX1_AXI_USER_LOCK[i0] && !decoded_req_is_wr) ? field_storage.MBOX1_AXI_USER_LOCK[i0].LOCK.value : '0;
-        assign readback_array[i0*1 + 72][31:1] = '0;
+        assign readback_array[i0*1 + 76][0:0] = (decoded_reg_strb.MBOX1_AXI_USER_LOCK[i0] && !decoded_req_is_wr) ? field_storage.MBOX1_AXI_USER_LOCK[i0].LOCK.value : '0;
+        assign readback_array[i0*1 + 76][31:1] = '0;
     end
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 77][31:0] = (decoded_reg_strb.SOC_DFT_EN[i0] && !decoded_req_is_wr) ? field_storage.SOC_DFT_EN[i0].MASK.value : '0;
+        assign readback_array[i0*1 + 81][31:0] = (decoded_reg_strb.SOC_DFT_EN[i0] && !decoded_req_is_wr) ? field_storage.SOC_DFT_EN[i0].MASK.value : '0;
     end
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 79][31:0] = (decoded_reg_strb.SOC_HW_DEBUG_EN[i0] && !decoded_req_is_wr) ? field_storage.SOC_HW_DEBUG_EN[i0].MASK.value : '0;
+        assign readback_array[i0*1 + 83][31:0] = (decoded_reg_strb.SOC_HW_DEBUG_EN[i0] && !decoded_req_is_wr) ? field_storage.SOC_HW_DEBUG_EN[i0].MASK.value : '0;
     end
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 81][31:0] = (decoded_reg_strb.SOC_PROD_DEBUG_STATE[i0] && !decoded_req_is_wr) ? field_storage.SOC_PROD_DEBUG_STATE[i0].MASK.value : '0;
+        assign readback_array[i0*1 + 85][31:0] = (decoded_reg_strb.SOC_PROD_DEBUG_STATE[i0] && !decoded_req_is_wr) ? field_storage.SOC_PROD_DEBUG_STATE[i0].MASK.value : '0;
     end
-    assign readback_array[83][31:0] = (decoded_reg_strb.FC_FIPS_ZEROZATION && !decoded_req_is_wr) ? field_storage.FC_FIPS_ZEROZATION.MASK.value : '0;
+    assign readback_array[87][31:0] = (decoded_reg_strb.FC_FIPS_ZEROZATION && !decoded_req_is_wr) ? field_storage.FC_FIPS_ZEROZATION.MASK.value : '0;
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 84][31:0] = (decoded_reg_strb.GENERIC_INPUT_WIRES[i0] && !decoded_req_is_wr) ? field_storage.GENERIC_INPUT_WIRES[i0].wires.value : '0;
+        assign readback_array[i0*1 + 88][31:0] = (decoded_reg_strb.GENERIC_INPUT_WIRES[i0] && !decoded_req_is_wr) ? field_storage.GENERIC_INPUT_WIRES[i0].wires.value : '0;
     end
     for(genvar i0=0; i0<2; i0++) begin
-        assign readback_array[i0*1 + 86][31:0] = (decoded_reg_strb.GENERIC_OUTPUT_WIRES[i0] && !decoded_req_is_wr) ? field_storage.GENERIC_OUTPUT_WIRES[i0].wires.value : '0;
+        assign readback_array[i0*1 + 90][31:0] = (decoded_reg_strb.GENERIC_OUTPUT_WIRES[i0] && !decoded_req_is_wr) ? field_storage.GENERIC_OUTPUT_WIRES[i0].wires.value : '0;
     end
-    assign readback_array[88][0:0] = (decoded_reg_strb.DEBUG_IN && !decoded_req_is_wr) ? field_storage.DEBUG_IN.DATA.value : '0;
-    assign readback_array[88][31:1] = '0;
-    assign readback_array[89][0:0] = (decoded_reg_strb.DEBUG_OUT && !decoded_req_is_wr) ? field_storage.DEBUG_OUT.DATA.value : '0;
-    assign readback_array[89][31:1] = '0;
-    assign readback_array[90][0:0] = (decoded_reg_strb.SS_DEBUG_INTENT && !decoded_req_is_wr) ? field_storage.SS_DEBUG_INTENT.debug_intent.value : '0;
-    assign readback_array[90][31:1] = '0;
-    assign readback_array[91][0:0] = (decoded_reg_strb.SS_CONFIG_DONE_STICKY && !decoded_req_is_wr) ? field_storage.SS_CONFIG_DONE_STICKY.done.value : '0;
-    assign readback_array[91][31:1] = '0;
-    assign readback_array[92][0:0] = (decoded_reg_strb.SS_CONFIG_DONE && !decoded_req_is_wr) ? field_storage.SS_CONFIG_DONE.done.value : '0;
-    assign readback_array[92][31:1] = '0;
+    assign readback_array[92][31:0] = (decoded_reg_strb.DEBUG_IN && !decoded_req_is_wr) ? field_storage.DEBUG_IN.DATA.value : '0;
+    assign readback_array[93][31:0] = (decoded_reg_strb.DEBUG_OUT && !decoded_req_is_wr) ? field_storage.DEBUG_OUT.DATA.value : '0;
+    assign readback_array[94][0:0] = (decoded_reg_strb.SS_DEBUG_INTENT && !decoded_req_is_wr) ? field_storage.SS_DEBUG_INTENT.debug_intent.value : '0;
+    assign readback_array[94][31:1] = '0;
+    assign readback_array[95][0:0] = (decoded_reg_strb.SS_CONFIG_DONE_STICKY && !decoded_req_is_wr) ? field_storage.SS_CONFIG_DONE_STICKY.done.value : '0;
+    assign readback_array[95][31:1] = '0;
+    assign readback_array[96][0:0] = (decoded_reg_strb.SS_CONFIG_DONE && !decoded_req_is_wr) ? field_storage.SS_CONFIG_DONE.done.value : '0;
+    assign readback_array[96][31:1] = '0;
     for(genvar i0=0; i0<8; i0++) begin
         for(genvar i1=0; i1<12; i1++) begin
-            assign readback_array[i0*12 + i1*1 + 93][31:0] = (decoded_reg_strb.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] && !decoded_req_is_wr) ? field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value : '0;
+            assign readback_array[i0*12 + i1*1 + 97][31:0] = (decoded_reg_strb.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] && !decoded_req_is_wr) ? field_storage.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].hash.value : '0;
         end
     end
-    assign readback_array[189][0:0] = (decoded_reg_strb.intr_block_rf.global_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.global_intr_en_r.error_en.value : '0;
-    assign readback_array[189][1:1] = (decoded_reg_strb.intr_block_rf.global_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.global_intr_en_r.notif_en.value : '0;
-    assign readback_array[189][31:2] = '0;
-    assign readback_array[190][0:0] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_mcu_sram_dmi_axi_collision_en.value : '0;
-    assign readback_array[190][1:1] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_internal_en.value : '0;
-    assign readback_array[190][2:2] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_mbox0_ecc_unc_en.value : '0;
-    assign readback_array[190][3:3] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_mbox1_ecc_unc_en.value : '0;
-    assign readback_array[190][4:4] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_wdt_timer1_timeout_en.value : '0;
-    assign readback_array[190][5:5] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_wdt_timer2_timeout_en.value : '0;
-    assign readback_array[190][31:6] = '0;
-    assign readback_array[191][0:0] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal31_en.value : '0;
-    assign readback_array[191][1:1] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal30_en.value : '0;
-    assign readback_array[191][2:2] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal29_en.value : '0;
-    assign readback_array[191][3:3] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal28_en.value : '0;
-    assign readback_array[191][4:4] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal27_en.value : '0;
-    assign readback_array[191][5:5] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal26_en.value : '0;
-    assign readback_array[191][6:6] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal25_en.value : '0;
-    assign readback_array[191][7:7] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal24_en.value : '0;
-    assign readback_array[191][8:8] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal23_en.value : '0;
-    assign readback_array[191][9:9] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal22_en.value : '0;
-    assign readback_array[191][10:10] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal21_en.value : '0;
-    assign readback_array[191][11:11] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal20_en.value : '0;
-    assign readback_array[191][12:12] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal19_en.value : '0;
-    assign readback_array[191][13:13] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal18_en.value : '0;
-    assign readback_array[191][14:14] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal17_en.value : '0;
-    assign readback_array[191][15:15] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal16_en.value : '0;
-    assign readback_array[191][16:16] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal15_en.value : '0;
-    assign readback_array[191][17:17] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal14_en.value : '0;
-    assign readback_array[191][18:18] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal13_en.value : '0;
-    assign readback_array[191][19:19] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal12_en.value : '0;
-    assign readback_array[191][20:20] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal11_en.value : '0;
-    assign readback_array[191][21:21] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal10_en.value : '0;
-    assign readback_array[191][22:22] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal9_en.value : '0;
-    assign readback_array[191][23:23] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal8_en.value : '0;
-    assign readback_array[191][24:24] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal7_en.value : '0;
-    assign readback_array[191][25:25] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal6_en.value : '0;
-    assign readback_array[191][26:26] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal5_en.value : '0;
-    assign readback_array[191][27:27] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal4_en.value : '0;
-    assign readback_array[191][28:28] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal3_en.value : '0;
-    assign readback_array[191][29:29] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal2_en.value : '0;
-    assign readback_array[191][30:30] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal1_en.value : '0;
-    assign readback_array[191][31:31] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal0_en.value : '0;
-    assign readback_array[192][0:0] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mcu_sram_ecc_cor_en.value : '0;
-    assign readback_array[192][1:1] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_cptra_mcu_reset_req_en.value : '0;
-    assign readback_array[192][2:2] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_gen_in_toggle_en.value : '0;
-    assign readback_array[192][3:3] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_target_done_en.value : '0;
-    assign readback_array[192][4:4] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_target_done_en.value : '0;
-    assign readback_array[192][5:5] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_cmd_avail_en.value : '0;
-    assign readback_array[192][6:6] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_cmd_avail_en.value : '0;
-    assign readback_array[192][7:7] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_cptra_mbox_cmd_avail_en.value : '0;
-    assign readback_array[192][8:8] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_ecc_cor_en.value : '0;
-    assign readback_array[192][9:9] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_ecc_cor_en.value : '0;
-    assign readback_array[192][10:10] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_debug_locked_en.value : '0;
-    assign readback_array[192][11:11] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_scan_mode_en.value : '0;
-    assign readback_array[192][12:12] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_soc_req_lock_en.value : '0;
-    assign readback_array[192][13:13] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value : '0;
-    assign readback_array[192][31:14] = '0;
-    assign readback_array[193][0:0] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal31_en.value : '0;
-    assign readback_array[193][1:1] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal30_en.value : '0;
-    assign readback_array[193][2:2] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal29_en.value : '0;
-    assign readback_array[193][3:3] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal28_en.value : '0;
-    assign readback_array[193][4:4] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal27_en.value : '0;
-    assign readback_array[193][5:5] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal26_en.value : '0;
-    assign readback_array[193][6:6] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal25_en.value : '0;
-    assign readback_array[193][7:7] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal24_en.value : '0;
-    assign readback_array[193][8:8] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal23_en.value : '0;
-    assign readback_array[193][9:9] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal22_en.value : '0;
-    assign readback_array[193][10:10] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal21_en.value : '0;
-    assign readback_array[193][11:11] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal20_en.value : '0;
-    assign readback_array[193][12:12] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal19_en.value : '0;
-    assign readback_array[193][13:13] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal18_en.value : '0;
-    assign readback_array[193][14:14] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal17_en.value : '0;
-    assign readback_array[193][15:15] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal16_en.value : '0;
-    assign readback_array[193][16:16] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal15_en.value : '0;
-    assign readback_array[193][17:17] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal14_en.value : '0;
-    assign readback_array[193][18:18] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal13_en.value : '0;
-    assign readback_array[193][19:19] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal12_en.value : '0;
-    assign readback_array[193][20:20] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal11_en.value : '0;
-    assign readback_array[193][21:21] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal10_en.value : '0;
-    assign readback_array[193][22:22] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal9_en.value : '0;
-    assign readback_array[193][23:23] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal8_en.value : '0;
-    assign readback_array[193][24:24] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal7_en.value : '0;
-    assign readback_array[193][25:25] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal6_en.value : '0;
-    assign readback_array[193][26:26] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal5_en.value : '0;
-    assign readback_array[193][27:27] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal4_en.value : '0;
-    assign readback_array[193][28:28] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal3_en.value : '0;
-    assign readback_array[193][29:29] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal2_en.value : '0;
-    assign readback_array[193][30:30] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal1_en.value : '0;
-    assign readback_array[193][31:31] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal0_en.value : '0;
-    assign readback_array[194][0:0] = (decoded_reg_strb.intr_block_rf.error_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_global_intr_r.agg_sts0.value : '0;
-    assign readback_array[194][1:1] = (decoded_reg_strb.intr_block_rf.error_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_global_intr_r.agg_sts1.value : '0;
-    assign readback_array[194][31:2] = '0;
-    assign readback_array[195][0:0] = (decoded_reg_strb.intr_block_rf.notif_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_global_intr_r.agg_sts0.value : '0;
-    assign readback_array[195][1:1] = (decoded_reg_strb.intr_block_rf.notif_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_global_intr_r.agg_sts1.value : '0;
-    assign readback_array[195][31:2] = '0;
-    assign readback_array[196][0:0] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts.value : '0;
-    assign readback_array[196][1:1] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_internal_sts.value : '0;
-    assign readback_array[196][2:2] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_mbox0_ecc_unc_sts.value : '0;
-    assign readback_array[196][3:3] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_mbox1_ecc_unc_sts.value : '0;
-    assign readback_array[196][4:4] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_wdt_timer1_timeout_sts.value : '0;
-    assign readback_array[196][5:5] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_wdt_timer2_timeout_sts.value : '0;
-    assign readback_array[196][31:6] = '0;
-    assign readback_array[197][0:0] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal31_sts.value : '0;
-    assign readback_array[197][1:1] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal30_sts.value : '0;
-    assign readback_array[197][2:2] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal29_sts.value : '0;
-    assign readback_array[197][3:3] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal28_sts.value : '0;
-    assign readback_array[197][4:4] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal27_sts.value : '0;
-    assign readback_array[197][5:5] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal26_sts.value : '0;
-    assign readback_array[197][6:6] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal25_sts.value : '0;
-    assign readback_array[197][7:7] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal24_sts.value : '0;
-    assign readback_array[197][8:8] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal23_sts.value : '0;
-    assign readback_array[197][9:9] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal22_sts.value : '0;
-    assign readback_array[197][10:10] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal21_sts.value : '0;
-    assign readback_array[197][11:11] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal20_sts.value : '0;
-    assign readback_array[197][12:12] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal19_sts.value : '0;
-    assign readback_array[197][13:13] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal18_sts.value : '0;
-    assign readback_array[197][14:14] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal17_sts.value : '0;
-    assign readback_array[197][15:15] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal16_sts.value : '0;
-    assign readback_array[197][16:16] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal15_sts.value : '0;
-    assign readback_array[197][17:17] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal14_sts.value : '0;
-    assign readback_array[197][18:18] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal13_sts.value : '0;
-    assign readback_array[197][19:19] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal12_sts.value : '0;
-    assign readback_array[197][20:20] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal11_sts.value : '0;
-    assign readback_array[197][21:21] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal10_sts.value : '0;
-    assign readback_array[197][22:22] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal9_sts.value : '0;
-    assign readback_array[197][23:23] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal8_sts.value : '0;
-    assign readback_array[197][24:24] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal7_sts.value : '0;
-    assign readback_array[197][25:25] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal6_sts.value : '0;
-    assign readback_array[197][26:26] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal5_sts.value : '0;
-    assign readback_array[197][27:27] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal4_sts.value : '0;
-    assign readback_array[197][28:28] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal3_sts.value : '0;
-    assign readback_array[197][29:29] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal2_sts.value : '0;
-    assign readback_array[197][30:30] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal1_sts.value : '0;
-    assign readback_array[197][31:31] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal0_sts.value : '0;
-    assign readback_array[198][0:0] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value : '0;
-    assign readback_array[198][1:1] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts.value : '0;
-    assign readback_array[198][2:2] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_gen_in_toggle_sts.value : '0;
-    assign readback_array[198][3:3] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_target_done_sts.value : '0;
-    assign readback_array[198][4:4] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_target_done_sts.value : '0;
-    assign readback_array[198][5:5] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_cmd_avail_sts.value : '0;
-    assign readback_array[198][6:6] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_cmd_avail_sts.value : '0;
-    assign readback_array[198][7:7] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts.value : '0;
-    assign readback_array[198][8:8] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_ecc_cor_sts.value : '0;
-    assign readback_array[198][9:9] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_ecc_cor_sts.value : '0;
-    assign readback_array[198][10:10] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_sts.value : '0;
-    assign readback_array[198][11:11] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_scan_mode_sts.value : '0;
-    assign readback_array[198][12:12] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts.value : '0;
-    assign readback_array[198][13:13] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.value : '0;
-    assign readback_array[198][31:14] = '0;
-    assign readback_array[199][0:0] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal31_sts.value : '0;
-    assign readback_array[199][1:1] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal30_sts.value : '0;
-    assign readback_array[199][2:2] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal29_sts.value : '0;
-    assign readback_array[199][3:3] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal28_sts.value : '0;
-    assign readback_array[199][4:4] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal27_sts.value : '0;
-    assign readback_array[199][5:5] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal26_sts.value : '0;
-    assign readback_array[199][6:6] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal25_sts.value : '0;
-    assign readback_array[199][7:7] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal24_sts.value : '0;
-    assign readback_array[199][8:8] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal23_sts.value : '0;
-    assign readback_array[199][9:9] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal22_sts.value : '0;
-    assign readback_array[199][10:10] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal21_sts.value : '0;
-    assign readback_array[199][11:11] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal20_sts.value : '0;
-    assign readback_array[199][12:12] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal19_sts.value : '0;
-    assign readback_array[199][13:13] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal18_sts.value : '0;
-    assign readback_array[199][14:14] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal17_sts.value : '0;
-    assign readback_array[199][15:15] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal16_sts.value : '0;
-    assign readback_array[199][16:16] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal15_sts.value : '0;
-    assign readback_array[199][17:17] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal14_sts.value : '0;
-    assign readback_array[199][18:18] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal13_sts.value : '0;
-    assign readback_array[199][19:19] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal12_sts.value : '0;
-    assign readback_array[199][20:20] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal11_sts.value : '0;
-    assign readback_array[199][21:21] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal10_sts.value : '0;
-    assign readback_array[199][22:22] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal9_sts.value : '0;
-    assign readback_array[199][23:23] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal8_sts.value : '0;
-    assign readback_array[199][24:24] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal7_sts.value : '0;
-    assign readback_array[199][25:25] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal6_sts.value : '0;
-    assign readback_array[199][26:26] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal5_sts.value : '0;
-    assign readback_array[199][27:27] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal4_sts.value : '0;
-    assign readback_array[199][28:28] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal3_sts.value : '0;
-    assign readback_array[199][29:29] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal2_sts.value : '0;
-    assign readback_array[199][30:30] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal1_sts.value : '0;
-    assign readback_array[199][31:31] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal0_sts.value : '0;
-    assign readback_array[200][0:0] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_mcu_sram_dmi_axi_collision_trig.value : '0;
-    assign readback_array[200][1:1] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_internal_trig.value : '0;
-    assign readback_array[200][2:2] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_mbox0_ecc_unc_trig.value : '0;
-    assign readback_array[200][3:3] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_mbox1_ecc_unc_trig.value : '0;
-    assign readback_array[200][4:4] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_wdt_timer1_timeout_trig.value : '0;
-    assign readback_array[200][5:5] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_wdt_timer2_timeout_trig.value : '0;
+    assign readback_array[193][0:0] = (decoded_reg_strb.intr_block_rf.global_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.global_intr_en_r.error_en.value : '0;
+    assign readback_array[193][1:1] = (decoded_reg_strb.intr_block_rf.global_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.global_intr_en_r.notif_en.value : '0;
+    assign readback_array[193][31:2] = '0;
+    assign readback_array[194][0:0] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_mcu_sram_dmi_axi_collision_en.value : '0;
+    assign readback_array[194][1:1] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_internal_en.value : '0;
+    assign readback_array[194][2:2] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_mbox0_ecc_unc_en.value : '0;
+    assign readback_array[194][3:3] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_mbox1_ecc_unc_en.value : '0;
+    assign readback_array[194][4:4] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_wdt_timer1_timeout_en.value : '0;
+    assign readback_array[194][5:5] = (decoded_reg_strb.intr_block_rf.error0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_en_r.error_wdt_timer2_timeout_en.value : '0;
+    assign readback_array[194][31:6] = '0;
+    assign readback_array[195][0:0] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal31_en.value : '0;
+    assign readback_array[195][1:1] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal30_en.value : '0;
+    assign readback_array[195][2:2] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal29_en.value : '0;
+    assign readback_array[195][3:3] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal28_en.value : '0;
+    assign readback_array[195][4:4] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal27_en.value : '0;
+    assign readback_array[195][5:5] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal26_en.value : '0;
+    assign readback_array[195][6:6] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal25_en.value : '0;
+    assign readback_array[195][7:7] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal24_en.value : '0;
+    assign readback_array[195][8:8] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal23_en.value : '0;
+    assign readback_array[195][9:9] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal22_en.value : '0;
+    assign readback_array[195][10:10] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal21_en.value : '0;
+    assign readback_array[195][11:11] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal20_en.value : '0;
+    assign readback_array[195][12:12] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal19_en.value : '0;
+    assign readback_array[195][13:13] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal18_en.value : '0;
+    assign readback_array[195][14:14] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal17_en.value : '0;
+    assign readback_array[195][15:15] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal16_en.value : '0;
+    assign readback_array[195][16:16] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal15_en.value : '0;
+    assign readback_array[195][17:17] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal14_en.value : '0;
+    assign readback_array[195][18:18] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal13_en.value : '0;
+    assign readback_array[195][19:19] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal12_en.value : '0;
+    assign readback_array[195][20:20] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal11_en.value : '0;
+    assign readback_array[195][21:21] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal10_en.value : '0;
+    assign readback_array[195][22:22] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal9_en.value : '0;
+    assign readback_array[195][23:23] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal8_en.value : '0;
+    assign readback_array[195][24:24] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal7_en.value : '0;
+    assign readback_array[195][25:25] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal6_en.value : '0;
+    assign readback_array[195][26:26] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal5_en.value : '0;
+    assign readback_array[195][27:27] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal4_en.value : '0;
+    assign readback_array[195][28:28] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal3_en.value : '0;
+    assign readback_array[195][29:29] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal2_en.value : '0;
+    assign readback_array[195][30:30] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal1_en.value : '0;
+    assign readback_array[195][31:31] = (decoded_reg_strb.intr_block_rf.error1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_en_r.error_agg_error_fatal0_en.value : '0;
+    assign readback_array[196][0:0] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mcu_sram_ecc_cor_en.value : '0;
+    assign readback_array[196][1:1] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_cptra_mcu_reset_req_en.value : '0;
+    assign readback_array[196][2:2] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_gen_in_toggle_en.value : '0;
+    assign readback_array[196][3:3] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_target_done_en.value : '0;
+    assign readback_array[196][4:4] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_target_done_en.value : '0;
+    assign readback_array[196][5:5] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_cmd_avail_en.value : '0;
+    assign readback_array[196][6:6] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_cmd_avail_en.value : '0;
+    assign readback_array[196][7:7] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_cptra_mbox_cmd_avail_en.value : '0;
+    assign readback_array[196][8:8] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_ecc_cor_en.value : '0;
+    assign readback_array[196][9:9] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_ecc_cor_en.value : '0;
+    assign readback_array[196][10:10] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_debug_locked_en.value : '0;
+    assign readback_array[196][11:11] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_scan_mode_en.value : '0;
+    assign readback_array[196][12:12] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox0_soc_req_lock_en.value : '0;
+    assign readback_array[196][13:13] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_mbox1_soc_req_lock_en.value : '0;
+    assign readback_array[196][14:14] = (decoded_reg_strb.intr_block_rf.notif0_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_en_r.notif_otp_operation_done_en.value : '0;
+    assign readback_array[196][31:15] = '0;
+    assign readback_array[197][0:0] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal31_en.value : '0;
+    assign readback_array[197][1:1] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal30_en.value : '0;
+    assign readback_array[197][2:2] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal29_en.value : '0;
+    assign readback_array[197][3:3] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal28_en.value : '0;
+    assign readback_array[197][4:4] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal27_en.value : '0;
+    assign readback_array[197][5:5] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal26_en.value : '0;
+    assign readback_array[197][6:6] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal25_en.value : '0;
+    assign readback_array[197][7:7] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal24_en.value : '0;
+    assign readback_array[197][8:8] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal23_en.value : '0;
+    assign readback_array[197][9:9] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal22_en.value : '0;
+    assign readback_array[197][10:10] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal21_en.value : '0;
+    assign readback_array[197][11:11] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal20_en.value : '0;
+    assign readback_array[197][12:12] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal19_en.value : '0;
+    assign readback_array[197][13:13] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal18_en.value : '0;
+    assign readback_array[197][14:14] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal17_en.value : '0;
+    assign readback_array[197][15:15] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal16_en.value : '0;
+    assign readback_array[197][16:16] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal15_en.value : '0;
+    assign readback_array[197][17:17] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal14_en.value : '0;
+    assign readback_array[197][18:18] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal13_en.value : '0;
+    assign readback_array[197][19:19] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal12_en.value : '0;
+    assign readback_array[197][20:20] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal11_en.value : '0;
+    assign readback_array[197][21:21] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal10_en.value : '0;
+    assign readback_array[197][22:22] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal9_en.value : '0;
+    assign readback_array[197][23:23] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal8_en.value : '0;
+    assign readback_array[197][24:24] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal7_en.value : '0;
+    assign readback_array[197][25:25] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal6_en.value : '0;
+    assign readback_array[197][26:26] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal5_en.value : '0;
+    assign readback_array[197][27:27] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal4_en.value : '0;
+    assign readback_array[197][28:28] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal3_en.value : '0;
+    assign readback_array[197][29:29] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal2_en.value : '0;
+    assign readback_array[197][30:30] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal1_en.value : '0;
+    assign readback_array[197][31:31] = (decoded_reg_strb.intr_block_rf.notif1_intr_en_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_en_r.notif_agg_error_non_fatal0_en.value : '0;
+    assign readback_array[198][0:0] = (decoded_reg_strb.intr_block_rf.error_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_global_intr_r.agg_sts0.value : '0;
+    assign readback_array[198][1:1] = (decoded_reg_strb.intr_block_rf.error_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_global_intr_r.agg_sts1.value : '0;
+    assign readback_array[198][31:2] = '0;
+    assign readback_array[199][0:0] = (decoded_reg_strb.intr_block_rf.notif_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_global_intr_r.agg_sts0.value : '0;
+    assign readback_array[199][1:1] = (decoded_reg_strb.intr_block_rf.notif_global_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_global_intr_r.agg_sts1.value : '0;
+    assign readback_array[199][31:2] = '0;
+    assign readback_array[200][0:0] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts.value : '0;
+    assign readback_array[200][1:1] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_internal_sts.value : '0;
+    assign readback_array[200][2:2] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_mbox0_ecc_unc_sts.value : '0;
+    assign readback_array[200][3:3] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_mbox1_ecc_unc_sts.value : '0;
+    assign readback_array[200][4:4] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_wdt_timer1_timeout_sts.value : '0;
+    assign readback_array[200][5:5] = (decoded_reg_strb.intr_block_rf.error0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_internal_intr_r.error_wdt_timer2_timeout_sts.value : '0;
     assign readback_array[200][31:6] = '0;
-    assign readback_array[201][0:0] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal31_trig.value : '0;
-    assign readback_array[201][1:1] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal30_trig.value : '0;
-    assign readback_array[201][2:2] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal29_trig.value : '0;
-    assign readback_array[201][3:3] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal28_trig.value : '0;
-    assign readback_array[201][4:4] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal27_trig.value : '0;
-    assign readback_array[201][5:5] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal26_trig.value : '0;
-    assign readback_array[201][6:6] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal25_trig.value : '0;
-    assign readback_array[201][7:7] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal24_trig.value : '0;
-    assign readback_array[201][8:8] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal23_trig.value : '0;
-    assign readback_array[201][9:9] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal22_trig.value : '0;
-    assign readback_array[201][10:10] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal21_trig.value : '0;
-    assign readback_array[201][11:11] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal20_trig.value : '0;
-    assign readback_array[201][12:12] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal19_trig.value : '0;
-    assign readback_array[201][13:13] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal18_trig.value : '0;
-    assign readback_array[201][14:14] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal17_trig.value : '0;
-    assign readback_array[201][15:15] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal16_trig.value : '0;
-    assign readback_array[201][16:16] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal15_trig.value : '0;
-    assign readback_array[201][17:17] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal14_trig.value : '0;
-    assign readback_array[201][18:18] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal13_trig.value : '0;
-    assign readback_array[201][19:19] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal12_trig.value : '0;
-    assign readback_array[201][20:20] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal11_trig.value : '0;
-    assign readback_array[201][21:21] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal10_trig.value : '0;
-    assign readback_array[201][22:22] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal9_trig.value : '0;
-    assign readback_array[201][23:23] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal8_trig.value : '0;
-    assign readback_array[201][24:24] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal7_trig.value : '0;
-    assign readback_array[201][25:25] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal6_trig.value : '0;
-    assign readback_array[201][26:26] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal5_trig.value : '0;
-    assign readback_array[201][27:27] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal4_trig.value : '0;
-    assign readback_array[201][28:28] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal3_trig.value : '0;
-    assign readback_array[201][29:29] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal2_trig.value : '0;
-    assign readback_array[201][30:30] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal1_trig.value : '0;
-    assign readback_array[201][31:31] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal0_trig.value : '0;
-    assign readback_array[202][0:0] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value : '0;
-    assign readback_array[202][1:1] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_cptra_mcu_reset_req_trig.value : '0;
-    assign readback_array[202][2:2] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_gen_in_toggle_trig.value : '0;
-    assign readback_array[202][3:3] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox0_target_done_trig.value : '0;
-    assign readback_array[202][4:4] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_target_done_trig.value : '0;
-    assign readback_array[202][5:5] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox0_cmd_avail_trig.value : '0;
-    assign readback_array[202][6:6] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_cmd_avail_trig.value : '0;
-    assign readback_array[202][7:7] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_cptra_mbox_cmd_avail_trig.value : '0;
-    assign readback_array[202][8:8] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox0_ecc_cor_trig.value : '0;
-    assign readback_array[202][9:9] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_ecc_cor_trig.value : '0;
-    assign readback_array[202][10:10] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_debug_locked_trig.value : '0;
-    assign readback_array[202][11:11] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_scan_mode_trig.value : '0;
-    assign readback_array[202][12:12] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox0_soc_req_lock_trig.value : '0;
-    assign readback_array[202][13:13] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.value : '0;
-    assign readback_array[202][31:14] = '0;
-    assign readback_array[203][0:0] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal31_trig.value : '0;
-    assign readback_array[203][1:1] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal30_trig.value : '0;
-    assign readback_array[203][2:2] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal29_trig.value : '0;
-    assign readback_array[203][3:3] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal28_trig.value : '0;
-    assign readback_array[203][4:4] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal27_trig.value : '0;
-    assign readback_array[203][5:5] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal26_trig.value : '0;
-    assign readback_array[203][6:6] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal25_trig.value : '0;
-    assign readback_array[203][7:7] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal24_trig.value : '0;
-    assign readback_array[203][8:8] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal23_trig.value : '0;
-    assign readback_array[203][9:9] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal22_trig.value : '0;
-    assign readback_array[203][10:10] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal21_trig.value : '0;
-    assign readback_array[203][11:11] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal20_trig.value : '0;
-    assign readback_array[203][12:12] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal19_trig.value : '0;
-    assign readback_array[203][13:13] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal18_trig.value : '0;
-    assign readback_array[203][14:14] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal17_trig.value : '0;
-    assign readback_array[203][15:15] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal16_trig.value : '0;
-    assign readback_array[203][16:16] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal15_trig.value : '0;
-    assign readback_array[203][17:17] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal14_trig.value : '0;
-    assign readback_array[203][18:18] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal13_trig.value : '0;
-    assign readback_array[203][19:19] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal12_trig.value : '0;
-    assign readback_array[203][20:20] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal11_trig.value : '0;
-    assign readback_array[203][21:21] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal10_trig.value : '0;
-    assign readback_array[203][22:22] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal9_trig.value : '0;
-    assign readback_array[203][23:23] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal8_trig.value : '0;
-    assign readback_array[203][24:24] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal7_trig.value : '0;
-    assign readback_array[203][25:25] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal6_trig.value : '0;
-    assign readback_array[203][26:26] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal5_trig.value : '0;
-    assign readback_array[203][27:27] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal4_trig.value : '0;
-    assign readback_array[203][28:28] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal3_trig.value : '0;
-    assign readback_array[203][29:29] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal2_trig.value : '0;
-    assign readback_array[203][30:30] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal1_trig.value : '0;
-    assign readback_array[203][31:31] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal0_trig.value : '0;
-    assign readback_array[204][31:0] = (decoded_reg_strb.intr_block_rf.error_internal_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_internal_intr_count_r.cnt.value : '0;
-    assign readback_array[205][31:0] = (decoded_reg_strb.intr_block_rf.error_mbox0_ecc_unc_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox0_ecc_unc_intr_count_r.cnt.value : '0;
-    assign readback_array[206][31:0] = (decoded_reg_strb.intr_block_rf.error_mbox1_ecc_unc_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox1_ecc_unc_intr_count_r.cnt.value : '0;
-    assign readback_array[207][31:0] = (decoded_reg_strb.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_r.cnt.value : '0;
-    assign readback_array[208][31:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.value : '0;
-    assign readback_array[209][31:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.value : '0;
-    assign readback_array[210][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal0_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal0_intr_count_r.cnt.value : '0;
-    assign readback_array[211][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal1_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal1_intr_count_r.cnt.value : '0;
-    assign readback_array[212][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal2_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal2_intr_count_r.cnt.value : '0;
-    assign readback_array[213][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal3_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal3_intr_count_r.cnt.value : '0;
-    assign readback_array[214][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal4_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal4_intr_count_r.cnt.value : '0;
-    assign readback_array[215][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal5_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal5_intr_count_r.cnt.value : '0;
-    assign readback_array[216][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal6_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal6_intr_count_r.cnt.value : '0;
-    assign readback_array[217][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal7_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal7_intr_count_r.cnt.value : '0;
-    assign readback_array[218][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal8_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal8_intr_count_r.cnt.value : '0;
-    assign readback_array[219][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal9_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal9_intr_count_r.cnt.value : '0;
-    assign readback_array[220][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal10_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal10_intr_count_r.cnt.value : '0;
-    assign readback_array[221][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal11_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal11_intr_count_r.cnt.value : '0;
-    assign readback_array[222][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal12_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal12_intr_count_r.cnt.value : '0;
-    assign readback_array[223][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal13_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal13_intr_count_r.cnt.value : '0;
-    assign readback_array[224][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal14_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal14_intr_count_r.cnt.value : '0;
-    assign readback_array[225][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal15_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal15_intr_count_r.cnt.value : '0;
-    assign readback_array[226][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal16_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal16_intr_count_r.cnt.value : '0;
-    assign readback_array[227][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal17_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal17_intr_count_r.cnt.value : '0;
-    assign readback_array[228][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal18_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal18_intr_count_r.cnt.value : '0;
-    assign readback_array[229][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal19_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal19_intr_count_r.cnt.value : '0;
-    assign readback_array[230][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal20_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal20_intr_count_r.cnt.value : '0;
-    assign readback_array[231][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal21_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal21_intr_count_r.cnt.value : '0;
-    assign readback_array[232][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal22_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal22_intr_count_r.cnt.value : '0;
-    assign readback_array[233][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal23_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal23_intr_count_r.cnt.value : '0;
-    assign readback_array[234][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal24_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal24_intr_count_r.cnt.value : '0;
-    assign readback_array[235][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal25_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal25_intr_count_r.cnt.value : '0;
-    assign readback_array[236][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal26_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal26_intr_count_r.cnt.value : '0;
-    assign readback_array[237][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal27_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal27_intr_count_r.cnt.value : '0;
-    assign readback_array[238][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal28_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal28_intr_count_r.cnt.value : '0;
-    assign readback_array[239][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal29_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal29_intr_count_r.cnt.value : '0;
-    assign readback_array[240][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal30_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal30_intr_count_r.cnt.value : '0;
-    assign readback_array[241][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal31_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal31_intr_count_r.cnt.value : '0;
-    assign readback_array[242][31:0] = (decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.value : '0;
-    assign readback_array[243][31:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_r.cnt.value : '0;
-    assign readback_array[244][31:0] = (decoded_reg_strb.intr_block_rf.notif_gen_in_toggle_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_gen_in_toggle_intr_count_r.cnt.value : '0;
-    assign readback_array[245][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal0_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal0_intr_count_r.cnt.value : '0;
-    assign readback_array[246][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal1_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal1_intr_count_r.cnt.value : '0;
-    assign readback_array[247][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal2_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal2_intr_count_r.cnt.value : '0;
-    assign readback_array[248][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal3_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal3_intr_count_r.cnt.value : '0;
-    assign readback_array[249][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal4_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal4_intr_count_r.cnt.value : '0;
-    assign readback_array[250][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal5_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal5_intr_count_r.cnt.value : '0;
-    assign readback_array[251][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal6_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal6_intr_count_r.cnt.value : '0;
-    assign readback_array[252][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal7_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal7_intr_count_r.cnt.value : '0;
-    assign readback_array[253][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal8_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal8_intr_count_r.cnt.value : '0;
-    assign readback_array[254][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal9_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal9_intr_count_r.cnt.value : '0;
-    assign readback_array[255][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal10_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal10_intr_count_r.cnt.value : '0;
-    assign readback_array[256][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal11_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal11_intr_count_r.cnt.value : '0;
-    assign readback_array[257][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal12_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal12_intr_count_r.cnt.value : '0;
-    assign readback_array[258][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal13_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal13_intr_count_r.cnt.value : '0;
-    assign readback_array[259][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal14_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal14_intr_count_r.cnt.value : '0;
-    assign readback_array[260][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal15_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal15_intr_count_r.cnt.value : '0;
-    assign readback_array[261][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal16_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal16_intr_count_r.cnt.value : '0;
-    assign readback_array[262][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal17_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal17_intr_count_r.cnt.value : '0;
-    assign readback_array[263][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal18_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal18_intr_count_r.cnt.value : '0;
-    assign readback_array[264][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal19_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal19_intr_count_r.cnt.value : '0;
-    assign readback_array[265][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal20_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal20_intr_count_r.cnt.value : '0;
-    assign readback_array[266][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal21_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal21_intr_count_r.cnt.value : '0;
-    assign readback_array[267][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal22_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal22_intr_count_r.cnt.value : '0;
-    assign readback_array[268][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal23_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal23_intr_count_r.cnt.value : '0;
-    assign readback_array[269][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal24_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal24_intr_count_r.cnt.value : '0;
-    assign readback_array[270][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal25_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal25_intr_count_r.cnt.value : '0;
-    assign readback_array[271][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal26_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal26_intr_count_r.cnt.value : '0;
-    assign readback_array[272][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal27_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal27_intr_count_r.cnt.value : '0;
-    assign readback_array[273][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal28_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal28_intr_count_r.cnt.value : '0;
-    assign readback_array[274][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal29_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal29_intr_count_r.cnt.value : '0;
-    assign readback_array[275][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal30_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal30_intr_count_r.cnt.value : '0;
-    assign readback_array[276][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal31_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal31_intr_count_r.cnt.value : '0;
-    assign readback_array[277][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_target_done_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_target_done_intr_count_r.cnt.value : '0;
-    assign readback_array[278][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_target_done_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_target_done_intr_count_r.cnt.value : '0;
-    assign readback_array[279][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_cmd_avail_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_cmd_avail_intr_count_r.cnt.value : '0;
-    assign readback_array[280][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_cmd_avail_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_cmd_avail_intr_count_r.cnt.value : '0;
-    assign readback_array[281][31:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_r.cnt.value : '0;
-    assign readback_array[282][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_ecc_cor_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_ecc_cor_intr_count_r.cnt.value : '0;
-    assign readback_array[283][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_ecc_cor_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_ecc_cor_intr_count_r.cnt.value : '0;
-    assign readback_array[284][31:0] = (decoded_reg_strb.intr_block_rf.notif_debug_locked_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_debug_locked_intr_count_r.cnt.value : '0;
-    assign readback_array[285][31:0] = (decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_scan_mode_intr_count_r.cnt.value : '0;
-    assign readback_array[286][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_r.cnt.value : '0;
-    assign readback_array[287][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r.cnt.value : '0;
-    assign readback_array[288][0:0] = (decoded_reg_strb.intr_block_rf.error_internal_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_internal_intr_count_incr_r.pulse.value : '0;
-    assign readback_array[288][31:1] = '0;
-    assign readback_array[289][0:0] = (decoded_reg_strb.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r.pulse.value : '0;
-    assign readback_array[289][31:1] = '0;
-    assign readback_array[290][0:0] = (decoded_reg_strb.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r.pulse.value : '0;
-    assign readback_array[290][31:1] = '0;
-    assign readback_array[291][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value : '0;
-    assign readback_array[291][31:1] = '0;
-    assign readback_array[292][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value : '0;
-    assign readback_array[292][31:1] = '0;
-    assign readback_array[293][0:0] = (decoded_reg_strb.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[201][0:0] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal31_sts.value : '0;
+    assign readback_array[201][1:1] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal30_sts.value : '0;
+    assign readback_array[201][2:2] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal29_sts.value : '0;
+    assign readback_array[201][3:3] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal28_sts.value : '0;
+    assign readback_array[201][4:4] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal27_sts.value : '0;
+    assign readback_array[201][5:5] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal26_sts.value : '0;
+    assign readback_array[201][6:6] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal25_sts.value : '0;
+    assign readback_array[201][7:7] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal24_sts.value : '0;
+    assign readback_array[201][8:8] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal23_sts.value : '0;
+    assign readback_array[201][9:9] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal22_sts.value : '0;
+    assign readback_array[201][10:10] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal21_sts.value : '0;
+    assign readback_array[201][11:11] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal20_sts.value : '0;
+    assign readback_array[201][12:12] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal19_sts.value : '0;
+    assign readback_array[201][13:13] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal18_sts.value : '0;
+    assign readback_array[201][14:14] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal17_sts.value : '0;
+    assign readback_array[201][15:15] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal16_sts.value : '0;
+    assign readback_array[201][16:16] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal15_sts.value : '0;
+    assign readback_array[201][17:17] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal14_sts.value : '0;
+    assign readback_array[201][18:18] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal13_sts.value : '0;
+    assign readback_array[201][19:19] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal12_sts.value : '0;
+    assign readback_array[201][20:20] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal11_sts.value : '0;
+    assign readback_array[201][21:21] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal10_sts.value : '0;
+    assign readback_array[201][22:22] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal9_sts.value : '0;
+    assign readback_array[201][23:23] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal8_sts.value : '0;
+    assign readback_array[201][24:24] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal7_sts.value : '0;
+    assign readback_array[201][25:25] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal6_sts.value : '0;
+    assign readback_array[201][26:26] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal5_sts.value : '0;
+    assign readback_array[201][27:27] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal4_sts.value : '0;
+    assign readback_array[201][28:28] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal3_sts.value : '0;
+    assign readback_array[201][29:29] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal2_sts.value : '0;
+    assign readback_array[201][30:30] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal1_sts.value : '0;
+    assign readback_array[201][31:31] = (decoded_reg_strb.intr_block_rf.error1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_internal_intr_r.error_agg_error_fatal0_sts.value : '0;
+    assign readback_array[202][0:0] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value : '0;
+    assign readback_array[202][1:1] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_cptra_mcu_reset_req_sts.value : '0;
+    assign readback_array[202][2:2] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_gen_in_toggle_sts.value : '0;
+    assign readback_array[202][3:3] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_target_done_sts.value : '0;
+    assign readback_array[202][4:4] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_target_done_sts.value : '0;
+    assign readback_array[202][5:5] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_cmd_avail_sts.value : '0;
+    assign readback_array[202][6:6] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_cmd_avail_sts.value : '0;
+    assign readback_array[202][7:7] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts.value : '0;
+    assign readback_array[202][8:8] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_ecc_cor_sts.value : '0;
+    assign readback_array[202][9:9] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_ecc_cor_sts.value : '0;
+    assign readback_array[202][10:10] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_sts.value : '0;
+    assign readback_array[202][11:11] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_scan_mode_sts.value : '0;
+    assign readback_array[202][12:12] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts.value : '0;
+    assign readback_array[202][13:13] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts.value : '0;
+    assign readback_array[202][14:14] = (decoded_reg_strb.intr_block_rf.notif0_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.value : '0;
+    assign readback_array[202][31:15] = '0;
+    assign readback_array[203][0:0] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal31_sts.value : '0;
+    assign readback_array[203][1:1] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal30_sts.value : '0;
+    assign readback_array[203][2:2] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal29_sts.value : '0;
+    assign readback_array[203][3:3] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal28_sts.value : '0;
+    assign readback_array[203][4:4] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal27_sts.value : '0;
+    assign readback_array[203][5:5] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal26_sts.value : '0;
+    assign readback_array[203][6:6] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal25_sts.value : '0;
+    assign readback_array[203][7:7] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal24_sts.value : '0;
+    assign readback_array[203][8:8] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal23_sts.value : '0;
+    assign readback_array[203][9:9] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal22_sts.value : '0;
+    assign readback_array[203][10:10] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal21_sts.value : '0;
+    assign readback_array[203][11:11] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal20_sts.value : '0;
+    assign readback_array[203][12:12] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal19_sts.value : '0;
+    assign readback_array[203][13:13] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal18_sts.value : '0;
+    assign readback_array[203][14:14] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal17_sts.value : '0;
+    assign readback_array[203][15:15] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal16_sts.value : '0;
+    assign readback_array[203][16:16] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal15_sts.value : '0;
+    assign readback_array[203][17:17] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal14_sts.value : '0;
+    assign readback_array[203][18:18] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal13_sts.value : '0;
+    assign readback_array[203][19:19] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal12_sts.value : '0;
+    assign readback_array[203][20:20] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal11_sts.value : '0;
+    assign readback_array[203][21:21] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal10_sts.value : '0;
+    assign readback_array[203][22:22] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal9_sts.value : '0;
+    assign readback_array[203][23:23] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal8_sts.value : '0;
+    assign readback_array[203][24:24] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal7_sts.value : '0;
+    assign readback_array[203][25:25] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal6_sts.value : '0;
+    assign readback_array[203][26:26] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal5_sts.value : '0;
+    assign readback_array[203][27:27] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal4_sts.value : '0;
+    assign readback_array[203][28:28] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal3_sts.value : '0;
+    assign readback_array[203][29:29] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal2_sts.value : '0;
+    assign readback_array[203][30:30] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal1_sts.value : '0;
+    assign readback_array[203][31:31] = (decoded_reg_strb.intr_block_rf.notif1_internal_intr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_internal_intr_r.notif_agg_error_non_fatal0_sts.value : '0;
+    assign readback_array[204][0:0] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_mcu_sram_dmi_axi_collision_trig.value : '0;
+    assign readback_array[204][1:1] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_internal_trig.value : '0;
+    assign readback_array[204][2:2] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_mbox0_ecc_unc_trig.value : '0;
+    assign readback_array[204][3:3] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_mbox1_ecc_unc_trig.value : '0;
+    assign readback_array[204][4:4] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_wdt_timer1_timeout_trig.value : '0;
+    assign readback_array[204][5:5] = (decoded_reg_strb.intr_block_rf.error0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error0_intr_trig_r.error_wdt_timer2_timeout_trig.value : '0;
+    assign readback_array[204][31:6] = '0;
+    assign readback_array[205][0:0] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal31_trig.value : '0;
+    assign readback_array[205][1:1] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal30_trig.value : '0;
+    assign readback_array[205][2:2] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal29_trig.value : '0;
+    assign readback_array[205][3:3] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal28_trig.value : '0;
+    assign readback_array[205][4:4] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal27_trig.value : '0;
+    assign readback_array[205][5:5] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal26_trig.value : '0;
+    assign readback_array[205][6:6] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal25_trig.value : '0;
+    assign readback_array[205][7:7] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal24_trig.value : '0;
+    assign readback_array[205][8:8] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal23_trig.value : '0;
+    assign readback_array[205][9:9] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal22_trig.value : '0;
+    assign readback_array[205][10:10] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal21_trig.value : '0;
+    assign readback_array[205][11:11] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal20_trig.value : '0;
+    assign readback_array[205][12:12] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal19_trig.value : '0;
+    assign readback_array[205][13:13] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal18_trig.value : '0;
+    assign readback_array[205][14:14] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal17_trig.value : '0;
+    assign readback_array[205][15:15] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal16_trig.value : '0;
+    assign readback_array[205][16:16] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal15_trig.value : '0;
+    assign readback_array[205][17:17] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal14_trig.value : '0;
+    assign readback_array[205][18:18] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal13_trig.value : '0;
+    assign readback_array[205][19:19] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal12_trig.value : '0;
+    assign readback_array[205][20:20] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal11_trig.value : '0;
+    assign readback_array[205][21:21] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal10_trig.value : '0;
+    assign readback_array[205][22:22] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal9_trig.value : '0;
+    assign readback_array[205][23:23] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal8_trig.value : '0;
+    assign readback_array[205][24:24] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal7_trig.value : '0;
+    assign readback_array[205][25:25] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal6_trig.value : '0;
+    assign readback_array[205][26:26] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal5_trig.value : '0;
+    assign readback_array[205][27:27] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal4_trig.value : '0;
+    assign readback_array[205][28:28] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal3_trig.value : '0;
+    assign readback_array[205][29:29] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal2_trig.value : '0;
+    assign readback_array[205][30:30] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal1_trig.value : '0;
+    assign readback_array[205][31:31] = (decoded_reg_strb.intr_block_rf.error1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error1_intr_trig_r.error_agg_error_fatal0_trig.value : '0;
+    assign readback_array[206][0:0] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mcu_sram_ecc_cor_trig.value : '0;
+    assign readback_array[206][1:1] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_cptra_mcu_reset_req_trig.value : '0;
+    assign readback_array[206][2:2] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_gen_in_toggle_trig.value : '0;
+    assign readback_array[206][3:3] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox0_target_done_trig.value : '0;
+    assign readback_array[206][4:4] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_target_done_trig.value : '0;
+    assign readback_array[206][5:5] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox0_cmd_avail_trig.value : '0;
+    assign readback_array[206][6:6] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_cmd_avail_trig.value : '0;
+    assign readback_array[206][7:7] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_cptra_mbox_cmd_avail_trig.value : '0;
+    assign readback_array[206][8:8] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox0_ecc_cor_trig.value : '0;
+    assign readback_array[206][9:9] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_ecc_cor_trig.value : '0;
+    assign readback_array[206][10:10] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_debug_locked_trig.value : '0;
+    assign readback_array[206][11:11] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_scan_mode_trig.value : '0;
+    assign readback_array[206][12:12] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox0_soc_req_lock_trig.value : '0;
+    assign readback_array[206][13:13] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig.value : '0;
+    assign readback_array[206][14:14] = (decoded_reg_strb.intr_block_rf.notif0_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif0_intr_trig_r.notif_otp_operation_done_trig.value : '0;
+    assign readback_array[206][31:15] = '0;
+    assign readback_array[207][0:0] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal31_trig.value : '0;
+    assign readback_array[207][1:1] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal30_trig.value : '0;
+    assign readback_array[207][2:2] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal29_trig.value : '0;
+    assign readback_array[207][3:3] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal28_trig.value : '0;
+    assign readback_array[207][4:4] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal27_trig.value : '0;
+    assign readback_array[207][5:5] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal26_trig.value : '0;
+    assign readback_array[207][6:6] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal25_trig.value : '0;
+    assign readback_array[207][7:7] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal24_trig.value : '0;
+    assign readback_array[207][8:8] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal23_trig.value : '0;
+    assign readback_array[207][9:9] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal22_trig.value : '0;
+    assign readback_array[207][10:10] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal21_trig.value : '0;
+    assign readback_array[207][11:11] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal20_trig.value : '0;
+    assign readback_array[207][12:12] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal19_trig.value : '0;
+    assign readback_array[207][13:13] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal18_trig.value : '0;
+    assign readback_array[207][14:14] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal17_trig.value : '0;
+    assign readback_array[207][15:15] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal16_trig.value : '0;
+    assign readback_array[207][16:16] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal15_trig.value : '0;
+    assign readback_array[207][17:17] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal14_trig.value : '0;
+    assign readback_array[207][18:18] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal13_trig.value : '0;
+    assign readback_array[207][19:19] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal12_trig.value : '0;
+    assign readback_array[207][20:20] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal11_trig.value : '0;
+    assign readback_array[207][21:21] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal10_trig.value : '0;
+    assign readback_array[207][22:22] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal9_trig.value : '0;
+    assign readback_array[207][23:23] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal8_trig.value : '0;
+    assign readback_array[207][24:24] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal7_trig.value : '0;
+    assign readback_array[207][25:25] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal6_trig.value : '0;
+    assign readback_array[207][26:26] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal5_trig.value : '0;
+    assign readback_array[207][27:27] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal4_trig.value : '0;
+    assign readback_array[207][28:28] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal3_trig.value : '0;
+    assign readback_array[207][29:29] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal2_trig.value : '0;
+    assign readback_array[207][30:30] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal1_trig.value : '0;
+    assign readback_array[207][31:31] = (decoded_reg_strb.intr_block_rf.notif1_intr_trig_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif1_intr_trig_r.notif_agg_error_non_fatal0_trig.value : '0;
+    assign readback_array[208][31:0] = (decoded_reg_strb.intr_block_rf.error_internal_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_internal_intr_count_r.cnt.value : '0;
+    assign readback_array[209][31:0] = (decoded_reg_strb.intr_block_rf.error_mbox0_ecc_unc_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox0_ecc_unc_intr_count_r.cnt.value : '0;
+    assign readback_array[210][31:0] = (decoded_reg_strb.intr_block_rf.error_mbox1_ecc_unc_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox1_ecc_unc_intr_count_r.cnt.value : '0;
+    assign readback_array[211][31:0] = (decoded_reg_strb.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_r.cnt.value : '0;
+    assign readback_array[212][31:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_r.cnt.value : '0;
+    assign readback_array[213][31:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_r.cnt.value : '0;
+    assign readback_array[214][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal0_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal0_intr_count_r.cnt.value : '0;
+    assign readback_array[215][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal1_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal1_intr_count_r.cnt.value : '0;
+    assign readback_array[216][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal2_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal2_intr_count_r.cnt.value : '0;
+    assign readback_array[217][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal3_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal3_intr_count_r.cnt.value : '0;
+    assign readback_array[218][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal4_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal4_intr_count_r.cnt.value : '0;
+    assign readback_array[219][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal5_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal5_intr_count_r.cnt.value : '0;
+    assign readback_array[220][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal6_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal6_intr_count_r.cnt.value : '0;
+    assign readback_array[221][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal7_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal7_intr_count_r.cnt.value : '0;
+    assign readback_array[222][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal8_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal8_intr_count_r.cnt.value : '0;
+    assign readback_array[223][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal9_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal9_intr_count_r.cnt.value : '0;
+    assign readback_array[224][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal10_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal10_intr_count_r.cnt.value : '0;
+    assign readback_array[225][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal11_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal11_intr_count_r.cnt.value : '0;
+    assign readback_array[226][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal12_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal12_intr_count_r.cnt.value : '0;
+    assign readback_array[227][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal13_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal13_intr_count_r.cnt.value : '0;
+    assign readback_array[228][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal14_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal14_intr_count_r.cnt.value : '0;
+    assign readback_array[229][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal15_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal15_intr_count_r.cnt.value : '0;
+    assign readback_array[230][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal16_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal16_intr_count_r.cnt.value : '0;
+    assign readback_array[231][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal17_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal17_intr_count_r.cnt.value : '0;
+    assign readback_array[232][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal18_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal18_intr_count_r.cnt.value : '0;
+    assign readback_array[233][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal19_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal19_intr_count_r.cnt.value : '0;
+    assign readback_array[234][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal20_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal20_intr_count_r.cnt.value : '0;
+    assign readback_array[235][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal21_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal21_intr_count_r.cnt.value : '0;
+    assign readback_array[236][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal22_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal22_intr_count_r.cnt.value : '0;
+    assign readback_array[237][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal23_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal23_intr_count_r.cnt.value : '0;
+    assign readback_array[238][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal24_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal24_intr_count_r.cnt.value : '0;
+    assign readback_array[239][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal25_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal25_intr_count_r.cnt.value : '0;
+    assign readback_array[240][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal26_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal26_intr_count_r.cnt.value : '0;
+    assign readback_array[241][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal27_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal27_intr_count_r.cnt.value : '0;
+    assign readback_array[242][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal28_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal28_intr_count_r.cnt.value : '0;
+    assign readback_array[243][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal29_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal29_intr_count_r.cnt.value : '0;
+    assign readback_array[244][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal30_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal30_intr_count_r.cnt.value : '0;
+    assign readback_array[245][31:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal31_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal31_intr_count_r.cnt.value : '0;
+    assign readback_array[246][31:0] = (decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_r.cnt.value : '0;
+    assign readback_array[247][31:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_r.cnt.value : '0;
+    assign readback_array[248][31:0] = (decoded_reg_strb.intr_block_rf.notif_gen_in_toggle_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_gen_in_toggle_intr_count_r.cnt.value : '0;
+    assign readback_array[249][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal0_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal0_intr_count_r.cnt.value : '0;
+    assign readback_array[250][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal1_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal1_intr_count_r.cnt.value : '0;
+    assign readback_array[251][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal2_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal2_intr_count_r.cnt.value : '0;
+    assign readback_array[252][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal3_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal3_intr_count_r.cnt.value : '0;
+    assign readback_array[253][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal4_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal4_intr_count_r.cnt.value : '0;
+    assign readback_array[254][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal5_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal5_intr_count_r.cnt.value : '0;
+    assign readback_array[255][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal6_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal6_intr_count_r.cnt.value : '0;
+    assign readback_array[256][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal7_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal7_intr_count_r.cnt.value : '0;
+    assign readback_array[257][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal8_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal8_intr_count_r.cnt.value : '0;
+    assign readback_array[258][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal9_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal9_intr_count_r.cnt.value : '0;
+    assign readback_array[259][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal10_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal10_intr_count_r.cnt.value : '0;
+    assign readback_array[260][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal11_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal11_intr_count_r.cnt.value : '0;
+    assign readback_array[261][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal12_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal12_intr_count_r.cnt.value : '0;
+    assign readback_array[262][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal13_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal13_intr_count_r.cnt.value : '0;
+    assign readback_array[263][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal14_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal14_intr_count_r.cnt.value : '0;
+    assign readback_array[264][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal15_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal15_intr_count_r.cnt.value : '0;
+    assign readback_array[265][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal16_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal16_intr_count_r.cnt.value : '0;
+    assign readback_array[266][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal17_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal17_intr_count_r.cnt.value : '0;
+    assign readback_array[267][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal18_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal18_intr_count_r.cnt.value : '0;
+    assign readback_array[268][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal19_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal19_intr_count_r.cnt.value : '0;
+    assign readback_array[269][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal20_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal20_intr_count_r.cnt.value : '0;
+    assign readback_array[270][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal21_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal21_intr_count_r.cnt.value : '0;
+    assign readback_array[271][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal22_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal22_intr_count_r.cnt.value : '0;
+    assign readback_array[272][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal23_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal23_intr_count_r.cnt.value : '0;
+    assign readback_array[273][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal24_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal24_intr_count_r.cnt.value : '0;
+    assign readback_array[274][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal25_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal25_intr_count_r.cnt.value : '0;
+    assign readback_array[275][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal26_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal26_intr_count_r.cnt.value : '0;
+    assign readback_array[276][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal27_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal27_intr_count_r.cnt.value : '0;
+    assign readback_array[277][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal28_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal28_intr_count_r.cnt.value : '0;
+    assign readback_array[278][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal29_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal29_intr_count_r.cnt.value : '0;
+    assign readback_array[279][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal30_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal30_intr_count_r.cnt.value : '0;
+    assign readback_array[280][31:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal31_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal31_intr_count_r.cnt.value : '0;
+    assign readback_array[281][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_target_done_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_target_done_intr_count_r.cnt.value : '0;
+    assign readback_array[282][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_target_done_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_target_done_intr_count_r.cnt.value : '0;
+    assign readback_array[283][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_cmd_avail_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_cmd_avail_intr_count_r.cnt.value : '0;
+    assign readback_array[284][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_cmd_avail_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_cmd_avail_intr_count_r.cnt.value : '0;
+    assign readback_array[285][31:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_r.cnt.value : '0;
+    assign readback_array[286][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_ecc_cor_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_ecc_cor_intr_count_r.cnt.value : '0;
+    assign readback_array[287][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_ecc_cor_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_ecc_cor_intr_count_r.cnt.value : '0;
+    assign readback_array[288][31:0] = (decoded_reg_strb.intr_block_rf.notif_debug_locked_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_debug_locked_intr_count_r.cnt.value : '0;
+    assign readback_array[289][31:0] = (decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_scan_mode_intr_count_r.cnt.value : '0;
+    assign readback_array[290][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_r.cnt.value : '0;
+    assign readback_array[291][31:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_r.cnt.value : '0;
+    assign readback_array[292][31:0] = (decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_otp_operation_done_intr_count_r.cnt.value : '0;
+    assign readback_array[293][0:0] = (decoded_reg_strb.intr_block_rf.error_internal_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_internal_intr_count_incr_r.pulse.value : '0;
     assign readback_array[293][31:1] = '0;
-    assign readback_array[294][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal0_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal0_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[294][0:0] = (decoded_reg_strb.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox0_ecc_unc_intr_count_incr_r.pulse.value : '0;
     assign readback_array[294][31:1] = '0;
-    assign readback_array[295][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal1_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal1_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[295][0:0] = (decoded_reg_strb.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mbox1_ecc_unc_intr_count_incr_r.pulse.value : '0;
     assign readback_array[295][31:1] = '0;
-    assign readback_array[296][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal2_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal2_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[296][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer1_timeout_intr_count_incr_r.pulse.value : '0;
     assign readback_array[296][31:1] = '0;
-    assign readback_array[297][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal3_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal3_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[297][0:0] = (decoded_reg_strb.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_wdt_timer2_timeout_intr_count_incr_r.pulse.value : '0;
     assign readback_array[297][31:1] = '0;
-    assign readback_array[298][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal4_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal4_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[298][0:0] = (decoded_reg_strb.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_mcu_sram_dmi_axi_collision_intr_count_incr_r.pulse.value : '0;
     assign readback_array[298][31:1] = '0;
-    assign readback_array[299][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal5_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal5_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[299][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal0_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal0_intr_count_incr_r.pulse.value : '0;
     assign readback_array[299][31:1] = '0;
-    assign readback_array[300][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal6_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal6_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[300][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal1_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal1_intr_count_incr_r.pulse.value : '0;
     assign readback_array[300][31:1] = '0;
-    assign readback_array[301][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal7_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal7_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[301][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal2_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal2_intr_count_incr_r.pulse.value : '0;
     assign readback_array[301][31:1] = '0;
-    assign readback_array[302][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal8_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal8_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[302][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal3_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal3_intr_count_incr_r.pulse.value : '0;
     assign readback_array[302][31:1] = '0;
-    assign readback_array[303][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal9_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal9_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[303][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal4_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal4_intr_count_incr_r.pulse.value : '0;
     assign readback_array[303][31:1] = '0;
-    assign readback_array[304][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal10_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal10_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[304][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal5_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal5_intr_count_incr_r.pulse.value : '0;
     assign readback_array[304][31:1] = '0;
-    assign readback_array[305][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal11_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal11_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[305][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal6_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal6_intr_count_incr_r.pulse.value : '0;
     assign readback_array[305][31:1] = '0;
-    assign readback_array[306][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal12_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal12_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[306][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal7_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal7_intr_count_incr_r.pulse.value : '0;
     assign readback_array[306][31:1] = '0;
-    assign readback_array[307][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal13_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal13_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[307][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal8_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal8_intr_count_incr_r.pulse.value : '0;
     assign readback_array[307][31:1] = '0;
-    assign readback_array[308][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal14_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal14_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[308][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal9_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal9_intr_count_incr_r.pulse.value : '0;
     assign readback_array[308][31:1] = '0;
-    assign readback_array[309][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal15_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal15_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[309][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal10_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal10_intr_count_incr_r.pulse.value : '0;
     assign readback_array[309][31:1] = '0;
-    assign readback_array[310][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal16_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal16_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[310][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal11_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal11_intr_count_incr_r.pulse.value : '0;
     assign readback_array[310][31:1] = '0;
-    assign readback_array[311][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal17_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal17_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[311][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal12_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal12_intr_count_incr_r.pulse.value : '0;
     assign readback_array[311][31:1] = '0;
-    assign readback_array[312][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal18_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal18_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[312][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal13_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal13_intr_count_incr_r.pulse.value : '0;
     assign readback_array[312][31:1] = '0;
-    assign readback_array[313][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal19_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal19_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[313][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal14_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal14_intr_count_incr_r.pulse.value : '0;
     assign readback_array[313][31:1] = '0;
-    assign readback_array[314][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal20_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal20_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[314][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal15_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal15_intr_count_incr_r.pulse.value : '0;
     assign readback_array[314][31:1] = '0;
-    assign readback_array[315][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal21_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal21_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[315][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal16_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal16_intr_count_incr_r.pulse.value : '0;
     assign readback_array[315][31:1] = '0;
-    assign readback_array[316][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal22_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal22_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[316][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal17_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal17_intr_count_incr_r.pulse.value : '0;
     assign readback_array[316][31:1] = '0;
-    assign readback_array[317][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal23_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal23_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[317][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal18_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal18_intr_count_incr_r.pulse.value : '0;
     assign readback_array[317][31:1] = '0;
-    assign readback_array[318][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal24_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal24_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[318][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal19_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal19_intr_count_incr_r.pulse.value : '0;
     assign readback_array[318][31:1] = '0;
-    assign readback_array[319][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal25_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal25_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[319][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal20_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal20_intr_count_incr_r.pulse.value : '0;
     assign readback_array[319][31:1] = '0;
-    assign readback_array[320][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal26_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal26_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[320][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal21_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal21_intr_count_incr_r.pulse.value : '0;
     assign readback_array[320][31:1] = '0;
-    assign readback_array[321][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal27_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal27_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[321][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal22_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal22_intr_count_incr_r.pulse.value : '0;
     assign readback_array[321][31:1] = '0;
-    assign readback_array[322][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal28_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal28_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[322][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal23_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal23_intr_count_incr_r.pulse.value : '0;
     assign readback_array[322][31:1] = '0;
-    assign readback_array[323][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal29_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal29_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[323][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal24_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal24_intr_count_incr_r.pulse.value : '0;
     assign readback_array[323][31:1] = '0;
-    assign readback_array[324][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal30_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal30_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[324][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal25_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal25_intr_count_incr_r.pulse.value : '0;
     assign readback_array[324][31:1] = '0;
-    assign readback_array[325][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal31_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal31_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[325][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal26_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal26_intr_count_incr_r.pulse.value : '0;
     assign readback_array[325][31:1] = '0;
-    assign readback_array[326][0:0] = (decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[326][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal27_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal27_intr_count_incr_r.pulse.value : '0;
     assign readback_array[326][31:1] = '0;
-    assign readback_array[327][0:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[327][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal28_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal28_intr_count_incr_r.pulse.value : '0;
     assign readback_array[327][31:1] = '0;
-    assign readback_array[328][0:0] = (decoded_reg_strb.intr_block_rf.notif_gen_in_toggle_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_gen_in_toggle_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[328][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal29_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal29_intr_count_incr_r.pulse.value : '0;
     assign readback_array[328][31:1] = '0;
-    assign readback_array[329][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal0_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal0_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[329][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal30_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal30_intr_count_incr_r.pulse.value : '0;
     assign readback_array[329][31:1] = '0;
-    assign readback_array[330][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal1_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal1_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[330][0:0] = (decoded_reg_strb.intr_block_rf.error_agg_error_fatal31_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.error_agg_error_fatal31_intr_count_incr_r.pulse.value : '0;
     assign readback_array[330][31:1] = '0;
-    assign readback_array[331][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal2_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal2_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[331][0:0] = (decoded_reg_strb.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mcu_sram_ecc_cor_intr_count_incr_r.pulse.value : '0;
     assign readback_array[331][31:1] = '0;
-    assign readback_array[332][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal3_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal3_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[332][0:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mcu_reset_req_intr_count_incr_r.pulse.value : '0;
     assign readback_array[332][31:1] = '0;
-    assign readback_array[333][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal4_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal4_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[333][0:0] = (decoded_reg_strb.intr_block_rf.notif_gen_in_toggle_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_gen_in_toggle_intr_count_incr_r.pulse.value : '0;
     assign readback_array[333][31:1] = '0;
-    assign readback_array[334][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal5_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal5_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[334][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal0_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal0_intr_count_incr_r.pulse.value : '0;
     assign readback_array[334][31:1] = '0;
-    assign readback_array[335][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal6_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal6_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[335][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal1_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal1_intr_count_incr_r.pulse.value : '0;
     assign readback_array[335][31:1] = '0;
-    assign readback_array[336][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal7_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal7_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[336][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal2_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal2_intr_count_incr_r.pulse.value : '0;
     assign readback_array[336][31:1] = '0;
-    assign readback_array[337][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal8_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal8_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[337][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal3_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal3_intr_count_incr_r.pulse.value : '0;
     assign readback_array[337][31:1] = '0;
-    assign readback_array[338][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal9_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal9_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[338][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal4_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal4_intr_count_incr_r.pulse.value : '0;
     assign readback_array[338][31:1] = '0;
-    assign readback_array[339][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal10_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal10_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[339][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal5_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal5_intr_count_incr_r.pulse.value : '0;
     assign readback_array[339][31:1] = '0;
-    assign readback_array[340][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal11_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal11_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[340][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal6_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal6_intr_count_incr_r.pulse.value : '0;
     assign readback_array[340][31:1] = '0;
-    assign readback_array[341][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal12_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal12_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[341][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal7_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal7_intr_count_incr_r.pulse.value : '0;
     assign readback_array[341][31:1] = '0;
-    assign readback_array[342][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal13_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal13_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[342][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal8_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal8_intr_count_incr_r.pulse.value : '0;
     assign readback_array[342][31:1] = '0;
-    assign readback_array[343][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal14_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal14_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[343][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal9_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal9_intr_count_incr_r.pulse.value : '0;
     assign readback_array[343][31:1] = '0;
-    assign readback_array[344][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal15_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal15_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[344][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal10_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal10_intr_count_incr_r.pulse.value : '0;
     assign readback_array[344][31:1] = '0;
-    assign readback_array[345][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal16_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal16_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[345][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal11_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal11_intr_count_incr_r.pulse.value : '0;
     assign readback_array[345][31:1] = '0;
-    assign readback_array[346][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal17_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal17_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[346][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal12_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal12_intr_count_incr_r.pulse.value : '0;
     assign readback_array[346][31:1] = '0;
-    assign readback_array[347][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal18_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal18_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[347][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal13_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal13_intr_count_incr_r.pulse.value : '0;
     assign readback_array[347][31:1] = '0;
-    assign readback_array[348][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal19_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal19_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[348][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal14_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal14_intr_count_incr_r.pulse.value : '0;
     assign readback_array[348][31:1] = '0;
-    assign readback_array[349][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal20_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal20_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[349][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal15_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal15_intr_count_incr_r.pulse.value : '0;
     assign readback_array[349][31:1] = '0;
-    assign readback_array[350][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal21_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal21_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[350][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal16_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal16_intr_count_incr_r.pulse.value : '0;
     assign readback_array[350][31:1] = '0;
-    assign readback_array[351][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal22_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal22_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[351][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal17_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal17_intr_count_incr_r.pulse.value : '0;
     assign readback_array[351][31:1] = '0;
-    assign readback_array[352][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal23_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal23_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[352][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal18_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal18_intr_count_incr_r.pulse.value : '0;
     assign readback_array[352][31:1] = '0;
-    assign readback_array[353][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal24_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal24_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[353][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal19_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal19_intr_count_incr_r.pulse.value : '0;
     assign readback_array[353][31:1] = '0;
-    assign readback_array[354][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal25_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal25_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[354][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal20_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal20_intr_count_incr_r.pulse.value : '0;
     assign readback_array[354][31:1] = '0;
-    assign readback_array[355][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal26_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal26_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[355][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal21_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal21_intr_count_incr_r.pulse.value : '0;
     assign readback_array[355][31:1] = '0;
-    assign readback_array[356][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal27_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal27_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[356][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal22_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal22_intr_count_incr_r.pulse.value : '0;
     assign readback_array[356][31:1] = '0;
-    assign readback_array[357][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal28_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal28_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[357][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal23_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal23_intr_count_incr_r.pulse.value : '0;
     assign readback_array[357][31:1] = '0;
-    assign readback_array[358][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal29_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal29_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[358][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal24_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal24_intr_count_incr_r.pulse.value : '0;
     assign readback_array[358][31:1] = '0;
-    assign readback_array[359][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal30_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal30_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[359][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal25_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal25_intr_count_incr_r.pulse.value : '0;
     assign readback_array[359][31:1] = '0;
-    assign readback_array[360][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal31_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal31_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[360][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal26_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal26_intr_count_incr_r.pulse.value : '0;
     assign readback_array[360][31:1] = '0;
-    assign readback_array[361][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_target_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_target_done_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[361][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal27_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal27_intr_count_incr_r.pulse.value : '0;
     assign readback_array[361][31:1] = '0;
-    assign readback_array[362][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_target_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_target_done_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[362][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal28_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal28_intr_count_incr_r.pulse.value : '0;
     assign readback_array[362][31:1] = '0;
-    assign readback_array[363][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_cmd_avail_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[363][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal29_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal29_intr_count_incr_r.pulse.value : '0;
     assign readback_array[363][31:1] = '0;
-    assign readback_array[364][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_cmd_avail_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[364][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal30_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal30_intr_count_incr_r.pulse.value : '0;
     assign readback_array[364][31:1] = '0;
-    assign readback_array[365][0:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[365][0:0] = (decoded_reg_strb.intr_block_rf.notif_agg_error_non_fatal31_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_agg_error_non_fatal31_intr_count_incr_r.pulse.value : '0;
     assign readback_array[365][31:1] = '0;
-    assign readback_array[366][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_ecc_cor_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[366][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_target_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_target_done_intr_count_incr_r.pulse.value : '0;
     assign readback_array[366][31:1] = '0;
-    assign readback_array[367][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_ecc_cor_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[367][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_target_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_target_done_intr_count_incr_r.pulse.value : '0;
     assign readback_array[367][31:1] = '0;
-    assign readback_array[368][0:0] = (decoded_reg_strb.intr_block_rf.notif_debug_locked_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_debug_locked_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[368][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_cmd_avail_intr_count_incr_r.pulse.value : '0;
     assign readback_array[368][31:1] = '0;
-    assign readback_array[369][0:0] = (decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_scan_mode_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[369][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_cmd_avail_intr_count_incr_r.pulse.value : '0;
     assign readback_array[369][31:1] = '0;
-    assign readback_array[370][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[370][0:0] = (decoded_reg_strb.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_cptra_mbox_cmd_avail_intr_count_incr_r.pulse.value : '0;
     assign readback_array[370][31:1] = '0;
-    assign readback_array[371][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[371][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_ecc_cor_intr_count_incr_r.pulse.value : '0;
     assign readback_array[371][31:1] = '0;
+    assign readback_array[372][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_ecc_cor_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_ecc_cor_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[372][31:1] = '0;
+    assign readback_array[373][0:0] = (decoded_reg_strb.intr_block_rf.notif_debug_locked_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_debug_locked_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[373][31:1] = '0;
+    assign readback_array[374][0:0] = (decoded_reg_strb.intr_block_rf.notif_scan_mode_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_scan_mode_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[374][31:1] = '0;
+    assign readback_array[375][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox0_soc_req_lock_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[375][31:1] = '0;
+    assign readback_array[376][0:0] = (decoded_reg_strb.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_mbox1_soc_req_lock_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[376][31:1] = '0;
+    assign readback_array[377][0:0] = (decoded_reg_strb.intr_block_rf.notif_otp_operation_done_intr_count_incr_r && !decoded_req_is_wr) ? field_storage.intr_block_rf.notif_otp_operation_done_intr_count_incr_r.pulse.value : '0;
+    assign readback_array[377][31:1] = '0;
 
     // Reduce the array
     always_comb begin
@@ -22852,7 +23057,7 @@ module mci_reg (
         readback_done = decoded_req & ~decoded_req_is_wr;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<372; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<378; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 

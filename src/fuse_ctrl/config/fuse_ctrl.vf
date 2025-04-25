@@ -12,6 +12,8 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/ast/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/../src/integration/rtl
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_if.sv
@@ -185,6 +187,8 @@ ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
+${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
+${CALIPTRA_SS_ROOT}/src/libs/rtl/caliptra_ss_prim_assert_sec_cm.svh
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_core_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_prim_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_dai.sv
@@ -198,4 +202,4 @@ ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_scrmbl.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_token_const.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg_defines.svh
-${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
+${CALIPTRA_SS_ROOT}/src/libs/rtl/caliptra_ss_prim_assert_sec_cm.svh

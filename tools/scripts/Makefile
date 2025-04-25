@@ -19,7 +19,12 @@ TEST_CFLAGS = -g -O3 -DMY_RANDOM_SEED=$(PLAYBOOK_RANDOM_SEED) $(BUILD_CFLAGS)
 VERILATOR = verilator
 GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
-CALIPTRA_SS_CLK_FREQ ?= 1000
+
+ifndef CALIPTRA_SS_CLK_FREQ
+# FIXME : Support 170MHz, 200MHz, 400MHz
+#CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 3 + 1))), 170 200 400)
+CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 3 + 1))), 400 400 400)
+endif
 
 # Ensure that RISC-V toolchain is installed
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
@@ -45,9 +50,10 @@ INCLUDES_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/includes
 RTL_DIR = $(CALIPTRA_SS_ROOT)/src/integration/rtl
 TBDIR ?= $(CALIPTRA_SS_ROOT)/src/integration/testbench
 RISCV_HW_IF_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/riscv_hw_if
-#ISR_DIR    = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
+ISR_DIR    = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/mcu_isr
 PRINTF_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/printf
 LIBS_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs
+CSS_MCU0_DEFINES_DIR = $(CALIPTRA_SS_ROOT)/src/riscv_core/veer_el2/rtl/defines
 
 
 DUT ?= caliptra_ss_top_tb
@@ -64,16 +70,22 @@ CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
 
 # Libraries providing functionality for each peripheral component in Caliptra Subsystem
 COMP_LIB_NAMES := caliptra_ss_lib \
+		  mci \
 		  fuse_ctrl \
-		  lc_ctrl
+		  lc_ctrl \
+		  wdt
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
 		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
+		$(INCLUDES_DIR)/caliptra_ss_defines.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
+		$(RISCV_HW_IF_DIR)/riscv-csr.h \
+		$(RISCV_HW_IF_DIR)/veer-csr.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
+		$(CSS_MCU0_DEFINES_DIR)/css_mcu0_defines.h \
 		$(BUILD_DIR)/caliptra_ss_clk_freq.h \
 		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
@@ -92,12 +104,27 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILE_CRT := mcu_crt0.o
 endif
 OFILES += $(TESTNAME).o
-# Assume all C tests will import our printf lib, but not assembly
+# Assume all C tests will import our printf and ISR libs, but assembly
+# tests will not
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += printf.o
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
+endif
+
+# Only build the mcu_isr lib (which consumes a large block of DCCM) if it is
+# included by the test code.
+ifeq (0,$(shell grep -e '\#include "mcu_isr.h"' $(TEST_DIR)/$(TESTNAME).c > /dev/null && echo $$?))
+	OFILES += mcu_isr.o
+# Tests might have a local variant of mcu_isr header
+# If not, use the default
+ifeq (0,$(shell test -e $(TEST_DIR)/mcu_isr.h && echo $$?))
+	HEADER_FILES += $(TEST_DIR)/mcu_isr.h
+else
+	HEADER_FILES += $(ISR_DIR)/mcu_isr.h
+endif
+HEADER_FILES += $(ISR_DIR)/riscv-interrupts.h
 endif
 
 # Verilator trace format
@@ -126,7 +153,7 @@ else
 	LINK = $(TEST_DIR)/$(TESTNAME).ld
 endif
 
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(COMP_LIBS)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(ISR_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
 $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
@@ -355,19 +382,30 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
 	#-$(GCC_PREFIX)-objcopy --dump-section .dccm=dccm_section.bin $(TESTNAME).exe
 	#-$(GCC_PREFIX)-objcopy -O verilog -I binary dccm_section.bin mcu_dccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -j .dccm -j .data -j .rodata -j .srodata -j .bss -j .sbss \
+	-$(GCC_PREFIX)-objcopy -O verilog -j .dccm -j .data -j .sdata -j .bss -j .sbss \
 			      --change-section-lma       .dccm-0x50000000 \
 			      --change-section-lma       .data-0x50000000 \
-			      --change-section-lma     .rodata-0x50000000 \
-			      --change-section-lma    .srodata-0x50000000 \
+			      --change-section-lma      .sdata-0x50000000 \
 			      --change-section-lma        .bss-0x50000000 \
 			      --change-section-lma       .sbss-0x50000000 \
 			      --pad-to 0x4000 \
 			      --no-change-warnings \
 			      $(TESTNAME).exe mcu_dccm.hex
-	-$(GCC_PREFIX)-objcopy -O verilog -R .dccm -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000  --change-section-lma .text-0x80000000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
-	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0xC000  --no-change-warnings $(TESTNAME).exe mcu_program.bin
-	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21C00000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .rodata -j .srodata \
+			      --change-section-lma       .text-0x80000000 \
+			      --change-section-lma     .rodata-0x80000000 \
+			      --change-section-lma    .srodata-0x80000000 \
+			      --pad-to 0x40000 \
+			      --no-change-warnings $(TESTNAME).exe mcu_program.hex
+	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0x40000  --no-change-warnings $(TESTNAME).exe mcu_program.bin
+	-$(GCC_PREFIX)-objcopy -O verilog -j .mcu_sram \
+			      --change-section-lma .mcu_sram-0x21C00000 \
+			      --pad-to 0x80000 \
+			      --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -j .mcu_hitless_sram \
+				--change-section-lma .mcu_hitless_sram-0x21C00000 \
+				--pad-to 0x80000 \
+				--no-change-warnings $(TESTNAME).exe mcu_hitless_lmem.hex			  
 	# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis

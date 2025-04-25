@@ -47,6 +47,10 @@ addrmap mci_reg {
         desc = "Indicates when there is a valid AXI request from MCU or SoC Config Agent AND the CAP_LOCK register is not set";
     } axi_mcu_req_or_mci_soc_config_req__cap_unlock;
     
+    signal {
+        desc = "Indicates when there is a valid AXI request from MCU or the SoC Config Agent.";
+    } axi_mcu_or_mcu_sram_config_req;
+    
     // AXI Request + SS_CONFIG_DONE Signals
     signal {
         desc = "Indicates when there is a valid AXI request from MCU or the SoC Config Agent.";
@@ -59,7 +63,7 @@ addrmap mci_reg {
     } axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky;
 
     //defined fields by access type
-    field rw_ro_ro_hw {swwe = axi_mcu_or_mci_soc_config_req; hw = r;}; //writes enabled only for MCU, hw readable
+    field rw_ro_ro_sticky_hw {swwe = axi_mcu_or_mci_soc_config_req; hw = r; resetsignal = mci_pwrgood;}; //writes enabled only for MCU, hw readable
     field rw_rw_sticky_hw { sw=rw; hw=rw; we=true; woclr = true; resetsignal = mci_pwrgood;}; //W1C            - used by HW ERROR regs
     field rw_rw_sticky    { sw=rw; hw=rw; we=true; swmod = true; resetsignal = mci_pwrgood;}; //writes enabled - used by FW ERROR regs
 
@@ -118,6 +122,34 @@ addrmap mci_reg {
         field {desc = "Size of MCU reset counter"; hw=w; sw=r;} MIN_MCU_RST_COUNTER_WIDTH[5];
         field {desc = "MCU SRAM Size KB"; hw=w; sw=r;} MCU_SRAM_SIZE[12];
     } HW_CONFIG1;
+    
+    reg {
+        name = "MCU IFU AXI USER";
+        desc = "MCU IFU AXI USER Strap";
+        // No storage, i.e. no resetsignal
+        field {hw=w; sw=r;} value[32];
+    } MCU_IFU_AXI_USER;
+    
+    reg {
+        name = "MCU LSU AXI USER";
+        desc = "MCU LSU AXI USER Strap";
+        // No storage, i.e. no resetsignal
+        field { hw=w; sw=r;} value[32];
+    } MCU_LSU_AXI_USER;
+    
+    reg {
+        name = "MCU SRAM CONFIG AGENT AXI USER";
+        desc = "Agent with access to MCU SRAM Execution region. Typically Caliptra Core";
+        // No storage, i.e. no resetsignal
+        field { hw=w; sw=r;} value[32];
+    } MCU_SRAM_CONFIG_AXI_USER;
+    
+    reg {
+        name = "MCI SOC CONFIG AGENT AXI USER";
+        desc = "SOC agent with special access to MCI register bank";
+        // No storage, i.e. no resetsignal
+        field { hw=w; sw=r;} value[32];
+    } MCI_SOC_CONFIG_AXI_USER;
 
     // ----------------------------------------
     // ---------------- STATUS ----------------
@@ -126,7 +158,7 @@ addrmap mci_reg {
         desc = "Reports the status of the firmware flows.
                 [br]TAP Access [with debug intent set]: RO";
         field {swwe = axi_mcu_or_mci_soc_config_req; hw=r; resetsignal = mci_rst_b;} status[32]=0;
-    } FW_FLOW_STATUS @0x20;
+    } FW_FLOW_STATUS @0x30;
     reg {
         name = "Flow Status";
         desc = "Reports the status of HW FSMs and other flows.
@@ -139,12 +171,12 @@ addrmap mci_reg {
     reg {
         name = "Reset Reason";
         desc = "Indicates to ROM the originating cause for the PC to be reset to 0.
-                Firmware Update Reset indicator is reset by the warm reset.
+                Firmware Update Reset indicator is reset by the warm reset and updated by SW applying MCU FW updated.
                 Warm Reset indicator is reset by the cold reset.
                 [br]TAP Access [with debug intent set]: RO";
-        field {desc = "FW update reset has been executed for the second+ time since MCI reset"; sw=r; hw=rw; resetsignal = mci_rst_b;  } FW_HITLESS_UPD_RESET=0;
-        field {desc = "FW update reset has been executed first time since MCI reset"; sw=r; hw=rw; resetsignal = mci_rst_b;  } FW_BOOT_UPD_RESET=0;
-        field {desc = "Warm reset has been executed";      sw=r; hw=rw;          resetsignal = mci_pwrgood;} WARM_RESET=0;
+        field {desc = "FW update reset has been executed for the second+ time since MCI reset"; swwe = axi_mcu_or_mcu_sram_config_req; sw=rw; hw=r; resetsignal = mci_rst_b;  } FW_HITLESS_UPD_RESET=0;
+        field {desc = "FW update reset has been executed first time since MCI reset";swwe = axi_mcu_or_mcu_sram_config_req;  sw=rw; hw=r; resetsignal = mci_rst_b;  } FW_BOOT_UPD_RESET=0;
+        field {desc = "Warm reset has been executed";  swwe = axi_mcu_or_mcu_sram_config_req;    sw=rw; hw=rw; we;          resetsignal = mci_pwrgood;} WARM_RESET=0;
     } RESET_REASON;
 
     reg {
@@ -192,7 +224,7 @@ addrmap mci_reg {
         rw_rw_sticky_hw mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
         rw_rw_sticky_hw nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
         rw_rw_sticky_hw mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
-    } HW_ERROR_FATAL @0x40;
+    } HW_ERROR_FATAL @0x50;
     reg {
         name = "Aggregate Error Fatal";
         desc = "Indicates fatal error from another IP within Caliptra SS. Assertion of any bit in this
@@ -201,40 +233,51 @@ addrmap mci_reg {
                 mask register. After the output interrupt is asserted, clearing
                 the bit in this register will not cause the interrupt to deassert.
                 Only an MCI reset will clear the fatal error interrupt.
+                [br] 5:0 -- caliptra core fatal errors
+                [br] {5'b0, cptra_error_fatal}
+                [br] 11:6 - mcu fatal errors
+                [br] {5'b0, mcu_dccm_ecc_double_error}
+                [br] 17:12 -- lcc alerts
+                [br] {3'b0, fatal_bus_integ_error, fatal_state_error, fatal_prog_error}
+                [br] 23:18 -- otp fc alerts
+                [br] {1'b0, recov_prim_otp_alert, fatal_prim_otp_alert, fatal_bus_integ_error, fatal_check_error, fatal_macro_error}
+                [br] 29:24 -- I3C - masked by default, unmasked in non_fatal error register
+                [br] {4'b0, i3c_peripheral_reset, i3c_escalated_reset}
+                [br] 31:30 -- spare bits
                 [br]AXI Access: RW1C
                 [br]TAP Access [with debug intent set]: RO";
-        rw_rw_sticky_hw agg_error_fatal31 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal30 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal29 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal28 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal27 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal26 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal25 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal24 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal23 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal22 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal21 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal20 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal19 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal18 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal17 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal16 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal15 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal14 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal13 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal12 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal11 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal10 = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal9  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal8  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal7  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal6  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal5  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal4  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal3  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal2  = 1'b0;
-        rw_rw_sticky_hw agg_error_fatal1  = 1'b0;
         rw_rw_sticky_hw agg_error_fatal0  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal1  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal2  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal3  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal4  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal5  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal6  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal7  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal8  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal9  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal10 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal11 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal12 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal13 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal14 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal15 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal16 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal17 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal18 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal19 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal20 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal21 = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal22  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal23  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal24  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal25  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal26  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal27  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal28  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal29  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal30  = 1'b0;
+        rw_rw_sticky_hw agg_error_fatal31  = 1'b0;
     } AGG_ERROR_FATAL;
     reg {
         name = "Hardware Error Non-Fatal";
@@ -272,48 +315,51 @@ addrmap mci_reg {
                 that firmware may cause the mci_error_non_fatal signal to deassert by
                 writing to any of these registers, if the write results in all error
                 bits being cleared or masked:
-                [br][list]
-                [br] [*] HW_ERROR_NON_FATAL
-                [br] [*] AGG_ERROR_NON_FATAL
-                [br] [*] FW_ERROR_NON_FATAL
-                [br] [*] hw_error_non_fatal_mask
-                [br] [*] agg_error_non_fatal_mask
-                [br] [*] fw_error_non_fatal_mask 
-                [/list]
+                [br] 5:0 -- caliptra core non fatal errors
+                [br] {5'b0, cptra_error_non_fatal}
+                [br] 11:6 - mcu non fatal errors
+                [br] {5'b0, mcu_dccm_ecc_single_error}
+                [br] 17:12 -- lcc alerts - masked by default, unmasked in fatal error register
+                [br] {3'b0, fatal_bus_integ_error, fatal_state_error, fatal_prog_error}
+                [br] 23:18 -- otp fc alerts - masked by default, unmasked in fatal error register
+                [br] {1'b0, recov_prim_otp_alert, fatal_prim_otp_alert, fatal_bus_integ_error, fatal_check_error, fatal_macro_error}
+                [br] 29:24 -- I3C
+                [br] {4'b0, i3c_peripheral_reset, i3c_escalated_reset}
+                [br] 31:30 -- spare bits
                 [br]AXI Access:      RW1C
                 [br]TAP Access [with debug intent set]: RO";
-        rw_rw_sticky_hw agg_error_non_fatal31 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal30 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal29 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal28 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal27 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal26 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal25 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal24 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal23 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal22 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal21 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal20 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal19 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal18 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal17 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal16 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal15 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal14 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal13 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal12 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal11 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal0 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal1 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal2 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal3 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal4 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal5 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal6 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal7 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal8 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal9 = 1'b0;
         rw_rw_sticky_hw agg_error_non_fatal10 = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal9  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal8  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal7  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal6  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal5  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal4  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal3  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal2  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal1  = 1'b0;
-        rw_rw_sticky_hw agg_error_non_fatal0  = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal11 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal12 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal13 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal14 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal15 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal16 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal17 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal18 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal19 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal20 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal21 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal22 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal23 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal24 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal25 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal26 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal27 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal28 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal29 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal30 = 1'b0;
+        rw_rw_sticky_hw agg_error_non_fatal31 = 1'b0;
     } AGG_ERROR_NON_FATAL;
     reg {
         name = "Firmware Error Fatal";
@@ -382,9 +428,9 @@ addrmap mci_reg {
                 [br]Firmware can not cause the interrupt output to deassert by setting
                 mask bits for fatal error conditions that have already triggered the 
                 interrupt.";
-        rw_ro_ro_hw mask_mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
-        rw_ro_ro_hw mask_nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
-        rw_ro_ro_hw mask_mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
+        rw_ro_ro_sticky_hw mask_mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
+        rw_ro_ro_sticky_hw mask_nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
+        rw_ro_ro_sticky_hw mask_mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
     } internal_hw_error_fatal_mask;
     reg {
         name = "Hardware Error Non-Fatal Mask";
@@ -411,8 +457,8 @@ addrmap mci_reg {
                 [br] [*] agg_error_non_fatal_mask
                 [br] [*] fw_error_non_fatal_mask 
                 [/list]";
-        rw_ro_ro_hw mask_mbox0_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
-        rw_ro_ro_hw mask_mbox1_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
+        rw_ro_ro_sticky_hw mask_mbox0_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
+        rw_ro_ro_sticky_hw mask_mbox1_ecc_unc=0;      /* Uncorrectable double-bit error in DCCM */
     } internal_hw_error_non_fatal_mask;
     reg {
         name = "Aggregate Error Fatal Mask";
@@ -429,38 +475,38 @@ addrmap mci_reg {
                 [br]Firmware can not cause the interrupt output to deassert by setting
                 mask bits for fatal error conditions that have already triggered the 
                 interrupt.";
-        rw_ro_ro_hw mask_agg_error_fatal31 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal30 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal29 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal28 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal27 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal26 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal25 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal24 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal23 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal22 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal21 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal20 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal19 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal18 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal17 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal16 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal15 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal14 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal13 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal12 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal11 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal10 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal9  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal8  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal7  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal6  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal5  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal4  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal3  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal2  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal1  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_fatal0  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal31 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal30 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal29 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal28 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal27 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal26 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal25 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal24 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal23 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal22 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal21 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal20 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal19 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal18 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal17 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal16 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal15 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal14 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal13 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal12 = 1'b1;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal11 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal10 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal9  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal8  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal7  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal6  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal5  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal4  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal3  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal2  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal1  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_fatal0  = 1'b0;
     } internal_agg_error_fatal_mask;
     reg {
         name = "Aggregate Error Non-Fatal Mask";
@@ -487,38 +533,38 @@ addrmap mci_reg {
                 [br] [*] agg_error_non_fatal_mask
                 [br] [*] fw_error_non_fatal_mask 
                 [/list]";
-        rw_ro_ro_hw mask_agg_error_non_fatal31 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal30 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal29 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal28 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal27 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal26 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal25 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal24 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal23 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal22 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal21 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal20 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal19 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal18 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal17 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal16 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal15 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal14 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal13 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal12 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal11 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal10 = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal9  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal8  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal7  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal6  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal5  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal4  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal3  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal2  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal1  = 1'b0;
-        rw_ro_ro_hw mask_agg_error_non_fatal0  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal31 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal30 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal29 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal28 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal27 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal26 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal25 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal24 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal23 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal22 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal21 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal20 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal19 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal18 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal17 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal16 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal15 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal14 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal13 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal12 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal11 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal10 = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal9  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal8  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal7  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal6  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal5  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal4  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal3  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal2  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal1  = 1'b0;
+        rw_ro_ro_sticky_hw mask_agg_error_non_fatal0  = 1'b0;
     } internal_agg_error_non_fatal_mask;
     reg {
         name = "Firmware Error Fatal Mask";
@@ -535,7 +581,7 @@ addrmap mci_reg {
                 [br]Firmware can not cause the interrupt output to deassert by setting
                 mask bits for fatal error conditions that have already triggered the 
                 interrupt.";
-        rw_ro_ro_hw mask[32]=0; 
+        rw_ro_ro_sticky_hw mask[32]=0; 
     } internal_fw_error_fatal_mask;
     reg {
         name = "Firmware Error Non-Fatal Mask";
@@ -562,7 +608,7 @@ addrmap mci_reg {
                 [br] [*] agg_error_non_fatal_mask
                 [br] [*] fw_error_non_fatal_mask 
                 [/list]";
-        rw_ro_ro_hw mask[32]=0; 
+        rw_ro_ro_sticky_hw mask[32]=0; 
     } internal_fw_error_non_fatal_mask;
 
     // ----------------------------------------
@@ -572,7 +618,7 @@ addrmap mci_reg {
         name = "WDT Timer1 EN register";
         desc = "Watchdog timer1 enable register";
         field {desc = "WDT timer1 enable"; hw = r; sw = rw; swwe = axi_mcu_or_mci_soc_config_req; resetsignal = mci_rst_b;} timer1_en = 1'b0;
-    } WDT_TIMER1_EN @0xA0;
+    } WDT_TIMER1_EN @0xB0;
 
     reg {
         name = "WDT Timer1 CTRL register";
@@ -618,7 +664,7 @@ addrmap mci_reg {
         name = "WDT1 Config";
         desc = "SOC provided count in cycles for WDT1 timeout.";
         field {sw=rw; hw=na; resetsignal = mci_pwrgood;} TIMEOUT[32]=0;
-    } WDT_CFG[2] @0xD0;
+    } WDT_CFG[2];
 
     // ----------------------------------------
     // ---------------- TIMER -----------------
@@ -792,10 +838,10 @@ addrmap mci_reg {
     } GENERIC_OUTPUT_WIRES[2];
     
     reg { 
-        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA=0;
+        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA[32]=32'h0;
     } DEBUG_IN; // i.e. stdin
     reg { 
-        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA=0;
+        field {sw=rw; hw=na; resetsignal = mci_rst_b;} DATA[32]=32'h0;
     } DEBUG_OUT; // i.e. stdout
     
     reg {
@@ -1051,6 +1097,7 @@ regfile intr_block_t {
         field {desc = "Enable bit for Scan mode asserted";                              } notif_scan_mode_en = 1'b0;
         field {desc = "Enable bit for SoC requested the mailbox while mcu has lock";          } notif_mbox0_soc_req_lock_en = 1'b0;
         field {desc = "Enable bit for SoC requested the mailbox while mcu has lock";          } notif_mbox1_soc_req_lock_en = 1'b0;
+        field {desc = "Enable bit for OTP operation done interrupt https://github.com/lowRISC/opentitan/blob/backport-25674-to-earlgrey_1.0.0/hw/ip/otp_ctrl/doc/interfaces.md#interrupts";          } notif_otp_operation_done_en = 1'b0;
     };
     reg notif1_intr_en_t {
         name = "Per-Event Interrupt Enable Register";
@@ -1187,6 +1234,7 @@ regfile intr_block_t {
         field {desc = "Scan mode asserted status bit";                         } notif_scan_mode_sts = 1'b0;
         field {desc = "SoC requested the mailbox while mcu has lock status bit";     } notif_mbox0_soc_req_lock_sts = 1'b0;
         field {desc = "SoC requested the mailbox while mcu has lock status bit";     } notif_mbox1_soc_req_lock_sts = 1'b0;
+        field {desc = "OTP operation done interrupt https://github.com/lowRISC/opentitan/blob/backport-25674-to-earlgrey_1.0.0/hw/ip/otp_ctrl/doc/interfaces.md#interrupts";          } notif_otp_operation_done_sts = 1'b0;
     };
     reg notif1_intr_t {
         name = "Interrupt Status Register type definition";
@@ -1354,6 +1402,7 @@ regfile intr_block_t {
         field {desc = "Scan mode asserted trigger bit";                         } notif_scan_mode_trig = 1'b0;
         field {desc = "SoC requested the mailbox while mcu has lock trigger bit";     } notif_mbox0_soc_req_lock_trig = 1'b0;
         field {desc = "SoC requested the mailbox while mcu has lock trigger bit";     } notif_mbox1_soc_req_lock_trig = 1'b0;
+        field {desc = "OTP operation done interrupt https://github.com/lowRISC/opentitan/blob/backport-25674-to-earlgrey_1.0.0/hw/ip/otp_ctrl/doc/interfaces.md#interrupts trigger bit";          } notif_otp_operation_done_trig = 1'b0;
     };
 
     reg notif1_intr_trig_t {
@@ -1544,6 +1593,7 @@ regfile intr_block_t {
     intr_count_t      notif_scan_mode_intr_count_r;        /* Per notification */                                    //
     intr_count_t      notif_mbox0_soc_req_lock_intr_count_r;     /* Per notification */                                    //
     intr_count_t      notif_mbox1_soc_req_lock_intr_count_r;     /* Per notification */                                    //
+    intr_count_t      notif_otp_operation_done_intr_count_r;     /* Per notification */                                    //
                                                                                                                      //
     // These registers should be treated by SW as reserved, and ignored.                                             //
     // Offset at 0x200 gives enough space for 32 Errors and 32 Notifications                                         //
@@ -1634,6 +1684,7 @@ regfile intr_block_t {
     intr_count_incr_t notif_scan_mode_intr_count_incr_r;       /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_mbox0_soc_req_lock_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
     intr_count_incr_t notif_mbox1_soc_req_lock_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
+    intr_count_incr_t notif_otp_operation_done_intr_count_incr_r;    /* Per notification count incrementor pulse */        //
     /* ------------------------------------------------------------------------------------------------------------- */
 
     /* ---- Reset assignment for Error Events ---- */
@@ -1800,6 +1851,7 @@ regfile intr_block_t {
     notif0_internal_intr_r.notif_scan_mode_sts     -> enable = notif0_intr_en_r.notif_scan_mode_en;
     notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts  -> enable = notif0_intr_en_r.notif_mbox0_soc_req_lock_en;
     notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts  -> enable = notif0_intr_en_r.notif_mbox1_soc_req_lock_en;
+    notif0_internal_intr_r.notif_otp_operation_done_sts  -> enable = notif0_intr_en_r.notif_otp_operation_done_en;
 
     error0_internal_intr_r.error_internal_sts     -> next   = error0_intr_trig_r.error_internal_trig;
     error0_internal_intr_r.error_mbox0_ecc_unc_sts -> next   = error0_intr_trig_r.error_mbox0_ecc_unc_trig;
@@ -1885,6 +1937,7 @@ regfile intr_block_t {
     notif0_internal_intr_r.notif_scan_mode_sts     -> next   = notif0_intr_trig_r.notif_scan_mode_trig;
     notif0_internal_intr_r.notif_mbox0_soc_req_lock_sts  -> next   = notif0_intr_trig_r.notif_mbox0_soc_req_lock_trig;
     notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts  -> next   = notif0_intr_trig_r.notif_mbox1_soc_req_lock_trig;
+    notif0_internal_intr_r.notif_otp_operation_done_sts  -> next   = notif0_intr_trig_r.notif_otp_operation_done_trig;
 
     // NOTE: hwset for events is implicitly defined as module input
 
@@ -2411,6 +2464,12 @@ regfile intr_block_t {
     notif_mbox1_soc_req_lock_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_mbox1_soc_req_lock_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
     notif_mbox1_soc_req_lock_intr_count_incr_r.pulse -> decr  = notif_mbox1_soc_req_lock_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
     notif_mbox1_soc_req_lock_intr_count_r.cnt        -> incr  = notif_mbox1_soc_req_lock_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
+
+    notif_otp_operation_done_intr_count_incr_r.pulse -> hwset = notif0_internal_intr_r.notif_otp_operation_done_sts -> hwset; // \_____ Capture both firmware and hardware triggered events
+    notif_otp_operation_done_intr_count_incr_r.pulse -> next  = notif0_internal_intr_r.notif_otp_operation_done_sts -> next;  // /      as a pulse to increment the intr_count_r register
+    notif_otp_operation_done_intr_count_incr_r.pulse -> we    = notif0_internal_intr_r.notif_otp_operation_done_sts -> next;  // Generate a pulse from SW trigger, if set, or default to use the hwset input
+    notif_otp_operation_done_intr_count_incr_r.pulse -> decr  = notif_otp_operation_done_intr_count_incr_r.pulse; // Auto-clear to generate pulse output
+    notif_otp_operation_done_intr_count_r.cnt        -> incr  = notif_otp_operation_done_intr_count_incr_r.pulse; // Increment coincides with rising edge of interrupt sts bit
 
 
 };

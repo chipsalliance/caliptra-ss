@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,28 @@
 
 #include <stdint.h>
 #include "caliptra_ss_lib.h"
+
+#define NUM_LC_STATES 21
+#define NUM_TOKENS 12
+
+typedef enum {
+    RAU, // RAW_UNLOCK
+    TU1, // TEST_UNLOCKED1
+    TU2, // TEST_UNLOCKED2
+    TU3, // TEST_UNLOCKED3
+    TU4, // TEST_UNLOCKED4
+    TU5, // TEST_UNLOCKED5
+    TU6, // TEST_UNLOCKED6
+    TU7, // TEST_UNLOCKED7
+    TEX, // TEST_EXIT
+    DEX, // DEV_EXIT
+    PEX, // PROD_EXIT
+    RMU, // RAW
+    ZER, // ZERO
+    INV  // INVALID
+} lc_token_type_t;
+
+extern lc_token_type_t trans_matrix[NUM_LC_STATES][NUM_LC_STATES];
 
 extern uint32_t state_sequence[];
 extern uint8_t use_token[];
@@ -60,6 +82,7 @@ void sw_transition_req(uint32_t next_lc_state,
 uint32_t calc_lc_state_mnemonic(uint32_t state);
 void transition_state(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
 void transition_state_req_with_expec_error(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
+void transition_state_check(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
 void test_all_lc_transitions_no_RMA_no_SCRAP(void);
 void sw_transition_req_with_expec_error(uint32_t next_lc_state,
     uint32_t token_31_0,
@@ -73,5 +96,7 @@ void force_PPD_pin(void);
 uint32_t read_lc_state(void);
 
 uint32_t read_lc_counter(void);
+void disable_lcc_SVAs(void);
+void enable_lcc_SVAs(void);
 
 #endif // LC_CTRL_H

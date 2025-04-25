@@ -30,10 +30,12 @@ requires:
   - edn_pkg
   - pwrmgr_pkg
   - fuse_ctrl_pkg
+  - ss_libs
 targets:
   rtl:
     directories:
       - $COMPILE_ROOT/rtl
+      - $COMPILE_ROOT/coverage
       - $COMPILE_ROOT/../src/integration/rtl
     files:
       - $COMPILE_ROOT/rtl/otp_ctrl_core_reg_top.sv
@@ -51,32 +53,17 @@ targets:
       - $COMPILE_ROOT/rtl/otp_ctrl.sv
       #- $COMPILE_ROOT/rtl/otp_ctrl_top.sv
     tops: [otp_ctrl]
-#---
-#provides: [fuse_ctrl_tb_pkg]
-#schema_version: 2.4.0
-#requires:
-#targets:
-#  tb:
-#    directories: [$COMPILE_ROOT/tb]
-#    files:
-#      - $COMPILE_ROOT/tb/otp_ctrl_top_tb_pkg.sv
-#    tops: [otp_ctrl_top_tb_pkg]
-#---
-#provides: [fuse_ctrl_tb]
-#schema_version: 2.4.0
-#requires:
-#  - fuse_ctrl
-#  - fuse_ctrl_tb_pkg
-#targets:
-#  tb:
-#    directories: [$COMPILE_ROOT/tb]
-#    files:
-#      - $COMPILE_ROOT/tb/otp_ctrl_top_tb.sv
-#    tops: [otp_ctrl_top_tb]
-#global:
-#  tool:
-#    vcs:
-#      default:
-#        - '-assert svaext'
-#        - +define+CLP_ASSERT_ON
-#        - '-noinherit_timescale=1ns/1ps'
+---
+provides: [fuse_ctrl_coverage]
+schema_version: 2.4.0
+requires:
+  - axi2tlul 
+  - fuse_ctrl_pkg
+  - lc_ctrl_pkg
+targets:
+  tb:
+    directories: 
+      - $COMPILE_ROOT/coverage
+    files:
+      - $COMPILE_ROOT/coverage/fuse_ctrl_cov_if.sv
+      - $COMPILE_ROOT/coverage/fuse_ctrl_cov_bind.sv

@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 // Description: I3C Smoke test for Caliptra Subsystem
 // Author     : Nilesh Patel
 // Created    : 2025-01-14
@@ -13,6 +29,7 @@
 #include "caliptra_ss_lib.h"
 #include "string.h"
 #include "stdint.h"
+#include "veer-csr.h"
 
 #define STATUS_CHECK_LOOP_COUNT_FOR_RECOVERY 20
 
@@ -34,25 +51,12 @@ void main (void) {
 
     //-- Boot MCU
     VPRINTF(LOW, "MCU: Booting... \n");
+    
     boot_mcu();
-
-    // -- Boot I3C Core
-    VPRINTF(LOW, "MCU: Boot I3C Core\n");
-    boot_i3c_core();  
-
-    //setting device address to 0x5A
-    i3c_reg_data = 0x00000000;
-    i3c_reg_data = 90 << 0  | i3c_reg_data;
-    i3c_reg_data = 1  << 15 | i3c_reg_data;
-    lsu_write_32( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_DEVICE_ADDR, i3c_reg_data);
-    VPRINTF(LOW, "MCU: I3C Device Address set to 0x5A\n");
-
-    //setting virtual device address to 0x5B
-    i3c_reg_data = 0x00000000;
-    i3c_reg_data = 91 << 0  | i3c_reg_data; //0x5B
-    i3c_reg_data = 1  << 15 | i3c_reg_data;   
-    lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
-    VPRINTF(LOW, "MCU: I3C Virtual Device Address set to 0x5B\n");
+    boot_i3c_core();
+    trigger_caliptra_go();
+    wait_for_cptra_ready_for_mb_processing();
+    configure_captra_axi_user();
 
     VPRINTF(LOW, "MCU: Updating I3C Recovery Registers\n");
     // Programming I3C for Recovery Mode 
@@ -61,7 +65,7 @@ void main (void) {
     i3c_reg_data = 1 << 12 | i3c_reg_data; // Flashless/Streaming Boot (FSB) (Reason of recovery) 
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0, i3c_reg_data);
 
-    // - RECOVERY_STATU_0
+    // - RECOVERY_STATUS_0
     i3c_reg_data = 0x00000001; // Awaiting recovery image
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS, i3c_reg_data);
     VPRINTF(LOW, "MCU: I3C Recovery Registers updated\n");
@@ -82,13 +86,6 @@ void main (void) {
         }    
     }
 
-    VPRINTF(LOW, "MCU: INDIRECT_FIFO_CTRL_1 is not zero\n");
-    for(uint8_t ii=0; ii<1000; ii++) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop");
-        }    
-    }
-    
-    VPRINTF(LOW, "MCU: End of I3C Reg Read Write Test\n");
-    SEND_STDOUT_CTRL(0xff);
+    //Halt the core to wait for Caliptra to finish the test
+    csr_write_mpmc_halt();
 }
