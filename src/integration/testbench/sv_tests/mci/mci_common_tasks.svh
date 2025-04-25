@@ -13,7 +13,6 @@
 // limitations under the License.
 //
 
-
 task get_mcu_sram_base_addr(output logic [AXI_AW-1:0] addr);
     addr = `SOC_MCI_TOP_MCU_SRAM_BASE_ADDR;
 endtask
@@ -28,6 +27,54 @@ endtask
 
 task get_mcu_sram_size_dword(output int size);
     size = (MCU_SRAM_SIZE_KB * 1024) / 4;
+endtask
+
+task get_mci_miss_address(output logic [AXI_AW-1:0] random_address);
+    logic [AXI_AW-1:0] end_params[4];
+    logic [AXI_AW-1:0] start_params[4];
+    int index;
+    logic allowed_invalid_addr;
+
+    end_params[0] = MCI_REG_END_ADDR;
+    end_params[1] = MCU_TRACE_BUFFER_END_ADDR;
+    end_params[2] = MBOX0_END_ADDR;
+    end_params[3] = MBOX1_END_ADDR;
+    start_params[0] = MCU_TRACE_BUFFER_START_ADDR;
+    start_params[1] = MBOX0_START_ADDR;
+    start_params[2] = MBOX1_START_ADDR;
+    start_params[3] = MCU_SRAM_START_ADDR;
+    allowed_invalid_addr = 0;
+
+    while(!allowed_invalid_addr) begin
+        // Randomly select an index
+        index = $urandom_range(0, 3);
+        if (start_params[index] - end_params[index] > 3) begin
+            allowed_invalid_addr = 1;
+        end
+    end
+    $display("Chose Index %d Start address: 0x%h End Address: 0x%h", $time, start_params[index], end_params[index]);
+    // Call the function with the selected parameters
+    get_random_address_between(end_params[index], start_params[index], random_address);
+endtask
+
+
+
+task automatic get_random_address_between(
+    input logic [AXI_AW-1:0] start_addr,
+    input logic [AXI_AW-1:0] end_addr,
+    output logic [AXI_AW-1:0] random_addr
+);
+    logic [AXI_AW-1:0] range;
+    logic [AXI_AW-1:0] offset;
+
+    // Calculate the range between start and end addresses
+    range = end_addr - start_addr;
+
+    // Generate a random offset within the range
+    offset = $urandom_range(0, range);
+
+    // Ensure the lower 2 bits of the address are 0
+    random_addr = (start_addr + offset) & ~32'h3;
 endtask
 
 
