@@ -854,4 +854,16 @@ mci_lcc_st_trans LCC_state_translator (
 // AXI SUB R - Verify ID width matches
 `CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_R_ID_SIZE_MATCH,  AXI_ID_WIDTH == s_axi_r_if.IW)
 
+// MCU SRAM ECC SB
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_SB, $rose(i_mci_mcu_sram_ctrl.ecc_decode.single_ecc_error) |=> i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_SB_INTR_OUT, $rose(i_mci_mcu_sram_ctrl.ecc_decode.single_ecc_error) && 
+                i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.notif0_intr_en_r.notif_mcu_sram_ecc_cor_en.value && 
+                i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.global_intr_en_r.notif_en.value |=>
+                ##2 mci_intr, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
+
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_DB, $rose(i_mci_mcu_sram_ctrl.ecc_decode.double_ecc_error) |=> i_mci_reg_top.mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_DB_ALL_ERR_OUT, $rose(i_mci_mcu_sram_ctrl.ecc_decode.double_ecc_error) && 
+                !i_mci_reg_top.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value |=> 
+                all_error_fatal, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
+
 endmodule
