@@ -98,13 +98,18 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_RESET_STATUS, "RESET_STATUS", "Reset Status", REG_NOT_STICKY },
         { 0, NULL, NULL, REG_NOT_STICKY }  // End marker
     },
-    
-    // REG_GROUP_ERROR
+
+    // REG_GROUP_ERROR_W1C
     {
         { SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL, "HW_ERROR_FATAL", "Hardware Fatal Error", REG_STICKY},
         { SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL, "AGG_ERROR_FATAL", "Aggregated Fatal Error", REG_STICKY },
         { SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL, "HW_ERROR_NON_FATAL", "Hardware Non-Fatal Error", REG_STICKY  },
         { SOC_MCI_TOP_MCI_REG_AGG_ERROR_NON_FATAL, "AGG_ERROR_NON_FATAL", "Aggregated Non-Fatal Error", REG_STICKY },
+        { 0, NULL, NULL, REG_NOT_STICKY }  // End marker
+    },
+    
+    // REG_GROUP_ERROR
+    {
         { SOC_MCI_TOP_MCI_REG_FW_ERROR_FATAL, "FW_ERROR_FATAL", "Firmware Fatal Error", REG_STICKY },
         { SOC_MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL, "FW_ERROR_NON_FATAL", "Firmware Non-Fatal Error", REG_STICKY },
         { SOC_MCI_TOP_MCI_REG_HW_ERROR_ENC, "HW_ERROR_ENC", "Hardware Error Enc", REG_STICKY},
@@ -502,6 +507,7 @@ const char* get_group_name(mci_register_group_t group) {
         case REG_GROUP_CAPABILITIES_RO: return "Capabilities-RO";
         case REG_GROUP_STATUS: return "Status";
         case REG_GROUP_STATUS_RO: return "Status-RO";
+        case REG_GROUP_ERROR_W1C: return "Fatal/Non-Fatal Error W1C";
         case REG_GROUP_ERROR: return "Fatal/Non-Fatal Error";
         case REG_GROUP_SECURITY_RO: return "Security-RO";
         case REG_GROUP_WATCHDOG: return "Watchdog";
@@ -696,6 +702,18 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type) {
     const mci_register_info_t *ss_config_done_sticky_reg = get_register_info(REG_GROUP_SS, 0);
     ss_config_done_sticky = mci_reg_read(ss_config_done_sticky_reg->address);
 
+    mci_register_group_t group_index;
+    int reg_index;
+    const mci_register_info_t *reg_info;
+    uint32_t err_data;
+
+    reg_info = find_register_by_address(address, &group_index, &reg_index);
+    
+    if (group_index == REG_GROUP_ERROR_W1C) {
+        err_data = mci_reg_read(address);
+        value = err_data & ~value;
+    }
+
     bool force_update = (address == SOC_MCI_TOP_MCI_REG_SS_CONFIG_DONE_STICKY);
     bool pulse_reg = (address == SOC_MCI_TOP_MCI_REG_WDT_TIMER1_CTRL || address == SOC_MCI_TOP_MCI_REG_WDT_TIMER2_CTRL);
     
@@ -871,7 +889,7 @@ void write_random_to_register_group_and_track(mci_register_group_t group, mci_re
                 // Generate a unique value for each register
                 uint32_t rand_value = xorshift32();
             
-                VPRINTF(MEDIUM, "  Writing 0x%08x to %s (0x%08x)\n", rand_value, reg->name, reg->address);
+                VPRINTF(LOW, "  Writing 0x%08x to %s (0x%08x)\n", rand_value, reg->name, reg->address);
                 mci_reg_write(reg->address, rand_value);
                 
                 /* Get mask for this register */
@@ -1385,7 +1403,8 @@ void init_mask_dict(void) {
                 MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_DEBUG_LOCKED_EN_MASK |
                 MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_SCAN_MODE_EN_MASK |
                 MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_MASK |
-                MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK);
+                MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK |
+                MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_OTP_OPERATION_DONE_EN_MASK);
 
     // INTR_BLOCK_RF_NOTIF1_INTR_EN_R (includes all 32 bits of AGG_ERROR_NON_FATAL flags)
     add_mask_entry(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R,
