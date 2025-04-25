@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -7,7 +23,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "fuse_ctrl_address_map.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
@@ -20,44 +35,70 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
+typedef struct {
+    uint32_t address;
+    uint32_t granularity;
+} partition_t;
+
+static const partition_t partitions[15] = {
+    { .address = 0x000, .granularity = 64 }, // SECRET_TEST_UNLOCK_PARTITION
+    { .address = 0x048, .granularity = 64 }, // SECRET_MANUF_PARTITION
+    { .address = 0x090, .granularity = 64 }, // SECRET_PROD_PARTITION_0
+    { .address = 0x0A0, .granularity = 64 }, // SECRET_PROD_PARTITION_1
+    { .address = 0x0B0, .granularity = 64 }, // SECRET_PROD_PARTITION_2
+    { .address = 0x0C0, .granularity = 64 }, // SECRET_PROD_PARTITION_3
+    { .address = 0x0D0, .granularity = 32 }, // SW_MANUF_PARTITION
+    { .address = 0x4C0, .granularity = 64 }, // SECRET_LC_TRANSITION_PARTITION
+    { .address = 0x578, .granularity = 32 }, // SVN_PARTITION
+    { .address = 0x5A0, .granularity = 32 }, // VENDOR_TEST
+    { .address = 0x5A0, .granularity = 32 }, // VENDOR_HASHES_MANUF_PARTITION
+    { .address = 0x620, .granularity = 32 }, // VENDOR_HASHES_PROD_PARTITION
+    { .address = 0x910, .granularity = 32 }, // VENDOR_REVOCATIONS_PROD_PARTITION
+    { .address = 0x9A8, .granularity = 64 }, // VENDOR_SECRET_PROD_PARTITION
+    { .address = 0xBB0, .granularity = 64 }  // VENDOR_NON_SECRET_PROD_PARTITION
+};
+
 /**
  * This test performs DAI writes over the AXI bus on the boundaries of the
- * fuse controller access table entries.
+ * fuse controller access table entries with randomized fuse writes and
+ * random AXI user ids.
  */
 void axi_id() {
     const uint32_t sentinel = 0xAB;
-    const uint32_t granularity = 64;
 
-    // Both CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN and CPTRA_CORE_UDS_SEED must not
-    // be modified by the AXI requests stemming from the MCU.
-    grant_mcu_for_fc_writes(); 
-    dai_wr(0x000, sentinel, sentinel, granularity, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
-    dai_wr(0x048, sentinel, sentinel, granularity, FUSE_CTRL_STATUS_DAI_ERROR_MASK);
-    dai_wr(0x090, sentinel, sentinel, granularity, 0 /* Should work */);
+    partition_t partition;
+    uint32_t axi_user;
 
-    // All fuses should be writable by the Caliptra core.
-    grant_caliptra_core_for_fc_writes();
-    dai_wr(0x000, sentinel, sentinel, granularity, 0);
-    dai_wr(0x048, sentinel, sentinel, granularity, 0);
-    dai_wr(0x090, sentinel, sentinel, granularity, 0);
+    for (int i = 0; i < 4; i++) {
+        partition = partitions[xorshift32() % 15];
+        axi_user = xorshift32() % 2;
+        
+        if (axi_user) {
+            grant_mcu_for_fc_writes();
+        } else {
+            grant_caliptra_core_for_fc_writes();
+        }
+
+        // Both CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN and CPTRA_CORE_UDS_SEED must not
+        // be modified by the AXI requests stemming from the MCU.
+        if (partition.address < 0x090 && axi_user) {
+            dai_wr(partition.address, sentinel, sentinel, partition.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+        } else {
+            dai_wr(partition.address, sentinel, sentinel, partition.granularity, 0);
+        }
+    }
 }
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
-    // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
-    // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO\n");
-
-    uint32_t cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
       
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    wait_dai_op_idle(0);
+    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
 
     initialize_otp_controller();
 

@@ -120,6 +120,27 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
         VPRINTF(LOW, "MCU: Writing to MBOX%x data: 0x%x\n", mbox_num, mbox_data[ii]); 
         lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_data[ii]);
     }
+    
+    // If SRAM is <2MB, write and read to a handful of random locations in invalid addresses
+    // and check that writes don't take affect/reads return 0
+    uint32_t sram_size_kb = mcu_mbox_get_sram_size_kb(mbox_num);
+    VPRINTF(LOW, "MCU: Mbox SRAM size in KB: %d\n", sram_size_kb);
+    if (sram_size_kb < MCU_MBOX_MAX_SIZE_KB) {
+        for (uint32_t j = 0; j < 5; j++) {
+            uint32_t rand_addr = mcu_mbox_gen_rand_dword_addr(mbox_num, sram_size_kb, MCU_MBOX_MAX_SIZE_KB);
+
+            VPRINTF(LOW, "MCU: Attempting to write to invalid SRAM[%d]\n", rand_addr);
+            mcu_mbox_write_sram_dword(mbox_num, rand_addr, xorshift32());
+
+            uint32_t data = mcu_mbox_read_sram_dword(mbox_num, rand_addr);
+
+            if (data != 0) {
+                VPRINTF(FATAL, "MCU: Invalid access to SRAM[%d] did not return 0: 0x%x \n", rand_addr, data);
+                SEND_STDOUT_CTRL(0x1);
+                while(1);
+            }
+        }
+    }
 
     // MBOX: Write CMD_STATUS for testing
     VPRINTF(LOW, "MCU: Writing to MBOX%x CMD_STATUS\n", mbox_num); 
@@ -198,7 +219,7 @@ void main (void) {
     }
     VPRINTF(LOW, "MCU: Mbox%x Caliptra AXI properly reflected in MBOX_USER CSR\n", mbox_num);
 
-    mcu_mbox_update_status_complete(mbox_num);
+    mcu_mbox_update_status(mbox_num, MCU_MBOX_CMD_COMPLETE);
 
     // Clear the CMD_AVAIL interrupt and check that it gets cleared
     mcu_mbox_clear_mbox_cmd_avail_interrupt(mbox_num);

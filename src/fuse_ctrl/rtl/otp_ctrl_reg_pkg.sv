@@ -93,28 +93,28 @@ package otp_ctrl_reg_pkg;
   parameter int SwManufPartitionDigestSize = 8;
   parameter int SecretLcTransitionPartitionOffset = 1216;
   parameter int SecretLcTransitionPartitionSize = 184;
-  parameter int CptraSsTestUnlockToken0Offset = 1216;
-  parameter int CptraSsTestUnlockToken0Size = 16;
-  parameter int CptraSsTestUnlockToken1Offset = 1232;
+  parameter int CptraSsTestUnlockToken1Offset = 1216;
   parameter int CptraSsTestUnlockToken1Size = 16;
-  parameter int CptraSsTestUnlockToken2Offset = 1248;
+  parameter int CptraSsTestUnlockToken2Offset = 1232;
   parameter int CptraSsTestUnlockToken2Size = 16;
-  parameter int CptraSsTestUnlockToken3Offset = 1264;
+  parameter int CptraSsTestUnlockToken3Offset = 1248;
   parameter int CptraSsTestUnlockToken3Size = 16;
-  parameter int CptraSsTestUnlockToken4Offset = 1280;
+  parameter int CptraSsTestUnlockToken4Offset = 1264;
   parameter int CptraSsTestUnlockToken4Size = 16;
-  parameter int CptraSsTestUnlockToken5Offset = 1296;
+  parameter int CptraSsTestUnlockToken5Offset = 1280;
   parameter int CptraSsTestUnlockToken5Size = 16;
-  parameter int CptraSsTestUnlockToken6Offset = 1312;
+  parameter int CptraSsTestUnlockToken6Offset = 1296;
   parameter int CptraSsTestUnlockToken6Size = 16;
-  parameter int CptraSsTestUnlockToken7Offset = 1328;
+  parameter int CptraSsTestUnlockToken7Offset = 1312;
   parameter int CptraSsTestUnlockToken7Size = 16;
-  parameter int CptraSsTestExitToManufTokenOffset = 1344;
+  parameter int CptraSsTestExitToManufTokenOffset = 1328;
   parameter int CptraSsTestExitToManufTokenSize = 16;
-  parameter int CptraSsManufToProdTokenOffset = 1360;
+  parameter int CptraSsManufToProdTokenOffset = 1344;
   parameter int CptraSsManufToProdTokenSize = 16;
-  parameter int CptraSsProdToProdEndTokenOffset = 1376;
+  parameter int CptraSsProdToProdEndTokenOffset = 1360;
   parameter int CptraSsProdToProdEndTokenSize = 16;
+  parameter int CptraSsRmaTokenOffset = 1376;
+  parameter int CptraSsRmaTokenSize = 16;
   parameter int SecretLcTransitionPartitionDigestOffset = 1392;
   parameter int SecretLcTransitionPartitionDigestSize = 8;
   parameter int SvnPartitionOffset = 1400;
@@ -1030,7 +1030,7 @@ package otp_ctrl_reg_pkg;
   parameter int unsigned       OTP_CTRL_SW_CFG_WINDOW_IDX    = 0;
 
   // Register index for core interface
-  typedef enum int {
+  typedef enum logic [31:0] {
     OTP_CTRL_INTR_STATE,
     OTP_CTRL_INTR_ENABLE,
     OTP_CTRL_INTR_TEST,
@@ -1443,7 +1443,7 @@ package otp_ctrl_reg_pkg;
   parameter logic [PrimAw-1:0] OTP_CTRL_CSR7_OFFSET = 5'h 1c;
 
   // Register index for prim interface
-  typedef enum int {
+  typedef enum logic [31:0] {
     OTP_CTRL_CSR0,
     OTP_CTRL_CSR1,
     OTP_CTRL_CSR2,

@@ -1,6 +1,6 @@
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,21 +18,16 @@
 `ifndef CALIPTRA_SS_INCLUDES_SVH
 `define CALIPTRA_SS_INCLUDES_SVH
 
-parameter CPTRA_SS_MCU_LSU_ARID_WIDTH = 8;
-parameter CPTRA_SS_MCU_LSU_AWID_WIDTH = 8;
-parameter CPTRA_SS_MCU_IFU_ARID_WIDTH = 8;
-parameter CPTRA_SS_MCU_IFU_AWID_WIDTH = 8;
-
-parameter CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER   = 32'h3; // FIXME make these values modifiable at run-time for testing
-parameter CPTRA_SS_STRAP_MCU_LSU_AXI_USER       = 32'h1; // FIXME make these values modifiable at run-time for testing
-parameter CPTRA_SS_STRAP_MCU_IFU_AXI_USER       = 32'h2; // FIXME make these values modifiable at run-time for testing
+parameter CPTRA_SS_ROM_SIZE_KB = 256;
+parameter CPTRA_SS_ROM_DATA_W = 64;
+parameter CPTRA_SS_ROM_DEPTH = (CPTRA_SS_ROM_SIZE_KB*1024) / (CPTRA_SS_ROM_DATA_W/8);
+parameter CPTRA_SS_ROM_AXI_ADDR_W = $clog2(CPTRA_SS_ROM_SIZE_KB*1024);
+parameter CPTRA_SS_ROM_MEM_ADDR_W = $clog2(CPTRA_SS_ROM_DEPTH);
 
 // Interrupt Assignments
 // NOTE Vector 0 is reserved by VeeR
 `define VEER_INTR_VEC_MCI                 1
-`define VEER_INTR_VEC_CLP_MBOX_DATA_AVAIL 2
-`define VEER_INTR_VEC_I3C                 3
-`define VEER_INTR_VEC_FC                  4
-`define VEER_INTR_EXT_LSB                 5
+`define VEER_INTR_VEC_I3C                 2
+`define VEER_INTR_EXT_LSB                 3
     
-`endif // CPTRA_SS_INCLUDES_SVH
+`endif // CALIPTRA_SS_INCLUDES_SVH

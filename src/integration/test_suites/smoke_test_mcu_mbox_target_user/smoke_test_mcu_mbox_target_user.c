@@ -44,7 +44,7 @@ void mcu_mbox_get_and_check_sram_data(uint32_t mbox_num, uint32_t expected_dlen,
     }
 
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        mbox_resp_data = mcu_mbox_read_sram(mbox_num, 4*ii);
+        mbox_resp_data = mcu_mbox_read_sram_dword(mbox_num, ii);
         // Compare expected data from Caliptra uC
         if (mbox_resp_data != clptra_expected_data[ii]) {
             VPRINTF(FATAL, "MCU: Mbox%x SRAM data from Caliptra is not expected value - dword: %x expected data: %x\n", mbox_num, ii, clptra_expected_data[ii]);
@@ -66,8 +66,7 @@ void mcu_mbox_check_target_non_accessible_regs(uint32_t mbox_num, uint32_t calip
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    // TODO: add root user strap
-    if (mcu_mbox_read_mbox_user(mbox_num) != 0x1) {
+    if (mcu_mbox_read_mbox_user(mbox_num) != lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER)) {
         VPRINTF(FATAL, "MCU: Mbox%x MBOX_USER was changed by Target User\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
@@ -108,7 +107,7 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num, uint32_t mbox_dlen, ui
 
     //// MBOX: Write SRAM data
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
-        mcu_mbox_write_sram(mbox_num, 4*ii, mbox_data[ii]);
+        mcu_mbox_write_sram_dword(mbox_num, ii, mbox_data[ii]);
     }
 
     // MBOX: Write CMD_STATUS for testing

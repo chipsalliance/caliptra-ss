@@ -1,6 +1,6 @@
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ void main (void) {
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    mcu_mbox_update_status_complete(0);
+    mcu_mbox_update_status(0, MCU_MBOX_CMD_COMPLETE);
 
     SEND_STDOUT_CTRL(0x00); // FIXME - some reason TB not getting 0xFF. Flush out STDOUT and then write 0xFF
     SEND_STDOUT_CTRL(0xff);

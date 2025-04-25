@@ -182,6 +182,7 @@ ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
+${CALIPTRA_SS_ROOT}/src/libs/rtl/caliptra_ss_prim_assert_sec_cm.svh
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_top.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_axi_sub_decode.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_axi_sub_top.sv
@@ -198,4 +199,4 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/trace_buffer_csr.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mcu_mbox_csr.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg_defines.svh
-${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
+${CALIPTRA_SS_ROOT}/src/libs/rtl/caliptra_ss_prim_assert_sec_cm.svh

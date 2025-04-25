@@ -578,8 +578,16 @@
 `define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CAPABILITIES_DAA_ENTDAA_SUPPORT_LOW                     (15)
 `define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CAPABILITIES_DAA_ENTDAA_SUPPORT_MASK                    (32'h8000)
 `endif
-`ifndef I3CCSR_I3C_EC_STDBYCTRLMODE___RSVD_0
-`define I3CCSR_I3C_EC_STDBYCTRLMODE___RSVD_0                                                        (32'h90)
+`ifndef I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR                                     (32'h90)
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR_PID_HI_LOW                          (1)
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR_PID_HI_MASK                         (32'hfffe)
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR_DCR_LOW                             (16)
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR_DCR_MASK                            (32'hff0000)
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR_BCR_VAR_LOW                         (24)
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR_BCR_VAR_MASK                        (32'h1f000000)
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR_BCR_FIXED_LOW                       (29)
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_CHAR_BCR_FIXED_MASK                      (32'he0000000)
 `endif
 `ifndef I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_STATUS
 `define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_STATUS                                                  (32'h94)
@@ -633,8 +641,8 @@
 `define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_STATUS_CCC_FATAL_RSTDAA_ERR_STAT_LOW               (19)
 `define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_STATUS_CCC_FATAL_RSTDAA_ERR_STAT_MASK              (32'h80000)
 `endif
-`ifndef I3CCSR_I3C_EC_STDBYCTRLMODE___RSVD_1
-`define I3CCSR_I3C_EC_STDBYCTRLMODE___RSVD_1                                                        (32'ha4)
+`ifndef I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_PID_LO
+`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRTUAL_DEVICE_PID_LO                                   (32'ha4)
 `endif
 `ifndef I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE
 `define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_INTR_SIGNAL_ENABLE                                      (32'ha8)
@@ -784,6 +792,8 @@
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_INTERRUPT_MASK                                   (32'h78000)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ABORT_STAT_LOW                                  (25)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ABORT_STAT_MASK                                 (32'h2000000)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TX_DESC_COMPLETE_LOW                                     (26)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TX_DESC_COMPLETE_MASK                                    (32'h4000000)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ERR_STAT_LOW                                    (31)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ERR_STAT_MASK                                   (32'h80000000)
 `endif
@@ -811,6 +821,8 @@
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_IBI_DONE_EN_MASK                                         (32'h2000)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TRANSFER_ABORT_STAT_EN_LOW                               (25)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TRANSFER_ABORT_STAT_EN_MASK                              (32'h2000000)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TX_DESC_COMPLETE_EN_LOW                                  (26)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TX_DESC_COMPLETE_EN_MASK                                 (32'h4000000)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TRANSFER_ERR_STAT_EN_LOW                                 (31)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TRANSFER_ERR_STAT_EN_MASK                                (32'h80000000)
 `endif
@@ -838,6 +850,8 @@
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_IBI_DONE_FORCE_MASK                                       (32'h2000)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TRANSFER_ABORT_STAT_FORCE_LOW                             (25)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TRANSFER_ABORT_STAT_FORCE_MASK                            (32'h2000000)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TX_DESC_COMPLETE_FORCE_LOW                                (26)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TX_DESC_COMPLETE_FORCE_MASK                               (32'h4000000)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TRANSFER_ERR_STAT_FORCE_LOW                               (31)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TRANSFER_ERR_STAT_FORCE_MASK                              (32'h80000000)
 `endif
@@ -905,11 +919,21 @@
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS                                                     (32'h108)
 `endif
-`ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_0
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_0                                                     (32'h10c)
+`ifndef I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG                                                        (32'h10c)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_INTF_BYPASS_LOW                                    (0)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_INTF_BYPASS_MASK                                   (32'h1)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_PAYLOAD_DONE_LOW                                   (1)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_PAYLOAD_DONE_MASK                                  (32'h2)
 `endif
-`ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_1
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_1                                                     (32'h110)
+`ifndef I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS                                             (32'h110)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_DEVICE_RESET_CTRL_LOW                       (0)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_DEVICE_RESET_CTRL_MASK                      (32'hff)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_RECOVERY_CTRL_ACTIVATE_REC_IMG_LOW          (8)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_RECOVERY_CTRL_ACTIVATE_REC_IMG_MASK         (32'hff00)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_INDIRECT_FIFO_CTRL_RESET_LOW                (16)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_INDIRECT_FIFO_CTRL_RESET_MASK               (32'hff0000)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2                                                     (32'h114)
@@ -6180,16 +6204,28 @@
 `define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_LOW                                                        (5)
 `define MCI_REG_HW_CONFIG1_MCU_SRAM_SIZE_MASK                                                       (32'h1ffe0)
 `endif
+`ifndef MCI_REG_MCU_IFU_AXI_USER
+`define MCI_REG_MCU_IFU_AXI_USER                                                                    (32'h20)
+`endif
+`ifndef MCI_REG_MCU_LSU_AXI_USER
+`define MCI_REG_MCU_LSU_AXI_USER                                                                    (32'h24)
+`endif
+`ifndef MCI_REG_MCU_SRAM_CONFIG_AXI_USER
+`define MCI_REG_MCU_SRAM_CONFIG_AXI_USER                                                            (32'h28)
+`endif
+`ifndef MCI_REG_MCI_SOC_CONFIG_AXI_USER
+`define MCI_REG_MCI_SOC_CONFIG_AXI_USER                                                             (32'h2c)
+`endif
 `ifndef MCI_REG_FW_FLOW_STATUS
-`define MCI_REG_FW_FLOW_STATUS                                                                      (32'h20)
+`define MCI_REG_FW_FLOW_STATUS                                                                      (32'h30)
 `endif
 `ifndef MCI_REG_HW_FLOW_STATUS
-`define MCI_REG_HW_FLOW_STATUS                                                                      (32'h24)
+`define MCI_REG_HW_FLOW_STATUS                                                                      (32'h34)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW                                                         (0)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK                                                        (32'hf)
 `endif
 `ifndef MCI_REG_RESET_REASON
-`define MCI_REG_RESET_REASON                                                                        (32'h28)
+`define MCI_REG_RESET_REASON                                                                        (32'h38)
 `define MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_LOW                                               (0)
 `define MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_MASK                                              (32'h1)
 `define MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_LOW                                                  (1)
@@ -6198,14 +6234,14 @@
 `define MCI_REG_RESET_REASON_WARM_RESET_MASK                                                        (32'h4)
 `endif
 `ifndef MCI_REG_RESET_STATUS
-`define MCI_REG_RESET_STATUS                                                                        (32'h2c)
+`define MCI_REG_RESET_STATUS                                                                        (32'h3c)
 `define MCI_REG_RESET_STATUS_CPTRA_RESET_STS_LOW                                                    (0)
 `define MCI_REG_RESET_STATUS_CPTRA_RESET_STS_MASK                                                   (32'h1)
 `define MCI_REG_RESET_STATUS_MCU_RESET_STS_LOW                                                      (1)
 `define MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK                                                     (32'h2)
 `endif
 `ifndef MCI_REG_SECURITY_STATE
-`define MCI_REG_SECURITY_STATE                                                                      (32'h30)
+`define MCI_REG_SECURITY_STATE                                                                      (32'h40)
 `define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_LOW                                                 (0)
 `define MCI_REG_SECURITY_STATE_DEVICE_LIFECYCLE_MASK                                                (32'h3)
 `define MCI_REG_SECURITY_STATE_DEBUG_LOCKED_LOW                                                     (2)
@@ -6214,7 +6250,7 @@
 `define MCI_REG_SECURITY_STATE_SCAN_MODE_MASK                                                       (32'h8)
 `endif
 `ifndef MCI_REG_HW_ERROR_FATAL
-`define MCI_REG_HW_ERROR_FATAL                                                                      (32'h40)
+`define MCI_REG_HW_ERROR_FATAL                                                                      (32'h50)
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_LOW                                                 (0)
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_MASK                                                (32'h1)
 `define MCI_REG_HW_ERROR_FATAL_NMI_PIN_LOW                                                          (1)
@@ -6223,184 +6259,184 @@
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (32'h4)
 `endif
 `ifndef MCI_REG_AGG_ERROR_FATAL
-`define MCI_REG_AGG_ERROR_FATAL                                                                     (32'h44)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_LOW                                               (0)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_MASK                                              (32'h1)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL30_LOW                                               (1)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL30_MASK                                              (32'h2)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL29_LOW                                               (2)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL29_MASK                                              (32'h4)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL28_LOW                                               (3)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL28_MASK                                              (32'h8)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL27_LOW                                               (4)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL27_MASK                                              (32'h10)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL26_LOW                                               (5)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL26_MASK                                              (32'h20)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL25_LOW                                               (6)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL25_MASK                                              (32'h40)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL24_LOW                                               (7)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL24_MASK                                              (32'h80)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL23_LOW                                               (8)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL23_MASK                                              (32'h100)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL22_LOW                                               (9)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL22_MASK                                              (32'h200)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL21_LOW                                               (10)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL21_MASK                                              (32'h400)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL20_LOW                                               (11)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL20_MASK                                              (32'h800)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL19_LOW                                               (12)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL19_MASK                                              (32'h1000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL18_LOW                                               (13)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL18_MASK                                              (32'h2000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL17_LOW                                               (14)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL17_MASK                                              (32'h4000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL16_LOW                                               (15)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL16_MASK                                              (32'h8000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL15_LOW                                               (16)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL15_MASK                                              (32'h10000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL14_LOW                                               (17)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL14_MASK                                              (32'h20000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL13_LOW                                               (18)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL13_MASK                                              (32'h40000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL12_LOW                                               (19)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL12_MASK                                              (32'h80000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL11_LOW                                               (20)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL11_MASK                                              (32'h100000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL10_LOW                                               (21)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL10_MASK                                              (32'h200000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL9_LOW                                                (22)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL9_MASK                                               (32'h400000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL8_LOW                                                (23)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL8_MASK                                               (32'h800000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL7_LOW                                                (24)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL7_MASK                                               (32'h1000000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL6_LOW                                                (25)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL6_MASK                                               (32'h2000000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL5_LOW                                                (26)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL5_MASK                                               (32'h4000000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL4_LOW                                                (27)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL4_MASK                                               (32'h8000000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL3_LOW                                                (28)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL3_MASK                                               (32'h10000000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL2_LOW                                                (29)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL2_MASK                                               (32'h20000000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL1_LOW                                                (30)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL1_MASK                                               (32'h40000000)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL0_LOW                                                (31)
-`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL0_MASK                                               (32'h80000000)
+`define MCI_REG_AGG_ERROR_FATAL                                                                     (32'h54)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL0_LOW                                                (0)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL0_MASK                                               (32'h1)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL1_LOW                                                (1)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL1_MASK                                               (32'h2)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL2_LOW                                                (2)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL2_MASK                                               (32'h4)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL3_LOW                                                (3)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL3_MASK                                               (32'h8)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL4_LOW                                                (4)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL4_MASK                                               (32'h10)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL5_LOW                                                (5)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL5_MASK                                               (32'h20)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL6_LOW                                                (6)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL6_MASK                                               (32'h40)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL7_LOW                                                (7)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL7_MASK                                               (32'h80)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL8_LOW                                                (8)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL8_MASK                                               (32'h100)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL9_LOW                                                (9)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL9_MASK                                               (32'h200)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL10_LOW                                               (10)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL10_MASK                                              (32'h400)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL11_LOW                                               (11)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL11_MASK                                              (32'h800)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL12_LOW                                               (12)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL12_MASK                                              (32'h1000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL13_LOW                                               (13)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL13_MASK                                              (32'h2000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL14_LOW                                               (14)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL14_MASK                                              (32'h4000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL15_LOW                                               (15)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL15_MASK                                              (32'h8000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL16_LOW                                               (16)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL16_MASK                                              (32'h10000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL17_LOW                                               (17)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL17_MASK                                              (32'h20000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL18_LOW                                               (18)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL18_MASK                                              (32'h40000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL19_LOW                                               (19)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL19_MASK                                              (32'h80000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL20_LOW                                               (20)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL20_MASK                                              (32'h100000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL21_LOW                                               (21)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL21_MASK                                              (32'h200000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL22_LOW                                               (22)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL22_MASK                                              (32'h400000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL23_LOW                                               (23)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL23_MASK                                              (32'h800000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL24_LOW                                               (24)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL24_MASK                                              (32'h1000000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL25_LOW                                               (25)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL25_MASK                                              (32'h2000000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL26_LOW                                               (26)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL26_MASK                                              (32'h4000000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL27_LOW                                               (27)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL27_MASK                                              (32'h8000000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL28_LOW                                               (28)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL28_MASK                                              (32'h10000000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL29_LOW                                               (29)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL29_MASK                                              (32'h20000000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL30_LOW                                               (30)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL30_MASK                                              (32'h40000000)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_LOW                                               (31)
+`define MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL31_MASK                                              (32'h80000000)
 `endif
 `ifndef MCI_REG_HW_ERROR_NON_FATAL
-`define MCI_REG_HW_ERROR_NON_FATAL                                                                  (32'h48)
+`define MCI_REG_HW_ERROR_NON_FATAL                                                                  (32'h58)
 `define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_LOW                                                (0)
 `define MCI_REG_HW_ERROR_NON_FATAL_MBOX0_ECC_UNC_MASK                                               (32'h1)
 `define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_ECC_UNC_LOW                                                (1)
 `define MCI_REG_HW_ERROR_NON_FATAL_MBOX1_ECC_UNC_MASK                                               (32'h2)
 `endif
 `ifndef MCI_REG_AGG_ERROR_NON_FATAL
-`define MCI_REG_AGG_ERROR_NON_FATAL                                                                 (32'h4c)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_LOW                                       (0)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_MASK                                      (32'h1)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL30_LOW                                       (1)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL30_MASK                                      (32'h2)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL29_LOW                                       (2)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL29_MASK                                      (32'h4)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL28_LOW                                       (3)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL28_MASK                                      (32'h8)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL27_LOW                                       (4)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL27_MASK                                      (32'h10)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL26_LOW                                       (5)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL26_MASK                                      (32'h20)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL25_LOW                                       (6)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL25_MASK                                      (32'h40)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL24_LOW                                       (7)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL24_MASK                                      (32'h80)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL23_LOW                                       (8)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL23_MASK                                      (32'h100)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL22_LOW                                       (9)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL22_MASK                                      (32'h200)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL21_LOW                                       (10)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL21_MASK                                      (32'h400)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL20_LOW                                       (11)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL20_MASK                                      (32'h800)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL19_LOW                                       (12)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL19_MASK                                      (32'h1000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL18_LOW                                       (13)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL18_MASK                                      (32'h2000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL17_LOW                                       (14)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL17_MASK                                      (32'h4000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL16_LOW                                       (15)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL16_MASK                                      (32'h8000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL15_LOW                                       (16)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL15_MASK                                      (32'h10000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL14_LOW                                       (17)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL14_MASK                                      (32'h20000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL13_LOW                                       (18)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL13_MASK                                      (32'h40000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL12_LOW                                       (19)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL12_MASK                                      (32'h80000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL11_LOW                                       (20)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL11_MASK                                      (32'h100000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL10_LOW                                       (21)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL10_MASK                                      (32'h200000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL9_LOW                                        (22)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL9_MASK                                       (32'h400000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL8_LOW                                        (23)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL8_MASK                                       (32'h800000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL7_LOW                                        (24)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL7_MASK                                       (32'h1000000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL6_LOW                                        (25)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL6_MASK                                       (32'h2000000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL5_LOW                                        (26)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL5_MASK                                       (32'h4000000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL4_LOW                                        (27)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL4_MASK                                       (32'h8000000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL3_LOW                                        (28)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL3_MASK                                       (32'h10000000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL2_LOW                                        (29)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL2_MASK                                       (32'h20000000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL1_LOW                                        (30)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL1_MASK                                       (32'h40000000)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL0_LOW                                        (31)
-`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL0_MASK                                       (32'h80000000)
+`define MCI_REG_AGG_ERROR_NON_FATAL                                                                 (32'h5c)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL0_LOW                                        (0)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL0_MASK                                       (32'h1)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL1_LOW                                        (1)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL1_MASK                                       (32'h2)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL2_LOW                                        (2)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL2_MASK                                       (32'h4)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL3_LOW                                        (3)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL3_MASK                                       (32'h8)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL4_LOW                                        (4)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL4_MASK                                       (32'h10)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL5_LOW                                        (5)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL5_MASK                                       (32'h20)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL6_LOW                                        (6)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL6_MASK                                       (32'h40)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL7_LOW                                        (7)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL7_MASK                                       (32'h80)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL8_LOW                                        (8)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL8_MASK                                       (32'h100)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL9_LOW                                        (9)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL9_MASK                                       (32'h200)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL10_LOW                                       (10)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL10_MASK                                      (32'h400)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL11_LOW                                       (11)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL11_MASK                                      (32'h800)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL12_LOW                                       (12)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL12_MASK                                      (32'h1000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL13_LOW                                       (13)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL13_MASK                                      (32'h2000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL14_LOW                                       (14)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL14_MASK                                      (32'h4000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL15_LOW                                       (15)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL15_MASK                                      (32'h8000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL16_LOW                                       (16)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL16_MASK                                      (32'h10000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL17_LOW                                       (17)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL17_MASK                                      (32'h20000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL18_LOW                                       (18)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL18_MASK                                      (32'h40000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL19_LOW                                       (19)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL19_MASK                                      (32'h80000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL20_LOW                                       (20)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL20_MASK                                      (32'h100000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL21_LOW                                       (21)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL21_MASK                                      (32'h200000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL22_LOW                                       (22)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL22_MASK                                      (32'h400000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL23_LOW                                       (23)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL23_MASK                                      (32'h800000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL24_LOW                                       (24)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL24_MASK                                      (32'h1000000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL25_LOW                                       (25)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL25_MASK                                      (32'h2000000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL26_LOW                                       (26)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL26_MASK                                      (32'h4000000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL27_LOW                                       (27)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL27_MASK                                      (32'h8000000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL28_LOW                                       (28)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL28_MASK                                      (32'h10000000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL29_LOW                                       (29)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL29_MASK                                      (32'h20000000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL30_LOW                                       (30)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL30_MASK                                      (32'h40000000)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_LOW                                       (31)
+`define MCI_REG_AGG_ERROR_NON_FATAL_AGG_ERROR_NON_FATAL31_MASK                                      (32'h80000000)
 `endif
 `ifndef MCI_REG_FW_ERROR_FATAL
-`define MCI_REG_FW_ERROR_FATAL                                                                      (32'h50)
+`define MCI_REG_FW_ERROR_FATAL                                                                      (32'h60)
 `endif
 `ifndef MCI_REG_FW_ERROR_NON_FATAL
-`define MCI_REG_FW_ERROR_NON_FATAL                                                                  (32'h54)
+`define MCI_REG_FW_ERROR_NON_FATAL                                                                  (32'h64)
 `endif
 `ifndef MCI_REG_HW_ERROR_ENC
-`define MCI_REG_HW_ERROR_ENC                                                                        (32'h58)
+`define MCI_REG_HW_ERROR_ENC                                                                        (32'h68)
 `endif
 `ifndef MCI_REG_FW_ERROR_ENC
-`define MCI_REG_FW_ERROR_ENC                                                                        (32'h5c)
+`define MCI_REG_FW_ERROR_ENC                                                                        (32'h6c)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_0
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                            (32'h60)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_0                                                            (32'h70)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_1
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                            (32'h64)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_1                                                            (32'h74)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_2
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                            (32'h68)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_2                                                            (32'h78)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_3
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                            (32'h6c)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_3                                                            (32'h7c)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_4
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                            (32'h70)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_4                                                            (32'h80)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_5
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                            (32'h74)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_5                                                            (32'h84)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_6
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                            (32'h78)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_6                                                            (32'h88)
 `endif
 `ifndef MCI_REG_FW_EXTENDED_ERROR_INFO_7
-`define MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                            (32'h7c)
+`define MCI_REG_FW_EXTENDED_ERROR_INFO_7                                                            (32'h8c)
 `endif
 `ifndef MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK
-`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                        (32'h80)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK                                                        (32'h90)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_ECC_UNC_LOW                              (0)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_ECC_UNC_MASK                             (32'h1)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_NMI_PIN_LOW                                       (1)
@@ -6409,14 +6445,14 @@
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (32'h4)
 `endif
 `ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK
-`define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (32'h84)
+`define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (32'h94)
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_ECC_UNC_LOW                             (0)
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX0_ECC_UNC_MASK                            (32'h1)
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_ECC_UNC_LOW                             (1)
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK_MASK_MBOX1_ECC_UNC_MASK                            (32'h2)
 `endif
 `ifndef MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK
-`define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                                       (32'h88)
+`define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK                                                       (32'h98)
 `define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL31_LOW                            (0)
 `define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL31_MASK                           (32'h1)
 `define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL30_LOW                            (1)
@@ -6483,7 +6519,7 @@
 `define MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK_MASK_AGG_ERROR_FATAL0_MASK                            (32'h80000000)
 `endif
 `ifndef MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK
-`define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                                   (32'h8c)
+`define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK                                                   (32'h9c)
 `define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL31_LOW                    (0)
 `define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL31_MASK                   (32'h1)
 `define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL30_LOW                    (1)
@@ -6550,55 +6586,55 @@
 `define MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK_MASK_AGG_ERROR_NON_FATAL0_MASK                    (32'h80000000)
 `endif
 `ifndef MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK
-`define MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                        (32'h90)
+`define MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK                                                        (32'ha0)
 `endif
 `ifndef MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK
-`define MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                                    (32'h94)
+`define MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK                                                    (32'ha4)
 `endif
 `ifndef MCI_REG_WDT_TIMER1_EN
-`define MCI_REG_WDT_TIMER1_EN                                                                       (32'ha0)
+`define MCI_REG_WDT_TIMER1_EN                                                                       (32'hb0)
 `define MCI_REG_WDT_TIMER1_EN_TIMER1_EN_LOW                                                         (0)
 `define MCI_REG_WDT_TIMER1_EN_TIMER1_EN_MASK                                                        (32'h1)
 `endif
 `ifndef MCI_REG_WDT_TIMER1_CTRL
-`define MCI_REG_WDT_TIMER1_CTRL                                                                     (32'ha4)
+`define MCI_REG_WDT_TIMER1_CTRL                                                                     (32'hb4)
 `define MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_LOW                                                  (0)
 `define MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_MASK                                                 (32'h1)
 `endif
 `ifndef MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0
-`define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                         (32'ha8)
+`define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_0                                                         (32'hb8)
 `endif
 `ifndef MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1
-`define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                         (32'hac)
+`define MCI_REG_WDT_TIMER1_TIMEOUT_PERIOD_1                                                         (32'hbc)
 `endif
 `ifndef MCI_REG_WDT_TIMER2_EN
-`define MCI_REG_WDT_TIMER2_EN                                                                       (32'hb0)
+`define MCI_REG_WDT_TIMER2_EN                                                                       (32'hc0)
 `define MCI_REG_WDT_TIMER2_EN_TIMER2_EN_LOW                                                         (0)
 `define MCI_REG_WDT_TIMER2_EN_TIMER2_EN_MASK                                                        (32'h1)
 `endif
 `ifndef MCI_REG_WDT_TIMER2_CTRL
-`define MCI_REG_WDT_TIMER2_CTRL                                                                     (32'hb4)
+`define MCI_REG_WDT_TIMER2_CTRL                                                                     (32'hc4)
 `define MCI_REG_WDT_TIMER2_CTRL_TIMER2_RESTART_LOW                                                  (0)
 `define MCI_REG_WDT_TIMER2_CTRL_TIMER2_RESTART_MASK                                                 (32'h1)
 `endif
 `ifndef MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0
-`define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                         (32'hb8)
+`define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_0                                                         (32'hc8)
 `endif
 `ifndef MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1
-`define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                         (32'hbc)
+`define MCI_REG_WDT_TIMER2_TIMEOUT_PERIOD_1                                                         (32'hcc)
 `endif
 `ifndef MCI_REG_WDT_STATUS
-`define MCI_REG_WDT_STATUS                                                                          (32'hc0)
+`define MCI_REG_WDT_STATUS                                                                          (32'hd0)
 `define MCI_REG_WDT_STATUS_T1_TIMEOUT_LOW                                                           (0)
 `define MCI_REG_WDT_STATUS_T1_TIMEOUT_MASK                                                          (32'h1)
 `define MCI_REG_WDT_STATUS_T2_TIMEOUT_LOW                                                           (1)
 `define MCI_REG_WDT_STATUS_T2_TIMEOUT_MASK                                                          (32'h2)
 `endif
 `ifndef MCI_REG_WDT_CFG_0
-`define MCI_REG_WDT_CFG_0                                                                           (32'hd0)
+`define MCI_REG_WDT_CFG_0                                                                           (32'hd4)
 `endif
 `ifndef MCI_REG_WDT_CFG_1
-`define MCI_REG_WDT_CFG_1                                                                           (32'hd4)
+`define MCI_REG_WDT_CFG_1                                                                           (32'hd8)
 `endif
 `ifndef MCI_REG_MCU_TIMER_CONFIG
 `define MCI_REG_MCU_TIMER_CONFIG                                                                    (32'he0)
@@ -7182,6 +7218,8 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX0_SOC_REQ_LOCK_EN_MASK                     (32'h1000)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_LOW                      (13)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_MBOX1_SOC_REQ_LOCK_EN_MASK                     (32'h2000)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_OTP_OPERATION_DONE_EN_LOW                      (14)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R_NOTIF_OTP_OPERATION_DONE_EN_MASK                     (32'h4000)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R
 `define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_EN_R                                                      (32'h1010)
@@ -7376,6 +7414,8 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_SOC_REQ_LOCK_STS_MASK              (32'h1000)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_LOW               (13)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_MASK              (32'h2000)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_OTP_OPERATION_DONE_STS_LOW               (14)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_OTP_OPERATION_DONE_STS_MASK              (32'h4000)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R
 `define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R                                                (32'h1028)
@@ -7556,6 +7596,8 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX0_SOC_REQ_LOCK_TRIG_MASK                 (32'h1000)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_LOW                  (13)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_MBOX1_SOC_REQ_LOCK_TRIG_MASK                 (32'h2000)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_OTP_OPERATION_DONE_TRIG_LOW                  (14)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_TRIG_R_NOTIF_OTP_OPERATION_DONE_TRIG_MASK                 (32'h4000)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R
 `define MCI_REG_INTR_BLOCK_RF_NOTIF1_INTR_TRIG_R                                                    (32'h1038)
@@ -7875,6 +7917,9 @@
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R                                 (32'h12b4)
+`endif
+`ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_R
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_R                                 (32'h12b8)
 `endif
 `ifndef MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R
 `define MCI_REG_INTR_BLOCK_RF_ERROR_INTERNAL_INTR_COUNT_INCR_R                                      (32'h1300)
@@ -8295,6 +8340,11 @@
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R                            (32'h144c)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
 `define MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_INCR_R_PULSE_MASK                 (32'h1)
+`endif
+`ifndef MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_INCR_R
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_INCR_R                            (32'h1450)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_INCR_R_PULSE_LOW                  (0)
+`define MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_INCR_R_PULSE_MASK                 (32'h1)
 `endif
 `ifndef MCU_TRACE_BUFFER_CSR_STATUS
 `define MCU_TRACE_BUFFER_CSR_STATUS                                                                 (32'h0)

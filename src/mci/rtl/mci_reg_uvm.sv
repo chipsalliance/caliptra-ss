@@ -224,6 +224,126 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_CONFIG1
 
+    // Reg - mci_reg::MCU_IFU_AXI_USER
+    class mci_reg__MCU_IFU_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_IFU_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCU_IFU_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCU_IFU_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_IFU_AXI_USER
+
+    // Reg - mci_reg::MCU_LSU_AXI_USER
+    class mci_reg__MCU_LSU_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_LSU_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCU_LSU_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCU_LSU_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_LSU_AXI_USER
+
+    // Reg - mci_reg::MCU_SRAM_CONFIG_AXI_USER
+    class mci_reg__MCU_SRAM_CONFIG_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCU_SRAM_CONFIG_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCU_SRAM_CONFIG_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_SRAM_CONFIG_AXI_USER
+
+    // Reg - mci_reg::MCI_SOC_CONFIG_AXI_USER
+    class mci_reg__MCI_SOC_CONFIG_AXI_USER extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCI_SOC_CONFIG_AXI_USER_bit_cg value_bit_cg[32];
+        mci_reg__MCI_SOC_CONFIG_AXI_USER_fld_cg fld_cg;
+        rand uvm_reg_field value;
+
+        function new(string name = "mci_reg__MCI_SOC_CONFIG_AXI_USER");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.value = new("value");
+            this.value.configure(this, 32, 0, "RO", 1, 'h0, 0, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(value_bit_cg[bt]) value_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCI_SOC_CONFIG_AXI_USER
+
     // Reg - mci_reg::FW_FLOW_STATUS
     class mci_reg__FW_FLOW_STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -445,71 +565,71 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal31_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal30_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal29_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal28_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal27_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal26_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal25_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal24_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal23_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal22_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal21_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal20_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal19_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal18_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal17_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal16_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal15_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal14_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal13_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal12_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal11_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal10_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal9_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal8_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal7_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal6_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal5_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal4_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal3_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal2_bit_cg[1];
-        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal1_bit_cg[1];
         mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal0_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal1_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal2_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal3_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal4_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal5_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal6_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal7_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal8_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal9_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal10_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal11_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal12_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal13_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal14_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal15_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal16_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal17_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal18_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal19_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal20_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal21_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal22_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal23_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal24_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal25_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal26_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal27_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal28_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal29_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal30_bit_cg[1];
+        mci_reg__AGG_ERROR_FATAL_bit_cg agg_error_fatal31_bit_cg[1];
         mci_reg__AGG_ERROR_FATAL_fld_cg fld_cg;
-        rand uvm_reg_field agg_error_fatal31;
-        rand uvm_reg_field agg_error_fatal30;
-        rand uvm_reg_field agg_error_fatal29;
-        rand uvm_reg_field agg_error_fatal28;
-        rand uvm_reg_field agg_error_fatal27;
-        rand uvm_reg_field agg_error_fatal26;
-        rand uvm_reg_field agg_error_fatal25;
-        rand uvm_reg_field agg_error_fatal24;
-        rand uvm_reg_field agg_error_fatal23;
-        rand uvm_reg_field agg_error_fatal22;
-        rand uvm_reg_field agg_error_fatal21;
-        rand uvm_reg_field agg_error_fatal20;
-        rand uvm_reg_field agg_error_fatal19;
-        rand uvm_reg_field agg_error_fatal18;
-        rand uvm_reg_field agg_error_fatal17;
-        rand uvm_reg_field agg_error_fatal16;
-        rand uvm_reg_field agg_error_fatal15;
-        rand uvm_reg_field agg_error_fatal14;
-        rand uvm_reg_field agg_error_fatal13;
-        rand uvm_reg_field agg_error_fatal12;
-        rand uvm_reg_field agg_error_fatal11;
-        rand uvm_reg_field agg_error_fatal10;
-        rand uvm_reg_field agg_error_fatal9;
-        rand uvm_reg_field agg_error_fatal8;
-        rand uvm_reg_field agg_error_fatal7;
-        rand uvm_reg_field agg_error_fatal6;
-        rand uvm_reg_field agg_error_fatal5;
-        rand uvm_reg_field agg_error_fatal4;
-        rand uvm_reg_field agg_error_fatal3;
-        rand uvm_reg_field agg_error_fatal2;
-        rand uvm_reg_field agg_error_fatal1;
         rand uvm_reg_field agg_error_fatal0;
+        rand uvm_reg_field agg_error_fatal1;
+        rand uvm_reg_field agg_error_fatal2;
+        rand uvm_reg_field agg_error_fatal3;
+        rand uvm_reg_field agg_error_fatal4;
+        rand uvm_reg_field agg_error_fatal5;
+        rand uvm_reg_field agg_error_fatal6;
+        rand uvm_reg_field agg_error_fatal7;
+        rand uvm_reg_field agg_error_fatal8;
+        rand uvm_reg_field agg_error_fatal9;
+        rand uvm_reg_field agg_error_fatal10;
+        rand uvm_reg_field agg_error_fatal11;
+        rand uvm_reg_field agg_error_fatal12;
+        rand uvm_reg_field agg_error_fatal13;
+        rand uvm_reg_field agg_error_fatal14;
+        rand uvm_reg_field agg_error_fatal15;
+        rand uvm_reg_field agg_error_fatal16;
+        rand uvm_reg_field agg_error_fatal17;
+        rand uvm_reg_field agg_error_fatal18;
+        rand uvm_reg_field agg_error_fatal19;
+        rand uvm_reg_field agg_error_fatal20;
+        rand uvm_reg_field agg_error_fatal21;
+        rand uvm_reg_field agg_error_fatal22;
+        rand uvm_reg_field agg_error_fatal23;
+        rand uvm_reg_field agg_error_fatal24;
+        rand uvm_reg_field agg_error_fatal25;
+        rand uvm_reg_field agg_error_fatal26;
+        rand uvm_reg_field agg_error_fatal27;
+        rand uvm_reg_field agg_error_fatal28;
+        rand uvm_reg_field agg_error_fatal29;
+        rand uvm_reg_field agg_error_fatal30;
+        rand uvm_reg_field agg_error_fatal31;
 
         function new(string name = "mci_reg__AGG_ERROR_FATAL");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -521,103 +641,103 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.agg_error_fatal31 = new("agg_error_fatal31");
-            this.agg_error_fatal31.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal30 = new("agg_error_fatal30");
-            this.agg_error_fatal30.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal29 = new("agg_error_fatal29");
-            this.agg_error_fatal29.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal28 = new("agg_error_fatal28");
-            this.agg_error_fatal28.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal27 = new("agg_error_fatal27");
-            this.agg_error_fatal27.configure(this, 1, 4, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal26 = new("agg_error_fatal26");
-            this.agg_error_fatal26.configure(this, 1, 5, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal25 = new("agg_error_fatal25");
-            this.agg_error_fatal25.configure(this, 1, 6, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal24 = new("agg_error_fatal24");
-            this.agg_error_fatal24.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal23 = new("agg_error_fatal23");
-            this.agg_error_fatal23.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal22 = new("agg_error_fatal22");
-            this.agg_error_fatal22.configure(this, 1, 9, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal21 = new("agg_error_fatal21");
-            this.agg_error_fatal21.configure(this, 1, 10, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal20 = new("agg_error_fatal20");
-            this.agg_error_fatal20.configure(this, 1, 11, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal19 = new("agg_error_fatal19");
-            this.agg_error_fatal19.configure(this, 1, 12, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal18 = new("agg_error_fatal18");
-            this.agg_error_fatal18.configure(this, 1, 13, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal17 = new("agg_error_fatal17");
-            this.agg_error_fatal17.configure(this, 1, 14, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal16 = new("agg_error_fatal16");
-            this.agg_error_fatal16.configure(this, 1, 15, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal15 = new("agg_error_fatal15");
-            this.agg_error_fatal15.configure(this, 1, 16, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal14 = new("agg_error_fatal14");
-            this.agg_error_fatal14.configure(this, 1, 17, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal13 = new("agg_error_fatal13");
-            this.agg_error_fatal13.configure(this, 1, 18, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal12 = new("agg_error_fatal12");
-            this.agg_error_fatal12.configure(this, 1, 19, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal11 = new("agg_error_fatal11");
-            this.agg_error_fatal11.configure(this, 1, 20, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal10 = new("agg_error_fatal10");
-            this.agg_error_fatal10.configure(this, 1, 21, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal9 = new("agg_error_fatal9");
-            this.agg_error_fatal9.configure(this, 1, 22, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal8 = new("agg_error_fatal8");
-            this.agg_error_fatal8.configure(this, 1, 23, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal7 = new("agg_error_fatal7");
-            this.agg_error_fatal7.configure(this, 1, 24, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal6 = new("agg_error_fatal6");
-            this.agg_error_fatal6.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal5 = new("agg_error_fatal5");
-            this.agg_error_fatal5.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal4 = new("agg_error_fatal4");
-            this.agg_error_fatal4.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal3 = new("agg_error_fatal3");
-            this.agg_error_fatal3.configure(this, 1, 28, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal2 = new("agg_error_fatal2");
-            this.agg_error_fatal2.configure(this, 1, 29, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_fatal1 = new("agg_error_fatal1");
-            this.agg_error_fatal1.configure(this, 1, 30, "W1C", 1, 'h0, 1, 1, 0);
             this.agg_error_fatal0 = new("agg_error_fatal0");
-            this.agg_error_fatal0.configure(this, 1, 31, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal0.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal1 = new("agg_error_fatal1");
+            this.agg_error_fatal1.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal2 = new("agg_error_fatal2");
+            this.agg_error_fatal2.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal3 = new("agg_error_fatal3");
+            this.agg_error_fatal3.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal4 = new("agg_error_fatal4");
+            this.agg_error_fatal4.configure(this, 1, 4, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal5 = new("agg_error_fatal5");
+            this.agg_error_fatal5.configure(this, 1, 5, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal6 = new("agg_error_fatal6");
+            this.agg_error_fatal6.configure(this, 1, 6, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal7 = new("agg_error_fatal7");
+            this.agg_error_fatal7.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal8 = new("agg_error_fatal8");
+            this.agg_error_fatal8.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal9 = new("agg_error_fatal9");
+            this.agg_error_fatal9.configure(this, 1, 9, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal10 = new("agg_error_fatal10");
+            this.agg_error_fatal10.configure(this, 1, 10, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal11 = new("agg_error_fatal11");
+            this.agg_error_fatal11.configure(this, 1, 11, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal12 = new("agg_error_fatal12");
+            this.agg_error_fatal12.configure(this, 1, 12, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal13 = new("agg_error_fatal13");
+            this.agg_error_fatal13.configure(this, 1, 13, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal14 = new("agg_error_fatal14");
+            this.agg_error_fatal14.configure(this, 1, 14, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal15 = new("agg_error_fatal15");
+            this.agg_error_fatal15.configure(this, 1, 15, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal16 = new("agg_error_fatal16");
+            this.agg_error_fatal16.configure(this, 1, 16, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal17 = new("agg_error_fatal17");
+            this.agg_error_fatal17.configure(this, 1, 17, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal18 = new("agg_error_fatal18");
+            this.agg_error_fatal18.configure(this, 1, 18, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal19 = new("agg_error_fatal19");
+            this.agg_error_fatal19.configure(this, 1, 19, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal20 = new("agg_error_fatal20");
+            this.agg_error_fatal20.configure(this, 1, 20, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal21 = new("agg_error_fatal21");
+            this.agg_error_fatal21.configure(this, 1, 21, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal22 = new("agg_error_fatal22");
+            this.agg_error_fatal22.configure(this, 1, 22, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal23 = new("agg_error_fatal23");
+            this.agg_error_fatal23.configure(this, 1, 23, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal24 = new("agg_error_fatal24");
+            this.agg_error_fatal24.configure(this, 1, 24, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal25 = new("agg_error_fatal25");
+            this.agg_error_fatal25.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal26 = new("agg_error_fatal26");
+            this.agg_error_fatal26.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal27 = new("agg_error_fatal27");
+            this.agg_error_fatal27.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal28 = new("agg_error_fatal28");
+            this.agg_error_fatal28.configure(this, 1, 28, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal29 = new("agg_error_fatal29");
+            this.agg_error_fatal29.configure(this, 1, 29, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal30 = new("agg_error_fatal30");
+            this.agg_error_fatal30.configure(this, 1, 30, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_fatal31 = new("agg_error_fatal31");
+            this.agg_error_fatal31.configure(this, 1, 31, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(agg_error_fatal31_bit_cg[bt]) agg_error_fatal31_bit_cg[bt] = new();
-                foreach(agg_error_fatal30_bit_cg[bt]) agg_error_fatal30_bit_cg[bt] = new();
-                foreach(agg_error_fatal29_bit_cg[bt]) agg_error_fatal29_bit_cg[bt] = new();
-                foreach(agg_error_fatal28_bit_cg[bt]) agg_error_fatal28_bit_cg[bt] = new();
-                foreach(agg_error_fatal27_bit_cg[bt]) agg_error_fatal27_bit_cg[bt] = new();
-                foreach(agg_error_fatal26_bit_cg[bt]) agg_error_fatal26_bit_cg[bt] = new();
-                foreach(agg_error_fatal25_bit_cg[bt]) agg_error_fatal25_bit_cg[bt] = new();
-                foreach(agg_error_fatal24_bit_cg[bt]) agg_error_fatal24_bit_cg[bt] = new();
-                foreach(agg_error_fatal23_bit_cg[bt]) agg_error_fatal23_bit_cg[bt] = new();
-                foreach(agg_error_fatal22_bit_cg[bt]) agg_error_fatal22_bit_cg[bt] = new();
-                foreach(agg_error_fatal21_bit_cg[bt]) agg_error_fatal21_bit_cg[bt] = new();
-                foreach(agg_error_fatal20_bit_cg[bt]) agg_error_fatal20_bit_cg[bt] = new();
-                foreach(agg_error_fatal19_bit_cg[bt]) agg_error_fatal19_bit_cg[bt] = new();
-                foreach(agg_error_fatal18_bit_cg[bt]) agg_error_fatal18_bit_cg[bt] = new();
-                foreach(agg_error_fatal17_bit_cg[bt]) agg_error_fatal17_bit_cg[bt] = new();
-                foreach(agg_error_fatal16_bit_cg[bt]) agg_error_fatal16_bit_cg[bt] = new();
-                foreach(agg_error_fatal15_bit_cg[bt]) agg_error_fatal15_bit_cg[bt] = new();
-                foreach(agg_error_fatal14_bit_cg[bt]) agg_error_fatal14_bit_cg[bt] = new();
-                foreach(agg_error_fatal13_bit_cg[bt]) agg_error_fatal13_bit_cg[bt] = new();
-                foreach(agg_error_fatal12_bit_cg[bt]) agg_error_fatal12_bit_cg[bt] = new();
-                foreach(agg_error_fatal11_bit_cg[bt]) agg_error_fatal11_bit_cg[bt] = new();
-                foreach(agg_error_fatal10_bit_cg[bt]) agg_error_fatal10_bit_cg[bt] = new();
-                foreach(agg_error_fatal9_bit_cg[bt]) agg_error_fatal9_bit_cg[bt] = new();
-                foreach(agg_error_fatal8_bit_cg[bt]) agg_error_fatal8_bit_cg[bt] = new();
-                foreach(agg_error_fatal7_bit_cg[bt]) agg_error_fatal7_bit_cg[bt] = new();
-                foreach(agg_error_fatal6_bit_cg[bt]) agg_error_fatal6_bit_cg[bt] = new();
-                foreach(agg_error_fatal5_bit_cg[bt]) agg_error_fatal5_bit_cg[bt] = new();
-                foreach(agg_error_fatal4_bit_cg[bt]) agg_error_fatal4_bit_cg[bt] = new();
-                foreach(agg_error_fatal3_bit_cg[bt]) agg_error_fatal3_bit_cg[bt] = new();
-                foreach(agg_error_fatal2_bit_cg[bt]) agg_error_fatal2_bit_cg[bt] = new();
-                foreach(agg_error_fatal1_bit_cg[bt]) agg_error_fatal1_bit_cg[bt] = new();
                 foreach(agg_error_fatal0_bit_cg[bt]) agg_error_fatal0_bit_cg[bt] = new();
+                foreach(agg_error_fatal1_bit_cg[bt]) agg_error_fatal1_bit_cg[bt] = new();
+                foreach(agg_error_fatal2_bit_cg[bt]) agg_error_fatal2_bit_cg[bt] = new();
+                foreach(agg_error_fatal3_bit_cg[bt]) agg_error_fatal3_bit_cg[bt] = new();
+                foreach(agg_error_fatal4_bit_cg[bt]) agg_error_fatal4_bit_cg[bt] = new();
+                foreach(agg_error_fatal5_bit_cg[bt]) agg_error_fatal5_bit_cg[bt] = new();
+                foreach(agg_error_fatal6_bit_cg[bt]) agg_error_fatal6_bit_cg[bt] = new();
+                foreach(agg_error_fatal7_bit_cg[bt]) agg_error_fatal7_bit_cg[bt] = new();
+                foreach(agg_error_fatal8_bit_cg[bt]) agg_error_fatal8_bit_cg[bt] = new();
+                foreach(agg_error_fatal9_bit_cg[bt]) agg_error_fatal9_bit_cg[bt] = new();
+                foreach(agg_error_fatal10_bit_cg[bt]) agg_error_fatal10_bit_cg[bt] = new();
+                foreach(agg_error_fatal11_bit_cg[bt]) agg_error_fatal11_bit_cg[bt] = new();
+                foreach(agg_error_fatal12_bit_cg[bt]) agg_error_fatal12_bit_cg[bt] = new();
+                foreach(agg_error_fatal13_bit_cg[bt]) agg_error_fatal13_bit_cg[bt] = new();
+                foreach(agg_error_fatal14_bit_cg[bt]) agg_error_fatal14_bit_cg[bt] = new();
+                foreach(agg_error_fatal15_bit_cg[bt]) agg_error_fatal15_bit_cg[bt] = new();
+                foreach(agg_error_fatal16_bit_cg[bt]) agg_error_fatal16_bit_cg[bt] = new();
+                foreach(agg_error_fatal17_bit_cg[bt]) agg_error_fatal17_bit_cg[bt] = new();
+                foreach(agg_error_fatal18_bit_cg[bt]) agg_error_fatal18_bit_cg[bt] = new();
+                foreach(agg_error_fatal19_bit_cg[bt]) agg_error_fatal19_bit_cg[bt] = new();
+                foreach(agg_error_fatal20_bit_cg[bt]) agg_error_fatal20_bit_cg[bt] = new();
+                foreach(agg_error_fatal21_bit_cg[bt]) agg_error_fatal21_bit_cg[bt] = new();
+                foreach(agg_error_fatal22_bit_cg[bt]) agg_error_fatal22_bit_cg[bt] = new();
+                foreach(agg_error_fatal23_bit_cg[bt]) agg_error_fatal23_bit_cg[bt] = new();
+                foreach(agg_error_fatal24_bit_cg[bt]) agg_error_fatal24_bit_cg[bt] = new();
+                foreach(agg_error_fatal25_bit_cg[bt]) agg_error_fatal25_bit_cg[bt] = new();
+                foreach(agg_error_fatal26_bit_cg[bt]) agg_error_fatal26_bit_cg[bt] = new();
+                foreach(agg_error_fatal27_bit_cg[bt]) agg_error_fatal27_bit_cg[bt] = new();
+                foreach(agg_error_fatal28_bit_cg[bt]) agg_error_fatal28_bit_cg[bt] = new();
+                foreach(agg_error_fatal29_bit_cg[bt]) agg_error_fatal29_bit_cg[bt] = new();
+                foreach(agg_error_fatal30_bit_cg[bt]) agg_error_fatal30_bit_cg[bt] = new();
+                foreach(agg_error_fatal31_bit_cg[bt]) agg_error_fatal31_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -665,71 +785,71 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal31_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal30_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal29_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal28_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal27_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal26_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal25_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal24_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal23_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal22_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal21_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal20_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal19_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal18_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal17_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal16_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal15_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal14_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal13_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal12_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal11_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal10_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal9_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal8_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal7_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal6_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal5_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal4_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal3_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal2_bit_cg[1];
-        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal1_bit_cg[1];
         mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal0_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal1_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal2_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal3_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal4_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal5_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal6_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal7_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal8_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal9_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal10_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal11_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal12_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal13_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal14_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal15_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal16_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal17_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal18_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal19_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal20_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal21_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal22_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal23_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal24_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal25_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal26_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal27_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal28_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal29_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal30_bit_cg[1];
+        mci_reg__AGG_ERROR_NON_FATAL_bit_cg agg_error_non_fatal31_bit_cg[1];
         mci_reg__AGG_ERROR_NON_FATAL_fld_cg fld_cg;
-        rand uvm_reg_field agg_error_non_fatal31;
-        rand uvm_reg_field agg_error_non_fatal30;
-        rand uvm_reg_field agg_error_non_fatal29;
-        rand uvm_reg_field agg_error_non_fatal28;
-        rand uvm_reg_field agg_error_non_fatal27;
-        rand uvm_reg_field agg_error_non_fatal26;
-        rand uvm_reg_field agg_error_non_fatal25;
-        rand uvm_reg_field agg_error_non_fatal24;
-        rand uvm_reg_field agg_error_non_fatal23;
-        rand uvm_reg_field agg_error_non_fatal22;
-        rand uvm_reg_field agg_error_non_fatal21;
-        rand uvm_reg_field agg_error_non_fatal20;
-        rand uvm_reg_field agg_error_non_fatal19;
-        rand uvm_reg_field agg_error_non_fatal18;
-        rand uvm_reg_field agg_error_non_fatal17;
-        rand uvm_reg_field agg_error_non_fatal16;
-        rand uvm_reg_field agg_error_non_fatal15;
-        rand uvm_reg_field agg_error_non_fatal14;
-        rand uvm_reg_field agg_error_non_fatal13;
-        rand uvm_reg_field agg_error_non_fatal12;
-        rand uvm_reg_field agg_error_non_fatal11;
-        rand uvm_reg_field agg_error_non_fatal10;
-        rand uvm_reg_field agg_error_non_fatal9;
-        rand uvm_reg_field agg_error_non_fatal8;
-        rand uvm_reg_field agg_error_non_fatal7;
-        rand uvm_reg_field agg_error_non_fatal6;
-        rand uvm_reg_field agg_error_non_fatal5;
-        rand uvm_reg_field agg_error_non_fatal4;
-        rand uvm_reg_field agg_error_non_fatal3;
-        rand uvm_reg_field agg_error_non_fatal2;
-        rand uvm_reg_field agg_error_non_fatal1;
         rand uvm_reg_field agg_error_non_fatal0;
+        rand uvm_reg_field agg_error_non_fatal1;
+        rand uvm_reg_field agg_error_non_fatal2;
+        rand uvm_reg_field agg_error_non_fatal3;
+        rand uvm_reg_field agg_error_non_fatal4;
+        rand uvm_reg_field agg_error_non_fatal5;
+        rand uvm_reg_field agg_error_non_fatal6;
+        rand uvm_reg_field agg_error_non_fatal7;
+        rand uvm_reg_field agg_error_non_fatal8;
+        rand uvm_reg_field agg_error_non_fatal9;
+        rand uvm_reg_field agg_error_non_fatal10;
+        rand uvm_reg_field agg_error_non_fatal11;
+        rand uvm_reg_field agg_error_non_fatal12;
+        rand uvm_reg_field agg_error_non_fatal13;
+        rand uvm_reg_field agg_error_non_fatal14;
+        rand uvm_reg_field agg_error_non_fatal15;
+        rand uvm_reg_field agg_error_non_fatal16;
+        rand uvm_reg_field agg_error_non_fatal17;
+        rand uvm_reg_field agg_error_non_fatal18;
+        rand uvm_reg_field agg_error_non_fatal19;
+        rand uvm_reg_field agg_error_non_fatal20;
+        rand uvm_reg_field agg_error_non_fatal21;
+        rand uvm_reg_field agg_error_non_fatal22;
+        rand uvm_reg_field agg_error_non_fatal23;
+        rand uvm_reg_field agg_error_non_fatal24;
+        rand uvm_reg_field agg_error_non_fatal25;
+        rand uvm_reg_field agg_error_non_fatal26;
+        rand uvm_reg_field agg_error_non_fatal27;
+        rand uvm_reg_field agg_error_non_fatal28;
+        rand uvm_reg_field agg_error_non_fatal29;
+        rand uvm_reg_field agg_error_non_fatal30;
+        rand uvm_reg_field agg_error_non_fatal31;
 
         function new(string name = "mci_reg__AGG_ERROR_NON_FATAL");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -741,103 +861,103 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.agg_error_non_fatal31 = new("agg_error_non_fatal31");
-            this.agg_error_non_fatal31.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal30 = new("agg_error_non_fatal30");
-            this.agg_error_non_fatal30.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal29 = new("agg_error_non_fatal29");
-            this.agg_error_non_fatal29.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal28 = new("agg_error_non_fatal28");
-            this.agg_error_non_fatal28.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal27 = new("agg_error_non_fatal27");
-            this.agg_error_non_fatal27.configure(this, 1, 4, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal26 = new("agg_error_non_fatal26");
-            this.agg_error_non_fatal26.configure(this, 1, 5, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal25 = new("agg_error_non_fatal25");
-            this.agg_error_non_fatal25.configure(this, 1, 6, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal24 = new("agg_error_non_fatal24");
-            this.agg_error_non_fatal24.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal23 = new("agg_error_non_fatal23");
-            this.agg_error_non_fatal23.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal22 = new("agg_error_non_fatal22");
-            this.agg_error_non_fatal22.configure(this, 1, 9, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal21 = new("agg_error_non_fatal21");
-            this.agg_error_non_fatal21.configure(this, 1, 10, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal20 = new("agg_error_non_fatal20");
-            this.agg_error_non_fatal20.configure(this, 1, 11, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal19 = new("agg_error_non_fatal19");
-            this.agg_error_non_fatal19.configure(this, 1, 12, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal18 = new("agg_error_non_fatal18");
-            this.agg_error_non_fatal18.configure(this, 1, 13, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal17 = new("agg_error_non_fatal17");
-            this.agg_error_non_fatal17.configure(this, 1, 14, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal16 = new("agg_error_non_fatal16");
-            this.agg_error_non_fatal16.configure(this, 1, 15, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal15 = new("agg_error_non_fatal15");
-            this.agg_error_non_fatal15.configure(this, 1, 16, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal14 = new("agg_error_non_fatal14");
-            this.agg_error_non_fatal14.configure(this, 1, 17, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal13 = new("agg_error_non_fatal13");
-            this.agg_error_non_fatal13.configure(this, 1, 18, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal12 = new("agg_error_non_fatal12");
-            this.agg_error_non_fatal12.configure(this, 1, 19, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal11 = new("agg_error_non_fatal11");
-            this.agg_error_non_fatal11.configure(this, 1, 20, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal10 = new("agg_error_non_fatal10");
-            this.agg_error_non_fatal10.configure(this, 1, 21, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal9 = new("agg_error_non_fatal9");
-            this.agg_error_non_fatal9.configure(this, 1, 22, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal8 = new("agg_error_non_fatal8");
-            this.agg_error_non_fatal8.configure(this, 1, 23, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal7 = new("agg_error_non_fatal7");
-            this.agg_error_non_fatal7.configure(this, 1, 24, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal6 = new("agg_error_non_fatal6");
-            this.agg_error_non_fatal6.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal5 = new("agg_error_non_fatal5");
-            this.agg_error_non_fatal5.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal4 = new("agg_error_non_fatal4");
-            this.agg_error_non_fatal4.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal3 = new("agg_error_non_fatal3");
-            this.agg_error_non_fatal3.configure(this, 1, 28, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal2 = new("agg_error_non_fatal2");
-            this.agg_error_non_fatal2.configure(this, 1, 29, "W1C", 1, 'h0, 1, 1, 0);
-            this.agg_error_non_fatal1 = new("agg_error_non_fatal1");
-            this.agg_error_non_fatal1.configure(this, 1, 30, "W1C", 1, 'h0, 1, 1, 0);
             this.agg_error_non_fatal0 = new("agg_error_non_fatal0");
-            this.agg_error_non_fatal0.configure(this, 1, 31, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal0.configure(this, 1, 0, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal1 = new("agg_error_non_fatal1");
+            this.agg_error_non_fatal1.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal2 = new("agg_error_non_fatal2");
+            this.agg_error_non_fatal2.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal3 = new("agg_error_non_fatal3");
+            this.agg_error_non_fatal3.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal4 = new("agg_error_non_fatal4");
+            this.agg_error_non_fatal4.configure(this, 1, 4, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal5 = new("agg_error_non_fatal5");
+            this.agg_error_non_fatal5.configure(this, 1, 5, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal6 = new("agg_error_non_fatal6");
+            this.agg_error_non_fatal6.configure(this, 1, 6, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal7 = new("agg_error_non_fatal7");
+            this.agg_error_non_fatal7.configure(this, 1, 7, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal8 = new("agg_error_non_fatal8");
+            this.agg_error_non_fatal8.configure(this, 1, 8, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal9 = new("agg_error_non_fatal9");
+            this.agg_error_non_fatal9.configure(this, 1, 9, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal10 = new("agg_error_non_fatal10");
+            this.agg_error_non_fatal10.configure(this, 1, 10, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal11 = new("agg_error_non_fatal11");
+            this.agg_error_non_fatal11.configure(this, 1, 11, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal12 = new("agg_error_non_fatal12");
+            this.agg_error_non_fatal12.configure(this, 1, 12, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal13 = new("agg_error_non_fatal13");
+            this.agg_error_non_fatal13.configure(this, 1, 13, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal14 = new("agg_error_non_fatal14");
+            this.agg_error_non_fatal14.configure(this, 1, 14, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal15 = new("agg_error_non_fatal15");
+            this.agg_error_non_fatal15.configure(this, 1, 15, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal16 = new("agg_error_non_fatal16");
+            this.agg_error_non_fatal16.configure(this, 1, 16, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal17 = new("agg_error_non_fatal17");
+            this.agg_error_non_fatal17.configure(this, 1, 17, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal18 = new("agg_error_non_fatal18");
+            this.agg_error_non_fatal18.configure(this, 1, 18, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal19 = new("agg_error_non_fatal19");
+            this.agg_error_non_fatal19.configure(this, 1, 19, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal20 = new("agg_error_non_fatal20");
+            this.agg_error_non_fatal20.configure(this, 1, 20, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal21 = new("agg_error_non_fatal21");
+            this.agg_error_non_fatal21.configure(this, 1, 21, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal22 = new("agg_error_non_fatal22");
+            this.agg_error_non_fatal22.configure(this, 1, 22, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal23 = new("agg_error_non_fatal23");
+            this.agg_error_non_fatal23.configure(this, 1, 23, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal24 = new("agg_error_non_fatal24");
+            this.agg_error_non_fatal24.configure(this, 1, 24, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal25 = new("agg_error_non_fatal25");
+            this.agg_error_non_fatal25.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal26 = new("agg_error_non_fatal26");
+            this.agg_error_non_fatal26.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal27 = new("agg_error_non_fatal27");
+            this.agg_error_non_fatal27.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal28 = new("agg_error_non_fatal28");
+            this.agg_error_non_fatal28.configure(this, 1, 28, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal29 = new("agg_error_non_fatal29");
+            this.agg_error_non_fatal29.configure(this, 1, 29, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal30 = new("agg_error_non_fatal30");
+            this.agg_error_non_fatal30.configure(this, 1, 30, "W1C", 1, 'h0, 1, 1, 0);
+            this.agg_error_non_fatal31 = new("agg_error_non_fatal31");
+            this.agg_error_non_fatal31.configure(this, 1, 31, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(agg_error_non_fatal31_bit_cg[bt]) agg_error_non_fatal31_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal30_bit_cg[bt]) agg_error_non_fatal30_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal29_bit_cg[bt]) agg_error_non_fatal29_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal28_bit_cg[bt]) agg_error_non_fatal28_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal27_bit_cg[bt]) agg_error_non_fatal27_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal26_bit_cg[bt]) agg_error_non_fatal26_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal25_bit_cg[bt]) agg_error_non_fatal25_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal24_bit_cg[bt]) agg_error_non_fatal24_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal23_bit_cg[bt]) agg_error_non_fatal23_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal22_bit_cg[bt]) agg_error_non_fatal22_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal21_bit_cg[bt]) agg_error_non_fatal21_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal20_bit_cg[bt]) agg_error_non_fatal20_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal19_bit_cg[bt]) agg_error_non_fatal19_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal18_bit_cg[bt]) agg_error_non_fatal18_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal17_bit_cg[bt]) agg_error_non_fatal17_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal16_bit_cg[bt]) agg_error_non_fatal16_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal15_bit_cg[bt]) agg_error_non_fatal15_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal14_bit_cg[bt]) agg_error_non_fatal14_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal13_bit_cg[bt]) agg_error_non_fatal13_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal12_bit_cg[bt]) agg_error_non_fatal12_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal11_bit_cg[bt]) agg_error_non_fatal11_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal10_bit_cg[bt]) agg_error_non_fatal10_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal9_bit_cg[bt]) agg_error_non_fatal9_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal8_bit_cg[bt]) agg_error_non_fatal8_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal7_bit_cg[bt]) agg_error_non_fatal7_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal6_bit_cg[bt]) agg_error_non_fatal6_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal5_bit_cg[bt]) agg_error_non_fatal5_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal4_bit_cg[bt]) agg_error_non_fatal4_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal3_bit_cg[bt]) agg_error_non_fatal3_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal2_bit_cg[bt]) agg_error_non_fatal2_bit_cg[bt] = new();
-                foreach(agg_error_non_fatal1_bit_cg[bt]) agg_error_non_fatal1_bit_cg[bt] = new();
                 foreach(agg_error_non_fatal0_bit_cg[bt]) agg_error_non_fatal0_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal1_bit_cg[bt]) agg_error_non_fatal1_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal2_bit_cg[bt]) agg_error_non_fatal2_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal3_bit_cg[bt]) agg_error_non_fatal3_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal4_bit_cg[bt]) agg_error_non_fatal4_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal5_bit_cg[bt]) agg_error_non_fatal5_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal6_bit_cg[bt]) agg_error_non_fatal6_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal7_bit_cg[bt]) agg_error_non_fatal7_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal8_bit_cg[bt]) agg_error_non_fatal8_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal9_bit_cg[bt]) agg_error_non_fatal9_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal10_bit_cg[bt]) agg_error_non_fatal10_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal11_bit_cg[bt]) agg_error_non_fatal11_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal12_bit_cg[bt]) agg_error_non_fatal12_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal13_bit_cg[bt]) agg_error_non_fatal13_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal14_bit_cg[bt]) agg_error_non_fatal14_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal15_bit_cg[bt]) agg_error_non_fatal15_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal16_bit_cg[bt]) agg_error_non_fatal16_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal17_bit_cg[bt]) agg_error_non_fatal17_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal18_bit_cg[bt]) agg_error_non_fatal18_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal19_bit_cg[bt]) agg_error_non_fatal19_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal20_bit_cg[bt]) agg_error_non_fatal20_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal21_bit_cg[bt]) agg_error_non_fatal21_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal22_bit_cg[bt]) agg_error_non_fatal22_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal23_bit_cg[bt]) agg_error_non_fatal23_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal24_bit_cg[bt]) agg_error_non_fatal24_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal25_bit_cg[bt]) agg_error_non_fatal25_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal26_bit_cg[bt]) agg_error_non_fatal26_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal27_bit_cg[bt]) agg_error_non_fatal27_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal28_bit_cg[bt]) agg_error_non_fatal28_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal29_bit_cg[bt]) agg_error_non_fatal29_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal30_bit_cg[bt]) agg_error_non_fatal30_bit_cg[bt] = new();
+                foreach(agg_error_non_fatal31_bit_cg[bt]) agg_error_non_fatal31_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -1156,41 +1276,41 @@ package mci_reg_uvm;
             this.mask_agg_error_fatal30 = new("mask_agg_error_fatal30");
             this.mask_agg_error_fatal30.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
             this.mask_agg_error_fatal29 = new("mask_agg_error_fatal29");
-            this.mask_agg_error_fatal29.configure(this, 1, 2, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal29.configure(this, 1, 2, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal28 = new("mask_agg_error_fatal28");
-            this.mask_agg_error_fatal28.configure(this, 1, 3, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal28.configure(this, 1, 3, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal27 = new("mask_agg_error_fatal27");
-            this.mask_agg_error_fatal27.configure(this, 1, 4, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal27.configure(this, 1, 4, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal26 = new("mask_agg_error_fatal26");
-            this.mask_agg_error_fatal26.configure(this, 1, 5, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal26.configure(this, 1, 5, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal25 = new("mask_agg_error_fatal25");
-            this.mask_agg_error_fatal25.configure(this, 1, 6, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal25.configure(this, 1, 6, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal24 = new("mask_agg_error_fatal24");
-            this.mask_agg_error_fatal24.configure(this, 1, 7, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal24.configure(this, 1, 7, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal23 = new("mask_agg_error_fatal23");
-            this.mask_agg_error_fatal23.configure(this, 1, 8, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal23.configure(this, 1, 8, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal22 = new("mask_agg_error_fatal22");
-            this.mask_agg_error_fatal22.configure(this, 1, 9, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal22.configure(this, 1, 9, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal21 = new("mask_agg_error_fatal21");
-            this.mask_agg_error_fatal21.configure(this, 1, 10, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal21.configure(this, 1, 10, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal20 = new("mask_agg_error_fatal20");
-            this.mask_agg_error_fatal20.configure(this, 1, 11, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal20.configure(this, 1, 11, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal19 = new("mask_agg_error_fatal19");
-            this.mask_agg_error_fatal19.configure(this, 1, 12, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal19.configure(this, 1, 12, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal18 = new("mask_agg_error_fatal18");
-            this.mask_agg_error_fatal18.configure(this, 1, 13, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal18.configure(this, 1, 13, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal17 = new("mask_agg_error_fatal17");
-            this.mask_agg_error_fatal17.configure(this, 1, 14, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal17.configure(this, 1, 14, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal16 = new("mask_agg_error_fatal16");
-            this.mask_agg_error_fatal16.configure(this, 1, 15, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal16.configure(this, 1, 15, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal15 = new("mask_agg_error_fatal15");
-            this.mask_agg_error_fatal15.configure(this, 1, 16, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal15.configure(this, 1, 16, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal14 = new("mask_agg_error_fatal14");
-            this.mask_agg_error_fatal14.configure(this, 1, 17, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal14.configure(this, 1, 17, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal13 = new("mask_agg_error_fatal13");
-            this.mask_agg_error_fatal13.configure(this, 1, 18, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal13.configure(this, 1, 18, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal12 = new("mask_agg_error_fatal12");
-            this.mask_agg_error_fatal12.configure(this, 1, 19, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_agg_error_fatal12.configure(this, 1, 19, "RW", 0, 'h1, 1, 1, 0);
             this.mask_agg_error_fatal11 = new("mask_agg_error_fatal11");
             this.mask_agg_error_fatal11.configure(this, 1, 20, "RW", 0, 'h0, 1, 1, 0);
             this.mask_agg_error_fatal10 = new("mask_agg_error_fatal10");
@@ -2849,6 +2969,7 @@ package mci_reg_uvm;
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_scan_mode_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_mbox0_soc_req_lock_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_mbox1_soc_req_lock_en_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_en_t_bit_cg notif_otp_operation_done_en_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_en_t_fld_cg fld_cg;
         rand uvm_reg_field notif_mcu_sram_ecc_cor_en;
         rand uvm_reg_field notif_cptra_mcu_reset_req_en;
@@ -2864,6 +2985,7 @@ package mci_reg_uvm;
         rand uvm_reg_field notif_scan_mode_en;
         rand uvm_reg_field notif_mbox0_soc_req_lock_en;
         rand uvm_reg_field notif_mbox1_soc_req_lock_en;
+        rand uvm_reg_field notif_otp_operation_done_en;
 
         function new(string name = "mci_reg__intr_block_t__notif0_intr_en_t");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -2903,6 +3025,8 @@ package mci_reg_uvm;
             this.notif_mbox0_soc_req_lock_en.configure(this, 1, 12, "RW", 0, 'h0, 1, 1, 0);
             this.notif_mbox1_soc_req_lock_en = new("notif_mbox1_soc_req_lock_en");
             this.notif_mbox1_soc_req_lock_en.configure(this, 1, 13, "RW", 0, 'h0, 1, 1, 0);
+            this.notif_otp_operation_done_en = new("notif_otp_operation_done_en");
+            this.notif_otp_operation_done_en.configure(this, 1, 14, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_en_bit_cg[bt]) notif_mcu_sram_ecc_cor_en_bit_cg[bt] = new();
                 foreach(notif_cptra_mcu_reset_req_en_bit_cg[bt]) notif_cptra_mcu_reset_req_en_bit_cg[bt] = new();
@@ -2918,6 +3042,7 @@ package mci_reg_uvm;
                 foreach(notif_scan_mode_en_bit_cg[bt]) notif_scan_mode_en_bit_cg[bt] = new();
                 foreach(notif_mbox0_soc_req_lock_en_bit_cg[bt]) notif_mbox0_soc_req_lock_en_bit_cg[bt] = new();
                 foreach(notif_mbox1_soc_req_lock_en_bit_cg[bt]) notif_mbox1_soc_req_lock_en_bit_cg[bt] = new();
+                foreach(notif_otp_operation_done_en_bit_cg[bt]) notif_otp_operation_done_en_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -3419,27 +3544,28 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb
 
-    // Reg - mci_reg::intr_block_t::notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188
-    class mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188 extends uvm_reg;
+    // Reg - mci_reg::intr_block_t::notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188
+    class mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mcu_sram_ecc_cor_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_cptra_mcu_reset_req_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_gen_in_toggle_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_target_done_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_target_done_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_cmd_avail_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_cmd_avail_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_cptra_mbox_cmd_avail_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_ecc_cor_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_ecc_cor_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_debug_locked_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_scan_mode_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_soc_req_lock_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_soc_req_lock_sts_bit_cg[1];
-        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188_fld_cg fld_cg;
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_mcu_sram_ecc_cor_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_cptra_mcu_reset_req_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_gen_in_toggle_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_target_done_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_target_done_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_cmd_avail_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_cmd_avail_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_cptra_mbox_cmd_avail_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_ecc_cor_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_ecc_cor_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_debug_locked_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_scan_mode_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox0_soc_req_lock_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_mbox1_soc_req_lock_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_bit_cg notif_otp_operation_done_sts_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188_fld_cg fld_cg;
         rand uvm_reg_field notif_mcu_sram_ecc_cor_sts;
         rand uvm_reg_field notif_cptra_mcu_reset_req_sts;
         rand uvm_reg_field notif_gen_in_toggle_sts;
@@ -3454,8 +3580,9 @@ package mci_reg_uvm;
         rand uvm_reg_field notif_scan_mode_sts;
         rand uvm_reg_field notif_mbox0_soc_req_lock_sts;
         rand uvm_reg_field notif_mbox1_soc_req_lock_sts;
+        rand uvm_reg_field notif_otp_operation_done_sts;
 
-        function new(string name = "mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188");
+        function new(string name = "mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -3493,6 +3620,8 @@ package mci_reg_uvm;
             this.notif_mbox0_soc_req_lock_sts.configure(this, 1, 12, "W1C", 1, 'h0, 1, 1, 0);
             this.notif_mbox1_soc_req_lock_sts = new("notif_mbox1_soc_req_lock_sts");
             this.notif_mbox1_soc_req_lock_sts.configure(this, 1, 13, "W1C", 1, 'h0, 1, 1, 0);
+            this.notif_otp_operation_done_sts = new("notif_otp_operation_done_sts");
+            this.notif_otp_operation_done_sts.configure(this, 1, 14, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_sts_bit_cg[bt]) notif_mcu_sram_ecc_cor_sts_bit_cg[bt] = new();
                 foreach(notif_cptra_mcu_reset_req_sts_bit_cg[bt]) notif_cptra_mcu_reset_req_sts_bit_cg[bt] = new();
@@ -3508,11 +3637,12 @@ package mci_reg_uvm;
                 foreach(notif_scan_mode_sts_bit_cg[bt]) notif_scan_mode_sts_bit_cg[bt] = new();
                 foreach(notif_mbox0_soc_req_lock_sts_bit_cg[bt]) notif_mbox0_soc_req_lock_sts_bit_cg[bt] = new();
                 foreach(notif_mbox1_soc_req_lock_sts_bit_cg[bt]) notif_mbox1_soc_req_lock_sts_bit_cg[bt] = new();
+                foreach(notif_otp_operation_done_sts_bit_cg[bt]) notif_otp_operation_done_sts_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188
+    endclass : mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188
 
     // Reg - mci_reg::intr_block_t::notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3
     class mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3 extends uvm_reg;
@@ -3959,6 +4089,7 @@ package mci_reg_uvm;
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_scan_mode_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_mbox0_soc_req_lock_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_mbox1_soc_req_lock_trig_bit_cg[1];
+        mci_reg__intr_block_t__notif0_intr_trig_t_bit_cg notif_otp_operation_done_trig_bit_cg[1];
         mci_reg__intr_block_t__notif0_intr_trig_t_fld_cg fld_cg;
         rand uvm_reg_field notif_mcu_sram_ecc_cor_trig;
         rand uvm_reg_field notif_cptra_mcu_reset_req_trig;
@@ -3974,6 +4105,7 @@ package mci_reg_uvm;
         rand uvm_reg_field notif_scan_mode_trig;
         rand uvm_reg_field notif_mbox0_soc_req_lock_trig;
         rand uvm_reg_field notif_mbox1_soc_req_lock_trig;
+        rand uvm_reg_field notif_otp_operation_done_trig;
 
         function new(string name = "mci_reg__intr_block_t__notif0_intr_trig_t");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -4013,6 +4145,8 @@ package mci_reg_uvm;
             this.notif_mbox0_soc_req_lock_trig.configure(this, 1, 12, "W1S", 0, 'h0, 1, 1, 0);
             this.notif_mbox1_soc_req_lock_trig = new("notif_mbox1_soc_req_lock_trig");
             this.notif_mbox1_soc_req_lock_trig.configure(this, 1, 13, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_otp_operation_done_trig = new("notif_otp_operation_done_trig");
+            this.notif_otp_operation_done_trig.configure(this, 1, 14, "W1S", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_trig_bit_cg[bt]) notif_mcu_sram_ecc_cor_trig_bit_cg[bt] = new();
                 foreach(notif_cptra_mcu_reset_req_trig_bit_cg[bt]) notif_cptra_mcu_reset_req_trig_bit_cg[bt] = new();
@@ -4028,6 +4162,7 @@ package mci_reg_uvm;
                 foreach(notif_scan_mode_trig_bit_cg[bt]) notif_scan_mode_trig_bit_cg[bt] = new();
                 foreach(notif_mbox0_soc_req_lock_trig_bit_cg[bt]) notif_mbox0_soc_req_lock_trig_bit_cg[bt] = new();
                 foreach(notif_mbox1_soc_req_lock_trig_bit_cg[bt]) notif_mbox1_soc_req_lock_trig_bit_cg[bt] = new();
+                foreach(notif_otp_operation_done_trig_bit_cg[bt]) notif_otp_operation_done_trig_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -6739,6 +6874,36 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_d593a0b7
 
+    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_83e74d3f
+    class mci_reg__intr_block_t__intr_count_t_cnt_83e74d3f extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_t_cnt_83e74d3f_bit_cg cnt_bit_cg[32];
+        mci_reg__intr_block_t__intr_count_t_cnt_83e74d3f_fld_cg fld_cg;
+        rand uvm_reg_field cnt;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_t_cnt_83e74d3f");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.cnt = new("cnt");
+            this.cnt.configure(this, 32, 0, "RW", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(cnt_bit_cg[bt]) cnt_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_t_cnt_83e74d3f
+
     // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_95b180a4
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_95b180a4 extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -9259,6 +9424,36 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_01554b96
 
+    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_a7b8ef97
+    class mci_reg__intr_block_t__intr_count_incr_t_pulse_a7b8ef97 extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_a7b8ef97_bit_cg pulse_bit_cg[1];
+        mci_reg__intr_block_t__intr_count_incr_t_pulse_a7b8ef97_fld_cg fld_cg;
+        rand uvm_reg_field pulse;
+
+        function new(string name = "mci_reg__intr_block_t__intr_count_incr_t_pulse_a7b8ef97");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.pulse = new("pulse");
+            this.pulse.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(pulse_bit_cg[bt]) pulse_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_a7b8ef97
+
     // Regfile - mci_reg::intr_block_t
     class mci_reg__intr_block_t extends uvm_reg_block;
         rand mci_reg__intr_block_t__global_intr_en_t global_intr_en_r;
@@ -9270,7 +9465,7 @@ package mci_reg_uvm;
         rand mci_reg__intr_block_t__global_intr_t_agg_sts0_fbbcc271_agg_sts1_5df57496 notif_global_intr_r;
         rand mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_ecc_unc_sts_61142362_error_mbox1_ecc_unc_sts_37b6febe_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2 error0_internal_intr_r;
         rand mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb error1_internal_intr_r;
-        rand mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_scan_mode_sts_1ac97188 notif0_internal_intr_r;
+        rand mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188 notif0_internal_intr_r;
         rand mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3 notif1_internal_intr_r;
         rand mci_reg__intr_block_t__error0_intr_trig_t error0_intr_trig_r;
         rand mci_reg__intr_block_t__error1_intr_trig_t error1_intr_trig_r;
@@ -9360,6 +9555,7 @@ package mci_reg_uvm;
         rand mci_reg__intr_block_t__intr_count_t_cnt_fbf3c714 notif_scan_mode_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_c5d79517 notif_mbox0_soc_req_lock_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_t_cnt_d593a0b7 notif_mbox1_soc_req_lock_intr_count_r;
+        rand mci_reg__intr_block_t__intr_count_t_cnt_83e74d3f notif_otp_operation_done_intr_count_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_95b180a4 error_internal_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_85b4132c error_mbox0_ecc_unc_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_74d07ac5 error_mbox1_ecc_unc_intr_count_incr_r;
@@ -9444,6 +9640,7 @@ package mci_reg_uvm;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_d73ae1bb notif_scan_mode_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_c2486cf5 notif_mbox0_soc_req_lock_intr_count_incr_r;
         rand mci_reg__intr_block_t__intr_count_incr_t_pulse_01554b96 notif_mbox1_soc_req_lock_intr_count_incr_r;
+        rand mci_reg__intr_block_t__intr_count_incr_t_pulse_a7b8ef97 notif_otp_operation_done_intr_count_incr_r;
 
         function new(string name = "mci_reg__intr_block_t");
             super.new(name);
@@ -9946,6 +10143,11 @@ package mci_reg_uvm;
 
             this.notif_mbox1_soc_req_lock_intr_count_r.build();
             this.default_map.add_reg(this.notif_mbox1_soc_req_lock_intr_count_r, 'h2b4);
+            this.notif_otp_operation_done_intr_count_r = new("notif_otp_operation_done_intr_count_r");
+            this.notif_otp_operation_done_intr_count_r.configure(this);
+
+            this.notif_otp_operation_done_intr_count_r.build();
+            this.default_map.add_reg(this.notif_otp_operation_done_intr_count_r, 'h2b8);
             this.error_internal_intr_count_incr_r = new("error_internal_intr_count_incr_r");
             this.error_internal_intr_count_incr_r.configure(this);
 
@@ -10366,6 +10568,11 @@ package mci_reg_uvm;
 
             this.notif_mbox1_soc_req_lock_intr_count_incr_r.build();
             this.default_map.add_reg(this.notif_mbox1_soc_req_lock_intr_count_incr_r, 'h44c);
+            this.notif_otp_operation_done_intr_count_incr_r = new("notif_otp_operation_done_intr_count_incr_r");
+            this.notif_otp_operation_done_intr_count_incr_r.configure(this);
+
+            this.notif_otp_operation_done_intr_count_incr_r.build();
+            this.default_map.add_reg(this.notif_otp_operation_done_intr_count_incr_r, 'h450);
         endfunction : build
     endclass : mci_reg__intr_block_t
 
@@ -10378,6 +10585,10 @@ package mci_reg_uvm;
         rand mci_reg__FW_REV_ID FW_REV_ID[2];
         rand mci_reg__HW_CONFIG0 HW_CONFIG0;
         rand mci_reg__HW_CONFIG1 HW_CONFIG1;
+        rand mci_reg__MCU_IFU_AXI_USER MCU_IFU_AXI_USER;
+        rand mci_reg__MCU_LSU_AXI_USER MCU_LSU_AXI_USER;
+        rand mci_reg__MCU_SRAM_CONFIG_AXI_USER MCU_SRAM_CONFIG_AXI_USER;
+        rand mci_reg__MCI_SOC_CONFIG_AXI_USER MCI_SOC_CONFIG_AXI_USER;
         rand mci_reg__FW_FLOW_STATUS FW_FLOW_STATUS;
         rand mci_reg__HW_FLOW_STATUS HW_FLOW_STATUS;
         rand mci_reg__RESET_REASON RESET_REASON;
@@ -10478,153 +10689,173 @@ package mci_reg_uvm;
 
             this.HW_CONFIG1.build();
             this.default_map.add_reg(this.HW_CONFIG1, 'h1c);
+            this.MCU_IFU_AXI_USER = new("MCU_IFU_AXI_USER");
+            this.MCU_IFU_AXI_USER.configure(this);
+
+            this.MCU_IFU_AXI_USER.build();
+            this.default_map.add_reg(this.MCU_IFU_AXI_USER, 'h20);
+            this.MCU_LSU_AXI_USER = new("MCU_LSU_AXI_USER");
+            this.MCU_LSU_AXI_USER.configure(this);
+
+            this.MCU_LSU_AXI_USER.build();
+            this.default_map.add_reg(this.MCU_LSU_AXI_USER, 'h24);
+            this.MCU_SRAM_CONFIG_AXI_USER = new("MCU_SRAM_CONFIG_AXI_USER");
+            this.MCU_SRAM_CONFIG_AXI_USER.configure(this);
+
+            this.MCU_SRAM_CONFIG_AXI_USER.build();
+            this.default_map.add_reg(this.MCU_SRAM_CONFIG_AXI_USER, 'h28);
+            this.MCI_SOC_CONFIG_AXI_USER = new("MCI_SOC_CONFIG_AXI_USER");
+            this.MCI_SOC_CONFIG_AXI_USER.configure(this);
+
+            this.MCI_SOC_CONFIG_AXI_USER.build();
+            this.default_map.add_reg(this.MCI_SOC_CONFIG_AXI_USER, 'h2c);
             this.FW_FLOW_STATUS = new("FW_FLOW_STATUS");
             this.FW_FLOW_STATUS.configure(this);
 
             this.FW_FLOW_STATUS.build();
-            this.default_map.add_reg(this.FW_FLOW_STATUS, 'h20);
+            this.default_map.add_reg(this.FW_FLOW_STATUS, 'h30);
             this.HW_FLOW_STATUS = new("HW_FLOW_STATUS");
             this.HW_FLOW_STATUS.configure(this);
 
             this.HW_FLOW_STATUS.build();
-            this.default_map.add_reg(this.HW_FLOW_STATUS, 'h24);
+            this.default_map.add_reg(this.HW_FLOW_STATUS, 'h34);
             this.RESET_REASON = new("RESET_REASON");
             this.RESET_REASON.configure(this);
 
             this.RESET_REASON.build();
-            this.default_map.add_reg(this.RESET_REASON, 'h28);
+            this.default_map.add_reg(this.RESET_REASON, 'h38);
             this.RESET_STATUS = new("RESET_STATUS");
             this.RESET_STATUS.configure(this);
 
             this.RESET_STATUS.build();
-            this.default_map.add_reg(this.RESET_STATUS, 'h2c);
+            this.default_map.add_reg(this.RESET_STATUS, 'h3c);
             this.SECURITY_STATE = new("SECURITY_STATE");
             this.SECURITY_STATE.configure(this);
 
             this.SECURITY_STATE.build();
-            this.default_map.add_reg(this.SECURITY_STATE, 'h30);
+            this.default_map.add_reg(this.SECURITY_STATE, 'h40);
             this.HW_ERROR_FATAL = new("HW_ERROR_FATAL");
             this.HW_ERROR_FATAL.configure(this);
 
             this.HW_ERROR_FATAL.build();
-            this.default_map.add_reg(this.HW_ERROR_FATAL, 'h40);
+            this.default_map.add_reg(this.HW_ERROR_FATAL, 'h50);
             this.AGG_ERROR_FATAL = new("AGG_ERROR_FATAL");
             this.AGG_ERROR_FATAL.configure(this);
 
             this.AGG_ERROR_FATAL.build();
-            this.default_map.add_reg(this.AGG_ERROR_FATAL, 'h44);
+            this.default_map.add_reg(this.AGG_ERROR_FATAL, 'h54);
             this.HW_ERROR_NON_FATAL = new("HW_ERROR_NON_FATAL");
             this.HW_ERROR_NON_FATAL.configure(this);
 
             this.HW_ERROR_NON_FATAL.build();
-            this.default_map.add_reg(this.HW_ERROR_NON_FATAL, 'h48);
+            this.default_map.add_reg(this.HW_ERROR_NON_FATAL, 'h58);
             this.AGG_ERROR_NON_FATAL = new("AGG_ERROR_NON_FATAL");
             this.AGG_ERROR_NON_FATAL.configure(this);
 
             this.AGG_ERROR_NON_FATAL.build();
-            this.default_map.add_reg(this.AGG_ERROR_NON_FATAL, 'h4c);
+            this.default_map.add_reg(this.AGG_ERROR_NON_FATAL, 'h5c);
             this.FW_ERROR_FATAL = new("FW_ERROR_FATAL");
             this.FW_ERROR_FATAL.configure(this);
 
             this.FW_ERROR_FATAL.build();
-            this.default_map.add_reg(this.FW_ERROR_FATAL, 'h50);
+            this.default_map.add_reg(this.FW_ERROR_FATAL, 'h60);
             this.FW_ERROR_NON_FATAL = new("FW_ERROR_NON_FATAL");
             this.FW_ERROR_NON_FATAL.configure(this);
 
             this.FW_ERROR_NON_FATAL.build();
-            this.default_map.add_reg(this.FW_ERROR_NON_FATAL, 'h54);
+            this.default_map.add_reg(this.FW_ERROR_NON_FATAL, 'h64);
             this.HW_ERROR_ENC = new("HW_ERROR_ENC");
             this.HW_ERROR_ENC.configure(this);
 
             this.HW_ERROR_ENC.build();
-            this.default_map.add_reg(this.HW_ERROR_ENC, 'h58);
+            this.default_map.add_reg(this.HW_ERROR_ENC, 'h68);
             this.FW_ERROR_ENC = new("FW_ERROR_ENC");
             this.FW_ERROR_ENC.configure(this);
 
             this.FW_ERROR_ENC.build();
-            this.default_map.add_reg(this.FW_ERROR_ENC, 'h5c);
+            this.default_map.add_reg(this.FW_ERROR_ENC, 'h6c);
             foreach(this.FW_EXTENDED_ERROR_INFO[i0]) begin
                 this.FW_EXTENDED_ERROR_INFO[i0] = new($sformatf("FW_EXTENDED_ERROR_INFO[%0d]", i0));
                 this.FW_EXTENDED_ERROR_INFO[i0].configure(this);
                 
                 this.FW_EXTENDED_ERROR_INFO[i0].build();
-                this.default_map.add_reg(this.FW_EXTENDED_ERROR_INFO[i0], 'h60 + i0*'h4);
+                this.default_map.add_reg(this.FW_EXTENDED_ERROR_INFO[i0], 'h70 + i0*'h4);
             end
             this.internal_hw_error_fatal_mask = new("internal_hw_error_fatal_mask");
             this.internal_hw_error_fatal_mask.configure(this);
 
             this.internal_hw_error_fatal_mask.build();
-            this.default_map.add_reg(this.internal_hw_error_fatal_mask, 'h80);
+            this.default_map.add_reg(this.internal_hw_error_fatal_mask, 'h90);
             this.internal_hw_error_non_fatal_mask = new("internal_hw_error_non_fatal_mask");
             this.internal_hw_error_non_fatal_mask.configure(this);
 
             this.internal_hw_error_non_fatal_mask.build();
-            this.default_map.add_reg(this.internal_hw_error_non_fatal_mask, 'h84);
+            this.default_map.add_reg(this.internal_hw_error_non_fatal_mask, 'h94);
             this.internal_agg_error_fatal_mask = new("internal_agg_error_fatal_mask");
             this.internal_agg_error_fatal_mask.configure(this);
 
             this.internal_agg_error_fatal_mask.build();
-            this.default_map.add_reg(this.internal_agg_error_fatal_mask, 'h88);
+            this.default_map.add_reg(this.internal_agg_error_fatal_mask, 'h98);
             this.internal_agg_error_non_fatal_mask = new("internal_agg_error_non_fatal_mask");
             this.internal_agg_error_non_fatal_mask.configure(this);
 
             this.internal_agg_error_non_fatal_mask.build();
-            this.default_map.add_reg(this.internal_agg_error_non_fatal_mask, 'h8c);
+            this.default_map.add_reg(this.internal_agg_error_non_fatal_mask, 'h9c);
             this.internal_fw_error_fatal_mask = new("internal_fw_error_fatal_mask");
             this.internal_fw_error_fatal_mask.configure(this);
 
             this.internal_fw_error_fatal_mask.build();
-            this.default_map.add_reg(this.internal_fw_error_fatal_mask, 'h90);
+            this.default_map.add_reg(this.internal_fw_error_fatal_mask, 'ha0);
             this.internal_fw_error_non_fatal_mask = new("internal_fw_error_non_fatal_mask");
             this.internal_fw_error_non_fatal_mask.configure(this);
 
             this.internal_fw_error_non_fatal_mask.build();
-            this.default_map.add_reg(this.internal_fw_error_non_fatal_mask, 'h94);
+            this.default_map.add_reg(this.internal_fw_error_non_fatal_mask, 'ha4);
             this.WDT_TIMER1_EN = new("WDT_TIMER1_EN");
             this.WDT_TIMER1_EN.configure(this);
 
             this.WDT_TIMER1_EN.build();
-            this.default_map.add_reg(this.WDT_TIMER1_EN, 'ha0);
+            this.default_map.add_reg(this.WDT_TIMER1_EN, 'hb0);
             this.WDT_TIMER1_CTRL = new("WDT_TIMER1_CTRL");
             this.WDT_TIMER1_CTRL.configure(this);
 
             this.WDT_TIMER1_CTRL.build();
-            this.default_map.add_reg(this.WDT_TIMER1_CTRL, 'ha4);
+            this.default_map.add_reg(this.WDT_TIMER1_CTRL, 'hb4);
             foreach(this.WDT_TIMER1_TIMEOUT_PERIOD[i0]) begin
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0] = new($sformatf("WDT_TIMER1_TIMEOUT_PERIOD[%0d]", i0));
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0].configure(this);
                 
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0].build();
-                this.default_map.add_reg(this.WDT_TIMER1_TIMEOUT_PERIOD[i0], 'ha8 + i0*'h4);
+                this.default_map.add_reg(this.WDT_TIMER1_TIMEOUT_PERIOD[i0], 'hb8 + i0*'h4);
             end
             this.WDT_TIMER2_EN = new("WDT_TIMER2_EN");
             this.WDT_TIMER2_EN.configure(this);
 
             this.WDT_TIMER2_EN.build();
-            this.default_map.add_reg(this.WDT_TIMER2_EN, 'hb0);
+            this.default_map.add_reg(this.WDT_TIMER2_EN, 'hc0);
             this.WDT_TIMER2_CTRL = new("WDT_TIMER2_CTRL");
             this.WDT_TIMER2_CTRL.configure(this);
 
             this.WDT_TIMER2_CTRL.build();
-            this.default_map.add_reg(this.WDT_TIMER2_CTRL, 'hb4);
+            this.default_map.add_reg(this.WDT_TIMER2_CTRL, 'hc4);
             foreach(this.WDT_TIMER2_TIMEOUT_PERIOD[i0]) begin
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0] = new($sformatf("WDT_TIMER2_TIMEOUT_PERIOD[%0d]", i0));
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0].configure(this);
                 
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0].build();
-                this.default_map.add_reg(this.WDT_TIMER2_TIMEOUT_PERIOD[i0], 'hb8 + i0*'h4);
+                this.default_map.add_reg(this.WDT_TIMER2_TIMEOUT_PERIOD[i0], 'hc8 + i0*'h4);
             end
             this.WDT_STATUS = new("WDT_STATUS");
             this.WDT_STATUS.configure(this);
 
             this.WDT_STATUS.build();
-            this.default_map.add_reg(this.WDT_STATUS, 'hc0);
+            this.default_map.add_reg(this.WDT_STATUS, 'hd0);
             foreach(this.WDT_CFG[i0]) begin
                 this.WDT_CFG[i0] = new($sformatf("WDT_CFG[%0d]", i0));
                 this.WDT_CFG[i0].configure(this);
                 
                 this.WDT_CFG[i0].build();
-                this.default_map.add_reg(this.WDT_CFG[i0], 'hd0 + i0*'h4);
+                this.default_map.add_reg(this.WDT_CFG[i0], 'hd4 + i0*'h4);
             end
             this.MCU_TIMER_CONFIG = new("MCU_TIMER_CONFIG");
             this.MCU_TIMER_CONFIG.configure(this);

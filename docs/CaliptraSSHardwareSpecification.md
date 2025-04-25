@@ -101,7 +101,7 @@
     - [MCU SRAM](#mcu-sram-1)
       - [MCU Hitless Update Handshake](#mcu-hitless-update-handshake)
     - [MCI AXI Subordinate](#mci-axi-subordinate)
-    - [Interrupts](#interrupts)
+    - [MCI Interrupts](#mci-interrupts)
     - [MCI Error handling](#mci-error-handling)
     - [MCI Fuse Storage Support](#mci-fuse-storage-support)
     - [MCU Timer](#mcu-timer)
@@ -114,13 +114,11 @@
     - [MCI Debug Access](#mci-debug-access)
       - [MCI DMI](#mci-dmi)
         - [MCU DMI Enable Control](#mcu-dmi-enable-control)
-        - [MCI DMI Memory Map](#mci-dmi-memory-map)
         - [MCI DMI Interface](#mci-dmi-interface)
+        - [MCI DMI Memory Map](#mci-dmi-memory-map)
+          - [DMI Only Registers](#dmi-only-registers)
         - [DMI MCU SRAM Access](#dmi-mcu-sram-access)
         - [DMI MCU Trace Buffer Access](#dmi-mcu-trace-buffer-access)
-      - [MCI DEBUG AXI USER](#mci-debug-axi-user)
-        - [Disabling MCI DEBUG AXI USER](#disabling-mci-debug-axi-user)
-        - [Force Enabling MCI DEBUG AXI USER](#force-enabling-mci-debug-axi-user)
     - [MCI Boot FSM Breakpoint](#mci-boot-fsm-breakpoint)
       - [MCI Boot FSM Breakpoint Flow](#mci-boot-fsm-breakpoint-flow)
   - [MCI Design for Test (DFT)](#mci-design-for-test-dft)
@@ -1037,10 +1035,12 @@ MCI has the following types of straps:
 | :---------     | :---------| :---------| 
 | **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These shall be constant non-configurable inputs to CSS/MCI. Inside MCI these are not overridable by SW.| 
 | **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
-| **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
+| **Configurable Sampled** | Sampled**  | Sampled once per warm boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
 
 
 *NOTE: Strap sampling occurs when mci_rst_b is deasserted and is typically performed once per cold boot. This process is controlled by the SS_CONFIG_DONE_STICKY register; when set, sampling is skipped. If a warm reset happens before SS_CONFIG_DONE_STICKY is set, the straps will be sampled again, although this is not the usual behavior.
+
+**NOTE: Strap sampling occurs when mci_rst_b is deasserted.
 
 | **Strap Name**     | **Strap Type**|**Description**     | 
 | :---------     | :---------| :---------| 
@@ -1290,12 +1290,15 @@ MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the 
 
 The MCI AXI Sub will respond with an AXI error if one of the following conditions is met:
 
-1. AXI Address miss
-2. Submodule error response
-3. Invalid MBOX AXI User access (MCU and Debug AXI USERs bypasses this check)
+1. Submodule error response
+
+AXI access misses are:
+
+1. Writes dropped
+2. Reads return 0
 
 
-### Interrupts
+### MCI Interrupts
 
 ![](images/MCI-Interrupts.png)
 
@@ -1315,11 +1318,37 @@ All interrupt groups are ORed and sent out on a signal mci_intr pin.
 
 SW access to all interrupt registers are restricted to MCU.
 
+MCI aggregates other Caliptra SS interrupts in this infrastructure. To clear these interrupts FW must:
+
+1. Service the interrupt at the IP source.
+2. Clear the interrupt in MCI.
+
+Interrupts that are aggregated in MCI:
+
+1. Caliptra MBOX data available
+2. [OTP FC Done Interrupt](https://github.com/lowRISC/opentitan/blob/backport-25674-to-earlgrey_1.0.0/hw/ip/otp_ctrl/doc/interfaces.md#interrupts)
+
 ### MCI Error handling
 
 MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any error signals that fuse controller, i3c etc.) and provides subsystem level FATAL and NON FATAL error signals. For all the error information being collected from other subystem modules, MCI also provides masking capability for MCU FW to program/enable based on SOC specific architectures to provide maximum flexibility.
 
 ![](images/MCI-error-agg.png)
+
+Aggregate error register assignments are documented in the register specification: **TODO:** Add a link to rdl -> html file
+
+Regions of 6 bits in the aggregate error registers are reserved for each component.
+MCU and Caliptra errors are connected to appropriate severity levels.
+Lifecycle controller, fuse controller and I3C are connected to both severities. 
+Masks are used to set the severity of each error for these components. These can be configured by integrators, ROM, or runtime firmware.
+
+| **Error Register Bits** | **Component**         | **Default Error Severity** | **Description**          |
+| :---------              | :---------            | :---------                 |:---------                |
+| Aggregate error[5:0]    | Caliptra core         | Both                       | [Caliptra errors](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling) |
+| Aggregate error[11:6]   | MCU                   | Both                       | DCCM double bit ECC error is fatal <br> DCCM single bit ECC error is non-fatal |
+| Aggregate error[17:12]  | Life cycle controller | Fatal                      | [LCC alerts](https://opentitan.org/book/hw/ip/lc_ctrl/doc/interfaces.html#security-alerts) |
+| Aggregate error[23:18]  | OTP Fuse controller   | Fatal                      | [FC alerts](https://opentitan.org/book/hw/top_earlgrey/ip_autogen/otp_ctrl/doc/interfaces.html#security-alerts) |
+| Aggregate error[29:24]  | I3C                   | Non-Fatal                  | Peripheral reset and escalated reset pins from I3C <br> **TODO:** Add a link to I3C doc |
+| Aggregate error[31:30]  | Spare bits            | None                       | Spare bits for integrator use |
 
 MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
 
@@ -1336,9 +1365,13 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 ![](images/MCI-MCU-Trace-Buffer-Diagram.png)
 
-MCI hosts the MCU trace buffer. It can hold up to 64 traces from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Access to the trace buffer and enabling it is controlled by the LCC state Translator. If not **Debug Unlock** then all traces and access to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while not in Debug Unlock mode.
-MCU RISC-V processor can enable/disable tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces other than being debug locked.
-The trace buffer is a circular buffer where old data is overwritten by new traces. The start of the first trace packet is stored at offset 0 and subsequent trace data is written to WRITE_PTR + 1. 
+MCI hosts the MCU trace buffer. It can hold up to 64 trace packets from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Read access to the trace buffer is controlled by the LCC state Translator. When Debug Locked all AXI and DMI accesses to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while Debug Locked.
+
+MCU RISC-V processor can enable/disable tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces.
+
+The trace buffer is a circular buffer where the oldest data is overwritten by new traces when the buffer is full. When a trace packet is stored the write pointer increments by [MCU Trace Buffer Packet Size](#mcu-trace-buffer-packet)/DWORD
+
+The trace buffer is reset when MCI reset is asserted (warm reset).
 
 ![](images/MCI-MCU-Trace-Buffer-Circular-Diagram.png)
 
@@ -1348,29 +1381,30 @@ Below is the SW interface to extract trace data:
 | **Register Name** | **Access Type**     | **Description**     | 
 | :---------         | :---------     | :---------| 
 | DATA               | RO        | Trace data at READ_PTR location|
-| READ_PTR           | RW        | Read pointer. NOTE this is not an address so increment by 1 to get the next entry. | 
-| WRITE_PTR          | RO        | Last valid data written into trace buffer              |
+| READ_PTR           | RW        | Read pointer in trace buffer for DATA. NOTE: this is not an address, meaning increment by 1 to get the next entry. | 
+| WRITE_PTR          | RO        | Offset to store next trace entry in trace buffer. If VALID_DATA is set, WRITE_PTR - 1 is the newest trace entry.              |
 | STATUS.VALID_DATA         | RO        | Indicates at least one entry is valid in the trace buffer.      |
-| STATUS.WRAPPED            | RO        | Indicates the trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid.|
+| STATUS.WRAPPED            | RO        | Indicates the trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid. If 0, then the oldest entry in the buffer is at ptr=0. If 1, the oldest entry is at WRITE_PTR|
 | CONFIG.TRACE_BUFFER_DEPTH | RO        | Indicates the total number of 32 bit entries in the trace buffer. TRACE_BUFFER_DEPTH - 1 is the last valid WRITE/READ_PTR entry in the trace buffer. NOTE: This is the trace buffer depth and not the number of [MCU Trace Buffer Packets](#mcu-trace-buffer-packet). |
 
 #### MCU Trace Buffer Packet
 
-A single MCU trace is more than 32 bits, meaning each trace takes up more than one offset. Trace data is stored in the following format:
+A single MCU trace packet is more than 32 bits, meaning each trace takes up more than one READ/WRITE_PTR entry. Trace data is stored in the following format:
+
 ![](images/MCI-MCU-Trace-Buffer-Data.png)
 
-Assuming there is only one trace stored in the trace buffer the WRITE_PTR would read as 0x3. To get the entire trace packet the user would need to read offsets 0x0, 0x1, 0x2, and 0x3. 
+Assuming there is only one trace stored in the trace buffer the WRITE_PTR would read as 0x4. To get the entire trace packet the user would need to read offsets 0x0, 0x1, 0x2, and 0x3. 
 
 #### MCU Trace Buffer Extraction
 
-To extrace trace buffer data the user should send the following transaction:
+To extract trace buffer data the user should send the following transaction:
 
 1. Write READ_PTR
 2. Read DATA
 
 Repeat these steps until all data required has been extracted. 
 
-The user should use the combination of WRITE_PTR, VALID_DATA, WRAPPED, and TRACE_BUFFER_DEPTH to know where valid data
+The user should use the combination of WRITE_PTR, VALID_DATA, WRAPPED, and TRACE_BUFFER_DEPTH to know where valid data lives in the trace buffer.
 
 #### MCU Trace Buffer Error Handling
 
@@ -1392,7 +1426,7 @@ MCI provides DMI access via MCU TAP and a DEBUG AXI USER address for debug acces
 ![](images/MCI-DMI-Interface.png)
 
 
-The DMI port on MCU is a dedicated interface that is controled via the MCU TAP interface. MCI provides two services when it comes to DMI:
+The DMI port on MCU is a dedicated interface that is controlled via the MCU TAP interface. MCI provides two services when it comes to DMI:
 
 1. MCU DMI enable control (uncore and core)
 
@@ -1415,6 +1449,22 @@ MCI provides the logic for these enables. When the following condition(s) are me
 **MCU Uncore Enable**: Debug Mode **OR** LCC Manufacturing Mode **OR** DEBUG_INTENT strap set
 
 *Note: These are the exact same controls Calipitra Core uses for DMI enable* 
+
+
+##### MCI DMI Interface
+
+The MCI DMI Interface gives select access to the blocks inside MCI.
+
+Access to MCI's DMI space is split into two different levels of security:
+
+| **Access** 	| **Description** 	| 
+| :--------- 	| :--------- 	| 
+| **Debug Intent/Manufacture Mode**|  Always accessable over DMI whenever [MCU uncore DMI enabled](#mcu-dmi-enable-control).| 
+| **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked| 
+
+Illegal accesses will result in writes being dropped and reads returning 0.
+
+*NOTE: MCI DMI address space is different than MCI AXI address space.*
 
 ##### MCI DMI Memory Map
 
@@ -1464,22 +1514,16 @@ MCI provides the logic for these enables. When the following condition(s) are me
 | SS\_CONFIG\_DONE | 0x79 | RW |  |  | Yes |
 | SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  |  | Yes |
 | MCU\_NMI\_VECTOR | 0x7B | RW |  |  | Yes |
+| MCI\_DMI\_MCI\_HW\_OVERRIDE ([DMI ONLY Reg](#dmi-only-registers)) | 0x7C | RW |  |  | Yes |
 
-##### MCI DMI Interface
+###### DMI Only Registers 
 
-The MCI DMI Interface gives select access to the blocks inside MCI.
+MCI\_DMI\_MCU\_HW\_OVERRIDE
 
-Access to MCI's DMI space is split into three different levels of security:
-
-| **Access** 	| **Description** 	| 
-| :--------- 	| :--------- 	| 
-| **Debug Intent**|  Always accessable over DMI as long as uncore DMI Enable is set.| 
-| **Manufacturing Mode**|  Accessable over DMI only if LCC is in Manufacturing mode or Debug Unlocked| 
-| **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked| 
-
-Illegal accesses will result in writes being dropped and reads returning 0.
-
-*NOTE: MCI DMI address space is different than MCI AXI address space.*
+| Field Name | Bits  | Access Type | Description | 
+| :----      | :---- | :----       | :----       | 
+| `mcu_sram_fw_exec_region_lock`      | [0]  | RW          | mcu_sram_fw_exec_region_lock control. ORed with input signal giving debugger control if Caliptra Core in reset while attempting MCU reset flow.         |
+| `reserved`      | [31:1]  | RW          | Reserved         |
 
 
 ##### DMI MCU SRAM Access
@@ -1512,21 +1556,6 @@ Access to the MCU Trace buffer via DMI is the same SW interface as specified in 
 
 Access is limited to **Debug Unlock** mode only. Access to this space while not in **Debug Unlock** will result in writes being dropped and reads return 0x0. 
 
-#### MCI DEBUG AXI USER
-
-In addition to the MCU and Caliptra AXI USER straps, MCI has a debug AXI USER strap. This is a privileged user that has access to registers typically only accessible to MCU and Caliptra. It has full access to the MCI IP address space with the following restrictions:
-1. This user cannot bypass locks within MCI. i.e. Registers locked by SS_CONFIG_DONE cannot be modified by this user once SS_CONFIG_DONE is set.
-2. It can only access MCU SRAM once the system is unlocked to debug mode via LCC.
-3. **MBOX FIXME TBD**
-
-##### Disabling MCI DEBUG AXI USER
-
-If this feature is not needed by the SOC the integrator shall tie this port to 0. This will indicate to MCI that there are no AXI debug users within the design and no debug access is needed via AXI. 
-
-##### Force Enabling MCI DEBUG AXI USER
-
-If the user wants to treat all AXI transactions as a debug user the integrator shall tie this port to all 1s. 
-
 ### MCI Boot FSM Breakpoint
 
 The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At this breakpoint the user can either use one of the [MCI Debug Access](#MCI-Debug-Access) mechanisms to configure MCI before bringing MCU or Caliptra out of reset.
@@ -1544,7 +1573,7 @@ The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At thi
 
 ### Reset Controls
 
-MCI controls various resets for other IPs like MCU and Caliptra Core. When the `scan_mode` input port is set it these resets are directly controlled by the mcu_rst_b intput intead of the internal MCI logic.
+MCI controls various resets for other IPs like MCU and Caliptra Core. When the `scan_mode` input port is set these resets are directly controlled by the mcu_rst_b input intead of the internal MCI logic.
 
 
 # Subsystem Memory Map

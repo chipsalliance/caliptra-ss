@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+// 
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 // Description: I3C Smoke test for Caliptra Subsystem
 // Author     : Nilesh Patel
 // Created    : 2025-01-14
@@ -388,15 +404,3 @@ void main (void) {
 
     SEND_STDOUT_CTRL(0xff);
 }
-
-
-
-
-//-- Junk code
-    // i3c_reg_data = 0x00000000;
-    // i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_TTI_TX_DATA_PORT);
-    // VPRINTF(LOW, "TTI TX DATA PORT: %x\n", i3c_reg_data);
-
-    // i3c_reg_data = 0x00000000;
-    // i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_TTI_RX_DATA_PORT);
-    // VPRINTF(LOW, "TTI RX DATA PORT: %x\n", i3c_reg_data);

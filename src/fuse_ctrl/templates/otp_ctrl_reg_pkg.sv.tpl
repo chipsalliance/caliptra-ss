@@ -349,7 +349,7 @@ value = "{}'h {:x}".format(aw, r.offset)
 %>\
 
   // Register index${for_iface}
-  typedef enum int {
+  typedef enum logic [31:0] {
 % for r in rb.flat_regs:
     ${ublock}_${r.name.upper()}${"" if loop.last else ","}
 % endfor

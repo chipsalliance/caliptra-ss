@@ -17,13 +17,15 @@
 #ifndef VEER_CSR_H
 #define VEER_CSR_H
 
-#include "caliptra_defines.h"
+#include "caliptra_ss_defines.h"
 #include "riscv-csr.h" /* for __riscv_xlen */
 
 //////////////////////////////////////////////////////////////////////////////
 // Non-Standard VeeR CSR offset macros
 //
 #define VEER_CSR_MPMC     0x7C6
+#define VEER_CSR_MITCTL0  0x7D4
+#define VEER_CSR_MITCTL1  0x7D7
 #define VEER_CSR_MICECT   0x7F0
 #define VEER_CSR_MICCMECT 0x7F1
 #define VEER_CSR_MDCCMECT 0x7F2
@@ -56,17 +58,17 @@ enum {
 //              i.e. 64 interrupts = 64 registers
 //   Suffix 'X' indicates a single bit within a range of registers for each interrupt source
 //              i.e. 64 interrupts = 2 registers (32-bits each)
-#define VEER_MM_PIC_MEIPLS       (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIPL_OFFSET)
-#define VEER_MM_PIC_MEIPL(S)     (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIPL_OFFSET + S*4) /* S is 1:255 */
-#define VEER_MM_PIC_MEIPX        (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIP_OFFSET)
-#define VEER_MM_PIC_MEIP(X)      (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIP_OFFSET + (X>>5)*4) /* X is 1:255 */
-#define VEER_MM_PIC_MEIES        (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIE_OFFSET)
-#define VEER_MM_PIC_MEIE(S)      (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIE_OFFSET + S*4) /* S is 1:255 */
-#define VEER_MM_PIC_MPICCFG      (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MPICCFG_OFFSET)
-#define VEER_MM_PIC_MEIGWCTRLS   (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIGWCTRL_OFFSET)
-#define VEER_MM_PIC_MEIGWCTRL(S) (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIGWCTRL_OFFSET + S*4) /* S is 1:255 */
-#define VEER_MM_PIC_MEIGWCLRS    (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIGWCLR_OFFSET)
-#define VEER_MM_PIC_MEIGWCLR(S)  (MCU_RV_PIC_BASE_ADDR + MCU_RV_PIC_MEIGWCLR_OFFSET + S*4) /* S is 1:255 */
+#define VEER_MM_PIC_MEIPLS       (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIPL_OFFSET)
+#define VEER_MM_PIC_MEIPL(S)     (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIPL_OFFSET + S*4) /* S is 1:255 */
+#define VEER_MM_PIC_MEIPX        (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIP_OFFSET)
+#define VEER_MM_PIC_MEIP(X)      (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIP_OFFSET + (X>>5)*4) /* X is 1:255 */
+#define VEER_MM_PIC_MEIES        (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIE_OFFSET)
+#define VEER_MM_PIC_MEIE(S)      (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIE_OFFSET + S*4) /* S is 1:255 */
+#define VEER_MM_PIC_MPICCFG      (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MPICCFG_OFFSET)
+#define VEER_MM_PIC_MEIGWCTRLS   (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIGWCTRL_OFFSET)
+#define VEER_MM_PIC_MEIGWCTRL(S) (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIGWCTRL_OFFSET + S*4) /* S is 1:255 */
+#define VEER_MM_PIC_MEIGWCLRS    (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIGWCLR_OFFSET)
+#define VEER_MM_PIC_MEIGWCLR(S)  (CSS_MCU0_RV_PIC_BASE_ADDR + CSS_MCU0_RV_PIC_MEIGWCLR_OFFSET + S*4) /* S is 1:255 */
 
 
 //////////////////////////////////////////////////////////////////////////////

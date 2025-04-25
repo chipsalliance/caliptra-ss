@@ -280,8 +280,10 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | input     | 1     | `cptra_ss_clk_i`                     | Caliptra subsystem clock input           |
 | External | input     | 1     | `cptra_ss_pwrgood_i`                 | Power good signal input                  |
 | External | input     | 1     | `cptra_ss_rst_b_i`                   | Reset signal input, active low           |
-| External | input     | 1     | `cptra_ss_mci_cptra_rst_b_i`                   | Reset signal input for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
-| External | output    | 1     | `cptra_ss_mci_cptra_rst_b_o`                   | Reset signal output from MCI for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
+| External | input     | 1     | `cptra_ss_mci_cptra_rst_b_i`         | Reset signal input for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
+| External | output    | 1     | `cptra_ss_mci_cptra_rst_b_o`         | Reset signal output from MCI for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
+| External | output    | 1     | `cptra_ss_rdc_clk_cg_o`              | Caliptra subsystem clock gated clock for RDC. [Clock Control](#clock)         |
+| External | output    | 1     | `cptra_ss_rst_b_o`                   | Caliptra subsystem reset aligned for RDC crossing [Reset Control](#reset)         |
 | External | axi_if    | na    | `cptra_ss_cptra_core_s_axi_if`       | Caliptra core AXI sub-interface          |
 | External | axi_if    | na    | `cptra_ss_cptra_core_m_axi_if`       | Caliptra core AXI manager interface      |
 | External | axi_if    | na    | `cptra_ss_mci_s_axi_if`              | Caliptra Subsystem MCI AXI sub-interface |
@@ -357,6 +359,7 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | output    | 1     | `ready_for_fuses`                    | Ready for fuses output                   |
 | External | output    | 1     | `ready_for_mb_processing`            | Ready for mailbox processing output      |
 | External | output    | 1     | `mailbox_data_avail`                 | Mailbox data available output            |
+| External | output    | 1     | `cptra_ss_cpu_halt_status_o`                 | MCU Halt status            |
 
 ## Integration Requirements
 
@@ -372,6 +375,14 @@ The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsyste
      2. The clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.
      3. If a different frequency is required, ensure that a clock divider or PLL is used to generate the 200 MHz clock before connection.
 
+The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_clk_i`. It is clock gated whenever `cptra_ss_rst_b` is asserted to avoid RDC issues from the warm reset domain to the cold reset domain/memories. 
+
+  - **Signal Name** `cptra_ss_rdc_clk_cg_o`
+  - **Required Frequency** Same as `cptra_ss_clk_i`.
+  - **Clock Source** Caliptra SS MCI clock gater
+  - **Integration Notes**
+     1. MCU SRAM and MCU MBOX memrories shall be connected to this clock to avoid RDC issues.
+
 ### Reset
 
 The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles at 200 MHz) to allow all internal logic to initialize properly.
@@ -383,7 +394,16 @@ The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsys
      - The reset signal must be synchronized to the 200 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
-     - It is **illegal** to only toggle ```cptra_ss_reset_n``` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
+     - It is **illegal** to only toggle `cptra_ss_reset_n` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
+     - SOC shall toggle `cptra_ss_reset_b` only after ```cptra_ss_cpu_halt_status_o``` is asserted to guarantee MCU is idle and to prevent any RDC issues.
+The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_reset_n` to ensure `cptra_ss_rdc_clk_cg_o` is gated before reset is asserted. This reset is needed for the purpose of RDC between the warm reset domain and the cold reset/memory domain.
+
+   - **Signal Name** `cptra_ss_rst_b_o`
+   - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
+   - **Reset Type** Synchronous with the `cptra_ss_rdc_clk_cg_o` signal
+   - **Integration Notes**
+    - SOC's shall use this reset for any memory logic connected to MCU SRAM or MCU MBOX to avoid RDC corruption of the memories.
+    - It is recommended to be used for SOC AXI interconnect if it is on the same reset domain as Caliptra SS to avoid RDC issues. 
 
 ### Power Good Signal 
 
@@ -1072,13 +1092,13 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 - Top Level Memory Map
 
-| Internal Block | Address Offset (from base address) | 
-| :---- | :---- | 
-| CSRs | 0x0 |
-| MCU Trace Buffer | 0x10000 |
-| Mailbox 0 | 0x400000|
-| Mailbox 1 | 0x800000|
-| MCU SRAM | 0xC00000 |
+| Internal Block | Address Offset (from base address) | End Address| 
+| :---- | :---- | :---- |
+| CSRs | 0x0 | 0x1FFF | 
+| MCU Trace Buffer | 0x10000 | 0x1001F |
+| Mailbox 0 | 0x400000| 0x7FFFFF |
+| Mailbox 1 | 0x800000| 0xBFFFFF |
+| MCU SRAM | 0xC00000 | MCU SRAM BASE + MCU_SRAM_SIZE |
 
 - MCU SRAM Memory Map
 
@@ -1123,7 +1143,7 @@ The two regions have different access protection. The size of the regions is dyn
 
       To calculate the base address alignment use the following calculation:
 
-        bits = $clog2(MCU_SRAM_OFFSET + ((MCU\_SRAM\_SIZE\_KB * 1024) - 1))
+        bits = $clog2(MCU_SRAM_OFFSET + ((MCU_SRAM_SIZE_KB * 1024) - 1))
 
       MCU\_SRAM\_OFFSET can be found in the MCI’s [Top Level Memory Map](#top-level-memory-map).
 
@@ -1133,7 +1153,7 @@ The two regions have different access protection. The size of the regions is dyn
         
         MCU_SRAM_SIZE_KB = 512 (512KB)
         
-        bits = $clog2(2097152 + ((512 * 1024) - 1)
+        bits = $clog2(12582912 + ((512 * 1024) - 1))
         
         bits = 24
         

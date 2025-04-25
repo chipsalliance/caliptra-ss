@@ -45,7 +45,7 @@ module lc_ctrl_fsm
   // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
   // ---------------------------------------------------------------
   input  logic                  volatile_raw_unlock_i,
-  output logic                  strap_en_override_o,
+  // output logic                  strap_en_override_o,
   // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------
   // Token input from OTP (these are all hash post-images).
   input  lc_token_t             test_unlock_token_i,
@@ -635,13 +635,13 @@ module lc_ctrl_fsm
       end
     end
 
-    assign strap_en_override_o = strap_en_override_q[NumStrapDelayRegs-1];
+    // assign strap_en_override_o = strap_en_override_q[NumStrapDelayRegs-1];
   end else begin : gen_no_strap_delay_regs
     // In this case we tie the strap sampling off.
     logic unused_sigs;
     assign unused_sigs = ^{set_strap_en_override,
                            volatile_raw_unlock_success_d};
-    assign strap_en_override_o = 1'b0;
+    // assign strap_en_override_o = 1'b0;
     assign volatile_raw_unlock_success_q = caliptra_prim_mubi_pkg::MuBi8False;
   end
   // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------

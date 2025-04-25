@@ -124,16 +124,27 @@ module mci_reg_top
     input logic ss_debug_intent,
     output logic mci_ss_debug_intent,
 
+    // AXI Straps
+    input logic [AXI_USER_WIDTH-1:0] strap_mcu_lsu_axi_user,
+    input logic [AXI_USER_WIDTH-1:0] strap_mcu_ifu_axi_user,
+    input logic [AXI_USER_WIDTH-1:0] strap_mcu_sram_config_axi_user,
+    input logic [AXI_USER_WIDTH-1:0] strap_mci_soc_config_axi_user,
+
+
     // MCU Reset vector
     input  logic [31:0] strap_mcu_reset_vector, // default reset vector
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
+
+    // OTP
+    input logic intr_otp_operation_done,
 
     // NMI
     input  logic nmi_intr,
     output logic [31:0] mcu_nmi_vector,
 
     // MISC 
-    input logic mcu_sram_fw_exec_region_lock,
+    input  logic mcu_sram_fw_exec_region_lock,
+    output logic mcu_sram_fw_exec_region_lock_dmi_override,
 
     // MCU SRAM specific signals
     input  logic        mcu_sram_single_ecc_error,
@@ -171,15 +182,14 @@ logic scan_mode_p;
 
 // DMI
 logic mcu_dmi_uncore_dbg_unlocked_en;
-logic mcu_dmi_uncore_manuf_unlocked_en;
 logic mcu_dmi_uncore_locked_en;
 logic mcu_dmi_uncore_dbg_unlocked_wr_en;
-logic mcu_dmi_uncore_manuf_unlocked_wr_en;
 logic mcu_dmi_uncore_locked_wr_en  ;
 // unused in 2.0 logic mcu_dmi_uncore_mbox0_dout_access_f;
 // unused in 2.0 logic mcu_dmi_uncore_mbox0_din_access_f;
 // unused in 2.0 logic mcu_dmi_uncore_mbox1_dout_access_f;
 // unused in 2.0 logic mcu_dmi_uncore_mbox1_din_access_f;
+MCI_DMI_MCI_HW_OVERRIDE_REG_t MCI_DMI_MCI_HW_OVERRIDE_REG;
 
 logic [31:0] mcu_dmi_uncore_dbg_unlocked_rdata_in;
 logic [31:0] mcu_dmi_uncore_locked_rdata_in;
@@ -267,7 +277,7 @@ endgenerate
 ///////////////////////////////////////////////
 caliptra_prim_flop_2sync #(
   .Width(64)
-) u_prim_flop_2sync_mcu_sram_fw_exec_region_lock (
+) u_prim_flop_2sync_mic_generic_wire_in (
   .clk_i(clk),
   .rst_ni(mci_rst_b),
   .d_i(mci_generic_input_wires),
@@ -319,7 +329,7 @@ assign strap_we_sticky = strap_we & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done
 always_comb begin
     // STRAP with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = strap_we_sticky ? ss_debug_intent : mcu_dmi_uncore_wdata[0];
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we_sticky ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
 
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.next          = mcu_dmi_uncore_wdata[0] ; 
@@ -329,6 +339,13 @@ always_comb begin
     mci_reg_hwif_in.SS_CONFIG_DONE_STICKY.done.next     = mcu_dmi_uncore_wdata[0] ; 
     mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.next  = mcu_dmi_uncore_wdata[15:0] ; 
     mci_reg_hwif_in.MCU_NMI_VECTOR.vec.next             = mcu_dmi_uncore_wdata ; 
+
+    // Straps with no override
+    mci_reg_hwif_in.MCU_IFU_AXI_USER.value.next = { {(32-$bits(strap_mcu_ifu_axi_user)){1'b0}}, strap_mcu_ifu_axi_user};
+    mci_reg_hwif_in.MCU_LSU_AXI_USER.value.next = { {(32-$bits(strap_mcu_lsu_axi_user)){1'b0}}, strap_mcu_lsu_axi_user};
+    mci_reg_hwif_in.MCU_SRAM_CONFIG_AXI_USER.value.next = { {(32-$bits(strap_mcu_sram_config_axi_user)){1'b0}}, strap_mcu_sram_config_axi_user} ;
+    mci_reg_hwif_in.MCI_SOC_CONFIG_AXI_USER.value.next  = { {(32-$bits(strap_mci_soc_config_axi_user )){1'b0}}, strap_mci_soc_config_axi_user} ;
+
 end
 
 // Write enable
@@ -336,7 +353,7 @@ always_comb begin
     // STRAPS with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR));
     
     // REGISTERS WITH TAP ACCESS
@@ -356,7 +373,19 @@ always_comb begin
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR));
 end
 
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        MCI_DMI_MCI_HW_OVERRIDE_REG <= '0;
+    end
+    else begin
+        if(mcu_dmi_uncore_dbg_unlocked_wr_en & 
+            (mcu_dmi_uncore_addr == MCI_DMI_MCI_HW_OVERRIDE)) begin
+            MCI_DMI_MCI_HW_OVERRIDE_REG <= mcu_dmi_uncore_wdata;
+        end
+    end
+end
 
+assign mcu_sram_fw_exec_region_lock_dmi_override = MCI_DMI_MCI_HW_OVERRIDE_REG.mcu_sram_fw_exec_region_lock;
 
 
 assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value;
@@ -415,12 +444,6 @@ assign mcu_dmi_uncore_enable        = (!security_state_o.debug_locked) || (secur
 //Uncore registers open for all cases
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;
 
-//Uncore registers only open for debug unlock or manufacturing
-// NOTE - unused in 2.0
-always_comb mcu_dmi_uncore_manuf_unlocked_en = mcu_dmi_uncore_en & 
-                                                (~(security_state_o.debug_locked) | 
-                                                 (security_state_o.device_lifecycle == DEVICE_MANUFACTURING));
-
 //Uncore registers only open for debug unlock 
 always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & 
                                                 (~(security_state_o.debug_locked)  
@@ -429,7 +452,6 @@ always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en &
 
 
 always_comb mcu_dmi_uncore_dbg_unlocked_wr_en   = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_dbg_unlocked_en);
-always_comb mcu_dmi_uncore_manuf_unlocked_wr_en = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_manuf_unlocked_en);
 always_comb mcu_dmi_uncore_locked_wr_en         = (mcu_dmi_uncore_wr_en & mcu_dmi_uncore_locked_en);
 
 //DMI unlocked register read mux
@@ -481,7 +503,8 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT            )}}   &  32'(mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value) )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE             )}}   &  32'(mci_reg_hwif_out.SS_CONFIG_DONE.done.value)          )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE_STICKY      )}}   &  32'(mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value)   )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  32'(mci_reg_hwif_out.MCU_NMI_VECTOR.vec.value)           )  ;
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  32'(mci_reg_hwif_out.MCU_NMI_VECTOR.vec.value)           )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_HW_OVERRIDE            )}}   &  32'(MCI_DMI_MCI_HW_OVERRIDE_REG)                             )  ;
 
 
 // Registers accessable while in a locked state
@@ -539,7 +562,6 @@ always_comb mcu_sram_dmi_uncore_wdata = mcu_dmi_uncore_wdata;
 
 always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts.hwset           = mcu_sram_dmi_axi_collision_error; // Set by any protocol error violation (mirrors the bits in CPTRA_HW_ERROR_NON_FATAL)
                                               
-// FIXME RDC clock?
 always_ff @(posedge clk or negedge mci_pwrgood) begin
     if (~mci_pwrgood) begin
       mcu_dmi_uncore_rdata <= '0;
@@ -631,7 +653,7 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
         mcu_sram_fw_exec_region_lock_prev <= 0;
     end
-    else if(!Warm_Reset_Capture_Flag) begin
+    else begin
         mcu_sram_fw_exec_region_lock_prev <= mcu_sram_fw_exec_region_lock;
     end
 end
@@ -799,6 +821,11 @@ always_comb cptra_mbox_cmd_avail_p = cptra_mbox_data_avail & !cptra_mbox_data_av
 always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_cptra_mbox_cmd_avail_sts.hwset          = cptra_mbox_cmd_avail_p;
 
 ///////////////////////////////////////////////
+// MISC INTERRUPTS
+///////////////////////////////////////////////
+always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.hwset       = intr_otp_operation_done;
+
+///////////////////////////////////////////////
 // NMI Vector   
 ///////////////////////////////////////////////
 assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec;  
@@ -807,7 +834,7 @@ assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec;
 // Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL
 // Also calculate whether or not an unmasked event is being set, so we can
 // trigger the SOC interrupt signal
-always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_double_ecc_error; // FIXME do we need to add a reset window disable like in caliptra?
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_double_ecc_error;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      = nmi_intr;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  = mcu_sram_dmi_axi_collision_error;
 // Using we+next instead of hwset allows us to encode the reserved fields in some fashion
@@ -1254,7 +1281,7 @@ assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_c
 mci_reg i_mci_reg (
 
         .clk  (clk),
-        .rst  ('0), // FIXME why is this tied off in soc_ifc?
+        .rst  ('0), 
 
         .s_cpuif_req            (cif_resp_if.dv),
         .s_cpuif_req_is_wr      (cif_resp_if.req_data.write),
