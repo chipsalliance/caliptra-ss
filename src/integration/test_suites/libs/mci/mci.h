@@ -12,24 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MCI_H
-#define MCI_H
 
-#include <stdint.h>
+#ifndef MCI_LIB
+#define MCI_LIB
+
+#include <stdbool.h>
+#include "stdint.h"
 #include <stddef.h>
 
-/* Include necessary definitions but no function implementations */
 #include "mci_reg_defs.h"
 #include "soc_address_map.h"
 
-/* Declare the global dictionary so other files can reference it */
+uint32_t get_mcu_sram_size();
+
+uint32_t get_mcu_sram_size_byte();
+
+uint32_t get_mcu_sram_end_addr();
+
+uint32_t get_mcu_sram_last_dword();
+
+uint32_t get_mcu_sram_execution_region_start() ;
+
+uint32_t get_mcu_sram_execution_region_end() ;
+
+uint32_t get_mcu_sram_protected_region_start() ;
+
+uint32_t get_mcu_sram_protected_region_end() ;
+
+bool get_is_sram_protected_region();
+
+uint32_t get_fw_sram_exec_region_less_than_sram_size(uint32_t rnd);
+
+/* Global dictionary */
 extern mci_reg_exp_dict_t g_expected_data_dict;
 
-/* Core register access functions */
 uint32_t mci_reg_read(uint32_t reg_addr);
 void mci_reg_write(uint32_t reg_addr, uint32_t value);
 
-/* Register utility functions from mci_reg_utils.h */
 const mci_register_info_t* find_register_by_address(uint32_t address, mci_register_group_t *group_index, int *reg_index);
 int get_total_register_count(void);
 void init_reg_exp_dict(mci_reg_exp_dict_t *dict);
@@ -55,4 +74,4 @@ void init_excluded_registers(void);
 /* Initialization */
 void mci_init(void);
 
-#endif /* MCI_H */
+#endif /* MCI_LIB */
