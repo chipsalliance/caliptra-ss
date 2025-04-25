@@ -236,8 +236,8 @@ initial begin
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.base_address[0] = 64'h2000_4000;
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.limit_address[0] = 64'h2000_4FFF;
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.base_address[0] = 64'(`SOC_I3CCSR_BASE_ADDR);
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.limit_address[0] = 64'(`SOC_I3CCSR_BASE_ADDR) + 64'hFFF; // FIXME hardcoded offset
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.total_outstanding_depth = 4;
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.id_outstanding_depth = 4;

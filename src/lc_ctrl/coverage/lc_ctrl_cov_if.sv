@@ -207,6 +207,8 @@ interface lc_ctrl_cov_if
         }
     endgroup
 
+    lc_ctrl_volatile_raw_unlock_transition_cg lc_ctrl_volatile_raw_unlock_transition_cg1 = new();
+
     logic trans_cnt_oflw_error_o = lc_ctrl.u_lc_ctrl_fsm.trans_cnt_oflw_error_o;
     logic trans_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.trans_invalid_error_o;
     logic token_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.token_invalid_error_o;
