@@ -331,7 +331,7 @@ assign mcu_sram_valid_req = exec_region_filter_success | prot_region_filter_succ
 // Detecting read, write , vs byte write (rmw) requests
 assign mcu_sram_read_req  = mcu_sram_valid_req & (~cif_resp_if.req_data.write);
 
-assign mcu_sram_write_req = mcu_sram_valid_req & cif_resp_if.req_data.write &   (&cif_resp_if.req_data.wstrb);;
+assign mcu_sram_write_req = mcu_sram_valid_req & cif_resp_if.req_data.write &   (&cif_resp_if.req_data.wstrb);
 
 // Detects we need to do a RMW 
 assign mcu_sram_rmw_req   = mcu_sram_valid_req & cif_resp_if.req_data.write & (~(&cif_resp_if.req_data.wstrb));
