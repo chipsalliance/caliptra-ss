@@ -51,10 +51,6 @@ void main(void) {
         exclude_register(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
         exclude_register(SOC_MBOX_CSR_MBOX_LOCK);
         exclude_register(SOC_MBOX_CSR_MBOX_USER);
-        exclude_register(SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_AGG_ERROR_NON_FATAL);
         
         // Loop through all RW register groups
         for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
@@ -73,6 +69,7 @@ void main(void) {
                 (group == REG_GROUP_WATCHDOG_RO) ||
                 (group == REG_GROUP_GENERIC_WIRES_RO) ||
                 (group == REG_GROUP_SS_RO) ||
+                (group == REG_GROUP_ERROR_W1C) ||
                 (group == REG_GROUP_ERROR) ||
                 (group == REG_GROUP_INTERRUPT) ||
                 (group == REG_GROUP_INTERRUPT_COUNTERS) ||
@@ -117,6 +114,7 @@ void main(void) {
                 (group == REG_GROUP_GENERIC_WIRES_RO) ||
                 (group == REG_GROUP_SS_RO) ||
                 (group == REG_GROUP_ERROR) ||
+                (group == REG_GROUP_ERROR_W1C) ||
                 (group == REG_GROUP_INTERRUPT) ||
                 (group == REG_GROUP_INTERRUPT_COUNTERS) ||
                 (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_0) ||
@@ -165,6 +163,7 @@ void main(void) {
                 (group == REG_GROUP_GENERIC_WIRES_RO) ||
                 (group == REG_GROUP_SS_RO) ||
                 (group == REG_GROUP_ERROR) ||
+                (group == REG_GROUP_ERROR_W1C) ||
                 (group == REG_GROUP_INTERRUPT) ||
                 (group == REG_GROUP_INTERRUPT_COUNTERS) ||
                 (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_0) ||
@@ -210,6 +209,7 @@ void main(void) {
                 (group == REG_GROUP_GENERIC_WIRES_RO) ||
                 (group == REG_GROUP_SS_RO) ||
                 (group == REG_GROUP_ERROR) ||
+                (group == REG_GROUP_ERROR_W1C) ||
                 (group == REG_GROUP_INTERRUPT) ||
                 (group == REG_GROUP_INTERRUPT_COUNTERS) ||
                 (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_0) ||
@@ -235,8 +235,8 @@ void main(void) {
     }
 
     if (error_count == 0 ) {
-        SEND_STDOUT_CTRL(0xff);
+        SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
     } else {
-        SEND_STDOUT_CTRL(0x1);
+        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
     }
 }
