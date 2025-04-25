@@ -6,7 +6,7 @@ contents:
       tags: ["L1", "caliptra_ss_top_tb", "Random", "Nightly"]
       path: ""
       weight: 100
-      generations: 190
+      generations: 200
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
@@ -20,6 +20,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_protected_region/smoke_test_mcu_sram_protected_region: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region_max_size: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region_random_sram_config_axi_user: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_mbox_rand_rdwr/mcu_mbox0_rand_rdwr: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_mbox_rand_rdwr/mcu_mbox1_rand_rdwr: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_burst/smoke_test_mcu_mbox0_burst: { weight: 100 }

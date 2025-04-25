@@ -6,7 +6,7 @@ contents:
       tags: ["L1", "caliptra_ss_top_tb", "Directed", "Nightly"]
       path: ""
       weight: 100
-      generations: 650
+      generations: 660
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
@@ -43,6 +43,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_ecc_sb/smoke_test_mcu_sram_ecc_sb: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mci_soc_config_always_enable/smoke_test_mci_soc_config_always_enable: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mci_soc_config_disable/smoke_test_mci_soc_config_disable: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mci_soc_diff_mcu/smoke_test_mci_soc_diff_mcu: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_single: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_random: { weight: 100 }

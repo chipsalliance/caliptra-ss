@@ -112,6 +112,9 @@ initial begin
         else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_ALWAYS_ENABLE") begin
             smoke_test_mci_soc_config_always_enable();       
         end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_DIFF_MCU") begin
+            smoke_test_mci_soc_config_diff_mcu();       
+        end
         else begin
             $error("ERROR: Test Name from Plusarg: %s not found", cptra_ss_test_name);
             $finish;
@@ -223,7 +226,7 @@ initial begin
     if ($value$plusargs("MCU_SRAM_CONFIG_AXI_USER=%h", cptra_ss_strap_mcu_sram_config_axi_user_i)) begin
         // Plusarg value is directly assigned to cptra_ss_strap_mcu_sram_config_axi_user_i as hex
         $display("MCU SRAM CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mcu_sram_config_axi_user_i);
-    end else if ($test$plusargs("MCU_SRAM CONFIG_AXI_USER_RAND")) begin
+    end else if ($test$plusargs("MCU_SRAM_CONFIG_AXI_USER_RAND")) begin
         // Randomize the signal if no plusarg is provided
         cptra_ss_strap_mcu_sram_config_axi_user_i = $urandom();
         $display("Randomized MCU SRAM CONFIG AXI USER Value: %h", cptra_ss_strap_mcu_sram_config_axi_user_i);
@@ -238,7 +241,7 @@ initial begin
     if ($value$plusargs("MCI_SOC_CONFIG_AXI_USER=%h", cptra_ss_strap_mci_soc_config_axi_user_i)) begin
         // Plusarg value is directly assigned to cptra_ss_strap_mcu_ifu_axi_user_i as hex
         $display("MCI SOC CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
-    end else if ($test$plusargs("MCU_SOC CONFIG_AXI_USER_RAND")) begin
+    end else if ($test$plusargs("MCU_SOC_CONFIG_AXI_USER_RAND")) begin
         // Randomize the signal if no plusarg is provided
         cptra_ss_strap_mci_soc_config_axi_user_i= $urandom();
         $display("Randomized MCI SOC CONFIG AXI USER Value: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
