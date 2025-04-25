@@ -219,7 +219,7 @@ void main (void) {
     }
     VPRINTF(LOW, "MCU: Mbox%x Caliptra AXI properly reflected in MBOX_USER CSR\n", mbox_num);
 
-    mcu_mbox_update_status_complete(mbox_num);
+    mcu_mbox_update_status(mbox_num, MCU_MBOX_CMD_COMPLETE);
 
     // Clear the CMD_AVAIL interrupt and check that it gets cleared
     mcu_mbox_clear_mbox_cmd_avail_interrupt(mbox_num);

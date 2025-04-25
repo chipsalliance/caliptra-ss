@@ -24,11 +24,7 @@ SECTIONS {
   . = 0x50000000;
   .dccm : { *(.dccm) }
   _dccm_end = .;
-<<<<<<< HEAD
-  .data : { *(.data) *(.data.*) *(.sdata) *(.sdata.*) }
-=======
   .data : { *(.data) *(.data.*) *(.sdata) *(.sdata.*) ; . = ALIGN(4); } =0x0000,
->>>>>>> main
   _data_end = .;
   .bss : { *(.bss) *(.sbss) ; . = ALIGN(4); } =0x0000,
   _bss_end = .;
@@ -42,9 +38,6 @@ SECTIONS {
   .rodata : { *(.rodata*) *(.srodata*) ; . = ALIGN(4); } =0x0000,
   _rodata_end = .;
   ASSERT( _rodata_end < 0x80040000, "ERROR: ROM size exceeds 256KiB")
-
-  . = 0x21000414;
-  .data.io : { *(.data.io) }
 
   . = 0x21C00000;
   .mcu_sram : { *(.mcu_sram*) ; . = ALIGN(4); } =0x0000,

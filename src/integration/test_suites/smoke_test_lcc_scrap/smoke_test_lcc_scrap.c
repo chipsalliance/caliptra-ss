@@ -39,6 +39,7 @@ void from_Unlocked_to_SCRAP(void) {
 
 void no_PPD_from_Raw_to_SCRAP(void) {
 
+    disable_lcc_SVAs();
     uint32_t reg_value;
     uint32_t from_state = 0;
     uint32_t to_state   = 1;
@@ -64,7 +65,8 @@ void no_PPD_from_Raw_to_SCRAP(void) {
                                 0, 0, 0, 0,
                                 0 /*use_token*/);
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in not SCRAP state!\n");
-    reset_fc_lcc_rtl();    
+    reset_fc_lcc_rtl();
+    enable_lcc_SVAs();
    
 }
 

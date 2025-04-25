@@ -64,6 +64,13 @@ import tb_top_pkg::*;
     string                      abi_reg[32]; // ABI register names
 
     tb_top_pkg::veer_sram_error_injection_mode_t error_injection_mode;
+    tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mbox0_sram_error_injection_mode;
+    tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mbox1_sram_error_injection_mode;
+    
+    bit                         flip_bit_mbox0;
+    bit                         flip_bit_mbox1;
+    logic [MCU_MBOX0_DATA_AND_ECC_W-1:0] mbox0_sram_wdata_bitflip;
+    logic [MCU_MBOX1_DATA_AND_ECC_W-1:0] mbox1_sram_wdata_bitflip;
 
     logic                       wb_valid;
     logic [4:0]                 wb_dest;
@@ -109,6 +116,7 @@ import tb_top_pkg::*;
         end 
         if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
+            force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
         end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
@@ -197,7 +205,7 @@ import tb_top_pkg::*;
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
                 if($test$plusargs("AVY_TEST")) begin
-                    if($value$plusargs("i3c_run_time=%0t", i3c_run_time)) begin
+                    if($value$plusargs("i3c_run_time=%0d", i3c_run_time)) begin
                         $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
                         #i3c_run_time;
                     end else begin
@@ -212,6 +220,33 @@ import tb_top_pkg::*;
                 $error("* TESTCASE FAILED");
                 $finish;
             end
+        end
+    end
+
+    always @(negedge clk or negedge rst_l) begin
+        if (!rst_l) begin
+            mbox0_sram_error_injection_mode <= '{default: 1'b0};
+            mbox1_sram_error_injection_mode <= '{default: 1'b0};
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MBOX_SRAM_SINGLE_ECC_ERROR)) begin
+            $display("Injecting single bit MCU Mbox SRAM errors");
+            mbox0_sram_error_injection_mode.single_bit_error <= 1'b1;
+            mbox1_sram_error_injection_mode.single_bit_error <= 1'b1;
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR)) begin
+            $display("Injecting double bit MCU Mbox SRAM errors");
+            mbox0_sram_error_injection_mode.double_bit_error <= 1'b1;
+            mbox1_sram_error_injection_mode.double_bit_error <= 1'b1;
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION)) begin
+            $display("Randomizing MCU SRAM Mbox error injection");
+            mbox0_sram_error_injection_mode.randomize <= 1'b1;
+            mbox1_sram_error_injection_mode.randomize <= 1'b1;
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION)) begin
+            $display("Disabling MCU SRAM Mbox injection");
+            mbox0_sram_error_injection_mode <= '{default: 1'b0};
+            mbox1_sram_error_injection_mode <= '{default: 1'b0};
         end
     end
 
@@ -369,16 +404,11 @@ initial begin
         @(posedge clk);
         if(cold_rst) begin
             @(posedge clk);
-            $display("[%t] COLD RESET: Resets asserting", $time);
-            soc_bfm_if.assert_rst_flag <= 1'b1;
-            clr_cold_rst               <= 1'b1;
-            @(posedge clk);
-            soc_bfm_if.assert_rst_flag <= 1'b0;
-            clr_cold_rst               <= 1'b0;
-            wait(soc_bfm_if.assert_rst_flag_done);
             $display("[%t] COLD RESET: Powergood Reset asserting", $time);
             soc_bfm_if.assert_hard_rst_flag <= 1'b1;
+            clr_cold_rst               <= 1'b1;
             @(posedge clk);
+            clr_cold_rst               <= 1'b0;
             soc_bfm_if.assert_hard_rst_flag <= 1'b0;
             wait(soc_bfm_if.assert_hard_rst_flag_done);
             $display("[%t] COLD RESET: Hold", $time);
@@ -390,11 +420,6 @@ initial begin
             @(posedge clk);
             soc_bfm_if.deassert_hard_rst_flag <= 1'b0;
             wait(soc_bfm_if.deassert_hard_rst_flag_done);
-            $display("[%t] COLD RESET: Resets deasserting", $time);
-            soc_bfm_if.deassert_rst_flag <= 1'b1;
-            @(posedge clk);
-            soc_bfm_if.deassert_rst_flag <= 1'b0;
-            wait(soc_bfm_if.deassert_rst_flag_done);
 
             $display("[%t] COLD RESET: COMPLETE", $time);
         end
@@ -494,10 +519,6 @@ end
         hex_file_is_empty = $system("test -s mcu_lmem.hex");
         if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram, 0, (MCU_SRAM_SIZE_KB*1024)-1);
 
-<<<<<<< HEAD
-=======
-
->>>>>>> main
         imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
@@ -517,6 +538,76 @@ end
 
     end
 
+
+    // Mbox0 SRAM error injection
+    `ifndef VERILATOR
+        initial begin
+            automatic bitflip_mask_generator #(MCU_MBOX0_DATA_AND_ECC_W) bitflip_gen = new();
+            forever begin
+                @(posedge clk)
+                if (~|mbox0_sram_error_injection_mode) begin
+                    mbox0_sram_wdata_bitflip <= '0;
+                end
+                else if (cptra_ss_mcu_mbox0_sram_req_if.req.cs & cptra_ss_mcu_mbox0_sram_req_if.req.we) begin
+                    // Corrupt 20% of the writes if randomize is enabled
+                    flip_bit_mbox0 = (mbox0_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                    mbox0_sram_wdata_bitflip <= flip_bit_mbox0 ? bitflip_gen.get_mask(mbox0_sram_error_injection_mode.double_bit_error) : '0;
+                    if (flip_bit_mbox0) begin
+                    //    $display("%t Injecting bit flips to Mbox0 SRAM[%d] Bitflip Mask: 0x%x Write Data: 0x%x", 
+                    //                             $realtime, cptra_ss_mcu_mbox0_sram_req_if.req.addr >>2, mbox0_sram_wdata_bitflip, cptra_ss_mcu_mbox0_sram_req_if.req.wdata);
+                    end
+                end
+            end
+        end
+    `else
+        always @(posedge clk) begin
+            if (~|mbox0_sram_error_injection_mode) begin
+                flip_bit_mbox0 <= 0;
+                mbox0_sram_wdata_bitflip <= '0;
+            end
+            else if (cptra_ss_mcu_mbox0_sram_req_if.req.cs & cptra_ss_mcu_mbox0_sram_req_if.req.cs) begin
+                // Corrupt 20% of the writes if randomize is enabled
+                flip_bit_mbox0 = (mbox0_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                mbox0_sram_wdata_bitflip <= flip_bit_mbox0 ? get_bitflip_mask(mbox0_sram_error_injection_mode.double_bit_error) : '0;
+            end
+        end
+    `endif
+
+    // Mbox1 SRAM error injection
+    `ifndef VERILATOR
+        initial begin
+            automatic bitflip_mask_generator #(MCU_MBOX1_DATA_AND_ECC_W) bitflip_gen = new();
+            forever begin
+                @(posedge clk)
+                if (~|mbox1_sram_error_injection_mode) begin
+                    mbox1_sram_wdata_bitflip <= '0;
+                end
+                else if (cptra_ss_mcu_mbox1_sram_req_if.req.cs & cptra_ss_mcu_mbox1_sram_req_if.req.we) begin
+                    flip_bit_mbox1 = (mbox1_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                    mbox1_sram_wdata_bitflip <= flip_bit_mbox1 ? bitflip_gen.get_mask(mbox1_sram_error_injection_mode.double_bit_error) : '0;
+                    // if (flip_bit_mbox1) $display("Injecting bit flips to Mbox1 SRAM[%d]", $realtime, mbox1_sram_wdata_bitflip, cptra_ss_mcu_mbox1_sram_req_if.req.addr >>2);
+                end
+            end
+    end
+    `else
+        always @(posedge clk) begin
+            if (~|mbox1_sram_error_injection_mode) begin
+                flip_bit_mbox1 <= 0;
+                mbox1_sram_wdata_bitflip <= '0;
+            end
+            else if (cptra_ss_mcu_mbox1_sram_req_if.req.cs & cptra_ss_mcu_mbox1_sram_req_if.req.cs) begin
+                // Corrupt 20% of the writes if randomize is enabled
+                flip_bit_mbox1 = (mbox1_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                mbox1_sram_wdata_bitflip <= flip_bit_mbox1 ? get_bitflip_mask(mbox1_sram_error_injection_mode.double_bit_error) : '0;
+            end
+        end
+    `endif
+
+   //=========================================================================-
+   // SRAM instances
+   //=========================================================================-
+
+
     caliptra_sram
     #(
         .DATA_WIDTH(MCU_MBOX0_DATA_AND_ECC_W),
@@ -529,7 +620,7 @@ end
         .cs_i(cptra_ss_mcu_mbox0_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox0_sram_req_if.req.we),
         .addr_i(cptra_ss_mcu_mbox0_sram_req_if.req.addr),
-        .wdata_i(cptra_ss_mcu_mbox0_sram_req_if.req.wdata),
+        .wdata_i(cptra_ss_mcu_mbox0_sram_req_if.req.wdata ^ mbox0_sram_wdata_bitflip),
 
         .rdata_o(cptra_ss_mcu_mbox0_sram_req_if.resp.rdata)
     );
@@ -546,16 +637,15 @@ end
         .cs_i(cptra_ss_mcu_mbox1_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox1_sram_req_if.req.we),
         .addr_i(cptra_ss_mcu_mbox1_sram_req_if.req.addr),
-        .wdata_i(cptra_ss_mcu_mbox1_sram_req_if.req.wdata),
+        .wdata_i(cptra_ss_mcu_mbox1_sram_req_if.req.wdata ^ mbox1_sram_wdata_bitflip),
 
         .rdata_o(cptra_ss_mcu_mbox1_sram_req_if.resp.rdata)
     );
 
 
     rom #(
-        .DEPTH     (16'h8000), // 256KiB
-        .DATA_WIDTH(64),
-        .ADDR_WIDTH(22)
+        .DEPTH     (CPTRA_SS_ROM_DEPTH), // 256KiB
+        .DATA_WIDTH(CPTRA_SS_ROM_DATA_W)
     ) imem (
         .clk_i   (clk),
         .cs_i    (mcu_rom_mem_export_if.req.cs),

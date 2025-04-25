@@ -20,11 +20,19 @@
 // [03/26] MCI Register Count: 261
 #define MAX_REGISTER_ENTRIES 300
 
+// Enum for register sticky behavior
+typedef enum {
+    REG_NOT_STICKY = 0,
+    REG_STICKY = 1
+} register_sticky_t;
+
+
 // Register info struct
 typedef struct {
     uint32_t address;   /* Register address */
     const char *name;   /* Register name */
     const char *desc;   /* Register description */
+    register_sticky_t is_sticky;        /* Flag to indicate if register is sticky */
 } mci_register_info_t;
 
 // Register expected data struct
@@ -50,6 +58,11 @@ typedef struct {
     register_mask_t entries[MAX_REGISTER_ENTRIES];  /* Fixed-size array of entries */
     int count;                                      /* Current number of entries */
 } register_mask_dict_t;
+
+typedef enum {
+    COLD_RESET = 0, 
+    WARM_RESET = 1
+} reset_type_t;
 
 // Register groups
 typedef enum {

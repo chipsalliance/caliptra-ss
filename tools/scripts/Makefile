@@ -67,13 +67,7 @@ COMP_LIB_NAMES := caliptra_ss_lib \
 		  mci \
 		  fuse_ctrl \
 		  lc_ctrl \
-			mci
-
-# Add mci to COMP_LIB_NAMES when TESTNAME is mci_reg_rand_test
-#ifeq ($(TESTNAME),mci_reg_rand_test)
-#    COMP_LIB_NAMES += mci
-#endif
-
+		  wdt
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
@@ -374,25 +368,17 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 			      --pad-to 0x4000 \
 			      --no-change-warnings \
 			      $(TESTNAME).exe mcu_dccm.hex
-<<<<<<< HEAD
-	-$(GCC_PREFIX)-objcopy -O verilog -R .dccm -R .data -R .bss -R .sbss -R .data.io -R .eh_frame \
-=======
 	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .rodata -j .srodata \
->>>>>>> main
 			      --change-section-lma       .text-0x80000000 \
 			      --change-section-lma     .rodata-0x80000000 \
 			      --change-section-lma    .srodata-0x80000000 \
 			      --pad-to 0x40000 \
 			      --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	-$(GCC_PREFIX)-objcopy -O binary           -R .data.io -R .eh_frame --pad-to 0x40000  --no-change-warnings $(TESTNAME).exe mcu_program.bin
-<<<<<<< HEAD
-	-$(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --change-section-lma .data-0x21C00000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
-=======
 	-$(GCC_PREFIX)-objcopy -O verilog -j .mcu_sram \
 			      --change-section-lma .mcu_sram-0x21C00000 \
 			      --pad-to 0x80000 \
 			      --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
->>>>>>> main
 	# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
@@ -456,4 +442,3 @@ help:
 	@echo Possible targets: verilator vcs irun vlog riviera help clean all verilator-build irun-build vcs-build riviera-build program.hex
 
 .PHONY: help clean clean_fw verilator vcs irun vlog riviera
-

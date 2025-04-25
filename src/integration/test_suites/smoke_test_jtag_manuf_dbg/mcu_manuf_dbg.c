@@ -71,10 +71,22 @@ void main (void) {
     uint32_t cptra_boot_go;
 
     uint32_t vector[16] = {
-        0xba03f195, 0xcfb86f60, 0x6ce5adc0, 0x90be97cd,
-        0x5021e4df, 0x25edab7d, 0xb141e89a, 0xd115a87b,
-        0x28abfbfa, 0x5a8f41,   0x44901cee, 0x4961df3f,
-        0x8db3e5ea, 0x8d489c51, 0x90e26b42, 0xaf9369e
+        0x9d2fee5e,
+    0xd6ad3ab7,
+    0xde49acb6,
+    0x32afd8f2,
+    0xc9cddd33,
+    0xd5ed2846,
+    0xc34b9649,
+    0xb3a54fa3,
+    0x67343f15,
+    0x908277c6,
+    0xc6779c52,
+    0xfe55fd7d,
+    0x96966232,
+    0xcd03999d,
+    0x90b3fae2,
+    0x7f04e213
     };
     // VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
@@ -86,13 +98,13 @@ void main (void) {
     // Fuse and Boot Bringup
     //
     uint32_t base_address = SOC_SOC_IFC_REG_FUSE_MANUF_DBG_UNLOCK_TOKEN_0;
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 16; i++) {
         VPRINTF(LOW, "MCU: writing 0x%x to address of 0x%x\n", vector[i], base_address + (i * 4));
         lsu_write_32(base_address + (i * 4), vector[i]);
     }
 
 
-    for (uint32_t ii = 0; ii < 500; ii++) {
+    for (uint32_t ii = 0; ii < 600; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
 

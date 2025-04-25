@@ -18,3 +18,21 @@ task end_test_successful_req();
     tb_services_if.end_test_success = 1'b1;
 
 endtask
+
+task wait_lcc_init();
+    $display("[%t]: Waiting for LCC init", $time);
+    wait(`MCI_PATH.i_boot_seqr.lc_done);
+    $display("[%t]: LCC init complete", $time);
+endtask
+
+task wait_mcu_running();
+    $display("[%t]: Waiting for MCU is running", $time);
+    wait(`MCU_PATH.rst_l);
+    $display("[%t]: MCU is running", $time);
+endtask
+
+task wait_debug_unlock();
+    $display("[%t]: Waiting for debug unlock", $time);
+    wait(!`MCI_PATH.LCC_state_translator.security_state_o.debug_locked);
+    $display("[%t]: Debug unlock complete", $time);
+endtask

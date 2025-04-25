@@ -235,7 +235,7 @@ package pwrmgr_reg_pkg;
   parameter logic [0:0] PWRMGR_WAKE_INFO_ABORT_RESVAL = 1'h 0;
 
   // Register index
-  typedef enum int {
+  typedef enum logic [31:0] {
     PWRMGR_INTR_STATE,
     PWRMGR_INTR_ENABLE,
     PWRMGR_INTR_TEST,

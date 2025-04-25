@@ -19,14 +19,14 @@ source [file join $script_dir common.tcl]
 # [1023:0] = ABCDEFEB00000...000F888888A
 array set TOKEN_data {
     0 0xFFFFF8E2
-    1 0xABCDEFEB
+    1 0xEBEFCDAB
     2 0x00000000
     3 0x00000000
     4 0x00000000
     5 0x00000000
     6 0x00000000
     7 0x00000000
-    8 0xF888888A
+    8 0x8A8888F8
 }
 
 # Digest value is 9d2fee5ed6ad3ab7de49acb632afd8f2c9cddd33d5ed2846c34b9649b3a54fa367343f15908277c6c6779c52fe55fd7d96966232cd03999d90b3fae27f04e213

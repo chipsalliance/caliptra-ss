@@ -109,6 +109,7 @@ requires:
   - axi_dma_coverage
   - mci_coverage
   - lc_ctrl_coverage
+  - fuse_ctrl_coverage
 targets:
   tb:
     directories:
@@ -155,6 +156,7 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_tb_cmd_list.svh
       - $COMPILE_ROOT/testbench/caliptra_ss_veer_sram_export.sv
       - $COMPILE_ROOT/testbench/fc_lcc_tb_services.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_axi_64_to_32_downsizer.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_services.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_bfm_services_if.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
@@ -182,6 +184,7 @@ global:
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
+        - +define+SVA_RST=caliptra_ss_top_tb.caliptra_ss_dut.cptra_ss_mci_cptra_rst_b_i
         - +define+CALIPTRA_MODE_SUBSYSTEM
         - +define+MCU_RV_BUILD_AXI4
         - +define+MCU_RV_OPENSOURCE
@@ -207,6 +210,8 @@ global:
         - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME : remve this Note suppression
         - '-suppress=SV-LCM-PPWI'
+        #FIXME : ENABLE THIS DEFINE FOR THE RELEASE
+        # - +define+I3C_BOOT_USING_ENTDAA
       elab:
         #FIXME : remve this warning suppression
         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
@@ -221,7 +226,8 @@ global:
         # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
         #- '+ai3c_dbg_name=master'
-        - '+vpi -lpthread'
+        - '+vpi'
+        # - -lpthread'
         - '+CLP_BUS_LOGS=1'
         # Command line arg to spcify the I3C test 
         # - +AVY_TEST=ai3ct_ext_basic
