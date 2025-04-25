@@ -27,6 +27,8 @@ contents:
         - ../test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region_max_size.yml
         - ../test_suites/smoke_test_mcu_sram_ecc_db/smoke_test_mcu_sram_ecc_db.yml
         - ../test_suites/smoke_test_mcu_sram_ecc_sb/smoke_test_mcu_sram_ecc_sb.yml
+        - ../test_suites/smoke_test_mci_soc_config_always_enable/smoke_test_mci_soc_config_always_enable.yml
+        - ../test_suites/smoke_test_mci_soc_config_disable/smoke_test_mci_soc_config_disable.yml
         - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer.yml
         - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_single.yml
         - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_random.yml
