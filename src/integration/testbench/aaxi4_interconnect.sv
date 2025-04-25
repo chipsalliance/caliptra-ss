@@ -108,7 +108,7 @@ generate
         defparam monitor.VER= "AXI4";
         defparam monitor.ID_WIDTH= AAXI_ID_WIDTH;
         defparam monitor.monitor.FNAME_TRACK= {"m0"+i,"_intf.txt"};
-        defparam monitor.checker0.MAXWAITS= 60;
+        defparam monitor.checker0.RecMaxWaitOn= 0;
     end
     // MCU IFU, LSU, SB i/fs
     defparam master_mon[`CSS_INTC_MINTF_MCU_LSU_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
@@ -124,7 +124,7 @@ generate
         defparam monitor.VER= "AXI4";
         defparam monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
         defparam monitor.monitor.FNAME_TRACK= {"s0"+i,"_intf.txt"};
-        defparam monitor.checker0.MAXWAITS= 60;
+        defparam monitor.checker0.RecMaxWaitOn= 0;
     end
     // NC, MCU ROM, FC PRIM (NC)
     defparam slave_mon[`CSS_INTC_SINTF_NC0_IDX    ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
@@ -148,7 +148,7 @@ aaxi_monitor_wrapper def_monitor(ports.default_slave_intf);
 defparam def_monitor.VER= "AXI4";
 defparam def_monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
 defparam def_monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH;    // set DATA BUS WIDTH
-defparam def_monitor.checker0.MAXWAITS= 60;
+defparam def_monitor.checker0.RecMaxWaitOn= 0;
 defparam def_monitor.monitor.FNAME_TRACK= "default_slave_intf.txt";
 
 `endif
