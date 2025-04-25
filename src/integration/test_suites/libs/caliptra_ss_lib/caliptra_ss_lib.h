@@ -23,6 +23,9 @@
 #include "stdint.h"
 #include <stdbool.h>
 
+#define TB_CMD_TEST_FAIL   0x01
+#define TB_CMD_TEST_PASS   0xFF
+
 #define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
 
 #define FC_LCC_CMD_OFFSET 0x90
@@ -63,24 +66,32 @@
 #define TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR  0xe5
 #define TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION 0xe6
 #define TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION 0xe7
+<<<<<<< HEAD
 #define TB_CMD_INJECT_MCI_ERROR_FATAL 0xe8
 #define TB_CMD_INJECT_MCI_ERROR_NON_FATAL 0xe9
 #define TB_CMD_INJECT_AGG_ERROR_FATAL 0xea
 #define TB_CMD_INJECT_AGG_ERROR_NON_FATAL 0xeb
 #define TB_CMD_INJECT_NOTIF0 0xec
+=======
+#define TB_CMD_INJECT_MCU_SRAM_SINGLE_ECC_ERROR  0xe8
+#define TB_CMD_INJECT_MCU_SRAM_DOUBLE_ECC_ERROR  0xe9
+#define TB_CMD_DISABLE_MCU_SRAM_ECC_ERROR_INJECTION 0xea
+#define TB_CMD_RANDOMIZE_MCU_SRAM_ECC_ERROR_INJECTION 0xeb
+>>>>>>> main
 
 #define TB_CMD_COLD_RESET 0xF5
 #define TB_CMD_WARM_RESET 0xF6
 
 #define TB_CMD_INCR_INTR_ACTIVE 0xFB
 #define TB_CMD_DECR_INTR_ACTIVE 0xFC
-
 #define TB_CMD_END_SIM_WITH_SUCCESS     0xFF 
 
 #define MCU_MBOX_NUM_STRIDE             (SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR - SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR)
 #define MCU_MBOX_AXI_CFG_STRIDE         (SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0 - SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0)
 #define MCU_MBOX_MAX_SIZE_KB            2048
 #define MCU_MBOX_MAX_NUM                2
+
+#define TB_CMD_END_SIM_WITH_SUCCESS     0xFF 
 
 extern uint32_t state;
 
@@ -144,6 +155,9 @@ typedef struct {
 // TO LOAD FUSES!!!
 void mcu_cptra_init(mcu_cptra_init_args args);
 #define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){mcu_cptra_init_arg_defaults __VA_OPT__(,) __VA_ARGS__});
+
+
+void handle_error(const char *format, ...);
 
 uint32_t xorshift32(void);
 
