@@ -48,6 +48,8 @@ task smoke_test_mci_soc_config_always_enable();
             $error("ERROR: Register 0x%h did not changed after DMA user write! Expected 0x%h, Actual 0x%h", reg_addrs[i], test_val, read_val);
         end
 
+        // Randomize test_val for each register
+        assert(std::randomize(test_val));
         $display("[%t] Testing mci_soc_config can access the register", $time);
         // Try writing with mci_soc_config user
         bfm_axi_write_single(reg_addrs[i], cptra_ss_strap_mci_soc_config_axi_user_i, test_val);
@@ -56,6 +58,8 @@ task smoke_test_mci_soc_config_always_enable();
             $error("ERROR: Register 0x%h did not changed after SOC_CONFIG user write! Expected 0x%h, Actual 0x%h", reg_addrs[i], test_val, read_val);
         end
 
+        // Randomize test_val for each register
+        assert(std::randomize(test_val));
         $display("[%t] Testing mcu LSU can access the register", $time);
         // Try writing with mcu_lsu user
         bfm_axi_write_single_mcu_lsu(reg_addrs[i], test_val);

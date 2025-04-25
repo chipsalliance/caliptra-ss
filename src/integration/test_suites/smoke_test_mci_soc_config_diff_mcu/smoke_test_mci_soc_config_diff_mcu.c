@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdarg.h> // For va_list, va_start, va_end
-
+#include "veer-csr.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -36,8 +36,6 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
 void main (void) {
 
-
-    // Have SV end the test
-    while(1);
+    csr_write_mpmc_halt();
 
 }
