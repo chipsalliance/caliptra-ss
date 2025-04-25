@@ -65,14 +65,12 @@ void main(void) {
                 (group == REG_GROUP_MCU_MBOX0_RO) ||
                 (group == REG_GROUP_MCU_MBOX0) ||
                 (group == REG_GROUP_MCU_MBOX1_RO) ||
-                (group == REG_GROUP_MCU_MBOX1)
+                (group == REG_GROUP_MCU_MBOX1) ||
                 (group == REG_GROUP_KNOWN_VALUES) ||
                 (group == REG_GROUP_CAPABILITIES_RO) ||
                 (group == REG_GROUP_STATUS_RO) ||
                 (group == REG_GROUP_SECURITY_RO) ||
                 (group == REG_GROUP_WATCHDOG_RO) ||
-                (group == REG_GROUP_MCU_MBOX0_RO) ||
-                (group == REG_GROUP_MCU_MBOX1_RO) ||
                 (group == REG_GROUP_GENERIC_WIRES_RO) ||
                 (group == REG_GROUP_SS_RO) ||
                 (group == REG_GROUP_ERROR) ||
@@ -110,14 +108,12 @@ void main(void) {
                 (group == REG_GROUP_MCU_MBOX0_RO) ||
                 (group == REG_GROUP_MCU_MBOX0) ||
                 (group == REG_GROUP_MCU_MBOX1_RO) ||
-                (group == REG_GROUP_MCU_MBOX1)
+                (group == REG_GROUP_MCU_MBOX1) ||
                 (group == REG_GROUP_KNOWN_VALUES) ||
                 (group == REG_GROUP_CAPABILITIES_RO) ||
                 (group == REG_GROUP_STATUS_RO) ||
                 (group == REG_GROUP_SECURITY_RO) ||
                 (group == REG_GROUP_WATCHDOG_RO) ||
-                (group == REG_GROUP_MCU_MBOX0_RO) ||
-                (group == REG_GROUP_MCU_MBOX1_RO) ||
                 (group == REG_GROUP_GENERIC_WIRES_RO) ||
                 (group == REG_GROUP_SS_RO) ||
                 (group == REG_GROUP_ERROR) ||
@@ -160,14 +156,12 @@ void main(void) {
                 (group == REG_GROUP_MCU_MBOX0_RO) ||
                 (group == REG_GROUP_MCU_MBOX0) ||
                 (group == REG_GROUP_MCU_MBOX1_RO) ||
-                (group == REG_GROUP_MCU_MBOX1)
+                (group == REG_GROUP_MCU_MBOX1) ||
                 (group == REG_GROUP_KNOWN_VALUES) ||
                 (group == REG_GROUP_CAPABILITIES_RO) ||
                 (group == REG_GROUP_STATUS_RO) ||
                 (group == REG_GROUP_SECURITY_RO) ||
                 (group == REG_GROUP_WATCHDOG_RO) ||
-                (group == REG_GROUP_MCU_MBOX0_RO) ||
-                (group == REG_GROUP_MCU_MBOX1_RO) ||
                 (group == REG_GROUP_GENERIC_WIRES_RO) ||
                 (group == REG_GROUP_SS_RO) ||
                 (group == REG_GROUP_ERROR) ||
@@ -207,14 +201,12 @@ void main(void) {
                 (group == REG_GROUP_MCU_MBOX0_RO) ||
                 (group == REG_GROUP_MCU_MBOX0) ||
                 (group == REG_GROUP_MCU_MBOX1_RO) ||
-                (group == REG_GROUP_MCU_MBOX1)
+                (group == REG_GROUP_MCU_MBOX1) ||
                 (group == REG_GROUP_KNOWN_VALUES) ||
                 (group == REG_GROUP_CAPABILITIES_RO) ||
                 (group == REG_GROUP_STATUS_RO) ||
                 (group == REG_GROUP_SECURITY_RO) ||
                 (group == REG_GROUP_WATCHDOG_RO) ||
-                (group == REG_GROUP_MCU_MBOX0_RO) ||
-                (group == REG_GROUP_MCU_MBOX1_RO) ||
                 (group == REG_GROUP_GENERIC_WIRES_RO) ||
                 (group == REG_GROUP_SS_RO) ||
                 (group == REG_GROUP_ERROR) ||
