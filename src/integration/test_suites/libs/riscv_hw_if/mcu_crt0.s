@@ -33,23 +33,25 @@ _start:
         // MRAC
         // Disable Caches on all regions except...
         //  - Set cacheable for ROM to improve perf
+        //  - Set cacheable for MCI to test MCU SRAM caching
         // Set side-effects (SE) at peripheral address regions:
         //  - [UNMAPPED] @ 0x0000_0000:    SE
         //  - [UNMAPPED] @ 0x1000_0000:    SE
-        //  - [UNMAPPED] @ 0x2000_0000:    SE
-        //  - soc_ifc    @ 0x3000_0000:    SE
+        //  - MCI/I3C    @ 0x2000_0000: no SE, +Cache
+        //  - [UNMAPPED] @ 0x3000_0000:    SE
         //  - [UNMAPPED] @ 0x4000_0000:    SE
         //  - DCCM       @ 0x5000_0000: no SE
         //  - PIC        @ 0x6000_0000:    SE
-        //  - [UNMAPPED] @ 0x7000_0000:    SE
+        //  - FC/LCC     @ 0x7000_0000:    SE
         //  - imem       @ 0x8000_0000: no SE, +Cache
-        //  - lmem       @ 0x9000_0000:    SE
+        //  - [UNMAPPED] @ 0x9000_0000:    SE
+        //  - soc_ifc    @ 0xA000_0000:    SE
         //  - ...
         //  - [UNMAPPED] @ 0xC000_0000:    SE
-        //  - STDOUT     @ 0xD000_0000:    SE
+        //  - [UNMAPPED] @ 0xD000_0000:    SE
         //  - [UNMAPPED] @ 0xE000_0000:    SE
         //  - [UNMAPPED] @ 0xF000_0000:    SE
-        li t0, 0xAAA9A2AA
+        li t0, 0xAAA9A29A
         csrw mrac, t0
 
         la sp, STACK
