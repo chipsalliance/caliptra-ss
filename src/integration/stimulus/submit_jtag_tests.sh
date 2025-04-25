@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 # 
 #
@@ -15,10 +14,22 @@
 # limitations under the License."
 
 
-set -euo pipefail
+set -eo pipefail
 
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_uds_prog        -op -sb -to 520000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_manuf_dbg       -op -sb -to 520000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_prod_dbg          -op -sb -to 10000000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_lcc_registers     -op -sb -to 185000
-submit --interactive --name css_regress --project Caliptra ss_build -tc caliptra_ss_jtag_lcc_st_trans     -op -sb -to 220000
+if [ -z "${COVERAGE_DIR_PATH}" ]; then
+  echo "COVERAGE_DIR_PATH is not defined."
+  COV_CMD=""
+else
+  echo "COVERAGE_DIR_PATH is defined as: ${COVERAGE_DIR_PATH}"
+  COV_CMD="-cov_dir ${COVERAGE_DIR_PATH}"
+fi
+
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_uds_prog      -c ${COV_CMD} -op -sb -to 520000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_manuf_dbg     -c ${COV_CMD} -op -sb -to 520000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_prod_dbg      -c ${COV_CMD} -op -sb -to 10000000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_lcc_registers -c ${COV_CMD} -op -sb -to 185000
+submit --interactive --name css_regress --project Caliptra ss_build -tc caliptra_ss_jtag_lcc_st_trans -c ${COV_CMD} -op -sb -to 220000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_bp        -c ${COV_CMD} -op -sb -to 220000
+submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_intent    -c ${COV_CMD} -op -sb -to 220000
+#assertion fails in lcc state translator - put back after fixed
+#submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_unlock    -c ${COV_CMD} -op -sb -to 220000
