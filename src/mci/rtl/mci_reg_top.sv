@@ -1259,7 +1259,7 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
 end
 
 assign wdt_timer1_timeout_serviced = error_wdt_timer1_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer1_timeout_sts.value;
-assign wdt_timer2_timeout_serviced = error_wdt_timer2_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer2_timeout_sts.value;;
+assign wdt_timer2_timeout_serviced = error_wdt_timer2_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer2_timeout_sts.value;
 
 
 // WDT timeout Interrupts
