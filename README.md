@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and<BR>
 limitations under the License.*_<BR>
 
 # Caliptra Subsystem Overview
-_*Last Update: 2025/04/03*_
+_*Last Update: 2025/04/24*_
 
 HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and additional infrastructure to support manufacturer custom controls.
 
@@ -170,5 +170,7 @@ caliptra-ss GitHub repository.
 ## **Regression Tests** ##
 
 ### Standalone SystemVerilog Testbench Regression ###
-Only tests from the L0 Regression List should be run.
-The list is defined in the file [L0_Promote_caliptra_ss_top_tb_regression.yml](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/stimulus/L0_Promote_caliptra_ss_top_tb_regression.yml)
+Only tests from existing regression test lists should be run:
+* L0 smoke tests: [L0_Promote_caliptra_ss_top_tb_regression.yml](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/stimulus/L0_Promote_caliptra_ss_top_tb_regression.yml)
+* L1 directed tests: [L1_Nightly_Directed_caliptra_ss_top_tb_regression.yml](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/stimulus/L1_Nightly_Directed_caliptra_ss_top_tb_regression.yml)
+* L1 random tests: [L1_Nightly_Random_caliptra_ss_top_tb_regression.yml](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/stimulus/L1_Nightly_Random_caliptra_ss_top_tb_regression.yml)
