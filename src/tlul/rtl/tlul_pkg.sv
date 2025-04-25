@@ -9,11 +9,21 @@ import caliptra_prim_secded_pkg::*;
 `ifndef TLUL_PKG_DEFINE
 `define TLUL_PKG_DEFINE
 
+`ifndef CALIPTRA_SS_TLUL_AXI_ADDR_WIDTH
+    `define CALIPTRA_SS_TLUL_AXI_ADDR_WIDTH 32
+`endif
+`ifndef CALIPTRA_SS_TLUL_AXI_USER_WIDTH
+    `define CALIPTRA_SS_TLUL_AXI_USER_WIDTH `CALIPTRA_AXI_USER_WIDTH
+`endif
+`ifndef CALIPTRA_SS_TLUL_AXI_ID_WIDTH
+    `define CALIPTRA_SS_TLUL_AXI_ID_WIDTH `CALIPTRA_AXI_ID_WIDTH
+`endif
+
 package tlul_pkg;
 
-  parameter TL_AW=32;
+  parameter TL_AW=`CALIPTRA_SS_TLUL_AXI_ADDR_WIDTH;
   parameter TL_DW=32;    // = TL_DBW * 8; TL_DBW must be a power-of-two
-  parameter TL_AIW=8;    // a_source, d_source
+  parameter TL_AIW=`CALIPTRA_SS_TLUL_AXI_ID_WIDTH;    // a_source, d_source
   parameter TL_DIW=1;    // d_sink
   parameter TL_AUW=21;   // a_user
   parameter TL_DUW=14;   // d_user
@@ -226,16 +236,20 @@ endpackage
 
 package axi_struct_pkg;
 
+  parameter TLUL_AXI_STRUCT_ADDR_WIDTH = `CALIPTRA_SS_TLUL_AXI_ADDR_WIDTH;
+  parameter TLUL_AXI_STRUCT_ID_WIDTH   = `CALIPTRA_SS_TLUL_AXI_ID_WIDTH;
+  parameter TLUL_AXI_STRUCT_USER_WIDTH = `CALIPTRA_SS_TLUL_AXI_USER_WIDTH;
+
   typedef struct packed {
     // AXI AW Channel
-    logic [31:0] awaddr;           // 32-bit Address for write transaction
-    logic [1:0]  awburst;          // 2-bit Burst type (based on axi_burst_e width)
-    logic [2:0]  awsize;           // 3-bit Burst size
-    logic [7:0]  awlen;            // 8-bit Burst length
-    logic [31:0] awuser;           // 32-bit User-defined signal
-    logic [7:0]  awid;             // 3-bit Write transaction ID
-    logic        awlock;           // Lock signal for atomic operations
-    logic        awvalid;          // Write address valid
+    logic [TLUL_AXI_STRUCT_ADDR_WIDTH-1:0] awaddr; // 32-bit Address for write transaction
+    logic [1:0]                            awburst;// 2-bit Burst type (based on axi_burst_e width)
+    logic [2:0]                            awsize; // 3-bit Burst size
+    logic [7:0]                            awlen;  // 8-bit Burst length
+    logic [TLUL_AXI_STRUCT_USER_WIDTH-1:0] awuser; // 32-bit User-defined signal
+    logic [TLUL_AXI_STRUCT_ID_WIDTH  -1:0] awid;   // 3-bit Write transaction ID
+    logic                                  awlock; // Lock signal for atomic operations
+    logic                                  awvalid;// Write address valid
 
     // AXI W Channel
     logic [31:0] wdata;            // 32-bit Write data
@@ -249,24 +263,24 @@ package axi_struct_pkg;
 
   typedef struct packed {
 
-    logic        awready;          // Write address ready
-    logic        wready;           // Write data ready
-    logic [1:0]  bresp;            // 2-bit Write response (based on axi_resp_e width)
-    logic [7:0]  bid;              // 3-bit Response ID
-    logic        bvalid;           // Write response valid
+    logic                                 awready; // Write address ready
+    logic                                 wready;  // Write data ready
+    logic [1:0]                           bresp;   // 2-bit Write response (based on axi_resp_e width)
+    logic [TLUL_AXI_STRUCT_ID_WIDTH-1:0]  bid;     // 3-bit Response ID
+    logic                                 bvalid;  // Write response valid
 
   } axi_wr_rsp_t;
 
   typedef struct packed {
 
-    logic [31:0] araddr;           // 32-bit Address for read transaction
-    logic [1:0]  arburst;          // 2-bit Burst type
-    logic [2:0]  arsize;           // 3-bit Burst size
-    logic [7:0]  arlen;            // 8-bit Burst length (max 255)
-    logic [31:0] aruser;           // 32-bit User-defined signal for read
-    logic [7:0]  arid;             // 4-bit Read transaction ID
-    logic        arlock;           // Lock signal
-    logic        arvalid;          // Read address valid
+    logic [TLUL_AXI_STRUCT_ADDR_WIDTH-1:0] araddr;           // 32-bit Address for read transaction
+    logic [1:0]                            arburst;          // 2-bit Burst type
+    logic [2:0]                            arsize;           // 3-bit Burst size
+    logic [7:0]                            arlen;            // 8-bit Burst length (max 255)
+    logic [TLUL_AXI_STRUCT_USER_WIDTH-1:0] aruser;           // 32-bit User-defined signal for read
+    logic [TLUL_AXI_STRUCT_ID_WIDTH  -1:0] arid;             // 4-bit Read transaction ID
+    logic                                  arlock;           // Lock signal
+    logic                                  arvalid;          // Read address valid
 
     logic        rready;           // Read data ready
 
@@ -274,12 +288,12 @@ package axi_struct_pkg;
 
   typedef struct packed {
 
-    logic        arready;          // Read address ready
-    logic [31:0] rdata;            // 32-bit Data returned from the read transaction
-    logic [1:0]  rresp;            // 2-bit Response status
-    logic [7:0]  rid;              // 4-bit Read transaction ID
-    logic        rlast;            // Last read in burst
-    logic        rvalid;           // Read data valid
+    logic                                  arready;          // Read address ready
+    logic [31:0]                           rdata;            // 32-bit Data returned from the read transaction
+    logic [1:0]                            rresp;            // 2-bit Response status
+    logic [TLUL_AXI_STRUCT_ID_WIDTH  -1:0] rid;              // 4-bit Read transaction ID
+    logic                                  rlast;            // Last read in burst
+    logic                                  rvalid;           // Read data valid
 
   } axi_rd_rsp_t;
 
