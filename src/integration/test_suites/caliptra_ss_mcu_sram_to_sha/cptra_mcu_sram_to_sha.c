@@ -66,8 +66,15 @@ void sha_accel_set_cmd(uint64_t base_addr, enum sha_accel_mode_e mode, uint32_t 
 }
 
 void sha_accel_push_datain(uint64_t mcu_sram_addr, uint64_t sha_acc_addr, uint32_t dlen) {
+    uint32_t dlen_padded;
     VPRINTF(MEDIUM, "FW: Arm transfer to SHA DATAIN\n");
-    soc_ifc_axi_dma_send_axi_to_axi(mcu_sram_addr + 0x400, 0, sha_acc_addr + SHA512_ACC_CSR_DATAIN, 1, dlen, 0);
+    if (dlen & 0x3) {
+        dlen_padded = dlen + (4 - (dlen & 0x3));
+        VPRINTF(HIGH, "FW: DLEN (0x%x) is not aligned to dw-size, padding DLEN to 0x%x\n", dlen, dlen_padded);
+    } else {
+        dlen_padded = dlen;
+    }
+    soc_ifc_axi_dma_send_axi_to_axi(mcu_sram_addr + 0x400, 0, sha_acc_addr + SHA512_ACC_CSR_DATAIN, 1, dlen_padded, 0);
 }
 
 void sha_accel_execute(uint64_t base_addr) {
