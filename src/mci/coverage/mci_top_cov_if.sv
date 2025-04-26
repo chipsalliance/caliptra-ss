@@ -233,10 +233,10 @@ interface mci_top_cov_if
     covergroup port_lcc_st_trans_toggle_coverage @(posedge clk);
         // Single-bit ports toggle coverage
         coverpoint lc_dft_en_i {
-            bins toggled = {1'b0, 1'b1};
+            bins toggled = {4'b1010, 4'b0101};
         }
         coverpoint lc_hw_debug_en_i {
-            bins toggled = {1'b0, 1'b1};
+            bins toggled = {4'b1010, 4'b0101};
         }
         coverpoint ss_dbg_manuf_enable_i {
             bins toggled = {1'b0, 1'b1};
