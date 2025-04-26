@@ -1,0 +1,8 @@
+---
+seed: 1
+testname: mci_reg_rand_test
+pre-exec: |
+  echo "Running pre_exec for [mcu_cptra_bringup]" && 
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=smoke_test_mbox program.hex &&
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=mci_reg_rand_test mcu_program.hex
+

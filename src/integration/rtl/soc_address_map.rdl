@@ -31,11 +31,11 @@ addrmap soc {
 
     mci_top mci_top @ 0x2100_0000;
     
-    mbox_csr mbox_csr @ 0x3002_0000;
+    mbox_csr mbox_csr @ 0xa002_0000;
 
-    sha512_acc_csr sha512_acc_csr @ 0x3002_1000;
+    sha512_acc_csr sha512_acc_csr @ 0xa002_1000;
 
-    soc_ifc_reg soc_ifc_reg @ 0x3003_0000;
+    soc_ifc_reg soc_ifc_reg @ 0xa003_0000;
 
     otp_ctrl otp_ctrl @ 0x7000_0000;
 
