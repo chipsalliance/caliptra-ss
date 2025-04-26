@@ -7,6 +7,7 @@ contents:
       path: ""
       weight: 100
       generations: 250
+      generations: 250
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
