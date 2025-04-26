@@ -19,6 +19,9 @@
 module caliptra_ss_top_tb_soc_bfm
 import axi_pkg::*;
 import mci_dmi_pkg::*;
+import mci_reg_pkg::*;
+import mcu_mbox_csr_pkg::*;
+import trace_buffer_csr_pkg::*;
 #(
     parameter MCU_SRAM_SIZE_KB = 512
 ) 
@@ -38,15 +41,23 @@ import mci_dmi_pkg::*;
     axi_if m_axi_bfm_if,
 
     caliptra_ss_bfm_services_if.bfm tb_services_if
-    
-    //Interrupt flags
-    //input logic assert_hard_rst_flag,
-    //input logic assert_rst_flag_from_service,
-    //input logic deassert_rst_flag_from_service
 
 );
 
+localparam KB = 1024;
 localparam AXI_AW = $bits(m_axi_bfm_if.araddr);
+localparam MCI_REG_SIZE_BYTES               = 2 ** MCI_REG_MIN_ADDR_WIDTH;
+localparam MCI_REG_START_ADDR               = `SOC_MCI_TOP_MCI_REG_BASE_ADDR;
+localparam MCI_REG_END_ADDR                 = MCI_REG_START_ADDR + (MCI_REG_SIZE_BYTES) - 1;
+localparam MCU_TRACE_BUFFER_SIZE_BYTES      = 2 ** TRACE_BUFFER_CSR_MIN_ADDR_WIDTH;
+localparam MCU_TRACE_BUFFER_START_ADDR      = `SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_BASE_ADDR;
+localparam MCU_TRACE_BUFFER_END_ADDR        = MCU_TRACE_BUFFER_START_ADDR + (MCU_TRACE_BUFFER_SIZE_BYTES) - 1;
+localparam MBOX0_START_ADDR                 = `SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR;
+localparam MBOX0_END_ADDR                   = MBOX0_START_ADDR + ((32'h0000_0001 << MCU_MBOX_CSR_ADDR_WIDTH) - 1);
+localparam MBOX1_START_ADDR                 = `SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR;
+localparam MBOX1_END_ADDR                   = MBOX1_START_ADDR + ((32'h0000_0001 << MCU_MBOX_CSR_ADDR_WIDTH) - 1);
+localparam MCU_SRAM_START_ADDR              = `SOC_MCI_TOP_MCU_SRAM_BASE_ADDR;
+localparam MCU_SRAM_END_ADDR                = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1;
 
 
 // MCU Trace Buffer monitor signals
@@ -100,11 +111,27 @@ initial begin
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_TRACE_BUFFER") begin
             smoke_test_mcu_trace_buffer();
         end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_AXI_MISS") begin
+            smoke_test_mci_axi_miss();
+        end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_TRACE_BUFFER_NO_DEBUG") begin
             smoke_test_mcu_trace_buffer_no_debug();
         end
         else if(cptra_ss_test_name == "MCU_MBOX_SOC_AGENT_WRITE_FW_IMAGE") begin
             mcu_mbox_soc_agent_write_fw_image();       
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_DISABLE") begin
+            smoke_test_mci_soc_config_disable();       
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_ALWAYS_ENABLE") begin
+            smoke_test_mci_soc_config_always_enable();       
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_DIFF_MCU") begin
+            smoke_test_mci_soc_config_diff_mcu();       
+        end
+        else begin
+            $error("ERROR: Test Name from Plusarg: %s not found", cptra_ss_test_name);
+            $finish;
         end
     end
 end
@@ -213,7 +240,7 @@ initial begin
     if ($value$plusargs("MCU_SRAM_CONFIG_AXI_USER=%h", cptra_ss_strap_mcu_sram_config_axi_user_i)) begin
         // Plusarg value is directly assigned to cptra_ss_strap_mcu_sram_config_axi_user_i as hex
         $display("MCU SRAM CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mcu_sram_config_axi_user_i);
-    end else if ($test$plusargs("MCU_SRAM CONFIG_AXI_USER_RAND")) begin
+    end else if ($test$plusargs("MCU_SRAM_CONFIG_AXI_USER_RAND")) begin
         // Randomize the signal if no plusarg is provided
         cptra_ss_strap_mcu_sram_config_axi_user_i = $urandom();
         $display("Randomized MCU SRAM CONFIG AXI USER Value: %h", cptra_ss_strap_mcu_sram_config_axi_user_i);
@@ -225,17 +252,17 @@ initial begin
 end
 initial begin
     // MCU SOC CONFIG
-    if ($value$plusargs("MCU_SOC_CONFIG_AXI_USER=%h", cptra_ss_strap_mci_soc_config_axi_user_i)) begin
+    if ($value$plusargs("MCI_SOC_CONFIG_AXI_USER=%h", cptra_ss_strap_mci_soc_config_axi_user_i)) begin
         // Plusarg value is directly assigned to cptra_ss_strap_mcu_ifu_axi_user_i as hex
-        $display("MCU SOC CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
-    end else if ($test$plusargs("MCU_SOC CONFIG_AXI_USER_RAND")) begin
+        $display("MCI SOC CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
+    end else if ($test$plusargs("MCU_SOC_CONFIG_AXI_USER_RAND")) begin
         // Randomize the signal if no plusarg is provided
         cptra_ss_strap_mci_soc_config_axi_user_i= $urandom();
-        $display("Randomized MCU SOC CONFIG AXI USER Value: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
+        $display("Randomized MCI SOC CONFIG AXI USER Value: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
     end else begin
         #1
         cptra_ss_strap_mci_soc_config_axi_user_i = cptra_ss_strap_mcu_lsu_axi_user_i; 
-        $display("MCU SOC CONFIG AXI USER Value Default to MCU LSU: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
+        $display("MCI SOC CONFIG AXI USER Value Default to MCU LSU: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
     end
 end
 

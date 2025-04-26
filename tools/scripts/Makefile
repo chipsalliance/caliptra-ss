@@ -469,4 +469,3 @@ help:
 	@echo Possible targets: verilator vcs irun vlog riviera help clean all verilator-build irun-build vcs-build riviera-build program.hex
 
 .PHONY: help clean clean_fw verilator vcs irun vlog riviera
-
