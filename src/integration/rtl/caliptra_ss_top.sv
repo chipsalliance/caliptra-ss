@@ -874,6 +874,12 @@ module caliptra_ss_top
     //=========================================================================-
     // i3c_core Instance
     //=========================================================================-
+    
+    logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
+    assign priv_ids[0] = 32'd0;
+    assign priv_ids[1] = 32'd0;
+    assign priv_ids[2] = cptra_ss_strap_caliptra_dma_axi_user_i;
+    assign priv_ids[3] = cptra_ss_strap_mcu_lsu_axi_user_i;
 
     i3c_wrapper #(
         .AxiDataWidth(`AXI_DATA_WIDTH),
@@ -936,7 +942,7 @@ module caliptra_ss_top
         .irq_o(i3c_irq_o),
 
         .disable_id_filtering_i(1'b0),
-        .priv_ids_i('{cptra_ss_strap_mcu_lsu_axi_user_i, cptra_ss_strap_caliptra_dma_axi_user_i, 32'b0, 32'b0}) // -- FIXME : ENABLE THIS FEATURE
+        .priv_ids_i(priv_ids)
 
     );
 
