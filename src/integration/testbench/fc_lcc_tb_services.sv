@@ -146,6 +146,14 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: disable clk_byp_ack");
           force `LCC_PATH.lc_clk_byp_ack_i = '0;
           end
+          CMD_LC_TRIGGER_ESCALATION0_DIS: begin
+            $display("fc_lcc_tb_services: releasing esc_scrap_state0 escalation");
+            force `LCC_PATH.esc_scrap_state0 = 1'b0;
+          end
+          CMD_LC_TRIGGER_ESCALATION1_DIS: begin
+            $display("fc_lcc_tb_services: releasing esc_scrap_state1 escalation");
+            force `LCC_PATH.esc_scrap_state1 = 1'b0;
+          end
           default: begin
             // No action for unrecognized commands.
           end
