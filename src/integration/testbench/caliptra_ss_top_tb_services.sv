@@ -111,16 +111,16 @@ import tb_top_pkg::*;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
         end
-        if ($test$plusargs("CALIPTRA_SS_UDS_PROG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
-        end
+        // if ($test$plusargs("CALIPTRA_SS_UDS_PROG")) begin
+        //     force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
+        // end
         if ($test$plusargs("CALIPTRA_SS_MANUF_DBG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
+            // force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
         end 
         if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
+            // force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
         end 
