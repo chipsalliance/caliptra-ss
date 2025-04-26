@@ -15,6 +15,6 @@
 
 module fuse_ctrl_cov_bind;
     `ifdef FCOV
-    bind fuse_ctrl fuse_ctrl_cov_if i_fuse_ctrl_cov_if(.*);
+    bind otp_ctrl fuse_ctrl_cov_if i_fuse_ctrl_cov_if(.*);
     `endif
 endmodule
