@@ -376,18 +376,6 @@ module caliptra_ss_top
     logic payload_available_o;
     logic image_activated_o;
 
-    mci_mcu_sram_if cptra_ss_mcu_rom_mbox0_sram_req_if (
-        .clk(cptra_ss_clk_i),
-        .rst_b(cptra_ss_rst_b_o)
-    );
-    
-    mci_mcu_sram_if cptra_ss_mcu_rom_mbox1_sram_req_if (
-        .clk(cptra_ss_clk_i),
-        .rst_b(cptra_ss_rst_b_o)
-    );
-
-
-    
 
 
 
