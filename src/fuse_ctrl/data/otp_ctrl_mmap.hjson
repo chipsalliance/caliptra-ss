@@ -20,7 +20,7 @@
 
     otp: {
         width: "2", // bytes
-        depth: "2048"
+        depth: "8192"
     }
 
     // Definition of scrambling and digest constants and keys.
@@ -254,7 +254,7 @@
                 },
                 {
                     name: "CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR",
-                    size: "96",
+                    size: "7952",
                     desc: '''
                     IDevID Certificate Generation Attributes.
                     See IDevID certificate section. Caliptra only uses 352 bits. Integrator is not required
