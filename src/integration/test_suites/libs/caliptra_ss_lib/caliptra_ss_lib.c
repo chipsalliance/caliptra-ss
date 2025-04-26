@@ -838,11 +838,11 @@ void boot_i3c_socmgmt_if(void) {
             return;
     }
 
-    //-- Enable the I3C bus
-    VPRINTF(LOW, "MCU: Writing I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW register  \n");
-    i3c_reg_data = lsu_read_32( SOC_I3CCSR_I3CBASE_HC_CONTROL);
-    i3c_reg_data = 1 << I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW | i3c_reg_data;
-    lsu_write_32( SOC_I3CCSR_I3CBASE_HC_CONTROL, i3c_reg_data);
+    // //-- Enable the I3C bus
+    // VPRINTF(LOW, "MCU: Writing I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW register  \n");
+    // i3c_reg_data = lsu_read_32( SOC_I3CCSR_I3CBASE_HC_CONTROL);
+    // i3c_reg_data = 1 << I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW | i3c_reg_data;
+    // lsu_write_32( SOC_I3CCSR_I3CBASE_HC_CONTROL, i3c_reg_data);
 }
 
 // -- function boot i3c core (i3c bringup)
