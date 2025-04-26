@@ -6,7 +6,7 @@ contents:
       tags: ["L1", "caliptra_ss_top_tb", "Random", "Nightly"]
       path: ""
       weight: 100
-      generations: 210
+      generations: 240
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
@@ -32,3 +32,6 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_error_handling/smoke_test_error_handling: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_clock_bypass/caliptra_ss_lcc_clock_bypass: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_errors/caliptra_ss_lcc_errors: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_reg_rand_test/mci_reg_rand_test: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_ro_reg_rand_test/mci_ro_reg_rand_test: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_pk_hash_reg_rand_test/mci_pk_hash_reg_rand_test: { weight: 100 }
