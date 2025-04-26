@@ -34,5 +34,5 @@ volatile uint32_t  intr_count;
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
 void main(void) {
-    csr_write_mpmc_halt();
+    while(1);
 }

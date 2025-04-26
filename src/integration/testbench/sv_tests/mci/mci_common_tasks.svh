@@ -47,7 +47,7 @@ task get_mci_miss_address(output logic [AXI_AW-1:0] random_address);
 
     while(!allowed_invalid_addr) begin
         // Randomly select an index
-        index = $urandom_range(0, 3);
+        index = $urandom_range(3);
         if (start_params[index] - end_params[index] > 3) begin
             allowed_invalid_addr = 1;
         end
