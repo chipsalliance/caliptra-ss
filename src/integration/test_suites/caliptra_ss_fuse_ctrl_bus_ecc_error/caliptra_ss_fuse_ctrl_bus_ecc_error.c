@@ -53,11 +53,11 @@ void main (void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_FAULT_BUS_ECC);
 
     grant_caliptra_core_for_fc_writes();
-    dai_wr(0x00, 0x18, 0x19, 64, 0);
+    dai_wr(0x00, 0xFF, 0xFF, 64, 0);
 
     uint32_t status = lsu_read_32(SOC_OTP_CTRL_STATUS);
     if (!((status >> OTP_CTRL_STATUS_BUS_INTEG_ERROR_LOW) & 0x1)) {
-        VPRINTF(LOW, "ERROR: bus integrity erros is not set\n");
+        VPRINTF(LOW, "ERROR: bus integrity error is not set %08X\n", status);
     }
 
     for (uint8_t ii = 0; ii < 160; ii++) {

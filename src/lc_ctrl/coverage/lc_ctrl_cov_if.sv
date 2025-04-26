@@ -176,24 +176,44 @@ interface lc_ctrl_cov_if
     otp_ctrl_pkg::otp_lc_data_t otp_lc_data_i;
     assign otp_lc_data_i = lc_ctrl.otp_lc_data_i;
 
-    // Make sure all valid state transitions are covered.
-    covergroup lc_ctrl_transition_cg(input lc_state_e src, input lc_state_e dst, input token_idx_e token) @(posedge clk_i);
-        lc_ctrl_valid_transition_cp: coverpoint otp_lc_data_i.state iff (token != InvalidTokenIdx)
-        {
-            bins ValidTransition = ( src => [0:] => dst);
-        }
-        lc_ctrl_invalid_transition_cp: coverpoint otp_lc_data_i.state iff (token == InvalidTokenIdx && src != dst)
-        {
-            illegal_bins InvalidTransition = ( src => [0:] => dst);
-        }
+    logic ack;
+    assign ack = lc_ctrl.lc_otp_program_i.ack;
+
+    lc_state_t states[2];
+    logic adv;
+
+    covergroup lc_ctrl_transitions_cg with function sample(lc_state_e src, lc_state_e dst, token_idx_e token);
+        option.per_instance = 1;
+        src_cp: coverpoint src;
+        dst_cp: coverpoint dst;
+
+        transition_cross: cross src, dst iff (token != InvalidTokenIdx);
     endgroup
 
-    lc_ctrl_transition_cg lc_ctrl_transitions_cg [NumLcStates][NumLcStates];
+    lc_ctrl_transitions_cg trans_cg = new();
 
-    initial begin
-        for (int i = 0; i < NumLcStates; i++)
-            for (int j = 0; j < NumLcStates; j++)
-                lc_ctrl_transitions_cg[i][j] = new(lc_states[i], lc_states[j], TransTokenIdxMatrix[i][j]);
+    always @(posedge clk_i) begin
+        if (!rst_ni) begin
+            adv <= '0;
+        end else if (ack && adv) begin
+            states[0] <= states[1];
+            states[1] <= otp_lc_data_i.state;
+        end
+
+        // Only advance states for every second otp ack.
+        if (ack) begin
+            adv <= adv ^ 1'b1;
+        end
+
+        for (int i = 0; i < NumLcStates; i++) begin
+            if (states[0] == lc_states[i]) begin
+                for (int j = 0; j < NumLcStates; j++) begin
+                    if (states[1] == lc_states[j]) begin
+                        trans_cg.sample(lc_states[i], lc_states[j], TransTokenIdxMatrix[i][j]);
+                    end
+                end
+            end
+        end
     end
 
     logic volatile_raw_unlock_i = lc_ctrl.u_lc_ctrl_fsm.volatile_raw_unlock_i;

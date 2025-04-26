@@ -1164,6 +1164,7 @@ endtask
 
 `ifndef VERILATOR
     lc_ctrl_cov_bind i_lc_ctrl_cov_bind();
+    fuse_ctrl_cov_bind i_fuse_ctrl_cov_bind();
     mci_top_cov_bind i_mci_top_cov_bind();
     caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
 `endif
