@@ -22,3 +22,6 @@
 `include "smoke_test_mcu_trace_buffer.svh"
 `include "mcu_mbox_soc_agent_write_fw_image.svh"
 `include "smoke_test_mcu_trace_buffer_no_debug.svh"
+`include "smoke_test_mci_soc_config_disable.svh"
+`include "smoke_test_mci_soc_config_always_enable.svh"
+`include "smoke_test_mci_soc_config_diff_mcu.svh"

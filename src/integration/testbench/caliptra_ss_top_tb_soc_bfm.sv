@@ -106,6 +106,19 @@ initial begin
         else if(cptra_ss_test_name == "MCU_MBOX_SOC_AGENT_WRITE_FW_IMAGE") begin
             mcu_mbox_soc_agent_write_fw_image();       
         end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_DISABLE") begin
+            smoke_test_mci_soc_config_disable();       
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_ALWAYS_ENABLE") begin
+            smoke_test_mci_soc_config_always_enable();       
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_DIFF_MCU") begin
+            smoke_test_mci_soc_config_diff_mcu();       
+        end
+        else begin
+            $error("ERROR: Test Name from Plusarg: %s not found", cptra_ss_test_name);
+            $finish;
+        end
     end
 end
 
@@ -213,7 +226,7 @@ initial begin
     if ($value$plusargs("MCU_SRAM_CONFIG_AXI_USER=%h", cptra_ss_strap_mcu_sram_config_axi_user_i)) begin
         // Plusarg value is directly assigned to cptra_ss_strap_mcu_sram_config_axi_user_i as hex
         $display("MCU SRAM CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mcu_sram_config_axi_user_i);
-    end else if ($test$plusargs("MCU_SRAM CONFIG_AXI_USER_RAND")) begin
+    end else if ($test$plusargs("MCU_SRAM_CONFIG_AXI_USER_RAND")) begin
         // Randomize the signal if no plusarg is provided
         cptra_ss_strap_mcu_sram_config_axi_user_i = $urandom();
         $display("Randomized MCU SRAM CONFIG AXI USER Value: %h", cptra_ss_strap_mcu_sram_config_axi_user_i);
@@ -225,17 +238,17 @@ initial begin
 end
 initial begin
     // MCU SOC CONFIG
-    if ($value$plusargs("MCU_SOC_CONFIG_AXI_USER=%h", cptra_ss_strap_mci_soc_config_axi_user_i)) begin
+    if ($value$plusargs("MCI_SOC_CONFIG_AXI_USER=%h", cptra_ss_strap_mci_soc_config_axi_user_i)) begin
         // Plusarg value is directly assigned to cptra_ss_strap_mcu_ifu_axi_user_i as hex
-        $display("MCU SOC CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
-    end else if ($test$plusargs("MCU_SOC CONFIG_AXI_USER_RAND")) begin
+        $display("MCI SOC CONFIG AXI USER Value from Plusarg: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
+    end else if ($test$plusargs("MCU_SOC_CONFIG_AXI_USER_RAND")) begin
         // Randomize the signal if no plusarg is provided
         cptra_ss_strap_mci_soc_config_axi_user_i= $urandom();
-        $display("Randomized MCU SOC CONFIG AXI USER Value: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
+        $display("Randomized MCI SOC CONFIG AXI USER Value: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
     end else begin
         #1
         cptra_ss_strap_mci_soc_config_axi_user_i = cptra_ss_strap_mcu_lsu_axi_user_i; 
-        $display("MCU SOC CONFIG AXI USER Value Default to MCU LSU: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
+        $display("MCI SOC CONFIG AXI USER Value Default to MCU LSU: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
     end
 end
 
