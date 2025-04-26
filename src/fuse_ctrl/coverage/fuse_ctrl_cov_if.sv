@@ -51,13 +51,13 @@ interface fuse_ctrl_cov_if
             bins DirectAccessWData1   = { 32'h7000_006c };
         }
 
-        fuse_ctrl_filter_awuser_cp: coverpoint core_axi_wr_req_awuser
-        {
-            bins CptraSsStrapClptraCoreAxiUser = { `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_caliptra_dma_axi_user_i };
-            bins CptraSsStrapMcuLsuAxiUser     = { `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i };
-        }
+        // fuse_ctrl_filter_awuser_cp: coverpoint core_axi_wr_req_awuser
+        // {
+        //     bins CptraSsStrapClptraCoreAxiUser = { `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_caliptra_dma_axi_user_i };
+        //     bins CptraSsStrapMcuLsuAxiUser     = { `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i };
+        // }
 
-        fuser_ctrl_filter_cr: cross fuse_ctrl_filter_awaddr_cp, fuse_ctrl_filter_awuser_cp;
+        // fuser_ctrl_filter_cr: cross fuse_ctrl_filter_awaddr_cp, fuse_ctrl_filter_awuser_cp;
     endgroup
 
     /** fuse_ctrl fuses:
@@ -65,31 +65,59 @@ interface fuse_ctrl_cov_if
      * Verify that all fuses are provisioned alongside their digest fields if available.
      */
 
-    logic [21:0] fc_mem [0:2047];
-    assign fc_mem = `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem;
+    covergroup fuse_ctrl_fuses_cg @(posedge clk_i);                                        
+      option.per_instance = 1;
+      // SECRET_TEST_UNLOCK_PARTITION                                                         
+      CptraCoreManufDebugUnlockToken_cp:  coverpoint `FC_MEM[CptraCoreManufDebugUnlockTokenOffset/2]  { bins Fuse = { [1:$] }; }
+      SecretTestUnlockPartitionDigest_cp: coverpoint `FC_MEM[SecretTestUnlockPartitionDigestOffset/2] { bins Fuse = { [1:$] }; }  
+      // SECRET_MANUF_PARTITION
+      CptraCoreUdsSeed_cp:           coverpoint `FC_MEM[CptraCoreUdsSeedOffset/2]           { bins Fuse = { [1:$] }; }
+      SecretManufPartitionDigest_cp: coverpoint `FC_MEM[SecretManufPartitionDigestOffset/2] { bins Fuse = { [1:$] }; }
+      // SECRET_PROD_PARTITION_0
+      CptraCoreFieldEntropy0_cp:     coverpoint `FC_MEM[CptraCoreFieldEntropy0Offset/2]     { bins Fuse = { [1:$] }; }
+      SecretProdPartition0Digest_cp: coverpoint `FC_MEM[SecretProdPartition0DigestOffset/2] { bins Fuse = { [1:$] }; }
+      // SECRET_PROD_PARTITION_1
+      CptraCoreFieldEntropy1_cp:     coverpoint `FC_MEM[CptraCoreFieldEntropy1Offset/2]     { bins Fuse = { [1:$] }; }
+      SecretProdPartition1Digest_cp: coverpoint `FC_MEM[SecretProdPartition1DigestOffset/2] { bins Fuse = { [1:$] }; }
+      // SECRET_PROD_PARTITION_2
+      CptraCoreFieldEntropy2_cp:     coverpoint `FC_MEM[CptraCoreFieldEntropy2Offset/2]     { bins Fuse = { [1:$] }; }
+      SecretProdPartition2Digest_cp: coverpoint `FC_MEM[SecretProdPartition2DigestOffset/2] { bins Fuse = { [1:$] }; }
+      // SECRET_PROD_PARTITION_3
+      CptraCoreFieldEntropy3_cp:     coverpoint `FC_MEM[CptraCoreFieldEntropy3Offset/2]     { bins Fuse = { [1:$] }; }
+      SecretProdPartition3Digest_cp: coverpoint `FC_MEM[SecretProdPartition3DigestOffset/2] { bins Fuse = { [1:$] }; }
+      // SW_MANUF_PARTITION
+      CptraCoreAntiRollbackDisable_cp:      coverpoint `FC_MEM[CptraCoreAntiRollbackDisableOffset/2]      { bins Fuse = { [1:$] }; }
+      CptraCoreIdevidCertIdevidAttr_cp:     coverpoint `FC_MEM[CptraCoreIdevidCertIdevidAttrOffset/2]     { bins Fuse = { [1:$] }; }
+      CptraCoreIdevidManufHsmIdentifier_cp: coverpoint `FC_MEM[CptraCoreIdevidManufHsmIdentifierOffset/2] { bins Fuse = { [1:$] }; }                                                                                
+      CptraCoreSocSteppingId_cp:            coverpoint `FC_MEM[CptraCoreSocSteppingIdOffset/2]            { bins Fuse = { [1:$] }; }
+      CptraSsProdDebugUnlockPks0_cp:        coverpoint `FC_MEM[CptraSsProdDebugUnlockPks0Offset/2]        { bins Fuse = { [1:$] }; }
+      CptraSsProdDebugUnlockPks1_cp:        coverpoint `FC_MEM[CptraSsProdDebugUnlockPks1Offset/2]        { bins Fuse = { [1:$] }; }
+      CptraSsProdDebugUnlockPks2_cp:        coverpoint `FC_MEM[CptraSsProdDebugUnlockPks2Offset/2]        { bins Fuse = { [1:$] }; }
+      CptraSsProdDebugUnlockPks3_cp:        coverpoint `FC_MEM[CptraSsProdDebugUnlockPks3Offset/2]        { bins Fuse = { [1:$] }; }
+      CptraSsProdDebugUnlockPks4_cp:        coverpoint `FC_MEM[CptraSsProdDebugUnlockPks4Offset/2]        { bins Fuse = { [1:$] }; }
+      CptraSsProdDebugUnlockPks5_cp:        coverpoint `FC_MEM[CptraSsProdDebugUnlockPks5Offset/2]        { bins Fuse = { [1:$] }; }  
+      CptraSsProdDebugUnlockPks6_cp:        coverpoint `FC_MEM[CptraSsProdDebugUnlockPks6Offset/2]        { bins Fuse = { [1:$] }; }
+      CptraSsProdDebugUnlockPks7_cp:        coverpoint `FC_MEM[CptraSsProdDebugUnlockPks7Offset/2]        { bins Fuse = { [1:$] }; }
+      SwManufPartitionDigest_cp:            coverpoint `FC_MEM[SwManufPartitionDigestOffset/2]            { bins Fuse = { [1:$] }; }
+      // SECRET_LC_TRANSITION_PARTITION
+      CptraSsTestUnlockToken1_cp:           coverpoint `FC_MEM[CptraSsTestUnlockToken1Offset/2]           { bins Fuse = { [1:$] }; }
+      CptraSsTestUnlockToken2_cp:           coverpoint `FC_MEM[CptraSsTestUnlockToken2Offset/2]           { bins Fuse = { [1:$] }; }
+      CptraSsTestUnlockToken3_cp:           coverpoint `FC_MEM[CptraSsTestUnlockToken3Offset/2]           { bins Fuse = { [1:$] }; }
+      CptraSsTestUnlockToken4_cp:           coverpoint `FC_MEM[CptraSsTestUnlockToken4Offset/2]           { bins Fuse = { [1:$] }; }
+      CptraSsTestUnlockToken5_cp:           coverpoint `FC_MEM[CptraSsTestUnlockToken5Offset/2]           { bins Fuse = { [1:$] }; }
+      CptraSsTestUnlockToken6_cp:           coverpoint `FC_MEM[CptraSsTestUnlockToken6Offset/2]           { bins Fuse = { [1:$] }; }
+      CptraSsTestUnlockToken7_cp:           coverpoint `FC_MEM[CptraSsTestUnlockToken7Offset/2]           { bins Fuse = { [1:$] }; }
+      CptraSsTestExitToManufToken_cp:       coverpoint `FC_MEM[CptraSsTestExitToManufTokenOffset/2]       { bins Fuse = { [1:$] }; }
+      CtraSsManufToProdToken_cp:            coverpoint `FC_MEM[CptraSsManufToProdTokenOffset/2]           { bins Fuse = { [1:$] }; }
+      CptraSsProdToProdEndToken_cp:         coverpoint `FC_MEM[CptraSsProdToProdEndTokenOffset/2]         { bins Fuse = { [1:$] }; }
+      CptraSsRmaToken_cp:                   coverpoint `FC_MEM[CptraSsRmaTokenOffset/2]                   { bins Fuse = { [1:$] }; }
+      SecretLcTransitionPartitionDigest_cp: coverpoint `FC_MEM[SecretLcTransitionPartitionDigestOffset/2] { bins Fuse = { [1:$] }; }
+      // TODO: fill in the remaining fuses
+    endgroup 
 
-    `define FUSE_CG(ADDR, SIZE)                                                             \
-      covergroup fuse_``ADDR``_cg @(posedge clk_i);                                         \
-        option.per_instance = 1;                                                            \
-        fuse_``ADDR``_cp: coverpoint ((16+6)*(SIZE/2))'(fc_mem[(ADDR/2):((ADDR+SIZE)/2)-1]) \
-        {                                                                                   \
-            bins Fuse = { [1:] };                                                           \
-        }                                                                                   \
-      endgroup                                             \
-      initial begin                                         \
-        fuse_``ADDR``_cg cg_``ADDR``_1 = new();         \       
-      end                                           
-
-    // SECRET_TEST_UNLOCK_PARTITION
-    `FUSE_CG(CptraCoreManufDebugUnlockTokenOffset, CptraCoreManufDebugUnlockTokenSize)
-    `FUSE_CG(SecretTestUnlockPartitionDigestOffset, SecretTestUnlockPartitionDigestSize)
-    // SECRET_MANUF_PARTITION
-    `FUSE_CG(CptraCoreUdsSeedOffset, CptraCoreUdsSeedSize)
-    `FUSE_CG(SecretManufPartitionDigestOffset, SecretManufPartitionDigestSize)
-    // SECRET_PROD_PARTITION_0
-    `FUSE_CG(CptraCoreFieldEntropy0Offset, CptraCoreFieldEntropy0Size)
-    `FUSE_CG(SecretProdPartition0DigestOffset, SecretProdPartition0DigestSize)
-    // TODO: fill all fuses
+    initial begin
+      fuse_ctrl_fuses_cg fuse_ctrl_fuses = new();
+    end
 
     /** fuse_ctrl test unlock tokens:
      *
@@ -110,19 +138,19 @@ interface fuse_ctrl_cov_if
 
         fuse_ctrl_test_unlock_token_cp: coverpoint test_unlock_token
         {
-            bins TestUnlockToken = { [1:] };
+            bins TestUnlockToken = { [1:$] };
         }
         fuse_ctrl_test_exit_dev_token_cp: coverpoint test_exit_dev_token
         {
-            bins TestExitDevToken = { [1:] };
+            bins TestExitDevToken = { [1:$] };
         }
         fuse_ctrl_dev_exit_prod_token_cp: coverpoint dev_exit_prod_token
         {
-            bins DevExitProdToken = { [1:] };
+            bins DevExitProdToken = { [1:$] };
         }
         fuse_ctrl_prod_exit_prodend_token_cp: coverpoint prod_exit_prodend_token
         {
-            bins ProdExitProdendToken = { [1:] };
+            bins ProdExitProdendToken = { [1:$] };
         }
 
     endgroup

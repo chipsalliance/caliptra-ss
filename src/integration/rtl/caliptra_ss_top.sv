@@ -1104,6 +1104,8 @@ module caliptra_ss_top
 
     );
 
+    // lcc_steady_state_from_otp
+
     //=========================================================================-
     // Life-cycle Controller Instance : 
     // 
