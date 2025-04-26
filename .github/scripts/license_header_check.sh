@@ -63,7 +63,7 @@ exclude_regs='*_reg*.{sv,rdl}'
 exclude_csr='*_csr*.*'
 exclude_file='{sglint_waivers,pr_hash,pr_timestamp,.gitmodules,.git-comodules,.gitignore,spyglass_lint.policy,ascent.ctl,clp_mapfile,readme.md,README.md,SECURITY.md,c_sample.c}'
 # excluding OT Files.
-exclude_specific_files='{dmi_cdc.sv,dmi_jtag.sv,dmi_jtag_tap.sv,caliptra_rom_manuf_dbg,caliptra_rom_uds_prog,caliptra_rom_prod_dbg,cptra_fw_test_rom_fw}'
+exclude_specific_files='{dmi_cdc.sv,dmi_jtag.sv,dmi_jtag_tap.sv,dm_pkg.sv,caliptra_rom_manuf_dbg,caliptra_rom_uds_prog,caliptra_rom_prod_dbg,cptra_fw_test_rom_fw}'
 
 apache_patn='Licensed under the Apache License'
 
