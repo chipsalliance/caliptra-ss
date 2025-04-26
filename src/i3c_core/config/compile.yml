@@ -27,7 +27,6 @@ targets:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/buf_pp.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/bufs.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/i3c_phy.sv
-      - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/i3c_io.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/csr/I3CCSR.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/interrupt.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi_sub/i3c_axi_sub_arb.sv
@@ -42,6 +41,7 @@ targets:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/tti.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/queues.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/hci.sv
+      - $COMPILE_ROOT/../../third_party/i3c-core/src/hci/csri.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/target_reset_detector.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/width_converter_8toN.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/width_converter_Nto8.sv

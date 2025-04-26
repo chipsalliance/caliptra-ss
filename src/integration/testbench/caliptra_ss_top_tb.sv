@@ -1367,14 +1367,10 @@ module caliptra_ss_top_tb
     // ai3c_device#(`AI3C_LANE_NUM) slave;
     // ai3c_intf#(`AI3C_LANE_NUM) slave_intf(i3c_sda_io, i3c_scl_io);
 
-    // --- AXI interface for I3C ---
-    `ifdef DIGITAL_IO_I3C
-        wire cptra_ss_sel_od_pp_o;
-    `else
-        wire cptra_ss_i3c_scl_io;
-        wire cptra_ss_i3c_sda_io;
-    `endif
-
+    wire cptra_ss_i3c_sda_oe;
+    wire cptra_ss_i3c_scl_oe;
+    wire cptra_ss_sel_od_pp_o;
+    
     initial begin
         string avy_test_name;
 
@@ -1686,17 +1682,14 @@ module caliptra_ss_top_tb
         .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
         .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
 
-    // I3C Interface
-    `ifdef DIGITAL_IO_I3C
+
         .cptra_ss_i3c_scl_i(master0_intf.scl_and),
         .cptra_ss_i3c_sda_i(master0_intf.sda_and),
         .cptra_ss_i3c_scl_o(master0_intf.scl_and),
         .cptra_ss_i3c_sda_o(master0_intf.sda_and),
+        .cptra_ss_i3c_sda_oe,
+        .cptra_ss_i3c_scl_oe,
         .cptra_ss_sel_od_pp_o,
-    `else
-        .cptra_ss_i3c_scl_io,
-        .cptra_ss_i3c_sda_io,
-    `endif
 
         // -- remove in final version
         .cptra_ss_cptra_core_generic_input_wires_i,

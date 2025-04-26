@@ -229,17 +229,14 @@ module caliptra_ss_top
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
     output otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o,
    
-// Caliptra SS I3C GPIO Interface
-`ifdef DIGITAL_IO_I3C
+
     input  logic cptra_ss_i3c_scl_i,
     input  logic cptra_ss_i3c_sda_i,
     output logic cptra_ss_i3c_scl_o,
     output logic cptra_ss_i3c_sda_o,
+    output logic cptra_ss_i3c_scl_oe,
+    output logic cptra_ss_i3c_sda_oe,
     output logic cptra_ss_sel_od_pp_o,
-`else
-    inout  wire  cptra_ss_i3c_scl_io,
-    inout  wire  cptra_ss_i3c_sda_io,
-`endif
 
 // -- THESE ARE NOT RTL SIGNALS, DO NOT USE THEM
 // -- note: these are output required for TB
@@ -873,6 +870,12 @@ module caliptra_ss_top
     //=========================================================================-
     // i3c_core Instance
     //=========================================================================-
+    
+    logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
+    assign priv_ids[0] = 32'd0;
+    assign priv_ids[1] = 32'd0;
+    assign priv_ids[2] = cptra_ss_strap_caliptra_dma_axi_user_i;
+    assign priv_ids[3] = cptra_ss_strap_mcu_lsu_axi_user_i;
 
     i3c_wrapper #(
         .AxiDataWidth(`AXI_DATA_WIDTH),
@@ -917,16 +920,13 @@ module caliptra_ss_top
         .bready_i   (cptra_ss_i3c_s_axi_if_w_sub.bready),
         .bresp_o    (cptra_ss_i3c_s_axi_if_w_sub.bresp),
         .bid_o      (cptra_ss_i3c_s_axi_if_w_sub.bid),
-`ifdef DIGITAL_IO_I3C
         .scl_i(cptra_ss_i3c_scl_i),
         .sda_i(cptra_ss_i3c_sda_i),
         .scl_o(cptra_ss_i3c_scl_o),
         .sda_o(cptra_ss_i3c_sda_o),
+        .scl_oe(cptra_ss_i3c_scl_oe),
+        .sda_oe(cptra_ss_i3c_sda_oe),
         .sel_od_pp_o(cptra_ss_sel_od_pp_o),
-`else
-        .i3c_scl_io(cptra_ss_i3c_scl_io),
-        .i3c_sda_io(cptra_ss_i3c_sda_io),
-`endif
         .recovery_payload_available_o(payload_available_o),
         .recovery_image_activated_o(image_activated_o),
         .peripheral_reset_o(i3c_peripheral_reset),
@@ -935,7 +935,7 @@ module caliptra_ss_top
         .irq_o(i3c_irq_o),
 
         .disable_id_filtering_i(1'b0),
-        .priv_ids_i('{cptra_ss_strap_mcu_lsu_axi_user_i, cptra_ss_strap_caliptra_dma_axi_user_i, 32'b0, 32'b0}) // -- FIXME : ENABLE THIS FEATURE
+        .priv_ids_i(priv_ids)
 
     );
 

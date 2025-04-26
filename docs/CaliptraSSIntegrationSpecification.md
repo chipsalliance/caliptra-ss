@@ -1600,11 +1600,11 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | `bid_o`                           | output    | [AxiIdWidth-1:0]          | AXI write transaction ID (response)                                  |
 | `bvalid_o`                        | output    | 1 bit                     | AXI write response valid                                             |
 | `bready_i`                        | input     | 1 bit                     | AXI write response ready                                             |
-| `scl_i`                           | input     | 1 bit (if DIGITAL_IO_I3C) | I3C clock input (digital)                                            |
-| `sda_i`                           | input     | 1 bit (if DIGITAL_IO_I3C) | I3C data input (digital)                                             |
-| `scl_o`                           | output    | 1 bit (if DIGITAL_IO_I3C) | I3C clock output (digital)                                           |
-| `sda_o`                           | output    | 1 bit (if DIGITAL_IO_I3C) | I3C data output (digital)                                            |
-| `sel_od_pp_o`                     | output    | 1 bit (if DIGITAL_IO_I3C) | Open-drain / push-pull selection (digital output)                    |
+| `scl_i`                           | input     | 1 bit | I3C clock input (digital)                                            |
+| `sda_i`                           | input     | 1 bit | I3C data input (digital)                                             |
+| `scl_o`                           | output    | 1 bit | I3C clock output (digital)                                           |
+| `sda_o`                           | output    | 1 bit | I3C data output (digital)                                            |
+| `sel_od_pp_o`                     | output    | 1 bit | Open-drain / push-pull selection (digital output)                    |
 | `i3c_scl_io`                      | inout     | 1 bit (else)              | I3C clock line (analog/digital)                                      |
 | `i3c_sda_io`                      | inout     | 1 bit (else)              | I3C data line (analog/digital)                                       |
 | `recovery_payload_available_o`    | output    | 1 bit                     | Indicates recovery payload is available                              |
