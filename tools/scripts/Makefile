@@ -265,7 +265,6 @@ VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
 VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
-VCS_COMP_OPTS += +define+DIGITAL_IO_I3C=1
 #VCS_COMP_OPTS += +define+AI3C_SKIP_DAA=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
