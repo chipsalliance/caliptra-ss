@@ -173,7 +173,12 @@ module lc_ctrl
   tlul_pkg::tl_h2d_t      regs_tl_i;
   tlul_pkg::tl_d2h_t      regs_tl_o;
 
-  axi_if axi_if(
+  axi_if #(
+    .AW(axi_struct_pkg::TLUL_AXI_STRUCT_ADDR_WIDTH),
+    .DW(32                                        ),
+    .UW(axi_struct_pkg::TLUL_AXI_STRUCT_USER_WIDTH),
+    .IW(axi_struct_pkg::TLUL_AXI_STRUCT_ID_WIDTH  )
+  ) axi_if (
     .clk(clk_i),
     .rst_n(rst_ni)
   );
@@ -219,10 +224,10 @@ module lc_ctrl
 
   // AXI2TLUL instance
   axi2tlul #(
-      .AW     (32),
-      .DW     (32),
-      .UW     (32),
-      .IW     (8 )
+      .AW     (axi_struct_pkg::TLUL_AXI_STRUCT_ADDR_WIDTH),
+      .DW     (32                                        ),
+      .UW     (axi_struct_pkg::TLUL_AXI_STRUCT_USER_WIDTH),
+      .IW     (axi_struct_pkg::TLUL_AXI_STRUCT_ID_WIDTH  )
   ) u_lc_axi2tlul (
       .clk            (clk_i),
       .rst_n          (rst_ni),
