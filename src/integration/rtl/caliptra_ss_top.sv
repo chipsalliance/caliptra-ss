@@ -968,8 +968,11 @@ module caliptra_ss_top
     // The following signal should be also an input coming from LC to MCI
             //lc_hw_rev_t  hw_rev_o;
     mci_top #(
-        .AXI_DATA_WIDTH(32),
-        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
+        .AXI_ADDR_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.araddr)),
+        .AXI_DATA_WIDTH  (32                                       ),
+        .AXI_USER_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.aruser)),
+        .AXI_ID_WIDTH    ($bits(cptra_ss_mci_s_axi_if_r_sub.arid)  ),
+        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB                         ),
 
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
         .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),  
@@ -1100,6 +1103,8 @@ module caliptra_ss_top
         .security_state_o(mci_cptra_security_state)
 
     );
+
+    // lcc_steady_state_from_otp
 
     //=========================================================================-
     // Life-cycle Controller Instance : 
@@ -1233,7 +1238,7 @@ module caliptra_ss_top
 
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
-	); 
+    ); 
 
     `CALIPTRA_ASSERT(i3c_payload_available, ($rose(payload_available_o) |-> ##[1:50] payload_available_o == 0),cptra_ss_clk_i, cptra_ss_rst_b_i)
     `CALIPTRA_ASSERT(i3c_image_activated, ($rose(image_activated_o) |-> ##[1:50] image_activated_o == 0), cptra_ss_clk_i, cptra_ss_rst_b_i)
