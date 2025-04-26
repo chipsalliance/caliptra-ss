@@ -265,4 +265,8 @@ assign axi_mcu_sram_config_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.
 `CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCU_MBOX0, MBOX0_END_ADDR < MBOX1_START_ADDR)
 `CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCU_MBOX1, MBOX1_END_ADDR < MCU_SRAM_START_ADDR)
 
+`CALIPTRA_ASSERT(MCI_MISS_NO_DV_A, soc_req_miss |-> 
+!mcu_sram_req_if.dv  && !mcu_trace_buffer_req_if.dv  && !mci_reg_req_if.dv  && !mcu_mbox0_req_if.dv  && !mcu_mbox1_req_if.dv  
+    ,clk, !rst_b)
+
 endmodule
