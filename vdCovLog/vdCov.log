@@ -1,0 +1,261 @@
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 
+  '../../scratch/v-pnasahl/simland/caliptra_ss_top_tb/caliptra_ss_lcc_st_trans/20250426.112250/coverage.vdb/test'
+  failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 
+  '../../scratch/v-pnasahl/simland/caliptra_ss_top_tb/caliptra_ss_lcc_st_trans/20250426.112250/coverage.vdb/test'
+  failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 
+  '../../scratch/v-pnasahl/simland/caliptra_ss_top_tb/caliptra_ss_lcc_st_trans/20250426.112250/coverage.vdb/test'
+  failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Limited Design Loaded: 
+Warning-[UCAPI-LDAST] Limited design loaded
+  Only the design information inferred from assertion database is available 
+  since the information containing the full compile-time design is not 
+  available in the base coverage directory 
+  '../../scratch/v-pnasahl/simland/caliptra_ss_top_tb/caliptra_ss_lcc_st_trans/20250426.112250/coverage.vdb'.
+  The report contains only a partial hierarchy - the parts containing 
+  assertions - but all coverage scores are correct.
+  This situation can sometimes happen if you have only assertion coverage 
+  enabled. If you need the full hierarchical report, you have to use at least 
+  one '-cm' option at compile-time.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 
+  '../../scratch/v-pnasahl/simland/caliptra_ss_top_tb/caliptra_ss_lcc_st_trans/20250426.112250/coverage.vdb/test'
+  failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 
+  '../../scratch/v-pnasahl/simland/caliptra_ss_top_tb/caliptra_ss_lcc_st_trans/20250426.112250/coverage.vdb/test'
+  failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+The design '../../scratch/v-pnasahl/simland/caliptra_ss_top_tb/caliptra_ss_lcc_st_trans/20250426.112250/coverage.vdb' was loaded successfully.
+The following test is loaded from "../../scratch/v-pnasahl/simland/caliptra_ss_top_tb/caliptra_ss_lcc_st_trans/20250426.112250/coverage.vdb",
+    ../../scratch/v-pnasahl/simland/caliptra_ss_top_tb/caliptra_ss_lcc_st_trans/20250426.112250/coverage/test
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Design Not Loaded Yet: 
+Error-[UCAPI-DNYL] Design not yet loaded
+  Loading test 'MergedTest' failed, as design is not yet loaded.
+  Either you missed out specifying design directory or your design directory 
+  is corrupted.
+Processing the following text filter expression(s) in 'Groups' pane. The coverage data will be updated accordingly.
+    *lc_ctrl_cov_if*

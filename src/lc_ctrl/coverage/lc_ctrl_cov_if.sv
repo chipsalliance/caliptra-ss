@@ -171,7 +171,193 @@ interface lc_ctrl_cov_if
         LcStRaw, LcStTestUnlocked0, LcStTestLocked0, LcStTestUnlocked1, LcStTestLocked1, LcStTestUnlocked2, LcStTestLocked2, LcStTestUnlocked3,
         LcStTestLocked3, LcStTestUnlocked4, LcStTestLocked4, LcStTestUnlocked5, LcStTestLocked5, LcStTestUnlocked6, LcStTestLocked6, LcStTestUnlocked7,
         LcStDev,LcStProd, LcStProdEnd, LcStRma, LcStScrap
-    };  
+    };
+
+    covergroup lc_ctrl_state_transition_cg @(posedge clk_i);
+        lc_state_transition_cp: coverpoint dec_lc_state {
+                        // Raw to TestUnlocked0.
+            bins RawTestUnlocked0 = (DEC_LC_ST_RMA_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED0_REP);
+            // TestUnlocked0 to TestLocked0...6.
+            bins TestUnlocked0TestLocked0 = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED0_REP);
+            bins TestUnlocked0TestLocked1 = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED1_REP);
+            bins TestUnlocked0TestLocked2 = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED2_REP);
+            bins TestUnlocked0TestLocked3 = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED3_REP);
+            bins TestUnlocked0TestLocked4 = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED4_REP);
+            bins TestUnlocked0TestLocked5 = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED5_REP);
+            bins TestUnlocked0TestLocked6 = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED6_REP);
+            // TestUnlocked0 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked0Dev         = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestUnlocked0Prod        = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestUnlocked0ProdEnd     = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestUnlocked0Rma         = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins TestUnlocked0Scrap       = (DEC_LC_ST_TEST_UNLOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+            // TestUnlocked1 to TestLocked1...6.
+            bins TestUnlocked1TestLocked1 = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED1_REP);
+            bins TestUnlocked1TestLocked2 = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED2_REP);
+            bins TestUnlocked1TestLocked3 = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED3_REP);
+            bins TestUnlocked1TestLocked4 = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED4_REP);
+            bins TestUnlocked1TestLocked5 = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED5_REP);
+            bins TestUnlocked1TestLocked6 = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED6_REP);
+            // TestUnlocked1 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked1Dev         = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestUnlocked1Prod        = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestUnlocked1ProdEnd     = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestUnlocked1Rma         = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins TestUnlocked1Scrap       = (DEC_LC_ST_TEST_UNLOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+            // TestUnlocked2 to TestLocked2...6.
+            bins TestUnlocked2TestLocked2 = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED2_REP);
+            bins TestUnlocked2TestLocked3 = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED3_REP);
+            bins TestUnlocked2TestLocked4 = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED4_REP);
+            bins TestUnlocked2TestLocked5 = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED5_REP);
+            bins TestUnlocked2TestLocked6 = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED6_REP);
+            // TestUnlocked2 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked2Dev         = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestUnlocked2Prod        = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestUnlocked2ProdEnd     = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestUnlocked2Rma         = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins TestUnlocked2Scrap       = (DEC_LC_ST_TEST_UNLOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+            // TestUnlocked3 to TestLocked3...6.
+            bins TestUnlocked3TestLocked3 = (DEC_LC_ST_TEST_UNLOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED3_REP);
+            bins TestUnlocked3TestLocked4 = (DEC_LC_ST_TEST_UNLOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED4_REP);
+            bins TestUnlocked3TestLocked5 = (DEC_LC_ST_TEST_UNLOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED5_REP);
+            bins TestUnlocked3TestLocked6 = (DEC_LC_ST_TEST_UNLOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED6_REP);
+            // TestUnlocked3 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked3Dev         = (DEC_LC_ST_TEST_UNLOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestUnlocked3Prod        = (DEC_LC_ST_TEST_UNLOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestUnlocked3ProdEnd     = (DEC_LC_ST_TEST_UNLOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestUnlocked3Rma         = (DEC_LC_ST_TEST_UNLOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins TestUnlocked3Scrap       = (DEC_LC_ST_TEST_UNLOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+            // TestUnlocked4 to TestLocked4...6.
+            bins TestUnlocked4TestLocked4 = (DEC_LC_ST_TEST_UNLOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED4_REP);
+            bins TestUnlocked4TestLocked5 = (DEC_LC_ST_TEST_UNLOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED5_REP);
+            bins TestUnlocked4TestLocked6 = (DEC_LC_ST_TEST_UNLOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED6_REP);
+            // TestUnlocked4 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked4Dev         = (DEC_LC_ST_TEST_UNLOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestUnlocked4Prod        = (DEC_LC_ST_TEST_UNLOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestUnlocked4ProdEnd     = (DEC_LC_ST_TEST_UNLOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestUnlocked4Rma         = (DEC_LC_ST_TEST_UNLOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins TestUnlocked4Scrap       = (DEC_LC_ST_TEST_UNLOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+            // TestUnlocked5 to TestLocked5...6.
+            bins TestUnlocked5TestLocked5 = (DEC_LC_ST_TEST_UNLOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED5_REP);
+            bins TestUnlocked5TestLocked6 = (DEC_LC_ST_TEST_UNLOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED6_REP);
+            // TestUnlocked5 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked5Dev         = (DEC_LC_ST_TEST_UNLOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestUnlocked5Prod        = (DEC_LC_ST_TEST_UNLOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestUnlocked5ProdEnd     = (DEC_LC_ST_TEST_UNLOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestUnlocked5Rma         = (DEC_LC_ST_TEST_UNLOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins TestUnlocked5Scrap       = (DEC_LC_ST_TEST_UNLOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+            // TestUnlocked6 to TestLocked6.
+            bins TestUnlocked6TestLocked6 = (DEC_LC_ST_TEST_UNLOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_LOCKED6_REP);
+            // TestUnlocked6 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked6Dev         = (DEC_LC_ST_TEST_UNLOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestUnlocked6Prod        = (DEC_LC_ST_TEST_UNLOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestUnlocked6ProdEnd     = (DEC_LC_ST_TEST_UNLOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestUnlocked6Rma         = (DEC_LC_ST_TEST_UNLOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins TestUnlocked6Scrap       = (DEC_LC_ST_TEST_UNLOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+            // TestUnlocked7 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked7Dev         = (DEC_LC_ST_TEST_UNLOCKED7_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestUnlocked7Prod        = (DEC_LC_ST_TEST_UNLOCKED7_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestUnlocked7ProdEnd     = (DEC_LC_ST_TEST_UNLOCKED7_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestUnlocked7Rma         = (DEC_LC_ST_TEST_UNLOCKED7_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins TestUnlocked7Scrap       = (DEC_LC_ST_TEST_UNLOCKED7_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // TestLocked0 to TestUnlocked1...7.
+            bins TestLocked0TestUnlocked1 = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED1_REP);
+            bins TestLocked0TestUnlocked2 = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED2_REP);
+            bins TestLocked0TestUnlocked3 = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED3_REP);
+            bins TestLocked0TestUnlocked4 = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED4_REP);
+            bins TestLocked0TestUnlocked5 = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED5_REP);
+            bins TestLocked0TestUnlocked6 = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED6_REP);
+            bins TestLocked0TestUnlocked7 = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED7_REP);
+            // TestLocked0 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked0Dev         = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestLocked0Prod        = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestLocked0ProdEnd     = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestLocked0Scrap       = (DEC_LC_ST_TEST_LOCKED0_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // TestLocked1 to TestUnlocked2...7.
+            bins TestLocked1TestUnlocked2 = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED2_REP);
+            bins TestLocked1TestUnlocked3 = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED3_REP);
+            bins TestLocked1TestUnlocked4 = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED4_REP);
+            bins TestLocked1TestUnlocked5 = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED5_REP);
+            bins TestLocked1TestUnlocked6 = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED6_REP);
+            bins TestLocked1TestUnlocked7 = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED7_REP);
+            // TestLocked1 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked1Dev         = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestLocked1Prod        = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestLocked1ProdEnd     = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestLocked1Scrap       = (DEC_LC_ST_TEST_LOCKED1_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // TestLocked2 to TestUnlocked3...7.
+            bins TestLocked2TestUnlocked3 = (DEC_LC_ST_TEST_LOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED3_REP);
+            bins TestLocked2TestUnlocked4 = (DEC_LC_ST_TEST_LOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED4_REP);
+            bins TestLocked2TestUnlocked5 = (DEC_LC_ST_TEST_LOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED5_REP);
+            bins TestLocked2TestUnlocked6 = (DEC_LC_ST_TEST_LOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED6_REP);
+            bins TestLocked2TestUnlocked7 = (DEC_LC_ST_TEST_LOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED7_REP);
+            // TestLocked2 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked2Dev         = (DEC_LC_ST_TEST_LOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestLocked2Prod        = (DEC_LC_ST_TEST_LOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestLocked2ProdEnd     = (DEC_LC_ST_TEST_LOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestLocked2Scrap       = (DEC_LC_ST_TEST_LOCKED2_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // TestLocked3 to TestUnlocked4...7.
+            bins TestLocked3TestUnlocked4 = (DEC_LC_ST_TEST_LOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED4_REP);
+            bins TestLocked3TestUnlocked5 = (DEC_LC_ST_TEST_LOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED5_REP);
+            bins TestLocked3TestUnlocked6 = (DEC_LC_ST_TEST_LOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED6_REP);
+            bins TestLocked3TestUnlocked7 = (DEC_LC_ST_TEST_LOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED7_REP);
+            // TestLocked3 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked3Dev         = (DEC_LC_ST_TEST_LOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestLocked3Prod        = (DEC_LC_ST_TEST_LOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestLocked3ProdEnd     = (DEC_LC_ST_TEST_LOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestLocked3Scrap       = (DEC_LC_ST_TEST_LOCKED3_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // TestLocked4 to TestUnlocked5...7.
+            bins TestLocked4TestUnlocked5 = (DEC_LC_ST_TEST_LOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED5_REP);
+            bins TestLocked4TestUnlocked6 = (DEC_LC_ST_TEST_LOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED6_REP);
+            bins TestLocked4TestUnlocked7 = (DEC_LC_ST_TEST_LOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED7_REP);
+            // TestLocked4 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked4Dev         = (DEC_LC_ST_TEST_LOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestLocked4Prod        = (DEC_LC_ST_TEST_LOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestLocked4ProdEnd     = (DEC_LC_ST_TEST_LOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestLocked4Scrap       = (DEC_LC_ST_TEST_LOCKED4_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // TestLocked5 to TestUnlocked6...7.
+            bins TestLocked5TestUnlocked6 = (DEC_LC_ST_TEST_LOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED6_REP);
+            bins TestLocked5TestUnlocked7 = (DEC_LC_ST_TEST_LOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED7_REP);
+            // TestLocked5 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked5Dev         = (DEC_LC_ST_TEST_LOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestLocked5Prod        = (DEC_LC_ST_TEST_LOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestLocked5ProdEnd     = (DEC_LC_ST_TEST_LOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestLocked5Scrap       = (DEC_LC_ST_TEST_LOCKED5_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // TestLocked6 to TestUnlocked6...7.
+            bins TestLocked6TestUnlocked7 = (DEC_LC_ST_TEST_LOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_TEST_UNLOCKED7_REP);
+            // TestLocked6 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked6Dev         = (DEC_LC_ST_TEST_LOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_DEV_REP);
+            bins TestLocked6Prod        = (DEC_LC_ST_TEST_LOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins TestLocked6ProdEnd     = (DEC_LC_ST_TEST_LOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins TestLocked6Scrap       = (DEC_LC_ST_TEST_LOCKED6_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // DEV to PROD, PRODEND, RMA, SCR.
+            bins LcStDevProd            = (DEC_LC_ST_DEV_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_REP);
+            bins LcStDevProdEnd         = (DEC_LC_ST_DEV_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins LcStDevRma             = (DEC_LC_ST_DEV_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins LcStDevScrap           = (DEC_LC_ST_DEV_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // PROD to PRODEND, RMA, SCR.
+            bins LcStProdProdEnd         = (DEC_LC_ST_PROD_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_PROD_END_REP);
+            bins LcStProdRma             = (DEC_LC_ST_PROD_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_RMA_REP);
+            bins LcStProdScrap           = (DEC_LC_ST_PROD_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // PRODEND to SCR.
+            bins LcStProdEndScr          = (DEC_LC_ST_PROD_END_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+
+            // RMA to SCR.
+            bins LcStRmaScr              = (DEC_LC_ST_RMA_REP => DEC_LC_ST_POST_TRANS_REP => DEC_LC_ST_INVALID_REP =>  DEC_LC_ST_SCRAP_REP);
+        }
+    endgroup
+
+    lc_ctrl_state_transition_cg lc_ctrl_state_transition_cg1 = new();
 
     otp_ctrl_pkg::otp_lc_data_t otp_lc_data_i;
     assign otp_lc_data_i = lc_ctrl.otp_lc_data_i;

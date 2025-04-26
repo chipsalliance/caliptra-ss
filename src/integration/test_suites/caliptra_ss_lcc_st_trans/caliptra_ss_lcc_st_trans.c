@@ -82,7 +82,7 @@ void main (void) {
         }
 
         if (count) {
-            uint32_t lc_state_next = buf[xorshift32() % count];
+            uint32_t lc_state_next = 18;//buf[xorshift32() % count];
             VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
 
             lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
@@ -110,6 +110,7 @@ void main (void) {
                 VPRINTF(LOW, "INFO: scrap state reached; terminating test\n");
                 goto epilogue;
             }
+            break;
         }
     }
     
