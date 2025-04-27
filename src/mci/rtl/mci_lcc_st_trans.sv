@@ -311,7 +311,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
 `CALIPTRA_ASSERT(ScrapToNonDebug_A,
     $rose((otp_static_state == LcStScrap)  
         & (mci_trans_st_current != TRANSLATOR_RESET))
-  |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION),
+  |=> ##2 (security_state_o.device_lifecycle == DEVICE_PRODUCTION),
     clk_i,
     rst_ni || state_error
 );
@@ -319,14 +319,14 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
 `CALIPTRA_ASSERT(DebugUnlockedCheck_MANUF_A,
     $rose((ss_dbg_manuf_enable_i && (otp_static_state == LcStDev))
         & (mci_trans_st_current != TRANSLATOR_RESET))
-  |=> ##1 (security_state_o.debug_locked == 1'b0)
+  |=> ##2 (security_state_o.debug_locked == 1'b0)
 );
 
 `CALIPTRA_ASSERT(DebugUnlockedCheck_PROD_A,
     $rose(((CLPTR_PROD_DEBUG_UNLOCK_AND) 
         & (otp_static_state == LcStProd))  
         & (mci_trans_st_current != TRANSLATOR_RESET))
-  |=> ##1 (security_state_o.debug_locked == 1'b0)
+  |=> ##2 (security_state_o.debug_locked == 1'b0)
 );
 
 `CALIPTRA_ASSERT(NonDebugUnlockedCheck_A,
