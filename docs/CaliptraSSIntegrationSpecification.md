@@ -1416,8 +1416,8 @@ The mailboxes start locked by MCU to prevent any data leaks across warm reset.  
 8. Receiver updates ```MBOX_SRAM``` and ```MBOX_DLEN``` (if there is data to return).
 9. Reciever updates status in ```MBOX_TARGET_STATUS.STATUS``` and sets ```MBOX_TARGET_STATUS.DONE```
   - This generates interrupt MBOX*_TARGET_DONE to MCU
-10. MCU (in response to MBOX*_TARGET_DONE interrupt) will write 0 to ```MBOX_EXECUTE``` to release MBOX
-11. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during whole the lock session in ```MBOX_SRAM```
+10. MCU (in response to MBOX*_TARGET_DONE interrupt) will write 0 to ```MBOX_EXECUTE``` to release the MBOX
+11. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during the whole lock session in ```MBOX_SRAM```
   - Mailbox lock cannot be re-acquired until zeroization is complete
 
 #### SOC Sender to MCU Flow
@@ -1433,7 +1433,8 @@ The mailboxes start locked by MCU to prevent any data leaks across warm reset.  
 6. MCU processes command and data in mailbox
 7. MCU updates ```MBOX_SRAM``` and ```MBOX_DLEN``` (if there is data to return).
 8. MCU update ```MBOX_CMD_STATUS``` with desired status code
-9. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during whole the lock session in ```MBOX_SRAM```
+9. Sender writes 0 to ```MBOX_EXECUTE``` to release the MBOX
+10. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during the whole lock session in ```MBOX_SRAM```
   - Mailbox lock cannot be re-acquired until zeroization is complete
 
 #### SOC Sender to SOC Receiver Communication Flow (MCU as intermediary)
@@ -1456,8 +1457,8 @@ The mailboxes start locked by MCU to prevent any data leaks across warm reset.  
   - This generates interrupt MBOX*_TARGET_DONE to MCU
 13. MCU (in response to MBOX*_TARGET_DONE interrupt) will update ```MBOX_CMD_STATUS``` with final status
 14. Sender sees final desired ```MBOX_CMD_STATUS```
-15. Sender writes 0 to ```MBOX_EXECUTE``` to release MBOX
-16. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during whole the lock session in ```MBOX_SRAM```
+15. Sender writes 0 to ```MBOX_EXECUTE``` to release the MBOX
+16. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during the whole lock session in ```MBOX_SRAM```
   - Mailbox lock cannot be re-acquired until zeroization is complete
 
 ## Sequences : Reset, Boot,
