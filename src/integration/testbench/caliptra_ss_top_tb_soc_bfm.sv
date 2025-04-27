@@ -19,6 +19,9 @@
 module caliptra_ss_top_tb_soc_bfm
 import axi_pkg::*;
 import mci_dmi_pkg::*;
+import mci_reg_pkg::*;
+import mcu_mbox_csr_pkg::*;
+import trace_buffer_csr_pkg::*;
 #(
     parameter MCU_SRAM_SIZE_KB = 512
 ) 
@@ -38,15 +41,23 @@ import mci_dmi_pkg::*;
     axi_if m_axi_bfm_if,
 
     caliptra_ss_bfm_services_if.bfm tb_services_if
-    
-    //Interrupt flags
-    //input logic assert_hard_rst_flag,
-    //input logic assert_rst_flag_from_service,
-    //input logic deassert_rst_flag_from_service
 
 );
 
+localparam KB = 1024;
 localparam AXI_AW = $bits(m_axi_bfm_if.araddr);
+localparam MCI_REG_SIZE_BYTES               = 2 ** MCI_REG_MIN_ADDR_WIDTH;
+localparam MCI_REG_START_ADDR               = `SOC_MCI_TOP_MCI_REG_BASE_ADDR;
+localparam MCI_REG_END_ADDR                 = MCI_REG_START_ADDR + (MCI_REG_SIZE_BYTES) - 1;
+localparam MCU_TRACE_BUFFER_SIZE_BYTES      = 2 ** TRACE_BUFFER_CSR_MIN_ADDR_WIDTH;
+localparam MCU_TRACE_BUFFER_START_ADDR      = `SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_BASE_ADDR;
+localparam MCU_TRACE_BUFFER_END_ADDR        = MCU_TRACE_BUFFER_START_ADDR + (MCU_TRACE_BUFFER_SIZE_BYTES) - 1;
+localparam MBOX0_START_ADDR                 = `SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR;
+localparam MBOX0_END_ADDR                   = MBOX0_START_ADDR + ((32'h0000_0001 << MCU_MBOX_CSR_ADDR_WIDTH) - 1);
+localparam MBOX1_START_ADDR                 = `SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR;
+localparam MBOX1_END_ADDR                   = MBOX1_START_ADDR + ((32'h0000_0001 << MCU_MBOX_CSR_ADDR_WIDTH) - 1);
+localparam MCU_SRAM_START_ADDR              = `SOC_MCI_TOP_MCU_SRAM_BASE_ADDR;
+localparam MCU_SRAM_END_ADDR                = MCU_SRAM_START_ADDR + (MCU_SRAM_SIZE_KB * KB) - 1;
 
 
 // MCU Trace Buffer monitor signals
@@ -99,6 +110,9 @@ initial begin
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_TRACE_BUFFER") begin
             smoke_test_mcu_trace_buffer();
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_AXI_MISS") begin
+            smoke_test_mci_axi_miss();
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_TRACE_BUFFER_NO_DEBUG") begin
             smoke_test_mcu_trace_buffer_no_debug();
