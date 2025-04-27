@@ -23,7 +23,7 @@ BUILD_DIR = $(CURDIR)
 ifndef CALIPTRA_SS_CLK_FREQ
 # FIXME : Support 170MHz, 200MHz, 400MHz
 #CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 3 + 1))), 170 200 400)
-CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 3 + 1))), 400 400 400)
+CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 2 + 1))), 170 400)
 endif
 
 # Ensure that RISC-V toolchain is installed

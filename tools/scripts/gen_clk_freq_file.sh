@@ -27,9 +27,7 @@ save_frequency() {
 
     # Define the array of supported frequencies
     # frequencies=(160 167 170 400)
-    #-- FIXME: At Lower Frequencies I3C is not able to capture the Dynamic Address assignment.
-    #-- Hence, for now, we are keeping the frequency to 400MHz
-    frequencies=(400)
+    frequencies=(170 400)
 
     # If $2 is provided, validate it; otherwise, select a random frequency
     if [ -n "$2" ]; then

@@ -105,10 +105,7 @@ void main (void) {
             i3c_reg_data &= I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_RX_DESC_STAT_MASK;
             if(i3c_reg_data == 0x00000000) {
                 VPRINTF(LOW, "MCU: I3C TTI RX DESC Intrrupt is not set\n");
-                for (uint8_t ii = 0; ii < 100; ii++)
-                {
-                    __asm__ volatile("nop"); // Sleep loop as "nop"
-                }
+                mcu_sleep(1000);
             } else {
                 VPRINTF(LOW, "MCU: I3C I3C TTI RX DESC Intrrupt is set\n");
                 break;
@@ -145,7 +142,6 @@ void main (void) {
                 VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data match\n", ii);
             }
         }
-
 
     }
     
