@@ -23,6 +23,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // Non-Standard VeeR CSR offset macros
 //
+#define VEER_CSR_MRAC     0x7C0
 #define VEER_CSR_MPMC     0x7C6
 #define VEER_CSR_MITCTL0  0x7D4
 #define VEER_CSR_MITCTL1  0x7D7
@@ -91,6 +92,27 @@ enum {
 #define MCAUSE_NMI_CODE_FAST_INT_ECC_VALUE      (MCAUSE_NMI_BIT_MASK | 0x1000)
 #define MCAUSE_NMI_CODE_FAST_INT_DCCM_VALUE     (MCAUSE_NMI_BIT_MASK | 0x1001)
 #define MCAUSE_NMI_CODE_FAST_INT_NONDCCM_VALUE  (MCAUSE_NMI_BIT_MASK | 0x1002)
+
+/*******************************************
+ * mrac - MRW - Region Access Control Register
+ */
+static inline void csr_write_mrac(uint_xlen_t value) {
+    __asm__ volatile ("csrw    %0, %1" \
+                      : /* output: none */        \
+                      : "i" (VEER_CSR_MRAC), "r" (value)  /* input : immediate, register  */ \
+                      : /* clobbers: none */);
+}
+static inline void csr_write_mrac_and_fence(uint_xlen_t value) {
+    //Fence is required after writing to MRAC if a region in LSU space is modified
+    //Fence.i is required after writing to MRAC if a region in instr space is modified
+    //Since fence.i is a superset of fence, just use fence.i
+    __asm__ volatile ("csrw    %0, %1" \
+                      "fence.i" \
+                      : /* output: none */        \
+                      : "i" (VEER_CSR_MRAC), "r" (value)  /* input : immediate, register  */ \
+                      : /* clobbers: none */);
+}
+
 
 /*******************************************
  * mpmc - MRW - Power Management Control Register
