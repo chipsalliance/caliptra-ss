@@ -12,6 +12,12 @@ jobs:
   # Call auxiliary workflows
   pre_run:
     uses: ./.github/workflows/pre-run-check.yml
+  doc_gen:
+    uses: ./.github/workflows/doc-gen.yml
+    if: ${{ (github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'push') }}
+    permissions:
+      pages: write
+      id-token: write
   post_run:
     name: Call Post Run Final
     runs-on: ubuntu-22.04
@@ -23,3 +29,4 @@ jobs:
             fetch-depth: 0
             submodules: recursive
       - run: echo "Finalize"
+    
