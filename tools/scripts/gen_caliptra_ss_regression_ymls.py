@@ -208,8 +208,8 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
         # Adjust generations based on criteria
         template_count = len(filtered_data)
         if template_count > 0:
-            adjusted_generations = max(generations, template_count * 10)
-            logger.info(f"Setting generations to {adjusted_generations} (10x template count)")
+            adjusted_generations = max(generations, template_count * 3)
+            logger.info(f"Setting generations to {adjusted_generations} (3x template count)")
             generations = adjusted_generations
         else:
             logger.warning(f"No templates matched for criteria: {criteria}")
