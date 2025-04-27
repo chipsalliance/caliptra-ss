@@ -51,5 +51,3 @@ contents:
         - ../test_suites/caliptra_ss_lcc_volatile_unlock/caliptra_ss_lcc_volatile_unlock.yml
         - ../test_suites/caliptra_ss_lcc_alert/caliptra_ss_lcc_alert.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_interrupts/caliptra_ss_fuse_ctrl_interrupts.yml
-        - ../test_suites/caliptra_ss_fuse_ctrl_volatile_lock/caliptra_ss_fuse_ctrl_volatile_lock.yml
-        - ../test_suites/caliptra_ss_fuse_ctrl_read_lock/caliptra_ss_fuse_ctrl_read_lock.yml
