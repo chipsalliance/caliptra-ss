@@ -216,8 +216,11 @@ interface lc_ctrl_cov_if
         end
     end
 
-    logic volatile_raw_unlock_i = lc_ctrl.u_lc_ctrl_fsm.volatile_raw_unlock_i;
-    lc_state_e lc_state_q = lc_state_e'(lc_ctrl.u_lc_ctrl_fsm.lc_state_q);
+    logic volatile_raw_unlock_i;
+    assign volatile_raw_unlock_i = lc_ctrl.u_lc_ctrl_fsm.volatile_raw_unlock_i;
+    
+    lc_state_e lc_state_q;
+    assign lc_state_q = lc_state_e'(lc_ctrl.u_lc_ctrl_fsm.lc_state_q);
 
     // Make sure we observe a successful volatile raw unlock transition.
     covergroup lc_ctrl_volatile_raw_unlock_transition_cg @(posedge clk_i);
@@ -229,40 +232,33 @@ interface lc_ctrl_cov_if
 
     lc_ctrl_volatile_raw_unlock_transition_cg lc_ctrl_volatile_raw_unlock_transition_cg1 = new();
 
-    logic trans_cnt_oflw_error_o = lc_ctrl.u_lc_ctrl_fsm.trans_cnt_oflw_error_o;
-    logic trans_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.trans_invalid_error_o;
-    logic token_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.token_invalid_error_o;
-    logic flash_rma_error_o = lc_ctrl.u_lc_ctrl_fsm.flash_rma_error_o;
-    logic otp_prog_error_o = lc_ctrl.u_lc_ctrl_fsm.otp_prog_error_o;
-    logic state_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.state_invalid_error_o;
-
     covergroup lc_ctrl_errors_cg @(posedge clk_i);
-        lc_ctrl_cnt_oflw_error_cp: coverpoint trans_cnt_oflw_error_o
+        lc_ctrl_cnt_oflw_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.trans_cnt_oflw_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_trans_invalid_error_cp: coverpoint trans_invalid_error_o
+        lc_ctrl_trans_invalid_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.trans_invalid_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_token_invalid_error_cp: coverpoint token_invalid_error_o
+        lc_ctrl_token_invalid_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.token_invalid_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_flash_rma_error_cp: coverpoint flash_rma_error_o
+        lc_ctrl_flash_rma_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.flash_rma_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_otp_prog_error_cp: coverpoint otp_prog_error_o
+        lc_ctrl_otp_prog_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.otp_prog_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_state_invalid_error_cp: coverpoint state_invalid_error_o
+        lc_ctrl_state_invalid_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.state_invalid_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
