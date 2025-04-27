@@ -77,7 +77,7 @@
     - [MCI Boot Sequencer](#mci-boot-sequencer)
     - [MCU FW Update Flows](#mcu-fw-update-flows)
       - [MCU FW Boot Update](#mcu-fw-boot-update)
-      - [MCU Hitless Update Update](#mcu-hitless-update-update)
+      - [MCU Hitless FW Update](#mcu-hitless-fw-update)
       - [MCU Warm Reset FW Update](#mcu-warm-reset-fw-update)
     - [Error Flows](#error-flows)
   - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
@@ -1440,9 +1440,9 @@ First MCU FW Update after a Cold Reset.
 8. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
 9. MCU jumps to MCU SRAM
 
-#### MCU Hitless Update Update
+#### MCU Hitless FW Update
 
-Subsequenc MCU FW Update after FW Boot Update.
+Subsequent MCU FW Update after FW Boot Update.
 
 1. MCU FW should use ```notif_cptra_mcu_reset_req_sts``` interrupt to know when Caliptra has a FW image for MCU. MCU FW can either poll or enable the interrupt. 
 2. Caliptra clears ```FW_EXEC_CTRL[2]``` indicating a FW image is ready for MCU.
@@ -1450,11 +1450,12 @@ Subsequenc MCU FW Update after FW Boot Update.
 4. MCU sets ```RESET_REQUEST.mcu_req``` in MCI to request a reset.
 5. MCI does an MCU halt req/ack handshake to ensure the MCU is idle
 6. MCI asserts MCU reset (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
-7. Caliptra will gain access to MCU SRAM Updatable Execution Region and update the FW image.
-8. Caliptra sets ```RESET_REASON.FW_HITLESS_UPD_RESET```
-9. Caliptra sets ```FW_EXEC_CTRL[2]```
-10. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
-11. MCU jumps to MCU SRAM
+7. Caliptra will wait until RESET_STATUS.MCU_RESET_STS is set to indicate that reset is complete.
+8. Caliptra will then have access to MCU SRAM Updatable Execution Region and update the FW image.
+9. Caliptra sets ```RESET_REASON.FW_HITLESS_UPD_RESET```
+10. Caliptra sets ```FW_EXEC_CTRL[2]```
+11. MCU is brought out of reset and checks MCI's ```RESET_REASON``` 
+12. MCU jumps to MCU SRAM
 
 #### MCU Warm Reset FW Update 
 
