@@ -72,7 +72,12 @@
     - [MCU SRAM Sizing Requirements](#mcu-sram-sizing-requirements)
     - [MCI AXI DMA Requirements](#mci-axi-dma-requirements)
   - [Programming interface](#programming-interface-3)
-    - [Mailbox FIXME waiting on Caliptra MBOX integration spec updates before doing this section](#mailbox-fixme-waiting-on-caliptra-mbox-integration-spec-updates-before-doing-this-section)
+    - [MCU Mailbox](#mcu-mailbox)
+      - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
+      - [Reset](#reset-1)
+      - [MCU to SOC Receiver Flow](#mcu-to-soc-receiver-flow)
+      - [SOC Sender to MCU Flow](#soc-sender-to-mcu-flow)
+      - [SOC Sender to SOC Receiver Communication Flow (MCU as intermediary)](#soc-sender-to-soc-receiver-communication-flow-mcu-as-intermediary)
   - [Sequences : Reset, Boot,](#sequences--reset-boot)
     - [MCI Boot Sequencer](#mci-boot-sequencer)
     - [MCU FW Update Flows](#mcu-fw-update-flows)
@@ -330,6 +335,8 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | interface | na    | `cptra_ss_mci_mcu_sram_req_if`       | MCI MCU SRAM request interface           |
 | External | interface | na    | `cptra_ss_mci_mbox0_sram_req_if`     | MCI mailbox 0 SRAM request interface     |
 | External | interface | na    | `cptra_ss_mci_mbox1_sram_req_if`     | MCI mailbox 1 SRAM request interface     |
+| External | output    | 1     | `cptra_ss_soc_mcu_mbox0_data_avail`  | MCU Mailbox0 data available output            |
+| External | output    | 1     | `cptra_ss_soc_mcu_mbox1_data_avail`  | MCU Mailbox1 data available output            |
 | External | interface | na    | `cptra_ss_mcu0_el2_mem_export`       | MCU0 EL2 memory export interface         |
 | External | input     | 64    | `cptra_ss_mci_generic_input_wires_i` | Generic input wires for MCI              |
 | External | input     | 1     | `cptra_ss_mcu_no_rom_config_i`       | No ROM configuration input               |
@@ -1369,7 +1376,90 @@ FIXME use MCI AXI DMA block during secret fuse population (won’t be available)
 
 ## Programming interface
 
-### Mailbox FIXME waiting on Caliptra MBOX integration spec updates before doing this section
+### MCU Mailbox
+
+The MCU can be configured to implement up to 2 independent mailboxes with maximum fully addressable SRAM sizes of up to 2 MB.  If they are configured sizes of 0, they will not be instantiated.
+
+Each mailbox can be used for secure and restricted communication between external SoC entities, the MCU, and Caliptra core.  This communication channel is essential for exchanging control messages, status updates, and other critical information that the MCU will use to monitor system boot, firmware updates, and security critical operations. Mailboxes are designed to ensure that only authorized entities can access and communicate through it, preserving the integrity and security of the SoC operations.
+
+The mailboxes are generic with some specific protocols and legal operations/accesses to ensure their secured and restricted aspect. The command, statuses, and data that are intepreted by the MCU microcontroller (uC), Caliptra uC or other SoC agent are not defined or enforced in this specification.
+
+Since the MCU uC has root access to the mailboxes (even when the mailbox is locked), it can function as an intermediary and facilitate communication between 2 agents (such as Caliptra uC and other SoC agents).
+
+The [Caliptra SS HW MCU Mailbox Spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mcu-mailbox) has more details about the specific registers and interrupts used in the mailbox flows.
+
+#### MCU Mailbox Limited Trusted AXI users
+
+If build-time integration straps are not used for configuring the trusted MBOX AXI users, then trusted users will need to configured with the following lockable MCI registers before MBOX can be used by SOC agents:
+
+   - ```MBOX*_VALID_AXI_USER```
+   - ```MBOX*_AXI_USER_LOCK```
+  
+See [Caliptra SS MCU Trusted AXI Users](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSIntegrationSpecification.md#mcu-mailbox-limited-trusted-axi-users) for more details.
+
+#### Reset 
+
+The mailboxes start locked by MCU to prevent any data leaks across warm reset.  MCU shall set ```MBOX_DLEN``` to MBOX SRAM size and write 0 to ```MBOX_EXECUTE``` to release the MBOX and wipe the MBOX SRAM.  This should be done before using or allowing use of the mailboxes.
+
+#### MCU to SOC Receiver Flow
+
+1. MCU attempts to lock mailbox by reading ```MBOX_LOCK``` register
+  - If read returns 0, LOCK is granted and will be set to 1
+  - If read returns 1, MBOX is locked for another agent
+2. MCU writes data to ```MBOX_SRAM```
+3. MCU writes data length in bytes to ```MBOX_DLEN```
+4. MCU writes command to ```MBOX_CMD``` register
+5. MCU sets ```MBOX_TARGET_USER``` to SOC Receiver AXI and sets MBOX_TARGET_USER_VALID to 1
+5. MCU writes 1 to ```MBOX_EXECUTE``` register (which asserts cptra_ss_soc_mcu_mbox*_data_avail output)
+6. MCU can directly inform receiver depending on receiver capabilities OR receiver could use cptra_ss_soc_mcu_mbox*_data_avail wire to directly generate an interrupt
+7. Receiver processes command and data in mailbox
+8. Receiver updates ```MBOX_SRAM``` and ```MBOX_DLEN``` (if there is data to return).
+9. Reciever updates status in ```MBOX_TARGET_STATUS.STATUS``` and sets ```MBOX_TARGET_STATUS.DONE```
+  - This generates interrupt MBOX*_TARGET_DONE to MCU
+10. MCU (in response to MBOX*_TARGET_DONE interrupt) will write 0 to ```MBOX_EXECUTE``` to release the MBOX
+11. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during the whole lock session in ```MBOX_SRAM```
+  - Mailbox lock cannot be re-acquired until zeroization is complete
+
+#### SOC Sender to MCU Flow
+
+1. Sender attempts to lock mailbox by reading ```MBOX_LOCK``` register
+  - If read returns 0, LOCK is granted and will be set to 1
+  - If read returns 1, MBOX is locked for another agent
+2. Sender writes data to ```MBOX_SRAM```
+3. Sender writes data length in bytes to ```MBOX_DLEN```
+4. Sender writes command to ```MBOX_CMD``` register
+5. Sender writes 1 to ```MBOX_EXECUTE``` register 
+  - This generates MBOX*_CMD_AVAIL interrupt to MCU
+6. MCU processes command and data in mailbox
+7. MCU updates ```MBOX_SRAM``` and ```MBOX_DLEN``` (if there is data to return).
+8. MCU update ```MBOX_CMD_STATUS``` with desired status code
+9. Sender writes 0 to ```MBOX_EXECUTE``` to release the MBOX
+10. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during the whole lock session in ```MBOX_SRAM```
+  - Mailbox lock cannot be re-acquired until zeroization is complete
+
+#### SOC Sender to SOC Receiver Communication Flow (MCU as intermediary)
+
+1. Sender attempts to lock mailbox by reading ```MBOX_LOCK``` register
+  - If read returns 0, LOCK is granted and will be set to 1
+  - If read returns 1, MBOX is locked for another agent
+2. Sender writes data to ```MBOX_SRAM```
+3. Sender writes data length in bytes to MBOX_DLEN
+4. Sender writes command to ```MBOX_CMD``` register
+5. Sender writes 1 to ```MBOX_EXECUTE``` register
+  - This generates MBOX*_CMD_AVAIL interrupt to MCU
+6. Sender reads/polls ```MBOX_CMD_STATUS``` for desired completion/ready status
+7. MCU (in response to MBOX*_CMD_AVAIL interrupt) processes command and data 
+8. MCU sets ```MBOX_TARGET_USER``` to SOC Receiver AXI and sets MBOX_TARGET_USER_VALID to 1
+9. MCU notifies SOC Receiver they can access MBOX (method depends on SOC Receiver capabilities)
+10. Receiver reads MBOX and processes command and/or data
+11. Receiver potentially updates data in ```MBOX_SRAM``` and ```MBOX_DLEN```
+12. Reciever updates status in ```MBOX_TARGET_STATUS.STATUS``` and sets ```MBOX_TARGET_STATUS.DONE```
+  - This generates interrupt MBOX*_TARGET_DONE to MCU
+13. MCU (in response to MBOX*_TARGET_DONE interrupt) will update ```MBOX_CMD_STATUS``` with final status
+14. Sender sees final desired ```MBOX_CMD_STATUS```
+15. Sender writes 0 to ```MBOX_EXECUTE``` to release the MBOX
+16. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during the whole lock session in ```MBOX_SRAM```
+  - Mailbox lock cannot be re-acquired until zeroization is complete
 
 ## Sequences : Reset, Boot,
 
@@ -1450,7 +1540,7 @@ Subsequent MCU FW Update after FW Boot Update.
 4. MCU sets ```RESET_REQUEST.mcu_req``` in MCI to request a reset.
 5. MCI does an MCU halt req/ack handshake to ensure the MCU is idle
 6. MCI asserts MCU reset (min reset time for MCU is until MIN_MCU_RST_COUNTER overflows)
-7. Caliptra will wait until RESET_STATUS.MCU_RESET_STS is set to indicate that reset is complete.
+7. Caliptra will wait until ```RESET_STATUS.MCU_RESET_STS``` is set to indicate that reset is complete.
 8. Caliptra will then have access to MCU SRAM Updatable Execution Region and update the FW image.
 9. Caliptra sets ```RESET_REASON.FW_HITLESS_UPD_RESET```
 10. Caliptra sets ```FW_EXEC_CTRL[2]```
