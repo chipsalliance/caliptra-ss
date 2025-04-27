@@ -73,6 +73,12 @@ void trigger_escalation() {
     }
 }
 
+void deassert_escalation() {
+    // Randomly raise the esc_scrap_state0 or esc_scrap_state1 escalation port.
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_TRIGGER_ESCALATION0_DIS);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_TRIGGER_ESCALATION1_DIS);
+}
+
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
@@ -143,6 +149,8 @@ void main (void) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
     lc_state_curr = read_lc_state();
+
+    deassert_escalation();
 
     // Check if we are still in the ESCALATE state.
     if (lc_state_curr != 22) {
