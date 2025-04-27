@@ -20,7 +20,7 @@ set -o pipefail    # we still want to catch pipeline failures, but we will handl
 cov_args=()
 if [[ -n "${COVERAGE_DIR_PATH:-}" ]]; then
   echo "COVERAGE_DIR_PATH is: ${COVERAGE_DIR_PATH}"
-  cov_args=( -c "${COVERAGE_DIR_PATH}" )
+  cov_args=( -c "-cov_dir ${COVERAGE_DIR_PATH}" )
 else
   echo "COVERAGE_DIR_PATH is not defined."
 fi
