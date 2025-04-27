@@ -69,28 +69,26 @@ void main (void) {
     uint32_t mbox_resp_dlen;
     uint32_t mbox_resp_data;
     uint32_t cptra_boot_go;
-    // VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
-    
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
-    VPRINTF(LOW, "MCU: Writing MCI SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO\n");
-
-    cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-    VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
-
+    mcu_mci_boot_go();
     ////////////////////////////////////
     // Fuse and Boot Bringup
     //
     // Wait for ready_for_fuses
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
 
+    for (uint32_t ii = 0; ii < 400; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
 
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG UDS Prov TEST with ROM \n=================\n\n");
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0, 0x1);
+    VPRINTF(LOW, "MCU: Writting  SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0 %x\n", 0x1);
     
-    lcc_initialization();
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    reset_fc_lcc_rtl();
+    // lcc_initialization();
+    // transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    // reset_fc_lcc_rtl();
 
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);

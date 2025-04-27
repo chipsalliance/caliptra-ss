@@ -1010,10 +1010,8 @@ The privilaged users for the MCI CSRs are:
 
 All of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionalality like timers that are needed by the SOC but are critical for MCU functionality. 
 
-The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MCSCU can configure and lock down the MCI configuration. MSCU can be **disabled** by setting the strap to 0x0. For debug the MSCU strap can be set to all 1s meaning every access will give this level of privilage. 
-
-The MCRCU populates the MCU FW update in MCU SRAM. There are a few registers within the MCI register bank it has special access to for facillitating the FW update. 
-
+The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MCSCU can configure and lock down the MCI configuration. MSCU can be **disabled** by setting the strap to 0x0. For debug the MSCU strap can be set to all 1s meaning every access will give this level of privilege. 
+The MCRCU populates the MCU FW update in MCU SRAM. There are a few registers within the MCI register bank it has special access to for facilitating the FW update. 
 The registers can be split up into a few different categories:
 
 

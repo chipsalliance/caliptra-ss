@@ -35,6 +35,7 @@ module caliptra_ss_top
     ,parameter [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
+    ,parameter bit LCC_SecVolatileRawUnlockEn = 1
 ) (
     input logic cptra_ss_clk_i,
     output logic cptra_ss_rdc_clk_cg_o,
@@ -873,6 +874,12 @@ module caliptra_ss_top
     //=========================================================================-
     // i3c_core Instance
     //=========================================================================-
+    
+    logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
+    assign priv_ids[0] = 32'd0;
+    assign priv_ids[1] = 32'd0;
+    assign priv_ids[2] = cptra_ss_strap_caliptra_dma_axi_user_i;
+    assign priv_ids[3] = cptra_ss_strap_mcu_lsu_axi_user_i;
 
     i3c_wrapper #(
         .AxiDataWidth(`AXI_DATA_WIDTH),
@@ -935,7 +942,7 @@ module caliptra_ss_top
         .irq_o(i3c_irq_o),
 
         .disable_id_filtering_i(1'b0),
-        .priv_ids_i('{cptra_ss_strap_mcu_lsu_axi_user_i, cptra_ss_strap_caliptra_dma_axi_user_i, 32'b0, 32'b0}) // -- FIXME : ENABLE THIS FEATURE
+        .priv_ids_i(priv_ids)
 
     );
 
@@ -1137,7 +1144,9 @@ module caliptra_ss_top
     assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl_pwr_lc_o.lc_done);
     assign lcc_init_req.lc_init = mci_to_lcc_init_req; 
 
-    lc_ctrl u_lc_ctrl (
+    lc_ctrl  #(
+        .SecVolatileRawUnlockEn (LCC_SecVolatileRawUnlockEn)
+    ) u_lc_ctrl (
             .clk_i(cptra_ss_clk_i),
             .rst_ni(cptra_ss_rst_b_o),
             .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
