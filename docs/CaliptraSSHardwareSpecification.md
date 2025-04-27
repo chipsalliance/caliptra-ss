@@ -1557,7 +1557,7 @@ To read content from the MCU SRAM the flow is:
 
 There is no error response on the DMI port, so any ECC error must be checked via the ECC registers in the MCI Register Bank.  
 
-**Important**: If AXI and DMI try to access MCU SRAM at the same time it will result in an error interrupt to MCU and HW_FATAL_ERROR.
+**Important**: MCU core must be halted to access MCU SRAM via DMI. Failure to do so will result in collisions between the two interfaces and an error will be reported.
 
 
 ##### DMI MCU Trace Buffer Access
