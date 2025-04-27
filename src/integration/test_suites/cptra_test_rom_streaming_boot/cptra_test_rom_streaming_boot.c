@@ -152,7 +152,7 @@ void poll_for_payload_available() {
         VPRINTF(LOW, "CPTRA: Payload Available is 'h %0x\n", reg_data);
         if (reg_data == 0) {
             VPRINTF(LOW, "CPTRA: Waiting before reading Payload available status again\n");
-            for (uint8_t ii = 0; ii < 1000; ii++) {
+            for (uint16_t ii = 0; ii < 1000; ii++) {
                 __asm__ volatile ("nop");
             }
         } else {
@@ -181,10 +181,11 @@ uint32_t read_image_size(){
     VPRINTF(LOW, "CPTRA: Reading Image Size from INDIRECT_FIFO_CTRL_1 Register\n");
 
     // Read INDIRECT_FIFO_CTRL_1
+    // img_size = 0x00000045; //-- Example -- in bytes 0x114
+
     soc_ifc_axi_dma_read_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1, 0, &i3c_reg_data, 4, 0);
     VPRINTF(LOW, "CPTRA: Reading SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_CTRL_1 with 'h %0x\n", i3c_reg_data);
     img_size = i3c_reg_data;
-    // img_size = 0x00000045; //-- FIXME -- in bytes 0x114
 
     VPRINTF(LOW, "CPTRA: Image Size is 'h %0x , 'd %0d\n", img_size, img_size);
     return img_size;
@@ -196,8 +197,7 @@ void read_image_from_fifo(uint32_t fw_image_size) {
 
     uint32_t dma_block_size;
 
-    // -- FIXME: Uncomment code for randomized block size
-    // -- randomize block size between 4 to 256 bytes for the power of 2
+    // -- To randomize block size between 4 to 256 bytes for the power of 2
     // dma_block_size = 1<<(rand() % 8); // 2^0 to 2^7
     // dma_block_size = (dma_block_size < 4) ? 4 : dma_block_size; // minimum block size is 4 bytes
     dma_block_size = 256; // 256 bytes

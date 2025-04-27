@@ -26,7 +26,6 @@ save_frequency() {
     fi
 
     # Define the array of supported frequencies
-    # frequencies=(160 167 170 400)
     frequencies=(170 400)
 
     # If $2 is provided, validate it; otherwise, select a random frequency

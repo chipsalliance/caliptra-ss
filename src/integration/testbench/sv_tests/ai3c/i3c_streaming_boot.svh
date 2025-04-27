@@ -313,7 +313,7 @@ class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 
 		data = new[2];
 		data[0] = 0;
-		for (int i = 0; i < 300; i++) begin
+		for (int i = 0; i < 100; i++) begin
 			test_log.substep($psprintf("Reading RECOVERY_STATUS register .. count 'd %0d", i));
 			i3c_read(recovery_target_addr, `I3C_CORE_RECOVERY_STATUS, 2, data);
 				
@@ -339,6 +339,10 @@ class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 				'h1: 
 					begin
 						test_log.substep($psprintf("Awaiting recovery image.. wait loop count : 'd %0d", i));
+						if (i == 99) begin
+							test_log.substep("Error : Recovery did not start");
+							err_count++;
+						end
 					end
 				'h2:
 					begin

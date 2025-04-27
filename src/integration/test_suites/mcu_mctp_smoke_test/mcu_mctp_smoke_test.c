@@ -83,8 +83,8 @@ void main (void) {
     boot_mcu();
     boot_i3c_core();
     trigger_caliptra_go();
+    mcu_cptra_user_init();
     wait_for_cptra_ready_for_mb_processing();
-    configure_captra_axi_user();
 
     //-- Enable I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE 
     i3c_reg_data = 0xFFFFFFFF;
