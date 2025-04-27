@@ -75,9 +75,9 @@
     - [MCU Mailbox](#mcu-mailbox)
       - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
       - [Reset](#reset-1)
-      - [MCU to SOC Receiver](#mcu-to-soc-receiver)
-      - [SOC Sender to MCU](#soc-sender-to-mcu)
-      - [SOC Sender to SOC Receiver Communication (MCU as intermediary)](#soc-sender-to-soc-receiver-communication-mcu-as-intermediary)
+      - [MCU to SOC Receiver Flow](#mcu-to-soc-receiver-flow)
+      - [SOC Sender to MCU Flow](#soc-sender-to-mcu-flow)
+      - [SOC Sender to SOC Receiver Communication Flow (MCU as intermediary)](#soc-sender-to-soc-receiver-communication-flow-mcu-as-intermediary)
   - [Sequences : Reset, Boot,](#sequences--reset-boot)
     - [MCI Boot Sequencer](#mci-boot-sequencer)
     - [MCU FW Update Flows](#mcu-fw-update-flows)
@@ -1399,7 +1399,7 @@ See [Caliptra SS MCU Trusted AXI Users](https://github.com/chipsalliance/caliptr
 
 The mailboxes start locked by MCU to prevent any data leaks across warm reset.  MCU shall set ```MBOX_DLEN``` to MBOX SRAM size and write 0 to ```MBOX_EXECUTE``` to release the MBOX and wipe the MBOX SRAM.  This should be done before using or allowing use of the mailboxes.
 
-#### MCU to SOC Receiver
+#### MCU to SOC Receiver Flow
 
 1. MCU attempts to lock mailbox by reading ```MBOX_LOCK``` register
   - If read returns 0, LOCK is granted and will be set to 1
@@ -1418,7 +1418,7 @@ The mailboxes start locked by MCU to prevent any data leaks across warm reset.  
 11. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during whole the lock session in ```MBOX_SRAM```
   - Mailbox lock cannot be re-acquired until zeroization is complete
 
-#### SOC Sender to MCU
+#### SOC Sender to MCU Flow
 
 1. Sender attempts to lock mailbox by reading ```MBOX_LOCK``` register
   - If read returns 0, LOCK is granted and will be set to 1
@@ -1434,7 +1434,7 @@ The mailboxes start locked by MCU to prevent any data leaks across warm reset.  
 9. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during whole the lock session in ```MBOX_SRAM```
   - Mailbox lock cannot be re-acquired until zeroization is complete
 
-#### SOC Sender to SOC Receiver Communication (MCU as intermediary)
+#### SOC Sender to SOC Receiver Communication Flow (MCU as intermediary)
 
 1. Sender attempts to lock mailbox by reading ```MBOX_LOCK``` register
   - If read returns 0, LOCK is granted and will be set to 1
