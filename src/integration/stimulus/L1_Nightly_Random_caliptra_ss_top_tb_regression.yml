@@ -5,6 +5,7 @@ contents:
   - generator:
       tags: ["L1", "caliptra_ss_top_tb", "Random", "Nightly"]
       path: ""
+      mode: round-robin
       weight: 100
       generations: 81
       formats:

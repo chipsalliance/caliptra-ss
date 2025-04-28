@@ -807,36 +807,8 @@ void boot_i3c_socmgmt_if(void) {
     // file name : caliptra_ss_clk_freq.h
     uint32_t clk_freq = CALIPTRA_SS_CLK_FREQ;
     VPRINTF(LOW, "MCU: I3C Clock Frequency: %u MHz\n", clk_freq);
+    write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
 
-    switch (clk_freq) {
-        case 160:
-            //-- for 160 MHz
-            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
-            break;
-        case 167:
-            //-- for 167 MHz
-            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
-            break;
-        case 170:
-            //-- for 170 MHz
-            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
-            break;
-        case 400:
-            //-- for 400 MHz
-            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
-            break;
-        case 500:
-            //-- for 500 MHz
-            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
-            break;
-        case 1000:
-            //-- for 1000 MHz
-            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
-            break;
-        default:
-            VPRINTF(LOW, "Error: Unsupported clock frequency %u MHz\n", clk_freq);
-            return;
-    }
 
     //-- Enable the I3C bus
     VPRINTF(LOW, "MCU: Writing I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW register  \n");

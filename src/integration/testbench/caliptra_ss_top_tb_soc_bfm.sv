@@ -66,6 +66,9 @@ int unsigned mcu_trace_buffer_wr_ptr;
 logic mcu_trace_buffer_valid;
 logic mcu_trace_buffer_wrapped;
 string cptra_ss_test_name;
+//flopped signals for assertions
+int unsigned trace_buffer_rd_ptr_f;
+int unsigned trace_buffer_wr_ptr_f;
 
 ///////////////////////////////////
 // TEST FILE INCULDES

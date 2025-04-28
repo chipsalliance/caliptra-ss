@@ -68,7 +68,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 		data = new[8];
 		data[0] = 0;
 		test_log.substep($psprintf("Reading DEVICE_STATUS register"));
-		for(int i = 0; i < 1; i++) begin //-- FIXME : should be 100
+		for(int i = 0; i < 100; i++) begin
 			i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_STATUS, 7, data);
 			if(data[0] == 'h3) begin
 				test_log.substep($psprintf("Recovery started : 'd %0d", data[0]));
@@ -77,7 +77,8 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 			#1us;
 		end
 		if(data[0] != 'h3) begin	
-			test_log.substep("Recovery did not start"); //-- FIXME : it must be an error
+			test_log.substep("Error : Recovery did not start");
+			err_count++;
 		end
 
 		//-- Reading RECOVERY_STATUS register for recovery status
@@ -115,15 +116,13 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 		//-- Image size byte 2 to 5 field to size of the image.
 		data = new[6];
 		data[0] = 'h0; // CMS set to 0
-		data[1] = 'h0; // FIXME : reset the FIFO by writing 1 
+		data[1] = 'h1; // Reset field set to 1
 
 		data[2] = img_sz_in_4B[7:0]; // Image size 0
 		data[3] = img_sz_in_4B[15:8]; // Image size 1
 		data[4] = img_sz_in_4B[23:16];  // Image size 2
 		data[5] = img_sz_in_4B[31:24];  // Image size 3
 
-		
-		
 		test_log.substep($psprintf("Sending write to INDIRECT_FIFO_CTRL register"));
 		i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_CTRL, data, 6);
 
@@ -144,19 +143,19 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 			for(int i = 0; i < wr_count_256B; i++) begin
 
 				test_log.step($psprintf("INDIRECT_FIFO_DATA write..'d %0d", i));
-				data = new[16];
+				data = new[256];
 				for(int k = 0; k < 16; k++) begin
 					line = "'h ";
 					//-- writing 16 bytes of data
 					for(int j = 0; j < 16; j++) begin
-						data[j] = image[i*16+k][j];
-						line = $psprintf("%s%2.0h", line, data[j]);
+						data[k*16+j] = image[i*16+k][j];
+						line = $psprintf("%s%2.0h", line, data[k*16+j]);
 					end
 					test_log.substep($psprintf("== Image['d %0d]: %s", (i*16+k), line));
-					test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
-					i3c_random_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, 256);
 					remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 16;
 				end
+				test_log.substep($psprintf("Sending random write to INDIRECT_FIFO_DATA register"));	
+				i3c_random_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, 256);
 
 				if (remaining_img_sz_in_bytes > 0) begin
 					test_log.substep($psprintf("Remaining Image Size (in bytes): 'd %0d", remaining_img_sz_in_bytes));
@@ -191,9 +190,8 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 			test_log.substep($psprintf("Writing 'd %0d of 16B blocks", wr_count_16B));
 		
 			for(int i = 0; i < wr_count_16B; i++) begin
-			// for(int i = 0; i < 1; i++) begin
 
-				test_log.step($psprintf("INDIRECT_FIFO_DATA write..'d %0d", i));
+				test_log.step($psprintf("INDIRECT_FIFO_DATA write..'d %0d / %0d", i, wr_count_16B));
 				data = new[16];
 				line = "'h ";
 				//-- writing 16 bytes of data
@@ -203,7 +201,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 				end
 				test_log.substep($psprintf("Image['d %0d]: %s", i, line));
 				test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
-				i3c_random_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, remaining_img_sz_in_bytes);
+				i3c_random_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, 16);
 				remaining_img_sz_in_bytes = remaining_img_sz_in_bytes - 16;
 			end
 				
@@ -226,7 +224,6 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 			test_log.substep($psprintf("Image['d %0d]: %s", ((wr_count_256B*16)+(wr_count_16B)), line));
 			test_log.substep($psprintf("Sending write to INDIRECT_FIFO_DATA register"));
 			i3c_write(recovery_target_addr, `I3C_CORE_INDIRECT_FIFO_DATA, data, (wr_count_4B*4));
-			
 		end
 
 		test_log.step("=============================================================");
@@ -256,7 +253,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 
 		data = new[2];
 		data[0] = 0;
-		for (int i = 0; i < 300; i++) begin
+		for (int i = 0; i < 100; i++) begin
 			test_log.substep($psprintf("Reading RECOVERY_STATUS register .. count 'd %0d", i));
 			i3c_read(recovery_target_addr, `I3C_CORE_RECOVERY_STATUS, 2, data);
 				
@@ -277,15 +274,24 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 				'h0: 
 					begin
 						test_log.substep("Recovery Status Code : 0x0: Not in recovery mode");
+						err_count++;
 						break;
 					end
 				'h1: 
 					begin
 						test_log.substep($psprintf("Awaiting recovery image.. wait loop count : 'd %0d", i));
+						if (i == 99) begin
+							test_log.substep("Error : Recovery did not start");
+							err_count++;
+						end
 					end
 				'h2:
 					begin
 						test_log.substep($psprintf("Booting recovery image .. wait loop count : 'd %0d", i));
+						if (i == 149) begin
+							test_log.substep("Error : Recovery did not start");
+							err_count++;
+						end
 					end
 				'h3: 
 					begin
@@ -295,21 +301,25 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 				'hc: 
 					begin
 						test_log.substep("Recovery failed");
+						err_count++;
 						break;
 					end
 				'hd: 
 					begin
 						test_log.substep("Recovery image authentication error");
+						err_count++;
 						break;
 					end
 				'he: 
 					begin
 						test_log.substep("Error entering  Recovery mode (might be administratively disabled)");
+						err_count++;
 						break;
 					end
 				'hf: 
 					begin
 						test_log.substep("Invalid component address space");
+						err_count++;
 						break;
 					end
 				'h11: 
@@ -321,6 +331,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 				default: 
 					begin 
 						test_log.substep($psprintf("Unknown recovery status : 0x%0h", data[0]));
+						err_count++;
 						break;
 					end
 			endcase

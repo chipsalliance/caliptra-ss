@@ -8,4 +8,4 @@ pre-exec: |
 plusargs:
   - '+AVY_TEST=i3c_mctp_pkt_wr'
   - '+num_of_mctp_pkt=2'
-  - '+i3c_run_time=100000'
+  - '+i3c_run_time=200000'

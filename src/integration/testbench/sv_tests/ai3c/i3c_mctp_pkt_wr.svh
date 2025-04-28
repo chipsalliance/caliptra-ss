@@ -124,8 +124,8 @@ class i3c_mctp_pkt_wr extends cptra_ss_i3c_core_base_test;
             #100us;
 		end
 
-        test_log.step("Waiting for 100us to allow mcu to read the packet");
-        #100us;
+        test_log.step("Waiting for 200us to allow mcu to read the packet");
+        #200us;
 
 		test_log.step("=============================================================");
 		test_log.step("I3C MCTP Packet Write completed");
