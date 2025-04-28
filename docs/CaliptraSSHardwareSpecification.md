@@ -123,8 +123,6 @@
       - [MCI Boot FSM Breakpoint Flow](#mci-boot-fsm-breakpoint-flow)
   - [MCI Design for Test (DFT)](#mci-design-for-test-dft)
     - [Reset Controls](#reset-controls)
-- [Subsystem Memory Map](#subsystem-memory-map)
-- [Subsystem HW Security](#subsystem-hw-security)
 
 
 # Scope
@@ -1582,8 +1580,3 @@ The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At thi
 ### Reset Controls
 
 MCI controls various resets for other IPs like MCU and Caliptra Core. When the `scan_mode` input port is set these resets are directly controlled by the mcu_rst_b input intead of the internal MCI logic.
-
-
-# Subsystem Memory Map
-
-# Subsystem HW Security

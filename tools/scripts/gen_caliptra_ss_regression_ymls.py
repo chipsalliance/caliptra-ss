@@ -208,8 +208,8 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
         # Adjust generations based on criteria
         template_count = len(filtered_data)
         if template_count > 0:
-            adjusted_generations = max(generations, template_count * 10)
-            logger.info(f"Setting generations to {adjusted_generations} (10x template count)")
+            adjusted_generations = max(generations, template_count * 3)
+            logger.info(f"Setting generations to {adjusted_generations} (3x template count)")
             generations = adjusted_generations
         else:
             logger.warning(f"No templates matched for criteria: {criteria}")
@@ -225,6 +225,7 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
         generator_data = CommentedMap()
         generator_data['generator'] = CommentedMap()
         generator_data['generator']['tags'] = tags
+        generator_data['generator']['mode'] = "round-robin"
         generator_data['generator']['path'] = DoubleQuotedScalarString("")
         generator_data['generator']['weight'] = 100
         generator_data['generator']['generations'] = generations
@@ -284,6 +285,9 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
             
             # Write path
             yml_file.write(f"      path: \"{generator_data['generator']['path']}\"\n")
+            
+            # Write mode
+            yml_file.write(f"      mode: {generator_data['generator']['mode']}\n")
             
             # Write weight
             yml_file.write(f"      weight: {generator_data['generator']['weight']}\n")
