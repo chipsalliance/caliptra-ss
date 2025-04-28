@@ -1150,18 +1150,17 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 
 | Facing   | Type   | Width  | Name                                    | Description |
 |:---------|:-------|:-------|:----------------------------------------|:-----------|
-| Internal | Input  | 1      | `lc_fatal_state_error_i`                  | LCC invalid state error   |
-| Internal | Input  | Struct | `from_lcc_to_otp_program_i`               | **FIXME**   |
-| Internal | Input  | Struct | `lc_dft_en_i`                             | **FIXME**   |
-| Internal | Input  | Struct | `lc_hw_debug_en_i`                        | **FIXME**   |
-| Internal | Input  | Struct | `from_otp_to_lcc_program_i`               | **FIXME**   |
-| Internal | Input  | 1      | `ss_dbg_manuf_enable_i`                   | **FIXME**   |
-| Internal | Input  | 64     | `ss_soc_dbg_unlock_level_i`               | **FIXME**   |
-| External | Output | 1      | `SOC_DFT_EN`                              | **FIXME**   |
-| External | Output | 1      | `SOC_HW_DEBUG_EN`                         | **FIXME**   |
-| Internal | Output | Struct | `security_state_o`                        | **FIXME**   |
-| External | Input  | 1      | `FIPS_ZEROIZATION_PPD_i`                  | **FIXME**   |
-| Internal | Output | 1      | `FIPS_ZEROIZATION_CMD_o`                  | **FIXME**   |
+| Internal | Input  | Struct | `from_lcc_to_otp_program_i`             | These are the LCC port lists that program corressponding fuse partition for LCC     |
+| Internal | Input  | Struct | `lc_dft_en_i`                           | LCC decoding signal, see LCC section   |
+| Internal | Input  | Struct | `lc_hw_debug_en_i`                      | LCC decoding signal, see LCC section   |
+| Internal | Input  | Struct | `from_otp_to_lcc_program_i`             | These ports comes from fuse partitions and show LCC's non-volatile state   |
+| Internal | Input  | 1      | `ss_dbg_manuf_enable_i`                 | Caliptra-core enables manuf debug with this  |
+| Internal | Input  | 64     | `ss_soc_dbg_unlock_level_i`             | Caliptra-core enables prod debug with this. Since there are multiple debug levels, the debug level is one-hot encoded to this port  |
+| External | Output | 1      | `SOC_DFT_EN`                            | Masked LCC decoding signal, see LCC section    |
+| External | Output | 1      | `SOC_HW_DEBUG_EN`                       | Masked LCC decoding signal, see LCC section  |
+| Internal | Output | Struct | `security_state_o`                      | Caliptra-core's security state  |
+| External | Input  | 1      | `FIPS_ZEROIZATION_PPD_i`                | Physical pin to trigger zeroization   |
+| Internal | Output | 1      | `FIPS_ZEROIZATION_CMD_o`                | Masked zeroization command signal   |
 
 ## Memory Map	/ Address map
 
