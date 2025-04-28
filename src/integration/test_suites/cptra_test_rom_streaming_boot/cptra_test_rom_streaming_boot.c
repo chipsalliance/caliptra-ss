@@ -299,11 +299,8 @@ void recovery_sequence() {
     i3c_reg_data = 0x00000000;
     i3c_reg_data = 0x5 | i3c_reg_data;
     update_device_status(i3c_reg_data); // 0x5: Running Recovery Image
- 
 
     VPRINTF(LOW, "CPTRA: Recovery Sequence completed successfully\n");
-
-    SEND_STDOUT_CTRL(0xff);
         
 }
 
@@ -337,6 +334,7 @@ void main(void) {
 
     VPRINTF(LOW, "Initiating Recovery Sequence\n");
     recovery_sequence();
+    wait(10000);
 
     if (fail) {
         VPRINTF(FATAL, " cptra_ss_test_rom failed!\n");
