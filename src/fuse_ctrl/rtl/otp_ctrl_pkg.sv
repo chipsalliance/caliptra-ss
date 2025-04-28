@@ -348,11 +348,12 @@ package otp_ctrl_pkg;
     logic [31:0] upper_addr;  // Upper bound of the address range
   } access_control_entry_t;
   
-  localparam int FC_TABLE_NUM_RANGES = 2;
+  localparam int FC_TABLE_NUM_RANGES = 3;
   
   localparam access_control_entry_t access_control_table [FC_TABLE_NUM_RANGES] = '{
-    '{ lower_addr: 32'h00000000, upper_addr: 32'h00000FD8}, // Caliptra core
-    '{ lower_addr: 32'h00000090, upper_addr: 32'h00000FD8}  // MCU core
+    '{ lower_addr: 32'h00000000, upper_addr: 32'h00003FD8}, // Caliptra core
+    '{ lower_addr: 32'h000000D0, upper_addr: 32'h00003FD8},  // MCU core
+    '{ lower_addr: 32'h00000000, upper_addr: 32'h00000040}  // MCU core
   };
 
     //------------------------------------------------------------------

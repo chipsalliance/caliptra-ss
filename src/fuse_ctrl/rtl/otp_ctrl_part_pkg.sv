@@ -151,7 +151,7 @@ package otp_ctrl_part_pkg;
     // SECRET_TEST_UNLOCK_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd0,
+      offset:           14'd0,
       size:             72,
       key_sel:          SecretTestUnlockKey,
       secret:           1'b1,
@@ -167,7 +167,7 @@ package otp_ctrl_part_pkg;
     // SECRET_MANUF_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd72,
+      offset:           14'd72,
       size:             72,
       key_sel:          SecretManufKey,
       secret:           1'b1,
@@ -183,7 +183,7 @@ package otp_ctrl_part_pkg;
     // SECRET_PROD_PARTITION_0
     '{
       variant:          Buffered,
-      offset:           12'd144,
+      offset:           14'd144,
       size:             16,
       key_sel:          SecretProdKey0,
       secret:           1'b1,
@@ -199,7 +199,7 @@ package otp_ctrl_part_pkg;
     // SECRET_PROD_PARTITION_1
     '{
       variant:          Buffered,
-      offset:           12'd160,
+      offset:           14'd160,
       size:             16,
       key_sel:          SecretProdKey1,
       secret:           1'b1,
@@ -215,7 +215,7 @@ package otp_ctrl_part_pkg;
     // SECRET_PROD_PARTITION_2
     '{
       variant:          Buffered,
-      offset:           12'd176,
+      offset:           14'd176,
       size:             16,
       key_sel:          SecretProdKey2,
       secret:           1'b1,
@@ -231,7 +231,7 @@ package otp_ctrl_part_pkg;
     // SECRET_PROD_PARTITION_3
     '{
       variant:          Buffered,
-      offset:           12'd192,
+      offset:           14'd192,
       size:             16,
       key_sel:          SecretProdKey3,
       secret:           1'b1,
@@ -247,8 +247,8 @@ package otp_ctrl_part_pkg;
     // SW_MANUF_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd208,
-      size:             1008,
+      offset:           14'd208,
+      size:             11080,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
       sw_digest:        1'b1,
@@ -263,7 +263,7 @@ package otp_ctrl_part_pkg;
     // SECRET_LC_TRANSITION_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd1216,
+      offset:           14'd11288,
       size:             184,
       key_sel:          SecretLifeCycleTransitionKey,
       secret:           1'b1,
@@ -279,7 +279,7 @@ package otp_ctrl_part_pkg;
     // SVN_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1400,
+      offset:           14'd11472,
       size:             40,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -295,7 +295,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_TEST_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1440,
+      offset:           14'd11512,
       size:             64,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -311,7 +311,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_HASHES_MANUF_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1504,
+      offset:           14'd11576,
       size:             64,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -327,7 +327,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_HASHES_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1568,
+      offset:           14'd11640,
       size:             752,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -343,7 +343,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_REVOCATIONS_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd2320,
+      offset:           14'd12392,
       size:             152,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -359,7 +359,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_SECRET_PROD_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd2472,
+      offset:           14'd12544,
       size:             520,
       key_sel:          VendorSecretProdKey,
       secret:           1'b1,
@@ -375,8 +375,8 @@ package otp_ctrl_part_pkg;
     // VENDOR_NON_SECRET_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd2992,
-      size:             1016,
+      offset:           14'd13064,
+      size:             3232,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
       sw_digest:        1'b1,
@@ -391,7 +391,7 @@ package otp_ctrl_part_pkg;
     // LIFE_CYCLE
     '{
       variant:          LifeCycle,
-      offset:           12'd4008,
+      offset:           14'd16296,
       size:             88,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -560,14 +560,14 @@ package otp_ctrl_part_pkg;
 
 
   // OTP invalid partition default for buffered partitions.
-  parameter logic [32767:0] PartInvDefault = 32768'({
+  parameter logic [131071:0] PartInvDefault = 131072'({
     704'({
       320'h9E02C05185213FCF029CB3E62CE6FDDCBA7F6C9D2519EA1AACC8E1922AF7B82D7479CD41D20282EB,
       384'h58C2A1BA65D13A0FE39B01C95A626001CC969493D06CDB450C26A87F7BF58DDA1149EFDC5F023299DFB44D70A9F90685
     }),
-    8128'({
+    25856'({
       64'hBC95E25E95D30F45,
-      3968'h0, // unallocated space
+      21696'h0, // unallocated space
       256'h0,
       256'h0,
       256'h0,
@@ -722,9 +722,9 @@ package otp_ctrl_part_pkg;
       128'hD396D1CE085BDC31105733EAA3880C5A,
       128'h7E17D06B5D4E0DDDDBB9844327F20FB5
     }),
-    8064'({
+    88640'({
       64'h86224F25DAB6226B,
-      4008'h0, // unallocated space
+      21736'h0, // unallocated space
       384'h0,
       384'h0,
       384'h0,
@@ -735,7 +735,7 @@ package otp_ctrl_part_pkg;
       384'h0,
       16'h0,
       128'h0,
-      768'h0,
+      63616'h0,
       8'h0
     }),
     128'({

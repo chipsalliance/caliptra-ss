@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -29,21 +45,21 @@ typedef struct {
 // Buffered partitions.
 static partition_t partitions[8] = {
     // SECRET_TEST_UNLOCK_PARTITION
-    { .address = 0x000, .digest_address = 0x040, .index = 0 },
+    { .address = 0x0000, .digest_address = 0x0040, .index = 0 },
      // SECRET_MANUF_PARTITION
-    { .address = 0x048, .digest_address = 0x088, .index = 1 },
+    { .address = 0x0048, .digest_address = 0x0088, .index = 1 },
     // SECRET_PROD_PARTITION_0
-    { .address = 0x090, .digest_address = 0x098, .index = 2 },
+    { .address = 0x0090, .digest_address = 0x0098, .index = 2 },
     // SECRET_PROD_PARTITION_1 
-    { .address = 0x0A0, .digest_address = 0x0A8, .index = 3 },
+    { .address = 0x00A0, .digest_address = 0x00A8, .index = 3 },
     // SECRET_PROD_PARTITION_2 
-    { .address = 0x0B0, .digest_address = 0x0B8, .index = 4 },
+    { .address = 0x00B0, .digest_address = 0x00B8, .index = 4 },
     // SECRET_PROD_PARTITION_3
-    { .address = 0x0C0, .digest_address = 0x0C8, .index = 5 },
+    { .address = 0x00C0, .digest_address = 0x00C8, .index = 5 },
     // SECRET_LC_TRANSITION_PARTITION
-    { .address = 0x4C0, .digest_address = 0x570, .index = 7 },  
+    { .address = 0x2C18, .digest_address = 0x2CC8, .index = 7 },  
     // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0x9A8, .digest_address = 0xBA8, .index = 13 }
+    { .address = 0x3100, .digest_address = 0x3300, .index = 13 }
 };
 
 void init_fail() {

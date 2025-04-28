@@ -114,18 +114,15 @@
     - [MCI Debug Access](#mci-debug-access)
       - [MCI DMI](#mci-dmi)
         - [MCU DMI Enable Control](#mcu-dmi-enable-control)
-        - [MCI DMI Memory Map](#mci-dmi-memory-map)
-          - [DMI Only Registers](#dmi-only-registers)
         - [MCI DMI Interface](#mci-dmi-interface)
         - [MCI DMI Memory Map](#mci-dmi-memory-map)
+          - [DMI Only Registers](#dmi-only-registers)
         - [DMI MCU SRAM Access](#dmi-mcu-sram-access)
         - [DMI MCU Trace Buffer Access](#dmi-mcu-trace-buffer-access)
     - [MCI Boot FSM Breakpoint](#mci-boot-fsm-breakpoint)
       - [MCI Boot FSM Breakpoint Flow](#mci-boot-fsm-breakpoint-flow)
   - [MCI Design for Test (DFT)](#mci-design-for-test-dft)
     - [Reset Controls](#reset-controls)
-- [Subsystem Memory Map](#subsystem-memory-map)
-- [Subsystem HW Security](#subsystem-hw-security)
 
 
 # Scope
@@ -1007,21 +1004,24 @@ The privilaged users for the MCI CSRs are:
 
 1. MCU
 2. MCI SOC Config User (MSCU)
+3. MCU SRAM Config User (MSRCU)
 
-Both of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionalality like timers that are needed by the SOC but are critical for MCU functionality. 
+All of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionalality like timers that are needed by the SOC but are critical for MCU functionality. 
 
-The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MCSCU can configure and lock down the MCI configuration. 
-
+The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MCSCU can configure and lock down the MCI configuration. MSCU can be **disabled** by setting the strap to 0x0. For debug the MSCU strap can be set to all 1s meaning every access will give this level of privilege. 
+The MCRCU populates the MCU FW update in MCU SRAM. There are a few registers within the MCI register bank it has special access to for facilitating the FW update. 
 The registers can be split up into a few different categories:
 
 
 | **Write restrictions**     | **Description**     | 
 | :---------     | :---------| 
 | MCU Only        | These registers are only meant for MCU to have access. There is no reason for SOC or the MCI SOC Config User to access the. Example is the MTIMER|
-| MCU or MCSU      |  Access restricted to trusted agent but not locked. Example:RESET_REQUEST for MCU. |
+| MCU or MCSU      |  Access restricted to trusted agents but not locked. Example:RESET_REQUEST for MCU. |
+| MCU or MCRSU      |  Access restricted to trusted agents but not locked. Example:RESET_REASON for MCU. |
 | MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each warm reset |
 | Sticky MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each cold reset |
 | Locked by SS_CONFIG_DONE_STICKY        | Configuration once per cold reset. |
+| Locked by SS_CONFIG_DONE        | Configuration once per warm reset. |
 | MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilieds then locked until next warm reset |
 | MBOX_USER_LOCK       |  Mailbox specific configuration locked by it's own LOCK bit. Configured afer each arem reset.       |
 
@@ -1036,10 +1036,12 @@ MCI has the following types of straps:
 | :---------     | :---------| :---------| 
 | **Non-configurable Direct** |Direct  | Used directly by MCI and not sampled at all. These shall be constant non-configurable inputs to CSS/MCI. Inside MCI these are not overridable by SW.| 
 | **Non-configurable Sampled** | Sampled*  | Sampled once per cold boot and not overridable by SW | 
-| **Configurable Sampled** | Sampled*  | Sampled once per cold boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
+| **Configurable Sampled** | Sampled**  | Sampled once per warm boot and SW can override via MCI Register Bank until SS_CONFIG_DONE is set.|
 
 
 *NOTE: Strap sampling occurs when mci_rst_b is deasserted and is typically performed once per cold boot. This process is controlled by the SS_CONFIG_DONE_STICKY register; when set, sampling is skipped. If a warm reset happens before SS_CONFIG_DONE_STICKY is set, the straps will be sampled again, although this is not the usual behavior.
+
+**NOTE: Strap sampling occurs when mci_rst_b is deasserted.
 
 | **Strap Name**     | **Strap Type**|**Description**     | 
 | :---------     | :---------| :---------| 
@@ -1106,16 +1108,19 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 ### Watchdog Timer
 The Watchdog Timer within the MCI is a crucial component designed to enhance the reliability and robustness of the SoC. This timer monitors the operation of the system and can trigger a system reset if it detects that the system is not functioning correctly. The Watchdog Timer is configurable through CSRs and provides various timeout periods and control mechanisms to ensure the system operates within defined parameters.
 The Watchdog timer contains two different timers. These timers can be configured in two different modes:
-	1. Cascade
-	2. Independent
+
+1. Cascade
+2. Independent
 
 In cascade mode when the first timer reaches a timeout two things will happen:
-	1. An error interrupt will be triggered
-	2. Timer 2 will start counting
+
+1. An error interrupt will be triggered
+2. Timer 2 will start counting
 
 If the WDT is not serviced before Timer 2 times out two things happen:
-	1. NMI output pin is asserted
-	2. NMI HW_ERROR_FATAL is triggered which can assert an error_fatal on the MCI port.
+	
+1. NMI output pin is asserted
+2. NMI HW_ERROR_FATAL is triggered which can assert an error_fatal on the MCI port.
 
 In Independent mode the two timers are completely independent of each other. When they timeout an error interrupt will be asserted. The NMI will never be asserted while in independent mode.
 
@@ -1125,7 +1130,7 @@ There are 2 mailboxes in the MCI. Each Mailbox component of the MCI allows for s
 
 #### MCU Mailbox Limited Trusted AXI users
 
-There are 4 trusted AXI Users determined at build time via parameters or via MCI lockable registers. These users, a default user 0xFFFF_FFFF, and MCU are the only AXI users that can access or obtain a lock on the mailbox.
+There are 5 trusted AXI Users determined at build time via parameters or via MCI lockable registers. These users, a default user 0xFFFF_FFFF, and MCU are the only AXI users that can access or obtain a lock on the mailbox.
 
 Any untrusted AXI user trying to read or write the mailbox will receive an AXI error response ([MCU Mailbox Errors](#mcu-mailbox-errors)).
 
@@ -1258,7 +1263,7 @@ The entire MCU SRAM has ECC protection with no ability to disable. Single bit er
 
 **MCI actions for single bit errors:**
 - Correct data and pass corrected data back to the initiator.
-- Send interrupt notification to MCU.
+- Send maskable interrupt notification to MCU.
 
 **MCI actions for double bit errors:**
 - AXI SLVERR response to the initiator
@@ -1281,7 +1286,7 @@ MCI tracks three different ```RESET_REASON``` in its register bank:
 
 ```FW_BOOT_UPD_RESET``` and ```FW_HITLESS_UPD_RESET``` are typically set and cleared by the Caliptra Core during a firmware boot or hitless update flow. If Caliptra Core is not used in the design, the SoC needs to designate a different trusted entity to control these registers.
 
-```FW_EXEC_CTLR[2]``` is an input signal to the MCI and is sent as an interrupt (```notif_cptra_mcu_reset_req_sts```) to the MCU. This interrupt should be cleared by the MCU before the requested reset with ```RESET_REQUEST.req```. After a warm reset, setting ```FW_EXEC_CTRL[2]``` will trigger an interrupt to the MCU, indicating that the MCU should reset itself with ```RESET_REQUEST.req```. After the first MCU reset request, when this input signal is cleared, it triggers the interrupt. The MCU is held in reset until ```FW_EXEC_CTRL[2]``` is set, with a minimum reset time determined by the ```MIN_MCU_RST_COUNTER``` MCI parameter.
+```FW_EXEC_CTLR[2]``` is an input signal to the MCI and is sent as an interrupt (```notif_cptra_mcu_reset_req_sts```) to the MCU. This interrupt should be cleared by the MCU before it requests a reset with ```RESET_REQUEST.req```. After a warm reset, setting ```FW_EXEC_CTRL[2]``` will trigger an interrupt to the MCU, indicating that the MCU should reset itself with ```RESET_REQUEST.req```. After the first MCU reset request, when this input signal is cleared, it triggers the interrupt. The MCU is held in reset until ```FW_EXEC_CTRL[2]``` is set, with a minimum reset time determined by the ```MIN_MCU_RST_COUNTER``` MCI parameter.
 
 ### MCI AXI Subordinate
 
@@ -1344,9 +1349,9 @@ Masks are used to set the severity of each error for these components. These can
 | :---------              | :---------            | :---------                 |:---------                |
 | Aggregate error[5:0]    | Caliptra core         | Both                       | [Caliptra errors](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling) |
 | Aggregate error[11:6]   | MCU                   | Both                       | DCCM double bit ECC error is fatal <br> DCCM single bit ECC error is non-fatal |
-| Aggregate error[17:12]  | Life cycle controller | Fatal                      | [LCC alerts](https://opentitan.org/book/hw/ip/lc_ctrl/doc/interfaces.html#security-alerts) |
-| Aggregate error[23:18]  | OTP Fuse controller   | Fatal                      | [FC alerts](https://opentitan.org/book/hw/top_earlgrey/ip_autogen/otp_ctrl/doc/interfaces.html#security-alerts) |
-| Aggregate error[29:24]  | I3C                   | Non-Fatal                  | Peripheral reset and escalated reset pins from I3C <br> **TODO:** Add a link to I3C doc |
+| Aggregate error[17:12]  | Life cycle controller | Fatal                      | [LCC alerts [14:12]](https://opentitan.org/book/hw/ip/lc_ctrl/doc/interfaces.html#security-alerts) |
+| Aggregate error[23:18]  | OTP Fuse controller   | Fatal                      | [FC Error [23]](https://opentitan.org/book/hw/top_earlgrey/ip_autogen/otp_ctrl/doc/interfaces.html#interrupts), [FC alerts [22:18]](https://opentitan.org/book/hw/top_earlgrey/ip_autogen/otp_ctrl/doc/interfaces.html#security-alerts) |
+| Aggregate error[29:24]  | I3C                   | Non-Fatal                  | [Peripheral reset [25]](https://github.com/chipsalliance/i3c-core/blob/main/doc/source/overview.md#other-features) and [escalated reset [24]](https://github.com/chipsalliance/i3c-core/blob/main/doc/source/overview.md#other-features) pins from I3C   |
 | Aggregate error[31:30]  | Spare bits            | None                       | Spare bits for integrator use |
 
 MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
@@ -1449,6 +1454,22 @@ MCI provides the logic for these enables. When the following condition(s) are me
 
 *Note: These are the exact same controls Calipitra Core uses for DMI enable* 
 
+
+##### MCI DMI Interface
+
+The MCI DMI Interface gives select access to the blocks inside MCI.
+
+Access to MCI's DMI space (MCU Uncore) is split into two different levels of security:
+
+| **Access** 	| **Description** 	| 
+| :--------- 	| :--------- 	| 
+| **Debug Intent/Manufacture Mode**|  Always accessable over DMI whenever [MCU uncore DMI enabled](#mcu-dmi-enable-control).| 
+| **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked| 
+
+Illegal accesses will result in writes being dropped and reads returning 0.
+
+*NOTE: MCI DMI address space is different than MCI AXI address space.*
+
 ##### MCI DMI Memory Map
 
 | Register Name | DMI Address | Access Type | Debug Intent Access | Manufacture Mode Access | Debug Unlock Access |
@@ -1509,71 +1530,6 @@ MCI\_DMI\_MCU\_HW\_OVERRIDE
 | `reserved`      | [31:1]  | RW          | Reserved         |
 
 
-##### MCI DMI Interface
-
-The MCI DMI Interface gives select access to the blocks inside MCI.
-
-Access to MCI's DMI space is split into two different levels of security:
-
-| **Access** 	| **Description** 	| 
-| :--------- 	| :--------- 	| 
-| **Debug Intent/Manufacture Mode**|  Always accessable over DMI whenever [MCU uncore DMI enabled](#mcu-dmi-enable-control).| 
-| **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked| 
-
-Illegal accesses will result in writes being dropped and reads returning 0.
-
-*NOTE: MCI DMI address space is different than MCI AXI address space.*
-
-##### MCI DMI Memory Map
-
-| Register Name | DMI Address | Access Type | Debug Intent/Manufacture Mode Access | Debug Unlock Access |
-| :---- | :---- | :---- | :---- |  :---- |
-| **NOT ENABLED IN 2.0** MBOX0\_DLEN | 0x50 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX0\_DOUT | 0x51 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX0\_STATUS | 0x52 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX0\_DIN | 0x53 | WO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX1\_DLEN | 0x54 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX1\_DOUT | 0x55 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX1\_STATUS | 0x56 | RO | Yes |  |
-| **NOT ENABLED IN 2.0** MBOX1\_DIN | 0x57 | WO | Yes |  |
-| MCU\_SRAM\_ADDR | 0x58 | RW |  | Yes |
-| MCU\_SRAM\_DATA | 0x59 | RW |  | Yes |
-| MCU\_TRACE\_STATUS | 0x5A | RO |  | Yes |
-| MCU\_TRACE\_CONFIG | 0x5B | RO |  | Yes |
-| MCU\_TRACE\_WR\_PTR | 0x5C | RO |  | Yes |
-| MCU\_TRACE\_RD\_PTR | 0x5D | RW |  | Yes |
-| MCU\_TRACE\_DATA | 0x5E | RO |  | Yes |
-| HW\_FLOW\_STATUS | 0x5F | RO | Yes |  |
-| RESET\_REASON | 0x60 | RO | Yes |  |
-| RESET\_STATUS | 0x61 | RO | Yes |  |
-| FW\_FLOW\_STATUS | 0x62 | RO | Yes |  |
-| HW\_ERROR\_FATAL | 0x63 | RO | Yes |  |
-| AGG\_ERROR\_FATAL | 0x64 | RO | Yes |  |
-| HW\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |
-| AGG\_ERROR\_NON\_FATAL | 0x66 | RO | Yes |  |
-| FW\_ERROR\_FATAL | 0x67 | RO | Yes |  |
-| FW\_ERROR\_NON\_FATAL | 0x68 | RO | Yes |  |
-| HW\_ERROR\_ENC | 0x69 | RO | Yes |  |
-| FW\_ERROR\_ENC | 0x6A | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_0 | 0x6B | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_1 | 0x6C | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_2 | 0x6D | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_3 | 0x6E | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_4 | 0x6F | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_5 | 0x70 | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_6 | 0x71 | RO | Yes |  |
-| FW\_EXTENDED\_ERROR\_INFO\_7 | 0x72 | RO | Yes |  |
-| RESET\_REQUEST | 0x73 | RW |  | Yes |
-| MCI\_BOOTFSM\_GO | 0x74 | RW | Yes |  |
-| CPTRA\_BOOT\_GO | 0x75 | RW |  | Yes |
-| FW\_SRAM\_EXEC\_REGION\_SIZE | 0x76 | RW |  | Yes |
-| MCU\_RESET\_VECTOR | 0x77 | RW |  | Yes |
-| SS\_DEBUG\_INTENT | 0x78 | RW |  | Yes |
-| SS\_CONFIG\_DONE | 0x79 | RW |  | Yes |
-| SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  | Yes |
-| MCU\_NMI\_VECTOR | 0x7B | RW |  | Yes |
-
-
 ##### DMI MCU SRAM Access
 
 MCU SRAM is only accessable via DMI while in **Debug Unlock**. While in **Debug Unlock** DMI has RW permission to the entire MCU SRAM.
@@ -1596,6 +1552,8 @@ To read content from the MCU SRAM the flow is:
 2. Read `MCU_SRAM_DATA`
 
 There is no error response on the DMI port, so any ECC error must be checked via the ECC registers in the MCI Register Bank.  
+
+**Important**: MCU core must be halted to access MCU SRAM via DMI. Failure to do so will result in collisions between the two interfaces and an error will be reported.
 
 
 ##### DMI MCU Trace Buffer Access
@@ -1622,8 +1580,3 @@ The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At thi
 ### Reset Controls
 
 MCI controls various resets for other IPs like MCU and Caliptra Core. When the `scan_mode` input port is set these resets are directly controlled by the mcu_rst_b input intead of the internal MCI logic.
-
-
-# Subsystem Memory Map
-
-# Subsystem HW Security

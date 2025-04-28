@@ -119,8 +119,10 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
     yaml.default_flow_style = False
     yaml.indent(sequence=4, offset=2)
 
-    # Check if this is an L0 Promote regression
-    if criteria.get("L0") == "L0" and criteria.get("PromotePipeline") == "Promote":
+    # Check if this is
+    # * L0 Promote regression
+    # * Nightly Directed regression
+    if (criteria.get("L0") == "L0" and criteria.get("PromotePipeline") == "Promote") or (criteria.get("L1") == "L1" and criteria.get("Directed|Random") == "Directed"):
         # Create the new L0 Promote structure
         document = CommentedMap()
         document["document"] = CommentedMap([('schema', 1.0)])
@@ -129,7 +131,10 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
         tests_map = CommentedMap()
         
         # Create tags list with flow style
-        tags = CommentedSeq(["L0"])  # L0 is always required for L0 Promote
+        if (criteria.get("L0") == "L0"):
+            tags = CommentedSeq(["L0"])  # L0 is always required for L0 Promote
+        else:
+            tags = CommentedSeq(["L1"])  # L1 is always required for L1 Directed
         
         # Add tags from OtherTags
         if criteria.get("OtherTags"):
@@ -173,7 +178,11 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
         contents.append(tests_entry)
         
         # Write the document to the file 
-        with open(yml_file_path, 'w', encoding='utf-8') as yml_file:
+        if criteria.get("Directed|Random") == "Directed":
+            modded_yml_path = re.sub(r"_Directed_", "_Directed_Strict_", yml_file_path)
+        else:
+            modded_yml_path = yml_file_path
+        with open(modded_yml_path, 'w', encoding='utf-8') as yml_file:
             # Write document part
             yml_file.write("document:\n")
             yml_file.write("  schema: 1.0\n")
@@ -194,13 +203,13 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
             for path in paths:
                 yml_file.write(f"        - {path}\n")
             
-    else:
+    if not (criteria.get("L0") == "L0" and criteria.get("PromotePipeline") == "Promote"):
         # For non-L0 Promote, use the generator format
         # Adjust generations based on criteria
         template_count = len(filtered_data)
         if template_count > 0:
-            adjusted_generations = max(generations, template_count * 10)
-            logger.info(f"Setting generations to {adjusted_generations} (10x template count)")
+            adjusted_generations = max(generations, template_count * 3)
+            logger.info(f"Setting generations to {adjusted_generations} (3x template count)")
             generations = adjusted_generations
         else:
             logger.warning(f"No templates matched for criteria: {criteria}")
@@ -216,6 +225,7 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
         generator_data = CommentedMap()
         generator_data['generator'] = CommentedMap()
         generator_data['generator']['tags'] = tags
+        generator_data['generator']['mode'] = "round-robin"
         generator_data['generator']['path'] = DoubleQuotedScalarString("")
         generator_data['generator']['weight'] = 100
         generator_data['generator']['generations'] = generations
@@ -275,6 +285,9 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
             
             # Write path
             yml_file.write(f"      path: \"{generator_data['generator']['path']}\"\n")
+            
+            # Write mode
+            yml_file.write(f"      mode: {generator_data['generator']['mode']}\n")
             
             # Write weight
             yml_file.write(f"      weight: {generator_data['generator']['weight']}\n")

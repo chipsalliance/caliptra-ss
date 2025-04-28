@@ -25,8 +25,13 @@ contents:
         - ../test_suites/smoke_test_mcu_sram_protected_region/smoke_test_mcu_sram_protected_region.yml
         - ../test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region.yml
         - ../test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region_max_size.yml
+        - ../test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region_random_sram_config_axi_user.yml
         - ../test_suites/smoke_test_mcu_sram_ecc_db/smoke_test_mcu_sram_ecc_db.yml
         - ../test_suites/smoke_test_mcu_sram_ecc_sb/smoke_test_mcu_sram_ecc_sb.yml
+        - ../test_suites/smoke_test_mci_axi_miss/smoke_test_mci_axi_miss.yml
+        - ../test_suites/smoke_test_mci_soc_config_always_enable/smoke_test_mci_soc_config_always_enable.yml
+        - ../test_suites/smoke_test_mci_soc_config_disable/smoke_test_mci_soc_config_disable.yml
+        - ../test_suites/smoke_test_mci_soc_config_diff_mcu/smoke_test_mci_soc_config_diff_mcu.yml
         - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer.yml
         - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_single.yml
         - ../test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_random.yml
@@ -38,10 +43,11 @@ contents:
         - ../test_suites/smoke_test_mcu_mbox_ecc/smoke_test_mcu_mbox0_ecc.yml
         - ../test_suites/smoke_test_mcu_mbox_strb_wr_csr/smoke_test_mcu_mbox0_strb_wr_csr.yml
         - ../test_suites/smoke_test_mcu_mbox_csrs_warm_rst/smoke_test_mcu_mbox0_csrs_warm_rst.yml
-        - ../test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check.yml
         - ../test_suites/smoke_test_lcc_registers/smoke_test_lcc_registers.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_bus_ecc_error/caliptra_ss_fuse_ctrl_bus_ecc_error.yml
         - ../test_suites/smoke_test_wdt/smoke_test_wdt.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_integrity_check/caliptra_ss_fuse_ctrl_integrity_check.yml
+        - ../test_suites/smoke_test_error_handling/smoke_test_error_handling.yml
         - ../test_suites/caliptra_ss_lcc_volatile_unlock/caliptra_ss_lcc_volatile_unlock.yml
         - ../test_suites/caliptra_ss_lcc_alert/caliptra_ss_lcc_alert.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_interrupts/caliptra_ss_fuse_ctrl_interrupts.yml
