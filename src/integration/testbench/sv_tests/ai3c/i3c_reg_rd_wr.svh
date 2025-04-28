@@ -92,8 +92,9 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 		test_log.substep($psprintf("Sending read to INDIRECT_FIFO_CTRL register"));
 		read_reg(recovery_target_addr,`I3C_CORE_INDIRECT_FIFO_CTRL,  6, read_data);		
 		check_data(read_data, data, 6);
-
+		
 		//-- FIXME: https://github.com/chipsalliance/i3c-core/issues/36
+		//-- this optional. there is no use case for this register read for BMC
 		// test_log.step("=============================================================");
 		// test_log.step("Step : Write & Read back I3C_CORE_INDIRECT_FIFO_DATA Registers");
 
