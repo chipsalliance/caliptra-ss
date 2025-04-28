@@ -995,6 +995,8 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Facing | Type | Width | Name | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
 | External | Input | 1 | `clk` |  | MCI Clock. Connected to subsystem top level clk input.|
+| Internal | Output | 1 | `mcu_clk_cg` |  | MCU clock gated when MCU in reset for RDC. |
+| External | Output | 1 | `cptra_ss_rdc_clk_cg` |  | MCI SS clock gated when caliptra reset asserted for RDC. Should be used whenever their is a Warm reset ->  cold reset crossing in design. Must be paired with `cptra_ss_rst_b_o` reset for proper gating. |
 
 **Table: MCI Resets**
 
@@ -1002,6 +1004,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 |:-------- |:------ |:----- |:------------- |:----- |:-------------------------------------------------------------------------- |
 | External | Input  | 1     | `mci_pwrgood` | Async assert Sync deassert clk | Active high power good indicator. Deepest reset domain for MCI.             |
 | External | Input  | 1     | `mci_rst_b`   | Async assert Sync deassert clk | Active low asynchronous reset for MCI.                                      |
+| External | Input  | 1     | `cptra_ss_rst_b_o`   | Async assert Sync deassert clk | Active low asyn reset for Caliptra SS. Delayed version of `mci_rst_b` in order to gate `cptra_ss_rdc_clk_cg` and `mcu_clk_cg` before reset assertions for RDC purposes.                                      |
 | Internal | Output | 1     | `mcu_rst_b`   | clk   | Reset for MCU. When `scan_mode` is set, this is directly controlled by `mci_rst_b`. |
 | Internal | Output | 1     | `cptra_rst_b` | clk   | Reset for Caliptra. When `scan_mode` is set, this is directly controlled by `mci_rst_b`. |
 
@@ -1021,34 +1024,44 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 |:-------- |:------ |:-------------- |:------------------------- |:------ |:------------------------------------------------------------- |
 | External | Input  | `AXI_USER_WIDTH` | `strap_mcu_lsu_axi_user`   | STATIC | AXI USER for MCU’s load/store unit.                           |
 | External | Input  | `AXI_USER_WIDTH` | `strap_mcu_ifu_axi_user`   | STATIC | AXI USER for MCU’s instruction fetch unit.                    |
-| External | Input  | `AXI_USER_WIDTH` | `strap_cptra_axi_user`       | STATIC | AXI USER for Caliptra.                                        |
+| External | Input  | `AXI_USER_WIDTH` | `strap_mcu_sram_config_axi_user`       | STATIC | AXI USER populating MCU FW Image in MCU SRAM.                                        |
+| External | Input  | `AXI_USER_WIDTH` | `strap_mci_soc_config_axi_user`       | STATIC | AXI USER with MCU privilages in MCI reg. Use for Romless config. 0x0: Disable 0xFFFFFFFF: Debug (all AXI users get this privilage)                                        |
 | External | Input  | 32             | `strap_mcu_reset_vector`  | STATIC | Default reset vector for MCI. Can be overridden via MCI register write. |
+| External | Input  | 32             | `ss_debug_intent`  | STATIC | Debug intent |
+
 
 **Table: MCI MISC Interface**
 
 | Facing            | Type      | Width | Name                  | Clock | Description                                                                                                                                            |
 |:------------------|:----------|:------|:----------------------|:------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Internal/External | interface | 32    | `agg_error_fatal`     | Async | Fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the `all_error_fatal` output wire of MCI |
-| Internal/External | interface | 32    | `agg_error_non_fatal` | Async | Non-fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the `all_error_non_fatal` output wire of MCI. |
-| External          | Output    | 1     | `all_error_fatal`     | clk   | Fatal error interrupt for SOC consumption                                                                                                              |
-| External          | Output    | 1     | `all_error_non_fatal` | clk   | Non-fatal error interrupt for SOC consumption                                                                                                          |
-| Internal          | Output    | 1     | `mcu_timer_int`       | clk   | MCU’s standard RISC-V MTIMER interrupt.                                                                                                                |
-| Internal          | Output    | 1     | `mci_intr`            | clk   | MCI interrupt indication for MCU. This will be set when an unmasked interrupt occurs within MCI. This is a level interrupt and must be cleared by MCU firmware. |
-| Internal          | Output    | 1     | `nmi_intr`            | clk   | Non-maskable interrupt for MCU. This is connected to the watchdog (WDT) timer within MCI and will be asserted when the WDT is in cascade mode and both timers timeout. It can only be cleared by asserting `mci_rst_b`. This interrupt is also fed into the `all_error_fatal` infrastructure for SOC consumption. |
-| Internal          | Output    | 32    | `mci_nmi_vector`      | clk   | Non-maskable interrupt vector for MCU. This is controllable only by MCU FW.                                                                            |
+| Internal/External | input | 1     | `mcu_sram_fw_exec_region_lock`     | Async | `FW_EXEC_CTRL[2]` from Caliptra or SOC to indicate if there is a new MCU FW update avaialbe.|
+| External | input | 32     | `mci_generic_input_wires`     | Async | Generic input wires SOC can use to interrupt MCU |
+| External | output | 32     | `mci_generic_output_wires`     | clk | Generic output wires MCU can use to control SOC logic |
+| External | input | 1     | `mcu_no_rom_config`     | async | 1: No rom config enabled 0: No rom config |
+
+**Table: MCI MCU Interface**
+| Facing            | Type      | Width | Name                  | Clock | Description                                                                                                                                            |
+|:------------------|:----------|:------|:----------------------|:------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Internal | output | 32     | `mcu_reset_vector`     | clk | MCU reset vector |
+| Internal | output | 1     | `mcu_cpu_halt_req_o`     | clk | MCU halt request, used by MCI boot FSM |
+| Internal | input | 1     | `mcu_cpu_halt_ack_i`     | clk | MCU halt ack, used by MCI boot FSM |
+| External/Internal | input | 1     | `mcu_cpu_halt_status_i`     | clk | MCU halt status, used by MCI boot FSM, and exposed as output to SOC as `cptra_ss_cpu_halt_status_o` |
 
 **Table: MCI Errors and Interrupts Interface**
 
 | Facing | Type | Width | Name | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| Internal/External | interface | 32 | agg\_error\_fatal | Async | Fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the all\_error\_fatal output wire of MCI |
-| Internal/External | interface | 32 | agg\_error\_non\_fatal | Async | Non-fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the all\_error\_non\_fatal output wire of MCI. |
-| External | Output | 1 | all\_error\_fatal | clk | Fatal error interrupt for SOC consumption |
-| External | Output | 1 | all\_error\_non\_fatal | clk | Non-fatal error interrupt for SOC consumption |
-| Internal | Output | 1 | mcu\_timer\_int | clk | MCU’s standard RISK-V MTIMER interrupt. |
-| Internal | Output | 1 | mci\_intr | clk | MCI interrupt indication for MCU. This will be set when an unmasked interrupt occurs within MCI. This is a level interrupt and must be cleared by MCU firmware.     |
-| Internal | Output | 1 | nmi\_intr | clk | Non-maskable interrupt for MCU. This is connected to the watchdog (WDT) timer within MCI and will be asserted when the wdt is in cascade mode and both timers timeout. It can only be cleared by asserting mci\_rst\_b. This interrupt is also fed into the all\_error\_fatal infrastructure for SOC consumption.  |
-| Internal | Output | 32 | mci\_nmi\_vector | clk | Non-maskable interrupt vector for MCU. This is controllable only by MCU FW.  |
+| Internal/External | input | 32 | `agg_error_fatal` | Async | Fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the all\_error\_fatal output wire of MCI |
+| Internal/External | input | 32 | `agg_error_non_fatal` | Async | Non-fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the all\_error\_non\_fatal output wire of MCI. |
+| External | Output | 1 | `all_error_fatal` | clk | Fatal error interrupt for SOC consumption |
+| External | Output | 1 | `all_error_non_fatal` | clk | Non-fatal error interrupt for SOC consumption |
+| Internal | Output | 1 | `mcu_timer_int` | clk | MCU’s standard RISK-V MTIMER interrupt. |
+| Internal | Output | 1 | `mci_intr` | clk | MCI interrupt indication for MCU. This will be set when an unmasked interrupt occurs within MCI. This is a level interrupt and must be cleared by MCU firmware.     |
+| Internal | Output | 1 | `nmi_intr` | clk | Non-maskable interrupt for MCU. This is connected to the watchdog (WDT) timer within MCI and will be asserted when the wdt is in cascade mode and both timers timeout. It can only be cleared by asserting mci\_rst\_b. This interrupt is also fed into the all\_error\_fatal infrastructure for SOC consumption.  |
+| Internal | Output | 32 | `mci_nmi_vector` | clk | Non-maskable interrupt vector for MCU. This is controllable only by MCU FW.  |
+| Internal | input | 1 | `cptra_mbox_data_avail` | clk | Cptra mailbox data is available for SOC/MCU. Fed into MCI interrupts for MCU.  |
+| Internal | input | 1 | `intr_otp_operation_done` | clk | FC OTP operation done interrupt fed into MCI interrupts for MCU.  |
+
 
 **Table: MCI LCC Bring Up Interface**
 
@@ -1064,7 +1077,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Internal | Input  | 1     | `fc_opt_done` | Async | FC initialization done response used by MCU boot sequencer to move to the next state. |
 | Internal | Output | 1     | `fc_opt_init` | clk   | FC initialization request asserted by the MCU boot sequencer after every MCI reset.  |
 
-**Table: MCI SRAM Interface**
+**Table: MCU SRAM Interface**
 
 | Facing   | Type      | Width                     | Name                     | Clock | Description                                                                      |
 |:-------- |:--------- |:------------------------- |:------------------------ |:----- |:--------------------------------------------------------------------------------- |
