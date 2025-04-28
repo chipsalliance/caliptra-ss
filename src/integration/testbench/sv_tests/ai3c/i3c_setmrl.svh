@@ -62,6 +62,7 @@ class i3c_setmrl extends cptra_ss_i3c_core_base_test;
 		test_log.step("Step : Executing CCC SETMRL ");
 		i3c_send_dc_ccc_setmrl();
 
+		// time delay to allow for the I3C core to process the CCC Command
 		#100us;
 		test_log.step("Step : ending test ... I3C SETMRL ");
 
