@@ -17,7 +17,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_hello_world/mcu_hello_world: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_set_mci_cacheable/mcu_set_mci_cacheable: { weight: 20 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_set_mci_cacheable/mcu_set_mci_cacheable: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_intr_handler/mcu_intr_handler: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_lmem_exe/mcu_lmem_exe: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_lcc_scrap/smoke_test_lcc_scrap: { weight: 100 }
