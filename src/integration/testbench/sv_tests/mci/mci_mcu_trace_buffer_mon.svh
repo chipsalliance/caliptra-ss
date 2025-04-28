@@ -21,6 +21,8 @@ task mcu_trace_buffer_mon();
             mcu_trace_buffer <= '{default: '0};
             mcu_trace_buffer_valid <= '0;
             mcu_trace_buffer_wrapped <= '0;
+            trace_buffer_rd_ptr_f <= '0;
+            trace_buffer_wr_ptr_f <= '0;
         end else begin
             if(`CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip) begin
                 mcu_trace_buffer_valid  <= 1;
@@ -38,6 +40,9 @@ task mcu_trace_buffer_mon();
                     mcu_trace_buffer_wrapped <= 1'b1;
                 end
             end
+            //Flopped signals for assertions
+            trace_buffer_wr_ptr_f <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.WRITE_PTR;
+            trace_buffer_rd_ptr_f <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.READ_PTR;
         end
     end
 endtask
@@ -67,8 +72,8 @@ endtask
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
     !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
-    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_DATA |->
-    `MCI_PATH.i_mci_reg_top.mcu_sram_dmi_uncore_rdata === mcu_trace_buffer[`MCI_PATH.mcu_trace_buffer_dmi_reg.TRACE_RD_PTR],  
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_DATA |-> ##1
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === mcu_trace_buffer[trace_buffer_rd_ptr_f],  
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
     !cptra_rst_b
 );
@@ -79,8 +84,8 @@ endtask
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
     !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
-    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_STATUS |->
-    `MCI_PATH.i_mci_reg_top.mcu_sram_dmi_uncore_rdata === {`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.STATUS.valid_data.value,`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.STATUS.wrapped.value}, 
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_STATUS |-> ##1
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata[1:0] === {`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.STATUS.valid_data.value,`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.STATUS.wrapped.value}, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
     !cptra_rst_b
 );
@@ -90,8 +95,8 @@ endtask
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
     !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
-    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_CONFIG |->
-    `MCI_PATH.i_mci_reg_top.mcu_sram_dmi_uncore_rdata === `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CONFIG.trace_buffer_depth.value, 
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_CONFIG |-> ##1
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CONFIG.trace_buffer_depth.value, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
     !cptra_rst_b
 );
@@ -101,8 +106,8 @@ endtask
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
     !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
-    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_WR_PTR |->
-    `MCI_PATH.i_mci_reg_top.mcu_sram_dmi_uncore_rdata === `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.WRITE_PTR, 
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_WR_PTR |-> ##1
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === trace_buffer_wr_ptr_f, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
     !cptra_rst_b
 );
@@ -112,8 +117,8 @@ endtask
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
     !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
-    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_RD_PTR |->
-    `MCI_PATH.i_mci_reg_top.mcu_sram_dmi_uncore_rdata === `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.READ_PTR, 
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_RD_PTR |-> ##1
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === trace_buffer_rd_ptr_f, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
     !cptra_rst_b
 );
@@ -124,7 +129,7 @@ always_ff @(posedge `MCI_PATH.i_mci_mcu_trace_buffer.clk or negedge cptra_rst_b)
     if (!cptra_rst_b) begin
         mcu_trace_buffer_capture_write_data <= 0;
     end else begin
-        mcu_trace_buffer_capture_write_data <= `MCI_PATH.i_mci_reg_top.mcu_sram_dmi_uncore_wdata;
+        mcu_trace_buffer_capture_write_data <= `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wdata;
     end
 end
 
