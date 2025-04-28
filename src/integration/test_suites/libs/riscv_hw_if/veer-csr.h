@@ -106,10 +106,10 @@ static inline void csr_write_mrac_and_fence(uint_xlen_t value) {
     //Fence is required after writing to MRAC if a region in LSU space is modified
     //Fence.i is required after writing to MRAC if a region in instr space is modified
     //Since fence.i is a superset of fence, just use fence.i
-    __asm__ volatile ("csrw    %0, %1" \
-                      "fence.i" \
-                      : /* output: none */        \
-                      : "i" (VEER_CSR_MRAC), "r" (value)  /* input : immediate, register  */ \
+    __asm__ volatile ("csrw    %0, %1\n"
+                      "fence.i\n"
+                      : /* output: none */
+                      : "i" (VEER_CSR_MRAC), "r" (value)  /* input : immediate, register  */
                       : /* clobbers: none */);
 }
 
