@@ -65,8 +65,8 @@ static uint32_t hashed_tokens[8][4] = {
  */
 void iterate_test_unlock_states() {
 
-    // 0x4C0: CPTRA_SS_TEST_UNLOCK_TOKEN_0
-    const uint32_t base_address = 0x4C0;
+    // 0x2C18: CPTRA_SS_TEST_UNLOCK_TOKEN_1
+    const uint32_t base_address = 0x2C18;
 
     // Write the tokens into the partition.
     for (uint32_t i = 0; i < 3; i++) {

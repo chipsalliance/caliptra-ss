@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 # 
 #
@@ -13,23 +14,70 @@
 # See the License for the specific language governing permissions and
 # limitations under the License."
 
+set -o pipefail    # we still want to catch pipeline failures, but we will handle exit‐codes ourselves
 
-set -eo pipefail
-
-if [ -z "${COVERAGE_DIR_PATH}" ]; then
-  echo "COVERAGE_DIR_PATH is not defined."
-  COV_CMD=""
+# 1) build up any coverage args
+cov_args=()
+if [[ -n "${COVERAGE_DIR_PATH:-}" ]]; then
+  echo "COVERAGE_DIR_PATH is: ${COVERAGE_DIR_PATH}"
+  cov_args=( -c -cov_dir ${COVERAGE_DIR_PATH} )
 else
-  echo "COVERAGE_DIR_PATH is defined as: ${COVERAGE_DIR_PATH}"
-  COV_CMD="-cov_dir ${COVERAGE_DIR_PATH}"
+  echo "COVERAGE_DIR_PATH is not defined."
 fi
 
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_uds_prog      -c ${COV_CMD} -op -sb -to 520000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_manuf_dbg     -c ${COV_CMD} -op -sb -to 520000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_prod_dbg      -c ${COV_CMD} -op -sb -to 10000000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_lcc_registers -c ${COV_CMD} -op -sb -to 185000
-submit --interactive --name css_regress --project Caliptra ss_build -tc caliptra_ss_jtag_lcc_st_trans -c ${COV_CMD} -op -sb -to 220000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_bp        -c ${COV_CMD} -op -sb -to 220000
-submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_intent    -c ${COV_CMD} -op -sb -to 220000
+# 2) your test list
+tests=(
+  "smoke_test_jtag_uds_prog:520000"
+  "smoke_test_jtag_manuf_dbg:520000"
+  "smoke_test_jtag_prod_dbg:10000000"
+  "smoke_test_jtag_lcc_registers:185000"
+  "caliptra_ss_jtag_lcc_st_trans:220000"
+  "smoke_test_jtag_mcu_bp:220000"
+  "smoke_test_jtag_mcu_intent:220000"
+)
+
+overall_rc=0
+
+for entry in "${tests[@]}"; do
+  tc="${entry%%:*}"
+  to="${entry##*:}"
+
+  echo
+  echo "=== Running ${tc} (timeout ${to}) ==="
+
+  # 3) build a fresh arg array
+  args=( --interactive
+         --name css_regress
+         --project Caliptra ss_build
+         -tc "${tc}"
+         "${cov_args[@]}"
+         -op
+         -sb
+         -to "${to}"
+  )
+
+  # optional: echo the exact command line to debug
+  echo "+ submit ${args[*]}"
+
+  submit "${args[@]}"
+  rc=$?
+  if (( rc != 0 )); then
+    echo "!!! ${tc} FAILED (exit code ${rc})"
+    overall_rc=1
+  else
+    echo "--- ${tc} PASSED"
+  fi
+done
+
+echo
+if (( overall_rc != 0 )); then
+  echo "One or more tests failed."
+else
+  echo "All tests passed."
+fi
+
+exit $overall_rc
+
+
 #assertion fails in lcc state translator - put back after fixed
 #submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_unlock    -c ${COV_CMD} -op -sb -to 220000

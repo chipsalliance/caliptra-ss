@@ -110,9 +110,9 @@ void main (void) {
 
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG MANUF DEBUG TEST with ROM \n=================\n\n");
 
-    lcc_initialization();
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    reset_fc_lcc_rtl();
+    // lcc_initialization();
+    // transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    // reset_fc_lcc_rtl();
 
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
@@ -129,7 +129,7 @@ void main (void) {
     }
 
     VPRINTF(LOW, "MCU: Success done\n");
-    reset_fc_lcc_rtl();
+    // reset_fc_lcc_rtl();
     for (uint32_t ii = 0; ii < 5000; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
