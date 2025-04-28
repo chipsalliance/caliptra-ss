@@ -56,11 +56,11 @@ void program_sw_manuf_partition(uint32_t seed) {
 
     // 0x0D0: CPTRA_CORE_ANTI_ROLLBACK_DISABLE
     // 0x0D1: CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR
-    // 0x131: CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER
-    // 0x141: CPTRA_CORE_SOC_STEPPING_ID
-    // 0x143: CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0
-    const uint32_t addresses[12] = {0x0D0, 0x0D1, 0x131, 0x141, 0x143, 0x173, 0x1A3, 0x1D3, 0x203, 0x233, 0x263, 0x293};
-    const uint32_t digest_address = 0x4B8;
+    // 0x1FE1: CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER
+    // 0x1FF1: CPTRA_CORE_SOC_STEPPING_ID
+    // 0x1FF3: CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0
+    const uint32_t addresses[12] = {0x0D0, 0x0D1, 0x1FE1, 0x1FF1, 0x1FF3, 0x2023, 0x2053, 0x2083, 0x20B3, 0x20E3, 0x2113, 0x2143};
+    const uint32_t digest_address = 0x2C10;
     uint32_t fuse_address = addresses[seed % 12];
 
     const uint32_t data = 0xAB;

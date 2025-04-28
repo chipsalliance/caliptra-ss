@@ -176,28 +176,51 @@ interface lc_ctrl_cov_if
     otp_ctrl_pkg::otp_lc_data_t otp_lc_data_i;
     assign otp_lc_data_i = lc_ctrl.otp_lc_data_i;
 
-    // Make sure all valid state transitions are covered.
-    covergroup lc_ctrl_transition_cg(input lc_state_e src, input lc_state_e dst, input token_idx_e token) @(posedge clk_i);
-        lc_ctrl_valid_transition_cp: coverpoint otp_lc_data_i.state iff (token != InvalidTokenIdx)
-        {
-            bins ValidTransition = ( src => [0:] => dst);
-        }
-        lc_ctrl_invalid_transition_cp: coverpoint otp_lc_data_i.state iff (token == InvalidTokenIdx && src != dst)
-        {
-            illegal_bins InvalidTransition = ( src => [0:] => dst);
-        }
+    logic ack;
+    assign ack = lc_ctrl.lc_otp_program_i.ack;
+
+    lc_state_t states[2];
+    logic adv;
+
+    covergroup lc_ctrl_transitions_cg with function sample(lc_state_e src, lc_state_e dst, token_idx_e token);
+        option.per_instance = 1;
+        src_cp: coverpoint src;
+        dst_cp: coverpoint dst;
+
+        transition_cross: cross src, dst iff (token != InvalidTokenIdx);
     endgroup
 
-    lc_ctrl_transition_cg lc_ctrl_transitions_cg [NumLcStates][NumLcStates];
+    lc_ctrl_transitions_cg trans_cg = new();
 
-    initial begin
-        for (int i = 0; i < NumLcStates; i++)
-            for (int j = 0; j < NumLcStates; j++)
-                lc_ctrl_transitions_cg[i][j] = new(lc_states[i], lc_states[j], TransTokenIdxMatrix[i][j]);
+    always @(posedge clk_i) begin
+        if (!rst_ni) begin
+            adv <= '0;
+        end else if (ack && adv) begin
+            states[0] <= states[1];
+            states[1] <= otp_lc_data_i.state;
+        end
+
+        // Only advance states for every second otp ack.
+        if (ack) begin
+            adv <= adv ^ 1'b1;
+        end
+
+        for (int i = 0; i < NumLcStates; i++) begin
+            if (states[0] == lc_states[i]) begin
+                for (int j = 0; j < NumLcStates; j++) begin
+                    if (states[1] == lc_states[j]) begin
+                        trans_cg.sample(lc_states[i], lc_states[j], TransTokenIdxMatrix[i][j]);
+                    end
+                end
+            end
+        end
     end
 
-    logic volatile_raw_unlock_i = lc_ctrl.u_lc_ctrl_fsm.volatile_raw_unlock_i;
-    lc_state_e lc_state_q = lc_state_e'(lc_ctrl.u_lc_ctrl_fsm.lc_state_q);
+    logic volatile_raw_unlock_i;
+    assign volatile_raw_unlock_i = lc_ctrl.u_lc_ctrl_fsm.volatile_raw_unlock_i;
+    
+    lc_state_e lc_state_q;
+    assign lc_state_q = lc_state_e'(lc_ctrl.u_lc_ctrl_fsm.lc_state_q);
 
     // Make sure we observe a successful volatile raw unlock transition.
     covergroup lc_ctrl_volatile_raw_unlock_transition_cg @(posedge clk_i);
@@ -209,40 +232,33 @@ interface lc_ctrl_cov_if
 
     lc_ctrl_volatile_raw_unlock_transition_cg lc_ctrl_volatile_raw_unlock_transition_cg1 = new();
 
-    logic trans_cnt_oflw_error_o = lc_ctrl.u_lc_ctrl_fsm.trans_cnt_oflw_error_o;
-    logic trans_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.trans_invalid_error_o;
-    logic token_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.token_invalid_error_o;
-    logic flash_rma_error_o = lc_ctrl.u_lc_ctrl_fsm.flash_rma_error_o;
-    logic otp_prog_error_o = lc_ctrl.u_lc_ctrl_fsm.otp_prog_error_o;
-    logic state_invalid_error_o = lc_ctrl.u_lc_ctrl_fsm.state_invalid_error_o;
-
     covergroup lc_ctrl_errors_cg @(posedge clk_i);
-        lc_ctrl_cnt_oflw_error_cp: coverpoint trans_cnt_oflw_error_o
+        lc_ctrl_cnt_oflw_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.trans_cnt_oflw_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_trans_invalid_error_cp: coverpoint trans_invalid_error_o
+        lc_ctrl_trans_invalid_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.trans_invalid_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_token_invalid_error_cp: coverpoint token_invalid_error_o
+        lc_ctrl_token_invalid_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.token_invalid_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_flash_rma_error_cp: coverpoint flash_rma_error_o
+        lc_ctrl_flash_rma_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.flash_rma_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_otp_prog_error_cp: coverpoint otp_prog_error_o
+        lc_ctrl_otp_prog_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.otp_prog_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };
         }
-        lc_ctrl_state_invalid_error_cp: coverpoint state_invalid_error_o
+        lc_ctrl_state_invalid_error_cp: coverpoint lc_ctrl.u_lc_ctrl_fsm.state_invalid_error_o
         {
             bins On  = { 1'b1 };
             bins Off = { 1'b0 };

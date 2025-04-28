@@ -114,7 +114,7 @@ module fc_lcc_tb_services (
           end
           CMD_FC_LCC_FAULT_DIGEST: begin
             $display("fc_lcc_tb_services: fault the transition tokens partition digest");
-            force `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[696] = '0;
+            force `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[5732] = '0;
           end
           CMD_FC_LCC_FAULT_BUS_ECC: begin
             $display("fc_lcc_tb_services: fault one bit in axi write request");
@@ -146,6 +146,14 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: disable clk_byp_ack");
           force `LCC_PATH.lc_clk_byp_ack_i = '0;
           end
+          CMD_LC_TRIGGER_ESCALATION0_DIS: begin
+            $display("fc_lcc_tb_services: releasing esc_scrap_state0 escalation");
+            force `LCC_PATH.esc_scrap_state0 = 1'b0;
+          end
+          CMD_LC_TRIGGER_ESCALATION1_DIS: begin
+            $display("fc_lcc_tb_services: releasing esc_scrap_state1 escalation");
+            force `LCC_PATH.esc_scrap_state1 = 1'b0;
+          end
           default: begin
             // No action for unrecognized commands.
           end
@@ -157,7 +165,7 @@ module fc_lcc_tb_services (
   // Toggle a bit when observing a fuse_ctrl DAI write.
   always_comb begin
     if (ecc_fault_en == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.write == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.addr == 32'h7000_0068) begin
-      force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0] = ~`FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0];
+      force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0] = '0;
     end else begin
       force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data = `FC_PATH.u_core_axi2tlul.i_sub2tlul.wdata;
     end

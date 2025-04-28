@@ -110,28 +110,33 @@ import tb_top_pkg::*;
             // force `CPTRA_SS_TB_TOP_NAME.cptra_ss_cptra_core_m_axi_if.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
-        end
-        if ($test$plusargs("CALIPTRA_SS_UDS_PROG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_cptra_core_bootfsm_bp_i is 1");  
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): SUBSYSTEM_MODE_en.next = 1'b1");  
         end
         if ($test$plusargs("CALIPTRA_SS_MANUF_DBG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF");  
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");  
         end 
         if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF"); 
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");   
         end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
-            force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
+            //force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
+            //force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
+            //force `MCI_PATH.mcu_sram_fw_exec_region_lock = 1'b1;
         end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_MCI_BRK")) begin
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_mci_boot_seq_brkpoint_i = 1'b1;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): MCI_PATH.state is PROD_state");  
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");  
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_mci_boot_seq_brkpoint_i is high"); 
         end 
     end
 
@@ -1164,6 +1169,7 @@ endtask
 
 `ifndef VERILATOR
     lc_ctrl_cov_bind i_lc_ctrl_cov_bind();
+    fuse_ctrl_cov_bind i_fuse_ctrl_cov_bind();
     mci_top_cov_bind i_mci_top_cov_bind();
     caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
 `endif

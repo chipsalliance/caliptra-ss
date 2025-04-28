@@ -359,7 +359,7 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
             for (int j = 0; j < random_lengths.random_len[i]; j++) begin
                 data_subset[j] = data[data_idx + j];
             end
-            i3c_write(addr, cmd, data, random_lengths.random_len[i]);
+            i3c_write(addr, cmd, data_subset, random_lengths.random_len[i]);
         end
         test_log.substep($psprintf("Completed writing %0d bytes in %0d chunks", len, random_lengths.random_len.size()));
 

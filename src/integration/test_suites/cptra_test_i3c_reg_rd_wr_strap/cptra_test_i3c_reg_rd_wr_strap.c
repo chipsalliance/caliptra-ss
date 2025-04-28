@@ -36,7 +36,7 @@ volatile uint32_t intr_count       = 0;
 #endif
 
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
-
+volatile uint8_t fail = 0;
 
 // Wait function
 void wait(uint32_t wait_time) {
@@ -110,16 +110,15 @@ void main(void) {
     int argc=0;
     char *argv[1];
     uint32_t reg;
-    uint8_t fail = 0;
+    
 
     uint32_t send_payload[4] = {0xabadface, 0xba5eba11, 0xcafebabe, 0xdeadbeef};
     uint32_t read_payload[16];
 
     VPRINTF(LOW, "----------------------------------\n Caliptra SS Test Streaming Boot\n----------------------------------\n");
 
-    // Setup the interrupt CSR configuration
-    // init_interrupts();
-    fail = 0;
+    //set ready for FW so tb will push FW
+    soc_ifc_set_flow_status_field(SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK);
 
     // Send data through AHB interface to AXI_DMA, target the AXI SRAM
     VPRINTF(LOW, "Sending payload via AHB i/f\n");
@@ -129,8 +128,7 @@ void main(void) {
     // Use the block-size feature
     VPRINTF(LOW, "Reading payload at SRAM via AHB i/f\n");
     soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR, 0, read_payload, 16, 0);
-    //set ready for FW so tb will push FW
-    soc_ifc_set_flow_status_field(SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK);
+
 
     // Read Recovery Interface Offset
     VPRINTF(LOW, "CPTRA: Reading Recovery Interface start Addr\n");
