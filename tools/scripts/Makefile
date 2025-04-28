@@ -413,6 +413,26 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
 	@echo Completed building $(TESTNAME)
 
+############ lmem TEST build ###############################
+mcu_lmem.hex: $(OFILE_CRT) $(OFILES) $(LINK)
+	@echo Building $(TESTNAME)
+	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .rodata -j .srodata -j .dccm -j .data -j .sdata -j .bss -j .sbss \
+			      --change-section-lma       .text-0x21c00000 \
+			      --change-section-lma     .rodata-0x21c00000 \
+			      --change-section-lma    .srodata-0x21c00000 \
+			      --change-section-lma       .dccm-0x21c00000 \
+			      --change-section-lma       .data-0x21c00000 \
+			      --change-section-lma      .sdata-0x21c00000 \
+			      --change-section-lma        .bss-0x21c00000 \
+			      --change-section-lma       .sbss-0x21c00000 \
+			      --pad-to 0x40000 \
+			      --no-change-warnings $(TESTNAME).exe mcu_lmem.hex		  
+	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
+	$(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
+	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
+	@echo Completed building $(TESTNAME)
+
 # $(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 # $(GCC_PREFIX)-objcopy -O verilog -j .dccm --change-section-lma .dccm-0x50000000 --no-change-warnings $(TESTNAME).exe mcu_dccm.hex
 # cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.dis mcu_hello_world.dis

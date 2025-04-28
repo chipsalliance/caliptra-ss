@@ -46,6 +46,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 void main (void) {
 
     uint32_t cptra_boot_go;
+    uint32_t mci_boot_go;
 
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
@@ -73,7 +74,15 @@ void main (void) {
     //Sync phrase for JTAG
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG MCU Smoke Test with ROM \n=================\n\n");
     
-    VPRINTF(LOW, "MCU: waits until JTAG done\n");
-    while(1);
-    
+    mci_boot_go = 0;
+    VPRINTF(LOW, "MCU: waits in loop until JTAG done\n");
+    while(mci_boot_go != 0x1){
+        mci_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO);
+        for (uint32_t ii = 0; ii < 500; ii++) {
+            __asm__ volatile ("nop"); // Sleep loop as "nop"
+        }
+    }
+
+    VPRINTF(LOW, "MCU: JTAG work is done\n");
+    SEND_STDOUT_CTRL(0xff);    
 }
