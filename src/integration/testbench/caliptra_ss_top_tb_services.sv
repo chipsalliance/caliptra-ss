@@ -126,10 +126,9 @@ import tb_top_pkg::*;
             $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");   
         end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
-            force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): MCI_PATH.state is MANUF_state");  
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): MCI_PATH.state unlocked MANUF debug");  
+            //force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
+            //force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
+            //force `MCI_PATH.mcu_sram_fw_exec_region_lock = 1'b1;
         end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_MCI_BRK")) begin
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
