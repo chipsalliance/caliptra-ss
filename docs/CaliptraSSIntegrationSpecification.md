@@ -46,9 +46,14 @@
   - [Programming interface](#programming-interface-1)
   - [Sequences: Reset, Boot](#sequences-reset-boot)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
-- [Life Cycle Controller](#life-cycle-controller)
+- [Fuse Controller Macro](#fuse-controller-macro)
   - [Overview](#overview-3)
   - [Parameters \& Defines](#parameters--defines-3)
+  - [FC Macro Integration Requirements](#fc-macro-integration-requirements)
+  - [FC Macro Test Interface](#fc-macro-test-interface)
+- [Life Cycle Controller](#life-cycle-controller)
+  - [Overview](#overview-4)
+  - [Parameters \& Defines](#parameters--defines-4)
   - [Interface](#interface-1)
   - [Memory Map / Address Map](#memory-map--address-map)
   - [LC Integration Requirements](#lc-integration-requirements)
@@ -59,8 +64,8 @@
     - [Functional Tests](#functional-tests)
     - [Advanced Tests](#advanced-tests)
 - [MCI](#mci)
-  - [Overview](#overview-4)
-  - [Parameters \& Defines](#parameters--defines-4)
+  - [Overview](#overview-5)
+  - [Parameters \& Defines](#parameters--defines-5)
   - [Interface](#interface-2)
   - [Memory Map	/ Address map](#memory-map-address-map-1)
     - [Top Level Memory Map](#top-level-memory-map)
@@ -101,7 +106,7 @@
   - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
   - [Other requirements](#other-requirements)
 - [I3C core](#i3c-core)
-  - [Overview](#overview-5)
+  - [Overview](#overview-6)
   - [Integration Considerations](#integration-considerations-1)
   - [Paratmeters and defines](#paratmeters-and-defines)
   - [Interface](#interface-3)
@@ -830,6 +835,150 @@ The configurable parts of the `fuse_ctrl`, specifically the fuse map and registe
 are bootstrapped through a separate script `./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.py`.
 For a detailed breakdown of the design rationale behind the script as well as execution instructions,
 refer to [Fuse Map Generation Script](./../tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.md).
+# Fuse Controller Macro
+
+The following integration section is based on the
+[Generalized Open-source Interface](https://opentitan.org/earlgrey_1.0.0/book/hw/ip/otp_ctrl/doc/theory_of_operation.html#generalized-open-source-interface)
+with modifications to match the Caliptra implementation.
+
+## Overview
+
+The Fuse Controller Macro implements a generalized open-source interface for
+functional operation (described below). Any OTP redundancy mechanism like
+per-word ECC is assumed to be handled inside the wrapper, which means that the
+word width exposed as part of the generalized interface is the effective word
+width.
+
+## Paramteres & Defines
+
+| Parameter             | Default                    | Description                                         |
+|-----------------------|----------------------------|-----------------------------------------------------|
+| `Width`               | 16                         | Width of native OTP words. |
+| `AddrWidth`           | `Derived`                  | Width of the address signal, derived from Depth. |
+| `Depth`               | `2**OtpAddrWidth           | Depth of OTP macro.|
+| `CmdWidth`            | `7`                        | Width of the OTP command. Sparsely encoded. |
+| `ErrWidth`            | `3`                        | Width of error code output signal.|
+| `SizeWidth`           | `2`                        | Width of the size input field. Allows to transfer up to 4 native OTP words at once. |
+| `PwrSeqWidth`         | `""`                       | Hex file to initialize the OTP macro, including ECC.|
+| `IfWidth`             | `2**OtpSizeWidth*OtpWidth` | Width of the wrapper data interface.|
+
+## FC Macro Integration Requirements
+
+The generalized open-source interface is a simple command interface with a
+ready / valid handshake that makes it possible to introduce back pressure
+if the OTP macro is not able to accept a command due to an ongoing operation.
+
+In order to facilitate the scrambling and digest operations, the data width has
+been sized such that data blocks up to the PRESENT block size (64bit) can be
+transferred across the generalized interface. The actual size of a transfer is
+determined via the size_i field. Transfer sizes are specified in multiples of
+the native OTP block size, as listed below.
+
+Value of `size_i` | #Native OTP Words | Bit Slice
+------------------|-------------------|------------
+2'b00             |                 1 | `{word0} = data[15:0]`
+2'b01             |                 2 | `{word1, word0} = data[31:0]`
+2'b10             |                 3 | `{word2, word1, word0} = data[47:0]`
+2'b11             |                 4 | `{word3, word2, word1, word0} = data[63:0]`
+
+Responses are returned in-order via an unidirectional response interface (i.e.,
+without back pressure capability). Downstream logic must be able to sink the
+response in any case. The response optionally carries read data, depending on
+whether the operation that took place was a read or not. Also, an error signal
+returns a non-zero error code in case an error occurred while carrying out the
+OTP command.
+
+The signals pertaining to the generalized open-source interface are listed below.
+The signals are exposed as `cptra_ss_fuse_macro_outputs_i` and
+`cptra_ss_fuse_macro_inputs_o` at the top level.
+
+Signal                                        | Type   | Width                 | Description
+----------------------------------------------|--------|-----------------------|---------------
+`cptra_ss_fuse_macro_inputs_o.valid_i`        | Input  | 1                     | Valid signal for the command handshake.
+`cptra_ss_fuse_macro_inputs_o.size_i`         | Input  | [`SizeWidth`-1:0]     | Number of native OTP words to transfer, minus one: `2'b00 = 1 native word` ... `2'b11 = 4 native words`.
+`cptra_ss_fuse_macro_inputs_o.cmd_i`          | Input  | [`CmdWidth`-1:0]      | OTP command: `7'b1000101 = read`, `7'b0110111 = write`, `7'b1111001 = read raw`, `7'b1100010 = write raw`,  `7'b0101100 = initialize`
+`cptra_ss_fuse_macro_inputs_o.addr_i`         | Input  | [`$clog2(Depth)`-1:0] | OTP word address.
+`cptra_ss_fuse_macro_inputs_o.wdata_i`        | Input  | [`IfWidth`-1:0]       | Write data for write commands.
+`cptra_ss_fuse_macro_outputs_i.fatal_alert_o` | Output | 1                     | Fatal alert output from the FC macro. This is connected to a separate alert channel in the instantiating IP. The instantiating IP latches the alert indication and continuously outputs alert events until reset.
+`cptra_ss_fuse_macro_outputs_i.ecov_alert_o`  | Output | 1                     | Recoverable alert output from the FC macro. This is connected to a separate alert channel in the instantiating IP. Should only be pulsed high for each alert occurrence. The instantiating IP then sends out a single alert event for each pulse.
+`cptra_ss_fuse_macro_outputs_i.ready_o`       | Output | 1                     | Ready signal for the command handshake.
+`cptra_ss_fuse_macro_outputs_i.valid_o`       | Output | 1                     | Valid signal for command response.
+`cptra_ss_fuse_macro_outputs_i.rdata_o`       | Output | [`IfWidth`-1:0]       | Read data from read commands.
+`cptra_ss_fuse_macro_outputs_i.err_o`         | Output | [`ErrWidth`-1:0]      | Error code.
+
+The `write raw` and `read raw` command instructs the Fuse Controller Macro
+wrapper to store / read the data in raw format without generating nor checking
+integrity information. That means that the wrapper must return the raw,
+uncorrected data and no integrity errors.
+
+The Fuse Controller Macro wrapper implements the error codes (0x0 - 0x4).
+
+Error Code | Enum Name              | Recoverable | DAI | LCI | Unbuf | Buf   | Description
+-----------|------------------------|-------------|-----|-----|-------|-------|-------------
+0x0        | `NoError`              | -           |  x  |  x  |   x   |  x    | No error has occurred.
+0x1        | `MacroError`           | no          |  x  |  x  |   x   |  x    | Returned if the OTP macro command did not complete successfully due to a macro malfunction.
+0x2        | `MacroEccCorrError`    | yes         |  x  |  -  |   x   |  x    | A correctable ECC error has occurred during a read operation in the OTP macro.
+0x3        | `MacroEccUncorrError`  | no          |  x  |  -  |   x*  |  x    | An uncorrectable ECC error has occurred during a read operation in the OTP macro. Note (*): This error is collapsed into `MacroEccCorrError` if the partition is a vendor test partition. It then becomes a recoverable error.
+0x4        | `MacroWriteBlankError` | yes / no*   |  x  |  x  |   -   |  -    | This error is returned if a write operation attempted to clear an already programmed bit location. Note (*): This error is recoverable if encountered in the DAI, but unrecoverable if encountered in the LCI.
+
+The timing diagram below illustrates the timing of a command. Note that both
+read and write commands return a response, and each command is independent of
+the previously issued commands. The latency from accepting a command to
+returning a response depends on the underlying OTP IP and is typically larger
+than 10 cycles. The returned values depend on the command type and whether an
+error occurred or not.
+
+<!--
+```wavejson
+{
+  signal: [
+    { name: 'clk_i',    wave: 'p.............' },
+    { name: 'ready_o',  wave: '0..10|.10.|...' , node: '...a...c'},
+    { name: 'valid_i',  wave: '01..0|1.0.|...' },
+    { name: 'size_i',   wave: '03..0|3.0.|...' },
+    { name: 'cmd_i',    wave: '04..0|4.0.|...' },
+    { name: 'wdata_i',  wave: '05..0|5.0.|...' },
+    { name: 'valid_o',  wave: '0....|..10|.10' , node: '........b...d'},
+    { name: 'rdata_o',  wave: '0....|..50|.50' },
+    { name: 'err_o',    wave: '0....|..40|.40' },
+  ],
+  edge: [
+   'a~>b',
+   'c~>d',
+  ],
+  head: {
+    text: 'Timing of an OTP command.',
+  },
+  foot: {
+    text: "Cmd's are accepted in cycles 3/7, and the corresponding responses return in cycles 8/12.",
+    tick: 0,
+  }
+}
+```
+-->
+![](images/OTP_commands.png)
+
+Note that the default configuration of the Fuse Controller allows up to two
+outstanding OTP commands, meaning that it is permissible to acknowledge an
+incoming command and start working on it while the results of the last command
+are still in the process of being output (e.g., due to an output register
+stage).
+
+The Fuse Controller Macro uses the following signals to interface with the
+Fuse Controller.
+
+## FC Macro Test Interface
+
+The Fuse Controller Macro requires a test interface to be able to access the
+underlying OTP debug access interface and power manager controller. During
+early manufacturing, the test interface can be used to run BIST and repair
+flows before performing a non-volatile raw unlock operation.
+
+For security reasons, it must be ensured that it is not possible to read /
+program arbitrary OTP memory locations through the test interface. Only
+specific, pre-defined test locations shall be readable and programmable. Access
+to debug access interface must also be disabled once the device is in
+mission mode (i.e. PROD life cycle state).
 
 # Life Cycle Controller
 
