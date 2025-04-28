@@ -128,18 +128,17 @@ void main (void) {
         {
             i3c_reg_data = 0x00000000;
             i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_TTI_RX_DATA_PORT);
-            VPRINTF(LOW, "MCU: Read I3C RX_DATA_PORT WORD%d with 'h %0x\n", ii, i3c_reg_data);
-            VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data is 'h %0x\n", ii, i3c_reg_data);
-            VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d reference data is 'h %0x\n", ii, global_data[ii+(mctp_packet*20)]);
 
-            
             if (i3c_reg_data != (global_data[ii + (mctp_packet*20)])) // && ii != dword_count - 1) -- Exception For PEC
             {
-                VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data mismatch\n", ii);
+                VPRINTF(LOW, "MCU: Error I3C RX_DATA_PORT WORD%d data mismatch\n", ii);
+                VPRINTF(LOW, "MCU: Read I3C RX_DATA_PORT WORD%d with 'h %0x\n", ii, i3c_reg_data);
+                VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data is 'h %0x\n", ii, i3c_reg_data);
+                VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d reference data is 'h %0x\n", ii, global_data[ii+(mctp_packet*20)]);
                 error_status = 1;
 
             } else {
-                VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data match\n", ii);
+                VPRINTF(LOW, "MCU: I3C WORD%d data match\n", ii);
             }
         }
 
