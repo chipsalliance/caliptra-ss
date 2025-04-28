@@ -372,15 +372,15 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 
 ### Clock
 
-The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem. This signal must be connected to a 200 MHz system clock to ensure proper operation.
+The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem. This signal must be connected to a 2400 MHz system clock to ensure proper operation.
 
   - **Signal Name** `cptra_ss_clk_i`
-  - **Required Frequency** 200 MHz
+  - **Required Frequency** 400 MHz
   - **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
   - **Integration Notes**
-     1. Verify that the SoC or system-level clock source provides a stable 200 MHz clock.
+     1. Verify that the SoC or system-level clock source provides a stable 400 MHz clock.
      2. The clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.
-     3. If a different frequency is required, ensure that a clock divider or PLL is used to generate the 200 MHz clock before connection.
+     3. If a different frequency is required, ensure that a clock divider or PLL is used to generate the 400 MHz clock before connection.
 
 The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_clk_i`. It is clock gated whenever `cptra_ss_rst_b` is asserted to avoid RDC issues from the warm reset domain to the cold reset domain/memories. 
 
@@ -392,13 +392,13 @@ The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_c
 
 ### Reset
 
-The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles at 200 MHz) to allow all internal logic to initialize properly.
+The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles at 400 MHz) to allow all internal logic to initialize properly.
 
    - **Signal Name** `cptra_ss_reset_n`
    - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
    - **Reset Type** Synchronous with the `cptra_ss_clk_i` signal
    - **Integration Notes**
-     - The reset signal must be synchronized to the 200 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
+     - The reset signal must be synchronized to the 400 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
      - It is **illegal** to only toggle `cptra_ss_reset_n` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
@@ -458,6 +458,10 @@ Integrator must connect, following list of manager and subordinates to axi inter
 
   - `caliptra-ss\src\integration\rtl\soc_address_map.h`
   - `caliptra-ss\src\integration\rtl\soc_address_map_defines.svh `
+
+### Caliptra Subsystem Reference Register Map
+
+- Here is the link to [Caliptra Subsystem Reference Registe Map](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=). **Please note, any addresses are for the example purpose only**.
 
 ### FW Execution Control Connections
 
