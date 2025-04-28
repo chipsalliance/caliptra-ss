@@ -991,7 +991,8 @@ The following diagram illustrates the internal components of the MCI.
 ### Control/Status Registers (CSRs)
 The Control/Status Registers (CSRs) within the MCI are designed to provide critical control and status monitoring functions for the SoC. These registers include configuration settings, status indicators, and control bits that allow communication and management of the various operations of the MCI. The CSR bank is accessible via the AXI interface and is mapped into the memory space to facilitate straightforward access and manipulation.
 
-**FIXME the link:** caliptra-ss/src/mci/rtl/mci_reg.rdl
+[MCI Reg Spec](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg)
+
 
 #### MCI CSR Access Restrictions
 
@@ -1242,6 +1243,8 @@ It is the only agent allowed to set TARGET_USER and update the final CMD_STATUS.
 
   *NOTE: MBOX SRAM size is configurable, but MBOX always reserves 2MB address space. See [MCU Mailbox Errors](#mcu-mailbox-errors) for how access to and invalid SRAM address are handled. 
 
+[MCU MBOX Register Spec](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mcu_mbox0_csr)
+
 ### MCU SRAM
 ![](images/MCI-MCU-SRAM-Diagram.png)
 
@@ -1390,6 +1393,8 @@ Below is the SW interface to extract trace data:
 | STATUS.VALID_DATA         | RO        | Indicates at least one entry is valid in the trace buffer.      |
 | STATUS.WRAPPED            | RO        | Indicates the trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid. If 0, then the oldest entry in the buffer is at ptr=0. If 1, the oldest entry is at WRITE_PTR|
 | CONFIG.TRACE_BUFFER_DEPTH | RO        | Indicates the total number of 32 bit entries in the trace buffer. TRACE_BUFFER_DEPTH - 1 is the last valid WRITE/READ_PTR entry in the trace buffer. NOTE: This is the trace buffer depth and not the number of [MCU Trace Buffer Packets](#mcu-trace-buffer-packet). |
+
+[MCU Trace Buffer Registers Spec](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mcu_trace_buffer_csr)
 
 #### MCU Trace Buffer Packet
 
