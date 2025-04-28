@@ -34,6 +34,8 @@ tests=(
   "caliptra_ss_jtag_lcc_st_trans:220000"
   "smoke_test_jtag_mcu_bp:220000"
   "smoke_test_jtag_mcu_intent:220000"
+  "smoke_test_jtag_mcu_unlock:220000"
+  "smoke_test_jtag_mcu_sram:220000"
 )
 
 overall_rc=0
@@ -77,7 +79,3 @@ else
 fi
 
 exit $overall_rc
-
-
-#assertion fails in lcc state translator - put back after fixed
-#submit --interactive --name css_regress --project Caliptra ss_build -tc smoke_test_jtag_mcu_unlock    -c ${COV_CMD} -op -sb -to 220000
