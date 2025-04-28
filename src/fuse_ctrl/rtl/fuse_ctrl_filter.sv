@@ -105,6 +105,7 @@ always_comb begin
     wr_allowed_vec = '0;
     AXI_user_id_arr[0] = cptra_ss_strap_cptra_axi_user_i;
     AXI_user_id_arr[1] = cptra_ss_strap_mcu_lsu_axi_user_i;
+    AXI_user_id_arr[2] = cptra_ss_strap_mcu_lsu_axi_user_i;
     for (int i = 0; i < FC_TABLE_NUM_RANGES; i = i + 1) begin : gen_wr_allowed
         wr_allowed_vec[i] = ( (latched_fuse_addr >= access_control_table[i].lower_addr)
                              && (latched_fuse_addr <= access_control_table[i].upper_addr)
