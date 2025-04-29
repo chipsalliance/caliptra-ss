@@ -1458,7 +1458,6 @@ module caliptra_ss_top_tb
     logic         cptra_ss_dbg_manuf_enable_o;
     logic [63:0]  cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o;
 
-    assign cptra_ss_mci_boot_seq_brkpoint_i     = 1'b0;
     assign cptra_ss_mcu_no_rom_config_i         = 1'b0;
     assign cptra_ss_strap_mcu_reset_vector_i    = `css_mcu0_RV_RESET_VEC;
     assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
@@ -1724,6 +1723,7 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mci_soc_config_axi_user_i,
         .cptra_ss_strap_caliptra_dma_axi_user_i,
 
+        .cptra_ss_mci_boot_seq_brkpoint_i,
 
         .m_axi_bfm_if,
         .tb_services_if(i_caliptra_ss_bfm_services_if.bfm)

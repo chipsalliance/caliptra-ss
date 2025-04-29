@@ -20,6 +20,7 @@ module caliptra_ss_top_tb_soc_bfm
 import axi_pkg::*;
 import mci_dmi_pkg::*;
 import mci_reg_pkg::*;
+import mci_pkg::*;
 import mcu_mbox_csr_pkg::*;
 import trace_buffer_csr_pkg::*;
 #(
@@ -37,6 +38,8 @@ import trace_buffer_csr_pkg::*;
     output logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
     output logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
     output logic [31:0] cptra_ss_strap_caliptra_dma_axi_user_i,
+
+    output logic cptra_ss_mci_boot_seq_brkpoint_i,
 
     axi_if m_axi_bfm_if,
 
@@ -132,6 +135,9 @@ initial begin
         else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_DIFF_MCU") begin
             smoke_test_mci_soc_config_diff_mcu();       
         end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCI_BRKPOINT_AXI") begin
+            smoke_test_mci_brkpoint_axi();       
+        end
         else begin
             $error("ERROR: Test Name from Plusarg: %s not found", cptra_ss_test_name);
             $finish;
@@ -140,6 +146,19 @@ initial begin
 end
 
 
+///////////////////////////////////
+// MCI Breakpoint              
+//////////////////////////////////
+initial begin
+    
+    if ($test$plusargs("MCI_BOOT_FSM_BRKPOINT_SET")) begin
+        cptra_ss_mci_boot_seq_brkpoint_i = 1'b1;
+    
+    end else begin
+        cptra_ss_mci_boot_seq_brkpoint_i = 1'b0;
+
+    end
+end
 
 ///////////////////////////////////
 // MONITOR STARTUP             

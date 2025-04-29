@@ -12,18 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include "caliptra_defines.h"
+#include "caliptra_isr.h"
+#include "riscv-csr.h"
+#include "soc_ifc.h"
+#include "soc_ifc_ss.h"
+#include "riscv_hw_if.h"
+#include <string.h>
+#include <stdint.h>
+#include "printf.h"
 
 
+volatile uint32_t* stdout           = (uint32_t *)STDOUT;
+#ifdef CPT_VERBOSITY
+    enum printf_verbosity verbosity_g = CPT_VERBOSITY;
+#else
+    enum printf_verbosity verbosity_g = LOW;
+#endif
 
-`include "mci_common_tasks.svh"
-`include "mci_mcu_trace_buffer_mon.svh"
-`include "smoke_test_mci_axi_miss.svh"
-`include "smoke_test_mcu_sram_execution_region.svh"
-`include "smoke_test_mcu_sram_debug_stress.svh"
-`include "smoke_test_mcu_trace_buffer.svh"
-`include "mcu_mbox_soc_agent_write_fw_image.svh"
-`include "smoke_test_mcu_trace_buffer_no_debug.svh"
-`include "smoke_test_mci_soc_config_disable.svh"
-`include "smoke_test_mci_soc_config_always_enable.svh"
-`include "smoke_test_mci_soc_config_diff_mcu.svh"
-`include "smoke_test_mci_brkpoint_axi.svh"
+volatile uint32_t  intr_count;
+volatile caliptra_intr_received_s cptra_intr_rcv = {0};
+
+void main(void) {
+    while(1);
+
+}
