@@ -143,7 +143,8 @@ module mci_reg_top
     output logic [31:0] mcu_nmi_vector,
 
     // MISC 
-    input logic mcu_sram_fw_exec_region_lock,
+    input  logic mcu_sram_fw_exec_region_lock,
+    output logic mcu_sram_fw_exec_region_lock_dmi_override,
 
     // MCU SRAM specific signals
     input  logic        mcu_sram_single_ecc_error,
@@ -188,6 +189,7 @@ logic mcu_dmi_uncore_locked_wr_en  ;
 // unused in 2.0 logic mcu_dmi_uncore_mbox0_din_access_f;
 // unused in 2.0 logic mcu_dmi_uncore_mbox1_dout_access_f;
 // unused in 2.0 logic mcu_dmi_uncore_mbox1_din_access_f;
+MCI_DMI_MCI_HW_OVERRIDE_REG_t MCI_DMI_MCI_HW_OVERRIDE_REG;
 
 logic [31:0] mcu_dmi_uncore_dbg_unlocked_rdata_in;
 logic [31:0] mcu_dmi_uncore_locked_rdata_in;
@@ -240,6 +242,7 @@ logic mcu_mbox0_target_user_done_p;
 logic mcu_mbox1_target_user_done_d;
 logic mcu_mbox1_target_user_done_p;
 
+logic strap_we_sticky;
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
 ///////////////////////////////////////////////
@@ -275,7 +278,7 @@ endgenerate
 ///////////////////////////////////////////////
 caliptra_prim_flop_2sync #(
   .Width(64)
-) u_prim_flop_2sync_mcu_sram_fw_exec_region_lock (
+) u_prim_flop_2sync_mic_generic_wire_in (
   .clk_i(clk),
   .rst_ni(mci_rst_b),
   .d_i(mci_generic_input_wires),
@@ -327,7 +330,7 @@ assign strap_we_sticky = strap_we & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done
 always_comb begin
     // STRAP with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = strap_we_sticky ? ss_debug_intent : mcu_dmi_uncore_wdata[0];
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we_sticky ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
 
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.next          = mcu_dmi_uncore_wdata[0] ; 
@@ -351,7 +354,7 @@ always_comb begin
     // STRAPS with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR));
     
     // REGISTERS WITH TAP ACCESS
@@ -371,7 +374,19 @@ always_comb begin
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR));
 end
 
+always_ff @(posedge clk or negedge mci_rst_b) begin
+    if (~mci_rst_b) begin
+        MCI_DMI_MCI_HW_OVERRIDE_REG <= '0;
+    end
+    else begin
+        if(mcu_dmi_uncore_dbg_unlocked_wr_en & 
+            (mcu_dmi_uncore_addr == MCI_DMI_MCI_HW_OVERRIDE)) begin
+            MCI_DMI_MCI_HW_OVERRIDE_REG <= mcu_dmi_uncore_wdata;
+        end
+    end
+end
 
+assign mcu_sram_fw_exec_region_lock_dmi_override = MCI_DMI_MCI_HW_OVERRIDE_REG.mcu_sram_fw_exec_region_lock;
 
 
 assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value;
@@ -489,7 +504,8 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT            )}}   &  32'(mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value) )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE             )}}   &  32'(mci_reg_hwif_out.SS_CONFIG_DONE.done.value)          )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE_STICKY      )}}   &  32'(mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value)   )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  32'(mci_reg_hwif_out.MCU_NMI_VECTOR.vec.value)           )  ;
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  32'(mci_reg_hwif_out.MCU_NMI_VECTOR.vec.value)           )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_HW_OVERRIDE            )}}   &  32'(MCI_DMI_MCI_HW_OVERRIDE_REG)                             )  ;
 
 
 // Registers accessable while in a locked state
@@ -826,7 +842,7 @@ always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  = mcu_
 // other than bit-hot in the future, if needed (e.g. we need to encode > 32 FATAL events)
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next    = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next        = 1'b1;
-always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next  = AXI_USER_WIDTH;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next  = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
 always_comb unmasked_hw_error_fatal_write = (mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin.value && |mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next) ||
                                             (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next)  ||
@@ -1243,7 +1259,7 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
 end
 
 assign wdt_timer1_timeout_serviced = error_wdt_timer1_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer1_timeout_sts.value;
-assign wdt_timer2_timeout_serviced = error_wdt_timer2_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer2_timeout_sts.value;;
+assign wdt_timer2_timeout_serviced = error_wdt_timer2_timeout_sts_prev & ~mci_reg_hwif_out.intr_block_rf.error0_internal_intr_r.error_wdt_timer2_timeout_sts.value;
 
 
 // WDT timeout Interrupts

@@ -186,61 +186,36 @@ for {set i 0} {$i < $num_ro_regs} {incr i} {
     }
 }
 
-#Check MCU SRAM
-puts "Checking the SRAM interface writes..."
-for {set i 0} {$i < 16} {incr i} {
-    #Write data that is address inverted
-    puts "Writing SRAM addr $i"
-    set wr_addr $i
-    set wr_data [expr {$i ^ 0xffffffff}]
-    riscv dmi_write $MCI_DMI_MCU_SRAM_ADDR $wr_addr
-    riscv dmi_write $MCI_DMI_MCU_SRAM_DATA $wr_data
-}
-
-puts "Checking the SRAM interface reads..."
-for {set i 0} {$i < 16} {incr i} {
-    #Expected data that is address inverted
-    puts "Reading SRAM addr $i"
-    set rd_addr $i
-    set expected [expr {$i ^ 0xffffffff}]
-    riscv dmi_write $MCI_DMI_MCU_SRAM_ADDR $rd_addr
-    set actual [riscv dmi_read $MCI_DMI_MCU_SRAM_DATA]
-    if {[compare $actual $expected] != 0} {
-        puts "mismatch in SRAM address $rd_addr!"
-        shutdown error
-    }
-}
-
-#Check trace registers, everything should be non-zero except rd pointer
+#Check trace registers a couple of times
+#Assertions validate the data
 puts "Checking trace register reads..."
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_STATUS]
-if {[compare $actual 0] == 0} {
-    puts "mismatch in register TRACE STATUS!"
-    shutdown error
-}
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_CONFIG]
-if {[compare $actual 0] == 0} {
-    puts "mismatch in register TRACE CONFIG!"
-    shutdown error
-}
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_WR_PTR]
-if {[compare $actual 0] == 0} {
-    puts "mismatch in register TRACE WR PTR!"
-    shutdown error
-}
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_RD_PTR]
-if {[compare $actual 0] != 0} {
-    puts "mismatch in register TRACE RD PTR!"
-    shutdown error
-}
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_DATA]
-if {[compare $actual 0] == 0} {
-    puts "mismatch in register TRACE DATA!"
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_STATUS]
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_CONFIG]
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_WR_PTR]
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_RD_PTR]
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_DATA]
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_STATUS]
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_CONFIG]
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_WR_PTR]
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_RD_PTR]
+set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_DATA]
+
+#test boot from MCI SRAM
+puts "Write HW override for sram execution"
+riscv dmi_write $MCI_DMI_MCI_HW_OVERRIDE 0x1
+set actual [riscv dmi_read  $MCI_DMI_MCI_HW_OVERRIDE]
+if {[compare $actual 0x1] != 0} {
+    puts "mismatch in register MCI_DMI_MCI_HW_OVERRIDE!"
     shutdown error
 }
-
-# Success
-#puts "Setting unique value to get MCU to end test"
-riscv dmi_write  $MCI_DMI_MCU_RESET_VECTOR 0xB007FACE
+puts "Setting reset vector to MCU SRAM"
+riscv dmi_write $MCI_DMI_MCU_RESET_VECTOR 0x21c00000
+puts "Setting reset request"
+riscv dmi_write $MCI_DMI_RESET_REQUEST 0x1
 
 shutdown

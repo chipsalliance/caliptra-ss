@@ -125,7 +125,14 @@ task smoke_test_mcu_sram_execution_region();
     // 10 Reads to check data can't be accessed by invalid user
     $display("[%t] 10 Random INVALID reads to MCU_SRAM", $time);
     for(int i = 0; i < 10; i++) begin
-        axi_user = $urandom();
+        if(cptra_ss_strap_mcu_sram_config_axi_user_i !== cptra_ss_strap_caliptra_dma_axi_user_i) begin
+            $display("[%t] Using CPTRA DMA user for invalid read", $time);
+            axi_user = cptra_ss_strap_caliptra_dma_axi_user_i;
+        end
+        else begin
+            $display("[%t] Using random user for invalid read", $time);
+            axi_user = $urandom();
+        end
         @(posedge core_clk); // Delay to avoid race condition with the AXI BFM.
         $display("[%t] Reading 0x%x with AXI USER: 0x%h", $time, write_addrs[i], axi_user);
         m_axi_bfm_if.axi_read_single(write_addrs[i],
@@ -147,7 +154,14 @@ task smoke_test_mcu_sram_execution_region();
     // 10 INVALID writes to already written MCU_SRAM
     $display("[%t] 10 Random INVALID writes to MCU_SRAM", $time);
     for(int i = 0; i < 10; i++) begin
-        axi_user = $urandom();
+        if(cptra_ss_strap_mcu_sram_config_axi_user_i !== cptra_ss_strap_caliptra_dma_axi_user_i) begin
+            $display("[%t] Using CPTRA DMA user for invalid write", $time);
+            axi_user = cptra_ss_strap_caliptra_dma_axi_user_i;
+        end
+        else begin
+            $display("[%t] Using random user for invalid write", $time);
+            axi_user = $urandom();
+        end
         @(posedge core_clk); // Delay to avoid race condition with the AXI BFM.
         $display("[%t] Writing 0x%x: 0x%x", $time, write_addrs[i], write_data[i]);
         m_axi_bfm_if.axi_write_single(write_addrs[i],

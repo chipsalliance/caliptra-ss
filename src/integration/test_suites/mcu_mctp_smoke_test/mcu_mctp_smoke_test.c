@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 // Description: I3C Smoke test for Caliptra Subsystem
 // Author     : Nilesh Patel
 // Created    : 2025-01-14
@@ -13,6 +29,7 @@
 #include "caliptra_ss_lib.h"
 #include "string.h"
 #include "stdint.h"
+#include "veer-csr.h"
 
 #define STATUS_CHECK_LOOP_COUNT_FOR_RECOVERY 20
 
@@ -58,6 +75,7 @@ void main (void) {
     int argc=0;
     char *argv[1];
     uint32_t i3c_reg_data;
+    uint32_t error_status = 0;
 
     //-- Boot MCU
     VPRINTF(LOW, "MCU: Booting... \n");
@@ -65,8 +83,8 @@ void main (void) {
     boot_mcu();
     boot_i3c_core();
     trigger_caliptra_go();
+    mcu_cptra_user_init();
     wait_for_cptra_ready_for_mb_processing();
-    configure_captra_axi_user();
 
     //-- Enable I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE 
     i3c_reg_data = 0xFFFFFFFF;
@@ -87,10 +105,7 @@ void main (void) {
             i3c_reg_data &= I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_RX_DESC_STAT_MASK;
             if(i3c_reg_data == 0x00000000) {
                 VPRINTF(LOW, "MCU: I3C TTI RX DESC Intrrupt is not set\n");
-                for (uint8_t ii = 0; ii < 100; ii++)
-                {
-                    __asm__ volatile("nop"); // Sleep loop as "nop"
-                }
+                mcu_sleep(1000);
             } else {
                 VPRINTF(LOW, "MCU: I3C I3C TTI RX DESC Intrrupt is set\n");
                 break;
@@ -113,24 +128,29 @@ void main (void) {
         {
             i3c_reg_data = 0x00000000;
             i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_TTI_RX_DATA_PORT);
-            VPRINTF(LOW, "MCU: Read I3C RX_DATA_PORT WORD%d with 'h %0x\n", ii, i3c_reg_data);
-            VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data is 'h %0x\n", ii, i3c_reg_data);
-            VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d reference data is 'h %0x\n", ii, global_data[ii+(mctp_packet*20)]);
 
-            
             if (i3c_reg_data != (global_data[ii + (mctp_packet*20)])) // && ii != dword_count - 1) -- Exception For PEC
             {
-                VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data mismatch\n", ii);
+                VPRINTF(LOW, "MCU: Error I3C RX_DATA_PORT WORD%d data mismatch\n", ii);
+                VPRINTF(LOW, "MCU: Read I3C RX_DATA_PORT WORD%d with 'h %0x\n", ii, i3c_reg_data);
+                VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data is 'h %0x\n", ii, i3c_reg_data);
+                VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d reference data is 'h %0x\n", ii, global_data[ii+(mctp_packet*20)]);
+                error_status = 1;
 
             } else {
-                VPRINTF(LOW, "MCU: I3C RX_DATA_PORT WORD%d data match\n", ii);
+                VPRINTF(LOW, "MCU: I3C WORD%d data match\n", ii);
             }
         }
-
 
     }
     
     VPRINTF(LOW, "MCU: End of I3C MCTP smoke test\n");
     
-    SEND_STDOUT_CTRL(0xff);
+    if(error_status) {
+        VPRINTF(LOW, "MCU: I3C MCTP smoke test failed\n");
+        SEND_STDOUT_CTRL(0x01);
+    } else {
+        VPRINTF(LOW, "MCU: I3C MCTP smoke test passed\n");
+        SEND_STDOUT_CTRL(0xff);
+    }
 }

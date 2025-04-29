@@ -36,17 +36,16 @@
 #include "lc_ctrl.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
+
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-
 void main (void) {
 
     uint32_t cptra_boot_go;
-    uint32_t read_data;
 
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
@@ -56,9 +55,6 @@ void main (void) {
     cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
     VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
 
-    ////////////////////////////////////
-    // Fuse and Boot Bringup
-    //
     // Wait for ready_for_fuses
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
 
@@ -73,20 +69,11 @@ void main (void) {
     for (uint16_t ii = 0; ii < 1000; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
-    
+
     //Sync phrase for JTAG
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG MCU Smoke Test with ROM \n=================\n\n");
     
-    read_data = 0;
-    VPRINTF(LOW, "MCU: waits in loop until JTAG done\n");
-    while(read_data != 0xB007FACE){
-        read_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RESET_VECTOR);
-        for (uint32_t ii = 0; ii < 500; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
-    }
-
-    VPRINTF(LOW, "MCU: JTAG work is done\n");
-    SEND_STDOUT_CTRL(0xff);
-
+    VPRINTF(LOW, "MCU: waits until JTAG done\n");
+    while(1);
+    
 }

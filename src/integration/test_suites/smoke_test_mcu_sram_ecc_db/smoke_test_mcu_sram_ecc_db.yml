@@ -1,0 +1,7 @@
+---
+seed: 1
+testname: smoke_test_mcu_sram_ecc_db
+pre-exec: |
+  echo "Running pre_exec for [smoke_test_mcu_sram_ecc_db]" &&
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_mcu_sram_ecc_db mcu_program.hex &&
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_sram_ecc_db AUX_LIB_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/libs/soc_ifc_ss AUX_OFILES=soc_ifc_ss.o AUX_HEADER_FILES=$CALIPTRA_SS_ROOT/src/integration/test_suites/libs/soc_ifc_ss/soc_ifc_ss.h TESTNAME=cptra_smoke_test_mcu_sram_ecc_db program.hex 

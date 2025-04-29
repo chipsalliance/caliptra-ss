@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #ifndef SOC_IFC_SS 
 #define SOC_IFC_SS 
 #include "caliptra_ss_lib.h"
@@ -54,12 +70,14 @@ uint32_t cptra_mcu_mbox_read_cmd(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_mbox_user(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_dlen(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_dword_sram(uint32_t mbox_num, uint32_t dword_addr);
+void cptra_mcu_mbox_write_dword_sram_burst(uint32_t mbox_num, uint32_t dword_addr, uint32_t * payload, uint32_t size_in_bytes, uint16_t block_size);
 uint32_t cptra_mcu_mbox_read_cmd_status(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_execute(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_target_user(uint32_t mbox_num);
 uint32_t cptra_mcu_mbox_read_target_user_valid(uint32_t mbox_num);
 
 void cptra_mcu_mbox_write_dword_sram(uint32_t mbox_num, uint32_t dword_addr, uint32_t data);
+void cptra_mcu_mbox_read_dword_sram_burst(uint32_t mbox_num, uint32_t dword_addr, uint32_t * payload, uint32_t size_in_bytes, uint16_t block_size);
 void cptra_mcu_mbox_write_execute(uint32_t mbox_num, uint32_t data);
 void cptra_mcu_mbox_write_dlen(uint32_t mbox_num, uint32_t data);
 void cptra_mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t data);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include "caliptra_ss_clk_freq.h"
 #include "caliptra_ss_lib.h"
 #include <stdbool.h>
+#include <stdarg.h> // For va_list, va_start, va_end
 
 #ifdef MCU_MBOX_VALID_VECTOR
     uint32_t valid_mbox_instances = MCU_MBOX_VALID_VECTOR;
@@ -41,6 +42,16 @@
 #else
     uint32_t state = 0;
 #endif
+
+void handle_error(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    VPRINTF(FATAL, format, args); // Pass the variable arguments to VPRINTF
+    va_end(args);
+
+    SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
+    while (1); // Infinite loop to halt execution
+}
 
 uint32_t xorshift32(void)
 {
@@ -192,7 +203,7 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     // 4. Always enabled unless overridden:
     //    - Add a cfg_override_<feature>.
     //    - Add a <feature_value>.
-    //    - Use when most tests whant the feature.
+    //    - Use when most tests want the feature.
     //    - Always configure to a default value. If cfg_override_<feature> is set, 
     //      write the <feature_value> into the register.
 
@@ -796,28 +807,8 @@ void boot_i3c_socmgmt_if(void) {
     // file name : caliptra_ss_clk_freq.h
     uint32_t clk_freq = CALIPTRA_SS_CLK_FREQ;
     VPRINTF(LOW, "MCU: I3C Clock Frequency: %u MHz\n", clk_freq);
+    write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
 
-    switch (clk_freq) {
-        case 160:
-            //-- for 160 MHz
-            write_i3c_socmgmtif_registers(0x00000002, 0x00000002, 0x00000003, 0x00000001);
-            break;
-        case 400:
-            //-- for 400 MHz
-            write_i3c_socmgmtif_registers(0x00000005, 0x00000005, 0x00000006, 0x00000002);
-            break;
-        case 500:
-            //-- for 500 MHz
-            write_i3c_socmgmtif_registers(0x00000006, 0x00000006, 0x00000007, 0x00000003);
-            break;
-        case 1000:
-            //-- for 1000 MHz
-            write_i3c_socmgmtif_registers(0x00000000, 0x00000000, 0x00000000, 0x00000000);
-            break;
-        default:
-            VPRINTF(LOW, "Error: Unsupported clock frequency %u MHz\n", clk_freq);
-            return;
-    }
 
     //-- Enable the I3C bus
     VPRINTF(LOW, "MCU: Writing I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW register  \n");

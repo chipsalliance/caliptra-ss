@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+// 
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -35,18 +51,18 @@ typedef struct {
 } prod_manuf_partition_t;
 
 static const prod_manuf_partition_t partitions[12] = {
-    { .address = 0x000, .granularity = 64, .lc_state = MANUF }, // SECRET_TEST_UNLOCK_PARTITION
-    { .address = 0x048, .granularity = 64, .lc_state = MANUF }, // SECRET_MANUF_PARTITION
-    { .address = 0x090, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_0
-    { .address = 0x0A0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_1
-    { .address = 0x0B0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_2
-    { .address = 0x0C0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_3
-    { .address = 0x0D0, .granularity = 32, .lc_state = MANUF }, // SW_MANUF_PARTITION
-    { .address = 0x5E0, .granularity = 32, .lc_state = MANUF }, // VENDOR_HASHES_MANUF_PARTITION
-    { .address = 0x620, .granularity = 32, .lc_state = PROD },  // VENDOR_HASHES_PROD_PARTITION
-    { .address = 0x910, .granularity = 32, .lc_state = PROD },  // VENDOR_REVOCATIONS_PROD_PARTITION
-    { .address = 0x9A8, .granularity = 64, .lc_state = PROD },  // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0xBB0, .granularity = 64, .lc_state = PROD },  // VENDOR_NON_SECRET_PROD_PARTITION
+    { .address = 0x0000, .granularity = 64, .lc_state = MANUF }, // SECRET_TEST_UNLOCK_PARTITION
+    { .address = 0x0048, .granularity = 64, .lc_state = MANUF }, // SECRET_MANUF_PARTITION
+    { .address = 0x0090, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_0
+    { .address = 0x00A0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_1
+    { .address = 0x00B0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_2
+    { .address = 0x00C0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_3
+    { .address = 0x00D0, .granularity = 32, .lc_state = MANUF }, // SW_MANUF_PARTITION
+    { .address = 0x2D38, .granularity = 32, .lc_state = MANUF }, // VENDOR_HASHES_MANUF_PARTITION
+    { .address = 0x2D78, .granularity = 32, .lc_state = PROD },  // VENDOR_HASHES_PROD_PARTITION
+    { .address = 0x3068, .granularity = 32, .lc_state = PROD },  // VENDOR_REVOCATIONS_PROD_PARTITION
+    { .address = 0x3100, .granularity = 64, .lc_state = PROD },  // VENDOR_SECRET_PROD_PARTITION
+    { .address = 0x3308, .granularity = 64, .lc_state = PROD },  // VENDOR_NON_SECRET_PROD_PARTITION
 };
 
 /**
@@ -56,10 +72,10 @@ static const prod_manuf_partition_t partitions[12] = {
  */
 void manuf_prod_provision() {
 
-    // 0x540: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
-    const uint32_t base_address  = 0x4C0;
-    const uint32_t manuf_token_address = 0x530;
-    const uint32_t prod_token_address = 0x540;
+    // 0x2C88: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
+    const uint32_t base_address  = 0x2C18;
+    const uint32_t manuf_token_address = 0x2C88;
+    const uint32_t prod_token_address = 0x2C98;
 
     dai_wr(manuf_token_address, manuf_token_hash[0], manuf_token_hash[1], 64, 0);
     dai_wr(manuf_token_address + 0x08, manuf_token_hash[2], manuf_token_hash[3], 64, 0);

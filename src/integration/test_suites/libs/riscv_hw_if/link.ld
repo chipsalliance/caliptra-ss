@@ -1,3 +1,4 @@
+
 #********************************************************************************
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2020 Western Digital Corporation or its affiliates.
@@ -21,7 +22,7 @@ ENTRY(_start)
 SECTIONS {
   
   . = 0x50000000;
-  .dccm : { *(.dccm) }
+  .dccm : { *(.dccm*) ; . = ALIGN(4); } =0x0000,
   _dccm_end = .;
   .data : { *(.data) *(.data.*) *(.sdata) *(.sdata.*) ; . = ALIGN(4); } =0x0000,
   _data_end = .;

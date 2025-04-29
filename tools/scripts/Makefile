@@ -19,7 +19,10 @@ TEST_CFLAGS = -g -O3 -DMY_RANDOM_SEED=$(PLAYBOOK_RANDOM_SEED) $(BUILD_CFLAGS)
 VERILATOR = verilator
 GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
-CALIPTRA_SS_CLK_FREQ ?= 1000
+
+ifndef CALIPTRA_SS_CLK_FREQ
+CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 2 + 1))), 170 400)
+endif
 
 # Ensure that RISC-V toolchain is installed
 ifeq ($(shell which $(GCC_PREFIX)-gcc 2> /dev/null),)
@@ -45,9 +48,10 @@ INCLUDES_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/includes
 RTL_DIR = $(CALIPTRA_SS_ROOT)/src/integration/rtl
 TBDIR ?= $(CALIPTRA_SS_ROOT)/src/integration/testbench
 RISCV_HW_IF_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/riscv_hw_if
-#ISR_DIR    = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/caliptra_isr FIXME for MCU
+ISR_DIR    = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/mcu_isr
 PRINTF_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs/printf
 LIBS_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/libs
+CSS_MCU0_DEFINES_DIR = $(CALIPTRA_SS_ROOT)/src/riscv_core/veer_el2/rtl/defines
 
 
 DUT ?= caliptra_ss_top_tb
@@ -72,12 +76,14 @@ COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
 		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
+		$(INCLUDES_DIR)/caliptra_ss_defines.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
 		$(RISCV_HW_IF_DIR)/riscv-csr.h \
 		$(RISCV_HW_IF_DIR)/veer-csr.h \
 		$(wildcard $(TEST_DIR)/*.h) \
 		$(SOC_IFC_DIR)/soc_ifc.h \
 		$(PRINTF_DIR)/printf.h \
+		$(CSS_MCU0_DEFINES_DIR)/css_mcu0_defines.h \
 		$(BUILD_DIR)/caliptra_ss_clk_freq.h \
 		$(foreach comp_lib, $(COMP_LIBS), $(wildcard $(comp_lib)/*.h))
 
@@ -96,12 +102,27 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILE_CRT := mcu_crt0.o
 endif
 OFILES += $(TESTNAME).o
-# Assume all C tests will import our printf lib, but not assembly
+# Assume all C tests will import our printf and ISR libs, but assembly
+# tests will not
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += printf.o
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
+endif
+
+# Only build the mcu_isr lib (which consumes a large block of DCCM) if it is
+# included by the test code.
+ifeq (0,$(shell grep -e '\#include "mcu_isr.h"' $(TEST_DIR)/$(TESTNAME).c > /dev/null && echo $$?))
+	OFILES += mcu_isr.o
+# Tests might have a local variant of mcu_isr header
+# If not, use the default
+ifeq (0,$(shell test -e $(TEST_DIR)/mcu_isr.h && echo $$?))
+	HEADER_FILES += $(TEST_DIR)/mcu_isr.h
+else
+	HEADER_FILES += $(ISR_DIR)/mcu_isr.h
+endif
+HEADER_FILES += $(ISR_DIR)/riscv-interrupts.h
 endif
 
 # Verilator trace format
@@ -130,7 +151,7 @@ else
 	LINK = $(TEST_DIR)/$(TESTNAME).ld
 endif
 
-VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(COMP_LIBS)
+VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(ISR_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
 $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
@@ -390,6 +411,26 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
 	@echo Completed building $(TESTNAME)
 
+############ lmem TEST build ###############################
+mcu_lmem.hex: $(OFILE_CRT) $(OFILES) $(LINK)
+	@echo Building $(TESTNAME)
+	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=$(TESTNAME).map -lgcc -T$(LINK) -o $(TESTNAME).exe $(OFILE_CRT) $(OFILES) -nostartfiles  $(TEST_LIBS)
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .rodata -j .srodata -j .dccm -j .data -j .sdata -j .bss -j .sbss \
+			      --change-section-lma       .text-0x21c00000 \
+			      --change-section-lma     .rodata-0x21c00000 \
+			      --change-section-lma    .srodata-0x21c00000 \
+			      --change-section-lma       .dccm-0x21c00000 \
+			      --change-section-lma       .data-0x21c00000 \
+			      --change-section-lma      .sdata-0x21c00000 \
+			      --change-section-lma        .bss-0x21c00000 \
+			      --change-section-lma       .sbss-0x21c00000 \
+			      --pad-to 0x40000 \
+			      --no-change-warnings $(TESTNAME).exe mcu_lmem.hex		  
+	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
+	$(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
+	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
+	@echo Completed building $(TESTNAME)
+
 # $(GCC_PREFIX)-objcopy -O verilog -R .text -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 # $(GCC_PREFIX)-objcopy -O verilog -j .dccm --change-section-lma .dccm-0x50000000 --no-change-warnings $(TESTNAME).exe mcu_dccm.hex
 # cp /home/pure_scratch/caliptra/users/users/pateln/veer_el2_core_ws2/hello_world.dis mcu_hello_world.dis
@@ -446,4 +487,3 @@ help:
 	@echo Possible targets: verilator vcs irun vlog riviera help clean all verilator-build irun-build vcs-build riviera-build program.hex
 
 .PHONY: help clean clean_fw verilator vcs irun vlog riviera
-

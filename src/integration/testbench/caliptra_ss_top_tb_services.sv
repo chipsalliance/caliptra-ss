@@ -35,6 +35,7 @@ import tb_top_pkg::*;
   input  logic                       clk,
   input  logic                       rst_l,
   input  int                         cycleCnt,
+  input logic                        cptra_ss_rdc_clk_cg_o,
   caliptra_ss_bfm_services_if.tb_services soc_bfm_if,
   css_mcu0_el2_mem_if                cptra_ss_mcu0_el2_mem_export,
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
@@ -66,11 +67,15 @@ import tb_top_pkg::*;
     tb_top_pkg::veer_sram_error_injection_mode_t error_injection_mode;
     tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mbox0_sram_error_injection_mode;
     tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mbox1_sram_error_injection_mode;
+    tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mcu_sram_error_injection_mode;
     
     bit                         flip_bit_mbox0;
     bit                         flip_bit_mbox1;
     logic [MCU_MBOX0_DATA_AND_ECC_W-1:0] mbox0_sram_wdata_bitflip;
     logic [MCU_MBOX1_DATA_AND_ECC_W-1:0] mbox1_sram_wdata_bitflip;
+    
+    bit                         flip_bit_mcu_sram;
+    logic [MCU_SRAM_DATA_TOTAL_WIDTH-1:0] mcu_sram_wdata_bitflip;
 
     logic                       wb_valid;
     logic [4:0]                 wb_dest;
@@ -105,33 +110,38 @@ import tb_top_pkg::*;
             // force `CPTRA_SS_TB_TOP_NAME.cptra_ss_cptra_core_m_axi_if.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
-        end
-        if ($test$plusargs("CALIPTRA_SS_UDS_PROG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_cptra_core_bootfsm_bp_i is 1");  
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): SUBSYSTEM_MODE_en.next = 1'b1");  
         end
         if ($test$plusargs("CALIPTRA_SS_MANUF_DBG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF");  
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");  
         end 
         if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF"); 
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");   
         end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
-            force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
-            force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
+            //force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
+            //force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
+            //force `MCI_PATH.mcu_sram_fw_exec_region_lock = 1'b1;
         end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_MCI_BRK")) begin
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_mci_boot_seq_brkpoint_i = 1'b1;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): MCI_PATH.state is PROD_state");  
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");  
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_mci_boot_seq_brkpoint_i is high"); 
         end 
     end
 
-    assign mailbox_write    = `CPTRA_SS_TOP_PATH.mci_top_i.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.load_next && rst_l;
-    assign mailbox_data     = `CPTRA_SS_TOP_PATH.mci_top_i.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.next;
+    assign mailbox_write    = `MCI_PATH.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.load_next && rst_l;
+    assign mailbox_data     = `MCI_PATH.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.next;
 
     assign mailbox_data_val = mailbox_data[7:0] > 8'h5 && mailbox_data[7:0] < 8'h7f;
 
@@ -150,6 +160,12 @@ import tb_top_pkg::*;
         end
 
     end
+
+    //Note update these as more errors are added to aggregate_error bus
+    int rand_err_injection_sel;
+    localparam NUM_AGG_ERROR_FATAL = 6;
+    localparam NUM_AGG_ERROR_NON_FATAL = 6;
+    localparam NUM_NOTIF0_INTR = 13; //Exclude generic_input_wires
 
     always @(negedge clk) begin
         // console Monitor
@@ -181,9 +197,200 @@ import tb_top_pkg::*;
         error_injection_mode.dccm_single_bit_error <= 1'b0;
         error_injection_mode.dccm_double_bit_error <= 1'b0;
 
+        //TODO: randomly select which error bit to force for more complete testing
+        // MCI error injection
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MCI_ERROR_FATAL)) begin
+            $display("Injecting MCI errs");
+            
+            force `MCI_REG_TOP_PATH.nmi_intr = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.nmi_intr;
+            repeat($urandom_range(0,15)) @(negedge clk);
+        
+            force `MCI_REG_TOP_PATH.mcu_sram_double_ecc_error = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.mcu_sram_double_ecc_error;
+            repeat($urandom_range(0,15)) @(negedge clk);
+        
+            force `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error;
+        end
+
+        //MCI non-fatal error injection
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MCI_ERROR_NON_FATAL)) begin
+            $display("Injecting non-ftl MCI errs");
+
+            force `MCI_REG_TOP_PATH.mbox0_sram_double_ecc_error = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.mbox0_sram_double_ecc_error;
+            repeat($urandom_range(0,15)) @(negedge clk);
+
+            force `MCI_REG_TOP_PATH.mbox1_sram_double_ecc_error = 1'b1;
+            @(negedge clk);
+            release `MCI_REG_TOP_PATH.mbox1_sram_double_ecc_error;
+        end
+
+        //Aggregate fatal error injection
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_AGG_ERROR_FATAL)) begin
+            $display("Injecting random aggregate ftl err");
+            rand_err_injection_sel = $urandom_range(0,NUM_AGG_ERROR_FATAL-1);
+
+            case(rand_err_injection_sel)
+                0: begin
+                    force `CPTRA_SS_TOP_PATH.cptra_error_fatal = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.cptra_error_fatal;
+                end
+                1: begin
+                    force `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_double_error = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_double_error;
+                end
+                2: begin
+                    force `CPTRA_SS_TOP_PATH.lc_alerts_o = $urandom_range(1,(2**lc_ctrl_reg_pkg::NumAlerts)-1);
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.lc_alerts_o;
+                end
+                3: begin
+                    force `CPTRA_SS_TOP_PATH.fc_alerts = $urandom_range(1, (2**otp_ctrl_reg_pkg::NumAlerts)-1);
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.fc_alerts;
+                end
+                4: begin
+                    force `CPTRA_SS_TOP_PATH.i3c_peripheral_reset = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.i3c_peripheral_reset;
+                end
+                5: begin
+                    force `CPTRA_SS_TOP_PATH.i3c_escalated_reset = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.i3c_escalated_reset;
+                end
+                default: begin
+                end
+            endcase
+        end
+
+        //Aggregate non_fatal error injection
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_AGG_ERROR_NON_FATAL)) begin
+            $display("Injecting random aggregate non ftl err");
+            rand_err_injection_sel = $urandom_range(0,NUM_AGG_ERROR_NON_FATAL-1);
+
+            case(rand_err_injection_sel)
+                0: begin
+                    force `CPTRA_SS_TOP_PATH.cptra_error_non_fatal = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.cptra_error_non_fatal;
+                end
+                1: begin
+                    force `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_single_error = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.mcu_dccm_ecc_single_error;
+                end
+                2: begin
+                    force `CPTRA_SS_TOP_PATH.lc_alerts_o = $urandom_range(1,(2**lc_ctrl_reg_pkg::NumAlerts)-1);
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.lc_alerts_o;
+                end
+                3: begin
+                    force `CPTRA_SS_TOP_PATH.fc_alerts = $urandom_range(1, (2**otp_ctrl_reg_pkg::NumAlerts)-1);
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.fc_alerts;
+                end
+                4: begin
+                    force `CPTRA_SS_TOP_PATH.i3c_peripheral_reset = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.i3c_peripheral_reset;
+                end
+                5: begin
+                    force `CPTRA_SS_TOP_PATH.i3c_escalated_reset = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.i3c_escalated_reset;
+                end
+                default: begin
+                end
+            endcase
+        end
+
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_NOTIF0)) begin
+            $display("Injecting random notif0 condition");
+            rand_err_injection_sel = $urandom_range(0,NUM_NOTIF0_INTR-1);
+
+            case(rand_err_injection_sel)
+                0: begin
+                    force `MCI_REG_TOP_PATH.mcu_sram_single_ecc_error = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.mcu_sram_single_ecc_error;
+                end
+                1: begin
+                    force `MCI_REG_TOP_PATH.cptra_mcu_rst_req = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.cptra_mcu_rst_req;
+                end
+                2: begin
+                    force `MCI_REG_TOP_PATH.mcu_mbox0_target_user_done = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.mcu_mbox0_target_user_done;
+                end
+                3: begin
+                    force `MCI_REG_TOP_PATH.mcu_mbox1_target_user_done = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.mcu_mbox1_target_user_done;
+                end
+                4: begin
+                    force `MCI_REG_TOP_PATH.mcu_mbox0_data_avail = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.mcu_mbox0_data_avail;
+                end
+                5: begin
+                    force `MCI_REG_TOP_PATH.mcu_mbox1_data_avail = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.mcu_mbox1_data_avail;
+                end
+                6: begin
+                    force `MCI_REG_TOP_PATH.cptra_mbox_data_avail = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.cptra_mbox_data_avail;
+                end
+                7: begin
+                    force `MCI_REG_TOP_PATH.mbox0_sram_single_ecc_error = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.mbox0_sram_single_ecc_error;
+                end
+                8: begin
+                    force `MCI_REG_TOP_PATH.mbox1_sram_single_ecc_error = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.mbox1_sram_single_ecc_error;
+                end
+                9: begin
+                    force `MCI_REG_TOP_PATH.security_state_o.debug_locked = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.security_state_o.debug_locked;
+                end
+                10: begin
+                    force `MCI_REG_TOP_PATH.scan_mode = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.scan_mode;
+                end
+                11: begin
+                    force `MCI_REG_TOP_PATH.soc_req_mbox0_lock = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.soc_req_mbox0_lock;
+                end
+                12: begin
+                    force `MCI_REG_TOP_PATH.soc_req_mbox1_lock = 1'b1;
+                    @(negedge clk);
+                    release `MCI_REG_TOP_PATH.soc_req_mbox1_lock;
+                end
+                default: begin
+                end
+            endcase
+        end
+
         // Disable MCU_SRAM assertions
         if(mailbox_write && (mailbox_data[7:0] == TB_DISABLE_MCU_SRAM_PROT_ASSERTS)) begin
-            $assertoff(0, caliptra_ss_top_tb.caliptra_ss_dut.mci_top_i.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
+            $assertoff(0, `MCI_PATH.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
         end
         // Memory signature dump and test END
         if((mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) || soc_bfm_if.end_test_success) begin
@@ -223,6 +430,17 @@ import tb_top_pkg::*;
         end
     end
 
+    // Aids debugging with waves
+    logic [7:0] isr_active = 8'h0;
+    always @(negedge clk) begin
+        if ((mailbox_data[7:0] == TB_CMD_DECR_INTR_ACTIVE) && mailbox_write) begin
+            isr_active--;
+        end
+        else if ((mailbox_data[7:0] == TB_CMD_INCR_INTR_ACTIVE) && mailbox_write) begin
+            isr_active++;
+        end
+    end
+
     always @(negedge clk or negedge rst_l) begin
         if (!rst_l) begin
             mbox0_sram_error_injection_mode <= '{default: 1'b0};
@@ -247,6 +465,34 @@ import tb_top_pkg::*;
             $display("Disabling MCU SRAM Mbox injection");
             mbox0_sram_error_injection_mode <= '{default: 1'b0};
             mbox1_sram_error_injection_mode <= '{default: 1'b0};
+        end
+    end
+
+
+    always @(negedge clk or negedge rst_l) begin
+        if (!rst_l) begin
+            mcu_sram_error_injection_mode <= '{default: 1'b0};
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MCU_SRAM_SINGLE_ECC_ERROR)) begin
+            $display("Injecting single bit MCU SRAM errors");
+            mcu_sram_error_injection_mode.single_bit_error <= 1'b1;
+            $assertoff(0, `MCI_PATH.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_ECC_SB_ERROR);
+
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MCU_SRAM_DOUBLE_ECC_ERROR)) begin
+            $display("Injecting double bit MCU SRAM errors");
+            mcu_sram_error_injection_mode.double_bit_error <= 1'b1;
+            $assertoff(0, `MCI_PATH.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_ECC_DB_ERROR);
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_RANDOMIZE_MCU_SRAM_ECC_ERROR_INJECTION)) begin
+            $display("Randomizing MCU SRAM error injection");
+            mcu_sram_error_injection_mode.randomize <= 1'b1;
+            $assertoff(0, `MCI_PATH.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_ECC_SB_ERROR);
+            $assertoff(0, `MCI_PATH.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_ECC_DB_ERROR);
+        end
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_DISABLE_MCU_SRAM_ECC_ERROR_INJECTION)) begin
+            $display("Disabling MCU SRAM injection");
+            mcu_sram_error_injection_mode <= '{default: 1'b0};
         end
     end
 
@@ -278,28 +524,28 @@ import tb_top_pkg::*;
                 // ============= SHA test setup =============
                 // Randomize test parameters
                 if (!std::randomize(sha512_mode)) $fatal("Failed to randomize sha mode");
-                if (!std::randomize(test_case) with {test_case inside {[1:255]};}) $fatal("Failed to randomize test_case");
+                if (!std::randomize(test_case) with {test_case inside {[1:256]};}) $fatal("Failed to randomize test_case");
                 if (sha512_mode) begin
                     case(test_case) inside
-                    [0:127]: begin
+                    [0:128]: begin
                       file_name = "./SHA512ShortMsg.rsp";
                       line_skip = test_case * 4 + 7;
                     end
-                    [128:255]: begin
+                    [129:256]: begin
                       file_name = "./SHA512LongMsg.rsp";
-                      line_skip = (test_case - 128) * 4 + 7;
+                      line_skip = (test_case - 129) * 4 + 7;
                     end
                   endcase
                 end
                 else begin
                     case(test_case) inside
-                    [0:127]: begin
+                    [0:128]: begin
                         file_name = "./SHA384ShortMsg.rsp";
                         line_skip = test_case * 4 + 7;
                     end
-                    [128:255]: begin
+                    [129:256]: begin
                       file_name = "./SHA384LongMsg.rsp";
-                      line_skip = (test_case - 128) * 4 + 7;
+                      line_skip = (test_case - 129) * 4 + 7;
                     end
                   endcase
                 end
@@ -519,7 +765,6 @@ end
         hex_file_is_empty = $system("test -s mcu_lmem.hex");
         if (!hex_file_is_empty) $readmemh("mcu_lmem.hex",lmem_dummy_preloader.ram, 0, (MCU_SRAM_SIZE_KB*1024)-1);
 
-
         imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
@@ -604,6 +849,39 @@ end
         end
     `endif
 
+    // MCU SRAM error injection
+    `ifndef VERILATOR
+        initial begin
+            automatic bitflip_mask_generator #(MCU_SRAM_DATA_TOTAL_WIDTH) bitflip_gen = new();
+            forever begin
+                @(posedge clk)
+                if (~|mcu_sram_error_injection_mode) begin
+                    mcu_sram_wdata_bitflip <= '0;
+                end
+                else if (cptra_ss_mci_mcu_sram_req_if.req.cs & cptra_ss_mci_mcu_sram_req_if.req.we) begin
+                    // Corrupt 20% of the writes if randomize is enabled
+                    flip_bit_mcu_sram = (mcu_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                    mcu_sram_wdata_bitflip <= flip_bit_mcu_sram ? bitflip_gen.get_mask(mcu_sram_error_injection_mode.double_bit_error) : '0;
+                    if (flip_bit_mcu_sram) begin
+                    //    $display("%t Injecting bit flips to MCU SRAM[%d] Bitflip Mask: 0x%x Write Data: 0x%x", 
+                    //                             $realtime, cptra_ss_mci_mcu_sram_req_if.req.addr >>2, mcu_sram_wdata_bitflip, cptra_ss_mci_mcu_sram_req_if.req.wdata);
+                    end
+                end
+            end
+        end
+    `else
+        always @(posedge clk) begin
+            if (~|mcu_sram_error_injection_mode) begin
+                flip_bit_mcu_sram <= 0;
+                mcu_sram_wdata_bitflip <= '0;
+            end
+            else if (cptra_ss_mci_mcu_sram_req_if.req.cs & cptra_ss_mci_mcu_sram_req_if.req.cs) begin
+                // Corrupt 20% of the writes if randomize is enabled
+                flip_bit_mcu_sram = (mcu_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
+                mcu_sram_wdata_bitflip <= flip_bit_mcu_sram ? get_bitflip_mask(mcu_sram_error_injection_mode.double_bit_error) : '0;
+            end
+        end
+    `endif
    //=========================================================================-
    // SRAM instances
    //=========================================================================-
@@ -616,7 +894,7 @@ end
     )
     mcu_mbox0_ram
     (
-        .clk_i(clk),
+        .clk_i(cptra_ss_rdc_clk_cg_o),
 
         .cs_i(cptra_ss_mcu_mbox0_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox0_sram_req_if.req.we),
@@ -633,7 +911,7 @@ end
     )
     mcu_mbox1_ram
     (
-        .clk_i(clk),
+        .clk_i(cptra_ss_rdc_clk_cg_o),
 
         .cs_i(cptra_ss_mcu_mbox1_sram_req_if.req.cs),
         .we_i(cptra_ss_mcu_mbox1_sram_req_if.req.we),
@@ -661,11 +939,11 @@ end
         .DATA_WIDTH(MCU_SRAM_DATA_TOTAL_WIDTH),
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
    ) lmem (
-       .clk_i   (clk),
+       .clk_i   (cptra_ss_rdc_clk_cg_o),
        .cs_i    (cptra_ss_mci_mcu_sram_req_if.req.cs),
        .we_i    (cptra_ss_mci_mcu_sram_req_if.req.we),
        .addr_i  (cptra_ss_mci_mcu_sram_req_if.req.addr),
-       .wdata_i (cptra_ss_mci_mcu_sram_req_if.req.wdata),
+       .wdata_i (cptra_ss_mci_mcu_sram_req_if.req.wdata ^ mcu_sram_wdata_bitflip),
        .rdata_o (cptra_ss_mci_mcu_sram_req_if.resp.rdata)
    );
 
@@ -891,6 +1169,7 @@ endtask
 
 `ifndef VERILATOR
     lc_ctrl_cov_bind i_lc_ctrl_cov_bind();
+    fuse_ctrl_cov_bind i_fuse_ctrl_cov_bind();
     mci_top_cov_bind i_mci_top_cov_bind();
     caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
 `endif

@@ -1,0 +1,7 @@
+---
+seed: ${PLAYBOOK_RANDOM_SEED}
+testname: smoke_test_error_handling
+pre-exec: |
+  echo "Running pre_exec for [smoke_test_error_handling]"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_error_handling mcu_program.hex
+  # CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile TESTNAME=smoke_test_error_handling program.hex

@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+// 
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -31,9 +47,9 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 void program_vendor_hashes_prod_partition(void) {
 
-    // 0x6C8: CPTRA_CORE_VENDOR_PK_HASH_3
-    // 0x6E4: CPTRA_CORE_VENDOR_PK_HASH_5
-    const uint32_t addresses[2] = {0x682, 0x6E4};
+    // 0x2DDA: CPTRA_CORE_VENDOR_PK_HASH_3
+    // 0x2E3C: CPTRA_CORE_VENDOR_PK_HASH_5
+    const uint32_t addresses[2] = {0x2DDA, 0x2E3C};
 
     const uint32_t data = 0xdeadbeef;
 
@@ -41,7 +57,7 @@ void program_vendor_hashes_prod_partition(void) {
     dai_wr(addresses[0], data, 0, 32, 0);
 
     // Step 2
-    dai_wr(addresses[1], data+1, 0, 32, 0);
+    //dai_wr(addresses[1], data+1, 0, 32, 0);
 
     // Step 3
     lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 4); // Lock all hashes starting from index 5.

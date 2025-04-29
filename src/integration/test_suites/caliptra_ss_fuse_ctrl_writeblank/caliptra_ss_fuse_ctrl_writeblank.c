@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -23,8 +39,8 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 void writeblank() {
     grant_mcu_for_fc_writes();
 
-    // 0x578: CPTRA_CORE_FMC_KEY_MANIFEST_SVN
-    const uint32_t fuse_address = 0x578;
+    // 0x2CD0: CPTRA_CORE_FMC_KEY_MANIFEST_SVN
+    const uint32_t fuse_address = 0x2CD0;
 
     // Overwriting set bits in a fuse should result in an error.
     dai_wr(fuse_address, 0xFFFFFFFF, 0, 32, 0);

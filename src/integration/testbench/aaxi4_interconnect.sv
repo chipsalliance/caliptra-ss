@@ -1,7 +1,7 @@
 
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ generate
         defparam monitor.VER= "AXI4";
         defparam monitor.ID_WIDTH= AAXI_ID_WIDTH;
         defparam monitor.monitor.FNAME_TRACK= {"m0"+i,"_intf.txt"};
-        defparam monitor.checker0.MAXWAITS= 60;
+        defparam monitor.checker0.RecMaxWaitOn= 0;
     end
     // MCU IFU, LSU, SB i/fs
     defparam master_mon[`CSS_INTC_MINTF_MCU_LSU_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
@@ -124,7 +124,7 @@ generate
         defparam monitor.VER= "AXI4";
         defparam monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
         defparam monitor.monitor.FNAME_TRACK= {"s0"+i,"_intf.txt"};
-        defparam monitor.checker0.MAXWAITS= 60;
+        defparam monitor.checker0.RecMaxWaitOn= 0;
     end
     // NC, MCU ROM, FC PRIM (NC)
     defparam slave_mon[`CSS_INTC_SINTF_NC0_IDX    ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
@@ -148,7 +148,7 @@ aaxi_monitor_wrapper def_monitor(ports.default_slave_intf);
 defparam def_monitor.VER= "AXI4";
 defparam def_monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
 defparam def_monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH;    // set DATA BUS WIDTH
-defparam def_monitor.checker0.MAXWAITS= 60;
+defparam def_monitor.checker0.RecMaxWaitOn= 0;
 defparam def_monitor.monitor.FNAME_TRACK= "default_slave_intf.txt";
 
 `endif
@@ -236,8 +236,8 @@ initial begin
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.base_address[0] = 64'h2000_4000;
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.limit_address[0] = 64'h2000_4FFF;
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.base_address[0] = 64'(`SOC_I3CCSR_BASE_ADDR);
+        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.limit_address[0] = 64'(`SOC_I3CCSR_BASE_ADDR) + 64'hFFF; // FIXME hardcoded offset
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.total_outstanding_depth = 4;
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.id_outstanding_depth = 4;

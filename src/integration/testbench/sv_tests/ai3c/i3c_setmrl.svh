@@ -29,6 +29,7 @@ class i3c_setmrl extends cptra_ss_i3c_core_base_test;
 
 	function new(string name, `avery_xvm_parent);
         super.new("i3c_setmrl", parent);
+		err_count = 0;
 	endfunction
 
 	virtual task read_reg(input ai3c_addr_t target_addr, input bit [7:0] addr, input int size, output bit [7:0] data[]);
@@ -61,8 +62,12 @@ class i3c_setmrl extends cptra_ss_i3c_core_base_test;
 		test_log.step("Step : Executing CCC SETMRL ");
 		i3c_send_dc_ccc_setmrl();
 
+		// time delay to allow for the I3C core to process the CCC Command
 		#100us;
 		test_log.step("Step : ending test ... I3C SETMRL ");
+
+		//-- Check for errors
+		process_test_result();
 
 	endtask
 

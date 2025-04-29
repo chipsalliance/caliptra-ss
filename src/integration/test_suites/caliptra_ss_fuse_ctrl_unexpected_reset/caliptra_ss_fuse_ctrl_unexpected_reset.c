@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -26,21 +42,21 @@ typedef struct {
 } partition_t;
 
 static partition_t partitions[15] = {
-    { .address = 0x000, .is_software = false }, // SECRET_TEST_UNLOCK_PARTITION
-    { .address = 0x048, .is_software = false }, // SECRET_MANUF_PARTITION
-    { .address = 0x090, .is_software = false }, // SECRET_PROD_PARTITION_0
-    { .address = 0x0A0, .is_software = false }, // SECRET_PROD_PARTITION_1
-    { .address = 0x0B0, .is_software = false }, // SECRET_PROD_PARTITION_2
-    { .address = 0x0C0, .is_software = false }, // SECRET_PROD_PARTITION_3
-    { .address = 0x0D0, .is_software = true  }, // SW_MANUF_PARTITION
-    { .address = 0x4C0, .is_software = false }, // SECRET_LC_TRANSITION_PARTITION
-    { .address = 0x578, .is_software = true  }, // SVN_PARTITION
-    { .address = 0x5A0, .is_software = true  }, // VENDOR_TEST_PARTITION
-    { .address = 0x5E0, .is_software = true  }, // VENDOR_HASHES_MANUF_PARTITION
-    { .address = 0x620, .is_software = true  }, // VENDOR_HASHES_PROD_PARTITION
-    { .address = 0x910, .is_software = true  }, // VENDOR_REVOCATIONS_PROD_PARTITION
-    { .address = 0x9A8, .is_software = false }, // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0xBB0, .is_software = true  }  // VENDOR_NON_SECRET_PROD_PARTITION
+    { .address = 0x0000, .is_software = false }, // SECRET_TEST_UNLOCK_PARTITION
+    { .address = 0x0048, .is_software = false }, // SECRET_MANUF_PARTITION
+    { .address = 0x0090, .is_software = false }, // SECRET_PROD_PARTITION_0
+    { .address = 0x00A0, .is_software = false }, // SECRET_PROD_PARTITION_1
+    { .address = 0x00B0, .is_software = false }, // SECRET_PROD_PARTITION_2
+    { .address = 0x00C0, .is_software = false }, // SECRET_PROD_PARTITION_3
+    { .address = 0x00D0, .is_software = true  }, // SW_MANUF_PARTITION
+    { .address = 0x2C18, .is_software = false }, // SECRET_LC_TRANSITION_PARTITION
+    { .address = 0x2CD0, .is_software = true  }, // SVN_PARTITION
+    { .address = 0x2CF8, .is_software = true  }, // VENDOR_TEST_PARTITION
+    { .address = 0x2D38, .is_software = true  }, // VENDOR_HASHES_MANUF_PARTITION
+    { .address = 0x2D78, .is_software = true  }, // VENDOR_HASHES_PROD_PARTITION
+    { .address = 0x3068, .is_software = true  }, // VENDOR_REVOCATIONS_PROD_PARTITION
+    { .address = 0x3100, .is_software = false }, // VENDOR_SECRET_PROD_PARTITION
+    { .address = 0x3308, .is_software = true  }  // VENDOR_NON_SECRET_PROD_PARTITION
 };
 
 /**

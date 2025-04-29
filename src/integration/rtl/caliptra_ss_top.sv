@@ -39,14 +39,17 @@ module caliptra_ss_top
     ,parameter [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
+    ,parameter bit LCC_SecVolatileRawUnlockEn = 1
 ) (
-    input logic cptra_ss_clk_i,
     // TODO: Hacking in this i3c clock
     input logic cptra_i3c_clk_i,
+    input logic cptra_ss_clk_i,
+    output logic cptra_ss_rdc_clk_cg_o,
     input logic cptra_ss_pwrgood_i,
     input logic cptra_ss_rst_b_i,
     input  logic cptra_ss_mci_cptra_rst_b_i,
     output logic cptra_ss_mci_cptra_rst_b_o,
+    output logic cptra_ss_rst_b_o,
 
 // Caliptra Core AXI Sub Interface
     axi_if.w_sub cptra_ss_cptra_core_s_axi_if_w_sub,
@@ -271,7 +274,7 @@ module caliptra_ss_top
     logic                       i3c_peripheral_reset;
     logic                       i3c_escalated_reset;
 
-    (* syn_keep = "true", mark_debug = "true" *) logic        [31:0]         reset_vector;
+    logic        [31:0]         reset_vector;
 
 
     logic                       o_debug_mode_status;
@@ -304,8 +307,6 @@ module caliptra_ss_top
     logic                       wb_csr_valid;
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
-
-    logic cptra_ss_rst_b_o;
 
     logic mcu_clk_cg;
 
@@ -382,18 +383,6 @@ module caliptra_ss_top
     logic payload_available_o;
     logic image_activated_o;
 
-    mci_mcu_sram_if cptra_ss_mcu_rom_mbox0_sram_req_if (
-        .clk(cptra_ss_clk_i),
-        .rst_b(cptra_ss_rst_b_o)
-    );
-    
-    mci_mcu_sram_if cptra_ss_mcu_rom_mbox1_sram_req_if (
-        .clk(cptra_ss_clk_i),
-        .rst_b(cptra_ss_rst_b_o)
-    );
-
-
-    
 
 
 
@@ -958,6 +947,11 @@ xpm_cdc_single_i3c_escalated_reset_inst (
    .src_in(i3c_escalated_reset_presync)      // 1-bit input: Input signal to be synchronized to dest_clk domain.
 );
 
+    logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
+    assign priv_ids[0] = 32'd0;
+    assign priv_ids[1] = 32'd0;
+    assign priv_ids[2] = cptra_ss_strap_caliptra_dma_axi_user_i;
+    assign priv_ids[3] = cptra_ss_strap_mcu_lsu_axi_user_i;
 
     i3c_wrapper #(
         .AxiDataWidth(`AXI_DATA_WIDTH),
@@ -1019,9 +1013,8 @@ xpm_cdc_single_i3c_escalated_reset_inst (
         .escalated_reset_o(i3c_escalated_reset_presync),
         .irq_o(i3c_irq_o),
 
-        //-- AXI USER ID FILTERING
-        .disable_id_filtering_i(1'b1), // -- FIXME : ENABLE THIS FEATURE
-        .priv_ids_i('{32'b0, 32'b0, 32'b0, 32'b0}) // -- FIXME : ENABLE THIS FEATURE
+        .disable_id_filtering_i(1'b0),
+        .priv_ids_i(priv_ids)
 
     );
 
@@ -1054,8 +1047,11 @@ xpm_cdc_single_i3c_escalated_reset_inst (
     // The following signal should be also an input coming from LC to MCI
             //lc_hw_rev_t  hw_rev_o;
     mci_top #(
-        .AXI_DATA_WIDTH(32),
-        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
+        .AXI_ADDR_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.araddr)),
+        .AXI_DATA_WIDTH  (32                                       ),
+        .AXI_USER_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.aruser)),
+        .AXI_ID_WIDTH    ($bits(cptra_ss_mci_s_axi_if_r_sub.arid)  ),
+        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB                         ),
 
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
         .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),  
@@ -1067,7 +1063,7 @@ xpm_cdc_single_i3c_escalated_reset_inst (
 
         .clk(cptra_ss_clk_i),
         .mcu_clk_cg(mcu_clk_cg),
-        .cptra_ss_rdc_clk_cg(), // Unused since no IPs on warm reset. MCU has different clock and Cptra has its own RDC.
+        .cptra_ss_rdc_clk_cg(cptra_ss_rdc_clk_cg_o), 
 
 
         .mci_rst_b(cptra_ss_rst_b_i),
@@ -1187,6 +1183,8 @@ xpm_cdc_single_i3c_escalated_reset_inst (
 
     );
 
+    // lcc_steady_state_from_otp
+
     //=========================================================================-
     // Life-cycle Controller Instance : 
     // 
@@ -1218,7 +1216,9 @@ xpm_cdc_single_i3c_escalated_reset_inst (
     assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl_pwr_lc_o.lc_done);
     assign lcc_init_req.lc_init = mci_to_lcc_init_req; 
 
-    lc_ctrl u_lc_ctrl (
+    lc_ctrl  #(
+        .SecVolatileRawUnlockEn (LCC_SecVolatileRawUnlockEn)
+    ) u_lc_ctrl (
             .clk_i(cptra_ss_clk_i),
             .rst_ni(cptra_ss_rst_b_o),
             .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
@@ -1319,12 +1319,7 @@ xpm_cdc_single_i3c_escalated_reset_inst (
 
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
-	); 
-
-    // assign fuse_ctrl_rdy = 1;
-    // De-assert cptra_rst_b only after fuse_ctrl has initialized
-    logic cptra_rst_b; //fixme resets
-    assign cptra_rst_b = cptra_ss_rst_b_i;//fuse_ctrl_rdy ? cptra_soc_bfm_rst_b : 1'b0;
+    ); 
 
     `CALIPTRA_ASSERT(i3c_payload_available, ($rose(payload_available_o) |-> ##[1:50] payload_available_o == 0),cptra_ss_clk_i, cptra_ss_rst_b_i)
     `CALIPTRA_ASSERT(i3c_image_activated, ($rose(image_activated_o) |-> ##[1:50] image_activated_o == 0), cptra_ss_clk_i, cptra_ss_rst_b_i)

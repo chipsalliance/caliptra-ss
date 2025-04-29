@@ -1,3 +1,19 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
 #include "soc_ifc_ss.h"
 #include "soc_address_map.h"
 #include "soc_ifc.h"
@@ -257,10 +273,25 @@ void cptra_mcu_mbox_write_dword_sram(uint32_t mbox_num, uint32_t dword_addr, uin
     cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num, data);
 }
 
+void cptra_mcu_mbox_write_dword_sram_burst(uint32_t mbox_num, uint32_t dword_addr, uint32_t * payload, uint32_t size_in_bytes, uint16_t block_size) {
+    VPRINTF(LOW, "CALIPTRA: Write burst to MBOX%x starting at SRAM[%d], size in bytes: 0x%x\n", mbox_num, dword_addr, size_in_bytes); 
+    uint8_t status;
+    status = soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num,
+                                             0, payload, size_in_bytes, block_size);
+}    
+
 uint32_t cptra_mcu_mbox_read_dword_sram(uint32_t mbox_num, uint32_t dword_addr) {
     uint32_t data = cptra_axi_dword_read(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "CALIPTRA: Reading Mbox%x SRAM[%d]: 0x%x\n", mbox_num, dword_addr, data);
     return data;
+}
+
+void cptra_mcu_mbox_read_dword_sram_burst(uint32_t mbox_num, uint32_t dword_addr, uint32_t * payload, uint32_t size_in_bytes, uint16_t block_size) {
+    VPRINTF(LOW, "CALIPTRA: Read burst to MBOX%x starting at SRAM[%d], size in bytes: 0x%x\n", mbox_num, dword_addr, size_in_bytes); 
+    uint8_t status;
+    status = soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num,
+                                             0, payload, size_in_bytes, block_size);
+
 }
 
 void cptra_mcu_mbox_write_cmd_status(uint32_t mbox_num, uint32_t data) {

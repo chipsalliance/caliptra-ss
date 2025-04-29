@@ -1,6 +1,6 @@
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 Western Digital Corporation or its affiliates.
+// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,6 +55,22 @@
 //         8'he0        - Disable ECC Error Injection
 //         8'he2        - Inject Single-bit ECC errors into MCU DCCM
 //         8'he3        - Inject Double-bit ECC errors into MCU DCCM
+//         8'he4        - Inject Single-bit ECC errors into MCU MBOX 
+//         8'he5        - Inject Double-bit ECC errors into MCU MBOX 
+//         8'he6        - Disable ECC Error Injection MCU MBOX
+//         8'he7        - Inject random ECC errors into MCU MBOX
+//         8'he8        - Inject Single-bit ECC errors into MCU SRAM 
+//         8'he9        - Inject Double-bit ECC errors into MCU SRAM 
+//         8'hea        - Disable ECC Error Injection MCU SRAM
+//         8'heb        - Inject random ECC errors into MCU SRAM
+//         8'hec        - Inject MCI error fatal (nmi, mcu_sram_ecc_unc, mcu_sram_dmi_axi_collision)
+//         8'hed        - Inject MCI error non fatal (mbox0/mbox1_ecc_unc)
+//         8'hee        - Inject aggregate error fatal
+//         8'hef        - Inject aggregate error non-fatal
+//         8'hf0        - Inject notif0 intr conditions
+//         --
+//         8'hfb        - Set the isr_active bit
+//         8'hfc        - Clear the isr_active bit
 //         --
 //         8'hff        - End the simulation with a Success status
 localparam TB_SERVICE_CMD_NOPE              = 8'h00;
@@ -85,6 +101,11 @@ localparam CMD_LC_DISABLE_SVA               = FC_LCC_CMD_OFFSET + 8'h14;
 localparam CMD_LC_ENABLE_SVA                = FC_LCC_CMD_OFFSET + 8'h15;
 localparam CMD_FC_LCC_CORRECTABLE_FAULT     = FC_LCC_CMD_OFFSET + 8'h16;
 localparam CMD_FC_LCC_UNCORRECTABLE_FAULT   = FC_LCC_CMD_OFFSET + 8'h17;
+localparam CMD_LCC_FATAL_BUS_INTEG_ERROR    = FC_LCC_CMD_OFFSET + 8'h18;
+localparam CMD_LC_FAULT_CNTR                = FC_LCC_CMD_OFFSET + 8'h19;
+localparam CMD_DISABLE_CLK_BYP_ACK          = FC_LCC_CMD_OFFSET + 8'h1A;
+localparam CMD_LC_TRIGGER_ESCALATION0_DIS   = FC_LCC_CMD_OFFSET + 8'h1B;
+localparam CMD_LC_TRIGGER_ESCALATION1_DIS   = FC_LCC_CMD_OFFSET + 8'h1C;
 
 
 localparam TB_DISABLE_MCU_SRAM_PROT_ASSERTS = 8'hc0;
@@ -96,10 +117,21 @@ localparam TB_CMD_INJECT_MBOX_SRAM_SINGLE_ECC_ERROR = 8'he4;
 localparam TB_CMD_INJECT_MBOX_SRAM_DOUBLE_ECC_ERROR = 8'he5;
 localparam TB_CMD_DISABLE_MBOX_SRAM_ECC_ERROR_INJECTION = 8'he6;
 localparam TB_CMD_RANDOMIZE_MBOX_SRAM_ECC_ERROR_INJECTION = 8'he7;
+localparam TB_CMD_INJECT_MCU_SRAM_SINGLE_ECC_ERROR = 8'he8;
+localparam TB_CMD_INJECT_MCU_SRAM_DOUBLE_ECC_ERROR = 8'he9;
+localparam TB_CMD_DISABLE_MCU_SRAM_ECC_ERROR_INJECTION = 8'hea;
+localparam TB_CMD_RANDOMIZE_MCU_SRAM_ECC_ERROR_INJECTION = 8'heb;
+localparam TB_CMD_INJECT_MCI_ERROR_FATAL = 8'hec;
+localparam TB_CMD_INJECT_MCI_ERROR_NON_FATAL = 8'hed;
+localparam TB_CMD_INJECT_AGG_ERROR_FATAL = 8'hee;
+localparam TB_CMD_INJECT_AGG_ERROR_NON_FATAL = 8'hef;
+localparam TB_CMD_INJECT_NOTIF0 = 8'hf0;
 
 localparam TB_CMD_COLD_RESET                  = 8'hF5;
 localparam TB_CMD_WARM_RESET                  = 8'hF6;
 
-localparam TB_CMD_END_SIM_WITH_SUCCESS         = 8'hFF;
+localparam TB_CMD_INCR_INTR_ACTIVE            = 8'hFB;
+localparam TB_CMD_DECR_INTR_ACTIVE            = 8'hFC;
+localparam TB_CMD_END_SIM_WITH_SUCCESS        = 8'hFF;
 
 `endif // CALIPTRA_SS_TB_CMD_LIST_SVH

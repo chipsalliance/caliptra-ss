@@ -188,6 +188,8 @@ module mci_top
     logic        mcu_sram_single_ecc_error;
     logic        mcu_sram_double_ecc_error;
     logic        mcu_sram_fw_exec_region_lock_sync;
+    logic        mcu_sram_fw_exec_region_lock_internal;
+    logic        mcu_sram_fw_exec_region_lock_dmi_override;
     logic        mcu_sram_dmi_axi_collision_error;
     logic        mcu_sram_dmi_uncore_en;
     logic        mcu_sram_dmi_uncore_wr_en;
@@ -242,6 +244,7 @@ module mci_top
 
     // Other
     logic mci_ss_debug_intent;
+    logic early_warm_reset_warn;
 
     // RDC
 
@@ -312,6 +315,8 @@ caliptra_prim_flop_2sync #(
   .rst_ni(cptra_ss_rst_b_o),
   .d_i(mcu_sram_fw_exec_region_lock),
   .q_o(mcu_sram_fw_exec_region_lock_sync));
+
+assign mcu_sram_fw_exec_region_lock_internal = mcu_sram_fw_exec_region_lock_dmi_override | mcu_sram_fw_exec_region_lock_sync;
   
 // Caliptra internal fabric interface for MCI Mbox0
 // Address width is set to AXI_ADDR_WIDTH and Mbox0
@@ -407,6 +412,7 @@ mci_boot_seqr #(
     .cptra_ss_rst_b_o,
     .mcu_rst_b,
     .cptra_rst_b,
+    .early_warm_reset_warn,
 
     // MCU Halt Signals
     .mcu_cpu_halt_req_o,
@@ -422,7 +428,7 @@ mci_boot_seqr #(
 
     // SoC signals
     .mci_boot_seq_brkpoint,
-    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),
     .mcu_no_rom_config,                // Determines boot sequencer boot flow
 
     // LCC Signals
@@ -497,7 +503,7 @@ mci_mcu_sram_ctrl #(
     .axi_mcu_sram_config_req    ,
 
     // Access lock interface
-    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),  
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),  
     
     // DMI
     .dmi_uncore_en    (mcu_sram_dmi_uncore_en),
@@ -665,7 +671,8 @@ mci_reg_top #(
     .mcu_nmi_vector,
     
     // MISC
-    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_sync),
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),
+    .mcu_sram_fw_exec_region_lock_dmi_override,
 
     // MCU SRAM specific signals
     .mcu_sram_single_ecc_error,
@@ -789,8 +796,9 @@ endgenerate
 
  // DUT instantiation
 mci_lcc_st_trans LCC_state_translator (
-    .clk_i(clk),
+    .clk_i(cptra_ss_rdc_clk_cg),
     .rst_ni(cptra_ss_rst_b_o),
+    .early_warm_reset_warn,
     .state_error(lc_fatal_state_error_i),  
     .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
     .lc_dft_en_i(lc_dft_en_i),
@@ -848,5 +856,17 @@ mci_lcc_st_trans LCC_state_translator (
 `CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_R_USER_SIZE_MATCH,  AXI_USER_WIDTH == s_axi_r_if.UW)
 // AXI SUB R - Verify ID width matches
 `CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_R_ID_SIZE_MATCH,  AXI_ID_WIDTH == s_axi_r_if.IW)
+
+// MCU SRAM ECC SB
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_SB, $rose(i_mci_mcu_sram_ctrl.ecc_decode.single_ecc_error) |=> i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_SB_INTR_OUT, $rose(i_mci_mcu_sram_ctrl.ecc_decode.single_ecc_error) && 
+                i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.notif0_intr_en_r.notif_mcu_sram_ecc_cor_en.value && 
+                i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.global_intr_en_r.notif_en.value |=>
+                ##2 mci_intr, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
+
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_DB, $rose(i_mci_mcu_sram_ctrl.ecc_decode.double_ecc_error) |=> i_mci_reg_top.mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_DB_ALL_ERR_OUT, $rose(i_mci_mcu_sram_ctrl.ecc_decode.double_ecc_error) && 
+                !i_mci_reg_top.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value |=> 
+                all_error_fatal, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
 
 endmodule

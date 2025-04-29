@@ -22,6 +22,7 @@ module mci_lcc_st_trans
  (
     input logic clk_i,
     input logic rst_ni,
+    input logic early_warm_reset_warn,
     // Inputs from top level of MCI
     input logic                                         state_error, // That represents any invalid state errors
     // Inputs from LCC
@@ -87,7 +88,7 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
         FIPS_ZEROIZATION_CMD_o          <= MCU_ROM_zeroization_AND;
         if (otp_data_valid) begin
             mci_trans_st_current            <= mci_trans_st_next;
-            security_state_o                <= security_state_comb;  // Default case
+            security_state_o                <= early_warm_reset_warn ?'{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1} : security_state_comb ;  // Default case
             otp_static_state                <= lc_state_e'(from_otp_to_lcc_program_i.state);
             SOC_DFT_EN                      <= ((lc_dft_en_i == lc_ctrl_pkg::On) | SOC_DFT_EN_AND) & !lcc_valid_SCRAP_req;
             SOC_HW_DEBUG_EN                 <= ((lc_hw_debug_en_i == lc_ctrl_pkg::On)  | SOC_HW_DEBUG_EN_AND) & !lcc_valid_SCRAP_req;
@@ -311,7 +312,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
 `CALIPTRA_ASSERT(ScrapToNonDebug_A,
     $rose((otp_static_state == LcStScrap)  
         & (mci_trans_st_current != TRANSLATOR_RESET))
-  |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION),
+  |=> ##2 (security_state_o.device_lifecycle == DEVICE_PRODUCTION),
     clk_i,
     rst_ni || state_error
 );
@@ -319,14 +320,14 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
 `CALIPTRA_ASSERT(DebugUnlockedCheck_MANUF_A,
     $rose((ss_dbg_manuf_enable_i && (otp_static_state == LcStDev))
         & (mci_trans_st_current != TRANSLATOR_RESET))
-  |=> ##1 (security_state_o.debug_locked == 1'b0)
+  |=> ##2 (security_state_o.debug_locked == 1'b0)
 );
 
 `CALIPTRA_ASSERT(DebugUnlockedCheck_PROD_A,
     $rose(((CLPTR_PROD_DEBUG_UNLOCK_AND) 
         & (otp_static_state == LcStProd))  
         & (mci_trans_st_current != TRANSLATOR_RESET))
-  |=> ##1 (security_state_o.debug_locked == 1'b0)
+  |=> ##2 (security_state_o.debug_locked == 1'b0)
 );
 
 `CALIPTRA_ASSERT(NonDebugUnlockedCheck_A,
