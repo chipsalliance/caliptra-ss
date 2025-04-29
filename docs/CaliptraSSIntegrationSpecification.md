@@ -336,6 +336,7 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
 | External | input     | 1     | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`     | Allow RMA or SCRAP on PPD input                   |
 | External | input     | 1     | `cptra_ss_FIPS_ZEROIZATION_PPD_i`    | Zeroization request with PPD input       |
+| External | output     | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro       |
 | External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI            |
 | External | output    | 1     | `cptra_ss_mci_error_fatal_o`         | MCI error fatal output                   |
 | External | output    | 1     | `cptra_ss_mci_error_non_fatal_o`     | MCI error non-fatal output               |
