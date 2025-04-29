@@ -79,6 +79,7 @@
     - [MCU Mailbox](#mcu-mailbox)
       - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
       - [Reset](#reset-1)
+      - [MCI Debug Lock Status](#mci-debug-lock-status)
       - [MCU to SOC Receiver Flow](#mcu-to-soc-receiver-flow)
       - [SOC Sender to MCU Flow](#soc-sender-to-mcu-flow)
       - [SOC Sender to SOC Receiver Communication Flow (MCU as intermediary)](#soc-sender-to-soc-receiver-communication-flow-mcu-as-intermediary)
@@ -1438,14 +1439,24 @@ The [Caliptra SS HW MCU Mailbox Spec](https://github.com/chipsalliance/caliptra-
 
 If build-time integration straps are not used for configuring the trusted MBOX AXI users, then trusted users will need to configured with the following lockable MCI registers before MBOX can be used by SOC agents:
 
-   - ```MBOX*_VALID_AXI_USER```
-   - ```MBOX*_AXI_USER_LOCK```
+   - `MBOX*_VALID_AXI_USER`
+   - `MBOX*_AXI_USER_LOCK`
   
 See [Caliptra SS MCU Trusted AXI Users](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSIntegrationSpecification.md#mcu-mailbox-limited-trusted-axi-users) for more details.
 
 #### Reset 
 
-The mailboxes start locked by MCU to prevent any data leaks across warm reset.  MCU shall set ```MBOX_DLEN``` to MBOX SRAM size and write 0 to ```MBOX_EXECUTE``` to release the MBOX and wipe the MBOX SRAM.  This should be done before using or allowing use of the mailboxes.
+The mailboxes start locked by MCU to prevent any data leaks across warm reset.  MCU shall set `MBOX_DLEN` to MBOX SRAM size and write 0 to `MBOX_EXECUTE` to release the MBOX and wipe the MBOX SRAM.  This should be done before using or allowing use of the mailboxes.
+
+#### MCI Debug Lock Status
+
+MCI exposed the debug state of the chip to MCU via an interrupt `notif_debug_locked_sts` and a status register `SECURITY_STATE.debug_locked`. There is no defined use case for this feature at subsystem level, unlike in Caliptra where security assets are cleared when entering debug locked state. Therefore, it is recommended this interrupt remains disabled using `notif_debug_locked_en`.
+
+If there is a need to use debug state the recommened flow to avoid missing a debug locked transition is:
+
+1. Out of reset MCU W1C `notif_debug_locked_sts`
+2. MCU reads `SECURITY_STATE.debug_locked` and acts on the value seen
+3. MCU enables the interrupt using `notif_debug_locked_en`
 
 #### MCU to SOC Receiver Flow
 
@@ -1564,15 +1575,16 @@ To proceed after a breakpoint the SOC must write the `MCI_BOOTFSM_GO.go` registe
 
 #### MCU No ROM Config
 
-Caliptra SS supports booting without a MCU ROM. To enable this configurations the SOC must set:
+Caliptra SS supports booting without a MCU ROM. To enable this configuration the SOC must set:
 
 1. `cptra_ss_mcu_no_rom_config_i` set to 1
 2. `cptra_ss_strap_mci_soc_config_axi_user_i` set to a trusted user other than MCU
+3. (optional) `cptra_ss_strap_mcu_reset_vector_i` set to known starting address in MCU SRAM
 
 The expected boot sequence is:
 
 1. MCI brought out of reset
-2. MCI boot FSM progresses to WAIT_FOR_CPTRA_BOOT_GO
+2. MCI boot FSM progresses to `WAIT_FOR_CPTRA_BOOT_GO`
 3. Trusted SOC agent does configuration MCU ROM typically executes. See [CSS HW spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#subsystem-boot-finite-state-machine-css-bootfsm)
 4. Trusted SOC agent sets `CPTRA_BOOT_GO.go`
 5. Trusted SOC agent executes [MCU FW Boot Update](mcu-fw-boot-update) with Caliptra
