@@ -41,65 +41,47 @@ void main(void) {
 
     VPRINTF(LOW, "==================\nMCI Registers Test\n==================\n\n");
 
+    mci_register_group_t ro_reg_groups[] = {
+        REG_GROUP_KNOWN_VALUES,
+        REG_GROUP_CAPABILITIES_RO,
+        REG_GROUP_STRAPS_RO,
+        REG_GROUP_STATUS_RO,
+        REG_GROUP_SECURITY_RO,
+        REG_GROUP_WATCHDOG_RO,
+        REG_GROUP_GENERIC_WIRES_RO,
+        REG_GROUP_SS_RO
+    };
+
+    const int num_groups =  sizeof(ro_reg_groups) / sizeof(ro_reg_groups[0]);
+
     if (rst_count == 1) {
 
         mci_init();
-
-        // Exclude registers from writing during group write
-        exclude_register(SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO);
-        exclude_register(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-        exclude_register(SOC_MBOX_CSR_MBOX_LOCK);
-        exclude_register(SOC_MBOX_CSR_MBOX_USER);
-        exclude_register(SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_AGG_ERROR_NON_FATAL);
     
         // Loop through all RO register groups
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_KNOWN_VALUES) ||
-                (group == REG_GROUP_CAPABILITIES_RO) ||
-                (group == REG_GROUP_STATUS_RO) ||
-                (group == REG_GROUP_SECURITY_RO) ||
-                (group == REG_GROUP_WATCHDOG_RO) ||
-                (group == REG_GROUP_MCU_MBOX0_RO) ||
-                (group == REG_GROUP_MCU_MBOX1_RO) ||
-                (group == REG_GROUP_GENERIC_WIRES_RO) ||
-                (group == REG_GROUP_SS_RO) ) {
-                // Read registers and record expected data
-                read_register_group_and_track(group, &g_expected_data_dict);
-                // Read registers and verify
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);    
-            } 
-            else {
-                continue;   
-            }    
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = ro_reg_groups[i];
+
+            // Read registers and record expected data
+            read_register_group_and_track(group, &g_expected_data_dict);
+            
+            // Read registers and verify
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, false, COLD_RESET);        
         }
 
         // Lock registers with SS_CONFIG_DONE_STICKY and SS_CONFIG_DONE registers by writing 0x1 to them
         write_to_register_group_and_track(REG_GROUP_SS, 0x1, &g_expected_data_dict);   
 
-        read_register_group_and_verify(REG_GROUP_SS, &g_expected_data_dict); 
+        read_register_group_and_verify(REG_GROUP_SS, &g_expected_data_dict, false, COLD_RESET); 
 
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_KNOWN_VALUES) ||
-                (group == REG_GROUP_CAPABILITIES_RO) ||
-                (group == REG_GROUP_STATUS_RO) ||
-                (group == REG_GROUP_SECURITY_RO) ||
-                (group == REG_GROUP_WATCHDOG_RO) ||
-                (group == REG_GROUP_MCU_MBOX0_RO) ||
-                (group == REG_GROUP_MCU_MBOX1_RO) ||
-                (group == REG_GROUP_GENERIC_WIRES_RO) ||
-                (group == REG_GROUP_SS_RO) ) {
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = ro_reg_groups[i];
 
-                // Write random values and confirm write fails
-                write_random_to_register_group_and_track(group, &g_expected_data_dict);
+            // Write random values and confirm write fails
+            write_random_to_register_group_and_track(group, &g_expected_data_dict);
 
-                // Read registers and verify data matches
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);
-            } else {
-                continue;
-            }
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, false, COLD_RESET);
         }
 
         // Issue warm reset
@@ -110,27 +92,15 @@ void main(void) {
 
     } else if (rst_count == 2) {
 
-        reset_exp_reg_data(&g_expected_data_dict, WARM_RESET);
-
         // Loop through all RO register groups
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_KNOWN_VALUES) ||
-                (group == REG_GROUP_CAPABILITIES_RO) ||
-                (group == REG_GROUP_STATUS_RO) ||
-                (group == REG_GROUP_SECURITY_RO) ||
-                (group == REG_GROUP_WATCHDOG_RO) ||
-                (group == REG_GROUP_MCU_MBOX0_RO) ||
-                (group == REG_GROUP_MCU_MBOX1_RO) ||
-                (group == REG_GROUP_GENERIC_WIRES_RO) ||
-                (group == REG_GROUP_SS_RO) ) {
-                // Read registers and record expected data
-                read_register_group_and_track(group, &g_expected_data_dict);
-                // Read registers and verify
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);    
-            } 
-            else {
-                continue;   
-            }    
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = ro_reg_groups[i];
+
+            // Read registers and record expected data
+            read_register_group_and_track(group, &g_expected_data_dict);
+                
+            // Read registers and verify
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, true, WARM_RESET);       
         }
     
         // Issue cold reset
@@ -141,27 +111,15 @@ void main(void) {
 
     } else if (rst_count == 3) {
 
-        reset_exp_reg_data(&g_expected_data_dict, COLD_RESET);
-
         // Loop through all RO register groups
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_KNOWN_VALUES) ||
-                (group == REG_GROUP_CAPABILITIES_RO) ||
-                (group == REG_GROUP_STATUS_RO) ||
-                (group == REG_GROUP_SECURITY_RO) ||
-                (group == REG_GROUP_WATCHDOG_RO) ||
-                (group == REG_GROUP_MCU_MBOX0_RO) ||
-                (group == REG_GROUP_MCU_MBOX1_RO) ||
-                (group == REG_GROUP_GENERIC_WIRES_RO) ||
-                (group == REG_GROUP_SS_RO) ) {
-                // Read registers and record expected data
-                read_register_group_and_track(group, &g_expected_data_dict);
-                // Read registers and verify
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);    
-            } 
-            else {
-                continue;   
-            }    
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = ro_reg_groups[i];
+
+            // Read registers and record expected data
+            read_register_group_and_track(group, &g_expected_data_dict);
+            
+            // Read registers and verify
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, true, COLD_RESET);       
         }
     }
     
