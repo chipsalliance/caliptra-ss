@@ -7,7 +7,7 @@ contents:
       path: ""
       mode: round-robin
       weight: 100
-      generations: 225
+      generations: 228
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
@@ -87,3 +87,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_volatile_lock/caliptra_ss_fuse_ctrl_volatile_lock: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_read_lock/caliptra_ss_fuse_ctrl_read_lock: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock_wrong_token/caliptra_ss_lcc_volatile_unlock_wrong_token: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_registers/caliptra_ss_fuse_ctrl_registers: { weight: 100 }
