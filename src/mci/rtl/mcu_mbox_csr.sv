@@ -268,7 +268,7 @@ module mcu_mbox_csr (
     field_storage_t field_storage;
 
     assign hwif_out.MBOX_SRAM.req = decoded_reg_strb.MBOX_SRAM;
-    assign hwif_out.MBOX_SRAM.addr = decoded_addr[21:0];
+    assign hwif_out.MBOX_SRAM.addr = decoded_addr[20:0];
     assign hwif_out.MBOX_SRAM.req_is_wr = decoded_req_is_wr;
     assign hwif_out.MBOX_SRAM.wr_data = decoded_wr_data;
     assign hwif_out.MBOX_SRAM.wr_biten = decoded_wr_biten;
