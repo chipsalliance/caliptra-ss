@@ -234,7 +234,7 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | input     | 32     | `cptra_ss_strap_generic_1_i`              | Generic strap input 1                    |
 | External | input     | 32     | `cptra_ss_strap_generic_2_i`              | Generic strap input 2                    |
 | External | input     | 32     | `cptra_ss_strap_generic_3_i`              | Generic strap input 3                    |
-| External | input     | 1      | `cptra_ss_debug_intent_i`                 | is a physical presence bit required to initiate the debug unlock flow. For more details, refer to the [Production Debug Unlock Flow](CaliptraSSHardwareSpecification.md#production-debug-unlock-architecture) and [How does Caliptra Subsystem enable manufacturing debug mode?](#how-does-caliptra-subsystem-enable-manufacturing-debug-mode)|
+| External | input     | 1      | `cptra_ss_debug_intent_i`                 | is a physical presence bit required to initiate the debug unlock flow. For more details, refer to the [Production Debug Unlock Flow](CaliptraSSHardwareSpecification.md#production-debug-unlock-architecture) and [How does Caliptra Subsystem enable manufacturing debug mode?](#how-does-caliptra-subsystem-enable-manufacturing-debug-mode). For SOCs that choose to use these features, this port should be connected to a GPIO|
 
 ### AXI Interface (axi_if)
 
@@ -337,7 +337,7 @@ File at path includes parameters and defines for Caliptra Subystem `src/integrat
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
 | External | input     | 1     | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`     | Allow RMA or SCRAP on PPD input                   |
 | External | input     | 1     | `cptra_ss_FIPS_ZEROIZATION_PPD_i`    | Zeroization request with PPD input       |
-| External | output     | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro       |
+| External | output     | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro for any additional SOC specific use cases       |
 | External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI            |
 | External | output    | 1     | `cptra_ss_mci_error_fatal_o`         | MCI error fatal output                   |
 | External | output    | 1     | `cptra_ss_mci_error_non_fatal_o`     | MCI error non-fatal output               |
@@ -633,7 +633,7 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 | Internal   | Input      | 1       | `lc_escalate_en_i`            |                                   | Escalation enable input from LC Controller.                                                      |
 | Internal   | Input      | 1       | `lc_check_byp_en_i`           |                                   | Clock bypass check enable input from LC Controller.                                              |
 | Internal   | Output     | Struct  | `otp_lc_data_o`               |                                   | Lifecycle broadcasted data output to LC Controller.                                              |
-| Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra-core. This port broadcasts UDS and Field-entropy.              |
+| Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra-core. This port broadcasts UDS-seed and Field-entropy-seed.    |
 
 
 ## Memory Map	/ Address map
