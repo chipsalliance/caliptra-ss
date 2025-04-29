@@ -147,8 +147,8 @@ void main(void) {
     }
 
     if (error_count == 0 ) {
-        SEND_STDOUT_CTRL(0xff);
+        SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
     } else {
-        SEND_STDOUT_CTRL(0x1);
+        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
     }
 }
