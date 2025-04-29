@@ -1447,7 +1447,5 @@ end
   `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlScrmlPrimCountCheck_A, u_otp_ctrl_scrmbl.u_prim_count, alerts[1])
   `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlScrmblStateRegsCheck_A, u_otp_ctrl_scrmbl.u_state_regs, alerts[1])
   `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlTlulLcGateStateRegsCheck_A, u_tlul_lc_gate.u_state_regs, alerts[1])
-  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, caliptra_ss_top_tb.u_otp.u_state_regs, alerts[1])
-  `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(OtpPrimOnehotCheck_A, caliptra_ss_top_tb.u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check, alerts[1])
 
 endmodule : otp_ctrl
