@@ -289,29 +289,29 @@ module caliptra_wrapper_top #(
 
     //-------------------------- MCU IFU AXI signals--------------------------
     // AXI Write Channels
-    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_IFU_AWVALID,
-    (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_IFU_AWREADY,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [18:0]               M_AXI_MCU_IFU_AWID,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [              31:0] M_AXI_MCU_IFU_AWADDR,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [               3:0] M_AXI_MCU_IFU_AWREGION,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [               7:0] M_AXI_MCU_IFU_AWLEN,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [               2:0] M_AXI_MCU_IFU_AWSIZE,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [               1:0] M_AXI_MCU_IFU_AWBURST,
-    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_IFU_AWLOCK,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [               3:0] M_AXI_MCU_IFU_AWCACHE,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [               2:0] M_AXI_MCU_IFU_AWPROT,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [               3:0] M_AXI_MCU_IFU_AWQOS,
+    output wire                      M_AXI_MCU_IFU_AWVALID,
+    input  wire                      M_AXI_MCU_IFU_AWREADY,
+    output wire [18:0]               M_AXI_MCU_IFU_AWID,
+    output wire [              31:0] M_AXI_MCU_IFU_AWADDR,
+    output wire [               3:0] M_AXI_MCU_IFU_AWREGION,
+    output wire [               7:0] M_AXI_MCU_IFU_AWLEN,
+    output wire [               2:0] M_AXI_MCU_IFU_AWSIZE,
+    output wire [               1:0] M_AXI_MCU_IFU_AWBURST,
+    output wire                      M_AXI_MCU_IFU_AWLOCK,
+    output wire [               3:0] M_AXI_MCU_IFU_AWCACHE,
+    output wire [               2:0] M_AXI_MCU_IFU_AWPROT,
+    output wire [               3:0] M_AXI_MCU_IFU_AWQOS,
 
-    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_IFU_WVALID,
-    (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_IFU_WREADY,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [63:0]               M_AXI_MCU_IFU_WDATA,
-    (* syn_keep = "true", mark_debug = "true" *) output wire [ 7:0]               M_AXI_MCU_IFU_WSTRB,
-    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_IFU_WLAST,
+    output wire                      M_AXI_MCU_IFU_WVALID,
+    input  wire                      M_AXI_MCU_IFU_WREADY,
+    output wire [63:0]               M_AXI_MCU_IFU_WDATA,
+    output wire [ 7:0]               M_AXI_MCU_IFU_WSTRB,
+    output wire                      M_AXI_MCU_IFU_WLAST,
 
-    (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_IFU_BVALID,
-    (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_IFU_BREADY,
-    (* syn_keep = "true", mark_debug = "true" *) input  wire [               1:0] M_AXI_MCU_IFU_BRESP,
-    (* syn_keep = "true", mark_debug = "true" *) input  wire [18:0]               M_AXI_MCU_IFU_BID,
+    input  wire                      M_AXI_MCU_IFU_BVALID,
+    output wire                      M_AXI_MCU_IFU_BREADY,
+    input  wire [               1:0] M_AXI_MCU_IFU_BRESP,
+    input  wire [18:0]               M_AXI_MCU_IFU_BID,
 
     // AXI Read Channels
     (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_IFU_ARVALID,
@@ -1844,7 +1844,8 @@ I think this is the one that isn't used
     (* syn_keep = "true", mark_debug = "true" *) logic i3c_core_scl_o;
     (* syn_keep = "true", mark_debug = "true" *) logic i3c_core_sda_o;
 
-/*
+
+    // TODO: Connect OE signals from i3c-core
     always_comb begin
         //     i3c-core                             | AXI I3C
         case ({i3c_core_sel_od_pp_o, i3c_core_scl_o, axi_i3c_scl_pullup_en, ~axi_i3c_scl_t, axi_i3c_scl_o
@@ -1881,19 +1882,17 @@ I think this is the one that isn't used
 
 
         // I3C core Push Pull - output high
-        5'b10000:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 0 // AXI I3C not driving
-        5'b10001:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 1 // AXI I3C not driving
-        5'b10010:   SCL = 1'b0; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 0 // Conflict! Driving different values!!! This should never happen according to I3C spec
-        5'b10011:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 1 // Both driving the same
-        5'b10100:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
-        5'b10101:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
-        5'b10110:   SCL = 1'b0; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 0 // Conflict between OD status.
-        5'b10111:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
+        5'b11000:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 0 // AXI I3C not driving
+        5'b11001:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 1 // AXI I3C not driving
+        5'b11010:   SCL = 1'b0; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 0 // Conflict! Driving different values!!! This should never happen according to I3C spec
+        5'b11011:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 1 // Both driving the same
+        5'b11100:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
+        5'b11101:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
+        5'b11110:   SCL = 1'b0; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 0 // Conflict between OD status.
+        5'b11111:   SCL = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
         default: SCL = 1'b1;
         endcase
     end
-*/
-
 
     always_comb begin
         //     i3c-core                             | AXI I3C
@@ -1931,14 +1930,14 @@ I think this is the one that isn't used
 
 
         // I3C core Push Pull - output high
-        5'b10000:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 0 // AXI I3C not driving
-        5'b10001:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 1 // AXI I3C not driving
-        5'b10010:   SDA = 1'b0; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 0 // Conflict! Driving different values!!! This should never happen according to I3C spec
-        5'b10011:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 1 // Both driving the same
-        5'b10100:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
-        5'b10101:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
-        5'b10110:   SDA = 1'b0; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 0 // Conflict between OD status.
-        5'b10111:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
+        5'b11000:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 0 // AXI I3C not driving
+        5'b11001:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output disable, data 1 // AXI I3C not driving
+        5'b11010:   SDA = 1'b0; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 0 // Conflict! Driving different values!!! This should never happen according to I3C spec
+        5'b11011:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 0, output enable,  data 1 // Both driving the same
+        5'b11100:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 0 // Conflict between OD status.
+        5'b11101:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output disable, data 1 // Conflict between OD status.
+        5'b11110:   SDA = 1'b0; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 0 // Conflict between OD status.
+        5'b11111:   SDA = 1'b1; // I3C core Push Pull - data 1 | AXI_I3C | pullup 1, output enable,  data 1 // Conflict between OD status.
         default: SDA = 1'b1;
         endcase
     end
