@@ -39,68 +39,52 @@ void main(void) {
     rst_count++;
     VPRINTF(LOW, "----------------\nrst count = %d\n----------------\n", rst_count);
 
-    VPRINTF(LOW, "==================\nMCI Registers Test\n==================\n\n");
+    VPRINTF(LOW, "=========================\nMCI Debug Hash Registers Test\n=========================\n\n");
+
+    mci_register_group_t pk_hash_groups[] = {
+        REG_GROUP_DEBUG_UNLOCK_PK_HASH_0,
+        REG_GROUP_DEBUG_UNLOCK_PK_HASH_1,
+        REG_GROUP_DEBUG_UNLOCK_PK_HASH_2,
+        REG_GROUP_DEBUG_UNLOCK_PK_HASH_3,
+        REG_GROUP_DEBUG_UNLOCK_PK_HASH_4,
+        REG_GROUP_DEBUG_UNLOCK_PK_HASH_5,
+        REG_GROUP_DEBUG_UNLOCK_PK_HASH_6,
+        REG_GROUP_DEBUG_UNLOCK_PK_HASH_7
+    };
+
+    const int num_groups = sizeof(pk_hash_groups) / sizeof(pk_hash_groups[0]);
 
     // Loop through all PK Hash register groups and write/read random values to registers
     if (rst_count == 1) {
 
         mci_init();
 
-        // Exclude registers from writing during group write
-        exclude_register(SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO);
-        exclude_register(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-        exclude_register(SOC_MBOX_CSR_MBOX_LOCK);
-        exclude_register(SOC_MBOX_CSR_MBOX_USER);
-        exclude_register(SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_AGG_ERROR_NON_FATAL);
-
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_0) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_1) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_2) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_3) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_4) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_5) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_6) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_7)) {
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = pk_hash_groups[i];
+            
+            // Write random values to all PK Hash registers
+            write_random_to_register_group_and_track(group, &g_expected_data_dict);
                 
-                // Write random values to all PK Hash registers
-                write_random_to_register_group_and_track(group, &g_expected_data_dict);
-                
-                // Read registers and verify data matches
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);
-            } else {
-                continue;
-            }
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, false, COLD_RESET);
+            
         }
 
         // Lock registers with SS_CONFIG_DONE_STICKY and SS_CONFIG_DONE registers by writing 0x1 to them
         write_to_register_group_and_track(REG_GROUP_SS, 0x1, &g_expected_data_dict); 
 
-        read_register_group_and_verify(REG_GROUP_SS, &g_expected_data_dict); 
+        read_register_group_and_verify(REG_GROUP_SS, &g_expected_data_dict, false, COLD_RESET); 
 
         // Loop through all PK Hash register groups and write/read random values
         // Registers are sticky, new value should not be written
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_0) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_1) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_2) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_3) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_4) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_5) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_6) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_7)) {
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = pk_hash_groups[i];
                 
-                // Write random values to all PK Hash registers
-                write_random_to_register_group_and_track(group, &g_expected_data_dict);
+            // Write random values to all PK Hash registers
+            write_random_to_register_group_and_track(group, &g_expected_data_dict);
                 
-                // Read registers and verify data matches
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);
-            } else {
-                continue;
-            }
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, false, COLD_RESET);
         }
 
         // Issue warm reset
@@ -111,24 +95,18 @@ void main(void) {
 
     } else if (rst_count == 2) {
 
-        reset_exp_reg_data(&g_expected_data_dict, WARM_RESET);
-
         // Read all registers, expect register values to be retained
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_0) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_1) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_2) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_3) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_4) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_5) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_6) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_7))  {   
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = pk_hash_groups[i];
+
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, true, WARM_RESET);
                 
-                // Read registers and verify data matches
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);
-            } else {
-                continue;
-            }
+            // Write random values to all PK Hash registers
+            write_random_to_register_group_and_track(group, &g_expected_data_dict);
+                
+            // Read registers and verify data matches original writes
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, false, WARM_RESET);
         }
 
         // Issue cold reset
@@ -139,25 +117,14 @@ void main(void) {
 
     } else if (rst_count == 3) {
 
-        reset_exp_reg_data(&g_expected_data_dict, COLD_RESET);
-
         // Read all registers, expect register values to be reset
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_0) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_1) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_2) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_3) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_4) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_5) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_6) ||
-                (group == REG_GROUP_DEBUG_UNLOCK_PK_HASH_7)) {
-                
-                // Read registers and verify data matches
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);
-            } else {
-                continue;
-            }
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = pk_hash_groups[i];
+
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, true, COLD_RESET);
         }
+
     }
  
     VPRINTF(LOW, "\nMCI PK Hash Register Access Tests Completed\n");
