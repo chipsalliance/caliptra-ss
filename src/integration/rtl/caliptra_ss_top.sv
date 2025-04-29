@@ -166,8 +166,11 @@ module caliptra_ss_top
     input  logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
     input  logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
     input  logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
-    output logic        cptra_ss_cpu_halt_status_o,
-
+    output logic        cptra_ss_mcu_halt_status_o,
+    input  logic        cptra_ss_mcu_halt_status_i,
+    output logic        cptra_ss_mcu_halt_req_o,
+    input  logic        cptra_ss_mcu_halt_ack_i,
+    output logic        cptra_ss_mcu_halt_ack_o,
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
     mci_mcu_sram_if.request cptra_ss_mcu_mbox0_sram_req_if,
@@ -274,8 +277,6 @@ module caliptra_ss_top
     logic                       o_debug_mode_status;
 
     logic                       jtag_tdo;
-    logic                       i_cpu_halt_req;
-    logic                       o_cpu_halt_ack;
     logic                       o_cpu_run_ack;
 
     logic        [63:0]         dma_hrdata       ;
@@ -789,9 +790,9 @@ module caliptra_ss_top
         .debug_brkpt_status     (debug_brkpt_status),
         .o_debug_mode_status    (o_debug_mode_status),
 
-        .i_cpu_halt_req         ( i_cpu_halt_req ),    // Async halt req to CPU
-        .o_cpu_halt_ack         ( o_cpu_halt_ack ),    // core response to halt
-        .o_cpu_halt_status      ( cptra_ss_cpu_halt_status_o ), // 1'b1 indicates core is halted
+        .i_cpu_halt_req         ( cptra_ss_mcu_halt_req_o ),    // Async halt req to CPU
+        .o_cpu_halt_ack         ( cptra_ss_mcu_halt_ack_o ),    // core response to halt
+        .o_cpu_halt_status      ( cptra_ss_mcu_halt_status_o ), // 1'b1 indicates core is halted
         .i_cpu_run_req          ( 1'b0  ),     // Async restart req to CPU
         .o_cpu_run_ack          ( o_cpu_run_ack ),     // Core response to run req
 
@@ -1024,9 +1025,9 @@ module caliptra_ss_top
         .intr_otp_operation_done,
         
         // MCU Halt Signals
-        .mcu_cpu_halt_req_o   (i_cpu_halt_req   ),
-        .mcu_cpu_halt_ack_i   (o_cpu_halt_ack   ),
-        .mcu_cpu_halt_status_i(cptra_ss_cpu_halt_status_o),
+        .mcu_cpu_halt_req_o   (cptra_ss_mcu_halt_req_o   ),
+        .mcu_cpu_halt_ack_i   (cptra_ss_mcu_halt_ack_i),
+        .mcu_cpu_halt_status_i(cptra_ss_mcu_halt_status_i),
 
         .mcu_no_rom_config(cptra_ss_mcu_no_rom_config_i),
 

@@ -21,6 +21,7 @@ import axi_pkg::*;
 import mci_dmi_pkg::*;
 import mci_reg_pkg::*;
 import mci_pkg::*;
+import soc_ifc_pkg::*;
 import mcu_mbox_csr_pkg::*;
 import trace_buffer_csr_pkg::*;
 #(
@@ -39,7 +40,15 @@ import trace_buffer_csr_pkg::*;
     output logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
     output logic [31:0] cptra_ss_strap_caliptra_dma_axi_user_i,
 
-    output logic cptra_ss_mci_boot_seq_brkpoint_i,
+    output logic         cptra_ss_mci_boot_seq_brkpoint_i,
+    output logic         cptra_ss_mcu_no_rom_config_i,
+    output logic [31:0]  cptra_ss_strap_mcu_reset_vector_i,
+
+    input  logic cptra_ss_mcu_halt_status_o,
+    output logic cptra_ss_mcu_halt_status_i,
+    input  logic cptra_ss_mcu_halt_req_o,
+    input  logic cptra_ss_mcu_halt_ack_o,
+    output logic cptra_ss_mcu_halt_ack_i,
 
     axi_if m_axi_bfm_if,
 
@@ -72,6 +81,10 @@ string cptra_ss_test_name;
 //flopped signals for assertions
 int unsigned trace_buffer_rd_ptr_f;
 int unsigned trace_buffer_wr_ptr_f;
+
+// MCU halt/ack control
+logic cptra_ss_mcu_halt_status_i_soc_ctrl;
+logic cptra_ss_mcu_halt_ack_i_soc_ctrl;
 
 ///////////////////////////////////
 // TEST FILE INCULDES
@@ -138,6 +151,12 @@ initial begin
         else if(cptra_ss_test_name == "SMOKE_TEST_MCI_BRKPOINT_AXI") begin
             smoke_test_mci_brkpoint_axi();       
         end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCU_NO_ROM_CONFIG") begin
+            smoke_test_mcu_no_rom_config();
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_MCU_NO_ROM_CONFIG_BRKPOINT") begin
+            smoke_test_mcu_no_rom_config_brkpoint();
+        end
         else begin
             $error("ERROR: Test Name from Plusarg: %s not found", cptra_ss_test_name);
             $finish;
@@ -147,16 +166,52 @@ end
 
 
 ///////////////////////////////////
+// MCU Halt/Ack control
+//////////////////////////////////
+initial begin
+    cptra_ss_mcu_halt_status_i_soc_ctrl = 1'b0;
+    cptra_ss_mcu_halt_ack_i_soc_ctrl = 1'b0;
+end 
+
+assign cptra_ss_mcu_halt_status_i = cptra_ss_mcu_halt_status_i_soc_ctrl | cptra_ss_mcu_halt_status_o;
+assign cptra_ss_mcu_halt_ack_i    = cptra_ss_mcu_halt_ack_i_soc_ctrl | cptra_ss_mcu_halt_ack_o;
+
+///////////////////////////////////
 // MCI Breakpoint              
 //////////////////////////////////
 initial begin
     
     if ($test$plusargs("MCI_BOOT_FSM_BRKPOINT_SET")) begin
         cptra_ss_mci_boot_seq_brkpoint_i = 1'b1;
-    
+        $display("MCI Boot FSM Breakpoint Set");
     end else begin
         cptra_ss_mci_boot_seq_brkpoint_i = 1'b0;
+        $display("MCI Boot FSM Breakpoint Not Set");
+    end
+end
 
+///////////////////////////////////
+// MCU NO ROM CONFIG 
+//////////////////////////////////
+initial begin
+    if ($test$plusargs("MCU_NO_ROM_CONFIG_SET")) begin
+        cptra_ss_mcu_no_rom_config_i = 1'b1;
+        $display("MCU NO ROM CONFIG Set");
+    end else begin
+        cptra_ss_mcu_no_rom_config_i = 1'b0;
+        $display("MCU NO ROM CONFIG Not Set");
+    end
+end
+
+///////////////////////////////////
+// MCU NO ROM CONFIG 
+//////////////////////////////////
+initial begin
+    if ($value$plusargs("MCU_RESET_VECTOR_STRAP_VALUE=%h", cptra_ss_strap_mcu_reset_vector_i)) begin
+        $display("MCU Reset Vector Value from Plusarg: %h", cptra_ss_strap_mcu_reset_vector_i);
+    end else begin
+        cptra_ss_strap_mcu_reset_vector_i    = `css_mcu0_RV_RESET_VEC;
+        $display("MCU Reset Vector Value Default to: %h", cptra_ss_strap_mcu_reset_vector_i);
     end
 end
 

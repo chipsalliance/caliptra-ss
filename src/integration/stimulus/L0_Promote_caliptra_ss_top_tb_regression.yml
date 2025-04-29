@@ -22,6 +22,8 @@ contents:
         - ../test_suites/caliptra_ss_fuse_ctrl_writeblank/caliptra_ss_fuse_ctrl_writeblank.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_zeroization/caliptra_ss_fuse_ctrl_zeroization.yml
         - ../test_suites/smoke_test_mci_brkpoint_axi/smoke_test_mci_brkpoint_axi.yml
+        - ../test_suites/smoke_test_mcu_no_rom_config/smoke_test_mcu_no_rom_config.yml
+        - ../test_suites/smoke_test_mcu_no_rom_config/smoke_test_mcu_no_rom_config_brkpoint.yml
         - ../test_suites/smoke_test_mcu_sram_byte_write/smoke_test_mcu_sram_byte_write.yml
         - ../test_suites/smoke_test_mcu_sram_protected_region/smoke_test_mcu_sram_protected_region.yml
         - ../test_suites/smoke_test_mcu_sram_execution_region/smoke_test_mcu_sram_execution_region.yml
