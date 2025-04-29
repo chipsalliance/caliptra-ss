@@ -280,6 +280,7 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_i3c_scl_oe;
     logic cptra_ss_i3c_sda_oe;
     logic cptra_ss_sel_od_pp_o;
+    logic cptra_i3c_axi_user_id_filtering_enable_i;
 
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
     logic cptra_ss_cptra_core_scan_mode_i;
@@ -336,15 +337,8 @@ module caliptra_ss_top_w_stub(
         cptra_ss_lc_esclate_scrap_state1_i = '0;
         cptra_ss_cptra_core_scan_mode_i = '0;
         cptra_ss_cptra_core_generic_input_wires_i = '0;
-        
+        cptra_i3c_axi_user_id_filtering_enable_i = 1'b1;
     end
-
-    // assign cptra_ss_cptra_core_el2_mem_export.veer_sram_sink = '0;
-    // assign cptra_ss_mcu0_el2_mem_export.veer_sram_sink = '0;
-    // assign cptra_ss_mci_mcu_sram_req_if.request = '0;
-    // assign cptra_ss_mci_mbox0_sram_req_if.request = '0;
-    // assign cptra_ss_mci_mbox1_sram_req_if.request = '0;
-    // assign mldsa_memory_export_req.req = '0;
 
     caliptra_ss_top
     caliptra_ss_dut (
@@ -537,6 +531,7 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_i3c_sda_o(master0_intf.sda_and),
         .cptra_ss_i3c_scl_oe,
         .cptra_ss_i3c_sda_oe,
+        .cptra_i3c_axi_user_id_filtering_enable_i,
         .cptra_ss_sel_od_pp_o,
     
         .cptra_ss_cptra_core_generic_input_wires_i,

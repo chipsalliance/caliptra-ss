@@ -239,6 +239,8 @@ module caliptra_ss_top
     output logic cptra_ss_i3c_sda_oe,
     output logic cptra_ss_sel_od_pp_o,
 
+    input  logic cptra_i3c_axi_user_id_filtering_enable_i,
+
     input  logic [63:0] cptra_ss_cptra_core_generic_input_wires_i,
     input  logic        cptra_ss_cptra_core_scan_mode_i,
     output logic        cptra_error_fatal,
@@ -555,7 +557,7 @@ module caliptra_ss_top
     //=========================================================================-
     mcu_top rvtop_wrapper (
         .rst_l                  ( mcu_rst_b ),
-        .dbg_rst_l              ( cptra_ss_pwrgood_i ), //FIXME same as caliptra?
+        .dbg_rst_l              ( cptra_ss_pwrgood_i ),
         .clk                    ( mcu_clk_cg ),
         .rst_vec                ( reset_vector[31:1]),
         .nmi_int                ( mci_mcu_nmi_int),
@@ -846,11 +848,15 @@ module caliptra_ss_top
     // i3c_core Instance
     //=========================================================================-
     
+    logic                       i3c_disable_id_filtering_i;
     logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
+    
     assign priv_ids[0] = 32'd0;
     assign priv_ids[1] = 32'd0;
     assign priv_ids[2] = cptra_ss_strap_caliptra_dma_axi_user_i;
     assign priv_ids[3] = cptra_ss_strap_mcu_lsu_axi_user_i;
+
+    assign disable_id_filtering_i = ~cptra_i3c_axi_user_id_filtering_enable_i;
 
     i3c_wrapper #(
         .AxiDataWidth(`AXI_DATA_WIDTH),
@@ -928,7 +934,7 @@ module caliptra_ss_top
         .irq_o                          (i3c_irq_o),
 
         // id filtering
-        .disable_id_filtering_i         (1'b0),
+        .disable_id_filtering_i         (disable_id_filtering_i),
         .priv_ids_i                     (priv_ids)
     
     );
