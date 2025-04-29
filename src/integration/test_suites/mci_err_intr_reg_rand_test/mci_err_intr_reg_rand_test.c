@@ -39,58 +39,61 @@ void main(void) {
     rst_count++;
     VPRINTF(LOW, "----------------\nrst count = %d\n----------------\n", rst_count);
 
-    VPRINTF(LOW, "==================\nMCI Registers Test\n==================\n\n");
+    VPRINTF(LOW, "==========================\nMCI Error & Interrupt Registers Test\n===========================\n\n");
+
+    mci_register_group_t err_intr_groups[] = {
+        //REG_GROUP_ERROR_RW1C,
+        //REG_GROUP_ERROR,
+        REG_GROUP_INTERNAL_ERROR_MASK,
+        //REG_GROUP_INTERRUPT_EN,
+        REG_GROUP_INTERRUPT_GLOBAL_STATUS_RO,
+        REG_GROUP_INTERRUPT_STATUS_RW1C,
+        REG_GROUP_INTERRUPT_TRIGGER_PULSE_RW1S,
+        REG_GROUP_INTERRUPT_ERROR0_COUNTERS,
+        REG_GROUP_INTERRUPT_NOTIF0_COUNTERS
+    };
+
+    const int num_groups = sizeof(err_intr_groups) / sizeof(err_intr_groups[0]);
 
     // Loop through all PK Hash register groups and write/read random values to registers
     if (rst_count == 1) {
 
         mci_init();
 
-        // Exclude registers from writing during group write
-        exclude_register(SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO);
-        exclude_register(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO);
-        exclude_register(SOC_MBOX_CSR_MBOX_LOCK);
-        exclude_register(SOC_MBOX_CSR_MBOX_USER);
-        exclude_register(SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_HW_ERROR_NON_FATAL);
-        exclude_register(SOC_MCI_TOP_MCI_REG_AGG_ERROR_NON_FATAL);
-
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_ERROR) ||
-                (group == REG_GROUP_INTERRUPT) ||
-                (group == REG_GROUP_INTERRUPT_COUNTERS)) {
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = err_intr_groups[i];
                 
-                // Write random values to all PK Hash registers
-                write_random_to_register_group_and_track(group, &g_expected_data_dict);
-                
-                // Read registers and verify data matches
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);
-            } else {
+            // Write random values to all PK Hash registers
+            if (group == REG_GROUP_INTERRUPT_GLOBAL_STATUS_RO){
                 continue;
+            } else {
+                write_random_to_register_group_and_track(group, &g_expected_data_dict);
             }
+                
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, false, COLD_RESET);
         }
 
         // Lock registers with SS_CONFIG_DONE_STICKY and SS_CONFIG_DONE registers by writing 0x1 to them
         write_to_register_group_and_track(REG_GROUP_SS, 0x1, &g_expected_data_dict); 
 
-        read_register_group_and_verify(REG_GROUP_SS, &g_expected_data_dict); 
+        read_register_group_and_verify(REG_GROUP_SS, &g_expected_data_dict, false, COLD_RESET); 
 
         // Loop through register groups and write/read random values
         // Registers that are sticky, new value should not be written
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_ERROR) ||
-                (group == REG_GROUP_INTERRUPT) ||
-                (group == REG_GROUP_INTERRUPT_COUNTERS)) {
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = err_intr_groups[i];
                 
-                // Write random values to all PK Hash registers
-                write_random_to_register_group_and_track(group, &g_expected_data_dict);
-                
-                // Read registers and verify data matches
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);
-            } else {
+            // Write random values to all interrupt registers
+            if (group == REG_GROUP_INTERRUPT_GLOBAL_STATUS_RO){
                 continue;
+            } else {
+                write_random_to_register_group_and_track(group, &g_expected_data_dict);
             }
+                
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, false, COLD_RESET);
+
         }
 
         // Issue warm reset
@@ -101,19 +104,22 @@ void main(void) {
 
     } else if (rst_count == 2) {
 
-        reset_exp_reg_data(&g_expected_data_dict, WARM_RESET);
-
         // Read all registers, expect register values to be retained for sticky registers
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_ERROR) ||
-                (group == REG_GROUP_INTERRUPT) ||
-                (group == REG_GROUP_INTERRUPT_COUNTERS)) {
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = err_intr_groups[i];
                 
-                // Read registers and verify data matches
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);
-            } else {
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, true, WARM_RESET);
+
+            // Write random values to all interrupt registers
+            if (group == REG_GROUP_INTERRUPT_GLOBAL_STATUS_RO){
                 continue;
+            } else {
+                write_random_to_register_group_and_track(group, &g_expected_data_dict);
             }
+                
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, false, WARM_RESET);
         }
 
         // Issue cold reset
@@ -124,19 +130,13 @@ void main(void) {
 
     } else if (rst_count == 3) {
 
-        reset_exp_reg_data(&g_expected_data_dict, COLD_RESET);
-
         // Read all registers, expect register values to be reset
-        for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
-            if ((group == REG_GROUP_ERROR) ||
-                (group == REG_GROUP_INTERRUPT) ||
-                (group == REG_GROUP_INTERRUPT_COUNTERS)) {
+        for (int i = 0; i < num_groups; i++) {
+            mci_register_group_t group = err_intr_groups[i];
                 
-                // Read registers and verify data matches
-                error_count += read_register_group_and_verify(group, &g_expected_data_dict);
-            } else {
-                continue;
-            }
+            // Read registers and verify data matches
+            error_count += read_register_group_and_verify(group, &g_expected_data_dict, true, COLD_RESET);
+
         }
     }
  
@@ -147,8 +147,8 @@ void main(void) {
     }
 
     if (error_count == 0 ) {
-        SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
+        SEND_STDOUT_CTRL(0xff);
     } else {
-        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
+        SEND_STDOUT_CTRL(0x1);
     }
 }
