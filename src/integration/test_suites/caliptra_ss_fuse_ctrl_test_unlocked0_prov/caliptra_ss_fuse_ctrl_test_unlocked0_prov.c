@@ -120,7 +120,7 @@ void test_unlocked0_provision() {
     uint32_t rnd_fuse_addresses[13];
 
     for (uint32_t i = 0; i < 13; i++) {
-        if (partitions[i].address <= 0x80) {
+        if (partitions[i].address > 0x40 && partitions[i].address < 0xD0) {
             grant_caliptra_core_for_fc_writes();
         } else {
             grant_mcu_for_fc_writes(); 
