@@ -220,8 +220,8 @@ module caliptra_ss_top
     output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_req_o,
     input  logic cptra_ss_lc_ctrl_scan_rst_ni_i,
 
-    input logic cptra_ss_lc_esclate_scrap_state0_i,   // NOTE: These two signals are very important. FIXME: Renaming is needed
-    input logic cptra_ss_lc_esclate_scrap_state1_i,   // If you assert them, Caliptr-SS will enter SCRAP mode
+    input logic cptra_ss_lc_esclate_scrap_state0_i,   
+    input logic cptra_ss_lc_esclate_scrap_state1_i,   
 
     output wire cptra_ss_soc_dft_en_o,
     output wire cptra_ss_soc_hw_debug_en_o,
@@ -230,30 +230,19 @@ module caliptra_ss_top
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
     output otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o,
    
-// Caliptra SS I3C GPIO Interface
-`ifdef DIGITAL_IO_I3C
+// I3C core interface signals
     input  logic cptra_ss_i3c_scl_i,
     input  logic cptra_ss_i3c_sda_i,
     output logic cptra_ss_i3c_scl_o,
     output logic cptra_ss_i3c_sda_o,
+    output logic cptra_ss_i3c_scl_oe,
+    output logic cptra_ss_i3c_sda_oe,
     output logic cptra_ss_sel_od_pp_o,
-`else
-    inout  wire  cptra_ss_i3c_scl_io,
-    inout  wire  cptra_ss_i3c_sda_io,
-`endif
 
-// -- THESE ARE NOT RTL SIGNALS, DO NOT USE THEM
-// -- note: these are output required for TB
-// -- this will go away in final release
     input  logic [63:0] cptra_ss_cptra_core_generic_input_wires_i,
     input  logic        cptra_ss_cptra_core_scan_mode_i,
     output logic        cptra_error_fatal,
-    output logic        cptra_error_non_fatal,
-    output logic        ready_for_fuses,
-    output logic        ready_for_mb_processing,
-    output logic        mailbox_data_avail
-
-    
+    output logic        cptra_error_non_fatal 
 );
 
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
@@ -392,13 +381,7 @@ module caliptra_ss_top
     assign cptra_ss_mcu_lsu_m_axi_if_w_mgr.awuser = cptra_ss_strap_mcu_lsu_axi_user_i;
     assign cptra_ss_mcu_ifu_m_axi_if_w_mgr.awuser = cptra_ss_strap_mcu_ifu_axi_user_i;
     assign cptra_ss_mcu_sb_m_axi_if_w_mgr.awuser = cptra_ss_strap_mcu_lsu_axi_user_i;
-    
-    // BUSER
-    assign cptra_ss_i3c_s_axi_if_w_sub.buser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
-    
-    // RUSER
-    assign cptra_ss_i3c_s_axi_if_r_sub.ruser = '0; // FIXME - no port on I3C - https://github.com/chipsalliance/i3c-core/issues/25
-    
+  
     // WUSER
     assign cptra_ss_mcu_lsu_m_axi_if_w_mgr.wuser = '0; // WUSER not used in Caliptra SS
     assign cptra_ss_mcu_ifu_m_axi_if_w_mgr.wuser = '0; // WUSER not used in Caliptra SS
@@ -873,65 +856,81 @@ module caliptra_ss_top
         .AxiDataWidth(`AXI_DATA_WIDTH),
         .AxiAddrWidth(`AXI_ADDR_WIDTH),
         .AxiUserWidth(`AXI_USER_WIDTH),
-        .AxiIdWidth  (`AXI_ID_WIDTH  )
+        .AxiIdWidth  (`AXI_ID_WIDTH)
     ) i3c (
-        .clk_i (cptra_ss_clk_i),
-        .rst_ni(cptra_ss_rst_b_o),
+        .clk_i                          (cptra_ss_clk_i),
+        .rst_ni                         (cptra_ss_rst_b_o),
+    
+        // Read Address Channel
+        .arvalid_i                      (cptra_ss_i3c_s_axi_if_r_sub.arvalid),
+        .arready_o                      (cptra_ss_i3c_s_axi_if_r_sub.arready),
+        .arid_i                         (cptra_ss_i3c_s_axi_if_r_sub.arid),
+        .araddr_i                       (cptra_ss_i3c_s_axi_if_r_sub.araddr[`AXI_ADDR_WIDTH-1:0]),
+        .arsize_i                       (cptra_ss_i3c_s_axi_if_r_sub.arsize),
+        .aruser_i                       (cptra_ss_i3c_s_axi_if_r_sub.aruser),
+        .arlen_i                        (cptra_ss_i3c_s_axi_if_r_sub.arlen),
+        .arburst_i                      (cptra_ss_i3c_s_axi_if_r_sub.arburst),
+        .arlock_i                       (cptra_ss_i3c_s_axi_if_r_sub.arlock),
+    
+        // Read Data Channel
+        .rvalid_o                       (cptra_ss_i3c_s_axi_if_r_sub.rvalid),
+        .rready_i                       (cptra_ss_i3c_s_axi_if_r_sub.rready),
+        .rid_o                          (cptra_ss_i3c_s_axi_if_r_sub.rid),
+        .rdata_o                        (cptra_ss_i3c_s_axi_if_r_sub.rdata),
+        .rresp_o                        (cptra_ss_i3c_s_axi_if_r_sub.rresp),
+        .rlast_o                        (cptra_ss_i3c_s_axi_if_r_sub.rlast),
+        .ruser_o                        (cptra_ss_i3c_s_axi_if_r_sub.ruser),
+    
+        // Write Address Channel
+        .awvalid_i                      (cptra_ss_i3c_s_axi_if_w_sub.awvalid),
+        .awready_o                      (cptra_ss_i3c_s_axi_if_w_sub.awready),
+        .awid_i                         (cptra_ss_i3c_s_axi_if_w_sub.awid),
+        .awaddr_i                       (cptra_ss_i3c_s_axi_if_w_sub.awaddr[`AXI_ADDR_WIDTH-1:0]),
+        .awsize_i                       (cptra_ss_i3c_s_axi_if_w_sub.awsize),
+        .awuser_i                       (cptra_ss_i3c_s_axi_if_w_sub.awuser),
+        .awlen_i                        (cptra_ss_i3c_s_axi_if_w_sub.awlen),
+        .awburst_i                      (cptra_ss_i3c_s_axi_if_w_sub.awburst),
+        .awlock_i                       (cptra_ss_i3c_s_axi_if_w_sub.awlock),
+    
+        // Write Data Channel
+        .wvalid_i                       (cptra_ss_i3c_s_axi_if_w_sub.wvalid),
+        .wuser_i                        (cptra_ss_i3c_s_axi_if_w_sub.wuser),
+        .wready_o                       (cptra_ss_i3c_s_axi_if_w_sub.wready),
+        .wdata_i                        (cptra_ss_i3c_s_axi_if_w_sub.wdata),
+        .wstrb_i                        (cptra_ss_i3c_s_axi_if_w_sub.wstrb),
+        .wlast_i                        (cptra_ss_i3c_s_axi_if_w_sub.wlast),
+    
+        // Write Response Channel
+        .bvalid_o                       (cptra_ss_i3c_s_axi_if_w_sub.bvalid),
+        .bready_i                       (cptra_ss_i3c_s_axi_if_w_sub.bready),
+        .bresp_o                        (cptra_ss_i3c_s_axi_if_w_sub.bresp),
+        .bid_o                          (cptra_ss_i3c_s_axi_if_w_sub.bid),
+        .buser_o                        (cptra_ss_i3c_s_axi_if_w_sub.buser),
+    
+        // I3C Signals
+        .scl_i                          (cptra_ss_i3c_scl_i),
+        .sda_i                          (cptra_ss_i3c_sda_i),
+        .scl_o                          (cptra_ss_i3c_scl_o),
+        .sda_o                          (cptra_ss_i3c_sda_o),
+        .scl_oe                         (cptra_ss_i3c_scl_oe),
+        .sda_oe                         (cptra_ss_i3c_sda_oe),
+    
+        // Additional signals
+        .sel_od_pp_o                    (cptra_ss_sel_od_pp_o),
 
-        .arvalid_i  (cptra_ss_i3c_s_axi_if_r_sub.arvalid),
-        .arready_o  (cptra_ss_i3c_s_axi_if_r_sub.arready),
-        .arid_i     (cptra_ss_i3c_s_axi_if_r_sub.arid),
-        .araddr_i   (cptra_ss_i3c_s_axi_if_r_sub.araddr[`AXI_ADDR_WIDTH-1:0]),
-        .arsize_i   (cptra_ss_i3c_s_axi_if_r_sub.arsize),
-        .aruser_i   (cptra_ss_i3c_s_axi_if_r_sub.aruser),
-        .arlen_i    (cptra_ss_i3c_s_axi_if_r_sub.arlen),
-        .arburst_i  (cptra_ss_i3c_s_axi_if_r_sub.arburst),
-        .arlock_i   (cptra_ss_i3c_s_axi_if_r_sub.arlock),
-        .rvalid_o   (cptra_ss_i3c_s_axi_if_r_sub.rvalid),
-        .rready_i   (cptra_ss_i3c_s_axi_if_r_sub.rready),
-        .rid_o      (cptra_ss_i3c_s_axi_if_r_sub.rid),
-        .rdata_o    (cptra_ss_i3c_s_axi_if_r_sub.rdata),
-        .rresp_o    (cptra_ss_i3c_s_axi_if_r_sub.rresp),
-        .rlast_o    (cptra_ss_i3c_s_axi_if_r_sub.rlast),
-        .awvalid_i  (cptra_ss_i3c_s_axi_if_w_sub.awvalid),
-        .awready_o  (cptra_ss_i3c_s_axi_if_w_sub.awready),
-        .awid_i     (cptra_ss_i3c_s_axi_if_w_sub.awid),
-        .awaddr_i   (cptra_ss_i3c_s_axi_if_w_sub.awaddr[`AXI_ADDR_WIDTH-1:0]),
-        .awsize_i   (cptra_ss_i3c_s_axi_if_w_sub.awsize),
-        .awuser_i   (cptra_ss_i3c_s_axi_if_w_sub.awuser),
-        .awlen_i    (cptra_ss_i3c_s_axi_if_w_sub.awlen),
-        .awburst_i  (cptra_ss_i3c_s_axi_if_w_sub.awburst),
-        .awlock_i   (cptra_ss_i3c_s_axi_if_w_sub.awlock),
-        .wvalid_i   (cptra_ss_i3c_s_axi_if_w_sub.wvalid),
-        .wuser_i    (cptra_ss_i3c_s_axi_if_w_sub.wuser),
-        .wready_o   (cptra_ss_i3c_s_axi_if_w_sub.wready),
-        .wdata_i    (cptra_ss_i3c_s_axi_if_w_sub.wdata),
-        .wstrb_i    (cptra_ss_i3c_s_axi_if_w_sub.wstrb),
-        .wlast_i    (cptra_ss_i3c_s_axi_if_w_sub.wlast),
-        .bvalid_o   (cptra_ss_i3c_s_axi_if_w_sub.bvalid),
-        .bready_i   (cptra_ss_i3c_s_axi_if_w_sub.bready),
-        .bresp_o    (cptra_ss_i3c_s_axi_if_w_sub.bresp),
-        .bid_o      (cptra_ss_i3c_s_axi_if_w_sub.bid),
-`ifdef DIGITAL_IO_I3C
-        .scl_i(cptra_ss_i3c_scl_i),
-        .sda_i(cptra_ss_i3c_sda_i),
-        .scl_o(cptra_ss_i3c_scl_o),
-        .sda_o(cptra_ss_i3c_sda_o),
-        .sel_od_pp_o(cptra_ss_sel_od_pp_o),
-`else
-        .i3c_scl_io(cptra_ss_i3c_scl_io),
-        .i3c_sda_io(cptra_ss_i3c_sda_io),
-`endif
-        .recovery_payload_available_o(payload_available_o),
-        .recovery_image_activated_o(image_activated_o),
-        .peripheral_reset_o(i3c_peripheral_reset),
-        .peripheral_reset_done_i(1'b1),
-        .escalated_reset_o(i3c_escalated_reset),
-        .irq_o(i3c_irq_o),
+        .recovery_payload_available_o   (payload_available_o),
+        .recovery_image_activated_o     (image_activated_o),
+        .peripheral_reset_o             (i3c_peripheral_reset),
+        .peripheral_reset_done_i        (1'b1),
+        .escalated_reset_o              (i3c_escalated_reset),
 
-        .disable_id_filtering_i(1'b0),
-        .priv_ids_i(priv_ids)
+        // Interrupts
+        .irq_o                          (i3c_irq_o),
 
+        // id filtering
+        .disable_id_filtering_i         (1'b0),
+        .priv_ids_i                     (priv_ids)
+    
     );
 
     //=========================================================================
