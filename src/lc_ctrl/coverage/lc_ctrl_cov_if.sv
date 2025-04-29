@@ -182,12 +182,190 @@ interface lc_ctrl_cov_if
     lc_state_t states[2];
     logic adv;
 
-    covergroup lc_ctrl_transitions_cg with function sample(lc_state_e src, lc_state_e dst, token_idx_e token);
+    covergroup lc_ctrl_transitions_cg with function sample(lc_state_e src, lc_state_e dst);
         option.per_instance = 1;
-        src_cp: coverpoint src;
-        dst_cp: coverpoint dst;
 
-        transition_cross: cross src, dst iff (token != InvalidTokenIdx);
+        foobar: coverpoint {src, dst}
+        {
+            bins RawTestUnlocked0 = {{LcStRaw, LcStTestUnlocked0}};
+            // TestUnlocked0 to TestLocked0...6.
+            bins TestUnlocked0TestLocked0 = {{LcStTestUnlocked0, LcStTestLocked0}};
+            bins TestUnlocked0TestLocked1 = {{LcStTestUnlocked0, LcStTestLocked1}};
+            bins TestUnlocked0TestLocked2 = {{LcStTestUnlocked0, LcStTestLocked2}};
+            bins TestUnlocked0TestLocked3 = {{LcStTestUnlocked0, LcStTestLocked3}};
+            bins TestUnlocked0TestLocked4 = {{LcStTestUnlocked0, LcStTestLocked4}};
+            bins TestUnlocked0TestLocked5 = {{LcStTestUnlocked0, LcStTestLocked5}};
+            bins TestUnlocked0TestLocked6 = {{LcStTestUnlocked0, LcStTestLocked6}};
+            // TestUnlocked0 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked0Dev         = {{LcStTestUnlocked0, LcStDev}};
+            bins TestUnlocked0Prod        = {{LcStTestUnlocked0, LcStProd}};
+            bins TestUnlocked0ProdEnd     = {{LcStTestUnlocked0, LcStProdEnd}};
+            bins TestUnlocked0Rma         = {{LcStTestUnlocked0, LcStRma}};
+            bins TestUnlocked0Scrap       = {{LcStTestUnlocked0, LcStScrap}};
+            // TestUnlocked1 to TestLocked1...6.
+            bins TestUnlocked1TestLocked1 = {{LcStTestUnlocked1, LcStTestLocked1}};
+            bins TestUnlocked1TestLocked2 = {{LcStTestUnlocked1, LcStTestLocked2}};
+            bins TestUnlocked1TestLocked3 = {{LcStTestUnlocked1, LcStTestLocked3}};
+            bins TestUnlocked1TestLocked4 = {{LcStTestUnlocked1, LcStTestLocked4}};
+            bins TestUnlocked1TestLocked5 = {{LcStTestUnlocked1, LcStTestLocked5}};
+            bins TestUnlocked1TestLocked6 = {{LcStTestUnlocked1, LcStTestLocked6}};
+            // TestUnlocked1 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked1Dev         = {{LcStTestUnlocked1, LcStDev}};
+            bins TestUnlocked1Prod        = {{LcStTestUnlocked1, LcStProd}};
+            bins TestUnlocked1ProdEnd     = {{LcStTestUnlocked1, LcStProdEnd}};
+            bins TestUnlocked1Rma         = {{LcStTestUnlocked1, LcStRma}};
+            bins TestUnlocked1Scrap       = {{LcStTestUnlocked1, LcStScrap}};
+            // TestUnlocked2 to TestLocked2...6.
+            bins TestUnlocked2TestLocked2 = {{LcStTestUnlocked2, LcStTestLocked2}};
+            bins TestUnlocked2TestLocked3 = {{LcStTestUnlocked2, LcStTestLocked3}};
+            bins TestUnlocked2TestLocked4 = {{LcStTestUnlocked2, LcStTestLocked4}};
+            bins TestUnlocked2TestLocked5 = {{LcStTestUnlocked2, LcStTestLocked5}};
+            bins TestUnlocked2TestLocked6 = {{LcStTestUnlocked2, LcStTestLocked6}};
+            // TestUnlocked2 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked2Dev         = {{LcStTestUnlocked2, LcStDev}};
+            bins TestUnlocked2Prod        = {{LcStTestUnlocked2, LcStProd}};
+            bins TestUnlocked2ProdEnd     = {{LcStTestUnlocked2, LcStProdEnd}};
+            bins TestUnlocked2Rma         = {{LcStTestUnlocked2, LcStRma}};
+            bins TestUnlocked2Scrap       = {{LcStTestUnlocked2, LcStScrap}};
+            // TestUnlocked3 to TestLocked3...6.
+            bins TestUnlocked3TestLocked3 = {{LcStTestUnlocked3, LcStTestLocked3}};
+            bins TestUnlocked3TestLocked4 = {{LcStTestUnlocked3, LcStTestLocked4}};
+            bins TestUnlocked3TestLocked5 = {{LcStTestUnlocked3, LcStTestLocked5}};
+            bins TestUnlocked3TestLocked6 = {{LcStTestUnlocked3, LcStTestLocked6}};
+            // TestUnlocked3 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked3Dev         = {{LcStTestUnlocked3, LcStDev}};
+            bins TestUnlocked3Prod        = {{LcStTestUnlocked3, LcStProd}};
+            bins TestUnlocked3ProdEnd     = {{LcStTestUnlocked3, LcStProdEnd}};
+            bins TestUnlocked3Rma         = {{LcStTestUnlocked3, LcStRma}};
+            bins TestUnlocked3Scrap       = {{LcStTestUnlocked3, LcStScrap}};
+            // TestUnlocked4 to TestLocked4...6.
+            bins TestUnlocked4TestLocked4 = {{LcStTestUnlocked4, LcStTestLocked4}};
+            bins TestUnlocked4TestLocked5 = {{LcStTestUnlocked4, LcStTestLocked5}};
+            bins TestUnlocked4TestLocked6 = {{LcStTestUnlocked4, LcStTestLocked6}};
+            // TestUnlocked4 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked4Dev         = {{LcStTestUnlocked4, LcStDev}};
+            bins TestUnlocked4Prod        = {{LcStTestUnlocked4, LcStProd}};
+            bins TestUnlocked4ProdEnd     = {{LcStTestUnlocked4, LcStProdEnd}};
+            bins TestUnlocked4Rma         = {{LcStTestUnlocked4, LcStRma}};
+            bins TestUnlocked4Scrap       = {{LcStTestUnlocked4, LcStScrap}};
+            // TestUnlocked5 to TestLocked5...6.
+            bins TestUnlocked5TestLocked5 = {{LcStTestUnlocked5, LcStTestLocked5}};
+            bins TestUnlocked5TestLocked6 = {{LcStTestUnlocked5, LcStTestLocked6}};
+            // TestUnlocked5 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked5Dev         = {{LcStTestUnlocked5, LcStDev}};
+            bins TestUnlocked5Prod        = {{LcStTestUnlocked5, LcStProd}};
+            bins TestUnlocked5ProdEnd     = {{LcStTestUnlocked5, LcStProdEnd}};
+            bins TestUnlocked5Rma         = {{LcStTestUnlocked5, LcStRma}};
+            bins TestUnlocked5Scrap       = {{LcStTestUnlocked5, LcStScrap}};
+            // TestUnlocked6 to TestLocked6.
+            bins TestUnlocked6TestLocked6 = {{LcStTestUnlocked6, LcStTestLocked6}};
+            // TestUnlocked6 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked6Dev         = {{LcStTestUnlocked6, LcStDev}};
+            bins TestUnlocked6Prod        = {{LcStTestUnlocked6, LcStProd}};
+            bins TestUnlocked6ProdEnd     = {{LcStTestUnlocked6, LcStProdEnd}};
+            bins TestUnlocked6Rma         = {{LcStTestUnlocked6, LcStRma}};
+            bins TestUnlocked6Scrap       = {{LcStTestUnlocked6, LcStScrap}};
+            // TestUnlocked7 to DEV, PROD, PRODEND, RMA, SCR.
+            bins TestUnlocked7Dev         = {{LcStTestUnlocked7, LcStDev}};
+            bins TestUnlocked7Prod        = {{LcStTestUnlocked7, LcStProd}};
+            bins TestUnlocked7ProdEnd     = {{LcStTestUnlocked7, LcStProdEnd}};
+            bins TestUnlocked7Rma         = {{LcStTestUnlocked7, LcStRma}};
+            bins TestUnlocked7Scrap       = {{LcStTestUnlocked7, LcStScrap}};
+
+            // TestLocked0 to TestUnlocked1...7.
+            bins TestLocked0TestUnlocked1 = {{LcStTestLocked0, LcStTestUnlocked1}};
+            bins TestLocked0TestUnlocked2 = {{LcStTestLocked0, LcStTestUnlocked2}};
+            bins TestLocked0TestUnlocked3 = {{LcStTestLocked0, LcStTestUnlocked3}};
+            bins TestLocked0TestUnlocked4 = {{LcStTestLocked0, LcStTestUnlocked4}};
+            bins TestLocked0TestUnlocked5 = {{LcStTestLocked0, LcStTestUnlocked5}};
+            bins TestLocked0TestUnlocked6 = {{LcStTestLocked0, LcStTestUnlocked6}};
+            bins TestLocked0TestUnlocked7 = {{LcStTestLocked0, LcStTestUnlocked7}};
+            // TestLocked0 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked0Dev         = {{LcStTestLocked0, LcStDev}};
+            bins TestLocked0Prod        = {{LcStTestLocked0, LcStProd}};
+            bins TestLocked0ProdEnd     = {{LcStTestLocked0, LcStProdEnd}};
+            bins TestLocked0Scrap       = {{LcStTestLocked0, LcStScrap}};
+
+            // TestLocked1 to TestUnlocked2...7.
+            bins TestLocked1TestUnlocked2 = {{LcStTestLocked1, LcStTestUnlocked2}};
+            bins TestLocked1TestUnlocked3 = {{LcStTestLocked1, LcStTestUnlocked3}};
+            bins TestLocked1TestUnlocked4 = {{LcStTestLocked1, LcStTestUnlocked4}};
+            bins TestLocked1TestUnlocked5 = {{LcStTestLocked1, LcStTestUnlocked5}};
+            bins TestLocked1TestUnlocked6 = {{LcStTestLocked1, LcStTestUnlocked6}};
+            bins TestLocked1TestUnlocked7 = {{LcStTestLocked1, LcStTestUnlocked7}};
+            // TestLocked1 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked1Dev         = {{LcStTestLocked1, LcStDev}};
+            bins TestLocked1Prod        = {{LcStTestLocked1, LcStProd}};
+            bins TestLocked1ProdEnd     = {{LcStTestLocked1, LcStProdEnd}};
+            bins TestLocked1Scrap       = {{LcStTestLocked1, LcStScrap}};
+
+            // TestLocked2 to TestUnlocked3...7.
+            bins TestLocked2TestUnlocked3 = {{LcStTestLocked2, LcStTestUnlocked3}};
+            bins TestLocked2TestUnlocked4 = {{LcStTestLocked2, LcStTestUnlocked4}};
+            bins TestLocked2TestUnlocked5 = {{LcStTestLocked2, LcStTestUnlocked5}};
+            bins TestLocked2TestUnlocked6 = {{LcStTestLocked2, LcStTestUnlocked6}};
+            bins TestLocked2TestUnlocked7 = {{LcStTestLocked2, LcStTestUnlocked7}};
+            // TestLocked2 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked2Dev         = {{LcStTestLocked2, LcStDev}};
+            bins TestLocked2Prod        = {{LcStTestLocked2, LcStProd}};
+            bins TestLocked2ProdEnd     = {{LcStTestLocked2, LcStProdEnd}};
+            bins TestLocked2Scrap       = {{LcStTestLocked2, LcStScrap}};
+
+            // TestLocked3 to TestUnlocked4...7.
+            bins TestLocked3TestUnlocked4 = {{LcStTestLocked3, LcStTestUnlocked4}};
+            bins TestLocked3TestUnlocked5 = {{LcStTestLocked3, LcStTestUnlocked5}};
+            bins TestLocked3TestUnlocked6 = {{LcStTestLocked3, LcStTestUnlocked6}};
+            bins TestLocked3TestUnlocked7 = {{LcStTestLocked3, LcStTestUnlocked7}};
+            // TestLocked3 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked3Dev         = {{LcStTestLocked3, LcStDev}};
+            bins TestLocked3Prod        = {{LcStTestLocked3, LcStProd}};
+            bins TestLocked3ProdEnd     = {{LcStTestLocked3, LcStProdEnd}};
+            bins TestLocked3Scrap       = {{LcStTestLocked3, LcStScrap}};
+
+            // TestLocked4 to TestUnlocked5...7.
+            bins TestLocked4TestUnlocked5 = {{LcStTestLocked4, LcStTestUnlocked5}};
+            bins TestLocked4TestUnlocked6 = {{LcStTestLocked4, LcStTestUnlocked6}};
+            bins TestLocked4TestUnlocked7 = {{LcStTestLocked4, LcStTestUnlocked7}};
+            // TestLocked4 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked4Dev         = {{LcStTestLocked4, LcStDev}};
+            bins TestLocked4Prod        = {{LcStTestLocked4, LcStProd}};
+            bins TestLocked4ProdEnd     = {{LcStTestLocked4, LcStProdEnd}};
+            bins TestLocked4Scrap       = {{LcStTestLocked4, LcStScrap}};
+
+            // TestLocked5 to TestUnlocked6...7.
+            bins TestLocked5TestUnlocked6 = {{LcStTestLocked5, LcStTestUnlocked6}};
+            bins TestLocked5TestUnlocked7 = {{LcStTestLocked5, LcStTestUnlocked7}};
+            // TestLocked5 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked5Dev         = {{LcStTestLocked5, LcStDev}};
+            bins TestLocked5Prod        = {{LcStTestLocked5, LcStProd}};
+            bins TestLocked5ProdEnd     = {{LcStTestLocked5, LcStProdEnd}};
+            bins TestLocked5Scrap       = {{LcStTestLocked5, LcStScrap}};
+
+            // TestLocked6 to TestUnlocked6...7.
+            bins TestLocked6TestUnlocked7 = {{LcStTestLocked6, LcStTestUnlocked7}};
+            // TestLocked6 to DEV, PROD, PRODEND, SCR.
+            bins TestLocked6Dev         = {{LcStTestLocked6, LcStDev}};
+            bins TestLocked6Prod        = {{LcStTestLocked6, LcStProd}};
+            bins TestLocked6ProdEnd     = {{LcStTestLocked6, LcStProdEnd}};
+            bins TestLocked6Scrap       = {{LcStTestLocked6, LcStScrap}};
+
+            // DEV to PROD, PRODEND, RMA, SCR.
+            bins LcStDevProd            = {{LcStDev, LcStProd}};
+            bins LcStDevProdEnd         = {{LcStDev, LcStProdEnd}};
+            bins LcStDevRma             = {{LcStDev, LcStRma}};
+            bins LcStDevScrap           = {{LcStDev, LcStScrap}};
+
+            // PROD to PRODEND, RMA, SCR.
+            bins LcStProdProdEnd         = {{LcStProd, LcStProdEnd}};
+            bins LcStProdRma             = {{LcStProd, LcStRma}};
+            bins LcStProdScrap           = {{LcStProd, LcStScrap}};
+
+            // PRODEND to SCR.
+            bins LcStProdEndScr          = {{LcStProdEnd, LcStScrap}};
+
+            // RMA to SCR.
+            bins LcStRmaScr              = {{LcStRma, LcStScrap}};
+        }
     endgroup
 
     lc_ctrl_transitions_cg trans_cg = new();
@@ -208,8 +386,8 @@ interface lc_ctrl_cov_if
         for (int i = 0; i < NumLcStates; i++) begin
             if (states[0] == lc_states[i]) begin
                 for (int j = 0; j < NumLcStates; j++) begin
-                    if (states[1] == lc_states[j]) begin
-                        trans_cg.sample(lc_states[i], lc_states[j], TransTokenIdxMatrix[i][j]);
+                    if (states[1] == lc_states[j] && TransTokenIdxMatrix[i][j] != InvalidTokenIdx) begin
+                        trans_cg.sample(lc_states[i], lc_states[j]);
                     end
                 end
             end
