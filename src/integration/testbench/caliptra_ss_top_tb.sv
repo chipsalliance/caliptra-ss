@@ -1679,7 +1679,7 @@ module caliptra_ss_top_tb
 
         .cptra_ss_lc_esclate_scrap_state0_i,
         .cptra_ss_lc_esclate_scrap_state1_i,
-        .caliptra_ss_life_cycle_steady_state_o,
+        .caliptra_ss_life_cycle_steady_state_o(),
 
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
