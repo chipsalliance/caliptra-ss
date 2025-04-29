@@ -659,6 +659,35 @@ See [Fuse Controller Register Map](../src/fuse_ctrl/doc/registers.md).
    - Errors like invalid data, ECC failures, or access violations should raise alerts via the `alerts` signal.
 
 ---
+## Direct Access Interface
+
+Fuse macros has to be programmed via the Direct Access Interface, which is comprised of the following CSRs:
+
+CSR Name                             | Description
+-------------------------------------|------------------------------------
+[`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | Low 32bit word to be written.
+[`DIRECT_ACCESS_WDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | High 32bit word to be written.
+[`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | Low 32bit word that has been read.
+[`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | High 32bit word that has been read.
+[`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address) | byte address for the access.
+[`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd)     | Command register to trigger a read or a write access.
+[`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen)  | Write protection register for DAI.
+
+## Initialization
+
+The OTP controller initializes automatically upon power-up and is fully operational by the time the processor boots.
+The only initialization steps that SW should perform are:
+
+1. Check that the OTP controller has successfully initialized by reading [`STATUS`](../src/fuse_ctrl/doc/registers.md#status). I.e., make sure that none of the ERROR bits are set, and that the DAI is idle ([`STATUS.DAI_IDLE`](../src/fuse_ctrl/doc/registers.md#status)).
+    - Choose whether the periodic [background checks](#partition-checks) shall be subject to a timeout by programming a nonzero timeout cycle count to [`CHECK_TIMEOUT`](registers.md#check_timeout).
+      In this case, the [`CHECK_TIMEOUT`](registers.md#check_timeout) register must be set before the [`INTEGRITY_CHECK_PERIOD`](registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](registers.md#consistency_check_period) registers (see next point).
+    - Enable periodic [background checks](#partition-checks) by programming nonzero mask values to [`INTEGRITY_CHECK_PERIOD`](registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](registers.md#consistency_check_period).
+    - It is recommended to lock down the background check registers via [`CHECK_REGWEN`](registers.md#check_regwen), once the background checks have been set up
+
+If needed, one-off integrity and consistency checks can be triggered via [`CHECK_TRIGGER`](../src/fuse_ctrl/doc/registers.md#check_trigger).
+If this functionality is not needed, it is recommended to lock down the trigger register via [`CHECK_TRIGGER_REGWEN`](../src/fuse_ctrl/doc/registers.md#check_trigger_regwen).
+
+Later on during the boot process, SW may also choose to block read access to the SW managed partitions via the associated partition lock registers, e.g. [`CREATOR_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#creator_sw_cfg_read_lock) or [`OWNER_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#owner_sw_cfg_read_lock).
 
 ## Programming interface
 The Fuse Controller (FC) programming interface is designed to manage lifecycle states, handle fuses with ECC support, and ensure secure interactions with the fuse macros. A key component in this architecture is the Fuse Controller Filter RTL. This module intercepts and verifies the fuse programming sequence by checking that all parts of the transaction originate from the same authorized source. In doing so, the filter guarantees that fuse provisioning is performed in an atomic manner.
@@ -695,6 +724,23 @@ Below are the key operations supported by the programming interface:
      - Write the partition base address to `FUSE_CTRL_DIRECT_ACCESS_ADDRESS`.
      - Trigger the digest calculation command (`0x4`) in `FUSE_CTRL_DIRECT_ACCESS_CMD`.
      - Poll the `DAI_IDLE` bit in `FUSE_CTRL_STATUS` to confirm the operation is complete.
+
+## Readout Sequence
+
+A typical readout sequence looks as follows:
+
+  - Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
+  - Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).  
+    Note that the address is aligned with the granule, meaning that either 2 or 3 LSBs of the address are ignored, depending on whether the access granule is 32 or 64bit.
+  - Trigger a read command by writing 0x1 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
+  - Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.  
+    Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
+  - If the status register flags a DAI error, additional handling is required.
+  - If the region accessed has a 32bit access granule, the 32bit chunk of read data can be read from [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata).  
+    If the region accessed has a 64bit access granule, the 64bit chunk of read data can be read from the [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) and [`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) registers.
+  - Go back to the first step and repeat until all data has been read.
+
+The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
 
 ## Sequences: Reset, Boot
 
@@ -733,6 +779,7 @@ Parameter                        | Default (Max)  | Description
 `RndCnstLcKeymgrDivDev`          | (see RTL)      | Diversification value used for the DEV life cycle state.
 `RndCnstLcKeymgrDivProduction`   | (see RTL)      | Diversification value used for the PROD/PROD_END life cycle states.
 `RndCnstLcKeymgrDivRma`          | (see RTL)      | Diversification value used for the RMA life cycle state.
+`SecVolatileRawUnlockEn`         | 1'b1           | Enables Volatile TEST_UNLOCKED0 state transition infra
 
 ## Interface
 
@@ -765,51 +812,14 @@ Internal    |output      |   1    | `lc_escalate_en_o`    |                     
 Internal    |output      |   1    | `lc_check_byp_en_o`   |                                     | External clock status delivery signal to fuse controller |
 External    |output      |   1    | `lc_clk_byp_req_o`    | `cptra_ss_lc_clk_byp_req_o`         | A request port to swtich from LCC clock to external clock |
 External    |input       |   1    | `lc_clk_byp_ack_i`    | `cptra_ss_lc_clk_byp_ack_i`         | Acknowledgment signal to indicate external clock request is accepted              |
-Internal    |input       |   1    | `otp_device_id_i`     |                                     | Fuse device ID              |
-Internal    |input       |   1    | `otp_manuf_state_i`   |                                     | Fuse manufacturing ID               |
-Internal    |output      |   1    | `hw_rev_o`            |                                     | Reflection of HW revision ID read from fuse controller              |
+Internal    |input       |   1    | `otp_device_id_i`     |                                     | Unused port              |
+Internal    |input       |   1    | `otp_manuf_state_i`   |                                     | Unused port               |
+Internal    |output      |   1    | `hw_rev_o`            |                                     | Unused port              |
 
 
 ## Memory Map / Address Map
 
-See LC Controller Register Map**TODO: link will be provided**.
-<!-- Register Offset                             | Description                                           | Address
------------------------------------------   |:------------------------------------------------------|:------    |                                       
-`LC_CTRL_ALERT_TEST_OFFSET`                 | Alert test register                                   |   0x0   |         
-`LC_CTRL_STATUS_OFFSET`                     | Status register                                       |   0x4   |     
-`LC_CTRL_CLAIM_TRANSITION_IF_REGWEN_OFFSET` | Claim transition interface write-enable register      |   0x8   |                                         
-`LC_CTRL_CLAIM_TRANSITION_IF_OFFSET`        | Claim transition interface register                   |   0xc   |                         
-`LC_CTRL_TRANSITION_REGWEN_OFFSET`          | Transition write-enable register                      |   0x10  |                     
-`LC_CTRL_TRANSITION_CMD_OFFSET`             | Transition command register                           |   0x14  |                 
-`LC_CTRL_TRANSITION_CTRL_OFFSET`            | Transition control register                           |   0x18  |                 
-`LC_CTRL_TRANSITION_TOKEN_0_OFFSET`         | Transition token register (part 0)                    |   0x1c  |                         
-`LC_CTRL_TRANSITION_TOKEN_1_OFFSET`         | Transition token register (part 1)                    |   0x20  |                         
-`LC_CTRL_TRANSITION_TOKEN_2_OFFSET`         | Transition token register (part 2)                    |   0x24  |                         
-`LC_CTRL_TRANSITION_TOKEN_3_OFFSET`         | Transition token register (part 3)                    |   0x28  |                         
-`LC_CTRL_TRANSITION_TARGET_OFFSET`          | Transition target register                            |   0x2c  |                 
-`LC_CTRL_OTP_VENDOR_TEST_CTRL_OFFSET`       | OTP vendor test control register                      |   0x30  |                     
-`LC_CTRL_OTP_VENDOR_TEST_STATUS_OFFSET`     | OTP vendor test status register                       |   0x34  |                     
-`LC_CTRL_LC_STATE_OFFSET`                   | Life cycle state register                             |   0x38  |                 
-`LC_CTRL_LC_TRANSITION_CNT_OFFSET`          | Life cycle transition count register                  |   0x3c  |                         
-`LC_CTRL_LC_ID_STATE_OFFSET`                | Life cycle ID state register                          |   0x40  |                 
-`LC_CTRL_HW_REVISION0_OFFSET`               | Hardware revision register (part 0)                   |   0x44  |                         
-`LC_CTRL_HW_REVISION1_OFFSET`               | Hardware revision register (part 1)                   |   0x48  |                         
-`LC_CTRL_DEVICE_ID_0_OFFSET`                | Device ID register (part 0)                           |   0x4c  |                 
-`LC_CTRL_DEVICE_ID_1_OFFSET`                | Device ID register (part 1)                           |   0x50  |                 
-`LC_CTRL_DEVICE_ID_2_OFFSET`                | Device ID register (part 2)                           |   0x54  |                 
-`LC_CTRL_DEVICE_ID_3_OFFSET`                | Device ID register (part 3)                           |   0x58  |                 
-`LC_CTRL_DEVICE_ID_4_OFFSET`                | Device ID register (part 4)                           |   0x5c  |                 
-`LC_CTRL_DEVICE_ID_5_OFFSET`                | Device ID register (part 5)                           |   0x60  |                 
-`LC_CTRL_DEVICE_ID_6_OFFSET`                | Device ID register (part 6)                           |   0x64  |                 
-`LC_CTRL_DEVICE_ID_7_OFFSET`                | Device ID register (part 7)                           |   0x68  |                 
-`LC_CTRL_MANUF_STATE_0_OFFSET`              | Manufacturing state register (part 0)                 |   0x6c  |                             
-`LC_CTRL_MANUF_STATE_1_OFFSET`              | Manufacturing state register (part 1)                 |   0x70  |                             
-`LC_CTRL_MANUF_STATE_2_OFFSET`              | Manufacturing state register (part 2)                 |   0x74  |                             
-`LC_CTRL_MANUF_STATE_3_OFFSET`              | Manufacturing state register (part 3)                 |   0x78  |                             
-`LC_CTRL_MANUF_STATE_4_OFFSET`              | Manufacturing state register (part 4)                 |   0x7c  |                             
-`LC_CTRL_MANUF_STATE_5_OFFSET`              | Manufacturing state register (part 5)                 |   0x80  |                             
-`LC_CTRL_MANUF_STATE_6_OFFSET`              | Manufacturing state register (part 6)                 |   0x84  |                             
-`LC_CTRL_MANUF_STATE_7_OFFSET`              | Manufacturing state register (part 7)                 |   0x88  |                              -->
+See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
 
 ## LC Integration Requirements
 
@@ -841,6 +851,22 @@ The LC Controller's programming interface facilitates lifecycle state transition
 
 3. **Token Validation**:
    - For conditional state transitions, provide the transition token before the transition request.
+   - Toke Format is illustrated with a python implementation:
+```python
+# value = 0x318372c87790628a05f493b472f04808
+# data = value.to_bytes(16, byteorder='little')
+# custom = 'LC_CTRL'.encode('UTF-8')
+# shake = cSHAKE128.new(data=data, custom=custom)
+#shake output is 0x4c9ca068a68474d526e7d8a0233d5aad
+
+# To unlock a state having the shake condition above, the LCC needs
+# to get the following input set:
+TOKEN_write(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, 0x318372c8)
+TOKEN_write(LC_CTRL_TRANSITION_TOKEN_1_OFFSET, 0x7790628a)
+TOKEN_write(LC_CTRL_TRANSITION_TOKEN_2_OFFSET, 0x05f493b4)
+TOKEN_write(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, 0x72f04808)
+
+```
 
 4. **RMA and SCRAP Strap Handling**:
    - Ensure the `Allow_RMA_or_SCRAP_on_PPD` GPIO strap is asserted for RMA or SCRAP transitions. Transitions without this strap will fail with an appropriate status in the `LC_CTRL_STATUS_OFFSET` register.
