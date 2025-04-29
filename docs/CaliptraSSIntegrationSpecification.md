@@ -721,6 +721,13 @@ Below are the key operations supported by the programming interface:
 The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
 **TODO** More details will be provided once FC is ready to test.
 
+## Generating the Fuse Partitions
+
+The configurable parts of the `fuse_ctrl`, specifically the fuse map and register interface,
+are bootstrapped through a separate script `./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.py`.
+For a detailed breakdown of the design rationale behind the script as well as execution instructions,
+refer to [Fuse Map Generation Script](./../tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.md).
+
 # Life Cycle Controller
 
 ## Overview
