@@ -225,7 +225,7 @@ module caliptra_ss_top
 
     output wire cptra_ss_soc_dft_en_o,
     output wire cptra_ss_soc_hw_debug_en_o,
-    output lc_ctrl_state_pkg::lc_state_e caliptra_ss_otp_static_state_o,
+    output lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o,
 
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
@@ -1094,7 +1094,7 @@ module caliptra_ss_top
         // Converted Signals from LCC to SoC
         .SOC_DFT_EN(cptra_ss_soc_dft_en_o),
         .SOC_HW_DEBUG_EN(cptra_ss_soc_hw_debug_en_o),
-        .otp_static_state_o(caliptra_ss_otp_static_state_o),
+        .otp_static_state_o(caliptra_ss_life_cycle_steady_state_o),
 
         // Converted Signals from LCC to Caliptra-core
         .security_state_o(mci_cptra_security_state)
