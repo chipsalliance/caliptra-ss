@@ -119,6 +119,7 @@ module caliptra_ss_top_tb
          otp_ctrl_pkg::lc_otp_program_req_t           from_lcc_to_otp_program_i;
          lc_ctrl_pkg::lc_tx_t                         lc_dft_en_i;
          lc_ctrl_pkg::lc_tx_t                         lc_hw_debug_en_i;
+         lc_ctrl_state_pkg::lc_state_e                caliptra_ss_otp_static_state_o;
          // Inputs from OTP_Ctrl
          otp_ctrl_pkg::otp_lc_data_t                  from_otp_to_lcc_program_i;
          // Inputs from Caliptra_Core
@@ -1679,6 +1680,7 @@ module caliptra_ss_top_tb
 
         .cptra_ss_lc_esclate_scrap_state0_i,
         .cptra_ss_lc_esclate_scrap_state1_i,
+        .caliptra_ss_otp_static_state_o,
 
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
