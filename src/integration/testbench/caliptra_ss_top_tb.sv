@@ -1745,6 +1745,9 @@ module caliptra_ss_top_tb
         .mcu_rom_mem_export_if
     );
 
+    `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, u_otp.u_state_regs, 1'b0)
+    `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(OtpPrimOnehotCheck_A, u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
+
 
 endmodule
 
