@@ -166,8 +166,8 @@ module caliptra_package_axi_top (
     input  wire S_AXI_MCU_ROM_AWVALID,
     output wire S_AXI_MCU_ROM_AWREADY,
     // W
-    input  wire [31:0] S_AXI_MCU_ROM_WDATA,
-    input  wire [3:0] S_AXI_MCU_ROM_WSTRB,
+    input  wire [63:0] S_AXI_MCU_ROM_WDATA,
+    input  wire [7:0] S_AXI_MCU_ROM_WSTRB,
     input  wire S_AXI_MCU_ROM_WVALID,
     output wire S_AXI_MCU_ROM_WREADY,
     input  wire S_AXI_MCU_ROM_WLAST,
@@ -187,7 +187,7 @@ module caliptra_package_axi_top (
     input  wire S_AXI_MCU_ROM_ARVALID,
     output wire S_AXI_MCU_ROM_ARREADY,
     // R
-    output wire [31:0] S_AXI_MCU_ROM_RDATA,
+    output wire [63:0] S_AXI_MCU_ROM_RDATA,
     output wire [1:0] S_AXI_MCU_ROM_RRESP,
     output wire [15:0] S_AXI_MCU_ROM_RID,
     output wire S_AXI_MCU_ROM_RLAST,

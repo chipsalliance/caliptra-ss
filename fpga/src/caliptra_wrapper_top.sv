@@ -173,7 +173,7 @@ module caliptra_wrapper_top #(
     output wire S_AXI_MCU_ROM_AWREADY,
     // W
     input  wire [63:0] S_AXI_MCU_ROM_WDATA,
-    input  wire [3:0] S_AXI_MCU_ROM_WSTRB,
+    input  wire [7:0] S_AXI_MCU_ROM_WSTRB,
     input  wire S_AXI_MCU_ROM_WVALID,
     output wire S_AXI_MCU_ROM_WREADY,
     input  wire S_AXI_MCU_ROM_WLAST,
