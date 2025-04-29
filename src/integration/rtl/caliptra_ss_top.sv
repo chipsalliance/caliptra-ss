@@ -1177,9 +1177,9 @@ module caliptra_ss_top
             .lc_clk_byp_req_o(cptra_ss_lc_clk_byp_req_o),
             .lc_clk_byp_ack_i(cptra_ss_lc_clk_byp_ack_i),
 
-            .otp_device_id_i(256'd0),   // FIXME: This signal should come from FC
-            .otp_manuf_state_i(256'd0), // FIXME: This signal should come from FC
-            .hw_rev_o()             // FIXME: This signal should go to MCI 
+            .otp_device_id_i(256'd0),   
+            .otp_manuf_state_i(256'd0),
+            .hw_rev_o()             
         );
 
 
