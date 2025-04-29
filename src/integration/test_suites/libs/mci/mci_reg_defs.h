@@ -23,7 +23,8 @@
 // Enum for register sticky behavior
 typedef enum {
     REG_NOT_STICKY = 0,
-    REG_STICKY = 1
+    REG_STICKY = 1,
+    REG_CONFIG_DONE_STICKY = 2
 } register_sticky_t;
 
 
@@ -33,6 +34,7 @@ typedef struct {
     const char *name;   /* Register name */
     const char *desc;   /* Register description */
     register_sticky_t is_sticky;        /* Flag to indicate if register is sticky */
+    uint8_t has_init_value:1; /* Single bit */
 } mci_register_info_t;
 
 // Register expected data struct
@@ -46,6 +48,11 @@ typedef struct {
     mci_register_exp_data_t entries[MAX_REGISTER_ENTRIES];  /* Fixed-size array of entries */
     int count;                                             /* Current number of entries */
 } mci_reg_exp_dict_t;
+
+typedef struct {
+    uint32_t address;
+    uint32_t default_value;
+} mci_reg_def_value_t;
 
 // Register mask struct
 typedef struct {
@@ -69,19 +76,24 @@ typedef enum {
     REG_GROUP_KNOWN_VALUES,
     REG_GROUP_CAPABILITIES,
     REG_GROUP_CAPABILITIES_RO,
+    REG_GROUP_STRAPS_RO,
     REG_GROUP_STATUS,
     REG_GROUP_STATUS_RO,
-    REG_GROUP_ERROR_W1C,
-    REG_GROUP_ERROR,
     REG_GROUP_SECURITY_RO,
+    REG_GROUP_ERROR_RW1C,
+    REG_GROUP_ERROR,
+    REG_GROUP_INTERNAL_ERROR_MASK,
     REG_GROUP_WATCHDOG,
     REG_GROUP_WATCHDOG_RO,
     REG_GROUP_MCU,
     REG_GROUP_CONTROL,
+    REG_GROUP_CONTROL_RO,
     REG_GROUP_MCI_MBOX0,
+    REG_GROUP_MCI_MBOX0_RW1S,
     REG_GROUP_MCU_MBOX0,
     REG_GROUP_MCU_MBOX0_RO,
     REG_GROUP_MCI_MBOX1,
+    REG_GROUP_MCI_MBOX1_RW1S,
     REG_GROUP_MCU_MBOX1,
     REG_GROUP_MCU_MBOX1_RO,
     REG_GROUP_DFT,
@@ -98,8 +110,12 @@ typedef enum {
     REG_GROUP_DEBUG_UNLOCK_PK_HASH_5,
     REG_GROUP_DEBUG_UNLOCK_PK_HASH_6,
     REG_GROUP_DEBUG_UNLOCK_PK_HASH_7,
-    REG_GROUP_INTERRUPT,
-    REG_GROUP_INTERRUPT_COUNTERS,
+    REG_GROUP_INTERRUPT_EN,
+    REG_GROUP_INTERRUPT_GLOBAL_STATUS_RO,
+    REG_GROUP_INTERRUPT_STATUS_RW1C,
+    REG_GROUP_INTERRUPT_TRIGGER_PULSE_RW1S,
+    REG_GROUP_INTERRUPT_ERROR0_COUNTERS,
+    REG_GROUP_INTERRUPT_NOTIF0_COUNTERS,
     REG_GROUP_TRACE,
     REG_GROUP_TRACE_RO,
     REG_GROUP_SOC_MBOX_CSR,
