@@ -618,8 +618,6 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 | External   | interface  | 1       | `core_axi_wr_rsp`             | `cptra_ss_otp_core_axi_wr_rsp_o`  | AXI write response.                          |
 | External   | interface  | 1       | `core_axi_rd_req`             | `cptra_ss_otp_core_axi_rd_req_i`  | AXI read request.                          |
 | External   | interface  | 1       | `core_axi_rd_rsp`             | `cptra_ss_otp_core_axi_rd_rsp_o`  | AXI read response.                           |
-| External   | interface  | 1       | `prim_tl_i`                   | `cptra_ss_fuse_macro_prim_tl_i`   | Input to the Fuse Macro's primitive TL interface.                                                |
-| External   | interface  | 1       | `prim_tl_o`                   | `cptra_ss_fuse_macro_prim_tl_o`   | Output from the Fuse Macro's primitive TL interface.                                             |
 | Internal   | Output     | 1       | `intr_otp_operation_done_o`   |                                   | Indicates that the OTP operation has completed.                                                  |
 | Internal   | Output     | 1       | `intr_otp_error_o`            |                                   | OTP error interrupt output (to be connected to MCI).                                             |
 | Internal   | Output     | 5       | `alerts`                      |                                   | Alert signals for critical errors.                                                               |
@@ -633,7 +631,7 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 | Internal   | Input      | 1       | `lc_escalate_en_i`            |                                   | Escalation enable input from LC Controller.                                                      |
 | Internal   | Input      | 1       | `lc_check_byp_en_i`           |                                   | Clock bypass check enable input from LC Controller.                                              |
 | Internal   | Output     | Struct  | `otp_lc_data_o`               |                                   | Lifecycle broadcasted data output to LC Controller.                                              |
-| Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra-core. This port broadcasts UDS and Field-entropy.             |
+| Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra-core. This port broadcasts UDS and Field-entropy.              |
 
 
 ## Memory Map	/ Address map
@@ -655,9 +653,12 @@ See [Fuse Controller Register Map](../src/fuse_ctrl/doc/registers.md).
 
 2. **Constraints & Violations**:
    - Any access to fuses must be gated by the `FUSE_CTRL_DIRECT_ACCESS_REGWEN` bit to prevent unauthorized writes.
+   - There are some fuses that can be programmed only by Caliptra-Core. Therefore, each AXI write should follow the access permission rule defined by `access_control_table ` in `src/fuse_ctrl/rtl/otp_ctrl_pkg.sv`.
    - Timeout conditions during consistency checks (`FUSE_CTRL_CHECK_TIMEOUT`) should trigger appropriate alerts.
    - Errors like invalid data, ECC failures, or access violations should raise alerts via the `alerts` signal.
 
+3. **Scan Path Exclusions**:
+   - Ensure that secret fuse items (UDS and Field-Entropy) and its corresponding flip-flops are not a parth of scan path. These secrets are broadcasted with this input port: `otp_broadcast_o`. Therefore, this port, its propagated signals, and its driver signals must not be scannable.
 ---
 ## Direct Access Interface
 
@@ -694,7 +695,7 @@ The Fuse Controller (FC) programming interface is designed to manage lifecycle s
 
 Atomic fuse provisioning means that only one entity can initiate the programming sequence at a time. The entire sequence—data write, address write, and command write—must complete successfully. If any phase fails or if an inconsistency is detected (for example, if the AXI user ID changes between phases), the operation is aborted, and a cold reset is required before any new programming attempt can be made.
 
-The access control table, which defines allowed fuse address ranges along with the corresponding authorized AXI user IDs, is automatically generated from an HJSON configuration file. A Python script is used for this purpose. See `tools/scripts/fc_access_control_table.py`.
+The access control table, which defines allowed fuse address ranges along with the corresponding authorized AXI user IDs. See `access_control_table ` in `src/fuse_ctrl/rtl/otp_ctrl_pkg.sv`.
 
 Below are the key operations supported by the programming interface:
 
@@ -848,6 +849,8 @@ The LC Controller's programming interface facilitates lifecycle state transition
    - Write the 128-bit transition token (if required) into the `LC_CTRL_TRANSITION_TOKEN_*_OFFSET` registers.
    - Trigger the state transition by writing `0x1` to `LC_CTRL_TRANSITION_CMD_OFFSET`.
    - Poll the `LC_CTRL_STATUS_OFFSET` register to monitor for successful state transition or detect errors such as token errors, OTP errors, or RMA strap violations.
+   - Each TEST_UNLOCKED state has its own TOKEN (see See [Fuse Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)).
+   - During a state transition, an asserted reset or zeorization command can cause permanent life-cycle state corruption. 
 
 3. **Token Validation**:
    - For conditional state transitions, provide the transition token before the transition request.
@@ -857,7 +860,7 @@ The LC Controller's programming interface facilitates lifecycle state transition
 # data = value.to_bytes(16, byteorder='little')
 # custom = 'LC_CTRL'.encode('UTF-8')
 # shake = cSHAKE128.new(data=data, custom=custom)
-#shake output is 0x4c9ca068a68474d526e7d8a0233d5aad
+# shake output is 0x4c9ca068a68474d526e7d8a0233d5aad
 
 # To unlock a state having the shake condition above, the LCC needs
 # to get the following input set:
@@ -870,7 +873,6 @@ TOKEN_write(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, 0x72f04808)
 
 4. **RMA and SCRAP Strap Handling**:
    - Ensure the `Allow_RMA_or_SCRAP_on_PPD` GPIO strap is asserted for RMA or SCRAP transitions. Transitions without this strap will fail with an appropriate status in the `LC_CTRL_STATUS_OFFSET` register.
-
 
 ## Sequences: Reset, Boot
 
