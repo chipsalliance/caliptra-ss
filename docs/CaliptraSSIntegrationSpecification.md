@@ -404,7 +404,7 @@ File at path includes parameters and defines for Caliptra Subsystem `src/integra
 
 ### Clock
 
-The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem. This signal must be connected to a 2400 MHz system clock to ensure proper operation.
+The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem. This signal must be connected to a 400 MHz system clock to ensure proper operation.
 
   - **Signal Name** `cptra_ss_clk_i`
   - **Required Frequency** 400 MHz
