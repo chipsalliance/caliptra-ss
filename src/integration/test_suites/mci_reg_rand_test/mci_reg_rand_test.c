@@ -44,7 +44,7 @@ void main(void) {
 
     mci_register_group_t mci_reg_groups[] = {
         REG_GROUP_CAPABILITIES,
-        REG_GROUP_STATUS,
+        REG_GROUP_STATUS
         REG_GROUP_WATCHDOG,
         REG_GROUP_MCU,
         REG_GROUP_CONTROL,
