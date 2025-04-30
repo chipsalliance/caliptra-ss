@@ -36,6 +36,7 @@ import tb_top_pkg::*;
   input  logic                       rst_l,
   input  int                         cycleCnt,
   input logic                        cptra_ss_rdc_clk_cg_o,
+  output logic [63:0]                cptra_ss_mci_generic_input_wires_o,
   caliptra_ss_bfm_services_if.tb_services soc_bfm_if,
   css_mcu0_el2_mem_if                cptra_ss_mcu0_el2_mem_export,
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
@@ -161,11 +162,23 @@ import tb_top_pkg::*;
 
     end
 
+    always @(negedge clk or negedge rst_l) begin
+        if (!rst_l) begin
+            cptra_ss_mci_generic_input_wires_o <= 'h0;
+        end
+        else if (mailbox_write && (mailbox_data[7:0] == TB_CMD_TOGGLE_GENERIC_INPUT_WIRES)) begin
+            $display("Writing random value to generic input wires\n");
+            cptra_ss_mci_generic_input_wires_o <= {$urandom(), $urandom()};
+            @(negedge clk);
+            cptra_ss_mci_generic_input_wires_o <= 'h0;
+        end
+    end
+
     //Note update these as more errors are added to aggregate_error bus
     int rand_err_injection_sel;
-    localparam NUM_AGG_ERROR_FATAL = 6;
+    localparam NUM_AGG_ERROR_FATAL = 7;
     localparam NUM_AGG_ERROR_NON_FATAL = 6;
-    localparam NUM_NOTIF0_INTR = 13; //Exclude generic_input_wires
+    localparam NUM_NOTIF0_INTR = 12; //Exclude generic_input_wires, mcu_sram_single_ecc_error
 
     always @(negedge clk) begin
         // console Monitor
@@ -205,11 +218,6 @@ import tb_top_pkg::*;
             force `MCI_REG_TOP_PATH.nmi_intr = 1'b1;
             @(negedge clk);
             release `MCI_REG_TOP_PATH.nmi_intr;
-            repeat($urandom_range(0,15)) @(negedge clk);
-        
-            force `MCI_REG_TOP_PATH.mcu_sram_double_ecc_error = 1'b1;
-            @(negedge clk);
-            release `MCI_REG_TOP_PATH.mcu_sram_double_ecc_error;
             repeat($urandom_range(0,15)) @(negedge clk);
         
             force `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error = 1'b1;
@@ -258,11 +266,16 @@ import tb_top_pkg::*;
                     release `CPTRA_SS_TOP_PATH.fc_alerts;
                 end
                 4: begin
+                    force `CPTRA_SS_TOP_PATH.fc_intr_otp_error = 1'b1;
+                    @(negedge clk);
+                    release `CPTRA_SS_TOP_PATH.fc_intr_otp_error;
+                end
+                5: begin
                     force `CPTRA_SS_TOP_PATH.i3c_peripheral_reset = 1'b1;
                     @(negedge clk);
                     release `CPTRA_SS_TOP_PATH.i3c_peripheral_reset;
                 end
-                5: begin
+                6: begin
                     force `CPTRA_SS_TOP_PATH.i3c_escalated_reset = 1'b1;
                     @(negedge clk);
                     release `CPTRA_SS_TOP_PATH.i3c_escalated_reset;
@@ -319,66 +332,61 @@ import tb_top_pkg::*;
 
             case(rand_err_injection_sel)
                 0: begin
-                    force `MCI_REG_TOP_PATH.mcu_sram_single_ecc_error = 1'b1;
-                    @(negedge clk);
-                    release `MCI_REG_TOP_PATH.mcu_sram_single_ecc_error;
-                end
-                1: begin
                     force `MCI_REG_TOP_PATH.cptra_mcu_rst_req = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.cptra_mcu_rst_req;
                 end
-                2: begin
+                1: begin
                     force `MCI_REG_TOP_PATH.mcu_mbox0_target_user_done = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.mcu_mbox0_target_user_done;
                 end
-                3: begin
+                2: begin
                     force `MCI_REG_TOP_PATH.mcu_mbox1_target_user_done = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.mcu_mbox1_target_user_done;
                 end
-                4: begin
+                3: begin
                     force `MCI_REG_TOP_PATH.mcu_mbox0_data_avail = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.mcu_mbox0_data_avail;
                 end
-                5: begin
+                4: begin
                     force `MCI_REG_TOP_PATH.mcu_mbox1_data_avail = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.mcu_mbox1_data_avail;
                 end
-                6: begin
+                5: begin
                     force `MCI_REG_TOP_PATH.cptra_mbox_data_avail = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.cptra_mbox_data_avail;
                 end
-                7: begin
+                6: begin
                     force `MCI_REG_TOP_PATH.mbox0_sram_single_ecc_error = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.mbox0_sram_single_ecc_error;
                 end
-                8: begin
+                7: begin
                     force `MCI_REG_TOP_PATH.mbox1_sram_single_ecc_error = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.mbox1_sram_single_ecc_error;
                 end
-                9: begin
+                8: begin
                     force `MCI_REG_TOP_PATH.security_state_o.debug_locked = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.security_state_o.debug_locked;
                 end
-                10: begin
+                9: begin
                     force `MCI_REG_TOP_PATH.scan_mode = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.scan_mode;
                 end
-                11: begin
+                10: begin
                     force `MCI_REG_TOP_PATH.soc_req_mbox0_lock = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.soc_req_mbox0_lock;
                 end
-                12: begin
+                11: begin
                     force `MCI_REG_TOP_PATH.soc_req_mbox1_lock = 1'b1;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.soc_req_mbox1_lock;
