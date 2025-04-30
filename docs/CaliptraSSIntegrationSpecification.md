@@ -1284,7 +1284,7 @@ MCI aggregates all fatal and non-fatal errors for Caliptra SS via two ports `agg
 
 Errors connected to this infrastructure are required to be level signals. Pulses are not permitted. 
 
-MCU has the ability to mask these aggregated interrupts to both its own interrupt along with the `all_error_fatal` `all_error_non_fatal` output port. 
+MCU has the ability to independently mask these aggregated interrupts to its own interrupt and to the `all_error_fatal` and `all_error_non_fatal` output ports.
 
 Aggregate error connections can be see in [Caliptra SS HW Spec: MCI Error Handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling).
 
