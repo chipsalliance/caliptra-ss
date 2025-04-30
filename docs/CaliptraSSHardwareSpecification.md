@@ -649,7 +649,7 @@ The process of enabling production debug mode begins when the DEBUG_INTENT_STRAP
 The process begins when the platform sets three conditions:
 - The `DEBUG_INTENT` field in the `SS_DEBUG_INTENT` register.
 - The `PROD_DEBUG_UNLOCK_REQ` bit in the `SS_DBG_MANUF_SERVICE_REG_REQ` register.
-- The `BOOTFSM_GO_ADDR` to allow Caliptra-Core to continue its execution.
+- The `BOOTFSM_GO_ADDR` to allow Caliptra Core to continue its execution.
 On reset, the Caliptra ROM checks these two signals. If both are asserted, the ROM begins the production debug unlock process.
 Upon detecting a valid debug intent:
 - Caliptra hardware erases its secret assets, including the Unique Device Secret (UDS) and Field Entropy, before exposing any debug interfaces, ensuring sensitive data is irreversibly destroyed.
