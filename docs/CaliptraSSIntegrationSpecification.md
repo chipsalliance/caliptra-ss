@@ -644,7 +644,7 @@ The following memory regions are defined and must be adhered to during integrati
 
 ## Overview
 
-The Fuse Controller is a core component in the secure infrastructure of the system, responsible for managing the fuses and ensuring the integrity, consistency, and secure storage of sensitive data. It provides essential interfaces for direct fuse programming. The Fuse Controller interacts closely with the Lifecycle Controller (LC), FUSE macros, MCI, and Caliptra-core.
+The Fuse Controller is a core component in the secure infrastructure of the system, responsible for managing the fuses and ensuring the integrity, consistency, and secure storage of sensitive data. It provides essential interfaces for direct fuse programming. The Fuse Controller interacts closely with the Lifecycle Controller (LC), FUSE macros, MCI, and Caliptra Core.
 
 For an in-depth understanding of the Fuse Controller's functionality, including its programming flow, refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md).
 
@@ -682,7 +682,7 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 | Internal   | Input      | 1       | `lc_escalate_en_i`            |                                   | Escalation enable input from LC Controller.                                                      |
 | Internal   | Input      | 1       | `lc_check_byp_en_i`           |                                   | Clock bypass check enable input from LC Controller.                                              |
 | Internal   | Output     | Struct  | `otp_lc_data_o`               |                                   | Lifecycle broadcasted data output to LC Controller.                                              |
-| Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra-core. This port broadcasts UDS and Field-entropy.             |
+| Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra Core. This port broadcasts UDS and Field-entropy.             |
 
 
 ## Memory Map	/ Address map
@@ -1160,11 +1160,11 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Internal | Input  | Struct | `lc_dft_en_i`                           | LCC decoding signal, see LCC section   |
 | Internal | Input  | Struct | `lc_hw_debug_en_i`                      | LCC decoding signal, see LCC section   |
 | Internal | Input  | Struct | `from_otp_to_lcc_program_i`             | These ports comes from fuse partitions and show LCC's non-volatile state   |
-| Internal | Input  | 1      | `ss_dbg_manuf_enable_i`                 | Caliptra-core enables manuf debug with this  |
-| Internal | Input  | 64     | `ss_soc_dbg_unlock_level_i`             | Caliptra-core enables prod debug with this. Since there are multiple debug levels, the debug level is one-hot encoded to this port  |
+| Internal | Input  | 1      | `ss_dbg_manuf_enable_i`                 | Caliptra Core enables manuf debug with this  |
+| Internal | Input  | 64     | `ss_soc_dbg_unlock_level_i`             | Caliptra Core enables prod debug with this. Since there are multiple debug levels, the debug level is one-hot encoded to this port  |
 | External | Output | 1      | `SOC_DFT_EN`                            | Masked LCC decoding signal, see LCC section    |
 | External | Output | 1      | `SOC_HW_DEBUG_EN`                       | Masked LCC decoding signal, see LCC section  |
-| Internal | Output | Struct | `security_state_o`                      | Caliptra-core's security state  |
+| Internal | Output | Struct | `security_state_o`                      | Caliptra Core's security state  |
 | External | Input  | 1      | `FIPS_ZEROIZATION_PPD_i`                | Physical pin to trigger zeroization   |
 | Internal | Output | 1      | `FIPS_ZEROIZATION_CMD_o`                | Masked zeroization command signal   |
 
