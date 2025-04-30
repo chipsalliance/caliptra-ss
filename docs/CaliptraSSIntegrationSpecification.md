@@ -1273,7 +1273,7 @@ The two regions have different access protection. The size of the regions is dyn
 
     | Bits | Name | Description |
     | :---- | :---- | :---- |
-    | 64:0 | RESERVED | No allocated function |
+    | 63:0 | RESERVED | No allocated function |
 
 ### Error Aggregation Connectivity Requirements
 
