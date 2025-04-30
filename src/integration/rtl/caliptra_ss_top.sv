@@ -850,7 +850,7 @@ module caliptra_ss_top
     // i3c_core Instance
     //=========================================================================-
     
-    logic                       i3c_disable_id_filtering_i;
+    logic                       disable_id_filtering_i;
     logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
     
     assign priv_ids[0] = 32'd0;
