@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //********************************************************************************
+
 `include "caliptra_ss_includes.svh"
 `include "config_defines.svh"
 `include "caliptra_macros.svh"
@@ -35,7 +36,6 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_rst_b_i;
     logic cptra_ss_mci_cptra_rst_b_o;
     logic cptra_ss_rdc_clk_cg_o;
-
 
     `define AXI_M_IF_TIE_OFF(_sig_name) \
     assign ``_sig_name``.awready = '0;\
@@ -342,10 +342,12 @@ module caliptra_ss_top_w_stub(
         cptra_ss_cptra_core_scan_mode_i = '0;
         cptra_ss_cptra_core_generic_input_wires_i = '0;
         cptra_i3c_axi_user_id_filtering_enable_i = 1'b1;
+        cptra_ss_i3c_scl_i=0;
+        cptra_ss_i3c_sda_i=0;
     end
 
     caliptra_ss_top
-    caliptra_ss_dut (
+    caliptra_ss_top_i (
 
         .cptra_ss_clk_i(cptra_ss_clk_i),
         .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i),
@@ -537,10 +539,10 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_fuse_macro_outputs_i('0),
         .cptra_ss_fuse_macro_inputs_o,
     
-        .cptra_ss_i3c_scl_i(master0_intf.scl_and),
-        .cptra_ss_i3c_sda_i(master0_intf.sda_and),
-        .cptra_ss_i3c_scl_o(master0_intf.scl_and),
-        .cptra_ss_i3c_sda_o(master0_intf.sda_and),
+        .cptra_ss_i3c_scl_i,
+        .cptra_ss_i3c_sda_i,
+        .cptra_ss_i3c_scl_o,
+        .cptra_ss_i3c_sda_o,
         .cptra_ss_i3c_scl_oe,
         .cptra_ss_i3c_sda_oe,
         .cptra_i3c_axi_user_id_filtering_enable_i,
