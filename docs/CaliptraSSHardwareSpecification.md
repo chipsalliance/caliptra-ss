@@ -132,7 +132,7 @@ This document defines technical specifications for a subsystem design utilizing 
 
 # Caliptra Subsystem Requirements
 ## Definitions
-* RA: Recovery Agent
+* RA: Recovery Agent / Streaming boot Agent
 * MCI: Manufacturer Control Interface
 * MCU: Manufacturer Control Unit
   
