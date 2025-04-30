@@ -27,12 +27,12 @@ package otp_ctrl_reg_pkg;
   parameter int NumPart = 16;
   parameter int NumPartUnbuf = 7;
   parameter int NumPartBuf = 9;
-  parameter int SecretTestUnlockPartitionOffset = 0;
-  parameter int SecretTestUnlockPartitionSize = 72;
+  parameter int SwTestUnlockPartitionOffset = 0;
+  parameter int SwTestUnlockPartitionSize = 72;
   parameter int CptraCoreManufDebugUnlockTokenOffset = 0;
   parameter int CptraCoreManufDebugUnlockTokenSize = 64;
-  parameter int SecretTestUnlockPartitionDigestOffset = 64;
-  parameter int SecretTestUnlockPartitionDigestSize = 8;
+  parameter int SwTestUnlockPartitionDigestOffset = 64;
+  parameter int SwTestUnlockPartitionDigestSize = 8;
   parameter int SecretManufPartitionOffset = 72;
   parameter int SecretManufPartitionSize = 72;
   parameter int CptraCoreUdsSeedOffset = 72;
@@ -548,7 +548,7 @@ package otp_ctrl_reg_pkg;
   typedef struct packed {
     struct packed {
       logic        d;
-    } secret_test_unlock_partition_error;
+    } sw_test_unlock_partition_error;
     struct packed {
       logic        d;
     } secret_manuf_partition_error;
@@ -634,7 +634,7 @@ package otp_ctrl_reg_pkg;
 
   typedef struct packed {
     logic [31:0] d;
-  } otp_ctrl_hw2reg_secret_test_unlock_partition_digest_mreg_t;
+  } otp_ctrl_hw2reg_sw_test_unlock_partition_digest_mreg_t;
 
   typedef struct packed {
     logic [31:0] d;
@@ -724,8 +724,8 @@ package otp_ctrl_reg_pkg;
     otp_ctrl_hw2reg_err_code_mreg_t [17:0] err_code; // [1014:961]
     otp_ctrl_hw2reg_direct_access_regwen_reg_t direct_access_regwen; // [960:960]
     otp_ctrl_hw2reg_direct_access_rdata_mreg_t [1:0] direct_access_rdata; // [959:896]
-    otp_ctrl_hw2reg_secret_test_unlock_partition_digest_mreg_t [1:0]
-        secret_test_unlock_partition_digest; // [895:832]
+    otp_ctrl_hw2reg_sw_test_unlock_partition_digest_mreg_t [1:0]
+        sw_test_unlock_partition_digest; // [895:832]
     otp_ctrl_hw2reg_secret_manuf_partition_digest_mreg_t [1:0]
         secret_manuf_partition_digest; // [831:768]
     otp_ctrl_hw2reg_secret_prod_partition_0_digest_mreg_t [1:0]
@@ -798,8 +798,8 @@ package otp_ctrl_reg_pkg;
   parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK_OFFSET = 15'h a4;
   parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK_OFFSET = 15'h a8;
   parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK_OFFSET = 15'h ac;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_0_OFFSET = 15'h b0;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_1_OFFSET = 15'h b4;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0_OFFSET = 15'h b0;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1_OFFSET = 15'h b4;
   parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0_OFFSET = 15'h b8;
   parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_1_OFFSET = 15'h bc;
   parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_0_OFFSET = 15'h c0;
@@ -838,7 +838,7 @@ package otp_ctrl_reg_pkg;
   parameter logic [0:0] OTP_CTRL_ALERT_TEST_FATAL_PRIM_OTP_ALERT_RESVAL = 1'h 0;
   parameter logic [0:0] OTP_CTRL_ALERT_TEST_RECOV_PRIM_OTP_ALERT_RESVAL = 1'h 0;
   parameter logic [23:0] OTP_CTRL_STATUS_RESVAL = 24'h 0;
-  parameter logic [0:0] OTP_CTRL_STATUS_SECRET_TEST_UNLOCK_PARTITION_ERROR_RESVAL = 1'h 0;
+  parameter logic [0:0] OTP_CTRL_STATUS_SW_TEST_UNLOCK_PARTITION_ERROR_RESVAL = 1'h 0;
   parameter logic [0:0] OTP_CTRL_STATUS_SECRET_MANUF_PARTITION_ERROR_RESVAL = 1'h 0;
   parameter logic [0:0] OTP_CTRL_STATUS_SECRET_PROD_PARTITION_0_ERROR_RESVAL = 1'h 0;
   parameter logic [0:0] OTP_CTRL_STATUS_SECRET_PROD_PARTITION_1_ERROR_RESVAL = 1'h 0;
@@ -911,13 +911,13 @@ package otp_ctrl_reg_pkg;
   parameter logic [1:0] OTP_CTRL_CHECK_TRIGGER_RESVAL = 2'h 0;
   parameter logic [0:0] OTP_CTRL_CHECK_TRIGGER_INTEGRITY_RESVAL = 1'h 0;
   parameter logic [0:0] OTP_CTRL_CHECK_TRIGGER_CONSISTENCY_RESVAL = 1'h 0;
-  parameter logic [31:0] OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_0_RESVAL = 32'h 0;
+  parameter logic [31:0] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0_RESVAL = 32'h 0;
   parameter logic [31:0]
-      OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_0_SECRET_TEST_UNLOCK_PARTITION_DIGEST_0_RESVAL =
+      OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0_SW_TEST_UNLOCK_PARTITION_DIGEST_0_RESVAL =
       32'h 0;
-  parameter logic [31:0] OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_1_RESVAL = 32'h 0;
+  parameter logic [31:0] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1_RESVAL = 32'h 0;
   parameter logic [31:0]
-      OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_1_SECRET_TEST_UNLOCK_PARTITION_DIGEST_1_RESVAL =
+      OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1_SW_TEST_UNLOCK_PARTITION_DIGEST_1_RESVAL =
       32'h 0;
   parameter logic [31:0] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0_RESVAL = 32'h 0;
   parameter logic [31:0]
@@ -1075,8 +1075,8 @@ package otp_ctrl_reg_pkg;
     OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK,
     OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK,
     OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK,
-    OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_0,
-    OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_1,
+    OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0,
+    OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1,
     OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0,
     OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_1,
     OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_0,
@@ -1151,8 +1151,8 @@ package otp_ctrl_reg_pkg;
     4'b 0001, // index[41] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK
     4'b 0001, // index[42] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK
     4'b 1111, // index[43] OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK
-    4'b 1111, // index[44] OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_0
-    4'b 1111, // index[45] OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_1
+    4'b 1111, // index[44] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0
+    4'b 1111, // index[45] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1
     4'b 1111, // index[46] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0
     4'b 1111, // index[47] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_1
     4'b 1111, // index[48] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_0

@@ -4,7 +4,7 @@ It has been generated with ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partit
 -->
 |                                         Digest Name                                         |         Affected Partition        |  Calculated by HW  |
 |:-------------------------------------------------------------------------------------------:|:---------------------------------:|:------------------:|
-|      [SECRET_TEST_UNLOCK_PARTITION_DIGEST](#Reg_secret_test_unlock_partition_digest_0)      |   SECRET_TEST_UNLOCK_PARTITION    |        yes         |
+|          [SW_TEST_UNLOCK_PARTITION_DIGEST](#Reg_sw_test_unlock_partition_digest_0)          |     SW_TEST_UNLOCK_PARTITION      |        yes         |
 |            [SECRET_MANUF_PARTITION_DIGEST](#Reg_secret_manuf_partition_digest_0)            |      SECRET_MANUF_PARTITION       |        yes         |
 |           [SECRET_PROD_PARTITION_0_DIGEST](#Reg_secret_prod_partition_0_digest_0)           |      SECRET_PROD_PARTITION_0      |        yes         |
 |           [SECRET_PROD_PARTITION_1_DIGEST](#Reg_secret_prod_partition_1_digest_0)           |      SECRET_PROD_PARTITION_1      |        yes         |

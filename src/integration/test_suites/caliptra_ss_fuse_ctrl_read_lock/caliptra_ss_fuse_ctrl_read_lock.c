@@ -35,10 +35,11 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#define NUM_READ_LOCK_PARTITIONS 7
+#define NUM_READ_LOCK_PARTITIONS 8
 
 void read_lock(void) {
     const uint32_t partition_addresses[NUM_READ_LOCK_PARTITIONS] = {
+        0x0000, // SW_TEST_UNLOCK_PARTITION
         0x00D0, // SW_MANUF_PARTITION
         0x2CD0, // SVN_PARTITION
         0x2CF8, // VENDOR_TEST_PARTITION
@@ -48,6 +49,7 @@ void read_lock(void) {
         0x3308  // VENDOR_NON_SECRET_PROD_PARTITION
     };
     const uint32_t register_addresses[NUM_READ_LOCK_PARTITIONS] = {
+        SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_READ_LOCK,
         SOC_OTP_CTRL_SW_MANUF_PARTITION_READ_LOCK,
         SOC_OTP_CTRL_SVN_PARTITION_READ_LOCK,
         SOC_OTP_CTRL_VENDOR_TEST_PARTITION_READ_LOCK,
