@@ -48,6 +48,8 @@ module mci_lcc_st_trans
     output  logic                                       SOC_DFT_EN,
     output 	logic                                       SOC_HW_DEBUG_EN,
 
+    output lc_state_e                                   otp_static_state,
+
     output soc_ifc_pkg::security_state_t                security_state_o
 );
 
@@ -55,7 +57,7 @@ soc_ifc_pkg::security_state_t                security_state_comb;
 mci_state_translator_fsm_state_e             mci_trans_st_next;
 mci_state_translator_fsm_state_e             mci_trans_st_current;
 lc_state_e                                   lc_alive_state;
-lc_state_e                                   otp_static_state;
+
 
 logic                                        otp_data_valid;
 logic                                        lc_otp_prog_req;
