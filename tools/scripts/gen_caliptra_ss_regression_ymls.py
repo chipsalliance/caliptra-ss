@@ -204,15 +204,21 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
                 yml_file.write(f"        - {path}\n")
             
     if not (criteria.get("L0") == "L0" and criteria.get("PromotePipeline") == "Promote"):
-        # For non-L0 Promote, use the generator format
-        # Adjust generations based on criteria
-        template_count = len(filtered_data)
-        if template_count > 0:
-            adjusted_generations = max(generations, template_count * 3)
-            logger.info(f"Setting generations to {adjusted_generations} (3x template count)")
-            generations = adjusted_generations
+        # With round-robin mode, each test is run for 'generations' number of
+        # iterations
+        if criteria.get("Directed|Random") == "Directed":
+            generations = 3
         else:
-            logger.warning(f"No templates matched for criteria: {criteria}")
+            generations = 5
+        ## For non-L0 Promote, use the generator format
+        ## Adjust generations based on criteria
+        #template_count = len(filtered_data)
+        #if template_count > 0:
+        #    adjusted_generations = max(generations, template_count * 3)
+        #    logger.info(f"Setting generations to {adjusted_generations} (3x template count)")
+        #    generations = adjusted_generations
+        #else:
+        #    logger.warning(f"No templates matched for criteria: {criteria}")
 
         # Prepare the YAML structure using CommentedMap and CommentedSeq for better control
         tags = CommentedSeq([DoubleQuotedScalarString(criteria[key]) for key in ["L0", "L1", "DUT", "Directed|Random", "Nightly|Weekly"] if criteria[key] is not None])
