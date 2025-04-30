@@ -1310,7 +1310,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                 VPRINTF(MEDIUM, "  Skipping excluded register %s (0x%08x)\n", reg->name, reg->address);
                 continue;
             }
-            VPRINTF(LOW,"Reg %s [0x%0x]\n", reg->name, reg->address);
+            VPRINTF(MEDIUM,"Reg %s [0x%0x]\n", reg->name, reg->address);
 
             // Read the register value
             read_data = mci_reg_read(reg->address);
