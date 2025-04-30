@@ -71,7 +71,7 @@ void init_fail() {
     partition_t partition = partitions[xorshift32() % 8];
     uint32_t fault = faults[xorshift32() % 2];
 
-    if (partition.address < 0x090) {
+    if (partitions[i].address > 0x40 && partitions[i].address < 0xD0) {
         grant_caliptra_core_for_fc_writes();
     } else {
         grant_mcu_for_fc_writes();

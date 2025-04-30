@@ -36,3 +36,25 @@ task wait_debug_unlock();
     wait(!`MCI_PATH.LCC_state_translator.security_state_o.debug_locked);
     $display("[%t]: Debug unlock complete", $time);
 endtask
+
+task bring_ctra_core_up();
+    logic [31:0] reg_data;
+
+
+    $display("[%t]: Bringing up CPTRA core", $time);
+
+    $display("[%t] Setting CPTRA FUSE DONE...", $time);
+    bfm_axi_write_single_invalid_user(`SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, `SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK); 
+
+    $display("[%t] Waiting for CPTRA boot FSM BOOT_DONE", $time);
+    bfm_axi_read_single_invalid_user(`SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS, reg_data);     
+    reg_data = (reg_data & `SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> `SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
+
+    while(reg_data !== BOOT_DONE) begin
+        bfm_axi_read_single_invalid_user(`SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS, reg_data);     
+        reg_data = (reg_data & `SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> `SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
+
+    end
+
+    $display("[%t]: CPTRA core up", $time);
+endtask

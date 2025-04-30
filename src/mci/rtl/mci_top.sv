@@ -175,6 +175,8 @@ module mci_top
     output  logic                                       SOC_DFT_EN,
     output 	logic                                       SOC_HW_DEBUG_EN,
 
+    output lc_ctrl_state_pkg::lc_state_e                                   otp_static_state_o,
+
     output soc_ifc_pkg::security_state_t                security_state_o
 
     //============================================================
@@ -244,6 +246,7 @@ module mci_top
 
     // Other
     logic mci_ss_debug_intent;
+    logic early_warm_reset_warn;
 
     // RDC
 
@@ -411,6 +414,7 @@ mci_boot_seqr #(
     .cptra_ss_rst_b_o,
     .mcu_rst_b,
     .cptra_rst_b,
+    .early_warm_reset_warn,
 
     // MCU Halt Signals
     .mcu_cpu_halt_req_o,
@@ -796,6 +800,7 @@ endgenerate
 mci_lcc_st_trans LCC_state_translator (
     .clk_i(cptra_ss_rdc_clk_cg),
     .rst_ni(cptra_ss_rst_b_o),
+    .early_warm_reset_warn,
     .state_error(lc_fatal_state_error_i),  
     .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
     .lc_dft_en_i(lc_dft_en_i),
@@ -811,6 +816,7 @@ mci_lcc_st_trans LCC_state_translator (
     .FIPS_ZEROIZATION_CMD_o,
     .SOC_DFT_EN(SOC_DFT_EN),
     .SOC_HW_DEBUG_EN(SOC_HW_DEBUG_EN),
+    .otp_static_state(otp_static_state_o),
     .security_state_o(security_state_o)
 );
 

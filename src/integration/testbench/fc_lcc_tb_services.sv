@@ -125,11 +125,11 @@ module fc_lcc_tb_services (
           end
           CMD_LC_TRIGGER_ESCALATION0: begin
             $display("fc_lcc_tb_services: triggering esc_scrap_state0 escalation");
-            force `LCC_PATH.esc_scrap_state0 = 1'b1;
+            force `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_esclate_scrap_state0_i = 1'b1;
           end
           CMD_LC_TRIGGER_ESCALATION1: begin
             $display("fc_lcc_tb_services: triggering esc_scrap_state1 escalation");
-            force `LCC_PATH.esc_scrap_state1 = 1'b1;
+            force `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_esclate_scrap_state1_i = 1'b1;
           end
           CMD_LCC_FATAL_BUS_INTEG_ERROR: begin
             $display("fc_lcc_tb_services: triggering a bus integrity fault");
@@ -144,15 +144,15 @@ module fc_lcc_tb_services (
           end
           CMD_DISABLE_CLK_BYP_ACK: begin
             $display("fc_lcc_tb_services: disable clk_byp_ack");
-          force `LCC_PATH.lc_clk_byp_ack_i = '0;
+          force `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_clk_byp_ack_i = '0;
           end
           CMD_LC_TRIGGER_ESCALATION0_DIS: begin
             $display("fc_lcc_tb_services: releasing esc_scrap_state0 escalation");
-            force `LCC_PATH.esc_scrap_state0 = 1'b0;
+            release `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_esclate_scrap_state0_i;
           end
           CMD_LC_TRIGGER_ESCALATION1_DIS: begin
             $display("fc_lcc_tb_services: releasing esc_scrap_state1 escalation");
-            force `LCC_PATH.esc_scrap_state1 = 1'b0;
+            release `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_esclate_scrap_state1_i;
           end
           default: begin
             // No action for unrecognized commands.

@@ -36,6 +36,7 @@ import mci_pkg::*;
     output logic cptra_ss_rst_b_o,
     output logic mcu_rst_b,
     output logic cptra_rst_b,
+    output logic early_warm_reset_warn,
 
     // MCU Halt Signals
     output logic mcu_cpu_halt_req_o,
@@ -87,6 +88,8 @@ logic cptra_ss_rst_b_o_nxt;
 
 logic mci_rst_window;
 logic mci_rst_window_sync;
+logic mci_rst_window_sync_f;
+logic mci_rst_window_sync_2f;
 logic fw_update_rst_window;
 logic warm_reset;
 
@@ -121,11 +124,34 @@ end
 
 caliptra_2ff_sync #(.WIDTH(1), .RST_VAL('d1)) i_rst_window_sync (.clk(clk), .rst_b(mci_pwrgood), .din(mci_rst_window), .       dout(mci_rst_window_sync));
 
+
+always_ff @(posedge clk or negedge mci_pwrgood) begin
+    if(~mci_pwrgood) begin
+        mci_rst_window_sync_f <= '1;
+        mci_rst_window_sync_2f <= '1;
+    end 
+    else begin
+
+        mci_rst_window_sync_f  <= mci_rst_window_sync;
+        mci_rst_window_sync_2f <= mci_rst_window_sync_f;
+
+    end
+end
+
+// Us to sync change signal to a safe value that feed
+// into different reset domains that can't have their 
+// clocks gated like caliptra core/noncore
+assign early_warm_reset_warn = mci_rst_window_sync;
+
 //clock gate all flops on warm reset to prevent RDC metastability issues
-always_comb rdc_clk_dis = mci_rst_window_sync;
+// Delay by 2 clock cycles to allow some signal sync transition to safe value
+always_comb rdc_clk_dis = mci_rst_window_sync_2f;
+
+// Delay by 2 clock cycles to allow some signal sync transition to safe value
+assign warm_reset = mci_rst_window_sync_2f;
 
 
-assign warm_reset = mci_rst_window_sync;
+
 
 assign fw_update_rst_window = (boot_fsm_nxt == BOOT_RST_MCU) || (boot_fsm == BOOT_RST_MCU); 
 

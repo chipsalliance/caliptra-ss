@@ -123,6 +123,18 @@ task automatic deassert_cptra_rst_b(int max_delay = 100, int min_delay = 0);
     modify_cptra_rst_b.put();
 endtask
 
+task automatic wait_mci_rst_b_deassert();
+    $display("[%t] Waiting for MCI reset deassertion", $time);
+    wait(`MCI_PATH.cptra_ss_rst_b_o);
+    $display("%t] MCI reset deasserted", $time);
+endtask
+
+task automatic wait_mci_rst_b_assert();
+    $display("[%t] Waiting for MCI reset assertion", $time);
+    wait(!`MCI_PATH.cptra_ss_rst_b_o);
+    $display("%t] MCI reset asserted", $time);
+endtask
+
 task automatic wait_mcu_rst_b_deassert();
     $display("[%t] Waiting for MCU reset deassertion", $time);
     wait(`MCU_PATH.rst_l);

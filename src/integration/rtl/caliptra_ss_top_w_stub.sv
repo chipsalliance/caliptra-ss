@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //********************************************************************************
+
 `include "caliptra_ss_includes.svh"
 `include "config_defines.svh"
 `include "caliptra_macros.svh"
@@ -35,7 +36,6 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_rst_b_i;
     logic cptra_ss_mci_cptra_rst_b_o;
     logic cptra_ss_rdc_clk_cg_o;
-
 
     `define AXI_M_IF_TIE_OFF(_sig_name) \
     assign ``_sig_name``.awready = '0;\
@@ -123,6 +123,10 @@ module caliptra_ss_top_w_stub(
     logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arregion;
     logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awqos;
     logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arqos;
+    
+    logic cptra_ss_mcu_halt_ack_o;
+    logic cptra_ss_mcu_halt_status_o;
+    logic cptra_ss_mcu_halt_req_o;
 
     logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awcache;
     logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arcache;
@@ -273,26 +277,19 @@ module caliptra_ss_top_w_stub(
     otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i;
     otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o;
 
-`ifdef DIGITAL_IO_I3C
     logic cptra_ss_i3c_scl_i;
     logic cptra_ss_i3c_sda_i;
     logic cptra_ss_i3c_scl_o;
     logic cptra_ss_i3c_sda_o;
+    logic cptra_ss_i3c_scl_oe;
+    logic cptra_ss_i3c_sda_oe;
     logic cptra_ss_sel_od_pp_o;
-`else
-    wire cptra_ss_i3c_scl_io;
-    wire cptra_ss_i3c_sda_io;
-    assign cptra_ss_i3c_sda_io = 1'b0;
-    assign cptra_ss_i3c_scl_io = 1'b0;
-`endif
+    logic cptra_i3c_axi_user_id_filtering_enable_i;
 
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
     logic cptra_ss_cptra_core_scan_mode_i;
     logic cptra_error_fatal;
     logic cptra_error_non_fatal;
-    logic ready_for_fuses;
-    logic ready_for_mb_processing;
-    logic mailbox_data_avail;
 
     always_comb begin
         cptra_ss_pwrgood_i = '0;
@@ -344,26 +341,17 @@ module caliptra_ss_top_w_stub(
         cptra_ss_lc_esclate_scrap_state1_i = '0;
         cptra_ss_cptra_core_scan_mode_i = '0;
         cptra_ss_cptra_core_generic_input_wires_i = '0;
-    `ifdef DIGITAL_IO_I3C
-        cptra_ss_i3c_scl_i = '0;
-        cptra_ss_i3c_sda_i = '0;
-    `endif
-        
+        cptra_i3c_axi_user_id_filtering_enable_i = 1'b1;
+        cptra_ss_i3c_scl_i=0;
+        cptra_ss_i3c_sda_i=0;
     end
 
-    // assign cptra_ss_cptra_core_el2_mem_export.veer_sram_sink = '0;
-    // assign cptra_ss_mcu0_el2_mem_export.veer_sram_sink = '0;
-    // assign cptra_ss_mci_mcu_sram_req_if.request = '0;
-    // assign cptra_ss_mci_mbox0_sram_req_if.request = '0;
-    // assign cptra_ss_mci_mbox1_sram_req_if.request = '0;
-    // assign mldsa_memory_export_req.req = '0;
-
     caliptra_ss_top
-    caliptra_ss_dut (
+    caliptra_ss_top_i (
 
         .cptra_ss_clk_i(cptra_ss_clk_i),
-        .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i), //fixme
-        .cptra_ss_rst_b_i(cptra_ss_rst_b_i), //fixme
+        .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i),
+        .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_rdc_clk_cg_o(cptra_ss_rdc_clk_cg_o),
@@ -384,6 +372,14 @@ module caliptra_ss_top_w_stub(
     //MCI AXI Sub Interface
         .cptra_ss_mci_s_axi_if_r_sub(cptra_ss_mci_s_axi_if.r_sub),
         .cptra_ss_mci_s_axi_if_w_sub(cptra_ss_mci_s_axi_if.w_sub),
+
+    // MCU halt status
+    .cptra_ss_mcu_halt_ack_i(cptra_ss_mcu_halt_ack_o),
+    .cptra_ss_mcu_halt_ack_o(cptra_ss_mcu_halt_ack_o),
+    .cptra_ss_mcu_halt_status_i(cptra_ss_mcu_halt_status_o),
+    .cptra_ss_mcu_halt_status_o(cptra_ss_mcu_halt_status_o),
+    .cptra_ss_mcu_halt_req_o,
+
     
     // AXI Manager INF
         .cptra_ss_mcu_ifu_m_axi_if_r_mgr(cptra_ss_mcu_ifu_m_axi_if.r_mgr),
@@ -543,26 +539,19 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_fuse_macro_outputs_i('0),
         .cptra_ss_fuse_macro_inputs_o,
     
-    // I3C Interface
-    `ifdef DIGITAL_IO_I3C
-        .cptra_ss_i3c_scl_i(master0_intf.scl_and),
-        .cptra_ss_i3c_sda_i(master0_intf.sda_and),
-        .cptra_ss_i3c_scl_o(master0_intf.scl_and),
-        .cptra_ss_i3c_sda_o(master0_intf.sda_and),
+        .cptra_ss_i3c_scl_i,
+        .cptra_ss_i3c_sda_i,
+        .cptra_ss_i3c_scl_o,
+        .cptra_ss_i3c_sda_o,
+        .cptra_ss_i3c_scl_oe,
+        .cptra_ss_i3c_sda_oe,
+        .cptra_i3c_axi_user_id_filtering_enable_i,
         .cptra_ss_sel_od_pp_o,
-    `else
-        .cptra_ss_i3c_scl_io,
-        .cptra_ss_i3c_sda_io,
-    `endif
-
-        // -- remove in final version
+    
         .cptra_ss_cptra_core_generic_input_wires_i,
         .cptra_ss_cptra_core_scan_mode_i,
         .cptra_error_fatal,
-        .cptra_error_non_fatal,
-        .ready_for_fuses,
-        .ready_for_mb_processing,
-        .mailbox_data_avail
+        .cptra_error_non_fatal
 
     );
     
