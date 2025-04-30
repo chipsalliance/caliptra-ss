@@ -1419,7 +1419,7 @@ MCU MBOX SRAM size is set via `MCU_MBOX0_SIZE_KB` and `MCU_MBOX1_SIZE_KB` parame
 
 The MCU can be configured to implement up to 2 independent mailboxes with maximum fully addressable SRAM. sizes of up to 2 MB.  If they are configured sizes of 0, they will not be instantiated.
 
-Size should be deterined by:
+Size should be determined by:
 
 1. Max MCU FW image size
 2. Max size of other FW images Caliptra SS will handle
