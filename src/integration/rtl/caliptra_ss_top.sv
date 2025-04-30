@@ -281,7 +281,9 @@ module caliptra_ss_top
     logic                       mpc_debug_run_ack;
     logic                       debug_brkpt_status;
 
-    logic                       mailbox_data_val;
+    logic ready_for_fuses;
+    logic ready_for_mb_processing;
+    logic mailbox_data_avail;
 
     wire                        dma_hready_out;
 
@@ -424,8 +426,9 @@ module caliptra_ss_top
     //=========================================================================-
     // Caliptra DUT instance
     //=========================================================================-
-    
+
     logic [127:0] cptra_ss_cptra_generic_fw_exec_ctrl_internal;
+
     assign cptra_ss_cptra_generic_fw_exec_ctrl_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[127:3];
     assign cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[2];
 
