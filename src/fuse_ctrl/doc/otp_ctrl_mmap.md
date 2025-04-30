@@ -4,8 +4,8 @@ It has been generated with ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partit
 -->
 |  Index  |             Partition             |  Size [B]  |  Access Granule  |                                            Item                                             |  Byte Address  |  Size [B]  |
 |:-------:|:---------------------------------:|:----------:|:----------------:|:-------------------------------------------------------------------------------------------:|:--------------:|:----------:|
-|    0    |   SECRET_TEST_UNLOCK_PARTITION    |     72     |      64bit       |                             CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN                             |     0x000      |     64     |
-|         |                                   |            |      64bit       |      [SECRET_TEST_UNLOCK_PARTITION_DIGEST](#Reg_secret_test_unlock_partition_digest_0)      |     0x040      |     8      |
+|    0    |     SW_TEST_UNLOCK_PARTITION      |     72     |      32bit       |                             CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN                             |     0x000      |     64     |
+|         |                                   |            |      64bit       |          [SW_TEST_UNLOCK_PARTITION_DIGEST](#Reg_sw_test_unlock_partition_digest_0)          |     0x040      |     8      |
 |    1    |      SECRET_MANUF_PARTITION       |     72     |      64bit       |                                     CPTRA_CORE_UDS_SEED                                     |     0x048      |     64     |
 |         |                                   |            |      64bit       |            [SECRET_MANUF_PARTITION_DIGEST](#Reg_secret_manuf_partition_digest_0)            |     0x088      |     8      |
 |    2    |      SECRET_PROD_PARTITION_0      |     16     |      64bit       |                                 CPTRA_CORE_FIELD_ENTROPY_0                                  |     0x090      |     8      |

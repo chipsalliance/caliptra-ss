@@ -51,7 +51,7 @@ typedef struct {
 } prod_manuf_partition_t;
 
 static const prod_manuf_partition_t partitions[12] = {
-    { .address = 0x0000, .granularity = 64, .lc_state = MANUF }, // SECRET_TEST_UNLOCK_PARTITION
+    { .address = 0x0000, .granularity = 32, .lc_state = MANUF }, // SW_TEST_UNLOCK_PARTITION
     { .address = 0x0048, .granularity = 64, .lc_state = MANUF }, // SECRET_MANUF_PARTITION
     { .address = 0x0090, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_0
     { .address = 0x00A0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_1
@@ -121,7 +121,7 @@ void manuf_prod_provision() {
 
     // Check that only PROD partitions are writeable and writes to MANUF partitions are blocked.
     for (uint32_t i = 0; i < 12; i++) {
-        if (partitions[i].address <= 0xD0) {
+        if (partitions[i].address > 0x40 && partitions[i].address < 0xD0) {
             grant_caliptra_core_for_fc_writes();
         } else {
             grant_mcu_for_fc_writes(); 

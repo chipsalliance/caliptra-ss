@@ -28,11 +28,7 @@
         key_size:  "16",
         iv_size:   "8",
         cnst_size: "16",
-        keys: [
-            {
-                name:  "SecretTestUnlockKey",
-                value: "<random>",
-            },        
+        keys: [  
             {
                 name:  "SecretManufKey",
                 value: "<random>",
@@ -79,14 +75,14 @@
     // Note that the digest items are added automatically to the address map.
     partitions: [
         {
-            name:         "SECRET_TEST_UNLOCK_PARTITION",
+            name:         "SW_TEST_UNLOCK_PARTITION",
             variant:      "Buffered",
-            secret:       true,
+            secret:       false,
             sw_digest:    false,
             hw_digest:    true,
             write_lock:   "Digest",
-            read_lock:    "Digest",
-            key_sel:      "SecretTestUnlockKey",
+            read_lock:    "None",
+            key_sel:      "NoKey",
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStDev",
@@ -99,7 +95,7 @@
                     '''
                 },                
             ],
-            desc: '''Secret manufacturing partition.
+            desc: '''Software manufacturing partition.
             '''
         },
         {
