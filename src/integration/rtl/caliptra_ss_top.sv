@@ -314,7 +314,6 @@ module caliptra_ss_top
     logic [31:0] mcu_trace_rv_i_tval_ip;
     
     // -- caliptra DUT instance
-    // -- Will be removed in final release.
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
 
     // ----------------- MCI Connections within Subsystem -----------------------
@@ -367,8 +366,6 @@ module caliptra_ss_top
     //---------------------------I3C---------------------------------------
     logic payload_available_o;
     logic image_activated_o;
-
-
 
 
     ///////
