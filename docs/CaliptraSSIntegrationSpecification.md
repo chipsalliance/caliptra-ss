@@ -86,6 +86,7 @@
     - [MCU JTAG/DMI Access](#mcu-jtagdmi-access)
       - [MCU SRAM JTAG Access](#mcu-sram-jtag-access)
     - [MCU Trace Buffer](#mcu-trace-buffer)
+    - [MCU Halt Ack Interface](#mcu-halt-ack-interface)
   - [Sequences : Reset, Boot,](#sequences--reset-boot)
     - [MCI Boot Sequencer](#mci-boot-sequencer)
       - [Breakpoint Flow](#breakpoint-flow)
@@ -393,7 +394,11 @@ File at path includes parameters and defines for Caliptra Subsystem `src/integra
 | External | output    | 1     | `ready_for_fuses`                    | Ready for fuses output                   |
 | External | output    | 1     | `ready_for_mb_processing`            | Ready for mailbox processing output      |
 | External | output    | 1     | `mailbox_data_avail`                 | Mailbox data available output            |
-| External | output    | 1     | `cptra_ss_cpu_halt_status_o`                 | MCU Halt status            |
+| External | output    | 1     | `cptra_ss_mcu_halt_status_o`         | MCU halt status                          |
+| External | output    | 1     | `cptra_ss_mcu_halt_status_i`         | MCU halt status input used by MCI        |
+| External | output    | 1     | `cptra_ss_mcu_halt_ack_o`            | MCU halt ack                             |
+| External | output    | 1     | `cptra_ss_mcu_halt_ack_i`            | MCU halt ack input used by MCI           |
+| External | output    | 1     | `cptra_ss_mcu_halt_req_o`            | MCU halt request                         |
 
 ## Integration Requirements
 
@@ -430,7 +435,7 @@ The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsys
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
      - It is **illegal** to only toggle `cptra_ss_reset_n` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
-     - SOC shall toggle `cptra_ss_reset_b` only after `cptra_ss_cpu_halt_status_o` is asserted to guarantee MCU is idle and to prevent any RDC issues.
+     - SOC shall toggle `cptra_ss_reset_b` only after `cptra_ss_mcu_halt_status_o` is asserted to guarantee MCU is idle and to prevent any RDC issues.
 
 The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_reset_n` to ensure `cptra_ss_rdc_clk_cg_o` is gated before reset is asserted. This reset is needed for the purpose of RDC between the warm reset domain and the cold reset/memory domain.
 
@@ -1087,9 +1092,9 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Facing            | Type      | Width | Name                  |  Description                                                                                                                                            |
 |:------------------|:----------|:------|:----------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Internal | output | 32     | `mcu_reset_vector`     | MCU reset vector |
-| Internal | output | 1     | `mcu_cpu_halt_req_o`     | MCU halt request, used by MCI boot FSM |
-| Internal | input | 1     | `mcu_cpu_halt_ack_i`     | MCU halt ack, used by MCI boot FSM |
-| External/Internal | input | 1     | `mcu_cpu_halt_status_i`     | MCU halt status, used by MCI boot FSM, and exposed as output to SOC as `cptra_ss_cpu_halt_status_o` |
+| Internal | output | 1     | `mcu_cpu_halt_req_o`     | MCU halt request, used by MCI boot FSM. Exposed as ouput to SOC as `cptra_ss_mcu_halt_req_o` |
+| Internal | input | 1     | `mcu_cpu_halt_ack_i`     | MCU halt ack, used by MCI boot FSM. Exposed as output to SOC as `cptra_ss_mcu_halt_ack_i`|
+| External/Internal | input | 1     | `mcu_cpu_halt_status_i`     | MCU halt status, used by MCI boot FSM, and exposed as input to SOC as `cptra_ss_mcu_halt_status_i` |
 | Internal | output | 1     | `mcu_dmi_core_enable`     | MCU DMI Core Enable |
 | Internal | output | 1     | `mcu_dmi_uncore_enable`     | MCU DMI Uncore Enable |
 | Internal | input | 1     | `mcu_dmi_uncore_en`     | MCU DMI Uncore Interface Enable |
@@ -1546,6 +1551,31 @@ MCI hosts the MCU trace buffer. The full trace buffer spec is [here](https://git
 4. Traces are sticky and persist through warm reset
 5. The trace buffer can hold a total of 64 traces
 
+### MCU Halt Ack Interface
+
+Caliptra SS exposed the MCU halt ack handshake to enable [MCU No Rom Config](#mcu-no-rom-config). 
+
+If the SOC does not support MCU No Rom Config Caliptra SS requires the signals to be looped back.
+
+| Caliptra SS port              | Direction | Connection | 
+| -----                         | :---:     | ----- | 
+| `cptra_ss_mcu_halt_status_o`  | output    | `cptra_ss_mcu_halt_status_i` | 
+| `cptra_ss_mcu_halt_status_i`  | input     | `cptra_ss_mcu_halt_status_o` | 
+| `cptra_ss_mcu_halt_ack_o`     | output    | `cptra_ss_mcu_halt_ack_i` | 
+| `cptra_ss_mcu_halt_ack_i`     | input     | `cptra_ss_mcu_halt_ack_o` | 
+| `cptra_ss_mcu_halt_req_o`     | output    | Unused by SOC | 
+
+If the SOC supports MCU No Rom Config the SOC must drive the halt_ack/status during the first Caliptra SS boot out of Cold Reset since MCU is still in reset. It shall give control back to MCU after it has completed the initial halt handshake as specified in [MCU No ROM Config flow](#mcu-no-rom-config). The recommended connections if MCU No Rom Config is supported:
+
+
+| Caliptra SS port              | Direction | Connection | 
+| -----                         | :---:     | ----- | 
+| `cptra_ss_mcu_halt_status_o`  | output    | `cptra_ss_mcu_halt_status_i` | 
+| `cptra_ss_mcu_halt_status_i`  | input     | `cptra_ss_mcu_halt_status_o` ORed with SOC control | 
+| `cptra_ss_mcu_halt_ack_o`     | output    | `cptra_ss_mcu_halt_ack_i` | 
+| `cptra_ss_mcu_halt_ack_i`     | input     | `cptra_ss_mcu_halt_ack_o` ORed with SOC control | 
+| `cptra_ss_mcu_halt_req_o`     | output    | Used to enable/disable the SOC control of ack/status | 
+
 ## Sequences : Reset, Boot,
 
 ### MCI Boot Sequencer
@@ -1575,17 +1605,21 @@ To proceed after a breakpoint the SOC must write the `MCI_BOOTFSM_GO.go` registe
 
 #### MCU No ROM Config
 
-Caliptra SS supports booting without a MCU ROM. To enable this configuration the SOC must set:
+Caliptra SS supports booting without a MCU ROM. To enable this configuration the SOC must:
 
 1. `cptra_ss_mcu_no_rom_config_i` set to 1
 2. `cptra_ss_strap_mci_soc_config_axi_user_i` set to a trusted user other than MCU
-3. (optional) `cptra_ss_strap_mcu_reset_vector_i` set to known starting address in MCU SRAM
+3. `cptra_ss_mcu_halt_status_i` connected to `cptra_ss_mcu_halt_status_o` ORed with SOC control
+4. `cptra_ss_mcu_halt_ack_i` connected to `cptra_ss_mcu_halt_ack_o` ORed with SOC control
+5. (optional) `cptra_ss_strap_mcu_reset_vector_i` set to known starting address in MCU SRAM
 
 The expected boot sequence is:
 
 1. MCI brought out of reset
 2. MCI boot FSM progresses to `WAIT_FOR_CPTRA_BOOT_GO`
 3. Trusted SOC agent does configuration MCU ROM typically executes. See [CSS HW spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#subsystem-boot-finite-state-machine-css-bootfsm)
+  - When SOC agent sees `notif_cptra_mcu_reset_req_sts` set by Caliptra, SOC will see `cptra_ss_mcu_halt_req_o` asserted by MCI Boot FSM. SOC must assert `cptra_ss_mcu_halt_status_i` and `cptra_ss_mcu_halt_ack_i` back to MCI. When SOC sees `cptra_ss_mcu_halt_req_o` deassert SOC shall give full control of these signals back to MCU. 
+  - See [MCU Halt Ack Interface](#mcu-halt-ack-interface) for recommended connections.
 4. Trusted SOC agent sets `CPTRA_BOOT_GO.go`
 5. Trusted SOC agent executes [MCU FW Boot Update](mcu-fw-boot-update) with Caliptra
 
