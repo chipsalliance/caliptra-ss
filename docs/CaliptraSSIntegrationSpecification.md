@@ -212,7 +212,7 @@ The following table describes Caliptra Subsystem integration requirements.
 ## Memory Requirements
 
 Caliptra Subsystem required following memory export connected to various memories to function as per the specification. 
-| **Memory Category** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
+| **Device** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
   |---------------------|-----------------------|--------------------------------------|----------|-----------------|---------------------------------------------------------------------------------|
   | **MCU0**            | Instruction ROM       | `mcu_rom_mem_export_if`              | TBD      | Read-Only       | Stores the instructions for MCU0 execution                                      |
   | **MCU0**            | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | TBD      | Read/Write      | Memory export for MCU0 access                                                   |
@@ -384,6 +384,9 @@ File at path includes parameters and defines for Caliptra Subsystem `src/integra
 | External | input     | 1     | `cptra_ss_i3c_sda_i`                 | I3C data input                           |
 | External | output    | 1     | `cptra_ss_i3c_scl_o`                 | I3C clock output                         |
 | External | output    | 1     | `cptra_ss_i3c_sda_o`                 | I3C data output                          |
+| External | output    | 1     | `cptra_ss_i3c_scl_oe`                | I3C clock output enable                  |
+| External | output    | 1     | `cptra_ss_i3c_sda_oe`                | I3C data output  enable                  |
+| External | output    | 1     | `cptra_i3c_axi_user_id_filtering_enable_i` | I3C AXI user filtering enable (active high)     | 
 | External | output    | 1     | `cptra_ss_sel_od_pp_o`               | Select open-drain push-pull output       |
 | External | inout     | 1     | `cptra_ss_i3c_scl_io`                | I3C clock bidirectional                  |
 | External | inout     | 1     | `cptra_ss_i3c_sda_io`                | I3C data bidirectional                   |
@@ -391,9 +394,6 @@ File at path includes parameters and defines for Caliptra Subsystem `src/integra
 | External | input     | 1     | `cptra_ss_cptra_core_scan_mode_i`    | Caliptra core scan mode input            |
 | External | output    | 1     | `cptra_error_fatal`                  | Fatal error output                       |
 | External | output    | 1     | `cptra_error_non_fatal`              | Non-fatal error output                   |
-| External | output    | 1     | `ready_for_fuses`                    | Ready for fuses output                   |
-| External | output    | 1     | `ready_for_mb_processing`            | Ready for mailbox processing output      |
-| External | output    | 1     | `mailbox_data_avail`                 | Mailbox data available output            |
 | External | output    | 1     | `cptra_ss_mcu_halt_status_o`         | MCU halt status                          |
 | External | output    | 1     | `cptra_ss_mcu_halt_status_i`         | MCU halt status input used by MCI        |
 | External | output    | 1     | `cptra_ss_mcu_halt_ack_o`            | MCU halt ack                             |
@@ -404,15 +404,15 @@ File at path includes parameters and defines for Caliptra Subsystem `src/integra
 
 ### Clock
 
-The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem. This signal must be connected to a 200 MHz system clock to ensure proper operation.
+The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem. This signal must be connected to a 400 MHz system clock to ensure proper operation.
 
   - **Signal Name** `cptra_ss_clk_i`
-  - **Required Frequency** 200 MHz
+  - **Required Frequency** 400 MHz
   - **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
   - **Integration Notes**
-     1. Verify that the SoC or system-level clock source provides a stable 200 MHz clock.
+     1. Verify that the SoC or system-level clock source provides a stable 400 MHz clock.
      2. The clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.
-     3. If a different frequency is required, ensure that a clock divider or PLL is used to generate the 200 MHz clock before connection.
+     3. If a different frequency is required, ensure that a clock divider or PLL is used to generate the 400 MHz clock before connection.
 
 The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_clk_i`. It is clock gated whenever `cptra_ss_rst_b` is asserted to avoid RDC issues from the warm reset domain to the cold reset domain/memories. 
 
@@ -425,13 +425,13 @@ The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_c
 
 ### Reset
 
-The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles at 200 MHz) to allow all internal logic to initialize properly.
+The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles at 400 MHz) to allow all internal logic to initialize properly.
 
    - **Signal Name** `cptra_ss_reset_n`
    - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
    - **Reset Type** Synchronous with the `cptra_ss_clk_i` signal
    - **Integration Notes**
-     - The reset signal must be synchronized to the 200 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
+     - The reset signal must be synchronized to the 400 MHz `cptra_ss_clk_i` clock to prevent metastability issues.
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
      - It is **illegal** to only toggle `cptra_ss_reset_n` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
@@ -493,6 +493,10 @@ Integrator must connect, following list of manager and subordinates to axi inter
 
   - `caliptra-ss\src\integration\rtl\soc_address_map.h`
   - `caliptra-ss\src\integration\rtl\soc_address_map_defines.svh `
+
+### Caliptra Subsystem Reference Register Map
+
+[Caliptra Subsystem Reference Register Map](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=). **Please note, any addresses are for the example purpose only**.
 
 ### FW Execution Control Connections
 
@@ -1801,8 +1805,6 @@ Setup assumes all interrupts to MCU and all\_error\_non\_fatal are enabled via M
 
 See [MCI error handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure.
 
-## How to test : Smoke & more
-
 ## Other requirements
 
 # I3C core
@@ -1810,8 +1812,8 @@ See [MCI error handling](https://github.com/chipsalliance/caliptra-ss/blob/main/
 ## Overview 
 
 The I3C core in the Caliptra Subsystem is an I3C target composed of two separate I3C targets:
-1. The first target manages standard (non-recovery) flows.
-2. The second target is dedicated to the recovery interface.
+1. **Main target** : Main target is responsible for any flows other than recovery or streaming boot.
+2. **Recovery target** : Recovery target is dedicated to streaming boot / recovery interface.
 
 - This I3C code integrates with an AXI interconnect, allowing AXI read and write transactions to access I3C registers. For details on the core’s internal registers and functionality, see:  
   - [I3C Core Documentation](https://github.com/chipsalliance/i3c-core/blob/main/docs/source/top.md)  
@@ -1876,11 +1878,13 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | `bid_o`                           | output    | [AxiIdWidth-1:0]          | AXI write transaction ID (response)                                  |
 | `bvalid_o`                        | output    | 1 bit                     | AXI write response valid                                             |
 | `bready_i`                        | input     | 1 bit                     | AXI write response ready                                             |
-| `scl_i`                           | input     | 1 bit (if DIGITAL_IO_I3C) | I3C clock input (digital)                                            |
-| `sda_i`                           | input     | 1 bit (if DIGITAL_IO_I3C) | I3C data input (digital)                                             |
-| `scl_o`                           | output    | 1 bit (if DIGITAL_IO_I3C) | I3C clock output (digital)                                           |
-| `sda_o`                           | output    | 1 bit (if DIGITAL_IO_I3C) | I3C data output (digital)                                            |
-| `sel_od_pp_o`                     | output    | 1 bit (if DIGITAL_IO_I3C) | Open-drain / push-pull selection (digital output)                    |
+| `scl_i`                           | input     | 1 bit                     | I3C clock input                                                      |
+| `sda_i`                           | input     | 1 bit                     | I3C data input                                                       |
+| `scl_o`                           | output    | 1 bit                     | I3C clock output                                                     |
+| `sda_o`                           | output    | 1 bit                     | I3C data output                                                      |
+| `scl_oe`                          | output    | 1 bit                     | I3C clock output enable                                              |
+| `sda_oe`                          | output    | 1 bit                     | I3C data output enable                                               |
+| `sel_od_pp_o`                     | output    | 1 bit                     | Open-drain / push-pull selection (digital output)                    |
 | `i3c_scl_io`                      | inout     | 1 bit (else)              | I3C clock line (analog/digital)                                      |
 | `i3c_sda_io`                      | inout     | 1 bit (else)              | I3C data line (analog/digital)                                       |
 | `recovery_payload_available_o`    | output    | 1 bit                     | Indicates recovery payload is available                              |
@@ -1889,12 +1893,15 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | `peripheral_reset_done_i`         | input     | 1 bit                     | Acknowledges peripheral reset completion                             |
 | `escalated_reset_o`               | output    | 1 bit                     | Escalated reset output                                               |
 | `irq_o`                           | output    | 1 bit                     | Interrupt request                                                    |
+| `disable_id_filtering_i`          | input     | 1 bit                     | Disables ID Filtering for I3C core                                   | 
+| `priv_ids`                        | input     | 32 bit x `NUM_PRIV_ID`    | 32 bit id list if ID filtering is enabled                            |
+
 
 ## I3C Integration Requirements
 
   1. Connect the `cptra_ss_i3c_s_axi_if` with AXI interconnect.
   2. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#1** to initialize the I3C targets. 
-  3. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#2** to set both I3C target device with static addresses.
+  3. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#2** to set both I3C target device with static addresses. **Note**, this is not required if I3C Host device is using the CCC `ENTDAA` for initializing the dynamic address to both targets. 
   
 ## Programming Sequence
 
@@ -1966,8 +1973,10 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
   - **Recovery Sequence** 
     - Test transfers the recovery image
     - Boots the device using the recovery image
+  
   - **MCTP Test seqeunce**
-    - TBD
+    - MCTP Test send random 68 bytes of data and PEC to RX queue
+    - MCU reads and compares the data with expected data
 
 
 

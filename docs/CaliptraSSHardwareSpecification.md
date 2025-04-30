@@ -123,7 +123,7 @@ This document defines technical specifications for a subsystem design utilizing 
 
 # Caliptra Subsystem Requirements
 ## Definitions
-* RA: Recovery Agent
+* RA: Recovery Agent / Streaming boot Agent
 * MCI: Manufacturer Control Interface
 * MCU: Manufacturer Control Unit
   
@@ -270,18 +270,18 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 ## I3C Streaming Boot (Recovery) Flow
 
-Please refer to [Caliptra Security Subsystem Recovery Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-recovery-sequence).
+Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-recovery-sequence).
 
 *Figure: Caliptra Subsystem I3C Streaming Boot (Recovery) Flow*
 ![](./images/CSS-Recovery-Flow.png)
 
-## Caliptra ROM Requirements
+## Caliptra ROM Requirements for OCP Streaming Boot
 Caliptra ROM & RT firmware must program DMA assist with correct image size (multiple of 4B) + FIXED Read + block size is 256B (burst / FIFO size). Caliptra ROM & RT Firmware must wait for "image_activated" signal to assert before processing the image. Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes. 
 
 ## I3C and Caliptra-AXI Interactions
 Received transfer data can be obtained by the driver via a read from XFER_DATA_PORT register. Received data threshold is indicated to BMC by the controller with TX_THLD_STAT interrupt if RX_THLD_STAT_EN is set. The RX threshold can be set via RX_BUF_THLD. In case of a read when no RX data is available, the controller shall raise an error on the frontend bus interface (AHB / AXI).
 
-# Caliptra AXI Manager & DMA assist
+# Caliptra Core AXI Manager & DMA assist
 SOC\_IFC includes a hardware-assist block that is capable of initiating DMA transfers to the attached SoC AXI interconnect. The DMA transfers include several modes of operation, including raw transfer between SoC (AXI) addresses, moving data into or out of the SOC\_IFC mailbox, and directly driving data through AHB CSR accesses to datain/dataout registers. One additional operating mode allows the DMA engine to autonomously wait for data availability via the OCP Recovery interface (which will be slowly populated via an I3C or similar interface). 
 
 Caliptra arms transfers by populating a transaction descriptor to the AXI DMA CSR block via register writes over the internal AHB bus. Once armed, the DMA will autonomously issue AXI transactions to the SoC until the requested data movement is completed. The DMA uses an internal FIFO to buffer transfer data. For any transfer using AXI Writes (Write Route is not disabled), the DMA waits until sufficient data is available in the FIFO before initiating any AXI write requests.
@@ -321,7 +321,7 @@ Write routes always apply when an AXI write is requested. Any AXI write will rea
 ![](./images/Caliptra-AXI-DMA-RD.png)
 
 
-## Streaming Boot Payloads
+## OCP Streaming Boot Payloads
 
 The DMA block supports a special mode of operation that is intended for use in reading Firmware Image Payloads (for Streaming Boot) from the Recovery Interface, present in the Caliptra Subsystem. This operation mode relies on three key control signals: the payload\_available signal input from the recovery interface, the read\_fixed control bit, and the block\_size register (from the DMA control CSR block). 
 
