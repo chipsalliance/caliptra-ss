@@ -7,7 +7,7 @@ contents:
       path: ""
       mode: round-robin
       weight: 100
-      generations: 237
+      generations: 3
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
