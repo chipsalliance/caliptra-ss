@@ -36,48 +36,39 @@
   - [Streaming Boot Payloads](#streaming-boot-payloads)
   - [Programming Flowchart {#programming-flowchart}](#programming-flowchart-programming-flowchart)
   - [Descriptor](#descriptor)
-- [Caliptra SS Fuse Controller](#caliptra-ss-fuse-controller)
+- [Caliptra Subsystem Fuse Controller](#caliptra-subsystem-fuse-controller)
   - [Partition Details](#partition-details)
-    - [Key Characteristics of Secret Partitions:](#key-characteristics-of-secret-partitions)
+    - [Key Characteristics of Secret Partitions](#key-characteristics-of-secret-partitions)
   - [Partition-Specific Behaviors](#partition-specific-behaviors)
     - [Life Cycle Partition](#life-cycle-partition)
     - [Vendor Test Partition](#vendor-test-partition)
   - [Locking the Validated Public Key Partition](#locking-the-validated-public-key-partition)
+    - [PK Hash Partition](#pk-hash-partition)
+    - [PK Hash Revocation Partition](#pk-hash-revocation-partition)
+    - [Volatile Locking Mechanism](#volatile-locking-mechanism)
   - [Hardware Integrity Checker](#hardware-integrity-checker)
     - [Purpose](#purpose)
   - [Zeroization Flow for Secret FUSEs](#zeroization-flow-for-secret-fuses)
     - [Conditions for Zeroization](#conditions-for-zeroization)
     - [Zeroization Process](#zeroization-process)
     - [Cold Reset and Final Zeroization](#cold-reset-and-final-zeroization)
-  - [Notes](#notes)
-  - [Programmer's Guide](#programmers-guide)
   - [General Guidance](#general-guidance)
-    - [Initialization](#initialization)
     - [Reset Considerations](#reset-considerations)
     - [Programming Already Programmed Regions](#programming-already-programmed-regions)
-  - [Direct Access Interface](#direct-access-interface)
-    - [Readout Sequence](#readout-sequence)
-    - [Programming Sequence](#programming-sequence)
-    - [Digest Calculation Sequence](#digest-calculation-sequence)
-- [Caliptra SS Life Cycle Controller](#caliptra-ss-life-cycle-controller)
+- [Caliptra Subsystem Life Cycle Controller](#caliptra-subsystem-life-cycle-controller)
   - [Caliptra Subsystem, SOC Debug Architecture Interaction](#caliptra-subsystem-soc-debug-architecture-interaction)
   - [Caliptra Subsystem LCC State Definitions](#caliptra-subsystem-lcc-state-definitions)
-  - [DFT \& DFD LC States](#dft--dfd-lc-states)
+  - [DFT & DFD Life-cycle States](#dft--dfd-life-cycle-states)
   - [LCC State and State Decoder Output Ports](#lcc-state-and-state-decoder-output-ports)
   - [TAP Pin Muxing](#tap-pin-muxing)
     - [How does Caliptra Subsystem enable manufacturing debug mode?](#how-does-caliptra-subsystem-enable-manufacturing-debug-mode)
-      - [Flow Explanation:](#flow-explanation)
   - [Production Debug Unlock Architecture](#production-debug-unlock-architecture)
+    - [Overview of Debug Unlock Initiation](#overview-of-debug-unlock-initiation)
+    - [Secure Debug Unlock Protocol](#secure-debug-unlock-protocol)
   - [Masking Logic for Debugging Features in Production Debug Mode (MCI)](#masking-logic-for-debugging-features-in-production-debug-mode-mci)
-  - [Production Debug Policy Authorization Content](#production-debug-policy-authorization-content)
-  - [SOC \& Manuf Debug Caliptra Subsystem Hardware Requirements](#soc--manuf-debug-caliptra-subsystem-hardware-requirements)
-    - [Caliptra Requirement List for Production Debug Unlock Architecture](#caliptra-requirement-list-for-production-debug-unlock-architecture)
-    - [Caliptra Requirement List for Manufacturing Debug Unlock Architecture](#caliptra-requirement-list-for-manufacturing-debug-unlock-architecture)
-    - [MCU and MCI Requirements](#mcu-and-mci-requirements)
-    - [FUSE Requirements](#fuse-requirements)
-  - [LCC Interpretation for Caliptra “Core” Security States](#lcc-interpretation-for-caliptra-core-security-states)
+  - [LCC Interpretation for Caliptra \"Core\" Security States](#lcc-interpretation-for-caliptra-core-security-states)
   - [Exception: Non-Volatile Debugging Infrastructure and Initial RAW State Operations](#exception-non-volatile-debugging-infrastructure-and-initial-raw-state-operations)
-  - [SOC LCC Interface usage \& requirements](#soc-lcc-interface-usage--requirements)
+  - [SOC LCC Interface usage & requirements](#soc-lcc-interface-usage--requirements)
   - [LCC Module: Summarized Theory of operation](#lcc-module-summarized-theory-of-operation)
 - [Manufacturer Control Unit (MCU)](#manufacturer-control-unit-mcu)
 - [Manufacturer Control Interface (MCI)](#manufacturer-control-interface-mci)
@@ -384,19 +375,19 @@ Steps:
 
 https://chipsalliance.github.io/caliptra-rtl/main/internal-regs/?p=clp.axi_dma_reg
 
-# Caliptra SS Fuse Controller
+# Caliptra Subsystem Fuse Controller
 
 FUSE controller is an RTL module that is responsible for programming and reading the FUSEs. This module has an AXI interface that is connected to Caliptra Subsystem’s AXI interconnect. This module provides the device with one-time programming functionality, resulting in non-volatile programming that cannot be reversed. This functionality is delivered via an open-source FUSE Controller and a proprietary FUSE/OTP Macro. This RTL module manages the following FUSE partition mapping, which can be found in the [Fuse Controller Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md).
 
 
 ## Partition Details
 
-The Fuse Controller supports a total of **13 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)). Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle Controller (LCC) states, such as "MANUF" or "PROD." This naming convention indicates the LCC state required to provision each partition.
+The Fuse Controller supports a total of **13 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)). Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle (LC) states, such as "MANUF" or "PROD." This naming convention indicates the LC state required to provision each partition.
 
 ### Key Characteristics of Secret Partitions:
 1. **Programming Access:**  
    - `UDS_SEED` and `FIELD_ENTROPY` partitions can only be programmed by the Caliptra-Core.
-   - Secret partitions are buffered, meaning they are stored in registers and are erased (zeroized) if Caliptra-SS enters debug mode.  
+   - Secret partitions are buffered, meaning they are stored in registers and are erased (temporarily zeroized) if Caliptra-SS enters debug mode.  
 2. **Locking Mechanism:**  
    - Write access to a partition can be permanently locked when no further updates are required.  
    - To lock a partition, an integrity constant is calculated and programmed alongside the data for that partition.
@@ -519,35 +510,11 @@ Zeroization occurs under the following conditions:
 - **Further Information:**  
   For more information about the conditional states, please refer to [OpenTitan open-source silicon Root of Trust (RoT) project](https://opentitan.org/book/hw/ip/lc_ctrl/doc/theory_of_operation.html).
 
-## Programmer's Guide
-
-During provisioning and manufacturing, SW interacts with the OTP controller mostly through the Direct Access Interface (DAI), which is described below.
-Afterwards during production, SW is expected to perform only read accesses via the exposed CSRs and CSR windows, since all write access to the partitions has been locked down.
-
-The following sections provide some general guidance, followed by an explanation of the DAI and a detailed OTP memory map.
-Typical programming sequences are explained at the end of the Programmer's guide.
-
 ## General Guidance
-
-### Initialization
-
-The OTP controller initializes automatically upon power-up and is fully operational by the time the processor boots.
-The only initialization steps that SW should perform are:
-
-1. Check that the OTP controller has successfully initialized by reading [`STATUS`](../src/fuse_ctrl/doc/registers.md#status). I.e., make sure that none of the ERROR bits are set, and that the DAI is idle ([`STATUS.DAI_IDLE`](../src/fuse_ctrl/doc/registers.md#status)).
-    - Choose whether the periodic [background checks](#partition-checks) shall be subject to a timeout by programming a nonzero timeout cycle count to [`CHECK_TIMEOUT`](registers.md#check_timeout).
-      In this case, the [`CHECK_TIMEOUT`](registers.md#check_timeout) register must be set before the [`INTEGRITY_CHECK_PERIOD`](registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](registers.md#consistency_check_period) registers (see next point).
-    - Enable periodic [background checks](#partition-checks) by programming nonzero mask values to [`INTEGRITY_CHECK_PERIOD`](registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](registers.md#consistency_check_period).
-    - It is recommended to lock down the background check registers via [`CHECK_REGWEN`](registers.md#check_regwen), once the background checks have been set up
-
-If needed, one-off integrity and consistency checks can be triggered via [`CHECK_TRIGGER`](../src/fuse_ctrl/doc/registers.md#check_trigger).
-If this functionality is not needed, it is recommended to lock down the trigger register via [`CHECK_TRIGGER_REGWEN`](../src/fuse_ctrl/doc/registers.md#check_trigger_regwen).
-
-Later on during the boot process, SW may also choose to block read access to the SW managed partitions via the associated partition lock registers, e.g. [`CREATOR_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#creator_sw_cfg_read_lock) or [`OWNER_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#owner_sw_cfg_read_lock).
 
 ### Reset Considerations
 
-It is important to note that values in OTP **can be corrupted** if a reset occurs during a programming operation.
+It is important to note that values in OTP **can be corrupted** if a reset/zeroization occurs during a programming operation.
 This should be of minor concern for SW, however, since all partitions except for the LIFE_CYCLE partition are being provisioned in secure and controlled environments, and not in the field.
 The LIFE_CYCLE partition is the only partition that is modified in the field - but that partition is entirely owned by the life cycle controller and not by SW.
 
@@ -557,79 +524,7 @@ OTP words cannot be programmed twice, and doing so may damage the memory array.
 Hence the OTP controller performs a blank check and returns an error if a write operation is issued to an already programmed location.
 
 
-
-## Direct Access Interface
-
-OTP has to be programmed via the Direct Access Interface, which is comprised of the following CSRs:
-
-CSR Name                             | Description
--------------------------------------|------------------------------------
-[`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | Low 32bit word to be written.
-[`DIRECT_ACCESS_WDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | High 32bit word to be written.
-[`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | Low 32bit word that has been read.
-[`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | High 32bit word that has been read.
-[`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address) | byte address for the access.
-[`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd)     | Command register to trigger a read or a write access.
-[`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen)  | Write protection register for DAI.
-
-See further below for a detailed Memory Map of the address space accessible via the DAI.
-
-### Readout Sequence
-
-A typical readout sequence looks as follows:
-
-1. Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
-2. Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
-Note that the address is aligned with the granule, meaning that either 2 or 3 LSBs of the address are ignored, depending on whether the access granule is 32 or 64bit.
-3. Trigger a read command by writing 0x1 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
-4. Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
-Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
-5. If the status register flags a DAI error, additional handling is required.
-6. If the region accessed has a 32bit access granule, the 32bit chunk of read data can be read from [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata).
-If the region accessed has a 64bit access granule, the 64bit chunk of read data can be read from the [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) and [`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) registers.
-7. Go back to 1. and repeat until all data has been read.
-
-The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
-
-### Programming Sequence
-
-A typical programming sequence looks as follows:
-
-1. Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
-2. If the region to be accessed has a 32bit access granule, place a 32bit chunk of data into [`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata).
-If the region to be accessed has a 64bit access granule, both the [`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) and [`DIRECT_ACCESS_WDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) registers have to be used.
-3. Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
-Note that the address is aligned with the granule, meaning that either 2 or 3 LSBs of the address are ignored, depending on whether the access granule is 32 or 64bit.
-4. Trigger a write command by writing 0x2 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
-5. Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
-Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
-6. If the status register flags a DAI error, additional handling is required.
-7. Go back to 1. and repeat until all data has been written.
-
-The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
-
-Note that SW is responsible for keeping track of already programmed OTP word locations during the provisioning phase.
-**It is imperative that SW does not write the same word location twice**, since this can lead to ECC inconsistencies, thereby potentially rendering the device useless.
-
-### Digest Calculation Sequence
-
-The hardware digest computation for the hardware and secret partitions can be triggered as follows:
-
-1. Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
-3. Write the partition base address to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
-4. Trigger a digest calculation command by writing 0x4 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
-5. Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
-Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
-6. If the status register flags a DAI error, additional handling is required.
-
-The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
-
-It should also be noted that the effect of locking a partition via the digest only takes effect **after** the next system reset.
-To prevent integrity check failures SW must therefore ensure that no more programming operations are issued to the affected partition after initiating the digest calculation sequence.
-
-
-
-# Caliptra SS Life Cycle Controller
+# Caliptra Subsystem Life Cycle Controller
 It is an overview of the architecture of the Life-Cycle Controller (LCC) Module for its use in the Caliptra Subsystem. The LCC is responsible for managing the life-cycle states of the system, ensuring secure transitions between states, and enforcing security policies.
 
 ## Caliptra Subsystem, SOC Debug Architecture Interaction
@@ -664,7 +559,7 @@ The figure below shows the LCC state transition and Caliptra Subsystem enhanceme
 * The LCC performs state transitions in a forward-only manner. It begins in the RAW state and follows the sequence: TEST_UNLOCKED and TEST_LOCKED, then MANUF, then PROD, and finally either PROD_END or RMA. After transitioning to TEST_UNLOCKED, the LCC can branch to any of the following states: MANUF, PROD, PROD_END, or RMA. However, once the LCC transitions to PROD, PROD_END, or RMA, it cannot return to the MANUF state. Additionally, note that the LCC cannot branch to RMA from PROD_END.
 
 
-## DFT & DFD LC States
+## DFT & DFD Life-cycle States
 
 In addition to the decoding signals of the Life-Cycle Controller (LCC) proposed in the OpenTitan open-source silicon Root of Trust (RoT) project, we introduce new signals: SOC_DFT_EN as SOC_HW_DEBUG_EN. These signals are critical for managing the test and debug interfaces within the Caliptra Subsystem, as well as at the broader SoC level.
 
@@ -735,105 +630,72 @@ The following figure illustrates how Caliptra Subsystem enters the manufacturing
 2. **(Platform) Assert DEBUG_INTENT_STRAP:** If Caliptra core HW samples this pin as high and sees that LCC is in MANUF mode, it prepares itself for entering debug mode. Once the DEBUG_INTENT_STRAP is detected, Caliptra HW immediately wipes out its secret assets, including the Unique Device Secret (UDS) and Field entropy, ensuring that no sensitive data remains accessible. If this Pin is not high, Caliptra continues always in non-debug mode without taking any further action listed with the following states.
 3. **(Platform over TAP)** MANUF_DEBUG_UNLOCK_REQ: The system intends to be in debug mode for manufacturing services.
 4. **(Platform over TAP)** Write to Boot Continue: Resuming the boot process after halting it with BootFSMBrk.
-5. **ROM reads MANUF_DEBUG_UNLOCK_REQ** at optimal time for ROM and clears mailbox lock
-6. **Platform over TAP requests Caliptra mailbox lock**. If lock is obtained, then platform over TAP writes to TAP mailbox to inject Token via TAP Register Write: Enabling the injection of a token through TAP and writing to a specific register. The injected token is combined with a 256-bit nonce value that is updated for each boot session and generated by ROM. **TODO:** Update this step with the latest HW implementation
-7. **ROM Executes Hash Hashing:** Calculates the authentication value of the injected token using a hash-core which is a cryptographic authentication technique that uses a hash function and a secret key. Before starting this operation, ROM also asserts MANUF_DEBUG_UNLOCK_IN_PROGRESS.
+5. **ROM reads MANUF_DEBUG_UNLOCK_REQ** at optimal time for ROM and clears mailbox lock and asserts MANUF_DEBUG_UNLOCK_IN_PROGRESS.
+6. **Platform over TAP requests Caliptra mailbox lock**. If lock is obtained, then platform over TAP writes to TAP mailbox to inject Token via TAP Register Write: Enabling the injection of a token through TAP and writing to a specific register.
+7. **ROM Executes Hash Hashing:** Calculates the hash value of the injected token using a SHA-512 hash core. Before starting this operation.
 8. **Token Comparison:** A constant-time comparison between the authentication values of injected token and the FUSE content.
 9. **ROM Drives MANUF_DEBUG_UNLOCK Signal:** The ROM writes to a register that controls the MANUF_DEBUG_UNLOCK signal based on the result of the token verification.
 
 **Note:** The manufacturing debug flow relies on the hash comparison hardness rather than an authentication check provided with an asymmetric cryptography scheme. However, the following sections show that production debug flow relies on asymmetric cryptography scheme hardness. The reason behind this choice is that the manufacturing phase is the early phase of the delivery, and this phase is entered in an authorized entity’s facility. Therefore, this architecture keeps the manufacturing phase simpler.
 
-The pseudo code given below explains the details of the token authentication.
-```c
-{
-   // Step 1: Assert BootFSMBrk to Caliptra and Debug intent strap GPIO pin
-   Assert DEBUG_INTENT_STRAP  // Caliptra HW erases the secret assets and opens Caliptra TAP.
-
-   Assert BootFSMBrk()        // Caliptra HW is paused
-
-   // Step 2: Request MANUF_DEBUG_UNLOCK_REQ service
-   WriteToRegister(DEBUG_SERVICE_REQ_MANUF_DEBUG_UNLOCK, 1)  // TAP writes to Caliptra HW
-
-   // Step 3: Write to Boot Continue to proceed with the boot sequence
-   WriteToRegister(BOOT_CONTINUE, 1)  // Caliptra ROM continues with GO command via TAP
-
-   // Step 4: TAP reads waiting for Caliptra mailbox lock
-   ReadRegister(CALIPTRA_MAILBOX_STS)
-
-   // Step 5: TAP writes to Caliptra mailbox with payload & command
-   MANUF_DEBUG_token_via_Caliptra_TAP = ReceiveTokenViaTAP()  // Token injected via Caliptra TAP
-
-   // Step 6: Caliptra ROM indicates that the authentication process is in progress
-   if (LCC_state == MANUF) {
-      WriteToRegister(MANUF_DEBUG_UNLOCK_IN_PROGRESS, 1)  // Indicated by Caliptra ROM
-
-      /* TOKEN FORMAT = (64’h0 || 128-bit raw data || 64’h0)
-         Raw data is padded with 64-bit zeros (prefix and suffix) by Caliptra ROM. */
-      WriteToRegister(SHA_512_API_Reg, (token || nonce_0))  // Store token in the pre-message register
-
-      // Step 7: Caliptra ROM performs hashing and token verification
-      ROM_ExecAlgorithm() {
-         expected_token = SHA_512(SHA_512_API_Reg)        // Calculate token hash via Caliptra ROM
-         fuse_value = ReadFromFUSE()                     // Read secret value from FUSE
-
-         // Calculate stored token hash via Caliptra ROM
-         stored_token = SHA_512(64’h0 || fuse_value || 64’h0 || nonce_0)
-
-         if (expected_token == stored_token) {
-               WriteToRegister(MANUF_DEBUG_UNLOCK_SUCCESS, 1)      // Success: set by Caliptra ROM
-               WriteToRegister(MANUF_DEBUG_UNLOCK_IN_PROGRESS, 0)  // Clear in-progress flag
-               WriteToRegister(uCTAP_UNLOCK, 1)                   // Unlock uCTAP
-         } else {
-               WriteToRegister(MANUF_DEBUG_UNLOCK_FAILURE, 1)      // Failure: set by Caliptra ROM
-               WriteToRegister(MANUF_DEBUG_UNLOCK_IN_PROGRESS, 0)  // Clear in-progress flag
-               WriteToRegister(uCTAP_UNLOCK, 0)                   // Do not unlock uCTAP
-         }
-      }
-   }
-}
-```
-<!--Emre: update the pseudocode visibility-->  
 ## Production Debug Unlock Architecture
 
 The Caliptra Subsystem includes SoC debugger logic that supports Caliptra’s production debug mode. This debugger logic extends the capabilities of the Lifecycle Controller (LCC) by providing a production debug mode architecture that the LCC does not inherently support, except in the RMA state. This architecture manages the initiation and handling of the production debug mode separately from the LCC's lifecycle states.
 
-The process of enabling production debug mode begins when the DEBUG_INTENT_STRAP pin is asserted high via the SoC’s GPIO. This pin signals Caliptra to start the debug mode when the LCC is in the PROD state. Even though the DEBUG_INTENT_STRAP can be set high at any time, Caliptra evaluates the request only during two distinct phases: Pre-ROM execution and Post-ROM execution.
+The process of enabling production debug mode begins when the DEBUG_INTENT_STRAP pin is asserted high via the SoC’s GPIO. This pin signals Caliptra to start the debug mode when the LCC is in the PROD state. Before the debug unlock flow, the MCU reads all hashed public keys from the fuse macros and writes them to the `SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK` registers. Additionally, the MCU sets the number of public keys used for production debug unlock by writing to the `SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES` register. The value `DEBUG_AUTH_PK_HASH_REG_BANK_OFFSET` represents an address offset, while `NUM_OF_DEBUG_AUTH_PK_HASHES` defines how many public keys are available for reading. These two values establish the debug policy depth for different debugging levels. 
 
-In addition to DEBUG_INTENT_STRAP pin, there is also SoC-based DEBUG intent strap configuration, which has two values: DEBUG_AUTH_PK_HASH_REG_BANK_OFFSET and NUM_OF_ DEBUG_AUTH_PK_HASHES. The value DEBUG_AUTH_PK_HASH_REG_BANK_OFFSET represents an address offset, while NUM_OF_ DEBUG_AUTH_PK_HASHES defines how many registers are available for reading. These two values establish the debug policy depth, allowing flexibility beyond the earlier limit of N number public keys for different debugging levels. When the subsystem powers up, Caliptra hardware latches and locks the DEBUG_AUTH_PK_HASH_REG_BANK_OFFSET and NUM_OF_ DEBUG_AUTH_PK_HASHES values, ensuring that these cannot be modified later through firmware or any run-time activity. NUM_OF_ DEBUG_AUTH_PK_HASHES is needed to prevent out-of-bound access.
+### Overview of Debug Unlock Initiation
 
-Once the DEBUG_INTENT_STRAP is detected, Caliptra immediately wipes out its secret assets, including the Unique Device Secret (UDS) and Field entropy, ensuring that no sensitive data remains accessible. After erasing the secret assets, Caliptra opens the TAP interface (in a safe mode to write to registers, not for active debug), which allows the debugger to interact with the system. The debugger verifies that the TAP interface is open by reading the TAP CSR (FIXME: to be documented once defined). The next step involves the debugger sending a Hybrid public key and a payload (employing both MLDSA and ECC cryptosystems) to Caliptra through the TAP interface. Caliptra receives these packages and writes them to its MailBox for further processing.
+The process begins when the platform sets three conditions:
+- The `DEBUG_INTENT` field in the `SS_DEBUG_INTENT` register.
+- The `PROD_DEBUG_UNLOCK_REQ` bit in the `SS_DBG_MANUF_SERVICE_REG_REQ` register.
+- The `BOOTFSM_GO_ADDR` to allow Caliptra-Core to continue its execution.
+On reset, the Caliptra ROM checks these two signals. If both are asserted, the ROM begins the production debug unlock process.
+Upon detecting a valid debug intent:
+- Caliptra hardware erases its secret assets, including the Unique Device Secret (UDS) and Field Entropy, before exposing any debug interfaces, ensuring sensitive data is irreversibly destroyed.
+- Caliptra ROM sets the `TAP_MAILBOX_AVAILABLE` and `PROD_DBG_UNLOCK_IN_PROGRESS` bits in the `SS_DBG_MANUF_SERVICE_REG_RSP` register.
 
-At this point, the debugger triggers the continuation of the boot sequence by setting the CPTRA_BOOTFSM_GO signal high through the TAP interface. This command signals Caliptra’s BootFSM to proceed. If the debug mode request occurs during run-time (after ROM execution), the debugger sets the GO command through the MailBox instead. Upon receiving the GO command, Caliptra locks the data in the MailBox to ensure its integrity, while the debugger waits for Caliptra to evaluate the request.
+### Secure Debug Unlock Protocol
+- The production debug unlock flow uses a challenge-response authentication model involving public key verification and hybrid cryptography (ECC and MLDSA). The flow includes the following steps:
+  - AUTH_DEBUG_UNLOCK_REQ Command: Caliptra ROM polls the Mailbox interface, awaiting an `AUTH_DEBUG_UNLOCK_REQ` from the platform.
+  - The request payload includes:
+  | Field          | Size (bytes) | Description              |
+  |----------------|--------------|--------------------------|
+  | Length         | 4            | Must be 2 DWORDs.        |
+  | Unlock Level   | 1            | Requested unlock level.  |
+  | Reserved       | 3            | Reserved.                |
+- If the payload is invalid, Caliptra ROM:
+  - Sets the `PROD_DBG_UNLOCK_FAIL` bit.
+  - Clears the `PROD_DBG_UNLOCK_IN_PROGRESS` bit.
+  - Exits the debug unlock process.
+- Upon successful initial validation, Caliptra ROM sends back an `AUTH_DEBUG_UNLOCK_CHALLENGE` payload:
+  | Field                  | Size (bytes) | Description              |
+  |------------------------|--------------|--------------------------|
+  | Length                 | 4            | Should be 21 DWORDs.     |
+  | Unique Device Identifier | 32         | Caliptra device identifier. |
+  | Challenge              | 48           | Randomly generated nonce. |
+- The platform signs the challenge data and sends an `AUTH_DEBUG_UNLOCK_TOKEN`:
+  | Field                  | Size (bytes) | Description              |
+  |------------------------|--------------|--------------------------|
+  | Length                 | 4            | Should be 0x753 DWORDs.  |
+  | Unique Device Identifier | 32         | Echoed from challenge.   |
+  | Unlock Level           | 1            | Echoed from initial request. |
+  | Reserved               | 3            | Reserved.                |
+  | Challenge              | 48           | Echoed from challenge.   |
+  | ECC Public Key         | 96           | P-384 public key.        |
+  | MLDSA Public Key       | 2592         | MLDSA-87 public key.     |
+  | ECC Signature          | 96           | Signature of challenge message. |
+  | MLDSA Signature        | 4628         | Signature of challenge message. |
+- Finally, Caliptra ROM reads the expected SHA2-384 public key hash from the corresponding register by using the following equation: 
+  - SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET + ((Unlock Level - 1) * 48 bytes)
+- If hash of `AUTH_DEBUG_UNLOCK_CHALLENGE`'s MLDSA and ECC public keys match with the read value from `SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET`, ROM uses these MLDSA and ECC public keys to perform the authentication.
+- Upon successful validation: 
+  - Sets the `PROD_DBG_UNLOCK_SUCCESS` bit.
+  - Writes the `CALIPTRA_SS_SOC_DEBUG_UNLOCK_LEVEL` register granted debug level with a one-hot encoding result (1 << (Unlock Level - 1)).
+  - Clears the `TAP_MAILBOX_AVAILABLE` bit.
+  - Clears the `PROD_DBG_UNLOCK_IN_PROGRESS` bit.
+  - Exits the debug unlock process.
 
-When a public key corresponding to a specific debug level is provided, denoted by the number i (Index_Of_Public_Key). Caliptra reads the i(th) register after setting the DEBUG_AUTH_PK_HASH_REG_BANK_OFFSET. This read operation retrieves the hash of the i(th) level PRE_DEBUG_PK from the appropriate register. Once Caliptra obtains this hash value, it compares it with the hash of the corresponding DEBUG_PK provided through the TAP interface. If the hash comparison is successful, Caliptra proceeds to authenticate the payload using the corresponding DEBUG_PKs.
-
-If either the authentication or the hash comparison fails, Caliptra returns a failure status and updates the Reg_CLPT_to_MCU register in the MailBox to reflect the error. On the other hand, if both the hash comparison and the authentication are successful, Caliptra grants access to production debug mode by writing to the Reg_CLPT_to_MCU register, setting the PROD_DEBUG_EN bit. This action signals that the SoC is now in production debug mode and ready for further operations.
-
-This flow establishes a secure and controlled process for entering Caliptra’s production debug mode, ensuring that only authorized access is granted while maintaining the integrity and confidentiality of the system’s sensitive assets. The more details about the flow sequence as illustrated with flow figure and explanation of each steps in the flow.
-
-*Figure: Caliptra Subsystem Production Debug Life Cycle View*
-![](./images/Prod-Debug-LifeCycle.png)
-
-1. (Platform) DEBUG_INTENT_STRAP Assertion:
-   * The process is initiated when the DEBUG_INTENT_STRAP pin, connected via the SoC's GPIO, is asserted high.
-   * When this pin is high and the LCC is in the PROD state, Caliptra HW observes this activity. The DEBUG_INTENT_STRAP can be asserted at any time, but Caliptra handles it in two phases: Pre-ROM Execution and Post-ROM Execution. Based on the timing, the debugger might need to assert BootFSMBrk (if ROM based debug unlock has to be executed).
-2. (Caliptra HW) Erasing Secret Assets: Caliptra HW wipes secret assets (Unique Device Secret (UDS) and Field entropy).
-3. (Platform over TAP requests) PROD_DEBUG_UNLOCK_REQ: The system intends to be in debug mode for manufacturing services.
-4. (Platform over TAP requests) Write to Boot Continue: Resuming the boot process after halting it with BootFSMBrk (CPTRA_BOOTFSM_GO).
-5. (Caliptra ROM) Reads PROD_DEBUG_UNLOCK_REQ at optimal time for ROM and clears mailbox lock
-6. (Platform over TAP requests) Reads Caliptra mailbox lock. If lock is obtained, then platform over TAP writes Auth Debug Unlock Request DOE object (see the table below) to TAP mailbox.
-   * **Auth Debug Unlock Request DOE object:** The debugger sends 24-bits desired unlock category
-7. (Caliptra ROM) Reads and parses Auth Debug Unlock Request DOE object
-8. (Caliptra ROM) Generates Auth Challenge DoE response object. Generates random 48-byte nonce. Gathers the unique device identifier. Packages them as described in Auth Challenge DoE response object Table. Places Auth
-9. (Platform over TAP requests) Reads Places Auth Challenge DoE response
-10. (Platform) Asks the authorized server to receive hybrid signature of Auth Challenge DoE response object. The signature payload is called Auth response unlock token (see the table below)
-11. (Platform over TAP requests) Writes Auth response unlock token to MailBox Following Steps by Caliptra ROM:
-12. **Payload Authentication:**
- * Caliptra ROM asserts PROD_DEBUG_UNLOCK_IN_PROGRESS.
- * Caliptra ROM reads public key indexed with Auth Debug Unlock Request DOE object.
- * Caliptra ROM checks the authentication of Auth response unlock token with this public key.
- * If the authentication fails, Caliptra ROM returns a failure status and reflects it in the PROD_DEBUG_UNLOCK_FAILURE register.
- * Otherwise, PROD_DEBUG_UNLOCK_SUCCESS register will be written.; Caliptra ROM also de-asserts PROD_DEBUG_UNLOCK_IN_PROGRESS register.
 
 **Granting Production Debug Mode:**
 * If authentication succeeds, Caliptra ROM does not immediately grant full production debug mode. Instead, the ROM sets the appropriate **"debug level"** signal, which corresponds to the type of debug access being requested.
@@ -844,55 +706,10 @@ In the production debug mode, the SoC can enable certain debugging features—su
 The masking registers in the MCI act as an OR gate with the existing debug signals. For instance, if DFT_EN is controlled by Caliptra, the SoC can assert the corresponding mask register to enable Design for Test (DFT) capabilities in the SoC, even if Caliptra has not explicitly enabled it. Similarly, the SOC_HW_DEBUG_EN signal can be masked through the MCI registers, giving the SoC the flexibility to unlock TAP interfaces and provide the required debugging in production.
 
 *Figure: Caliptra Subsystem Infrastructure for SOC flexibility to override various debug signals*
-![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/SOC-Debug-Unlock-Qual.png)
+![](./images/SOC-Debug-Unlock-Qual.png)
 
 This mechanism is only authorized when both the LCC and Caliptra core are in the PROD state and operating in production debug mode. The masking logic ensures that these features are enabled securely, in line with the production debug flow described in the "SoC Debug Flow and Architecture for Production Mode" section. By leveraging the MCI’s masking infrastructure, the SoC integrator has greater flexibility to implement custom debugging options during production without compromising the security framework established by Caliptra.
 
-
-## Production Debug Policy Authorization Content
-
-The Caliptra production debug mode architecture supports up to eight distinct categories of debug access, though it is not necessary to utilize all eight. Each category is associated with a unique set of cryptographic keys, offering flexibility and granularity in the debug process. The MCU sends the hash results of up to 8 PRE_DEBUG_PKs to Caliptra, where 8 is the default value and see the definition of NUM_OF_ DEBUG_AUTH_PK_HASHES for more details. These hash values are derived from the public keys corresponding to each debug category and are securely stored in the MCU’s FUSE.
-
-Upon receiving the hash results, Caliptra selects the appropriate PRE_DEBUG_PK hash to compare against the stored DEBUG_PK, determining which debug category is being requested. This selection is made based on the specific debug operation being invoked. Caliptra then authenticates the request using a Hybrid cryptosystem that combines both ECC (Elliptic Curve Cryptography) and MLDSA (PQC Digital Signature Algorithm).
-The private keys corresponding to these public keys are stored securely on an external authorization server, ensuring that they remain protected and isolated from the SoC. For each of the eight debug categories, the validity of the public keys is tracked via a valid/invalid bit stored in the FUSE. This bit serves as a key revocation mechanism, allowing keys to be invalidated if necessary, such as when a key is compromised or no longer needed. This revocation system enhances security by ensuring that only valid keys can be used for debug access, preventing unauthorized attempts to enter debug mode.
-
-| **Payload Content** 		|  **Size (Byte)**  |
-| :--------- 	      		| :--------- | 
-| Marker 			| 4 |
-| Hybrid PK (ECC or MLDSA) 	| 2640 |
-| Index_Of_Public_Key 		| 4 |
-| Unique_Device_ID 		| 32 |
-| Message 			| 128 |
-| Signature (ECC or MLDSA) 	| 4723 |
-| Reserved 			| 1 |
-|Total Byte Count 		| 7,532 (~8KB) |
-
-
-## SOC & Manuf Debug Caliptra Subsystem Hardware Requirements
-
-### Caliptra Requirement List for Production Debug Unlock Architecture
-
-* Wiring DEBUG_INTENT_STRAP to Caliptra debug mode logic to trigger debug preparation·
-* Caliptra Mailbox is open to TAP interface to read/write only if DEBUG_INTENT_STRAP is set and if any of the DBG_SERVICE_REQ bits are set
-* Separate Request and Response registers exposed for JTAG/TAP access in Debug locked mode and over AXI.
-* Functionality to communicate with MCU to ask hashed public key by using “SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET”, “SS_NUM_OF_DEBUG_AUTH_PK_HASHES” (default is 8) and “i” values
-* Mailbox command & payloads are defined by Caliptra ROM spec (includes MLDSA and ECC infrastructure for payload commands)
-      
-### Caliptra Requirement List for Manufacturing Debug Unlock Architecture
-
-* MANUF_DEBUG_REQ allocation for requesting service and MANUF_DEBUG_RSP for responses accessible over TAP and over AXI
-* Caliptra Mailbox infrastructure for command, payload and public key authentication (that gets the 256-bit for TOKEN)
-* Capability to generate 256-bit Nonce
-* Having SHA_512 infrastructure
-
-### MCU and MCI Requirements
-* Masking registers to override  DFT_EN, SOC_HW_DEBUG_EN
-* CLTAP Unlock logic
-* Caliptra Subsystem’s Boot/Reset Sequencer signals for LCC’s power manager interface
-* MCU ROM reading flow for hashed public key and allocate to registers implemented at “SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET” with "SS_NUM_OF_DEBUG_AUTH_PK_HASHES" of PK hashes
-
-### FUSE Requirements
-* A public content FUSEs for hashed public keys for SS_NUM_OF_DEBUG_AUTH_PK_HASHES (Default of 8)
 
 ## LCC Interpretation for Caliptra “Core” Security States
 
@@ -924,8 +741,8 @@ The table below summarizes the relationship between the LCC state, the decoder o
 
 | **LCC State vs Decoder Output** 	| **DFT_EN** 	| **SOC_DFT_EN** 	| **SOC_HW_DEBUG_EN**   | **Caliptra “Core” Security States**  |
 | :--------- 	      			      | :--------- 	| :--------- 	   | :--------- 	         | :---------                           |
-| RAW 					               | Low 		   | Low 		      | Low 			         | Non-Debug                            |
-| TEST_LOCKED 				            | Low 		   | Low 		      | Low 			         | Non-Debug                            |
+| RAW 					               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
+| TEST_LOCKED 				            | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
 | TEST_UNLOCKED  			            | High  	      | High  	         | High	 		         | Unprovisioned Debug                  |
 | MANUF 				                  | Low 		   | Low 		      | High 			         | Manuf Non-Debug                      |
 | MANUF* 				               | Low 		   | Low 		      | High 			         | Manuf Debug                          |
@@ -933,8 +750,8 @@ The table below summarizes the relationship between the LCC state, the decoder o
 | PROD* 				                  | Low 	      | High**          | High** 		         | Prod Debug                           |
 | PROD_END 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
 | RMA 					               | High 		   | High 		      | High 			         | Prod Debug                           |
-| SCRAP 				                  | Low 		   | Low 		      | Low 			         | Non-Debug                            |
-| INVALID 				               | Low 		   | Low 		      | Low 			         | Non-Debug                            |
+| SCRAP 				                  | Low 		   | Low 		      | Low 			         |Prod Non-Debug                            |
+| INVALID 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
 
 **Note:** In RAW, TEST_LOCKED, SCRAP and INVALID states, Caliptra “Core” is not brought out of reset.
 *: These states are Caliptra SS’s extension to LCC. Although the LCC is in either MANUF or PROD states, Caliptra core can grant debug mode through the logics explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”. 

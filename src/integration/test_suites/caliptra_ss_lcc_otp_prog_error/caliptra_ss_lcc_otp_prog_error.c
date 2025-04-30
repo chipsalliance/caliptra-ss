@@ -86,25 +86,15 @@ void main (void) {
             VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
 
             lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-            if (lc_state_next != SCRAP) {
-                // We should see: Expected Transition Count E**or detected.
-                transition_state_req_with_expec_error(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
-            } else {
-                // Entering SCRAP state should also be possible when reaching the max. lc counter value.
-                transition_state(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
-            }
-            
-
+            // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
+            // We should see: OTP E**or detected.
+            transition_state_req_with_expec_error(lc_state_next,
+                         tokens[token_type][0],
+                         tokens[token_type][1],
+                         tokens[token_type][2],
+                         tokens[token_type][3],
+                         token_type != ZER);
             goto epilogue;
         }
     }

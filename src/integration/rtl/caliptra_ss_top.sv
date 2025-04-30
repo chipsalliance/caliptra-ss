@@ -166,8 +166,11 @@ module caliptra_ss_top
     input  logic [31:0] cptra_ss_strap_mcu_ifu_axi_user_i,
     input  logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
     input  logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
-    output logic        cptra_ss_cpu_halt_status_o,
-
+    output logic        cptra_ss_mcu_halt_status_o,
+    input  logic        cptra_ss_mcu_halt_status_i,
+    output logic        cptra_ss_mcu_halt_req_o,
+    input  logic        cptra_ss_mcu_halt_ack_i,
+    output logic        cptra_ss_mcu_halt_ack_o,
 // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
     mci_mcu_sram_if.request cptra_ss_mcu_mbox0_sram_req_if,
@@ -225,6 +228,7 @@ module caliptra_ss_top
 
     output wire cptra_ss_soc_dft_en_o,
     output wire cptra_ss_soc_hw_debug_en_o,
+    output lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o,
 
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
@@ -265,8 +269,6 @@ module caliptra_ss_top
     logic                       o_debug_mode_status;
 
     logic                       jtag_tdo;
-    logic                       i_cpu_halt_req;
-    logic                       o_cpu_halt_ack;
     logic                       o_cpu_run_ack;
 
     logic        [63:0]         dma_hrdata       ;
@@ -774,9 +776,9 @@ module caliptra_ss_top
         .debug_brkpt_status     (debug_brkpt_status),
         .o_debug_mode_status    (o_debug_mode_status),
 
-        .i_cpu_halt_req         ( i_cpu_halt_req ),    // Async halt req to CPU
-        .o_cpu_halt_ack         ( o_cpu_halt_ack ),    // core response to halt
-        .o_cpu_halt_status      ( cptra_ss_cpu_halt_status_o ), // 1'b1 indicates core is halted
+        .i_cpu_halt_req         ( cptra_ss_mcu_halt_req_o ),    // Async halt req to CPU
+        .o_cpu_halt_ack         ( cptra_ss_mcu_halt_ack_o ),    // core response to halt
+        .o_cpu_halt_status      ( cptra_ss_mcu_halt_status_o ), // 1'b1 indicates core is halted
         .i_cpu_run_req          ( 1'b0  ),     // Async restart req to CPU
         .o_cpu_run_ack          ( o_cpu_run_ack ),     // Core response to run req
 
@@ -1029,9 +1031,9 @@ module caliptra_ss_top
         .intr_otp_operation_done,
         
         // MCU Halt Signals
-        .mcu_cpu_halt_req_o   (i_cpu_halt_req   ),
-        .mcu_cpu_halt_ack_i   (o_cpu_halt_ack   ),
-        .mcu_cpu_halt_status_i(cptra_ss_cpu_halt_status_o),
+        .mcu_cpu_halt_req_o   (cptra_ss_mcu_halt_req_o   ),
+        .mcu_cpu_halt_ack_i   (cptra_ss_mcu_halt_ack_i),
+        .mcu_cpu_halt_status_i(cptra_ss_mcu_halt_status_i),
 
         .mcu_no_rom_config(cptra_ss_mcu_no_rom_config_i),
 
@@ -1098,6 +1100,7 @@ module caliptra_ss_top
         // Converted Signals from LCC to SoC
         .SOC_DFT_EN(cptra_ss_soc_dft_en_o),
         .SOC_HW_DEBUG_EN(cptra_ss_soc_hw_debug_en_o),
+        .otp_static_state_o(caliptra_ss_life_cycle_steady_state_o),
 
         // Converted Signals from LCC to Caliptra-core
         .security_state_o(mci_cptra_security_state)
@@ -1180,9 +1183,9 @@ module caliptra_ss_top
             .lc_clk_byp_req_o(cptra_ss_lc_clk_byp_req_o),
             .lc_clk_byp_ack_i(cptra_ss_lc_clk_byp_ack_i),
 
-            .otp_device_id_i(256'd0),   // FIXME: This signal should come from FC
-            .otp_manuf_state_i(256'd0), // FIXME: This signal should come from FC
-            .hw_rev_o()             // FIXME: This signal should go to MCI 
+            .otp_device_id_i(256'd0),   
+            .otp_manuf_state_i(256'd0),
+            .hw_rev_o()             
         );
 
 

@@ -91,6 +91,7 @@ void main (void) {
     VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO %x\n", cptra_boot_go);
 
     uint32_t lc_state_curr = read_lc_state();
+    uint32_t lc_state_init = lc_state_curr;
 
     // Check if we can increment from the current state to the next.
     // PROD_END (18) to RMA (19) not possible.
@@ -156,6 +157,15 @@ void main (void) {
     if (lc_state_curr != 22) {
         VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act: %d\n", 22, lc_state_curr);
         exit(1);
+    }
+
+    // After a reset the escalation should be cleared and the lc state back at the
+    // pre-reset value.
+    reset_fc_lcc_rtl();
+    wait_dai_op_idle(0);
+    lc_state_curr = read_lc_state();
+    if (lc_state_curr != lc_state_init) {
+        VPRINTF(LOW, "ERROR: lc state has not reverted back to pre-reset value\n");
     }
 
     SEND_STDOUT_CTRL(0xff);
