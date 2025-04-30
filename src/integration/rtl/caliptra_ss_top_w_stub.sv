@@ -123,6 +123,10 @@ module caliptra_ss_top_w_stub(
     logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arregion;
     logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awqos;
     logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arqos;
+    
+    logic cptra_ss_mcu_halt_ack_o;
+    logic cptra_ss_mcu_halt_status_o;
+    logic cptra_ss_mcu_halt_req_o;
 
     logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awcache;
     logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arcache;
@@ -366,6 +370,14 @@ module caliptra_ss_top_w_stub(
     //MCI AXI Sub Interface
         .cptra_ss_mci_s_axi_if_r_sub(cptra_ss_mci_s_axi_if.r_sub),
         .cptra_ss_mci_s_axi_if_w_sub(cptra_ss_mci_s_axi_if.w_sub),
+
+    // MCU halt status
+    .cptra_ss_mcu_halt_ack_i(cptra_ss_mcu_halt_ack_o),
+    .cptra_ss_mcu_halt_ack_o(cptra_ss_mcu_halt_ack_o),
+    .cptra_ss_mcu_halt_status_i(cptra_ss_mcu_halt_status_o),
+    .cptra_ss_mcu_halt_status_o(cptra_ss_mcu_halt_status_o),
+    .cptra_ss_mcu_halt_req_o,
+
     
     // AXI Manager INF
         .cptra_ss_mcu_ifu_m_axi_if_r_mgr(cptra_ss_mcu_ifu_m_axi_if.r_mgr),

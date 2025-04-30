@@ -74,11 +74,12 @@ module caliptra_ss_top_tb
 
 
     logic                       jtag_tdo;
-    logic                       o_cpu_halt_ack;
-    logic                       o_cpu_halt_status;
-    logic                       o_cpu_run_ack;
 
-    logic                       cptra_ss_cpu_halt_status_o;
+    logic                       cptra_ss_mcu_halt_status_o;
+    logic                       cptra_ss_mcu_halt_status_i;
+    logic                       cptra_ss_mcu_halt_req_o;
+    logic                       cptra_ss_mcu_halt_ack_o;
+    logic                       cptra_ss_mcu_halt_ack_i;
 
     logic        [63:0]         dma_hrdata       ;
     logic        [63:0]         dma_hwdata       ;
@@ -1459,9 +1460,6 @@ module caliptra_ss_top_tb
     logic         cptra_ss_dbg_manuf_enable_o;
     logic [63:0]  cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o;
 
-    assign cptra_ss_mci_boot_seq_brkpoint_i     = 1'b0;
-    assign cptra_ss_mcu_no_rom_config_i         = 1'b0;
-    assign cptra_ss_strap_mcu_reset_vector_i    = `css_mcu0_RV_RESET_VEC;
     assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
     assign cptra_ss_mcu_ext_int = '0;
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'(`SOC_SOC_IFC_REG_BASE_ADDR - (`SOC_SOC_IFC_REG_BASE_ADDR & ((1<<SOC_IFC_ADDR_W)-1)));
@@ -1564,7 +1562,11 @@ module caliptra_ss_top_tb
         .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
         .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
 
-        .cptra_ss_cpu_halt_status_o,
+        .cptra_ss_mcu_halt_status_o,
+        .cptra_ss_mcu_halt_status_i,
+        .cptra_ss_mcu_halt_req_o,
+        .cptra_ss_mcu_halt_ack_o,
+        .cptra_ss_mcu_halt_ack_i,
 
         .cptra_ss_lc_axi_wr_req_i,
         .cptra_ss_lc_axi_wr_rsp_o,
@@ -1718,6 +1720,15 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mci_soc_config_axi_user_i,
         .cptra_ss_strap_caliptra_dma_axi_user_i,
 
+        .cptra_ss_mci_boot_seq_brkpoint_i,
+        .cptra_ss_mcu_no_rom_config_i,
+        .cptra_ss_strap_mcu_reset_vector_i,
+        
+        .cptra_ss_mcu_halt_status_o,
+        .cptra_ss_mcu_halt_status_i,
+        .cptra_ss_mcu_halt_req_o,
+        .cptra_ss_mcu_halt_ack_o,
+        .cptra_ss_mcu_halt_ack_i,
 
         .m_axi_bfm_if,
         .tb_services_if(i_caliptra_ss_bfm_services_if.bfm)

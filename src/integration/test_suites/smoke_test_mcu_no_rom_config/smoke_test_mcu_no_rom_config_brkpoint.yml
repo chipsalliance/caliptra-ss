@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+seed: 1
+testname: smoke_test_mcu_no_rom_config
+pre-exec: |
+  echo "Running pre_exec for [smoke_test_mcu_no_rom_config]" &&
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_no_rom_config TESTNAME=smoke_test_mcu_no_rom_config mcu_lmem.hex &&
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile AUX_LIB_DIR="$CALIPTRA_SS_ROOT/src/integration/test_suites/libs/caliptra_ss_lib $CALIPTRA_SS_ROOT/src/integration/test_suites/libs/soc_ifc_ss" AUX_OFILES="caliptra_ss_lib.o soc_ifc_ss.o" AUX_HEADER_FILES="$CALIPTRA_SS_ROOT/src/integration/test_suites/libs/caliptra_ss_lib/caliptra_ss_lib.h $CALIPTRA_SS_ROOT/src/integration/test_suites/libs/soc_ifc_ss/soc_ifc_ss.h" CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_no_rom_config TESTNAME=cptra_smoke_test_mcu_no_rom_config program.hex
+plusargs:
+    - '+cptra_ss_sv_test=SMOKE_TEST_MCU_NO_ROM_CONFIG_BRKPOINT'
+    - '+MCU_RESET_VECTOR_STRAP_VALUE=21c00000'
+    - '+MCU_NO_ROM_CONFIG_SET'
+    - '+MCU_SOC_CONFIG_AXI_USER_RAND'
+    - '+MCI_BOOT_FSM_BRKPOINT_SET'
