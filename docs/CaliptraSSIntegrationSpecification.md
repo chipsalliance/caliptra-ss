@@ -496,7 +496,7 @@ Integrator must connect, following list of manager and subordinates to axi inter
 
 ### Caliptra Subsystem Reference Register Map
 
-- Here is the link to [Caliptra Subsystem Reference Registe Map](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=). **Please note, any addresses are for the example purpose only**.
+[Caliptra Subsystem Reference Register Map](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=). **Please note, any addresses are for the example purpose only**.
 
 ### FW Execution Control Connections
 
