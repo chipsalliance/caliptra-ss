@@ -525,6 +525,15 @@ module caliptra_ss_top
         .generic_input_wires(cptra_ss_cptra_core_generic_input_wires_i),
         .generic_output_wires(cptra_ss_cptra_core_generic_output_wires_o),
 
+        // RISC-V Trace Ports
+        .trace_rv_i_insn_ip     (), //
+        .trace_rv_i_address_ip  (), //
+        .trace_rv_i_valid_ip    (), // Unconnected as these are not
+        .trace_rv_i_exception_ip(), // used in Subsystem
+        .trace_rv_i_ecause_ip   (), //
+        .trace_rv_i_interrupt_ip(), //
+        .trace_rv_i_tval_ip     (), //
+
         .security_state(mci_cptra_security_state),
         .scan_mode     (cptra_ss_cptra_core_scan_mode_i)
     );
