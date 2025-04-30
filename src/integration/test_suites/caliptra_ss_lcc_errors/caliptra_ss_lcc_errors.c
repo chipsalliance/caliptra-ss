@@ -89,7 +89,7 @@ void otp_prog_error(void) {
     // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
     lsu_write_32(LC_CTRL_TRANSITION_CTRL_OFFSET, 0x1);
-    sw_transition_req(calc_lc_state_mnemonic(TEST_LOCKED0), 0, 0, 0, 0, 0);
+    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_LOCKED0), 0, 0, 0, 0, 0);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_OTP_ERROR_LOW) & 0x1)) {
