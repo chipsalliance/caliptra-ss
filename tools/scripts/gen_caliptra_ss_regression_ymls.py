@@ -206,7 +206,7 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
     if not (criteria.get("L0") == "L0" and criteria.get("PromotePipeline") == "Promote"):
         # With round-robin mode, each test is run for 'generations' number of
         # iterations
-        if (criteria.get("Directed|Random") == "Directed":
+        if criteria.get("Directed|Random") == "Directed":
             generations = 3
         else:
             generations = 5
