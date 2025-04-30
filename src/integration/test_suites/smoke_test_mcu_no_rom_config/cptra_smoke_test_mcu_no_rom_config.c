@@ -65,10 +65,6 @@ void main(void) {
         // Wait for MCU to clear interrupt
         cptra_wait_mcu_reset_req_interrupt_clear(10000);
 
-        // Clear FW_EXEC_CTRL[2] to indicate hitless update is ready
-        VPRINTF(LOW, "CALIPTRA: Clearing FW_EXEC_CTRL[2]\n");
-        lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, 0x0);
-
         // Wait for MCU RESET STATUS to be set
         cptra_wait_mcu_reset_status_set(10000);
 

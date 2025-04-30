@@ -23,36 +23,13 @@ task automatic smoke_test_mci_brkpoint_axi();
     $display("[%0t] MCI out of reset.", $time);
 
     // 2. Wait for HW_FLOW_STATUS_BOOT_FSM == 4'h4, with timeout
-    $display("[%0t] Waiting for HW_FLOW_STATUS_BOOT_FSM == BOOT_BREAKPOINT...", $time);
-    for (i = 0; i < 100000; i++) begin
-        bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_HW_FLOW_STATUS, reg_data);
-        if ((reg_data & `MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK) == BOOT_BREAKPOINT) begin
-            $display("[%0t] HW_FLOW_STATUS_BOOT_FSM == BOOT_BREAKPOINT detected.", $time);
-            break;
-        end
-    end
-    if (i == 100000) begin
-        $fatal(1, "[%0t] FATAL: Timeout waiting for HW_FLOW_STATUS_BOOT_FSM == BOOT_BREAKPOINT", $time);
-    end
+    wait_mci_boot_fsm_in_state(BOOT_BREAKPOINT);
 
     // 3. Set MCI_BOOTFSM_GO_GO_MASK to 1
-    $display("[%0t] Setting MCI_BOOTFSM_GO_GO_MASK to 1...", $time);
-    bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO, reg_data);
-    reg_data = reg_data | `MCI_REG_MCI_BOOTFSM_GO_GO_MASK;
-    bfm_axi_write_single_invalid_user(`SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO, reg_data);
+    set_mci_boot_fsm_go();
 
     // 4. Wait for HW_FLOW_STATUS_BOOT_FSM == BOOT_WAIT_CPTRA_GO, with timeout
-    $display("[%0t] Waiting for HW_FLOW_STATUS_BOOT_FSM == BOOT_WAIT_CPTRA_GO...", $time);
-    for (i = 0; i < 100000; i++) begin
-        bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_HW_FLOW_STATUS, reg_data);
-        if ((reg_data & `MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK) == BOOT_WAIT_CPTRA_GO) begin
-            $display("[%0t] HW_FLOW_STATUS_BOOT_FSM == BOOT_WAIT_CPTRA_GO detected.", $time);
-            break;
-        end
-    end
-    if (i == 100000) begin
-        $fatal(1, "[%0t] FATAL: Timeout waiting for HW_FLOW_STATUS_BOOT_FSM == BOOT_WAIT_CPTRA_GO", $time);
-    end
+    wait_mci_boot_fsm_in_state(BOOT_WAIT_CPTRA_GO);
 
     // 5. Set CPTRA_BOOT_GO_GO_MASK to 1
     $display("[%0t] Setting CPTRA_BOOT_GO_GO_MASK to 1...", $time);
@@ -61,17 +38,8 @@ task automatic smoke_test_mci_brkpoint_axi();
     bfm_axi_write_single_invalid_user(`SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, reg_data);
 
     // 6. Wait for HW_FLOW_STATUS_BOOT_FSM == BOOT_WAIT_MCU_RST_REQ, with timeout
-    $display("[%0t] Waiting for HW_FLOW_STATUS_BOOT_FSM == BOOT_WAIT_MCU_RST_REQ...", $time);
-    for (i = 0; i < 100000; i++) begin
-        bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_HW_FLOW_STATUS, reg_data);
-        if ((reg_data & `MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK) == BOOT_WAIT_MCU_RST_REQ) begin
-            $display("[%0t] HW_FLOW_STATUS_BOOT_FSM == BOOT_WAIT_MCU_RST_REQ detected.", $time);
-            break;
-        end
-    end
-    if (i == 100000) begin
-        $fatal(1, "[%0t] FATAL: Timeout waiting for HW_FLOW_STATUS_BOOT_FSM == BOOT_WAIT_MCU_RST_REQ", $time);
-    end
+    wait_mci_boot_fsm_in_state(BOOT_WAIT_MCU_RST_REQ);
+
 
     $display("[%0t] smoke_test_mci_brkpoint_axi completed successfully.", $time);
     end_test_successful_req();
