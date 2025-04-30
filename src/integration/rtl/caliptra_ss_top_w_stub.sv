@@ -15,12 +15,9 @@
 // limitations under the License.
 //********************************************************************************
 
-//`define AI3C_LANE_NUM 1
-
 `include "caliptra_ss_includes.svh"
 `include "config_defines.svh"
 `include "caliptra_macros.svh"
-`include "i3c_defines.svh"
 
 module caliptra_ss_top_w_stub(
     input logic cptra_ss_clk_i,
@@ -39,11 +36,6 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_rst_b_i;
     logic cptra_ss_mci_cptra_rst_b_o;
     logic cptra_ss_rdc_clk_cg_o;
-
-    // wand  SCL;
-    // wand  SDA;
-
-    // ai3c_intf#(`AI3C_LANE_NUM) master0_intf(SDA, SCL);
 
     `define AXI_M_IF_TIE_OFF(_sig_name) \
     assign ``_sig_name``.awready = '0;\

@@ -283,9 +283,7 @@ module caliptra_ss_top
     logic                       mpc_debug_run_ack;
     logic                       debug_brkpt_status;
 
-    logic ready_for_fuses;
-    logic ready_for_mb_processing;
-    logic mailbox_data_avail;
+    logic                       mailbox_data_avail;
 
     wire                        dma_hready_out;
 
@@ -368,8 +366,10 @@ module caliptra_ss_top
     // --------------------------------------------------------------------
 
     //---------------------------I3C---------------------------------------
-    logic payload_available_o;
-    logic image_activated_o;
+    logic                       payload_available_o;
+    logic                       image_activated_o;
+    logic                       disable_id_filtering_i;
+    logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
 
 
     ///////
@@ -464,9 +464,9 @@ module caliptra_ss_top
         .el2_mem_export(cptra_ss_cptra_core_el2_mem_export),
         .mldsa_memory_export(mldsa_memory_export_req),
 
-        .ready_for_fuses(ready_for_fuses),
-        .ready_for_mb_processing(ready_for_mb_processing),
-        .ready_for_runtime(),
+        .ready_for_fuses(),             // -- unused in caliptra ss
+        .ready_for_mb_processing(),     // -- unused in caliptra ss
+        .ready_for_runtime(),           // -- unused in caliptra ss
 
         .mbox_sram_cs(cptra_ss_cptra_core_mbox_sram_cs_o),
         .mbox_sram_we(cptra_ss_cptra_core_mbox_sram_we_o),
@@ -850,8 +850,7 @@ module caliptra_ss_top
     // i3c_core Instance
     //=========================================================================-
     
-    logic                       disable_id_filtering_i;
-    logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
+
     
     assign priv_ids[0] = 32'd0;
     assign priv_ids[1] = 32'd0;
