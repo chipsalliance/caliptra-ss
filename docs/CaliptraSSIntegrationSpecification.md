@@ -1120,7 +1120,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Internal/External | input | 32 | `agg_error_non_fatal` | Non-fatal errors from other Caliptra SS IPs or other SOC entities fed into MCI’s aggregate error infrastructure and will be reflected for SOC consumption via the all\_error\_non\_fatal output wire of MCI. |
 | External | Output | 1 | `all_error_fatal` | Fatal error interrupt for SOC consumption. Exposed as `cptra_ss_all_error_fatal_o` to SOC |
 | External | Output | 1 | `all_error_non_fatal` | Non-fatal error interrupt for SOC consumption. Exposed as `cptra_ss_all_error_non_fatal_o` to SOC |
-| Internal | Output | 1 | `mcu_timer_int` | MCU’s standard RISK-V MTIMER interrupt. |
+| Internal | Output | 1 | `mcu_timer_int` | MCU’s standard RISC-V MTIMER interrupt. |
 | Internal | Output | 1 | `mci_intr` | MCI interrupt indication for MCU. This will be set when an unmasked interrupt occurs within MCI. This is a level interrupt and must be cleared by MCU firmware.     |
 | Internal | Output | 1 | `nmi_intr` | Non-maskable interrupt for MCU. This is connected to the watchdog (WDT) timer within MCI and will be asserted when the wdt is in cascade mode and both timers timeout. It can only be cleared by asserting mci\_rst\_b. This interrupt is also fed into the all\_error\_fatal infrastructure for SOC consumption.  |
 | Internal | Output | 32 | `mci_nmi_vector` | Non-maskable interrupt vector for MCU. This is controllable only by MCU FW.  |
@@ -1547,7 +1547,7 @@ MCI hosts the MCU trace buffer. The full trace buffer spec is [here](https://git
 
 1. It can only be accessed when debug unlocked
 2. It can be accessed via AXI or DMI
-3. Traces can be disabled via a Risk-V control register
+3. Traces can be disabled via a RISC-V control register
 4. Traces are sticky and persist through warm reset
 5. The trace buffer can hold a total of 64 traces
 
