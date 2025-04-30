@@ -347,7 +347,7 @@ module caliptra_ss_top_w_stub(
     end
 
     caliptra_ss_top
-    caliptra_ss_top (
+    caliptra_ss_top_i (
 
         .cptra_ss_clk_i(cptra_ss_clk_i),
         .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i),
