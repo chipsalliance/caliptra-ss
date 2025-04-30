@@ -29,6 +29,14 @@ GCC:
  - G++ Used to compile Verilator objects and test firmware
    - `g++ (GCC) 11.2.0`
 
+RDC:
+ - Real Intent Meridian
+    - 2022.A.P18.3
+
+Synthesis:
+ - Synopsys Design Compiler (R) NXT 
+    - Version U-2022.12-SP6
+
 Other:
  - Playbook (Microsoft Internal workflow management tool)
 
