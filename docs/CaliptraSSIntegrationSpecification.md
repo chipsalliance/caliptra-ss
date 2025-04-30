@@ -2143,7 +2143,92 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
     - MCTP Test send random 68 bytes of data and PEC to RX queue
     - MCU reads and compares the data with expected data
 
+# Reset Domain Crossing
 
+## Reset Architecture
+
+The below diagram illustrates the internal reset architecture of Caliptra SS.
+
+![](images/Reset_Architecture.png)
+
+The reset block diagram below illustrates the RTL implemenation of various resets.
+
+![](images/Reset_Block_Diagram.png)
+
+The below diagram illustrates how various internal blocks are connected to either primary resets or internally generated resets.
+
+![](images/Reset_Connection.png)
+
+Similar to Caliptra Core, we solve the problem of RDC using gated clocks which are gated during reset assertion. Below diagram illustrates the clock connections of various sub-modules.
+
+![](images/Clock_Connection.png)
+
+## Reset Domain Stamping and Constraints
+
+The Below table illustrates various reset domains that we have in the design. We assume that all resets are asserted at timestamp 5, and the constrained signal is held high or low around that time (for instance, from timestamp 2 to timestamp 8).
+
+| Reset Group | Description | HW Reset Signal | Constraints | False path groups |
+|-|-|-|-|-|
+| CPTRA_SS_PWRGD | Primary reset input corresponding to SOC Powergood |  cptra_ss_pwrgood_i || CPTRA_SS_PWRGD -> all |
+| CPTRA_SS_PRIM_RST | Primary reset input corresponding to SOC Warm Reset | cptra_ss_rst_b_i | caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_FUSE_WR_DONE.done.value -> HIGH <br> i3c.i3c.xrecovery_handler.xrecovery_executor.image_activated_o -> LOW <br> i3c.i3c.xrecovery_handler.xrecovery_executor.payload_available_q  -> LOW | CPTRA_SS_PRIM_RST -> CPTRA_CORE_UC_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_CORE_NON_CORE_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_SS_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_SS_MCU_RST |
+| CPTRA_SS_RST | Caliptra SS MCI Boot Sequencer generated reset used by various other SS level logic blocks and Caliptra Core | cptra_ss_mci_cptra_rst_b_i <br> mci_top_i.i_boot_seqr.cptra_ss_rst_b_o | mci_top_i.i_boot_seqr.rdc_clk_dis -> HIGH <br> mci_top_i.i_boot_seqr.early_warm_reset_warn -> HIGH <br> mci_top_i.i_boot_seqr.boot_fsm[3:0] = BOOT_IDLE <br> i3c.i3c.xrecovery_handler.xrecovery_executor.image_activated_o -> LOW <br> i3c.i3c.xrecovery_handler.xrecovery_executor.payload_available_q -> LOW <br> caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_FUSE_WR_DONE.done.value -> HIGH | CPTRA_SS_RST -> CPTRA_SS_PRIM_RST <br> CPTRA_SS_RST -> CPTRA_CORE_NON_CORE_RST <br> CPTRA_SS_RST -> CPTRA_CORE_UC_RST <br> CPTRA_SS_RST -> CPTRA_SS_MCU_RST <br> CPTRA_SS_RST -> CPTRA_DMI_NON_CORE_RST |
+| CPTRA_CORE_NON_CORE_RST | Caliptra Core Boot FSM generated reset used by various other Caliptra Core logics | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_noncore_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.rdc_clk_dis -> HIGH <br> caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.arc_IDLE -> HIGH <br> mci_top_i.i_boot_seqr.rdc_clk_dis -> HIGH | CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_PRIM_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_CORE_UC_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_MCU_RST |
+| CPTRA_CORE_UC_RST | Caliptra Core Boot FSM generated microcontroller reset for Caliptra Core RISCV | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_uc_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.fw_update_rst_window -> HIGH <br> caliptra_top_dut.aes_inst.aes_inst.u_aes_core.u_aes_control.gen_fsm[0].gen_fsm_p.u_aes_control_fsm_i.u_aes_control_fsm.aes_ctrl_cs[5:0] -> 6'b001001 | |
+| CPTRA_SS_MCU_RST | Caliptra SS MCI Boot Sequencer generated microcontroller reset for Caliptra SS RISCV | mci_top_i.i_boot_seqr.mcu_rst_b | mci_top_i.i_boot_seqr.fw_update_rst_window -> HIGH <br> mci_top_i.i_mci_mcu_trace_buffer.mcu_trace_rv_i_valid_ip -> LOW | |
+
+**The current analysis only focuses on RDC crossing which are internal to Caliptra SS. Any RDC crossings with external flops need to be handled by integrators.**
+
+## Reset Sequencing
+
+The below waveform illustrates how various resets of Caliptra SS and Caliptra Core are sequenced in the design.
+
+![](images/Reset_sequencing.png)
+
+The red and blue line indicates that the input Caliptra SS warm reset (cptra_ss_rst_b_i) needs to be asserted for atleast 32 clock cycles for the reset assertion to propagate through various levels of hierarhcy.
+
+## RDC Waivers
+
+All Caliptra Core waivers are applicable at SS level as well. On top of those, we have the following waivers.
+
+```
+create_view_criteria \
+    -name otp_broadcast_ss_rst_caliptra_core \
+    -rule {E_RST_METASTABILITY} \
+    -comment "waiver_for otp_broadcast related paths" \
+    -criteria { ((ResetFlop =~ "*.u_caliptra_ss.u_otp_ctrl.otp_broadcast_o.secret_prod_partition_0_data.*")  ||  \
+                 (ResetFlop =~ "*.u_caliptra_ss.u_otp_ctrl.otp_broadcast_o.valid*") ) &&  \
+                 ((MetaStableFlop =~ "*.u_caliptra_ss.caliptra_top_dut.soc_ifc_top1.i_soc_ifc_reg.field_storage.fuse_field_entropy*") || \
+                  (MetaStableFlop =~ "*.u_caliptra_ss.caliptra_top_dut.soc_ifc_top1.i_soc_ifc_reg.field_storage.fuse_uds_seed*") ) } \
+    -replace
+set_rule_status -use_view_criteria otp_broadcast_ss_rst_caliptra_core -status Waived -weakmatchfullgroup
+
+create_view_criteria \
+    -name path_ending_at_2ff_sync \
+    -rule {E_RST_METASTABILITY} \
+    -comment "wavier for 2ff sync" \
+    -criteria { ((MetaStableFlop =~ "*.u_sync_1.gen_generic.u_impl_generic.*") || \
+                  (MetaStableFlop =~ "*.i_rst_window_sync.*") ) } \
+    -replace
+set_rule_status -use_view_criteria path_ending_at_2ff_sync -status Waived -weakmatchfullgroup
+
+create_view_criteria \
+    -name no_axi_bus_active \
+    -rule {E_RDC_METASTABILITY} \
+    -comment "Before warm reset assertion, it is sure that is transaction pending on axi bus" \
+    -criteria {  (ResetFlop      =~ "*.caliptra_top_dut.s_axi_active[2:0]") && \
+                 (MetaStableFlop =~ "*cg.user_soc_ifc_icg.clk_slcg_0_generated_icg.p_clkgate.vudpi0.q")  } \
+    -replace
+set_rule_status -use_view_criteria no_axi_bus_active -status Waived -weakmatchfullgroup
+```
+
+# Synthesis
+
+Synthesis has been performed at CALIPTRA_SS_WRAPPER level which encompasses the following :-
+
+- *caliptra_ss_top*
+- Memories instantiated outside using tech specific macros
+
+Design converges at 400MHz 0.72V using an industry standard, advanced technology node as of 2025 April.
 
 # Terminology
 
