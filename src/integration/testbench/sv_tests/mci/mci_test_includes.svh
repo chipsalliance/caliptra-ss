@@ -26,3 +26,6 @@
 `include "smoke_test_mci_soc_config_disable.svh"
 `include "smoke_test_mci_soc_config_always_enable.svh"
 `include "smoke_test_mci_soc_config_diff_mcu.svh"
+`include "smoke_test_mci_brkpoint_axi.svh"
+`include "smoke_test_mcu_no_rom_config.svh"
+`include "smoke_test_mcu_no_rom_config_brkpoint.svh"
