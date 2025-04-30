@@ -395,7 +395,7 @@ The Fuse Controller supports a total of **13 partitions** (See [Fuse Controller'
 
 ### Key Characteristics of Secret Partitions:
 1. **Programming Access:**  
-   - `UDS_SEED` and `FIELD_ENTROPY` partitions can only be programmed by the Caliptra-Core.
+   - `UDS_SEED` and `FIELD_ENTROPY` partitions can only be programmed by the Caliptra Core.
    - Secret partitions are buffered, meaning they are stored in registers and are erased (zeroized) if Caliptra-SS enters debug mode.  
 2. **Locking Mechanism:**  
    - Write access to a partition can be permanently locked when no further updates are required.  
@@ -699,7 +699,7 @@ In the manufacturing phase, the Caliptra Subsystem asserts SOC_HW_DEBUG_EN high,
 
 **: SOC_DFT_EN and SOC_HW_DEBUG_EN can be high if Caliptra SS grants debug mode (either manufacturing or production). This case is explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”. SOC_HW_DEBUG_EN is set high to open CLTAP and SOC_DFT_EN enables DFT by SoC design support. However, this condition also needs to go through the flow described in “SoC Debug Flow and Architecture for Production Mode”. Caliptra Subsystem state should be set to either the manufacturing mode debug unlock or Level 0 of the production debug unlock.
 
-***: RMA state enables DFT_EN but Caliptra-Core enters the debug mode when LCC enters RMA state. Thus, Caliptra-Core clears UDS and Field Entropy secrets. 
+***: RMA state enables DFT_EN but Caliptra Core enters the debug mode when LCC enters RMA state. Thus, Caliptra Core clears UDS and Field Entropy secrets. 
 
 ## TAP Pin Muxing
 The LCC includes a TAP interface, which operates on its own dedicated clock and is used for injecting tokens into the LCC. Notably, the LCC TAP interface remains accessible in all life cycle states, providing a consistent entry point for test and debug operations. This TAP interface can be driven by either the TAP GPIO pins or internal chip-level wires, depending on the system's current configuration.
@@ -711,7 +711,7 @@ The LCC includes a TAP interface, which operates on its own dedicated clock and 
 SOC logic incorporates the TAP pin muxing to provide the integration support and manage the connection between the TAP GPIO pins and the Chip-Level TAP (CLTAP). As illustrated in figure above, this muxing logic determines the source that drives the LCC TAP interface. The selection between these two sources is controlled by the SOC_HW_DEBUG_EN signal. When SOC_HW_DEBUG_EN is set to high, control is handed over to the CLTAP, allowing for chip-level debug access through the TAP GPIO pins. Conversely, when SOC_HW_DEBUG_EN is low, the TAP GPIO pins take control, enabling external access to the LCC TAP interface.
 
 **[LCC State and State Decoder Output Ports Table](#lcc-state-and-state-decoder-output-ports)**  outlines the specific LCC states that enable the SOC_HW_DEBUG_EN signal. These states include TEST_UNLOCK, MANUF, PROD (debug unlocked version only), and RMA. In these states, the LCC allows internal chip-level debug access via CLTAP, thereby facilitating advanced debugging capabilities. This muxing approach ensures that the TAP interface is appropriately secured, and that access is granted only under specific conditions, aligning with the overall security and functional requirements of the Caliptra Subsystem. 
-**Note:** It is important to note that CLTAP provides access to the TAP interfaces of the LCC, MCU, or Caliptra-core. This functionality is managed by SoC logic, not by Caliptra-SS. Consequently, the SoC integration effort should ideally include an additional mux after CTAP to route the connection to one of the following: the LCC TAP, MCU TAP, or Caliptra-core TAP.
+**Note:** It is important to note that CLTAP provides access to the TAP interfaces of the LCC, MCU, or Caliptra Core. This functionality is managed by SoC logic, not by Caliptra-SS. Consequently, the SoC integration effort should ideally include an additional mux after CTAP to route the connection to one of the following: the LCC TAP, MCU TAP, or Caliptra Core TAP.
 
 TAP pin muxing also enables routing to Caliptra TAP. This selection happens when DEBUG_INTENT_STRAP is high. This selection is done through the GPIO and indicates that Caliptra will enter debug mode if the secret tokens are provided. Caliptra Subsystem has two debug modes: manufacturing debug and production debug. Entering these debug flows are explained in the following sections:
 **[How does Caliptra Subsystem enable manufacturing debug mode?](#how-does-caliptra-subsystem-enable-manufacturing-debug-mode), 
@@ -991,7 +991,8 @@ The following diagram illustrates the internal components of the MCI.
 ### Control/Status Registers (CSRs)
 The Control/Status Registers (CSRs) within the MCI are designed to provide critical control and status monitoring functions for the SoC. These registers include configuration settings, status indicators, and control bits that allow communication and management of the various operations of the MCI. The CSR bank is accessible via the AXI interface and is mapped into the memory space to facilitate straightforward access and manipulation.
 
-**FIXME the link:** caliptra-ss/src/mci/rtl/mci_reg.rdl
+[MCI Reg Spec](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg)
+
 
 #### MCI CSR Access Restrictions
 
@@ -1242,6 +1243,8 @@ It is the only agent allowed to set TARGET_USER and update the final CMD_STATUS.
 
   *NOTE: MBOX SRAM size is configurable, but MBOX always reserves 2MB address space. See [MCU Mailbox Errors](#mcu-mailbox-errors) for how access to and invalid SRAM address are handled. 
 
+[MCU MBOX Register Spec](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mcu_mbox0_csr)
+
 ### MCU SRAM
 ![](images/MCI-MCU-SRAM-Diagram.png)
 
@@ -1390,6 +1393,8 @@ Below is the SW interface to extract trace data:
 | STATUS.VALID_DATA         | RO        | Indicates at least one entry is valid in the trace buffer.      |
 | STATUS.WRAPPED            | RO        | Indicates the trace buffer has wrapped at least once. Meaning all entries in the trace buffer are valid. If 0, then the oldest entry in the buffer is at ptr=0. If 1, the oldest entry is at WRITE_PTR|
 | CONFIG.TRACE_BUFFER_DEPTH | RO        | Indicates the total number of 32 bit entries in the trace buffer. TRACE_BUFFER_DEPTH - 1 is the last valid WRITE/READ_PTR entry in the trace buffer. NOTE: This is the trace buffer depth and not the number of [MCU Trace Buffer Packets](#mcu-trace-buffer-packet). |
+
+[MCU Trace Buffer Registers Spec](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mcu_trace_buffer_csr)
 
 #### MCU Trace Buffer Packet
 
