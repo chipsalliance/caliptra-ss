@@ -9304,8 +9304,8 @@
 #define SOC_OTP_CTRL_STATUS                                                                         (0x70000010)
 #ifndef OTP_CTRL_STATUS
 #define OTP_CTRL_STATUS                                                                             (0x10)
-#define OTP_CTRL_STATUS_SECRET_TEST_UNLOCK_PARTITION_ERROR_LOW                                      (0)
-#define OTP_CTRL_STATUS_SECRET_TEST_UNLOCK_PARTITION_ERROR_MASK                                     (0x1)
+#define OTP_CTRL_STATUS_SW_TEST_UNLOCK_PARTITION_ERROR_LOW                                          (0)
+#define OTP_CTRL_STATUS_SW_TEST_UNLOCK_PARTITION_ERROR_MASK                                         (0x1)
 #define OTP_CTRL_STATUS_SECRET_MANUF_PARTITION_ERROR_LOW                                            (1)
 #define OTP_CTRL_STATUS_SECRET_MANUF_PARTITION_ERROR_MASK                                           (0x2)
 #define OTP_CTRL_STATUS_SECRET_PROD_PARTITION_0_ERROR_LOW                                           (2)
@@ -9580,14 +9580,14 @@
 #ifndef OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK
 #define OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK                                                       (0xac)
 #endif
-#define SOC_OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_START                                      (0x700000b0)
-#define SOC_OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                   (0x700000b0)
-#ifndef OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                       (0xb0)
+#define SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_START                                          (0x700000b0)
+#define SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                       (0x700000b0)
+#ifndef OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0
+#define OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                           (0xb0)
 #endif
-#define SOC_OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                   (0x700000b4)
-#ifndef OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                       (0xb4)
+#define SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                       (0x700000b4)
+#ifndef OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1
+#define OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                           (0xb4)
 #endif
 #define SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_START                                            (0x700000b8)
 #define SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_0                                         (0x700000b8)
