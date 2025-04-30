@@ -443,7 +443,7 @@ The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_reset_n` to ensure `cpt
    - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
    - **Reset Type** Synchronous with the `cptra_ss_rdc_clk_cg_o` signal
    - **Integration Notes**
-     1. SOC's shall use this reset for any memory logic connected to MCU SRAM or MCU MBOX to avoid RDC corruption of the memories.
+     1. SOCs shall use this reset for any memory logic connected to MCU SRAM or MCU MBOX to avoid RDC corruption of the memories.
      2. It is recommended to be used for SOC AXI interconnect if it is on the same reset domain as Caliptra SS to avoid RDC issues. 
      3. Logic shall paired with `cptra_ss_rdc_clk_cg_o` to avoid RDC issues.
 
