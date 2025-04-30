@@ -57,7 +57,7 @@ void nmi_handler (void) {
         SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
     }
     else {
-        VPRINTF(ERROR, "Unexpected entry into NMI handler function\n");
+        handle_error("Unexpected entry into NMI handler function\n");
     }
 }
 
@@ -136,7 +136,7 @@ uint32_t main(void) {
         for (uint8_t i = 0; i < 100; i++); //wait for all error injections to be done
         //service intr
         service_dmi_axi_collision_error_intr();
-        printf("done servicing collision err bit");
+        printf("Done servicing collision err bit");
 
         SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
         //halt core function
@@ -151,7 +151,7 @@ uint32_t main(void) {
         for (uint8_t i = 0; i < 100; i++); //wait for all error injections to be done
         //service intr
         service_dmi_axi_collision_error_intr();
-        printf("done servicing collision err bit\n");
+        printf("Done servicing collision err bit\n");
 
         // for (uint8_t i = 0; i < 10; i++);
         SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
@@ -162,10 +162,10 @@ uint32_t main(void) {
         SEND_STDOUT_CTRL(TB_CMD_INJECT_MCI_ERROR_NON_FATAL);
 
         service_mbox0_ecc_unc_error_intr();
-        printf("done servicing mbox0 err bit\n");
+        printf("Done servicing mbox0 err bit\n");
 
         service_mbox1_ecc_unc_error_intr();
-        printf("done servicing mbox1 err bit\n");
+        printf("Done servicing mbox1 err bit\n");
 
         //Add other stuff here
         VPRINTF(LOW, "------------\nMCI non-ftl err with mask\n------------\n");
@@ -174,9 +174,9 @@ uint32_t main(void) {
         SEND_STDOUT_CTRL(TB_CMD_INJECT_MCI_ERROR_NON_FATAL);
 
         service_mbox0_ecc_unc_error_intr();
-        printf("done servicing mbox0 err bit\n");
+        printf("Done servicing mbox0 err bit\n");
         service_mbox1_ecc_unc_error_intr();
-        printf("done servicing mbox1 err bit\n");
+        printf("Done servicing mbox1 err bit\n");
 
         VPRINTF(LOW, "------------\nAggregate ftl err without mask\n------------\n");
         SEND_STDOUT_CTRL(TB_CMD_INJECT_AGG_ERROR_FATAL);
@@ -246,20 +246,36 @@ uint32_t main(void) {
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
         csr_write_mpmc_halt();
     } 
-    else { //if (rst_count == 9) {
+    else if (rst_count == 9) {
         VPRINTF(LOW, "-------------\nNotif0 conditions\n---------------\n");
         SEND_STDOUT_CTRL(TB_CMD_INJECT_NOTIF0);
         service_notif0_intr();
 
-        // printf("Write to generic input wires 0\n");
-        // lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0, rand());
-        // service_notif0_intr();
+        VPRINTF(LOW, "-------------\nInject mcu sram double ecc err - no mask\n-----------------\n");
+        SEND_STDOUT_CTRL(TB_CMD_INJECT_MCU_SRAM_DOUBLE_ECC_ERROR);
 
-        // printf("Write to generic input wires 1\n");
-        // lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1, rand());
-        // service_notif0_intr();
-    // }
-    // else {
+        //issue cold reset to clear fatal flag
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
+        csr_write_mpmc_halt();
+    }
+    else if (rst_count == 10) {
+        VPRINTF(LOW, "-------------\nInject mcu sram double ecc err - with mask\n-----------------\n");
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK, 0x1);
+        SEND_STDOUT_CTRL(TB_CMD_INJECT_MCU_SRAM_DOUBLE_ECC_ERROR);
+
+        //issue cold reset to clear fatal flag
+        SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
+        csr_write_mpmc_halt();
+    }
+    else {
+        VPRINTF(LOW, "-------------\nInject mcu sram single ecc err\n-----------------\n");
+        SEND_STDOUT_CTRL(TB_CMD_INJECT_MCU_SRAM_SINGLE_ECC_ERROR);
+        service_notif0_intr();
+
+        VPRINTF(LOW, "-------------\nToggle generic_input_wires\n---------------\n");
+        SEND_STDOUT_CTRL(TB_CMD_TOGGLE_GENERIC_INPUT_WIRES);
+        service_notif0_intr();
+
         SEND_STDOUT_CTRL(0xFF);
         csr_write_mpmc_halt();
     }

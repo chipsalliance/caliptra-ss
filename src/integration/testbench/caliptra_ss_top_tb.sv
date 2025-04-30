@@ -1460,7 +1460,6 @@ module caliptra_ss_top_tb
     logic         cptra_ss_dbg_manuf_enable_o;
     logic [63:0]  cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o;
 
-    assign cptra_ss_mci_generic_input_wires_i   = 64'h0;
     assign cptra_ss_mcu_ext_int = '0;
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'(`SOC_SOC_IFC_REG_BASE_ADDR - (`SOC_SOC_IFC_REG_BASE_ADDR & ((1<<SOC_IFC_ADDR_W)-1)));
     assign cptra_ss_strap_mci_base_addr_i       = 64'(`SOC_MCI_TOP_BASE_ADDR);
@@ -1742,6 +1741,7 @@ module caliptra_ss_top_tb
         .cptra_ss_rdc_clk_cg_o,
         .cycleCnt                    (cycleCnt                    ),
         .cptra_ss_mcu0_el2_mem_export(cptra_ss_mcu0_el2_mem_export),
+        .cptra_ss_mci_generic_input_wires_o(cptra_ss_mci_generic_input_wires_i),
         .soc_bfm_if(i_caliptra_ss_bfm_services_if.tb_services),
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,

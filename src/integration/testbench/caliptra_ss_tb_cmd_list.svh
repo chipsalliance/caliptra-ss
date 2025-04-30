@@ -126,6 +126,7 @@ localparam TB_CMD_INJECT_MCI_ERROR_NON_FATAL = 8'hed;
 localparam TB_CMD_INJECT_AGG_ERROR_FATAL = 8'hee;
 localparam TB_CMD_INJECT_AGG_ERROR_NON_FATAL = 8'hef;
 localparam TB_CMD_INJECT_NOTIF0 = 8'hf0;
+localparam TB_CMD_TOGGLE_GENERIC_INPUT_WIRES = 8'hf1;
 
 localparam TB_CMD_COLD_RESET                  = 8'hF5;
 localparam TB_CMD_WARM_RESET                  = 8'hF6;
