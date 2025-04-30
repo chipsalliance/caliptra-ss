@@ -8493,8 +8493,8 @@
 `endif
 `ifndef OTP_CTRL_STATUS
 `define OTP_CTRL_STATUS                                                                             (32'h10)
-`define OTP_CTRL_STATUS_SECRET_TEST_UNLOCK_PARTITION_ERROR_LOW                                      (0)
-`define OTP_CTRL_STATUS_SECRET_TEST_UNLOCK_PARTITION_ERROR_MASK                                     (32'h1)
+`define OTP_CTRL_STATUS_SW_TEST_UNLOCK_PARTITION_ERROR_LOW                                          (0)
+`define OTP_CTRL_STATUS_SW_TEST_UNLOCK_PARTITION_ERROR_MASK                                         (32'h1)
 `define OTP_CTRL_STATUS_SECRET_MANUF_PARTITION_ERROR_LOW                                            (1)
 `define OTP_CTRL_STATUS_SECRET_MANUF_PARTITION_ERROR_MASK                                           (32'h2)
 `define OTP_CTRL_STATUS_SECRET_PROD_PARTITION_0_ERROR_LOW                                           (2)
@@ -8727,11 +8727,11 @@
 `ifndef OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK
 `define OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK                                                       (32'hac)
 `endif
-`ifndef OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0
-`define OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                       (32'hb0)
+`ifndef OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0
+`define OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                           (32'hb0)
 `endif
-`ifndef OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1
-`define OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                       (32'hb4)
+`ifndef OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1
+`define OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                           (32'hb4)
 `endif
 `ifndef OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_0
 `define OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_0                                             (32'hb8)

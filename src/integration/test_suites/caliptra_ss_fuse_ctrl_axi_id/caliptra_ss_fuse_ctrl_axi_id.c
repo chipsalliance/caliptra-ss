@@ -41,7 +41,7 @@ typedef struct {
 } partition_t;
 
 static const partition_t partitions[15] = {
-    { .address = 0x0000, .granularity = 64 }, // SECRET_TEST_UNLOCK_PARTITION
+    { .address = 0x0000, .granularity = 32 }, // SW_TEST_UNLOCK_PARTITION
     { .address = 0x0048, .granularity = 64 }, // SECRET_MANUF_PARTITION
     { .address = 0x0090, .granularity = 64 }, // SECRET_PROD_PARTITION_0
     { .address = 0x00A0, .granularity = 64 }, // SECRET_PROD_PARTITION_1

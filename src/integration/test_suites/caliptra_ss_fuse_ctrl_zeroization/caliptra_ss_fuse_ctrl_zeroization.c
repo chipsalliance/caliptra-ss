@@ -42,11 +42,11 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 void zeroize() {
     const uint32_t sentinel = 0xAB;
-    const uint32_t granularity = 64;
+    const uint32_t granularity = 32;
 
     // 0x000: CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN
     grant_caliptra_core_for_fc_writes();
-    dai_wr(0x000, sentinel, sentinel, granularity, 0);
+    dai_wr(0x000, sentinel, 0, granularity, 0);
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);

@@ -246,6 +246,7 @@ VCS_COMP_OPTS += +define+AVERY_MONITOR_ON
 # Used in caliptra_top_sva to find signals
 VCS_COMP_OPTS += +define+CPTRA_TB_TOP_NAME=$(DUT)
 VCS_COMP_OPTS += +define+CPTRA_TOP_PATH=$(DUT).caliptra_ss_dut.caliptra_top_dut
+VCS_COMP_OPTS += +define+SVA_RST=$(DUT).caliptra_ss_dut.cptra_ss_mci_cptra_rst_b_i
 VCS_COMP_OPTS += +define+CALIPTRA_MODE_SUBSYSTEM
 VCS_COMP_OPTS += +define+MCU_RV_BUILD_AXI4
 VCS_COMP_OPTS += +define+MCU_RV_OPENSOURCE
@@ -263,13 +264,13 @@ VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
 VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
-#VCS_COMP_OPTS += +define+AI3C_SKIP_DAA=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
 VCS_COMP_OPTS += $(AVERY_PLI)/lib.linux/libtb_vcs64.a
 VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME : remve this Note suppression
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
+VCS_COMP_OPTS += +define+I3C_BOOT_USING_ENTDAA
 ############# VCS Elab options #############
 #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
 VCS_ELAB_OPTS += +warn=noIWNF
