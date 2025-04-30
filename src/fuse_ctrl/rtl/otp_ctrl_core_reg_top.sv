@@ -201,7 +201,7 @@ module otp_ctrl_core_reg_top (
   logic alert_test_fatal_prim_otp_alert_wd;
   logic alert_test_recov_prim_otp_alert_wd;
   logic status_re;
-  logic status_secret_test_unlock_partition_error_qs;
+  logic status_sw_test_unlock_partition_error_qs;
   logic status_secret_manuf_partition_error_qs;
   logic status_secret_prod_partition_0_error_qs;
   logic status_secret_prod_partition_1_error_qs;
@@ -324,10 +324,10 @@ module otp_ctrl_core_reg_top (
   logic vendor_pk_hash_volatile_lock_we;
   logic [31:0] vendor_pk_hash_volatile_lock_qs;
   logic [31:0] vendor_pk_hash_volatile_lock_wd;
-  logic secret_test_unlock_partition_digest_0_re;
-  logic [31:0] secret_test_unlock_partition_digest_0_qs;
-  logic secret_test_unlock_partition_digest_1_re;
-  logic [31:0] secret_test_unlock_partition_digest_1_qs;
+  logic sw_test_unlock_partition_digest_0_re;
+  logic [31:0] sw_test_unlock_partition_digest_0_qs;
+  logic sw_test_unlock_partition_digest_1_re;
+  logic [31:0] sw_test_unlock_partition_digest_1_qs;
   logic secret_manuf_partition_digest_0_re;
   logic [31:0] secret_manuf_partition_digest_0_qs;
   logic secret_manuf_partition_digest_1_re;
@@ -617,19 +617,19 @@ module otp_ctrl_core_reg_top (
 
 
   // R[status]: V(True)
-  //   F[secret_test_unlock_partition_error]: 0:0
+  //   F[sw_test_unlock_partition_error]: 0:0
   caliptra_prim_subreg_ext #(
     .DW    (1)
-  ) u_status_secret_test_unlock_partition_error (
+  ) u_status_sw_test_unlock_partition_error (
     .re     (status_re),
     .we     (1'b0),
     .wd     ('0),
-    .d      (hw2reg.status.secret_test_unlock_partition_error.d),
+    .d      (hw2reg.status.sw_test_unlock_partition_error.d),
     .qre    (),
     .qe     (),
     .q      (),
     .ds     (),
-    .qs     (status_secret_test_unlock_partition_error_qs)
+    .qs     (status_sw_test_unlock_partition_error_qs)
   );
 
   //   F[secret_manuf_partition_error]: 1:1
@@ -1929,37 +1929,37 @@ module otp_ctrl_core_reg_top (
   );
 
 
-  // Subregister 0 of Multireg secret_test_unlock_partition_digest
-  // R[secret_test_unlock_partition_digest_0]: V(True)
+  // Subregister 0 of Multireg sw_test_unlock_partition_digest
+  // R[sw_test_unlock_partition_digest_0]: V(True)
   caliptra_prim_subreg_ext #(
     .DW    (32)
-  ) u_secret_test_unlock_partition_digest_0 (
-    .re     (secret_test_unlock_partition_digest_0_re),
+  ) u_sw_test_unlock_partition_digest_0 (
+    .re     (sw_test_unlock_partition_digest_0_re),
     .we     (1'b0),
     .wd     ('0),
-    .d      (hw2reg.secret_test_unlock_partition_digest[0].d),
+    .d      (hw2reg.sw_test_unlock_partition_digest[0].d),
     .qre    (),
     .qe     (),
     .q      (),
     .ds     (),
-    .qs     (secret_test_unlock_partition_digest_0_qs)
+    .qs     (sw_test_unlock_partition_digest_0_qs)
   );
 
 
-  // Subregister 1 of Multireg secret_test_unlock_partition_digest
-  // R[secret_test_unlock_partition_digest_1]: V(True)
+  // Subregister 1 of Multireg sw_test_unlock_partition_digest
+  // R[sw_test_unlock_partition_digest_1]: V(True)
   caliptra_prim_subreg_ext #(
     .DW    (32)
-  ) u_secret_test_unlock_partition_digest_1 (
-    .re     (secret_test_unlock_partition_digest_1_re),
+  ) u_sw_test_unlock_partition_digest_1 (
+    .re     (sw_test_unlock_partition_digest_1_re),
     .we     (1'b0),
     .wd     ('0),
-    .d      (hw2reg.secret_test_unlock_partition_digest[1].d),
+    .d      (hw2reg.sw_test_unlock_partition_digest[1].d),
     .qre    (),
     .qe     (),
     .q      (),
     .ds     (),
-    .qs     (secret_test_unlock_partition_digest_1_qs)
+    .qs     (sw_test_unlock_partition_digest_1_qs)
   );
 
 
@@ -2453,8 +2453,8 @@ module otp_ctrl_core_reg_top (
     addr_hit[41] = (reg_addr == OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK_OFFSET);
     addr_hit[42] = (reg_addr == OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK_OFFSET);
     addr_hit[43] = (reg_addr == OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK_OFFSET);
-    addr_hit[44] = (reg_addr == OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_0_OFFSET);
-    addr_hit[45] = (reg_addr == OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_1_OFFSET);
+    addr_hit[44] = (reg_addr == OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0_OFFSET);
+    addr_hit[45] = (reg_addr == OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1_OFFSET);
     addr_hit[46] = (reg_addr == OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0_OFFSET);
     addr_hit[47] = (reg_addr == OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_1_OFFSET);
     addr_hit[48] = (reg_addr == OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_0_OFFSET);
@@ -2674,8 +2674,8 @@ module otp_ctrl_core_reg_top (
   assign vendor_pk_hash_volatile_lock_we = addr_hit[43] & reg_we & !reg_error;
 
   assign vendor_pk_hash_volatile_lock_wd = reg_wdata[31:0];
-  assign secret_test_unlock_partition_digest_0_re = addr_hit[44] & reg_re & !reg_error;
-  assign secret_test_unlock_partition_digest_1_re = addr_hit[45] & reg_re & !reg_error;
+  assign sw_test_unlock_partition_digest_0_re = addr_hit[44] & reg_re & !reg_error;
+  assign sw_test_unlock_partition_digest_1_re = addr_hit[45] & reg_re & !reg_error;
   assign secret_manuf_partition_digest_0_re = addr_hit[46] & reg_re & !reg_error;
   assign secret_manuf_partition_digest_1_re = addr_hit[47] & reg_re & !reg_error;
   assign secret_prod_partition_0_digest_0_re = addr_hit[48] & reg_re & !reg_error;
@@ -2808,7 +2808,7 @@ module otp_ctrl_core_reg_top (
       end
 
       addr_hit[4]: begin
-        reg_rdata_next[0] = status_secret_test_unlock_partition_error_qs;
+        reg_rdata_next[0] = status_sw_test_unlock_partition_error_qs;
         reg_rdata_next[1] = status_secret_manuf_partition_error_qs;
         reg_rdata_next[2] = status_secret_prod_partition_0_error_qs;
         reg_rdata_next[3] = status_secret_prod_partition_1_error_qs;
@@ -2994,11 +2994,11 @@ module otp_ctrl_core_reg_top (
       end
 
       addr_hit[44]: begin
-        reg_rdata_next[31:0] = secret_test_unlock_partition_digest_0_qs;
+        reg_rdata_next[31:0] = sw_test_unlock_partition_digest_0_qs;
       end
 
       addr_hit[45]: begin
-        reg_rdata_next[31:0] = secret_test_unlock_partition_digest_1_qs;
+        reg_rdata_next[31:0] = sw_test_unlock_partition_digest_1_qs;
       end
 
       addr_hit[46]: begin

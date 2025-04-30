@@ -192,14 +192,14 @@
       default: "9",
       local: "true"
     },
-    { name: "SecretTestUnlockPartitionOffset",
-      desc: "Offset of the SECRET_TEST_UNLOCK_PARTITION partition",
+    { name: "SwTestUnlockPartitionOffset",
+      desc: "Offset of the SW_TEST_UNLOCK_PARTITION partition",
       type: "int",
       default: "0",
       local: "true"
     },
-    { name: "SecretTestUnlockPartitionSize",
-      desc: "Size of the SECRET_TEST_UNLOCK_PARTITION partition",
+    { name: "SwTestUnlockPartitionSize",
+      desc: "Size of the SW_TEST_UNLOCK_PARTITION partition",
       type: "int",
       default: "72",
       local: "true"
@@ -216,14 +216,14 @@
       default: "64",
       local: "true"
     },
-    { name: "SecretTestUnlockPartitionDigestOffset",
-      desc: "Offset of SECRET_TEST_UNLOCK_PARTITION_DIGEST",
+    { name: "SwTestUnlockPartitionDigestOffset",
+      desc: "Offset of SW_TEST_UNLOCK_PARTITION_DIGEST",
       type: "int",
       default: "64",
       local: "true"
     },
-    { name: "SecretTestUnlockPartitionDigestSize",
-      desc: "Size of SECRET_TEST_UNLOCK_PARTITION_DIGEST",
+    { name: "SwTestUnlockPartitionDigestSize",
+      desc: "Size of SW_TEST_UNLOCK_PARTITION_DIGEST",
       type: "int",
       default: "8",
       local: "true"
@@ -2836,7 +2836,7 @@
                 "excl:CsrAllTests:CsrExclCheck"],
         fields: [
           { bits: "0"
-            name: "SECRET_TEST_UNLOCK_PARTITION_ERROR"
+            name: "SW_TEST_UNLOCK_PARTITION_ERROR"
             desc: '''
                   Set to 1 if an error occurred in this partition.
                   If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
@@ -3524,9 +3524,9 @@
       // Integrity Digests //
       ///////////////////////
       { multireg: {
-          name:     "SECRET_TEST_UNLOCK_PARTITION_DIGEST",
+          name:     "SW_TEST_UNLOCK_PARTITION_DIGEST",
           desc:     '''
-                    Integrity digest for the SECRET_TEST_UNLOCK_PARTITION partition.
+                    Integrity digest for the SW_TEST_UNLOCK_PARTITION partition.
                     The integrity digest is 0 by default. The digest calculation can be triggered via the !!DIRECT_ACCESS_CMD.
                     After a reset, the digest then becomes visible in this CSR, and the corresponding partition becomes write-locked.
                     ''',

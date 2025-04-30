@@ -4,7 +4,7 @@ It has been generated with ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partit
 -->
 |             Partition             |  Secret  |  Buffered  |  Integrity  |  WR Lockable  |  RD Lockable  | Description                                                         |
 |:---------------------------------:|:--------:|:----------:|:-----------:|:-------------:|:-------------:|:--------------------------------------------------------------------|
-|   SECRET_TEST_UNLOCK_PARTITION    |   yes    |    yes     |     yes     | yes (Digest)  | yes (Digest)  | Secret manufacturing partition.                                     |
+|     SW_TEST_UNLOCK_PARTITION      |    no    |    yes     |     yes     | yes (Digest)  |      no       | Software manufacturing partition.                                   |
 |      SECRET_MANUF_PARTITION       |   yes    |    yes     |     yes     | yes (Digest)  | yes (Digest)  | Secret manufacturing partition.                                     |
 |      SECRET_PROD_PARTITION_0      |   yes    |    yes     |     yes     | yes (Digest)  | yes (Digest)  | Secret production partition 0.                                      |
 |      SECRET_PROD_PARTITION_1      |   yes    |    yes     |     yes     | yes (Digest)  | yes (Digest)  | Secret production partition 1.                                      |
