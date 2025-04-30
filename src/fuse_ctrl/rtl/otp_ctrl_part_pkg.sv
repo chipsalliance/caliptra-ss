@@ -32,7 +32,7 @@ package otp_ctrl_part_pkg;
   // Scrambling Constants and Types //
   ////////////////////////////////////
 
-  parameter int NumScrmblKeys = 8;
+  parameter int NumScrmblKeys = 7;
   parameter int NumDigestSets = 1;
 
   parameter int ScrmblKeySelWidth = vbits(NumScrmblKeys);
@@ -51,7 +51,6 @@ package otp_ctrl_part_pkg;
   typedef logic [NumDigestSets-1:0][ScrmblBlockWidth-1:0] digest_iv_array_t;
 
   typedef enum logic [ConstSelWidth-1:0] {
-    SecretTestUnlockKey,
     SecretManufKey,
     SecretProdKey0,
     SecretProdKey1,
@@ -67,7 +66,6 @@ package otp_ctrl_part_pkg;
 
   // SEC_CM: SECRET.MEM.SCRAMBLE
   parameter key_array_t RndCnstKey = {
-    128'h90C7F21F6224F027F98C48B1F9377284,
     128'hB7474D640F8A7F5D60822E1FAEC5C72,
     128'h277195FC471E4B26B6641214B61D1B43,
     128'h4D5A89AA9109294AE048B657396B4B83,
@@ -81,19 +79,19 @@ package otp_ctrl_part_pkg;
   // Note: digest set 0 is used for computing the partition digests. Constants at
   // higher indices are used to compute the scrambling keys.
   parameter digest_const_array_t RndCnstDigestConst = {
-    128'hBEE3958332F2939B63B9485A3856C417
+    128'hF98C48B1F93772844A22D4B78FE0266F
   };
 
   parameter digest_iv_array_t RndCnstDigestIV = {
-    64'h4A22D4B78FE0266F
+    64'h90C7F21F6224F027
   };
 
   parameter digest_const_array_t RndCnstDigestConstDefault = {
-    128'hBEE3958332F2939B63B9485A3856C417
+    128'hF98C48B1F93772844A22D4B78FE0266F
   };
 
   parameter digest_iv_array_t RndCnstDigestIVDefault = {
-    64'h4A22D4B78FE0266F
+    64'h90C7F21F6224F027
   };
 
   /////////////////////////////////////
@@ -148,17 +146,17 @@ package otp_ctrl_part_pkg;
   ////////////////////////
 
   localparam part_info_t PartInfo [NumPart] = '{
-    // SECRET_TEST_UNLOCK_PARTITION
+    // SW_TEST_UNLOCK_PARTITION
     '{
       variant:          Buffered,
       offset:           14'd0,
       size:             72,
-      key_sel:          SecretTestUnlockKey,
-      secret:           1'b1,
+      key_sel:          key_sel_e'('0),
+      secret:           1'b0,
       sw_digest:        1'b0,
       hw_digest:        1'b1,
       write_lock:       1'b1,
-      read_lock:        1'b1,
+      read_lock:        1'b0,
       integrity:        1'b1,
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0,
@@ -407,7 +405,7 @@ package otp_ctrl_part_pkg;
   };
 
   typedef enum logic [4:0] {
-    SecretTestUnlockPartitionIdx,
+    SwTestUnlockPartitionIdx,
     SecretManufPartitionIdx,
     SecretProdPartition0Idx,
     SecretProdPartition1Idx,
@@ -435,13 +433,13 @@ package otp_ctrl_part_pkg;
 
   // Breakout types for easier access of individual items.
   typedef struct packed {
-    logic [63:0] secret_test_unlock_partition_digest;
+    logic [63:0] sw_test_unlock_partition_digest;
     logic [511:0] cptra_core_manuf_debug_unlock_token;
-  } otp_secret_test_unlock_partition_data_t;
+  } otp_sw_test_unlock_partition_data_t;
 
   // default value used for intermodule
-  parameter otp_secret_test_unlock_partition_data_t OTP_SECRET_TEST_UNLOCK_PARTITION_DATA_DEFAULT = '{
-    secret_test_unlock_partition_digest: 64'hD61AA54CC696D54,
+  parameter otp_sw_test_unlock_partition_data_t OTP_SW_TEST_UNLOCK_PARTITION_DATA_DEFAULT = '{
+    sw_test_unlock_partition_digest: 64'hACC8E1922AF7B82D,
     cptra_core_manuf_debug_unlock_token: 512'h0
   };
   typedef struct packed {
@@ -451,8 +449,8 @@ package otp_ctrl_part_pkg;
 
   // default value used for intermodule
   parameter otp_secret_manuf_partition_data_t OTP_SECRET_MANUF_PARTITION_DATA_DEFAULT = '{
-    secret_manuf_partition_digest: 64'h16AF2545001DC3DB,
-    cptra_core_uds_seed: 512'hCF7A50A9A91EF7F7B3A5B4421F462370FFF698183664DC7EDF3888886BD10DC67ABB319BDA0529AE40119A3C6E63CDF358840E458E4029A6B5AC1F53D00A08C3
+    secret_manuf_partition_digest: 64'h7479CD41D20282EB,
+    cptra_core_uds_seed: 512'hBEE3958332F2939B63B9485A3856C417CF7A50A9A91EF7F7B3A5B4421F462370FFF698183664DC7EDF3888886BD10DC67ABB319BDA0529AE40119A3C6E63CDF3
   };
   typedef struct packed {
     logic [63:0] secret_prod_partition_0_digest;
@@ -461,8 +459,8 @@ package otp_ctrl_part_pkg;
 
   // default value used for intermodule
   parameter otp_secret_prod_partition_0_data_t OTP_SECRET_PROD_PARTITION_0_DATA_DEFAULT = '{
-    secret_prod_partition_0_digest: 64'hCA07B204875B3A8B,
-    cptra_core_field_entropy_0: 64'hB28B5C0FEE5F4C02
+    secret_prod_partition_0_digest: 64'hD61AA54CC696D54,
+    cptra_core_field_entropy_0: 64'h58840E458E4029A6
   };
   typedef struct packed {
     logic [63:0] secret_prod_partition_1_digest;
@@ -471,8 +469,8 @@ package otp_ctrl_part_pkg;
 
   // default value used for intermodule
   parameter otp_secret_prod_partition_1_data_t OTP_SECRET_PROD_PARTITION_1_DATA_DEFAULT = '{
-    secret_prod_partition_1_digest: 64'hE8207D2509C0D925,
-    cptra_core_field_entropy_1: 64'h711D135F59A50322
+    secret_prod_partition_1_digest: 64'h16AF2545001DC3DB,
+    cptra_core_field_entropy_1: 64'hB5AC1F53D00A08C3
   };
   typedef struct packed {
     logic [63:0] secret_prod_partition_2_digest;
@@ -481,8 +479,8 @@ package otp_ctrl_part_pkg;
 
   // default value used for intermodule
   parameter otp_secret_prod_partition_2_data_t OTP_SECRET_PROD_PARTITION_2_DATA_DEFAULT = '{
-    secret_prod_partition_2_digest: 64'h7ADDC105A37BE10E,
-    cptra_core_field_entropy_2: 64'hB6711DB6F5D40A37
+    secret_prod_partition_2_digest: 64'hCA07B204875B3A8B,
+    cptra_core_field_entropy_2: 64'hB28B5C0FEE5F4C02
   };
   typedef struct packed {
     logic [63:0] secret_prod_partition_3_digest;
@@ -491,8 +489,8 @@ package otp_ctrl_part_pkg;
 
   // default value used for intermodule
   parameter otp_secret_prod_partition_3_data_t OTP_SECRET_PROD_PARTITION_3_DATA_DEFAULT = '{
-    secret_prod_partition_3_digest: 64'h82F69C5D067AC23A,
-    cptra_core_field_entropy_3: 64'hDBC827839FE2DCC2
+    secret_prod_partition_3_digest: 64'hE8207D2509C0D925,
+    cptra_core_field_entropy_3: 64'h711D135F59A50322
   };
   typedef struct packed {
     logic [63:0] vendor_secret_prod_partition_digest;
@@ -516,23 +514,23 @@ package otp_ctrl_part_pkg;
 
   // default value used for intermodule
   parameter otp_vendor_secret_prod_partition_data_t OTP_VENDOR_SECRET_PROD_PARTITION_DATA_DEFAULT = '{
-    vendor_secret_prod_partition_digest: 64'h71400F1A2858655B,
-    cptra_ss_vendor_specific_secret_fuse_15: 256'hAF0ADBBE93A5F9BAB97F2A9139A0FFA956AEADB13BAAA10D2336E399E5F1AEB,
-    cptra_ss_vendor_specific_secret_fuse_14: 256'h9B0E9C2F06F0694CEDAB6BE2563D7C0C31CB754A523EAFE90D67C2C55F3D8CE4,
-    cptra_ss_vendor_specific_secret_fuse_13: 256'h207A34ABD439B462F7FDB8FC20E2960FA1C637588C08C38374903B58BC3484DF,
-    cptra_ss_vendor_specific_secret_fuse_12: 256'hF9CBEDBC3D512527FE67E8B2E07D55510F7DF200E9385195DE4F2FB208A71E82,
-    cptra_ss_vendor_specific_secret_fuse_11: 256'h7E2D8D259F101A8BF1E2B746BE84F30380655EE26D62DEE6AE95AAFB7A44E26D,
-    cptra_ss_vendor_specific_secret_fuse_10: 256'hDFEBB9B7267FEF2CEF1772418F8629C29C75ABA36D93FFE068F655FA7990D589,
-    cptra_ss_vendor_specific_secret_fuse_9: 256'hDD3C869E21D220A3543A0130B3BCFEC376D4BAC76AC7F32652FF80CC92DAEF2D,
-    cptra_ss_vendor_specific_secret_fuse_8: 256'hB8138A3BBDAAE552050DE28C64D4C187725A4C748BE1317E3E01C22789430178,
-    cptra_ss_vendor_specific_secret_fuse_7: 256'h563C0C2920F637247508BAB4DC752164D104B5B0B3D8FDDB7A0C53617A6A31C,
-    cptra_ss_vendor_specific_secret_fuse_6: 256'h60BAE4A876D70627B8DE43EDFF17AA86BF1F41B783B6DB8C644C4723CF740F6A,
-    cptra_ss_vendor_specific_secret_fuse_5: 256'h6FDFE93D3146B0F41837480464544A13BF7D79A9FF747F62DCDD92FA5B24BF3,
-    cptra_ss_vendor_specific_secret_fuse_4: 256'hC469C593E5DC0DA88CBBAD02BB4CA928AA3F4C71234F097C67BBE3B4555DF35C,
-    cptra_ss_vendor_specific_secret_fuse_3: 256'h20440F25BB053FB5F87BED95CFBA3727BBF4A76885E754F2BE193854E9CA60A0,
-    cptra_ss_vendor_specific_secret_fuse_2: 256'h4947DD361344767A0340A5B93BB19342E29749216775E8A515F164D7930C9D19,
-    cptra_ss_vendor_specific_secret_fuse_1: 256'h9605F051E74379CBCC6596C7174EBA643E725E464F593C87A445C3C29F71A256,
-    cptra_ss_vendor_specific_secret_fuse_0: 256'hE817E760B27AE937BFCDF15A3429452A851B80674A2B6FBE93B61DE417B9FB33
+    vendor_secret_prod_partition_digest: 64'hF7024F5AD97A0F9E,
+    cptra_ss_vendor_specific_secret_fuse_15: 256'h31CB754A523EAFE90D67C2C55F3D8CE40AF0ADBBE93A5F9BAB97F2A9139A0FFA,
+    cptra_ss_vendor_specific_secret_fuse_14: 256'hA1C637588C08C38374903B58BC3484DF9B0E9C2F06F0694CEDAB6BE2563D7C0C,
+    cptra_ss_vendor_specific_secret_fuse_13: 256'hF7DF200E9385195DE4F2FB208A71E82207A34ABD439B462F7FDB8FC20E2960F,
+    cptra_ss_vendor_specific_secret_fuse_12: 256'h80655EE26D62DEE6AE95AAFB7A44E26DF9CBEDBC3D512527FE67E8B2E07D5551,
+    cptra_ss_vendor_specific_secret_fuse_11: 256'h9C75ABA36D93FFE068F655FA7990D5897E2D8D259F101A8BF1E2B746BE84F303,
+    cptra_ss_vendor_specific_secret_fuse_10: 256'h76D4BAC76AC7F32652FF80CC92DAEF2DDFEBB9B7267FEF2CEF1772418F8629C2,
+    cptra_ss_vendor_specific_secret_fuse_9: 256'h725A4C748BE1317E3E01C22789430178DD3C869E21D220A3543A0130B3BCFEC3,
+    cptra_ss_vendor_specific_secret_fuse_8: 256'h4D104B5B0B3D8FDDB7A0C53617A6A31CB8138A3BBDAAE552050DE28C64D4C187,
+    cptra_ss_vendor_specific_secret_fuse_7: 256'hBF1F41B783B6DB8C644C4723CF740F6A0563C0C2920F637247508BAB4DC75216,
+    cptra_ss_vendor_specific_secret_fuse_6: 256'h3BF7D79A9FF747F62DCDD92FA5B24BF360BAE4A876D70627B8DE43EDFF17AA86,
+    cptra_ss_vendor_specific_secret_fuse_5: 256'hAA3F4C71234F097C67BBE3B4555DF35C06FDFE93D3146B0F41837480464544A1,
+    cptra_ss_vendor_specific_secret_fuse_4: 256'hBBF4A76885E754F2BE193854E9CA60A0C469C593E5DC0DA88CBBAD02BB4CA928,
+    cptra_ss_vendor_specific_secret_fuse_3: 256'hE29749216775E8A515F164D7930C9D1920440F25BB053FB5F87BED95CFBA3727,
+    cptra_ss_vendor_specific_secret_fuse_2: 256'h3E725E464F593C87A445C3C29F71A2564947DD361344767A0340A5B93BB19342,
+    cptra_ss_vendor_specific_secret_fuse_1: 256'h851B80674A2B6FBE93B61DE417B9FB339605F051E74379CBCC6596C7174EBA64,
+    cptra_ss_vendor_specific_secret_fuse_0: 256'h1E46311FD36D95401136C663A36C3E3E817E760B27AE937BFCDF15A3429452A
   };
   typedef struct packed {
     // This reuses the same encoding as the life cycle signals for indicating valid status.
@@ -543,7 +541,7 @@ package otp_ctrl_part_pkg;
     otp_secret_prod_partition_1_data_t secret_prod_partition_1_data;
     otp_secret_prod_partition_0_data_t secret_prod_partition_0_data;
     otp_secret_manuf_partition_data_t secret_manuf_partition_data;
-    otp_secret_test_unlock_partition_data_t secret_test_unlock_partition_data;
+    otp_sw_test_unlock_partition_data_t sw_test_unlock_partition_data;
   } otp_broadcast_t;
 
   // default value for intermodule
@@ -555,18 +553,18 @@ package otp_ctrl_part_pkg;
     secret_prod_partition_1_data: OTP_SECRET_PROD_PARTITION_1_DATA_DEFAULT,
     secret_prod_partition_0_data: OTP_SECRET_PROD_PARTITION_0_DATA_DEFAULT,
     secret_manuf_partition_data: OTP_SECRET_MANUF_PARTITION_DATA_DEFAULT,
-    secret_test_unlock_partition_data: OTP_SECRET_TEST_UNLOCK_PARTITION_DATA_DEFAULT
+    sw_test_unlock_partition_data: OTP_SW_TEST_UNLOCK_PARTITION_DATA_DEFAULT
   };
 
 
   // OTP invalid partition default for buffered partitions.
   parameter logic [131071:0] PartInvDefault = 131072'({
     704'({
-      320'h9E02C05185213FCF029CB3E62CE6FDDCBA7F6C9D2519EA1AACC8E1922AF7B82D7479CD41D20282EB,
-      384'h58C2A1BA65D13A0FE39B01C95A626001CC969493D06CDB450C26A87F7BF58DDA1149EFDC5F023299DFB44D70A9F90685
+      320'h1149EFDC5F023299DFB44D70A9F906859E02C05185213FCF029CB3E62CE6FDDCBA7F6C9D2519EA1A,
+      384'h956AEADB13BAAA10D2336E399E5F1AEB58C2A1BA65D13A0FE39B01C95A626001CC969493D06CDB450C26A87F7BF58DDA
     }),
     25856'({
-      64'hBC95E25E95D30F45,
+      64'h8633C897599F66A1,
       21696'h0, // unallocated space
       256'h0,
       256'h0,
@@ -586,26 +584,26 @@ package otp_ctrl_part_pkg;
       256'h0
     }),
     4160'({
-      64'h71400F1A2858655B,
-      256'hAF0ADBBE93A5F9BAB97F2A9139A0FFA956AEADB13BAAA10D2336E399E5F1AEB,
-      256'h9B0E9C2F06F0694CEDAB6BE2563D7C0C31CB754A523EAFE90D67C2C55F3D8CE4,
-      256'h207A34ABD439B462F7FDB8FC20E2960FA1C637588C08C38374903B58BC3484DF,
-      256'hF9CBEDBC3D512527FE67E8B2E07D55510F7DF200E9385195DE4F2FB208A71E82,
-      256'h7E2D8D259F101A8BF1E2B746BE84F30380655EE26D62DEE6AE95AAFB7A44E26D,
-      256'hDFEBB9B7267FEF2CEF1772418F8629C29C75ABA36D93FFE068F655FA7990D589,
-      256'hDD3C869E21D220A3543A0130B3BCFEC376D4BAC76AC7F32652FF80CC92DAEF2D,
-      256'hB8138A3BBDAAE552050DE28C64D4C187725A4C748BE1317E3E01C22789430178,
-      256'h563C0C2920F637247508BAB4DC752164D104B5B0B3D8FDDB7A0C53617A6A31C,
-      256'h60BAE4A876D70627B8DE43EDFF17AA86BF1F41B783B6DB8C644C4723CF740F6A,
-      256'h6FDFE93D3146B0F41837480464544A13BF7D79A9FF747F62DCDD92FA5B24BF3,
-      256'hC469C593E5DC0DA88CBBAD02BB4CA928AA3F4C71234F097C67BBE3B4555DF35C,
-      256'h20440F25BB053FB5F87BED95CFBA3727BBF4A76885E754F2BE193854E9CA60A0,
-      256'h4947DD361344767A0340A5B93BB19342E29749216775E8A515F164D7930C9D19,
-      256'h9605F051E74379CBCC6596C7174EBA643E725E464F593C87A445C3C29F71A256,
-      256'hE817E760B27AE937BFCDF15A3429452A851B80674A2B6FBE93B61DE417B9FB33
+      64'hF7024F5AD97A0F9E,
+      256'h31CB754A523EAFE90D67C2C55F3D8CE40AF0ADBBE93A5F9BAB97F2A9139A0FFA,
+      256'hA1C637588C08C38374903B58BC3484DF9B0E9C2F06F0694CEDAB6BE2563D7C0C,
+      256'hF7DF200E9385195DE4F2FB208A71E82207A34ABD439B462F7FDB8FC20E2960F,
+      256'h80655EE26D62DEE6AE95AAFB7A44E26DF9CBEDBC3D512527FE67E8B2E07D5551,
+      256'h9C75ABA36D93FFE068F655FA7990D5897E2D8D259F101A8BF1E2B746BE84F303,
+      256'h76D4BAC76AC7F32652FF80CC92DAEF2DDFEBB9B7267FEF2CEF1772418F8629C2,
+      256'h725A4C748BE1317E3E01C22789430178DD3C869E21D220A3543A0130B3BCFEC3,
+      256'h4D104B5B0B3D8FDDB7A0C53617A6A31CB8138A3BBDAAE552050DE28C64D4C187,
+      256'hBF1F41B783B6DB8C644C4723CF740F6A0563C0C2920F637247508BAB4DC75216,
+      256'h3BF7D79A9FF747F62DCDD92FA5B24BF360BAE4A876D70627B8DE43EDFF17AA86,
+      256'hAA3F4C71234F097C67BBE3B4555DF35C06FDFE93D3146B0F41837480464544A1,
+      256'hBBF4A76885E754F2BE193854E9CA60A0C469C593E5DC0DA88CBBAD02BB4CA928,
+      256'hE29749216775E8A515F164D7930C9D1920440F25BB053FB5F87BED95CFBA3727,
+      256'h3E725E464F593C87A445C3C29F71A2564947DD361344767A0340A5B93BB19342,
+      256'h851B80674A2B6FBE93B61DE417B9FB339605F051E74379CBCC6596C7174EBA64,
+      256'h1E46311FD36D95401136C663A36C3E3E817E760B27AE937BFCDF15A3429452A
     }),
     1216'({
-      64'h8633C897599F66A1,
+      64'h769D73F614F297C5,
       32'h0,
       32'h0,
       8'h0,
@@ -656,7 +654,7 @@ package otp_ctrl_part_pkg;
       8'h0
     }),
     6016'({
-      64'hF7024F5AD97A0F9E,
+      64'hFEEC587DCB2A9253,
       56'h0, // unallocated space
       16'h0,
       8'h0,
@@ -691,13 +689,13 @@ package otp_ctrl_part_pkg;
       384'h0
     }),
     512'({
-      64'h769D73F614F297C5,
+      64'hF545B7FC56675745,
       56'h0, // unallocated space
       8'h0,
       384'h0
     }),
     512'({
-      64'hFEEC587DCB2A9253,
+      64'h86224F25DAB6226B,
       192'h0, // unallocated space
       256'h0
     }),
@@ -709,8 +707,7 @@ package otp_ctrl_part_pkg;
       32'h0
     }),
     1472'({
-      64'hF545B7FC56675745,
-      128'h1E46311FD36D95401136C663A36C3E3,
+      64'h82F69C5D067AC23A,
       128'h315FD2B871D88819A0D1E90E8C9FDDFA,
       128'h688098A43C33459F0279FC51CC7C626E,
       128'hD3D58610F4851667D68C96F0B3D1FEED,
@@ -720,10 +717,11 @@ package otp_ctrl_part_pkg;
       128'h426D99D374E699CAE00E9680BD9B7029,
       128'h234729143F97B62A55D0320379A0D260,
       128'hD396D1CE085BDC31105733EAA3880C5A,
-      128'h7E17D06B5D4E0DDDDBB9844327F20FB5
+      128'h7E17D06B5D4E0DDDDBB9844327F20FB5,
+      128'hB6711DB6F5D40A37DBC827839FE2DCC2
     }),
     88640'({
-      64'h86224F25DAB6226B,
+      64'h7ADDC105A37BE10E,
       21736'h0, // unallocated space
       384'h0,
       384'h0,
@@ -739,14 +737,6 @@ package otp_ctrl_part_pkg;
       8'h0
     }),
     128'({
-      64'h82F69C5D067AC23A,
-      64'hDBC827839FE2DCC2
-    }),
-    128'({
-      64'h7ADDC105A37BE10E,
-      64'hB6711DB6F5D40A37
-    }),
-    128'({
       64'hE8207D2509C0D925,
       64'h711D135F59A50322
     }),
@@ -754,12 +744,20 @@ package otp_ctrl_part_pkg;
       64'hCA07B204875B3A8B,
       64'hB28B5C0FEE5F4C02
     }),
-    576'({
+    128'({
       64'h16AF2545001DC3DB,
-      512'hCF7A50A9A91EF7F7B3A5B4421F462370FFF698183664DC7EDF3888886BD10DC67ABB319BDA0529AE40119A3C6E63CDF358840E458E4029A6B5AC1F53D00A08C3
+      64'hB5AC1F53D00A08C3
+    }),
+    128'({
+      64'hD61AA54CC696D54,
+      64'h58840E458E4029A6
     }),
     576'({
-      64'hD61AA54CC696D54,
+      64'h7479CD41D20282EB,
+      512'hBEE3958332F2939B63B9485A3856C417CF7A50A9A91EF7F7B3A5B4421F462370FFF698183664DC7EDF3888886BD10DC67ABB319BDA0529AE40119A3C6E63CDF3
+    }),
+    576'({
+      64'hACC8E1922AF7B82D,
       512'h0
     })});
 
@@ -773,7 +771,7 @@ package otp_ctrl_part_pkg;
     logic unused_sigs;
     unused_sigs = ^part_digest;
     hw2reg = '0;
-    hw2reg.secret_test_unlock_partition_digest = part_digest[SecretTestUnlockPartitionIdx];
+    hw2reg.sw_test_unlock_partition_digest = part_digest[SwTestUnlockPartitionIdx];
     hw2reg.secret_manuf_partition_digest = part_digest[SecretManufPartitionIdx];
     hw2reg.secret_prod_partition_0_digest = part_digest[SecretProdPartition0Idx];
     hw2reg.secret_prod_partition_1_digest = part_digest[SecretProdPartition1Idx];
@@ -837,9 +835,9 @@ package otp_ctrl_part_pkg;
     logic valid, unused;
     unused = 1'b0;
     valid = 1'b1;
-    // SECRET_TEST_UNLOCK_PARTITION
-    valid &= part_init_done[SecretTestUnlockPartitionIdx];
-    otp_broadcast.secret_test_unlock_partition_data = otp_secret_test_unlock_partition_data_t'(part_buf_data[SecretTestUnlockPartitionOffset +: SecretTestUnlockPartitionSize]);
+    // SW_TEST_UNLOCK_PARTITION
+    valid &= part_init_done[SwTestUnlockPartitionIdx];
+    otp_broadcast.sw_test_unlock_partition_data = otp_sw_test_unlock_partition_data_t'(part_buf_data[SwTestUnlockPartitionOffset +: SwTestUnlockPartitionSize]);
     // SECRET_MANUF_PARTITION
     valid &= part_init_done[SecretManufPartitionIdx];
     otp_broadcast.secret_manuf_partition_data = otp_secret_manuf_partition_data_t'(part_buf_data[SecretManufPartitionOffset +: SecretManufPartitionSize]);
@@ -900,9 +898,9 @@ package otp_ctrl_part_pkg;
     // interface to the keymgr remains stable. The type contains
     // a superset of all options, so we have to initialize it to '0 here.
     otp_keymgr_key = '0;
-    // SECRET_TEST_UNLOCK_PARTITION
-    unused ^= ^{part_digest[SecretTestUnlockPartitionIdx],
-                part_buf_data[SecretTestUnlockPartitionOffset +: SecretTestUnlockPartitionSize]};
+    // SW_TEST_UNLOCK_PARTITION
+    unused ^= ^{part_digest[SwTestUnlockPartitionIdx],
+                part_buf_data[SwTestUnlockPartitionOffset +: SwTestUnlockPartitionSize]};
     // SECRET_MANUF_PARTITION
     unused ^= ^{part_digest[SecretManufPartitionIdx],
                 part_buf_data[SecretManufPartitionOffset +: SecretManufPartitionSize]};
