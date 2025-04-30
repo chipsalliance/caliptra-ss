@@ -222,6 +222,11 @@ task bfm_axi_read_single_mcu_lsu(input  [AXI_AW-1:0] addr,
     bfm_axi_read_single(addr, cptra_ss_strap_mcu_lsu_axi_user_i, data);
 endtask
 
+task bfm_axi_read_single_mci_soc_config(input  [AXI_AW-1:0] addr,
+                                 output [31:0]       data); 
+    bfm_axi_read_single(addr, cptra_ss_strap_mci_soc_config_axi_user_i, data);
+endtask
+
 task bfm_axi_write_single_mcu_lsu(input [AXI_AW-1:0] addr,
                                   input [31:0]       data); 
     bfm_axi_write_single(addr, cptra_ss_strap_mcu_lsu_axi_user_i, data);
@@ -242,4 +247,8 @@ task bfm_axi_write_single_mcu_sram_config(input [AXI_AW-1:0] addr,
     bfm_axi_write_single(addr, cptra_ss_strap_mcu_sram_config_axi_user_i, data);
 endtask
 
+task bfm_axi_write_single_mci_soc_config(input [AXI_AW-1:0] addr,
+                                  input [31:0]       data); 
+    bfm_axi_write_single(addr, cptra_ss_strap_mci_soc_config_axi_user_i, data);
+endtask
 

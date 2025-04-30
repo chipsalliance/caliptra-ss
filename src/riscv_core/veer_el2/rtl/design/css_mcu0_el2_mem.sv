@@ -96,7 +96,7 @@ import css_mcu0_el2_pkg::*;
 
    css_mcu0_el2_mem_if mem_export_local ();
 
-   //assign mem_export_local.clk = clk;
+   assign mem_export_local.clk = clk;
 
    assign mem_export      .clk                = clk;
 
@@ -117,7 +117,6 @@ import css_mcu0_el2_pkg::*;
    assign mem_export_local.dccm_bank_ecc      = mem_export      .dccm_bank_ecc;
 
    // icache data
-   assign icache_export   .clk                        = clk;
    assign icache_export   .ic_b_sb_wren               = mem_export_local.ic_b_sb_wren;
    assign icache_export   .ic_b_sb_bit_en_vec         = mem_export_local.ic_b_sb_bit_en_vec;
    assign icache_export   .ic_sb_wr_data              = mem_export_local.ic_sb_wr_data;

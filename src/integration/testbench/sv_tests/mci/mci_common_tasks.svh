@@ -301,3 +301,153 @@ task mcu_trace_buffer_random_inject_trace_data();
         force `MCU_PATH.trace_rv_i_tval_ip       = $urandom;
     end
 endtask
+
+task wait_for_mcu_reset_req_and_clear(input int timeout=100000); 
+    logic [31:0] reg_data;
+    int i;
+
+    $display("[%0t] Waiting for CPTRA_MCU_RESET_REQ_STS....", $time);
+    for (i = 0; i < timeout; i++) begin
+        bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, reg_data);
+        if (reg_data & `MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_MASK) begin
+            $display("[%0t] MCU_RESET_REQ_SET seen", $time);
+            break;
+        end
+    end
+    if (i == timeout) begin
+        $fatal(1, "[%0t] FATAL: Timeout waiting for HW_FLOW_STATUS_BOOT_FSM == BOOT_WAIT_CPTRA_GO", $time);
+    end
+    
+    $display("[%0t] Setting CPTRA_MCU_RESET_REQ_STS to 0...", $time);
+    bfm_axi_write_single_mci_soc_config(`SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, `MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_MASK);
+    bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, reg_data);
+    if (reg_data & `MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_CPTRA_MCU_RESET_REQ_STS_MASK) begin
+        $fatal(1, "[%0t] FATAL: CPTRA_MCU_RESET_REQ_STS not cleared", $time);
+    end
+
+    $display("[%0t] Done waiting for CPTRA_MCU_RESET_REQ_STS", $time);
+
+endtask
+
+task request_mcu_reset();
+    logic [31:0] reg_data;
+
+    $display("[%0t] Requesting MCU reset...", $time);
+    bfm_axi_write_single_mci_soc_config(`SOC_MCI_TOP_MCI_REG_RESET_REQUEST, `MCI_REG_RESET_REQUEST_MCU_REQ_MASK); 
+endtask
+
+task wait_mcu_out_of_reset(input int timeout=100000);
+    logic [31:0] reg_data;
+    int i;
+
+    $display("[%0t] Waiting for MCU out of reset...", $time);
+    bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_RESET_STATUS, reg_data);
+    for(i = 0; i < 100000; i++) begin
+        if (reg_data & `MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK) begin
+            bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_RESET_STATUS, reg_data);
+        end else begin
+            $display("[%0t] MCU out of reset", $time);
+            break;
+        end
+    end
+
+    if (i == 100000) begin
+        $fatal(1, "[%0t] FATAL: Timeout waiting for MCU out of reset", $time);
+    end
+endtask
+
+
+task wait_mcu_in_reset(input int timeout=100000);
+    logic [31:0] reg_data;
+    int i;
+
+    $display("[%0t] Waiting for MCU in reset...", $time);
+    bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_RESET_STATUS, reg_data);
+    for(i = 0; i < 100000; i++) begin
+        if (!(reg_data & `MCI_REG_RESET_STATUS_MCU_RESET_STS_MASK)) begin
+            bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_RESET_STATUS, reg_data);
+        end else begin
+            $display("[%0t] MCU in reset", $time);
+            break;
+        end
+    end
+
+    if (i == 100000) begin
+        $fatal(1, "[%0t] FATAL: Timeout waiting for MCU in reset", $time);
+    end
+endtask
+
+task wait_mci_boot_fsm_in_state(input mci_boot_fsm_state_e target_state, input int timeout=100000);
+    logic [31:0] reg_data;
+    int i;
+
+    $display("[%0t] Waiting for HW_FLOW_STATUS_BOOT_FSM == 0x%x...", $time, target_state);
+    for (i = 0; i < timeout; i++) begin
+        bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_HW_FLOW_STATUS, reg_data);
+        if ((reg_data & `MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK) == target_state) begin
+            $display("[%0t] HW_FLOW_STATUS_BOOT_FSM == 0x%x detected.", $time, target_state);
+            break;
+        end
+    end
+    if (i == timeout) begin
+        $fatal(1, "[%0t] FATAL: Timeout waiting for HW_FLOW_STATUS_BOOT_FSM == 0x%x", $time, target_state);
+    end
+
+    $display("[%0t] HW_FLOW_STATUS_BOOT_FSM == 0x%x detected.", $time, target_state);
+
+endtask
+
+task set_mci_boot_fsm_go();
+    logic [31:0] reg_data;
+    $display("[%0t] Setting MCI_BOOTFSM_GO_GO_MASK to 1...", $time);
+    bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO, reg_data);
+    reg_data = reg_data | `MCI_REG_MCI_BOOTFSM_GO_GO_MASK;
+    bfm_axi_write_single_invalid_user(`SOC_MCI_TOP_MCI_REG_MCI_BOOTFSM_GO, reg_data);
+    $display("[%0t] MCI_BOOTFSM_GO_GO set to 1", $time);
+endtask
+
+task mcu_halt_handshake(); 
+    $display("[%t] MCU halt ack handshake start", $time);
+    wait_mcu_halt_req();
+
+    assert_mcu_halt_ack();
+
+    assert_mcu_halt_status();
+
+    clear_mcu_halt_status_on_req_clear();
+    $display("[%t] MCU halt ack handshake complete", $time);
+endtask
+
+task wait_mcu_halt_req();
+    $display("[%t] Waiting for mcu_halt_req_i", $time);
+    while(!cptra_ss_mcu_halt_req_o) begin
+        @(posedge core_clk) ;
+    end
+    $display("[%t] mcu_halt_req_i seen", $time);
+endtask
+
+task assert_mcu_halt_ack();
+    $display("[%t] Asserting mcu_halt_ack_i", $time);
+    @(posedge core_clk) ;
+    cptra_ss_mcu_halt_ack_i_soc_ctrl = 1'b1;
+    $display("[%t] mcu_halt_ack_i asserted", $time);
+endtask
+    
+
+task assert_mcu_halt_status();
+    $display("[%t] Asserting mcu_halt_status_i", $time);
+    @(posedge core_clk) ;
+    cptra_ss_mcu_halt_status_i_soc_ctrl = 1'b1;
+    $display("[%t] mcu_halt_status_i asserted", $time);
+endtask
+
+task clear_mcu_halt_status_on_req_clear();
+    $display("[%t] Clearing mcu_ack/status on req clear", $time);
+    while(cptra_ss_mcu_halt_req_o) begin
+        @(posedge core_clk) ;
+    end
+    cptra_ss_mcu_halt_ack_i_soc_ctrl    = 1'b0;
+    cptra_ss_mcu_halt_status_i_soc_ctrl = 1'b0;
+
+    $display("[%t] cptra_ss_halt_req_o and cptra_ss_cpu_halt_req_o cleared", $time);
+endtask
