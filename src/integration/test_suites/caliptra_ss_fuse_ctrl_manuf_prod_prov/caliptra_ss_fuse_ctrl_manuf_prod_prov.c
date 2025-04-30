@@ -100,7 +100,7 @@ void manuf_prod_provision() {
 
     // Check that all the MANUF and PROD partitionss are writeable.
     for (uint32_t i = 0; i < 12; i++) {
-        if (partitions[i].address <= 0x80) {
+        if (partitions[i].address > 0x40 && partitions[i].address < 0xD0) {
             grant_caliptra_core_for_fc_writes();
         } else {
             grant_mcu_for_fc_writes(); 
@@ -121,7 +121,7 @@ void manuf_prod_provision() {
 
     // Check that only PROD partitions are writeable and writes to MANUF partitions are blocked.
     for (uint32_t i = 0; i < 12; i++) {
-        if (partitions[i].address <= 0x80) {
+        if (partitions[i].address <= 0xD0) {
             grant_caliptra_core_for_fc_writes();
         } else {
             grant_mcu_for_fc_writes(); 

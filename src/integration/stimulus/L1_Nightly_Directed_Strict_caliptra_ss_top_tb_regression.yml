@@ -82,3 +82,5 @@ contents:
         - ../test_suites/smoke_test_lcc_raw_wrong_token/smoke_test_lcc_raw_wrong_token.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_volatile_lock/caliptra_ss_fuse_ctrl_volatile_lock.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_read_lock/caliptra_ss_fuse_ctrl_read_lock.yml
+        - ../test_suites/caliptra_ss_lcc_volatile_unlock_wrong_token/caliptra_ss_lcc_volatile_unlock_wrong_token.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_registers/caliptra_ss_fuse_ctrl_registers.yml

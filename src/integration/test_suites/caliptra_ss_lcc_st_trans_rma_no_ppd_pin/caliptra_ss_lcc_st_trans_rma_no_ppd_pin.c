@@ -63,50 +63,46 @@ void main (void) {
     // state is reached.
     while (1) {
         lcc_initialization();
-        force_PPD_pin();
 
         uint32_t lc_state_curr = read_lc_state();
         uint32_t lc_cnt_curr = read_lc_counter();
-        uint32_t lc_cnt_next = lc_cnt_curr + 1; 
+        uint32_t lc_cnt_next = lc_cnt_curr + 1;
 
         VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
         VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
 
-        uint32_t count = 0;
-        memset(buf, 0, sizeof(buf));
-        for (uint32_t i = 1, k = 0; (i + lc_state_curr)< NUM_LC_STATES; i++) {
-            if (trans_matrix[lc_state_curr][i+lc_state_curr] != INV) {
-                buf[count] = i + lc_state_curr;
-                count++;
+        if (lc_cnt_curr == 24) {
+            VPRINTF(LOW, "INFO: reached max. LC counter value, finish test test\n");
+            for (uint8_t i = 0; i < 160; i++) {
+                __asm__ volatile ("nop"); // Sleep loop as "nop"
             }
+
+            SEND_STDOUT_CTRL(0xff);
         }
 
-        if (count) {
-            uint32_t lc_state_next = buf[xorshift32() % count];
-            VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
-
-            lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-            if (lc_state_next != SCRAP) {
-                // We should see: Expected Transition Count E**or detected.
-                transition_state_req_with_expec_error(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
-            } else {
-                // Entering SCRAP state should also be possible when reaching the max. lc counter value.
-                transition_state(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
-            }
-            
-
+        uint32_t lc_state_next = RMA;
+        if (trans_matrix[lc_state_curr][lc_state_next] == INV) {
+            VPRINTF(LOW, "Info: transition from %d into RMA not possible, finish test\n", lc_state_curr);
             goto epilogue;
         }
+
+        lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
+
+        transition_state_req_with_expec_error(lc_state_next,
+                             tokens[token_type][0],
+                             tokens[token_type][1],
+                             tokens[token_type][2],
+                             tokens[token_type][3],
+                             token_type != ZER);
+        wait_dai_op_idle(0);
+
+        uint32_t lc_state_after_transition = read_lc_state();
+        // Check if we are still in the start state.
+        if (lc_state_after_transition != lc_state_curr) {
+            VPRINTF(LOW, "ERROR: incorrect counter: exp: %d, act: %d\n", lc_state_curr, lc_state_after_transition);
+            goto epilogue;
+        }
+        goto epilogue; 
     }
     
 epilogue:
