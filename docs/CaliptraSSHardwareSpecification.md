@@ -6,6 +6,7 @@
 <h3 align="center"> Version 1p0-rc1 </h3>
 
 - [Scope](#scope)
+  - [Document Version](#document-version)
 - [Caliptra Subsystem Requirements](#caliptra-subsystem-requirements)
   - [Definitions](#definitions)
   - [Caliptra-Passive-Mode (Legacy)](#caliptra-passive-mode-legacy)
@@ -805,6 +806,8 @@ For conditional transitions, the LCC can also branch different states (TEST_UNLO
 # Manufacturer Control Unit (MCU)
 
 MCU is an instance of VeeR EL2 core. The following features are enabled on MCU - iCache, dedicated DCCM, AXI interfaces with seperate AXI USER ID to ROM and MCI, bit manipulation extensions that we have for Caliptra core (Zba, Zbb, Zbc, Zbs) and PMP + SMEPMP with max PMP entries. Please see Caliptra subsystem integration spec for the configuration options available at subsystem level.
+
+If the MCU VeeR instance must be regenerated with new configuration, a shell script is available in the Caliptra Subsystem repository. The script is located at `tools/scripts/veer_build_command.sh`.
 
 # Manufacturer Control Interface (MCI)
 ## Overview
