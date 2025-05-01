@@ -18,6 +18,8 @@ lappend VERILOG_OPTIONS MCU_RV_BUILD_AXI4
 lappend VERILOG_OPTIONS I3C_USE_AXI
 # TODO: This AXI_ID_WIDTH is probably way larger than needed.
 lappend VERILOG_OPTIONS AXI_ID_WIDTH=19 AXI_USER_WIDTH=32 AXI_DATA_WIDTH=32 AXI_ADDR_WIDTH=32
+# Might be removed in newer RTL? TLUL has compilation failure
+lappend VERILOG_OPTIONS CALIPTRA_AXI_ID_WIDTH=19 CALIPTRA_AXI_USER_WIDTH=32
 
 set_property verilog_define $VERILOG_OPTIONS [current_fileset]
 puts "\n\nVERILOG DEFINES: [get_property verilog_define [current_fileset]]"
