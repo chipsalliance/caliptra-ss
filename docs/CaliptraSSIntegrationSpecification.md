@@ -2,13 +2,14 @@
   <img src="./images/OCP_logo.png" alt="OCP Logo">
 </div>
 
-<h1 align="center"> Caliptra Subsystem Integration Specification v0p8 </h1>
+<h1 align="center"> Caliptra Subsystem Gen 2.0 Integration Specification </h1>
+<h3 align="center"> Version 1p0-rc1 </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
   - [Related repositories \& specifications](#related-repositories--specifications)
 - [Overview](#overview)
-- [Calpitra Subsystem High level diagram](#calpitra-subsystem-high-level-diagram)
+- [Caliptra Subsystem High level diagram](#caliptra-subsystem-high-level-diagram)
 - [Integration Considerations](#integration-considerations)
   - [Design Considerations](#design-considerations)
   - [Verification Considerations](#verification-considerations)
@@ -24,36 +25,50 @@
     - [Reset](#reset)
     - [Power Good Signal](#power-good-signal)
     - [Connecting AXI Interconnect](#connecting-axi-interconnect)
+    - [Caliptra Subsystem Reference Register Map](#caliptra-subsystem-reference-register-map)
     - [FW Execution Control Connections](#fw-execution-control-connections)
     - [Caliptra Core Reset Control](#caliptra-core-reset-control)
+  - [SRAM implementation](#sram-implementation)
+    - [Overview](#overview-1)
+    - [RISC-V internal memory export](#risc-v-internal-memory-export)
+    - [SRAM timing behavior](#sram-timing-behavior)
+    - [SRAM parameterization](#sram-parameterization)
+    - [Example SRAM machine check reliability integration](#example-sram-machine-check-reliability-integration)
+      - [Error detection and logging](#error-detection-and-logging)
+      - [Error injection](#error-injection)
+      - [Caliptra Subsystem error and recovery flow](#caliptra-subsystem-error-and-recovery-flow)
   - [Programming interface](#programming-interface)
   - [Sequences](#sequences)
   - [How to test](#how-to-test)
 - [Caliptra Core](#caliptra-core)
 - [MCU (Manufacturer Control Unit)](#mcu-manufacturer-control-unit)
-  - [Overview](#overview-1)
+  - [Overview](#overview-2)
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
   - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
     - [MCU External Interrupt Connections](#mcu-external-interrupt-connections)
 - [Fuse Controller](#fuse-controller)
-  - [Overview](#overview-2)
+  - [Overview](#overview-3)
   - [Parameters \& Defines](#parameters--defines-2)
   - [Interface](#interface)
   - [Memory Map	/ Address map](#memory-map-address-map)
   - [FC Integration Requirements](#fc-integration-requirements)
+  - [Direct Access Interface](#direct-access-interface)
+  - [Initialization](#initialization)
   - [Programming interface](#programming-interface-1)
+  - [Readout Sequence](#readout-sequence)
   - [Sequences: Reset, Boot](#sequences-reset-boot)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
+  - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
 - [Fuse Controller Macro](#fuse-controller-macro)
-  - [Overview](#overview-3)
-  - [Parameters \& Defines](#parameters--defines-3)
+  - [Overview](#overview-4)
+  - [Paramteres \& Defines](#paramteres--defines)
   - [FC Macro Integration Requirements](#fc-macro-integration-requirements)
   - [FC Macro Test Interface](#fc-macro-test-interface)
 - [Life Cycle Controller](#life-cycle-controller)
-  - [Overview](#overview-4)
-  - [Parameters \& Defines](#parameters--defines-4)
+  - [Overview](#overview-5)
+  - [Parameters \& Defines](#parameters--defines-3)
   - [Interface](#interface-1)
   - [Memory Map / Address Map](#memory-map--address-map)
   - [LC Integration Requirements](#lc-integration-requirements)
@@ -64,8 +79,8 @@
     - [Functional Tests](#functional-tests)
     - [Advanced Tests](#advanced-tests)
 - [MCI](#mci)
-  - [Overview](#overview-5)
-  - [Parameters \& Defines](#parameters--defines-5)
+  - [Overview](#overview-6)
+  - [Parameters \& Defines](#parameters--defines-4)
   - [Interface](#interface-2)
   - [Memory Map	/ Address map](#memory-map-address-map-1)
     - [Top Level Memory Map](#top-level-memory-map)
@@ -103,31 +118,33 @@
       - [MCU Hitless FW Update](#mcu-hitless-fw-update)
       - [MCU Warm Reset FW Update](#mcu-warm-reset-fw-update)
     - [Error Flows](#error-flows)
-  - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
   - [Other requirements](#other-requirements)
 - [I3C core](#i3c-core)
-  - [Overview](#overview-6)
+  - [Overview](#overview-7)
   - [Integration Considerations](#integration-considerations-1)
-  - [Paratmeters and defines](#paratmeters-and-defines)
+  - [Parameters and defines](#parameters-and-defines)
   - [Interface](#interface-3)
   - [I3C Integration Requirements](#i3c-integration-requirements)
   - [Programming Sequence](#programming-sequence)
     - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
     - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
-  - [How to test : Smoke \& more](#how-to-test--smoke--more-2)
-- [CDC Analysis and Constraints](#cdc-analysis-and-constraints)
-  - [Known Issues](#known-issues)
-  - [CDC Constraint](#cdc-constraint)
-  - [Analysis Result](#analysis-result)
-- [Recommended LINT rules](#recommended-lint-rules)
-  - [Known Lint Issue](#known-lint-issue)
+  - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
+  - [CDC Analysis and Constraints](#cdc-analysis-and-constraints)
+    - [Known Issues](#known-issues)
+    - [CDC Constraint](#cdc-constraint)
+    - [Analysis Result](#analysis-result)
+- [Reset Domain Crossing](#reset-domain-crossing)
+  - [Reset Architecture](#reset-architecture)
+  - [Reset Domain Stamping and Constraints](#reset-domain-stamping-and-constraints)
+  - [Reset Sequencing](#reset-sequencing)
+  - [RDC Waivers](#rdc-waivers)
+- [Synthesis](#synthesis)
+  - [Recommended LINT rules](#recommended-lint-rules)
+    - [Known Lint Issue](#known-lint-issue)
 - [Terminology](#terminology)
 
 
 # Scope
-
-<span style="color:red">**Disclaimer**: Internal Draft Document
-This document is a work in progress and intended for internal use only. It may contain incomplete or preliminary information subject to change. Do not refer to, share, or rely on this document unless explicitly released in its final version. </span>
 
 For Caliptra Subsystem, this document serves as a hardware integration specification. The scope of this document is to assist integrators in the integration of Caliptra Subsystem. It is not intended to serve as a hardware specification or to include micro-architectural details. This document includes Caliptra Subsystem top-level details along with parameters, defines, interfaces, memory map, programming reference, and guidelines on how to test the integration of the design.
 
@@ -137,6 +154,7 @@ For Caliptra Subsystem, this document serves as a hardware integration specifica
 | Date            |   Document Version | Description       |
 |-----------------|--------------------|-------------------|
 | Jan 31st, 2025  |   v0p8             | Work in progress  |
+| Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifcations updated with:<br> - Detail on usage of all Subsystem flows such as Streaming Boot, Mailbox operation, and Debug Unlock<br> - Details on design connectivity with top-level ports<br> - Requirements and recommendations for integrators when adding Caliptra Subsystem to SoC designs  |
 
 </div>
 
@@ -148,6 +166,7 @@ The components described in this document are either obtained from open-source G
 
 | IP/Block      | Code (GitHub URL)                                                         | Documentation (URL)                                                           |
 |---------------|---------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| Caliptra      | [GitHub - chipsalliance/Caliptra](https://github.com/chipsalliance/Caliptra)| [Caliptra Gen 2.0 Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/caliptra_20/Caliptra.md)
 | Caliptra-SS   | [GitHub - chipsalliance/caliptra-ss](https://github.com/chipsalliance/caliptra-ss)| [Hardware Specification Document](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md)
 | Caliptra-rtl  | [GitHub - chipsalliance/caliptra-rtl](https://github.com/chipsalliance/caliptra-rtl)      | [Caliptra RTL documentation](https://github.com/chipsalliance/caliptra-rtl/tree/main/docs) |
 | Cores-VeeR    | [GitHub - chipsalliance/Cores-VeeR-EL2](https://github.com/chipsalliance/Cores-VeeR-EL2)  | [VeeR EL2 Programmer’s Reference Manual](http://cores-swerv-el2/RISC-V_SweRV_EL2_PRM.pdf%20at%20master%20%C2%B7) |
@@ -158,7 +177,7 @@ The components described in this document are either obtained from open-source G
 
 The Caliptra Subsystem is designed to provide a robust Root of Trust (RoT) for datacenter-class System on Chips (SoCs), including CPUs, GPUs, DPUs, and TPUs. It integrates both hardware and firmware components to deliver essential security services such as identity establishment, measured boot, and attestation. By incorporating the Caliptra Subsystem, integrators can enhance the security capabilities of their SoCs, providing a reliable RoT that meets industry standards and addresses the evolving security needs of datacenter environments.
 
-# Calpitra Subsystem High level diagram
+# Caliptra Subsystem High level diagram
 
 The following diagram provides a high-level overview of the Caliptra subsystem. It illustrates the key components and their interconnections within the system. For an in-depth understanding of the Caliptra Subystem refer to [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md).
 
@@ -169,9 +188,9 @@ Following high-level diagram helps integrators understand the overall architectu
 
 Caliptra Subsystem includes:
 
-  - **Caliptra Core**: The Caliptra Core IP. For more information, see[ Caliptra: A Datacenter System on a Chip (SoC) Root of Trust (RoT)](https://chipsalliance.github.io/Caliptra/doc/Caliptra.html).
-  - **MCU (Manufactures Control Unit)**: A microcontroller unit that manages various control tasks within the subsystem.
-  - **I3C Core**: An interface for connecting and communicating with I3C devices, which are used for providing streaming boot support and communicates with other I3C host controllers.
+  - **Caliptra Core**: The Caliptra Core IP. For more information, see [Caliptra: A Datacenter System on a Chip (SoC) Root of Trust (RoT)](https://chipsalliance.github.io/Caliptra/doc/Caliptra.html).
+  - **MCU (Manufacturer Control Unit)**: A microcontroller unit that manages various control tasks within the subsystem.
+  - **I3C Core**: An interface for connecting and communicating with I3C devices, which are used for providing streaming boot support and communicating with other I3C host controllers.
   - **Life Cycle Controller**: A component that manages the different stages of the subsystem's lifecycle, including initialization, operation, and shutdown.
   - **Fuse Controller (OTP)**: A one-time programmable memory controller used for storing critical configuration data and security keys.
   - **MCI (Manufacturer Control Interface (for MCU))**: Manages the communication between the processor and the memory components.
@@ -201,7 +220,7 @@ The integrator must connect the I3C core (two target I3C devices) to the appropr
 
 # Verification View of Caliptra Subsystem
 
-Follwing block diagram shows details on verification view of Caliptra Subsystem
+The following block diagram shows details on verification view of Caliptra Subsystem
 
 ![alt text](./images/ValidationViewofSS.png)
 
@@ -239,7 +258,7 @@ The integration of the Caliptra Subsystem begins with the instantiation of the t
 
 ## Parameters & Defines
 
-File at path includes parameters and defines for Caliptra Subsystem `src/integration/rtl/caliptra_ss_includes.svh`
+File at this path in the repository includes parameters and defines for Caliptra Subsystem `src/integration/rtl/caliptra_ss_includes.svh`
 
 
 ## Interfaces & Signals
@@ -431,7 +450,7 @@ The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_c
   - **Required Frequency** Same as `cptra_ss_clk_i`.
   - **Clock Source** Caliptra SS MCI clock gater
   - **Integration Notes**
-     1. MCU SRAM and MCU MBOX memrories shall be connected to this clock to avoid RDC issues.
+     1. MCU SRAM and MCU MBOX memories shall be connected to this clock to avoid RDC issues.
      2. Clock shall be paired with `cptra_ss_rst_b_o` to properly avoid RDC issues.
 
 ### Reset
@@ -456,7 +475,7 @@ The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_reset_n` to ensure `cpt
    - **Integration Notes**
      1. SOCs shall use this reset for any memory logic connected to MCU SRAM or MCU MBOX to avoid RDC corruption of the memories.
      2. It is recommended to be used for SOC AXI interconnect if it is on the same reset domain as Caliptra SS to avoid RDC issues.
-     3. Logic shall paired with `cptra_ss_rdc_clk_cg_o` to avoid RDC issues.
+     3. Logic shall be paired with `cptra_ss_rdc_clk_cg_o` to avoid RDC issues.
 
 ### Power Good Signal
 
@@ -485,6 +504,14 @@ Integrator must connect, following list of manager and subordinates to axi inter
   | `cptra_ss_mci_m_axi_if`       | Manager interface for Manufacturer Control Interface (for MCU) (MCI)           |
   | `cptra_ss_cptra_core_m_axi_if`| Manager interface for the Caliptra Core AXI transactions          |
 
+- Subordinate Address Map requirements
+  - The MCU is configured with several internal address assignments that must not be used when assigning SOC addresses for AXI subordinates on the AXI interconnect. The following table shows these restricted regions:
+
+    | Start Address    | End Address      | Name        | Description                |
+    |------------------|------------------|-------------------|---------------------------|
+    | 64'h5000_0000    | 64'h5FFF_FFFF    | MCU DCCM             | MCU Data Closely Coupled Memory. No external subordinates may be assigned address space in the same 256MiB region as the DCCM. For more details, refer to the VeeR EL2 Programmer's Reference Manual.   |
+    | 64'h6000_0000    | 64'h6FFF_FFFF    | MCU PIC              | MCU Programmable Interrupt Controller. No external subordinates may be assigned address space in the same 256MiB region as the PIC. For more details, refer to the VeeR EL2 Programmer's Reference Manual.    |
+
 - Subordinate Address Map (reference only) / List of sub connected to Interconnect
 
   - The following address map is a **suggested address** map for subordinates for the subsystem design. It details the memory layout and the connections between different components within the Caliptra subsystem.
@@ -500,7 +527,7 @@ Integrator must connect, following list of manager and subordinates to axi inter
     | 64'h7000_0200    | 64'h7000_03FF    | 6     | Fuse Ctrl Core    | Fuse Controller Core      |
     | 64'h7000_0400    | 64'h7000_05FF    | 7     | Life Cycle Ctrl   | Life Cycle Controller     |
 
-- Follwing are the header files path for the below suggested address map. These files would be useful in defining the address map using the given RDL Files.
+- Following are the header files path for the below suggested address map. These files would be useful in defining the address map using the given RDL Files.
 
   - `caliptra-ss\src\integration\rtl\soc_address_map.h`
   - `caliptra-ss\src\integration\rtl\soc_address_map_defines.svh `
@@ -528,6 +555,106 @@ If an SOC wants to keep Caliptra in reset they can tie off `cptra_ss_mci_cptra_r
 If an SOC wants to modify Caliptra reset they can do so by adding additional logic to the above signals.
 
 **NOTE**: Caliptra SS RDC and CDC are only evaluated when the MCI control is looped back to Caliptra. Any modification to this reset control requires a full RDC and CDC analysis done by the SOC integration team.
+
+## SRAM implementation
+
+### Overview
+
+SRAMs are instantiated at the SoC level. Caliptra Subsystem provides the interface to export SRAMs from internal components. Components that export SRAMs include:
+ - Caliptra Core (see Caliptra Core integration specification)
+ - MCU (RISC-V core)
+ - MCI (Mailbox SRAM and MCU SRAM)
+
+SRAM repair logic (for example, BIST) and its associated fuses, which is proprietary to companies and their methodologies, is implemented external to the Caliptra Subsystem boundary.
+
+SRAMs must NOT go through BIST or repair flows across a “warm reset”. SoC shall perform SRAM repair during a powergood cycling event ("cold reset") and only prior to deasserting `cptra_ss_rst_b_i`. During powergood cycling events, SoC shall also initialize all entries in the SRAM to a 0 value, prior to deasserting `cptra_ss_rst_b_i`.
+
+MCU mailbox and executable SRAMs are implemented with ECC protection. Data width for the mailbox is 32-bits, with 7 parity bits for a Hamming-based SECDED (single-bit error correction and double-bit error detection).
+
+### RISC-V internal memory export
+
+To support synthesis flexibility and ease memory integration to various fabrication processes, all SRAM blocks inside the RISC-V cores (Caliptra Core and MCU) are exported to an external location in the testbench. A single unified interface connects these memory blocks to their parent logic within the RISC-V core. Any memory implementation may be used to provide SRAM functionality in the external location in the testbench, provided the implementation adheres to the interface requirements connected to control logic inside the processor. Memories behind the interface are expected to be implemented as multiple banks of SRAM, from which the RISC-V processor selects the target using an enable vector. The I-Cache has multiple ways, each containing multiple banks of memory, and SOC SRAM implementations for I-Cache must be compatible with the exported interface.
+
+The following memories are exported:
+* Instruction Closely-Coupled Memory (ICCM) (Caliptra Core only)
+* Data Closely Coupled Memory (DCCM) (Caliptra Core and MCU)
+* Instruction Cache (I-Cache) (MCU only)
+
+### SRAM timing behavior
+* [Writes] SRAM input wren signal is asserted simultaneously with input data and address. Input data is stored at the input address 1 clock cycle later.
+* [Reads] SRAM input clock enable signal is asserted simultaneously with input address. Output data is available 1 clock cycle later from a flip-flop register stage.
+
+The following figure shows the SRAM interface timing.
+
+*Figure: SRAM interface timing*
+
+![](./images/Caliptra_SRAM_interface_timing.png)
+
+### SRAM parameterization
+
+Parameterization for ICCM/DCCM/I-Cache memories is derived from the configuration of the VeeR RISC-V core that has been selected for Caliptra Subsystem integration. Parameters defined in the VeeR core determine signal dimensions at the Subsystem top-level interface and drive requirements for SRAM layout. For details about interface parameterization, see the [Interfaces \& Signals](#interfaces--signals) section. 
+
+### Example SRAM machine check reliability integration
+
+This section describes an example implementation of integrator machine check reliability.
+
+This example is applicable to scenarios where an integrator may need control of or visibility into SRAM errors for purposes of reliability or functional safety. In such cases, integrators may introduce additional layers of error injection, detection, and correction logic surrounding SRAMs. The addition of such logic is transparent to the correct function of Caliptra Subsystem, and removes integrator dependency on Caliptra Subsystem components for error logging or injection.
+
+Note that the example assumes that data and ECC codes are in non-deterministic bit-position in the exposed SRAM interface bus. Accordingly, redundant correction coding is shown in the integrator level logic (i.e., integrator\_ecc(calitpra\_data, caliptra\_ecc)). If the Caliptra Subsystem data and ECC are deterministically separable at the Caliptra Subsystem interface, the integrator would have discretion to store the ECC codes directly and calculate integrator ECC codes for the data alone.
+
+*Figure: Example machine check reliability implementation*
+
+![](./images/Caliptra_machine_reliability.png)
+
+#### Error detection and logging
+
+1. Caliptra Subsystem IP shall interface to ECC protected memories.
+2. Caliptra Subsystem IP calculates and applies its own ECC code, which produces a total of 39-bit data written to external or INTEGRATOR instantiated SRAMs.
+3. Each 39-bit bank memory internally calculates 8-bit ECC on a write and stores 47 bits of data with ECC into SRAM.
+4. On read access syndrome is calculated based on 39-bit data.
+5. If parity error is detected and syndrome is valid, then the error is deemed single-bit and correctable.
+6. If no parity error is detected but syndrome == 0 or the syndrome is invalid, the error is deemed uncorrectable.
+7. On both single and double errors, the read data is modified before being returned to Caliptra Subsystem.
+8. Since single-bit errors shall be corrected through INTEGRATOR instantiated logic, Caliptra Subsystem never sees single-bit errors from SRAM.
+9. Double-bit or uncorrectable errors would cause unpredictable data to be returned to Caliptra Subsystem. Since this condition shall be detected and reported to MCRIP, there is no concern or expectation that Caliptra Subsystem will operate correctly after a double error.
+10. On detection, single errors are reported as transparent to MCRIP, double errors are reported as fatal.
+11. Along with error severity, MCRIP logs physical location of the error.
+12. After MCRIP logs an error, it has a choice to send out in-band notification to an external agent.
+13. MCRIP logs can be queried by SoC software.
+
+#### Error injection
+
+1. MCRIP supports two error injection modes: intrusive and non-intrusive.
+2. Intrusive error injection:
+    1. Can force a single or double error to be injected, which would result in incorrect data to be returned on read access.
+    2. The intrusive error injection mode is disabled in Production fused parts via Security State signal.
+3. Non-intrusive error injection:
+    1. Allows external software to write into MCRIP error log registers.
+    2. The non-intrusive error injection does not interfere with the operation of memories.
+    3. The non-intrusive error injection is functional in Production fused parts.
+
+#### Caliptra Subsystem error and recovery flow
+
+1. Caliptra Subsystem Stuck:
+    1. SoC BC timeout mechanism with 300us timeout.
+2. Caliptra Subsystem reports non-fatal error during boot flow:
+    1. `cptra_ss_all_error_non_fatal_o` is an output Caliptra Subsystem signal, which shall be routed to SoC interrupt controller.
+    2. See [MCI error handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure.
+    3. SoC can read the MCI non-fatal error register for error source.
+    4. Assume Caliptra Subsystem can report a non-fatal error at any time.
+    5. SoC should monitor the error interrupt or check it before requesting any Subsystem operations.
+    6. In the event of a non-fatal error during boot, SoC should enter recovery flow and attempt to boot again using alternate boot part/partition.
+    7. If SoC sees that a non-fatal error has occurred AFTER initial bringup, SoC may attempt to recover Caliptra by executing the “Run Self-Test” mailbox command (not yet defined).
+    8. If this command completes successfully, SoC may continue using Caliptra as before.
+    9. If this command is unsuccessful, Caliptra is in an error state for the remainder of the current boot.
+    10. SoC needs to monitor MCRIP for non-fatal ECC errors that are not reported by Caliptra Subsystem.
+3. Caliptra Subsystem reports fatal error during boot flow:
+    1. `cptra_ss_all_error_fatal_o` is an output Caliptra Subsystem signal, which shall be routed to SoC interrupt controller.
+    2. SoC can read the MCI fatal error register for error source.
+    3. Assume Caliptra Subsystem can report a fatal error at any time.
+    4. Fatal errors are generally hardware in nature. SoC may attempt to recover by full reset of the entire SoC. If SoC continues without a full reset Caliptra Subsystem will be unavailable for the remainder of the current boot.
+    5. In the event of an uncorrectable error that is not correctly detected by Caliptra Subsystem, ECC fatal errors shall be reported by SoC MCRIP.
+
 
 ## Programming interface
 
@@ -576,10 +703,16 @@ MCU is encapsulates VeeR EL2 core that includes an iCache, a dedicated DCCM, and
 
 ### Parameters & Defines
 
-> Add the path to MCU parameters and defines.
-src/riscv_core/veer_el2/rtl/defines/css_mcu0_common_defines.vh
-src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_param.vh
-src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_pdef.vh
+The VeeR EL2 core instance used for MCU has been configured with these options:
+- DCCM size: 16KiB
+- I-Cache depth: 16KiB
+- ICCM: Disabled
+- External Interrupt Vectors: 255
+
+The following files from the Caliptra Subsystem repository contain the MCU configuration. Review these files for comprehensive list of MCU capabilities.<br>
+src/riscv_core/veer_el2/rtl/defines/css_mcu0_common_defines.vh<br>
+src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_param.vh<br>
+src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_pdef.vh<br>
 src/riscv_core/veer_el2/rtl/defines/defines.h
 
 ## MCU Integration Requirements
@@ -589,21 +722,10 @@ There are two main requirements for the MCU integration.
 - **Ensure Proper Memory Mapping**
   - The memory layout must match the physical memory configuration of the SoC.
   - If modifications are required, update the base addresses and section placements accordingly.
-
-- **Code Placement & Execution:**
-  - The `.text` section starts at `0x80000000` and should be mapped to executable memory.
-  - The `_start` entry point must be correctly set to align with boot ROM execution.
+  - The address regions assigned to PIC and DCCM must not include any other AXI subordinates on the interconnect.
 
 - **Enabling Programming interface.**
   - Please refer to section [MCU Programming Interface](#MCU-Programming-interface) for details on reference linker file for the MCU bringup.
-
-- **Data and Stack Placement Considerations**
-  - The `.bss` and `.data` sections should be properly initialized by the runtime startup code.
-  - The stack must be correctly set up before function execution to avoid memory corruption.
-
-- **I/O Mapped Data Handling**
-  - The `.data.io` section at `0x21000410` is used for memory-mapped peripherals.
-  - Ensure correct access permissions are configured in the memory controller.
 
 ## MCU Programming interface
 
@@ -613,39 +735,11 @@ This linker script defines the memory layout for the **MCU** firmware. It specif
 
 **Example** Linker File can be found at : [ integration/test_suite/libs/riscv_hw_if/link.ld  ](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/test_suites/libs/riscv_hw_if/link.ld)
 
-By following this linker script configuration, the **validation** firmware can be correctly mapped and executed within the **Caliptra Subsystem**.
-
-The following memory regions are defined and must be adhered to during integration:
-
-- **Memory Region Allocation**
-
-  - **DCCM (Data Closely Coupled Memory)**
-    - **Base Address:** `0x50000000`
-    - **Section:** `.dccm`
-    - **Usage:** Used for tightly coupled memory operations.
-    - **End Symbol:** `_dccm_end` (marks the end of this region).
-
-  - **Data and Read-Only Sections**
-    - **Base Address:** `0x21200000`
-    - **Sections:** `.data`, `.rodata`, `.srodata`, `.sbss`
-    - **Usage:** Stores initialized data, read-only data, and small uninitialized sections.
-    - **End Symbol:** `_data_end`
-
-  - **BSS (Uninitialized Data Section)**
-    - **Base Address:** `0x21210000`
-    - **Section:** `.bss`
-    - **Usage:** Stores uninitialized global and static variables.
-    - **End Symbol:** `_bss_end`
-
-  - **Stack Configuration**
-    - **Alignment:** 16-byte boundary
-    - **Size:** `0x1000` (4 KB)
-    - **Usage:** Defines the stack memory location for runtime operations.
-
-  - **I/O Mapped Data Section**
-    - **Base Address:** `0x21000410`
-    - **Section:** `.data.io`
-    - **Usage:** Used for memory-mapped I/O operations.
+By following this linker script configuration, the **validation** firmware can be correctly mapped and executed within the **Caliptra Subsystem**. Memory mapping for the validation firmware follows these principles:
+ - Instructions are stored in ROM for initial boot (.text)
+ - Read-only data is stored in ROM
+ - Stack and data sections are allocated to DCCM
+ - MCU SRAM is used for any combination of instructions and data to demonstrate program execution, data storage and persistence, streaming boot operations, and region protections that are enforced by MCI. Test firmware and corresponding linker scripts may be found in the repository test suites directory.
 
 ### MCU External Interrupt Connections
 
@@ -1997,7 +2091,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
   - Connection to AXI interface
   - GPIO connection to I3C Host (VIP or RTL)
 
-## Paratmeters and defines
+## Parameters and defines
 
 | Parameter          | Default Value                         | Description                                 |
 |--------------------|---------------------------------------|---------------------------------------------|
