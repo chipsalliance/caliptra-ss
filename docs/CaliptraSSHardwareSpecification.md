@@ -120,6 +120,15 @@
 
 This document defines technical specifications for a subsystem design utilizing Caliptra RoT in Subystem Mode. This document, along with [Caliptra Hardware Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraHardwareSpecification.md), shall comprise the Caliptra Subsystem technical specification.
 
+## Document Version
+<div align="center">
+
+| Date            |   Document Version | Description       |
+|-----------------|--------------------|-------------------|
+| Jan 31st, 2025  |   v0p8             | Work in progress  |
+| Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifcations updated with:<br> - Updated details on component features (MCU mailbox, MCU trace buffer, MCI error aggregation, FC fuse zeroization)<br> - Details on design connectivity with top-level ports<br> - Port and register updates  |
+
+</div>
 
 # Caliptra Subsystem Requirements
 ## Definitions
