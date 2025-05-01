@@ -48,6 +48,7 @@ HW & Integration spec updates coverage all the modules
 - Life Cycle Controller interactions and life cycle state changes
 - Life Cycle Controller & Fuse Controller interactions
 
+# Previous Releases #
 
 ## Caliptra Subsystem 0.8 Release Notes
 _*Release Date: 2025/01/20*_
