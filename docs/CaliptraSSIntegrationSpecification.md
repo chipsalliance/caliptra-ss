@@ -3,7 +3,7 @@
 </div>
 
 <h1 align="center"> Caliptra Subsystem Gen 2.0 Integration Specification </h1>
-<h3 align="center"> Version 1p0 </h3>
+<h3 align="center"> Version 1p0-rc1 </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
