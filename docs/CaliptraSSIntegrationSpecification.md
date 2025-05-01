@@ -120,6 +120,7 @@
   - [CDC Constraint](#cdc-constraint)
   - [Analysis Result](#analysis-result)
 - [Recommended LINT rules](#recommended-lint-rules)
+  - [Known Lint Issue](#known-lint-issue)
 - [Terminology](#terminology)
 
 
@@ -2260,6 +2261,11 @@ Design converges at 400MHz 0.72V using an industry standard, advanced technology
 ## Recommended LINT rules
 
 A standardized set of lint rules is used to sign off on each release. The lint policy may be provided directly to integrators upon request to ensure lint is clean in the SoC.
+
+### Known Lint Issue
+
+- Signal width mismatch in [Line 271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) of mcu_mbox_csr.sv
+  - MSB on RHS will be optimized out during synthesis
 
 # Terminology
 
