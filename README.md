@@ -87,7 +87,7 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
 ├── config
 │   └── compilespecs.yml
 ├── docs
-│   ├── Caliptra 2.0 Subsystem Specification 1.pdf
+│   ├── Caliptra_Gen2_SS_TestPlan.xlsx
 │   ├── CaliptraSSHardwareSpecification.md
 │   ├── CaliptraSSIntegrationSpecification.md
 │   └── images
