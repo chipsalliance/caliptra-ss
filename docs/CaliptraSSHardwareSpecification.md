@@ -2,7 +2,8 @@
   <img src="./images/OCP_logo.png" alt="OCP Logo">
 </div>
 
-<h1 align="center"> Caliptra Subsystem Hardware Specification v0p8 </h1>
+<h1 align="center"> Caliptra Subsystem Gen 2.0 Hardware Specification </h1>
+<h3 align="center"> Version 1p0 </h3>
 
 - [Scope](#scope)
 - [Caliptra Subsystem Requirements](#caliptra-subsystem-requirements)
@@ -28,47 +29,46 @@
   - [Hardware Registers](#hardware-registers)
   - [Streaming Boot (Recovery) Interface Wires](#streaming-boot-recovery-interface-wires)
   - [I3C Streaming Boot (Recovery) Flow](#i3c-streaming-boot-recovery-flow)
-  - [Caliptra ROM Requirements](#caliptra-rom-requirements)
+  - [Caliptra ROM Requirements for OCP Streaming Boot](#caliptra-rom-requirements-for-ocp-streaming-boot)
   - [I3C and Caliptra-AXI Interactions](#i3c-and-caliptra-axi-interactions)
-- [Caliptra AXI Manager \& DMA assist](#caliptra-axi-manager--dma-assist)
+- [Caliptra Core AXI Manager \& DMA assist](#caliptra-core-axi-manager--dma-assist)
   - [AXI Feature Support](#axi-feature-support)
   - [Routes](#routes)
-  - [Streaming Boot Payloads](#streaming-boot-payloads)
+  - [OCP Streaming Boot Payloads](#ocp-streaming-boot-payloads)
   - [Programming Flowchart {#programming-flowchart}](#programming-flowchart-programming-flowchart)
   - [Descriptor](#descriptor)
 - [Caliptra Subsystem Fuse Controller](#caliptra-subsystem-fuse-controller)
   - [Partition Details](#partition-details)
-    - [Key Characteristics of Secret Partitions](#key-characteristics-of-secret-partitions)
+    - [Key Characteristics of Secret Partitions:](#key-characteristics-of-secret-partitions)
   - [Partition-Specific Behaviors](#partition-specific-behaviors)
     - [Life Cycle Partition](#life-cycle-partition)
     - [Vendor Test Partition](#vendor-test-partition)
   - [Locking the Validated Public Key Partition](#locking-the-validated-public-key-partition)
-    - [PK Hash Partition](#pk-hash-partition)
-    - [PK Hash Revocation Partition](#pk-hash-revocation-partition)
-    - [Volatile Locking Mechanism](#volatile-locking-mechanism)
   - [Hardware Integrity Checker](#hardware-integrity-checker)
     - [Purpose](#purpose)
   - [Zeroization Flow for Secret FUSEs](#zeroization-flow-for-secret-fuses)
     - [Conditions for Zeroization](#conditions-for-zeroization)
     - [Zeroization Process](#zeroization-process)
     - [Cold Reset and Final Zeroization](#cold-reset-and-final-zeroization)
+  - [Notes](#notes)
   - [General Guidance](#general-guidance)
     - [Reset Considerations](#reset-considerations)
     - [Programming Already Programmed Regions](#programming-already-programmed-regions)
 - [Caliptra Subsystem Life Cycle Controller](#caliptra-subsystem-life-cycle-controller)
   - [Caliptra Subsystem, SOC Debug Architecture Interaction](#caliptra-subsystem-soc-debug-architecture-interaction)
   - [Caliptra Subsystem LCC State Definitions](#caliptra-subsystem-lcc-state-definitions)
-  - [DFT & DFD Life-cycle States](#dft--dfd-life-cycle-states)
+  - [DFT \& DFD Life-cycle States](#dft--dfd-life-cycle-states)
   - [LCC State and State Decoder Output Ports](#lcc-state-and-state-decoder-output-ports)
   - [TAP Pin Muxing](#tap-pin-muxing)
     - [How does Caliptra Subsystem enable manufacturing debug mode?](#how-does-caliptra-subsystem-enable-manufacturing-debug-mode)
+      - [Flow Explanation:](#flow-explanation)
   - [Production Debug Unlock Architecture](#production-debug-unlock-architecture)
     - [Overview of Debug Unlock Initiation](#overview-of-debug-unlock-initiation)
     - [Secure Debug Unlock Protocol](#secure-debug-unlock-protocol)
   - [Masking Logic for Debugging Features in Production Debug Mode (MCI)](#masking-logic-for-debugging-features-in-production-debug-mode-mci)
-  - [LCC Interpretation for Caliptra \"Core\" Security States](#lcc-interpretation-for-caliptra-core-security-states)
+  - [LCC Interpretation for Caliptra “Core” Security States](#lcc-interpretation-for-caliptra-core-security-states)
   - [Exception: Non-Volatile Debugging Infrastructure and Initial RAW State Operations](#exception-non-volatile-debugging-infrastructure-and-initial-raw-state-operations)
-  - [SOC LCC Interface usage & requirements](#soc-lcc-interface-usage--requirements)
+  - [SOC LCC Interface usage \& requirements](#soc-lcc-interface-usage--requirements)
   - [LCC Module: Summarized Theory of operation](#lcc-module-summarized-theory-of-operation)
 - [Manufacturer Control Unit (MCU)](#manufacturer-control-unit-mcu)
 - [Manufacturer Control Interface (MCI)](#manufacturer-control-interface-mci)
@@ -795,7 +795,7 @@ For conditional transitions, the LCC can also branch different states (TEST_UNLO
 
 # Manufacturer Control Unit (MCU)
 
-MCU is another instance of VeeR EL2 core. The following features are enabled on MCU - iCache, dedicated DCCM, AXI interfaces with seperate AXI USER ID to ROM and MCI, bit manipulation extensions that we have for Caliptra core (Zba, Zbb, Zbc, Zbs) and PMP + SMEPMP with max PMP entries. Please see Caliptra subsystem integration spec for the configuration options available at subsystem level.
+MCU is an instance of VeeR EL2 core. The following features are enabled on MCU - iCache, dedicated DCCM, AXI interfaces with seperate AXI USER ID to ROM and MCI, bit manipulation extensions that we have for Caliptra core (Zba, Zbb, Zbc, Zbs) and PMP + SMEPMP with max PMP entries. Please see Caliptra subsystem integration spec for the configuration options available at subsystem level.
 
 # Manufacturer Control Interface (MCI)
 ## Overview
