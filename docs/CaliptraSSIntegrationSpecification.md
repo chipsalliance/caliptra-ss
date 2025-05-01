@@ -115,6 +115,11 @@
     - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
     - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
   - [How to test : Smoke \& more](#how-to-test--smoke--more-2)
+- [CDC Analysis and Constraints](#cdc-analysis-and-constraints)
+  - [Known Issues](#known-issues)
+  - [CDC Constraint](#cdc-constraint)
+  - [Analysis Result](#analysis-result)
+- [Recommended LINT rules](#recommended-lint-rules)
 - [Terminology](#terminology)
 
 
@@ -2143,6 +2148,28 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
     - MCTP Test send random 68 bytes of data and PEC to RX queue
     - MCU reads and compares the data with expected data
 
+## CDC Analysis and Constraints
+
+Clock Domain Crossing (CDC) analysis is performed on the Caliptra Subsystem Design. The following are the results and recommended constraints for integrators using standard CDC analysis EDA tools.
+
+In an unconstrained environment, several CDC violations are anticipated. CDC analysis requires the addition of constraints to identify valid synchronization mechanisms and/or static/pseudo-static signals.
+
+### Known Issues
+ Will not affect complete solution.
+  - Suppressible error in [Line 235](https://github.com/chipsalliance/caliptra-rtl/blob/ea416cbe89805221a0cdb92a34a2cfefb795fbec/src/entropy_src/rtl/entropy_src.sv#L235) of entropy_src.sv
+    - Occurs in stub code. Comment out to proceed
+  - Function definition in [Line 45](https://github.com/chipsalliance/caliptra-rtl/blob/ea416cbe89805221a0cdb92a34a2cfefb795fbec/src/caliptra_prim/rtl/caliptra_prim_sparse_fsm_flop.sv#L45) of caliptra_prim_sparse_fsm_flop.sv may cause CDC tool to quit compilation 
+    - CALIPTRA_INC_ASSERT not defined by default
+    - Comment out code under if condition for CDC analysis
+
+### CDC Constraint
+
+- cdc preference -multi_fanout_async
+
+### Analysis Result
+
+Caliptra Subsystem analysis showed no CDC violations
+
 # Reset Domain Crossing
 
 ## Reset Architecture
@@ -2229,6 +2256,10 @@ Synthesis has been performed at CALIPTRA_SS_WRAPPER level which encompasses the 
 - Memories instantiated outside using tech specific macros
 
 Design converges at 400MHz 0.72V using an industry standard, advanced technology node as of 2025 April.
+
+## Recommended LINT rules
+
+A standardized set of lint rules is used to sign off on each release. The lint policy may be provided directly to integrators upon request to ensure lint is clean in the SoC.
 
 # Terminology
 
