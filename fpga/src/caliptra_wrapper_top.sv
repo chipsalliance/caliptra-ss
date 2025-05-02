@@ -1947,6 +1947,9 @@ I think this is the one that isn't used
 logic cptra_rst_b;
 // Looping back cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu
 logic cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu;
+// Looping back MCU Halt Ack Interface
+logic cptra_ss_mcu_halt_status;
+logic cptra_ss_mcu_halt_ack;
 
 caliptra_ss_top caliptra_ss_top_0 (
 
@@ -2087,6 +2090,11 @@ caliptra_ss_top caliptra_ss_top_0 (
     //.cptra_ss_strap_cptra_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value), TODO
     .cptra_ss_strap_mcu_sram_config_axi_user_i(hwif_out.interface_regs.sram_config_user.sram_config_user.value),
     .cptra_ss_strap_mci_soc_config_axi_user_i(hwif_out.interface_regs.soc_config_user.soc_config_user.value),
+    .cptra_ss_mcu_halt_status_o(cptra_ss_mcu_halt_status),
+    .cptra_ss_mcu_halt_status_i(cptra_ss_mcu_halt_status),
+    .cptra_ss_mcu_halt_req_o(),
+    .cptra_ss_mcu_halt_ack_i(cptra_ss_mcu_halt_ack),
+    .cptra_ss_mcu_halt_ack_o(cptra_ss_mcu_halt_ack),
 
     // Caliptra SS MCI MCU SRAM Interface (SRAM, MBOX0, MBOX1)
     .cptra_ss_mci_mcu_sram_req_if,
@@ -2157,16 +2165,16 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_i3c_sda_i(SDA),
     .cptra_ss_i3c_scl_o(i3c_core_scl_o),
     .cptra_ss_i3c_sda_o(i3c_core_sda_o),
+    .cptra_ss_i3c_scl_oe(), // TODO: Connect
+    .cptra_ss_i3c_sda_oe(), // TODO: Connect
     .cptra_ss_sel_od_pp_o(i3c_core_sel_od_pp_o),
 
-    // -- THESE ARE NOT RTL SIGNALS, DO NOT USE THEM
-    .cptra_ss_cptra_core_generic_input_wires_i(),
+    .cptra_i3c_axi_user_id_filtering_enable_i(hwif_out.interface_regs.control.i3c_axi_user_id_filtering.value),
+
+    .cptra_ss_cptra_core_generic_input_wires_i({hwif_out.interface_regs.generic_input_wires[0].value.value, hwif_out.interface_regs.generic_input_wires[1].value.value}),
     .cptra_ss_cptra_core_scan_mode_i(),
     .cptra_error_fatal(),
-    .cptra_error_non_fatal(),
-    .ready_for_fuses(),
-    .ready_for_mb_processing(),
-    .mailbox_data_avail()
+    .cptra_error_non_fatal()
 );
 
     // Hierarchical references to generic output wires register. Use as input to log FIFO.

@@ -57,6 +57,7 @@ regfile interface_regs {
 
         field { sw=rw; hw=r; } bootfsm_brkpoint = 1'b0;
         field { sw=rw; hw=r; } ss_debug_intent = 1'b0;
+        field { sw=rw; hw=r; } i3c_axi_user_id_filtering = 1'b0;
     } control;
 
     reg {

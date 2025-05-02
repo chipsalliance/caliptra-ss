@@ -220,6 +220,10 @@ package caliptra_fpga_realtime_regs_pkg;
     } interface_regs__control__ss_debug_intent__out_t;
 
     typedef struct {
+        logic value;
+    } interface_regs__control__i3c_axi_user_id_filtering__out_t;
+
+    typedef struct {
         interface_regs__control__cptra_pwrgood__out_t cptra_pwrgood;
         interface_regs__control__cptra_ss_rst_b__out_t cptra_ss_rst_b;
         interface_regs__control__cptra_obf_uds_seed_vld__out_t cptra_obf_uds_seed_vld;
@@ -228,6 +232,7 @@ package caliptra_fpga_realtime_regs_pkg;
         interface_regs__control__force_mcu_dmi_uncore_enable__out_t force_mcu_dmi_uncore_enable;
         interface_regs__control__bootfsm_brkpoint__out_t bootfsm_brkpoint;
         interface_regs__control__ss_debug_intent__out_t ss_debug_intent;
+        interface_regs__control__i3c_axi_user_id_filtering__out_t i3c_axi_user_id_filtering;
     } interface_regs__control__out_t;
 
     typedef struct {

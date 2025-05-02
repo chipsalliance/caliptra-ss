@@ -349,6 +349,10 @@ module caliptra_fpga_realtime_regs (
                     logic next;
                     logic load_next;
                 } ss_debug_intent;
+                struct {
+                    logic next;
+                    logic load_next;
+                } i3c_axi_user_id_filtering;
             } control;
             struct {
                 struct {
@@ -618,6 +622,9 @@ module caliptra_fpga_realtime_regs (
                 struct {
                     logic value;
                 } ss_debug_intent;
+                struct {
+                    logic value;
+                } i3c_axi_user_id_filtering;
             } control;
             struct {
                 struct {
@@ -1019,6 +1026,29 @@ module caliptra_fpga_realtime_regs (
         end
     end
     assign hwif_out.interface_regs.control.ss_debug_intent.value = field_storage.interface_regs.control.ss_debug_intent.value;
+    // Field: caliptra_fpga_realtime_regs.interface_regs.control.i3c_axi_user_id_filtering
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.interface_regs.control.i3c_axi_user_id_filtering.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.interface_regs.control && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.interface_regs.control.i3c_axi_user_id_filtering.value & ~decoded_wr_biten[8:8]) | (decoded_wr_data[8:8] & decoded_wr_biten[8:8]);
+            load_next_c = '1;
+        end
+        field_combo.interface_regs.control.i3c_axi_user_id_filtering.next = next_c;
+        field_combo.interface_regs.control.i3c_axi_user_id_filtering.load_next = load_next_c;
+    end
+    always_ff @(posedge clk) begin
+        if(rst) begin
+            field_storage.interface_regs.control.i3c_axi_user_id_filtering.value <= 1'h0;
+        end else begin
+            if(field_combo.interface_regs.control.i3c_axi_user_id_filtering.load_next) begin
+                field_storage.interface_regs.control.i3c_axi_user_id_filtering.value <= field_combo.interface_regs.control.i3c_axi_user_id_filtering.next;
+            end
+        end
+    end
+    assign hwif_out.interface_regs.control.i3c_axi_user_id_filtering.value = field_storage.interface_regs.control.i3c_axi_user_id_filtering.value;
     // Field: caliptra_fpga_realtime_regs.interface_regs.status.cptra_error_fatal
     always_comb begin
         automatic logic [0:0] next_c;
@@ -2079,7 +2109,8 @@ module caliptra_fpga_realtime_regs (
     assign readback_array[2][5:5] = (decoded_reg_strb.interface_regs.control && !decoded_req_is_wr) ? field_storage.interface_regs.control.force_mcu_dmi_uncore_enable.value : '0;
     assign readback_array[2][6:6] = (decoded_reg_strb.interface_regs.control && !decoded_req_is_wr) ? field_storage.interface_regs.control.bootfsm_brkpoint.value : '0;
     assign readback_array[2][7:7] = (decoded_reg_strb.interface_regs.control && !decoded_req_is_wr) ? field_storage.interface_regs.control.ss_debug_intent.value : '0;
-    assign readback_array[2][31:8] = '0;
+    assign readback_array[2][8:8] = (decoded_reg_strb.interface_regs.control && !decoded_req_is_wr) ? field_storage.interface_regs.control.i3c_axi_user_id_filtering.value : '0;
+    assign readback_array[2][31:9] = '0;
     assign readback_array[3][0:0] = (decoded_reg_strb.interface_regs.status && !decoded_req_is_wr) ? field_storage.interface_regs.status.cptra_error_fatal.value : '0;
     assign readback_array[3][1:1] = (decoded_reg_strb.interface_regs.status && !decoded_req_is_wr) ? field_storage.interface_regs.status.cptra_error_non_fatal.value : '0;
     assign readback_array[3][2:2] = (decoded_reg_strb.interface_regs.status && !decoded_req_is_wr) ? field_storage.interface_regs.status.ready_for_fuses.value : '0;

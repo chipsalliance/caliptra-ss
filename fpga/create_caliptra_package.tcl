@@ -94,7 +94,7 @@ remove_files [ glob $caliptrartlDir/src/spi_host/rtl/*.sv ]
 
 # Remove Caliptra files that need to be replaced by FPGA specific versions
 # Key Vault is very large. Replacing KV with a version with the minimum number of entries.
-remove_files [ glob $caliptrartlDir/src/keyvault/rtl/kv_reg.sv ]
+#remove_files [ glob $caliptrartlDir/src/keyvault/rtl/kv_reg.sv ]
 
 # Add FPGA specific sources
 add_files [ glob $fpgaDir/src/*.sv]
