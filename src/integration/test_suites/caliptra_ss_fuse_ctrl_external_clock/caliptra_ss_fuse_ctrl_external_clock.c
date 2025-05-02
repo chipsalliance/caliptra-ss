@@ -59,7 +59,7 @@ void external_clock() {
 
     grant_caliptra_core_for_fc_writes();
 
-    dai_wr(0x000, 0xFF, 0xFF, 64, 0);
+    dai_wr(0x000, 0xFF, 0, 32, 0);
 }
 
 void main (void) {

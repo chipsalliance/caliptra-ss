@@ -42,7 +42,7 @@ typedef struct {
 } partition_t;
 
 static partition_t partitions[15] = {
-    { .address = 0x0000, .is_software = false }, // SECRET_TEST_UNLOCK_PARTITION
+    { .address = 0x0000, .is_software = true  }, // SW_TEST_UNLOCK_PARTITION
     { .address = 0x0048, .is_software = false }, // SECRET_MANUF_PARTITION
     { .address = 0x0090, .is_software = false }, // SECRET_PROD_PARTITION_0
     { .address = 0x00A0, .is_software = false }, // SECRET_PROD_PARTITION_1
@@ -69,7 +69,7 @@ void unexpected_reset() {
     partition_t partition = partitions[xorshift32() % 15];
     uint32_t granularity = partition.is_software ? 32 : 64;
 
-    if (partition.address <= 0x80) {
+    if (partitions[i].address > 0x40 && partitions[i].address < 0xD0) {
         grant_caliptra_core_for_fc_writes();
     } else {
         grant_mcu_for_fc_writes(); 

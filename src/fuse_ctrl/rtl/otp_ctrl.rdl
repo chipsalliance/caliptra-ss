@@ -85,7 +85,7 @@ addrmap otp_ctrl {
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SECRET_TEST_UNLOCK_PARTITION_ERROR[0:0];
+        } SW_TEST_UNLOCK_PARTITION_ERROR[0:0];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
@@ -620,7 +620,7 @@ addrmap otp_ctrl {
         /* --------------------------------------*/
     };
 
-    digest_t SECRET_TEST_UNLOCK_PARTITION_DIGEST @ 0xB0;
+    digest_t SW_TEST_UNLOCK_PARTITION_DIGEST @ 0xB0;
     digest_t SECRET_MANUF_PARTITION_DIGEST @ 0xB8;
     digest_t SECRET_PROD_PARTITION_0_DIGEST @ 0xC0;
     digest_t SECRET_PROD_PARTITION_1_DIGEST @ 0xC8;

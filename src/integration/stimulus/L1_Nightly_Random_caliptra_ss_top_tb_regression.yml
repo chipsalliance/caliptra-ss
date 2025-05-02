@@ -7,7 +7,7 @@ contents:
       path: ""
       mode: round-robin
       weight: 100
-      generations: 93
+      generations: 5
       formats:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
@@ -43,3 +43,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans_invalid_state/caliptra_ss_lcc_st_trans_invalid_state: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans_rma_no_ppd_pin/caliptra_ss_lcc_st_trans_rma_no_ppd_pin: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock_wrong_state/caliptra_ss_lcc_volatile_unlock_wrong_state: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_otp_prog_error/caliptra_ss_lcc_otp_prog_error: { weight: 100 }

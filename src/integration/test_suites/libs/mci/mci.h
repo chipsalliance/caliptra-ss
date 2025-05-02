@@ -53,7 +53,7 @@ const mci_register_info_t* find_register_by_address(uint32_t address, mci_regist
 int get_total_register_count(void);
 void init_reg_exp_dict(mci_reg_exp_dict_t *dict);
 void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_register_group_t *groups, int num_groups);
-int set_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t value, uint32_t mask);
+int set_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t value, uint32_t mask, bool reg_write);
 int get_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t *value);    
 void init_mask_dict(void); 
 const mci_register_info_t* get_register_info(mci_register_group_t group, int index);

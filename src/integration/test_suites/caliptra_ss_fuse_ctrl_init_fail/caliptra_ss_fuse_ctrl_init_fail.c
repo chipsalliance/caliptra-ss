@@ -43,9 +43,7 @@ typedef struct {
 
 // XXX: Fuse addresses, eventually these should be generated automatically.
 // Buffered partitions.
-static partition_t partitions[8] = {
-    // SECRET_TEST_UNLOCK_PARTITION
-    { .address = 0x0000, .digest_address = 0x0040, .index = 0 },
+static partition_t partitions[7] = {
      // SECRET_MANUF_PARTITION
     { .address = 0x0048, .digest_address = 0x0088, .index = 1 },
     // SECRET_PROD_PARTITION_0
@@ -68,10 +66,10 @@ void init_fail() {
         CMD_FC_LCC_UNCORRECTABLE_FAULT
     };
 
-    partition_t partition = partitions[xorshift32() % 8];
+    partition_t partition = partitions[xorshift32() % 7];
     uint32_t fault = faults[xorshift32() % 2];
 
-    if (partition.address < 0x090) {
+    if (partitions[i].address > 0x40 && partitions[i].address < 0xD0) {
         grant_caliptra_core_for_fc_writes();
     } else {
         grant_mcu_for_fc_writes();

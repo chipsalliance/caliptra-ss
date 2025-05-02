@@ -42,10 +42,10 @@ void main(void) {
     VPRINTF(LOW, "==========================\nMCI Error & Interrupt Registers Test\n===========================\n\n");
 
     mci_register_group_t err_intr_groups[] = {
-        //REG_GROUP_ERROR_RW1C,
-        //REG_GROUP_ERROR,
+        REG_GROUP_ERROR_RW1C,
+        REG_GROUP_ERROR,
         REG_GROUP_INTERNAL_ERROR_MASK,
-        //REG_GROUP_INTERRUPT_EN,
+        REG_GROUP_INTERRUPT_EN,
         REG_GROUP_INTERRUPT_GLOBAL_STATUS_RO,
         REG_GROUP_INTERRUPT_STATUS_RW1C,
         REG_GROUP_INTERRUPT_TRIGGER_PULSE_RW1S,

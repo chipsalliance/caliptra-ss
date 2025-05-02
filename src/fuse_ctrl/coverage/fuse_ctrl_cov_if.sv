@@ -68,8 +68,8 @@ interface fuse_ctrl_cov_if
     covergroup fuse_ctrl_fuses_cg @(posedge clk_i);                                        
       option.per_instance = 1;
       // SECRET_TEST_UNLOCK_PARTITION                                                         
-      CptraCoreManufDebugUnlockToken_cp:  coverpoint `FC_MEM[CptraCoreManufDebugUnlockTokenOffset/2]  { bins Fuse = { [1:$] }; }
-      SecretTestUnlockPartitionDigest_cp: coverpoint `FC_MEM[SecretTestUnlockPartitionDigestOffset/2] { bins Fuse = { [1:$] }; }  
+      CptraCoreManufDebugUnlockToken_cp:  coverpoint `FC_MEM[CptraCoreManufDebugUnlockTokenOffset/2] { bins Fuse = { [1:$] }; }
+      SecretTestUnlockPartitionDigest_cp: coverpoint `FC_MEM[SwTestUnlockPartitionDigestOffset/2]    { bins Fuse = { [1:$] }; }  
       // SECRET_MANUF_PARTITION
       CptraCoreUdsSeed_cp:           coverpoint `FC_MEM[CptraCoreUdsSeedOffset/2]           { bins Fuse = { [1:$] }; }
       SecretManufPartitionDigest_cp: coverpoint `FC_MEM[SecretManufPartitionDigestOffset/2] { bins Fuse = { [1:$] }; }
@@ -340,7 +340,7 @@ interface fuse_ctrl_cov_if
                 OTP_CTRL_SVN_PARTITION_READ_LOCK_OFFSET, OTP_CTRL_VENDOR_TEST_PARTITION_READ_LOCK_OFFSET, OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_READ_LOCK_OFFSET,
                 OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_READ_LOCK_OFFSET, OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK_OFFSET,
                 OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK_OFFSET, OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK_OFFSET,
-                OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_0_OFFSET, OTP_CTRL_SECRET_TEST_UNLOCK_PARTITION_DIGEST_1_OFFSET,
+                OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0_OFFSET, OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1_OFFSET,
                 OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0_OFFSET, OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_1_OFFSET,
                 OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_0_OFFSET, OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_1_OFFSET,
                 OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_0_OFFSET, OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_1_OFFSET,
@@ -399,6 +399,53 @@ interface fuse_ctrl_cov_if
         fuse_ctrl_test_unlock_tokens_cg fuse_ctrl_test_unlock_tokens_cg1 = new();
         fuse_ctrl_core_tl_i_cg fuse_ctrl_core_tl_i_cg1 = new();
         fuse_ctrl_interrupts_cg fuse_ctrl_interrupts_cg1 = new();
+    end
+
+    // Broadcast data
+    lc_ctrl_pkg::lc_tx_t broadcast_valid;
+    otp_sw_test_unlock_partition_data_t debug_unlock_token;
+    otp_secret_manuf_partition_data_t uds_seed;
+    otp_secret_prod_partition_0_data_t field_entropy_0;
+    otp_secret_prod_partition_1_data_t field_entropy_1;
+    otp_secret_prod_partition_2_data_t field_entropy_2;
+    otp_secret_prod_partition_3_data_t field_entropy_3;
+    assign broadcast_valid = `FC_PATH.otp_broadcast_o.valid;
+    assign debug_unlock_token = `FC_PATH.otp_broadcast_o.sw_test_unlock_partition_data;
+    assign uds_seed = `FC_PATH.otp_broadcast_o.secret_manuf_partition_data;
+    assign field_entropy_0 = `FC_PATH.otp_broadcast_o.secret_prod_partition_0_data;
+    assign field_entropy_1 = `FC_PATH.otp_broadcast_o.secret_prod_partition_1_data;
+    assign field_entropy_2 = `FC_PATH.otp_broadcast_o.secret_prod_partition_2_data;
+    assign field_entropy_3 = `FC_PATH.otp_broadcast_o.secret_prod_partition_3_data;
+
+    covergroup fuse_ctrl_broadcast_cg @(posedge clk_i);
+      option.per_instance = 1;
+
+      fuse_ctrl_broadcast_valid_cp: coverpoint broadcast_valid {
+        bins Valid =   { lc_ctrl_pkg::On };
+        bins Invalid = { lc_ctrl_pkg::Off };
+      }
+      fuse_ctrl_debug_unlock_token_cp: coverpoint debug_unlock_token iff (broadcast_valid == lc_ctrl_pkg::On) {
+        bins DebugUnlockToken = { [1:$] };
+      }
+      fuse_ctrl_uds_seed_cp: coverpoint uds_seed iff (broadcast_valid == lc_ctrl_pkg::On) {
+        bins UdsSeed = { [1:$] };
+      }
+      fuse_ctrl_field_entropy_0_cp: coverpoint field_entropy_0 iff (broadcast_valid == lc_ctrl_pkg::On) {
+        bins FieldEntropy0 = { [1:$] };
+      }
+      fuse_ctrl_field_entropy_1_cp: coverpoint field_entropy_1 iff (broadcast_valid == lc_ctrl_pkg::On) {
+        bins FieldEntropy1 = { [1:$] };
+      }
+      fuse_ctrl_field_entropy_2_cp: coverpoint field_entropy_2 iff (broadcast_valid == lc_ctrl_pkg::On) {
+        bins FieldEntropy2 = { [1:$] };
+      }
+      fuse_ctrl_field_entropy_3_cp: coverpoint field_entropy_3 iff (broadcast_valid == lc_ctrl_pkg::On) {
+        bins FieldEntropy3 = { [1:$] };
+      }
+    endgroup
+
+    initial begin
+      fuse_ctrl_broadcast_cg cg_broadcast = new();
     end
 
 endinterface

@@ -41,7 +41,7 @@ typedef struct {
 } partition_t;
 
 static const partition_t partitions[15] = {
-    { .address = 0x0000, .granularity = 64 }, // SECRET_TEST_UNLOCK_PARTITION
+    { .address = 0x0000, .granularity = 32 }, // SW_TEST_UNLOCK_PARTITION
     { .address = 0x0048, .granularity = 64 }, // SECRET_MANUF_PARTITION
     { .address = 0x0090, .granularity = 64 }, // SECRET_PROD_PARTITION_0
     { .address = 0x00A0, .granularity = 64 }, // SECRET_PROD_PARTITION_1
@@ -81,7 +81,7 @@ void axi_id() {
 
         // Both CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN and CPTRA_CORE_UDS_SEED must not
         // be modified by the AXI requests stemming from the MCU.
-        if (partition.address < 0x090 && axi_user) {
+        if (partitions[i].address > 0x40 && partitions[i].address < 0xD0 && axi_user) {
             dai_wr(partition.address, sentinel, sentinel, partition.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
         } else {
             dai_wr(partition.address, sentinel, sentinel, partition.granularity, 0);
