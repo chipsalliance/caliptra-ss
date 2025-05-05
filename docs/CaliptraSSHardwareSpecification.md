@@ -1006,6 +1006,7 @@ If a second Target user is required it is the MCU's responsibility to:
 Otherwise these registers are cleared when the mailbox lock is released. 
 
 Target users must be an [MCU Mailbox trusted user](mcu-mailbox-limited-trusted-AXI-user)
+
 #### MCU Mailbox Fully addressable SRAM
 
 The SRAM is fully addressable and reads are not destructive in this mailbox.
@@ -1015,6 +1016,8 @@ The SRAM is fully addressable and reads are not destructive in this mailbox.
 **Max Size**: 2MB
 
 If set to 0 the mailbox is not instantiated. 
+
+Accesses must be DWORD aligned and BYTE accesses are not supported by the SRAM.
 
 #### MCU Mailbox SRAM Clearing
 
