@@ -36,7 +36,6 @@ void main (void) {
     char *argv[1];
     uint32_t reg_data;
     uint32_t sram_data;
-    uint32_t axi_user_id[] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x1 }; // FIXME doen't hardcode
 
     VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
 

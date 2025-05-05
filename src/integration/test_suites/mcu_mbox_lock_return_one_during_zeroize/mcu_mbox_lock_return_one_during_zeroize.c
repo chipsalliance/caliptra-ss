@@ -44,7 +44,7 @@ void main (void) {
     uint32_t mci_boot_fsm_go;
     uint32_t sram_data;
 
-    uint32_t axi_user_id[] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x1 }; // FIXME don't hardcode
+    uint32_t axi_user_id[] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x1 };
 
 
     VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n");
