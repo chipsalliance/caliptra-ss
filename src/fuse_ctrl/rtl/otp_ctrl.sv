@@ -108,7 +108,7 @@ module otp_ctrl
   assign core_axi_wr_rsp.awready = core_axi_if.awready;
 
   assign core_axi_if.wdata       = core_axi_wr_req.wdata;
-  assign core_axi_if.wuser       = '0; // FIXME
+  assign core_axi_if.wuser       = '0; 
   assign core_axi_if.wstrb       = core_axi_wr_req.wstrb;
   assign core_axi_if.wlast       = core_axi_wr_req.wlast;
   assign core_axi_if.wvalid      = core_axi_wr_req.wvalid;
