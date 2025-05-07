@@ -451,8 +451,8 @@ The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_c
   - **Clock Source** Caliptra SS MCI clock gater
   - **Integration Notes**
      1. Gated a few clock cycles before `cptra_ss_rst_b_o` asserted and remains gated until reset is deasserted. 
-     1. MCU SRAM and MCU MBOX memories shall be connected to this clock to avoid RDC issues.
-     2. Any SOC logic on a deeper reset domain than CSS can use this clock to resolve RDC issues.
+     2. MCU SRAM and MCU MBOX memories shall be connected to this clock to avoid RDC issues.
+     3. Any SOC logic on a deeper reset domain than CSS can use this clock to resolve RDC issues.
 
 ### Reset
 
