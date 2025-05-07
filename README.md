@@ -12,6 +12,10 @@ HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and
 OS:
  - Build instructions assume a Linux environment
 
+LINT:
+ - Synopsys SpyGlass
+   - `Version U-2023.03-SP2-8 -- Aug 09, 2024`
+
 Simulation:
  - Synopsys VCS with Verdi
    - `Version U-2023.03-SP1-1_Full64`
@@ -28,6 +32,18 @@ GCC:
    - `riscv64-unknown-elf-gcc (g) 12.2.0`
  - G++ Used to compile Verilator objects and test firmware
    - `g++ (GCC) 11.2.0`
+
+CDC:
+ - Questa CDC
+   - `2023.4_3 5762808 linux_x86_64 29-Feb-2024`
+
+RDC:
+ - Real Intent Meridian
+    - 2022.A.P18.3
+
+Synthesis:
+ - Synopsys Design Compiler (R) NXT 
+    - Version U-2022.12-SP6
 
 Other:
  - Playbook (Microsoft Internal workflow management tool)
@@ -71,7 +87,7 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
 ├── config
 │   └── compilespecs.yml
 ├── docs
-│   ├── Caliptra 2.0 Subsystem Specification 1.pdf
+│   ├── Caliptra_Gen2_SS_TestPlan.xlsx
 │   ├── CaliptraSSHardwareSpecification.md
 │   ├── CaliptraSSIntegrationSpecification.md
 │   └── images
