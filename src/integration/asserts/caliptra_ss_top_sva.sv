@@ -233,23 +233,41 @@ module caliptra_ss_top_sva
   agg_all_error_fatal_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i)
-    (`CPTRA_SS_TOP_PATH.cptra_error_fatal & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal0 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
-    (`CPTRA_SS_TOP_PATH.mcu_dccm_ecc_double_error & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal6 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
-    ((`CPTRA_SS_TOP_PATH.lc_alerts_o != 0) & (`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal14 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal13 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal12) |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
-    ((`CPTRA_SS_TOP_PATH.fc_alerts != 0) & (`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal20 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal19 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal18) |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
-    (`CPTRA_SS_TOP_PATH.i3c_peripheral_reset & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal25 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o) and
-    (`CPTRA_SS_TOP_PATH.i3c_escalated_reset & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal24 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o)
+    (((`CPTRA_SS_TOP_PATH.cptra_error_fatal & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal0) |
+     (`CPTRA_SS_TOP_PATH.mcu_dccm_ecc_double_error & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal6) |
+     (`CPTRA_SS_TOP_PATH.lc_alerts_o[0] & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal12) |
+     (`CPTRA_SS_TOP_PATH.lc_alerts_o[1] & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal13) |
+     (`CPTRA_SS_TOP_PATH.lc_alerts_o[2] & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal14) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[0]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal18) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[1]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal19) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[2]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal20) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[3]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal21) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[4]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal22) |
+     (`CPTRA_SS_TOP_PATH.fc_intr_otp_error   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal23) |
+     (`CPTRA_SS_TOP_PATH.i3c_escalated_reset & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal24) |
+     (`CPTRA_SS_TOP_PATH.i3c_peripheral_reset & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal25)
+
+    ) |=> ##2 `CPTRA_SS_TOP_PATH.cptra_ss_all_error_fatal_o)
   ) else $display("SVA ERROR: AGG all_error_fatal is not set correctly");
 
   agg_all_error_non_fatal_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i)
-    (`CPTRA_SS_TOP_PATH.cptra_error_non_fatal & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
-    (`CPTRA_SS_TOP_PATH.mcu_dccm_ecc_single_error & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
-    ((`CPTRA_SS_TOP_PATH.lc_alerts_o != 0) & (`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12) |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
-    ((`CPTRA_SS_TOP_PATH.fc_alerts != 0) & (`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19 | `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18) |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
-    (`CPTRA_SS_TOP_PATH.i3c_peripheral_reset & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o) and
-    (`CPTRA_SS_TOP_PATH.i3c_escalated_reset & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24 |=> ##2 ~`CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o)
+    (((`CPTRA_SS_TOP_PATH.cptra_error_non_fatal & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0) |
+     (`CPTRA_SS_TOP_PATH.mcu_dccm_ecc_single_error & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6) |
+     (`CPTRA_SS_TOP_PATH.lc_alerts_o[0] & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12) |
+     (`CPTRA_SS_TOP_PATH.lc_alerts_o[1] & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13) |
+     (`CPTRA_SS_TOP_PATH.lc_alerts_o[2] & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[0]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[1]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[2]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[3]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21) |
+     (`CPTRA_SS_TOP_PATH.fc_alerts[4]   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22) |
+     (`CPTRA_SS_TOP_PATH.fc_intr_otp_error   & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23) |
+     (`CPTRA_SS_TOP_PATH.i3c_escalated_reset & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24) |
+     (`CPTRA_SS_TOP_PATH.i3c_peripheral_reset & ~`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25)
+
+    ) |=> ##2 `CPTRA_SS_TOP_PATH.cptra_ss_all_error_non_fatal_o)
   ) else $display("SVA ERROR: AGG all_error_non_fatal is not set correctly");
 
   //----------------------------------------------
