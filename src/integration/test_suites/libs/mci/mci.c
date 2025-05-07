@@ -126,6 +126,7 @@ const mci_reg_def_value_t reg_init_values[] = {
     {SOC_MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_3, 0xFFFFFFFF},
     {SOC_MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_4, 0xFFFFFFFF},
     {SOC_MCI_TOP_MCI_REG_MCU_RESET_VECTOR, 0x80000000},
+    {SOC_MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK, 0x3FFFF000}
 };
 
 /* Array of register infos by group */
@@ -1371,15 +1372,28 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                 } else if (reset_type == WARM_RESET) {
                     if (reg->is_sticky == REG_STICKY || reg->is_sticky == REG_CONFIG_DONE_STICKY) {
                         if (get_reg_exp_data(&g_expected_data_dict, reg->address, &exp_data) == 0) {
-                            if (reg->address == SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) {
-                                exp_data = 0x400; // debug_locked_en_sts is set on Warm Reset
-                            } else if (reg->address == SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) {
-                                exp_data = 0x0;
-                            }
                             VPRINTF(MEDIUM, "Expected data for %s = 0x%0x\n", reg->name, exp_data);
                             // Compare and report
-                            if (reg->address == SOC_MCI_TOP_MCI_REG_RESET_REASON) {
-                                exp_data = exp_data | MCI_REG_RESET_REASON_WARM_RESET_MASK & ~(MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK | MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_MASK); // bits 0 & 1 are not sticky
+                            if (group == REG_GROUP_INTERRUPT_ERROR0_COUNTERS) {
+                                if ((i == 0 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_STS_MASK)) ||
+                                    (i == 1 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_INTERNAL_STS_MASK)) ||
+                                    (i == 2 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK)) ||
+                                    (i == 3 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_ECC_UNC_STS_MASK)) ||
+                                    (i == 4 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER1_TIMEOUT_STS_MASK)) ||
+                                    (i == 5 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER2_TIMEOUT_STS_MASK))) {
+                                    if (read_data >= exp_data) {
+                                        VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x > Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
+                                    } else {
+                                        VPRINTF(LOW, "  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
+                                        mismatch_count++;
+                                    } 
+                                }
+                            } else if (reg->address == SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) {
+                                exp_data |= MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_MASK; // debug_locked_en_sts is set on Warm Reset
+                            } else if (reg->address == SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) {
+                                exp_data = 0;
+                            } else if (reg->address == SOC_MCI_TOP_MCI_REG_RESET_REASON) {
+                                exp_data = exp_data & ~(MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK | MCI_REG_RESET_REASON_FW_HITLESS_UPD_RESET_MASK) | MCI_REG_RESET_REASON_WARM_RESET_MASK; // bits 0 & 1 are not sticky
                                 if (read_data == exp_data) {
                                     VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n",reg->name, reg->address, read_data, exp_data); 
                                 } else {
@@ -1404,6 +1418,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                     } else {
                         if (reg->has_init_value == false && ro_reg == false) {
                             exp_data  = 0;
+                            
                             if (read_data == exp_data) {
                                 VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
                             } else if (group == REG_GROUP_INTERRUPT_GLOBAL_STATUS_RO) {
@@ -1459,21 +1474,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                                         VPRINTF(LOW, "  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
                                     mismatch_count++;
                                     }
-                                }
-                            } else if (group == REG_GROUP_INTERRUPT_ERROR0_COUNTERS) {
-                                if ((i == 0 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_STS_MASK)) ||
-                                    (i == 1 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_INTERNAL_STS_MASK)) ||
-                                    (i == 2 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK)) ||
-                                    (i == 3 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_ECC_UNC_STS_MASK)) ||
-                                    (i == 4 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER1_TIMEOUT_STS_MASK)) ||
-                                    (i == 5 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER2_TIMEOUT_STS_MASK))) {
-                                    if (read_data >= exp_data) {
-                                        VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x > Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
-                                    } else {
-                                        VPRINTF(LOW, "  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
-                                        mismatch_count++;
-                                    } 
-                                }
+                                } 
                             } else {
                                 VPRINTF(LOW, "  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
                                 mismatch_count++;

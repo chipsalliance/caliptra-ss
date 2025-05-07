@@ -846,10 +846,10 @@ The registers can be split up into a few different categories:
 | **Write restrictions**     | **Description**     | 
 | :---------     | :---------| 
 | MCU Only        | These registers are only meant for MCU to have access. There is no reason for SOC or the MCI SOC Config User to access the. Example is the MTIMER|
-| MCU or MCSU      |  Access restricted to trusted agents but not locked. Example:RESET_REQUEST for MCU. |
-| MCU or MCRSU      |  Access restricted to trusted agents but not locked. Example:RESET_REASON for MCU. |
-| MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each warm reset |
-| Sticky MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each cold reset |
+| MCU or MSCU      |  Access restricted to trusted agents but not locked. Example:RESET_REQUEST for MCU. |
+| MCU or MSRCU      |  Access restricted to trusted agents but not locked. Example:RESET_REASON for MCU. |
+| MCU or MSCU and CONFIG locked      | Locked configuration by MCU ROM/MSCU and configured after each warm reset |
+| Sticky MCU or MSCU and CONFIG locked      | Locked configuration by MCU ROM/MSCU and configured after each cold reset |
 | Locked by SS_CONFIG_DONE_STICKY        | Configuration once per cold reset. |
 | Locked by SS_CONFIG_DONE        | Configuration once per warm reset. |
 | MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilieds then locked until next warm reset |
