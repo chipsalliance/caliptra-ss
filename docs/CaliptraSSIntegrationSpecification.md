@@ -228,7 +228,7 @@ The following block diagram shows details on verification view of Caliptra Subsy
 
 Caliptra Subsystem required following memory export connected to various memories to function as per the specification.
 
-TBD in below table means, integrator could change these sizes based on specific requirements. 
+**TBD in below table means the size of the memory is not fixed and can be configured based on the design requirements by integrator. The actual size will depend on the specific implementation and configuration of the Caliptra Subsystem.**
 
 | **Device** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
   |---------------------|-----------------------|--------------------------------------|----------|-----------------|---------------------------------------------------------------------------------|
