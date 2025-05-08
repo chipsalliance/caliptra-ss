@@ -123,7 +123,7 @@ import css_mcu0_el2_pkg::*;
    output logic                      ic_rd_en,           // Icache read  enable.
 
    output logic [pt.ICACHE_BANKS_WAY-1:0][70:0]               ic_wr_data,         // Data to fill to the Icache. With ECC
-   input  logic [63:0]              ic_rd_data ,        // Data read from Icache. 2x64bits + parity bits. F2 stage. With ECC
+   (* syn_keep = "true", mark_debug = "true" *) input  logic [63:0]              ic_rd_data ,        // Data read from Icache. 2x64bits + parity bits. F2 stage. With ECC
    input  logic [70:0]              ic_debug_rd_data ,        // Data read from Icache. 2x64bits + parity bits. F2 stage. With ECC
    input  logic [25:0]                     ictag_debug_rd_data,// Debug icache tag.
    output logic [70:0]               ic_debug_wr_data,   // Debug wr cache.
@@ -262,7 +262,7 @@ import css_mcu0_el2_pkg::*;
 
    logic [1:0]   ic_fetch_val_f;
    logic [31:0] ic_data_f;
-   logic [31:0] ifu_fetch_data_f;
+   (* syn_keep = "true", mark_debug = "true" *) logic [31:0] ifu_fetch_data_f;
    logic ifc_fetch_req_f;
    logic ifc_fetch_req_f_raw;
    logic iccm_dma_rd_ecc_double_err;

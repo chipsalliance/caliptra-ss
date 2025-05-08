@@ -134,7 +134,7 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.ICACHE_NUM_WAYS-1:0]                ic_wr_en,           // Icache write enable, when filling the Icache.
    output logic                      ic_rd_en,           // Icache read  enable.
 
-   output logic [pt.ICACHE_BANKS_WAY-1:0] [70:0]               ic_wr_data,           // Data to fill to the Icache. With ECC
+   (* syn_keep = "true", mark_debug = "true" *) output logic [pt.ICACHE_BANKS_WAY-1:0] [70:0]               ic_wr_data,           // Data to fill to the Icache. With ECC
    input  logic [63:0]               ic_rd_data ,          // Data read from Icache. 2x64bits + parity bits. F2 stage. With ECC
    input  logic [70:0]               ic_debug_rd_data ,          // Data read from Icache. 2x64bits + parity bits. F2 stage. With ECC
    input  logic [25:0]               ictag_debug_rd_data,  // Debug icache tag.
@@ -180,7 +180,7 @@ import css_mcu0_el2_pkg::*;
    output logic                      ifu_async_error_start,  // Or of the sb iccm, and all the icache errors sent to aligner to stop
    output logic                      iccm_dma_sb_error,      // Single Bit ECC error from a DMA access
    output logic [1:0]                ic_fetch_val_f,         // valid bytes for fetch. To the Aligner.
-   output logic [31:0]               ic_data_f,              // Data read from Icache or ICCM. To the Aligner.
+   (* syn_keep = "true", mark_debug = "true" *) output logic [31:0]               ic_data_f,              // Data read from Icache or ICCM. To the Aligner.
    output logic [63:0]               ic_premux_data,         // Premuxed data to be muxed with Icache data
    output logic                      ic_sel_premux_data,     // Select premux data.
 
@@ -293,7 +293,7 @@ import css_mcu0_el2_pkg::*;
    logic           sel_mb_addr ;
    logic           sel_mb_addr_ff ;
    logic           sel_mb_status_addr ;
-   logic [63:0]    ic_final_data;
+   (* syn_keep = "true", mark_debug = "true" *) logic [63:0]    ic_final_data;
 
    logic [pt.ICACHE_STATUS_BITS-1:0]                              way_status_new_ff ;
    logic                                    way_status_wr_en_ff ;
