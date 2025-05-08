@@ -81,7 +81,7 @@ void axi_id() {
 
         // Both CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN and CPTRA_CORE_UDS_SEED must not
         // be modified by the AXI requests stemming from the MCU.
-        if (partitions[i].address > 0x40 && partitions[i].address < 0xD0 && axi_user) {
+        if (partition.address > 0x40 && partition.address < 0xD0 && axi_user) {
             dai_wr(partition.address, sentinel, sentinel, partition.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
         } else {
             dai_wr(partition.address, sentinel, sentinel, partition.granularity, 0);
