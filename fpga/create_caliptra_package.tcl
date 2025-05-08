@@ -67,6 +67,8 @@ add_files $ssrtlDir/src/fuse_ctrl/data/otp-img.2048.vmem
 set_property file_type {Memory Initialization Files} [get_files $ssrtlDir/src/fuse_ctrl/data/otp-img.2048.vmem]
 # OTP from testbench
 add_files $ssrtlDir/src/integration/testbench/prim_generic_otp.sv
+# MCU VEER sram from testbench
+add_files $ssrtlDir/src/integration/testbench/caliptra_ss_veer_sram_export.sv
 # SS IPs
 add_files [ glob $ssrtlDir/src/*/rtl/*.svh ]
 add_files [ glob $ssrtlDir/src/*/rtl/*.sv ]

@@ -944,8 +944,11 @@ assign hwif_in.fifo_regs.dbg_fifo_status.dbg_fifo_empty.next = dbg_fifo_empty;
 
 // When rd_swacc is asserted, use the value of "valid" from when it was sampled.
 reg dbg_fifo_valid_f;
+// wr_swacc might be asserting before the data is available. Try delaying by a clock.
+reg dbg_fifo_wr_en;
 always@(posedge core_clk) begin
     dbg_fifo_valid_f <= ~dbg_fifo_empty;
+    dbg_fifo_wr_en <= hwif_out.fifo_regs.dbg_fifo_push.in_data.wr_swacc;
 end
 
 xpm_fifo_sync #(
@@ -992,7 +995,7 @@ dbg_fifo_inst (
     .rst(~S_AXI_WRAPPER_ARESETN),
     .sleep(0),
     .wr_clk(core_clk),
-    .wr_en(hwif_out.fifo_regs.dbg_fifo_push.in_data.wr_swacc)
+    .wr_en(dbg_fifo_wr_en)
 );
 
 
@@ -1819,6 +1822,9 @@ I think this is the one that isn't used
     
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export ();
 
+    caliptra_ss_veer_sram_export ss_veer_sram_export_inst (
+        .cptra_ss_mcu0_el2_mem_export
+    );
 
     /*
     Line Driver logic
@@ -2100,8 +2106,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mci_mcu_sram_req_if,
     .cptra_ss_mcu_mbox0_sram_req_if,
     .cptra_ss_mcu_mbox1_sram_req_if,
-    .cptra_ss_mcu0_el2_mem_export, // TODO this changed
-    //css_mcu0_el2_mem_if.veer_sram_icache_src cptra_ss_mcu0_el2_mem_export,
+    .cptra_ss_mcu0_el2_mem_export,
     
     .cptra_ss_mci_generic_input_wires_i({hwif_out.interface_regs.mci_generic_input_wires[0].value.value, hwif_out.interface_regs.mci_generic_input_wires[1].value.value}),
     .cptra_ss_mci_generic_output_wires_o({hwif_in.interface_regs.mci_generic_output_wires[0].value.next, hwif_in.interface_regs.mci_generic_output_wires[1].value.next}),
@@ -2182,8 +2187,8 @@ caliptra_ss_top caliptra_ss_top_0 (
     assign fifo_char[7:0] = caliptra_ss_top_0.caliptra_top_dut.soc_ifc_top1.i_soc_ifc_reg.field_combo.CPTRA_GENERIC_OUTPUT_WIRES[0].generic_wires.next[7:0];
 
 
-
-
+`ifdef DISABLING_THIS
+Created ss_veer_sram_export_inst to use same implementation as testbench. This implementation looks basically the same so unlikely to be the cause of the failures.
 //////////////////////////////////////////////////////
 // DCCM
 //
@@ -3085,6 +3090,7 @@ else begin : PACKED_1
 end // block: PACKED_1
 // end ICACHE TAG
 
+`endif
 
 
 endmodule

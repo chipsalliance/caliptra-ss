@@ -361,9 +361,13 @@ add_files -fileset constrs_1 $fpgaDir/src/ddr4_constraints.xdc
 # Consider constraint:
 # set_max_delay -from [get_clocks clk_pl_0] -to [get_clocks clk_pl_1] 25.0
 
+
+if {$FAST_I3C} {
+} else {
 # TODO: Weird why this couldn't be earlier
 set_property CONFIG.SCL_CLK_FREQ {12500} [get_bd_cells axi_i3c_0]
 save_bd_design
+}
 
 # Start build
 if {$BUILD} {
