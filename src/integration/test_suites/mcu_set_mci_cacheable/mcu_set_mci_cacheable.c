@@ -55,6 +55,10 @@ uint8_t main (void) {
     // so we can detect if it gets erroneously acquired later
     mcu_mbox_clear_lock_out_of_reset(0);
 
+    // Initialize MCU mbox lock to 0
+    // so we can detect if it gets erroneously acquired later
+    mcu_mbox_clear_lock_out_of_reset(0);
+
     // Test if MCI regs are cached by repeatedly reading MTIME
     for (uint32_t ii = 0; ii < 32; ii++) {
         reg_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_L);
