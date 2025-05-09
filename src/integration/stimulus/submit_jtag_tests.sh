@@ -97,7 +97,7 @@ wait_and_report() {
 # Function to wait for any job to finish and process it
 wait_for_any_and_report() {
   echo "submit_jtag_test.sh - Waiting for a test to finish..."
-  wait -n  # Wait for any job to finish
+  wait -n  # Wait for any job to finish (requires Bash 5.0+)
   echo "submit_jtag_test.sh - A test has finished!!!!"
   for finished_pid in "${pids[@]}"; do
     echo "submit_jtag_test.sh - Checking PID: $finished_pid"
