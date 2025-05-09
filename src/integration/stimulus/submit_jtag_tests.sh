@@ -95,7 +95,7 @@ wait_and_report() {
 
 # Function to wait for any job to finish and process it
 wait_for_any_and_report() {
-  wait -n  # Wait for any job to finish
+  wait -n  # Wait for any job to finish (requires Bash 5.0+)
   for finished_pid in "${pids[@]}"; do
     if ! kill -0 "$finished_pid" 2>/dev/null; then
       wait_and_report "$finished_pid"
