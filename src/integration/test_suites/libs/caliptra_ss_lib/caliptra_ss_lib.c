@@ -40,7 +40,7 @@
 #ifdef MY_RANDOM_SEED
     uint32_t state = (unsigned) MY_RANDOM_SEED;
 #else
-    uint32_t state = 0;
+    uint32_t state = 0xabcd;
 #endif
 
 void handle_error(const char *format, ...) {
