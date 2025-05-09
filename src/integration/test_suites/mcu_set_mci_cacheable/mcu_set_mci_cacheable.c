@@ -61,6 +61,10 @@ uint8_t main (void) {
     //  - [UNMAPPED] @ 0xF000_0000:    SE
     csr_write_mrac_and_fence(0xAAA9A29A);
 
+    // Initialize MCU mbox lock to 0
+    // so we can detect if it gets erroneously acquired later
+    mcu_mbox_clear_lock_out_of_reset(0);
+
     // Test if MCI regs are cached by repeatedly reading MTIME
     for (uint32_t ii = 0; ii < 32; ii++) {
         reg_data = lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_L);
@@ -74,6 +78,30 @@ uint8_t main (void) {
         } else {
             VPRINTF(LOW, "     MTIME_L (after wait): 0x%x\n", reg_data2);
         }
+    }
+
+    // Try to read MCU MBOX USER register, then check if the LOCK was set as
+    // as a side-effect
+    VPRINTF(LOW, "MCU: Read MCU MBOX 0 USER\n");
+    reg_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER);
+    reg_data2 = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK);
+    if (reg_data2 & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK) {
+        handle_error("Lock was acquired while reading from MBOX_USER, indicating some AXI misbehavior related to caching!\n");
+    }
+
+    // Try to write to MCU SRAM multiple times and read back the data
+    reg_data = 0xfadebabe;
+    reg_data2 = 0xba5eba11;
+
+    VPRINTF(LOW, "MCU: Try writes to MCU SRAM\n");
+    lsu_write_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1020, reg_data);
+    lsu_write_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1044, reg_data2);
+
+    if (lsu_read_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1020) != reg_data) {
+        handle_error("Data mismatch on MCU SRAM offset 0x%x. Data [0x%x] != Exp [0x%x]\n", 0x1020, lsu_read_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1020), reg_data);
+    }
+    if (lsu_read_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1044) != reg_data2) {
+        handle_error("Data mismatch on MCU SRAM offset 0x%x. Data [0x%x] != Exp [0x%x]\n", 0x1044, lsu_read_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1044), reg_data2);
     }
 
     // return status is treated as an 'exit' code by mcu_crt0
