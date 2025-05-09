@@ -112,6 +112,14 @@ static inline void csr_write_mrac_and_fence(uint_xlen_t value) {
                       : "i" (VEER_CSR_MRAC), "r" (value)  /* input : immediate, register  */
                       : /* clobbers: none */);
 }
+static inline uint_xlen_t csr_read_mrac(void) {
+    uint_xlen_t value;
+    __asm__ volatile ("csrr    %0, %1"
+                      : "=r" (value)  /* output : register */
+                      : "i" (VEER_CSR_MRAC) /* input : immediate */
+                      : /* clobbers: none */);
+    return value;
+}
 
 
 /*******************************************
