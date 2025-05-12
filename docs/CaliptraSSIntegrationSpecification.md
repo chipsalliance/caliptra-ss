@@ -556,7 +556,7 @@ SRAMs are instantiated at the SoC level. Caliptra Subsystem provides the interfa
 
 SRAM repair logic (for example, BIST) and its associated fuses, which is proprietary to companies and their methodologies, is implemented external to the Caliptra Subsystem boundary.
 
-SRAMs must NOT go through BIST or repair flows across a “warm reset”. SoC shall perform SRAM repair during a powergood cycling event ("cold reset") and only prior to deasserting `cptra_ss_rst_b_i`. During powergood cycling events, SoC shall also initialize all entries in the SRAM to a 0 value, prior to deasserting `cptra_ss_rst_b_i`.
+SRAMs must NOT go through BIST or repair flows across a “warm reset”. SoC shall perform SRAM repair during a powergood cycling event ("cold reset") and only prior to deasserting `cptra_ss_rst_b_i`. During powergood cycling events, SoC shall also initialize all entries in the SRAM to a 0 value prior to deasserting `cptra_ss_rst_b_i`. This requirement can not be completed by MCU (or any other components in Subsystem) because it is a function of the proprietary SRAM management logic.
 
 MCU mailbox and executable SRAMs are implemented with ECC protection. Data width for the mailbox is 32-bits, with 7 parity bits for a Hamming-based SECDED (single-bit error correction and double-bit error detection).
 
