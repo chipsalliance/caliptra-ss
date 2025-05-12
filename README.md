@@ -45,6 +45,30 @@ Synthesis:
  - Synopsys Design Compiler (R) NXT 
     - Version U-2022.12-SP6
 
+Scripts:
+ - Python
+    - tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py
+        - 3.7.3
+        - Package dependencies:
+           - jsonschema==4.5.1
+           - ruamel-yaml==0.17.32
+           - hjson==3.1.0
+           - importlib_resources==5.4.0
+           - Mako==1.0.6
+           - pycryptodome==3.21.0
+           - tabulate==0.8.10
+    - All other scripts
+        - 3.9.2
+        - RDL Compiler dependencies:
+           - systemrdl-compiler==1.27.3
+           - peakrdl-systemrdl==0.3.0
+           - peakrdl-regblock==0.21.0
+           - peakrdl-uvm==2.3.0
+           - peakrdl-ipxact==3.4.3
+           - peakrdl-html==2.10.1
+           - peakrdl-cheader==1.0.0
+           - peakrdl==1.1.0
+
 Other:
  - Playbook (Microsoft Internal workflow management tool)
 
