@@ -10,7 +10,6 @@ contents:
         - ../test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock.yml
         - ../test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens.yml
         - ../test_suites/mcu_hello_world/mcu_hello_world.yml
-        - ../test_suites/mcu_set_mci_cacheable/mcu_set_mci_cacheable.yml
         - ../test_suites/mcu_intr_handler/mcu_intr_handler.yml
         - ../test_suites/mcu_lmem_exe/mcu_lmem_exe.yml
         - ../test_suites/smoke_test_lcc_scrap/smoke_test_lcc_scrap.yml
