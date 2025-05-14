@@ -673,7 +673,7 @@ Reference tests are available at `caliptra-ss\src\integration\test_suites`
 | `MCU_CPTRA_BRINGUP`            | Tests the bring-up sequence of the MCU in the Caliptra Subsystem.           |
 | `MCU_DCCM_ACCESS`              | Validates access to the Data Closely Coupled Memory (DCCM) by the MCU.      |
 | `MCU_FUSE_CTRL_BRINGUP`        | Tests the bring-up sequence of the Fuse Controller by the MCU.              |
-| `MCU_LMEM_EXE`                 | Tests execution from the Local Memory (LMEM) by the MCU.                    |
+| `MCU_LMEM_EXE`                 | Tests execution by MCU from the MCU SRAM, contained inside the MCI component. LMEM refers to Local Memory, a generic alias for MCU SRAM. |
 | `MCU_MCTP_SMOKE_TEST`          | Test verifies the I3C main target operation                                 | 
 | `MCU_TEST_ROM_I3C_STREAMING_BOOT` | Test verifies the I3C recovery target operation by using caliptra test ROM |
 | `FUSE_PROV_WITH_LC_CTRL`       | Tests fuse provisioning in conjunction with the Lifecycle Controller.       |
