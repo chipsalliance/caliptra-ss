@@ -22,6 +22,10 @@
 #include <string.h>
 #include <stdint.h>
 
+#define MRAC_MCI_REGION (SOC_MCI_TOP_BASE_ADDR >> 28)
+#define MRAC_MCI_LOW    (MRAC_MCI_REGION * 2)
+#define MRAC_MCI_MASK   (0x3 << MRAC_MCI_LOW)
+
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
 #ifdef CPT_VERBOSITY
@@ -39,27 +43,13 @@ uint8_t main (void) {
 
     // Configure MCI as cacheable
     // MRAC
-    // Disable Caches on all regions except...
-    //  - Set cacheable for ROM to improve perf
     //  - Set cacheable for MCI to test MCU SRAM caching
-    // Set side-effects (SE) at peripheral address regions:
-    //  - [UNMAPPED] @ 0x0000_0000:    SE
-    //  - [UNMAPPED] @ 0x1000_0000:    SE
-    //  - MCI/I3C    @ 0x2000_0000: no SE, +Cache
-    //  - [UNMAPPED] @ 0x3000_0000:    SE
-    //  - [UNMAPPED] @ 0x4000_0000:    SE
-    //  - DCCM       @ 0x5000_0000: no SE
-    //  - PIC        @ 0x6000_0000:    SE
-    //  - FC/LCC     @ 0x7000_0000:    SE
-    //  - imem       @ 0x8000_0000: no SE, +Cache
-    //  - [UNMAPPED] @ 0x9000_0000:    SE
-    //  - soc_ifc    @ 0xA000_0000:    SE
-    //  - ...
-    //  - [UNMAPPED] @ 0xC000_0000:    SE
-    //  - [UNMAPPED] @ 0xD000_0000:    SE
-    //  - [UNMAPPED] @ 0xE000_0000:    SE
-    //  - [UNMAPPED] @ 0xF000_0000:    SE
-    csr_write_mrac_and_fence(0xAAA9A29A);
+    reg_data = csr_read_mrac() & ~(MRAC_MCI_MASK);
+    reg_data |= (0x1 << MRAC_MCI_LOW);
+    csr_write_mrac_and_fence(reg_data);
+    putchar('#');
+    mcu_sleep(128);
+    VPRINTF(LOW, "Set MCI as cacheable\n");
 
     // Initialize MCU mbox lock to 0
     // so we can detect if it gets erroneously acquired later
