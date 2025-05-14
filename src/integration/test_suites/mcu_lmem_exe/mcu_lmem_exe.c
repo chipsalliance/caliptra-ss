@@ -55,7 +55,7 @@ void mcu_sram_print_msg (uint32_t decision) {
     // LSU reads from MCU SRAM
     for (uint8_t ii = 0; ii < 8; ii++) {
         if ((mcu_sram_array[ii] & 0xf0000000) != (ii << 28)) {
-            VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[ii]); SEND_STDOUT_CTRL(0x1); while(1);
+            handle_error("Mismatch 0x%x\n",mcu_sram_array[ii]);
         }
     }
     return;
@@ -83,7 +83,7 @@ void mcu_sram_do_nonsense (uint32_t decision) {
     // LSU reads from MCU SRAM
     for (uint8_t ii = 0; ii < 8; ii++) {
         if ((mcu_sram_array[ii] & 0xf0000000) != (ii+8)<<28) {
-            VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[ii]); SEND_STDOUT_CTRL(0x1); while(1);
+            handle_error("Mismatch 0x%x\n",mcu_sram_array[ii]);
         }
     }
 
@@ -138,7 +138,7 @@ void main (void) {
         mcu_sram_do_nonsense(0xfee1);
 
 
-        SEND_STDOUT_CTRL(0xFF);
+        SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
         while(1);
     } else {
         VPRINTF(LOW, "MCU: Bringing Caliptra out of Reset\n");
