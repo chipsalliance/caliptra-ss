@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -39,11 +40,11 @@ typedef struct {
     uint32_t address;
     uint32_t digest_address;
     uint32_t index;
-} partition_t;
+} partition_tt;
 
 // XXX: Fuse addresses, eventually these should be generated automatically.
 // Buffered partitions.
-static partition_t partitions[7] = {
+static partition_tt partitions_t[7] = {
      // SECRET_MANUF_PARTITION
     { .address = 0x0048, .digest_address = 0x0088, .index = 1 },
     // SECRET_PROD_PARTITION_0
@@ -66,8 +67,8 @@ void init_fail() {
         CMD_FC_LCC_UNCORRECTABLE_FAULT
     };
 
-    partition_t partition = partitions[xorshift32() % 7];
-    uint32_t fault = faults[xorshift32() % 2];
+    partition_tt partition = partitions_t[5];
+    uint32_t fault = faults[1];
 
     if (partition.address > 0x40 && partition.address < 0xD0) {
         grant_caliptra_core_for_fc_writes();
