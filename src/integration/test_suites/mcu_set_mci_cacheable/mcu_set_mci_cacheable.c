@@ -47,7 +47,7 @@ uint8_t main (void) {
     reg_data = csr_read_mrac() & ~(MRAC_MCI_MASK);
     reg_data |= (0x1 << MRAC_MCI_LOW);
     csr_write_mrac_and_fence(reg_data);
-    putchar('#');
+    putchar('#'); // Print a unique character that shows up in waves to easily see when mrac is updated
     mcu_sleep(128);
     VPRINTF(LOW, "Set MCI as cacheable\n");
 
