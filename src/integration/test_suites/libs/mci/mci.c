@@ -214,7 +214,7 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
     {
         { SOC_MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK, "INTERNAL_HW_ERROR_FATAL_MASK", "Internal Hardware Error Fatal Mask", REG_STICKY, false },
         { SOC_MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK, "INTERNAL_HW_ERROR_NON_FATAL_MASK", "Internal Hardware Error Non-Fatal Mask", REG_STICKY, false },
-        { SOC_MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK, "INTERNAL_AGG_ERROR_FATAL_MASK", "Internal Agg Error Fatal Mask", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK, "INTERNAL_AGG_ERROR_FATAL_MASK", "Internal Agg Error Fatal Mask", REG_STICKY, true },
         { SOC_MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK, "INTERNAL_AGG_ERROR_NON_FATAL_MASK", "Internal Agg Error Non-Fatal Mask", REG_STICKY, false },
         { SOC_MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK, "INTERNAL_FW_ERROR_FATAL_MASK", "Internal Firmware Error Fatal Mask", REG_STICKY, false },
         { SOC_MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK, "INTERNAL_FW_ERROR_NON_FATAL_MASK", "Internal Firmware Error Non-Fatal Mask", REG_STICKY, false },
@@ -635,9 +635,9 @@ const char* get_group_name(mci_register_group_t group) {
         case REG_GROUP_STATUS: return "Status";
         case REG_GROUP_STATUS_RO: return "Status-RO";
         case REG_GROUP_SECURITY_RO: return "Security-RO";
-        case REG_GROUP_ERROR_RW1C: return "Fatal/Non-Fatal Error W1C";
-        case REG_GROUP_ERROR: return "Fatal/Non-Fatal Error";
-        case REG_GROUP_INTERNAL_ERROR_MASK: return "Internal Error Mask";
+        case REG_GROUP_ERROR_RW1C: return "Ftl/Non-Ftl err W1C";
+        case REG_GROUP_ERROR: return "Ftl/Non-Ftl Err";
+        case REG_GROUP_INTERNAL_ERROR_MASK: return "Internal err Mask";
         case REG_GROUP_WATCHDOG: return "Watchdog";
         case REG_GROUP_WATCHDOG_RO: return "Watchdog-RO";
         case REG_GROUP_MCU: return "MCU";
