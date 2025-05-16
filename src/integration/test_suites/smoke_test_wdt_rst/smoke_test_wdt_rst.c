@@ -133,20 +133,14 @@ void main(void) {
         csr_write_mpmc_halt();
     }
     else if (rst_count == 5) {
-        configure_wdt_cascade(0x200, 0x00, 0xffffffff, 0xffffffff);
         VPRINTF(LOW, "Cascaded mode with timer2 timeout - NMI - cold rst\n");
-        *wdt_timer1_en = 0x0;
-        *wdt_timer2_en = 0x0;
+        configure_wdt_cascade(0x200, 0x00, 0x00000200, 0x00000000);
 
-        set_t2_period(0x00000200, 0x00000000);
-
-        *wdt_timer1_en = 0x1;
-        *wdt_timer1_ctrl = 0x1; //restart counter so timer1 can start counting
-        
         VPRINTF(LOW, "Stall until timer1 times out\n");
         VPRINTF(LOW, "Stall until timer2 times out\n");
 
         while(!(lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL) & MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK));
+        handle_error("WDT timeout in cascade mode is expected to trigger NMI and reset!\n");
     }
     else if (rst_count == 6) {
         if ((*hw_error_fatal && MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK) == 1) {
@@ -224,7 +218,7 @@ void main(void) {
         csr_write_mpmc_halt();
     }
     else {
-        SEND_STDOUT_CTRL(0xff);
+        SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
         csr_write_mpmc_halt();
     }
 }

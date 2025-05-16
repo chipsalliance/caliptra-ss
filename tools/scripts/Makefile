@@ -21,7 +21,7 @@ GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
 
 ifndef CALIPTRA_SS_CLK_FREQ
-CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 2 + 1))), 170 400)
+CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$(( ($(PLAYBOOK_RANDOM_SEED) & 1)+1 )) ), 170 400)
 endif
 
 # Ensure that RISC-V toolchain is installed
