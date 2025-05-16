@@ -134,15 +134,8 @@ void main(void) {
     }
     else if (rst_count == 5) {
         VPRINTF(LOW, "Cascaded mode with timer2 timeout - NMI - cold rst\n");
-        configure_wdt_cascade(0x200, 0x00, 0xffffffff, 0xffffffff);
-        *wdt_timer1_en = 0x0;
-        *wdt_timer2_en = 0x0;
+        configure_wdt_cascade(0x200, 0x00, 0x00000200, 0x00000000);
 
-        set_t2_period(0x00000200, 0x00000000);
-
-        *wdt_timer1_en = 0x1;
-        *wdt_timer1_ctrl = MCI_REG_WDT_TIMER1_CTRL_TIMER1_RESTART_MASK; //restart counter so timer1 can start counting
-        
         VPRINTF(LOW, "Stall until timer1 times out\n");
         VPRINTF(LOW, "Stall until timer2 times out\n");
 
