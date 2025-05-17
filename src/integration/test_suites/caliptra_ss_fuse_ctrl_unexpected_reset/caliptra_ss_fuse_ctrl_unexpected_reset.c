@@ -28,6 +28,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -36,29 +37,6 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-typedef struct {
-    uint32_t address;
-    bool is_software;
-} partition_t;
-
-static partition_t partitions[15] = {
-    { .address = 0x0000, .is_software = true  }, // SW_TEST_UNLOCK_PARTITION
-    { .address = 0x0048, .is_software = false }, // SECRET_MANUF_PARTITION
-    { .address = 0x0090, .is_software = false }, // SECRET_PROD_PARTITION_0
-    { .address = 0x00A0, .is_software = false }, // SECRET_PROD_PARTITION_1
-    { .address = 0x00B0, .is_software = false }, // SECRET_PROD_PARTITION_2
-    { .address = 0x00C0, .is_software = false }, // SECRET_PROD_PARTITION_3
-    { .address = 0x00D0, .is_software = true  }, // SW_MANUF_PARTITION
-    { .address = 0x2C18, .is_software = false }, // SECRET_LC_TRANSITION_PARTITION
-    { .address = 0x2CD0, .is_software = true  }, // SVN_PARTITION
-    { .address = 0x2CF8, .is_software = true  }, // VENDOR_TEST_PARTITION
-    { .address = 0x2D38, .is_software = true  }, // VENDOR_HASHES_MANUF_PARTITION
-    { .address = 0x2D78, .is_software = true  }, // VENDOR_HASHES_PROD_PARTITION
-    { .address = 0x3068, .is_software = true  }, // VENDOR_REVOCATIONS_PROD_PARTITION
-    { .address = 0x3100, .is_software = false }, // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0x3308, .is_software = true  }  // VENDOR_NON_SECRET_PROD_PARTITION
-};
-
 /**
  * This function verifies that partitions remain unlocked after
  * a reset when no locking command has been issued.
@@ -66,8 +44,7 @@ static partition_t partitions[15] = {
 void unexpected_reset() {
     const uint32_t sentinel = 0x01;
 
-    partition_t partition = partitions[xorshift32() % 15];
-    uint32_t granularity = partition.is_software ? 32 : 64;
+    partition_t partition = partitions[xorshift32() % (NUM_PARTITIONS-1)];
 
     if (partition.address > 0x40 && partition.address < 0xD0) {
         grant_caliptra_core_for_fc_writes();
@@ -75,7 +52,7 @@ void unexpected_reset() {
         grant_mcu_for_fc_writes(); 
     }
 
-    dai_wr(partition.address, sentinel, 0x0, granularity, 0);
+    dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0);
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
@@ -83,11 +60,11 @@ void unexpected_reset() {
     // Check that the partition remains unlocked after the reset.
     // For software partitions are write should succeed while for
     // hardware partitions a read should go through.
-    if (partition.is_software) {
-        dai_wr(partition.address, sentinel, 0x0, granularity, 0);
+    if (!partition.is_secret) {
+        dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0);
     } else {
         uint32_t read_data[2];
-        dai_rd(partition.address, &read_data[0], &read_data[1], granularity, 0);
+        dai_rd(partition.address, &read_data[0], &read_data[1], partition.granularity, 0);
     }
 }
 

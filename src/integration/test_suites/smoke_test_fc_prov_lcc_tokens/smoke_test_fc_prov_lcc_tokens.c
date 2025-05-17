@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -56,9 +57,8 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 void program_secret_lc_transition_partition() {
 
-    // 0x2C88: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
-    const uint32_t base_address = 0x2C18;
-    const uint32_t fuse_address = 0x2C88;
+    const uint32_t base_address = partitions[SECRET_LC_TRANSITION_PARTITION].address;
+    const uint32_t fuse_address = CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN;
 
     const uint32_t data[4] = {0xdeadbeef, 0xcafebabe, 0x12345678, 0xabababab};
     uint32_t read_data[4];

@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -44,27 +45,6 @@ static const uint32_t prod_token_hash[4] = {
     0xaeebc767, 0x5d3667f5, 0xda705018, 0xf1c0bd8a
 };
 
-typedef struct {
-    uint32_t address;
-    uint32_t granularity;
-    lc_state_dec_t lc_state;
-} prod_manuf_partition_t;
-
-static const prod_manuf_partition_t partitions[12] = {
-    { .address = 0x0000, .granularity = 32, .lc_state = MANUF }, // SW_TEST_UNLOCK_PARTITION
-    { .address = 0x0048, .granularity = 64, .lc_state = MANUF }, // SECRET_MANUF_PARTITION
-    { .address = 0x0090, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_0
-    { .address = 0x00A0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_1
-    { .address = 0x00B0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_2
-    { .address = 0x00C0, .granularity = 64, .lc_state = PROD  }, // SECRET_PROD_PARTITION_3
-    { .address = 0x00D0, .granularity = 32, .lc_state = MANUF }, // SW_MANUF_PARTITION
-    { .address = 0x2D38, .granularity = 32, .lc_state = MANUF }, // VENDOR_HASHES_MANUF_PARTITION
-    { .address = 0x2D78, .granularity = 32, .lc_state = PROD },  // VENDOR_HASHES_PROD_PARTITION
-    { .address = 0x3068, .granularity = 32, .lc_state = PROD },  // VENDOR_REVOCATIONS_PROD_PARTITION
-    { .address = 0x3100, .granularity = 64, .lc_state = PROD },  // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0x3308, .granularity = 64, .lc_state = PROD },  // VENDOR_NON_SECRET_PROD_PARTITION
-};
-
 /**
  * This function advances to the MANUF LC state and checks that all the
  * MANUF and PROD partitions are writable. It then progresses to the PROD
@@ -72,10 +52,20 @@ static const prod_manuf_partition_t partitions[12] = {
  */
 void manuf_prod_provision() {
 
+    // Collect all MANUF and PROD partitions.
+    partition_t part_sel[NUM_PARTITIONS];
+
+    uint32_t count = 0;
+    for (int i = 0; i < NUM_PARTITIONS; i++) {
+        if (partitions[i].lc_phase == MANUF || partitions[i].lc_phase == PROD) {
+            part_sel[count++] = partitions[i];
+        }
+    } 
+
     // 0x2C88: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
-    const uint32_t base_address  = 0x2C18;
-    const uint32_t manuf_token_address = 0x2C88;
-    const uint32_t prod_token_address = 0x2C98;
+    const uint32_t base_address  = CPTRA_SS_TEST_UNLOCK_TOKEN_1;
+    const uint32_t manuf_token_address = CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN;
+    const uint32_t prod_token_address = CPTRA_SS_MANUF_TO_PROD_TOKEN;
 
     dai_wr(manuf_token_address, manuf_token_hash[0], manuf_token_hash[1], 64, 0);
     dai_wr(manuf_token_address + 0x08, manuf_token_hash[2], manuf_token_hash[3], 64, 0);
@@ -99,13 +89,13 @@ void manuf_prod_provision() {
     }
 
     // Check that all the MANUF and PROD partitionss are writeable.
-    for (uint32_t i = 0; i < 12; i++) {
-        if (partitions[i].address > 0x40 && partitions[i].address < 0xD0) {
+    for (uint32_t i = 0; i < count; i++) {
+        if (part_sel[i].address > 0x40 && part_sel[i].address < 0xD0) {
             grant_caliptra_core_for_fc_writes();
         } else {
             grant_mcu_for_fc_writes(); 
         }
-        dai_wr(partitions[i].address, i, 0, partitions[i].granularity, 0);
+        dai_wr(part_sel[i].address, i, 0, part_sel[i].granularity, 0);
     }
 
     // Transition from MANUF to PROD.
@@ -120,13 +110,13 @@ void manuf_prod_provision() {
     }
 
     // Check that only PROD partitions are writeable and writes to MANUF partitions are blocked.
-    for (uint32_t i = 0; i < 12; i++) {
-        if (partitions[i].address > 0x40 && partitions[i].address < 0xD0) {
+    for (uint32_t i = 0; i < count; i++) {
+        if (part_sel[i].address > 0x40 && part_sel[i].address < 0xD0) {
             grant_caliptra_core_for_fc_writes();
         } else {
             grant_mcu_for_fc_writes(); 
         }
-        dai_wr(partitions[i].address, i, 0, partitions[i].granularity, partitions[i].lc_state == MANUF ? OTP_CTRL_STATUS_DAI_ERROR_MASK : 0);
+        dai_wr(part_sel[i].address, i, 0, part_sel[i].granularity, part_sel[i].lc_phase == MANUF ? OTP_CTRL_STATUS_DAI_ERROR_MASK : 0);
     }
 }
 

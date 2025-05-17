@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -49,9 +50,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  *  5. Check that a read now results in an error.
  */
 void register_accesses() {
-
-    // 0x3068: CPTRA_CORE_ECC_REVOCATION_0
-    const uint32_t fuse_address = 0x3068;
+    const uint32_t fuse_address = CPTRA_CORE_ECC_REVOCATION_0;
 
     const uint32_t data = 0xdeadbeef;
     uint32_t read_data;

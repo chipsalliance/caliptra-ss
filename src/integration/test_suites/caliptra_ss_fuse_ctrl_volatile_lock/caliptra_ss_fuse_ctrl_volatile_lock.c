@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -39,9 +40,9 @@ void pk_volatile_lock(void) {
     // Loop through all possible pk volatile locks.
     for (uint32_t i = 1; i < 15; i++) {
         lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, i);
-        dai_wr(0x2D78 + i*49, 0xFF, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+        dai_wr(CPTRA_CORE_VENDOR_PK_HASH_1 + i*49, 0xFF, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
         lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 0);
-        dai_wr(0x2D78 + i*49, 0xFF, 0, 32, 0);
+        dai_wr(CPTRA_CORE_VENDOR_PK_HASH_1 + i*49, 0xFF, 0, 32, 0);
     }
 }
 

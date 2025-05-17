@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -34,7 +35,6 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #else
     enum printf_verbosity verbosity_g = LOW;
 #endif
-
 
 /**
  * Program a randomized fuse in `SW_MANUF_PARTITION`. The function consists
@@ -53,15 +53,10 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  *      is equal to the dummy digest written in Step 3.
  */
 void program_sw_manuf_partition(uint32_t seed) {
+    partition_t partition = partitions[SW_MANUF_PARTITION];
 
-    // 0x0D0: CPTRA_CORE_ANTI_ROLLBACK_DISABLE
-    // 0x0D1: CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR
-    // 0x1FE1: CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER
-    // 0x1FF1: CPTRA_CORE_SOC_STEPPING_ID
-    // 0x1FF3: CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0
-    const uint32_t addresses[12] = {0x0D0, 0x0D1, 0x1FE1, 0x1FF1, 0x1FF3, 0x2023, 0x2053, 0x2083, 0x20B3, 0x20E3, 0x2113, 0x2143};
-    const uint32_t digest_address = 0x2C10;
-    uint32_t fuse_address = addresses[seed % 12];
+    const uint32_t digest_address = partition.digest_address;
+    uint32_t fuse_address = partition.fuses[xorshift32() % partition.num_fuses];
 
     const uint32_t data = 0xAB;
     uint32_t read_data;
