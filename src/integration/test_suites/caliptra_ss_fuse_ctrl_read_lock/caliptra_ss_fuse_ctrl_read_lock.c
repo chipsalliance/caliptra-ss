@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -35,21 +36,18 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#define NUM_READ_LOCK_PARTITIONS 8
-
 void read_lock(void) {
-    const uint32_t partition_addresses[NUM_READ_LOCK_PARTITIONS] = {
-        0x0000, // SW_TEST_UNLOCK_PARTITION
-        0x00D0, // SW_MANUF_PARTITION
-        0x2CD0, // SVN_PARTITION
-        0x2CF8, // VENDOR_TEST_PARTITION
-        0x2D38, // VENDOR_HASHES_MANUF_PARTITION
-        0x2D78, // VENDOR_HASHES_PROD_PARTITION
-        0x3068, // VENDOR_REVOCATIONS_PROD_PARTITION
-        0x3308  // VENDOR_NON_SECRET_PROD_PARTITION
-    };
-    const uint32_t register_addresses[NUM_READ_LOCK_PARTITIONS] = {
-        SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_READ_LOCK,
+    // Collect all read-lockable partitions.
+    partition_t part_sel[NUM_PARTITIONS];
+
+    uint32_t count = 0;
+    for (int i = 0; i < NUM_PARTITIONS; i++) {
+        if (partitions[i].has_read_lock) {
+            part_sel[count++] = partitions[i];
+        }
+    } 
+
+    const uint32_t register_addresses[] = {
         SOC_OTP_CTRL_SW_MANUF_PARTITION_READ_LOCK,
         SOC_OTP_CTRL_SVN_PARTITION_READ_LOCK,
         SOC_OTP_CTRL_VENDOR_TEST_PARTITION_READ_LOCK,
@@ -58,12 +56,13 @@ void read_lock(void) {
         SOC_OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK,
         SOC_OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK
     };
+
     // Try to read all the read-lockable partitions.
     uint32_t read_data[2];
-    for (uint32_t i = 0; i < NUM_READ_LOCK_PARTITIONS; i++) {
-        dai_rd(partition_addresses[i], &read_data[0], &read_data[1], 32, 0);
+    for (uint32_t i = 0; i < count; i++) {
+        dai_rd(part_sel[i].address, &read_data[0], &read_data[1], part_sel[i].granularity, 0);
         lsu_write_32(register_addresses[i], 0x0);
-        dai_rd(partition_addresses[i], &read_data[0], &read_data[1], 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+        dai_rd(part_sel[i].address, &read_data[0], &read_data[1], part_sel[i].granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
     }
 }
 

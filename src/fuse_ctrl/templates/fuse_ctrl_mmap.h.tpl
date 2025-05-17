@@ -14,30 +14,51 @@
 //
 
 #ifndef FUSE_CTRL_MMAP_HEADER
-#define FUSE_CTRL_MMAP_HEADER
-
+#define FUSE_CTRL_MMAP_HEADERS
+<%!
+    def lc_state_decode(state):
+        return ["LcStRaw",
+                "LcStTestUnlocked0", "LcStTestLocked0", "LcStTestUnlocked1", "LcStTestLocked1",
+                "LcStTestUnlocked2", "LcStTestLocked2", "LcStTestUnlocked3", "LcStTestLocked3",
+                "LcStTestUnlocked4", "LcStTestLocked4", "LcStTestUnlocked5", "LcStTestLocked5",
+                "LcStTestUnlocked6", "LcStTestLocked6", "LcStTestUnlocked7",
+                "LcStDev", "LcStProd", "LcStProdEnd", "LcStRma", "LcStScrap"
+                ].index(state)
+%>
 typedef enum {
 % for i, p in enumerate(partitions):
     // ${p["name"]}
-% for j, f in enumerate(p["items"]):
-% if f["isdigest"] == False:
-% if i == len(partitions)-1 and j == len(p["items"])-1:
+  % for j, f in enumerate(p["items"]):
+    % if f["isdigest"] == False:
+      % if i == len(partitions)-1 and j == len(p["items"])-1:
     ${f["name"]} = ${"0x%04X" % f["offset"]}
-% else:
+      % else:
     ${f["name"]} = ${"0x%04X" % f["offset"]},
-% endif
-% endif
+      % endif
+    % endif
+  % endfor
 % endfor
+} fuse_k;
+
+typedef enum {
+% for i, p in enumerate(partitions):
+    ${p["name"]}${"," if i < len(partitions)-1 else ""}
 % endfor
-} fuse_t;
+} partition_k;
 
 typedef struct {
+    uint32_t index;
     uint32_t address;
     uint32_t digest_address;
+    uint32_t variant;
+    uint32_t granularity;
     bool is_secret;
     bool hw_digest;
     bool sw_digest;
+    bool has_read_lock;
+    bool has_ecc;
     bool is_lifecycle;
+    uint32_t lc_phase;
     uint32_t num_fuses;
     uint32_t *fuses;
 } partition_t;
@@ -46,67 +67,50 @@ typedef struct {
 
 % for i, p in enumerate(partitions[:len(partitions)]):
 uint32_t ${p["name"].lower()}_fuses[] = {
-% if p["hw_digest"] or p["sw_digest"]:
-% for j, f in enumerate(p["items"][:len(p["items"])-1]):
-% if j < len(p["items"])-2:
+  % if p["hw_digest"] or p["sw_digest"]:
+    % for j, f in enumerate(p["items"][:len(p["items"])-1]):
+      % if j < len(p["items"])-2:
     ${f["name"]},
-% else:
+      % else:
     ${f["name"]}
-% endif
-% endfor
-% else:
-% for j, f in enumerate(p["items"][:len(p["items"])]):
-% if j < len(p["items"])-1:
+      % endif
+    % endfor
+  % else:
+    % for j, f in enumerate(p["items"][:len(p["items"])]):
+      % if j < len(p["items"])-1:
     ${f["name"]},
-% else:
+      % else:
     ${f["name"]}
-% endif
-% endfor
-% endif
+      % endif
+    % endfor
+  % endif
 };
 % endfor
 
 partition_t partitions[NUM_PARTITIONS] = {
-% for i, p in enumerate(partitions[:len(partitions)-1]):
+% for i, p in enumerate(partitions):
     // ${p["name"]}
     {
+        .index = ${i},
         .address = ${"0x%04X" % p["offset"]},
 % if p["sw_digest"] or p["hw_digest"]:
         .digest_address = ${"0x%04X" % p["items"][len(p["items"])-1]["offset"]},
 % else:
         .digest_address = 0x0000,
 % endif
-% if p["secret"]:
-        .is_secret = true,
-% else:
-        .is_secret = false,
-% endif
-% if p["hw_digest"]:
-        .hw_digest = true,
-% else:
-        .hw_digest = false,
-% endif
-% if p["sw_digest"]:
-        .sw_digest = true,
-% else:
-        .sw_digest = false,
-% endif
-        .is_lifecycle = false,
+        .variant = ${0 if p["variant"] == "Buffered" else (1 if p["variant"] == "Unbuffered" else 2)},
+        .granularity = ${64 if p["secret"] else 32},
+        .is_secret = ${"true" if p["secret"] else "false"},
+        .hw_digest = ${"true" if p["hw_digest"] else "false"},
+        .sw_digest = ${"true" if p["sw_digest"] else "false"},
+        .has_read_lock = ${"true" if p["read_lock"] == "CSR" else "false"},
+        .has_ecc = ${"true" if p["integrity"] else "false"},
+        .lc_phase = ${lc_state_decode(p["lc_phase"])},
+        .is_lifecycle = ${"true" if p["variant"] == "LifeCycle" else "false"},
         .num_fuses = ${len(p["items"])-1},
         .fuses = ${p["name"].lower() + "_fuses"}
     },
 % endfor
-    // LIFE_CYCLE
-    {
-        .address = ${"0x%04X" % partitions[len(partitions)-1]["offset"]},
-        .digest_address = 0x0000,
-        .is_secret = false,
-        .hw_digest = false,
-        .sw_digest = false,
-        .is_lifecycle = true,
-        .num_fuses = 2,
-        .fuses = life_cycle_fuses
-    }
 };
 
 #endif // FUSE_CTRL_MMAP_HEADER

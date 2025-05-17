@@ -14,7 +14,7 @@
 //
 
 #ifndef FUSE_CTRL_MMAP_HEADER
-#define FUSE_CTRL_MMAP_HEADER
+#define FUSE_CTRL_MMAP_HEADERS
 
 typedef enum {
     // SW_TEST_UNLOCK_PARTITION
@@ -182,15 +182,40 @@ typedef enum {
     // LIFE_CYCLE
     LC_TRANSITION_CNT = 0x3FA8,
     LC_STATE = 0x3FD8
-} fuse_t;
+} fuse_k;
+
+typedef enum {
+    SW_TEST_UNLOCK_PARTITION,
+    SECRET_MANUF_PARTITION,
+    SECRET_PROD_PARTITION_0,
+    SECRET_PROD_PARTITION_1,
+    SECRET_PROD_PARTITION_2,
+    SECRET_PROD_PARTITION_3,
+    SW_MANUF_PARTITION,
+    SECRET_LC_TRANSITION_PARTITION,
+    SVN_PARTITION,
+    VENDOR_TEST_PARTITION,
+    VENDOR_HASHES_MANUF_PARTITION,
+    VENDOR_HASHES_PROD_PARTITION,
+    VENDOR_REVOCATIONS_PROD_PARTITION,
+    VENDOR_SECRET_PROD_PARTITION,
+    VENDOR_NON_SECRET_PROD_PARTITION,
+    LIFE_CYCLE
+} partition_k;
 
 typedef struct {
+    uint32_t index;
     uint32_t address;
     uint32_t digest_address;
+    uint32_t variant;
+    uint32_t granularity;
     bool is_secret;
     bool hw_digest;
     bool sw_digest;
+    bool has_read_lock;
+    bool has_ecc;
     bool is_lifecycle;
+    uint32_t lc_phase;
     uint32_t num_fuses;
     uint32_t *fuses;
 } partition_t;
@@ -382,180 +407,276 @@ uint32_t life_cycle_fuses[] = {
 partition_t partitions[NUM_PARTITIONS] = {
     // SW_TEST_UNLOCK_PARTITION
     {
+        .index = 0,
         .address = 0x0000,
         .digest_address = 0x0040,
+        .variant = 0,
+        .granularity = 32,
         .is_secret = false,
         .hw_digest = true,
         .sw_digest = false,
+        .has_read_lock = false,
+        .has_ecc = true,
+        .lc_phase = 16,
         .is_lifecycle = false,
         .num_fuses = 1,
         .fuses = sw_test_unlock_partition_fuses
     },
     // SECRET_MANUF_PARTITION
     {
+        .index = 1,
         .address = 0x0048,
         .digest_address = 0x0088,
+        .variant = 0,
+        .granularity = 64,
         .is_secret = true,
         .hw_digest = true,
         .sw_digest = false,
+        .has_read_lock = false,
+        .has_ecc = true,
+        .lc_phase = 16,
         .is_lifecycle = false,
         .num_fuses = 1,
         .fuses = secret_manuf_partition_fuses
     },
     // SECRET_PROD_PARTITION_0
     {
+        .index = 2,
         .address = 0x0090,
         .digest_address = 0x0098,
+        .variant = 0,
+        .granularity = 64,
         .is_secret = true,
         .hw_digest = true,
         .sw_digest = false,
+        .has_read_lock = false,
+        .has_ecc = true,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 1,
         .fuses = secret_prod_partition_0_fuses
     },
     // SECRET_PROD_PARTITION_1
     {
+        .index = 3,
         .address = 0x00A0,
         .digest_address = 0x00A8,
+        .variant = 0,
+        .granularity = 64,
         .is_secret = true,
         .hw_digest = true,
         .sw_digest = false,
+        .has_read_lock = false,
+        .has_ecc = true,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 1,
         .fuses = secret_prod_partition_1_fuses
     },
     // SECRET_PROD_PARTITION_2
     {
+        .index = 4,
         .address = 0x00B0,
         .digest_address = 0x00B8,
+        .variant = 0,
+        .granularity = 64,
         .is_secret = true,
         .hw_digest = true,
         .sw_digest = false,
+        .has_read_lock = false,
+        .has_ecc = true,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 1,
         .fuses = secret_prod_partition_2_fuses
     },
     // SECRET_PROD_PARTITION_3
     {
+        .index = 5,
         .address = 0x00C0,
         .digest_address = 0x00C8,
+        .variant = 0,
+        .granularity = 64,
         .is_secret = true,
         .hw_digest = true,
         .sw_digest = false,
+        .has_read_lock = false,
+        .has_ecc = true,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 1,
         .fuses = secret_prod_partition_3_fuses
     },
     // SW_MANUF_PARTITION
     {
+        .index = 6,
         .address = 0x00D0,
         .digest_address = 0x2C10,
+        .variant = 1,
+        .granularity = 32,
         .is_secret = false,
         .hw_digest = false,
         .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 16,
         .is_lifecycle = false,
         .num_fuses = 12,
         .fuses = sw_manuf_partition_fuses
     },
     // SECRET_LC_TRANSITION_PARTITION
     {
+        .index = 7,
         .address = 0x2C18,
         .digest_address = 0x2CC8,
+        .variant = 0,
+        .granularity = 64,
         .is_secret = true,
         .hw_digest = true,
         .sw_digest = false,
+        .has_read_lock = false,
+        .has_ecc = true,
+        .lc_phase = 1,
         .is_lifecycle = false,
         .num_fuses = 11,
         .fuses = secret_lc_transition_partition_fuses
     },
     // SVN_PARTITION
     {
+        .index = 8,
         .address = 0x2CD0,
         .digest_address = 0x0000,
+        .variant = 1,
+        .granularity = 32,
         .is_secret = false,
         .hw_digest = false,
         .sw_digest = false,
+        .has_read_lock = true,
+        .has_ecc = false,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 3,
         .fuses = svn_partition_fuses
     },
     // VENDOR_TEST_PARTITION
     {
+        .index = 9,
         .address = 0x2CF8,
         .digest_address = 0x2D30,
+        .variant = 1,
+        .granularity = 32,
         .is_secret = false,
         .hw_digest = false,
         .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = false,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 1,
         .fuses = vendor_test_partition_fuses
     },
     // VENDOR_HASHES_MANUF_PARTITION
     {
+        .index = 10,
         .address = 0x2D38,
         .digest_address = 0x2D70,
+        .variant = 1,
+        .granularity = 32,
         .is_secret = false,
         .hw_digest = false,
         .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = false,
+        .lc_phase = 16,
         .is_lifecycle = false,
         .num_fuses = 2,
         .fuses = vendor_hashes_manuf_partition_fuses
     },
     // VENDOR_HASHES_PROD_PARTITION
     {
+        .index = 11,
         .address = 0x2D78,
         .digest_address = 0x3060,
+        .variant = 1,
+        .granularity = 32,
         .is_secret = false,
         .hw_digest = false,
         .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = false,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 31,
         .fuses = vendor_hashes_prod_partition_fuses
     },
     // VENDOR_REVOCATIONS_PROD_PARTITION
     {
+        .index = 12,
         .address = 0x3068,
         .digest_address = 0x30F8,
+        .variant = 1,
+        .granularity = 32,
         .is_secret = false,
         .hw_digest = false,
         .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = false,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 48,
         .fuses = vendor_revocations_prod_partition_fuses
     },
     // VENDOR_SECRET_PROD_PARTITION
     {
+        .index = 13,
         .address = 0x3100,
         .digest_address = 0x3300,
+        .variant = 0,
+        .granularity = 64,
         .is_secret = true,
         .hw_digest = true,
         .sw_digest = false,
+        .has_read_lock = false,
+        .has_ecc = true,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 16,
         .fuses = vendor_secret_prod_partition_fuses
     },
     // VENDOR_NON_SECRET_PROD_PARTITION
     {
+        .index = 14,
         .address = 0x3308,
         .digest_address = 0x3FA0,
+        .variant = 1,
+        .granularity = 32,
         .is_secret = false,
         .hw_digest = false,
         .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 17,
         .is_lifecycle = false,
         .num_fuses = 16,
         .fuses = vendor_non_secret_prod_partition_fuses
     },
     // LIFE_CYCLE
     {
+        .index = 15,
         .address = 0x3FA8,
         .digest_address = 0x0000,
+        .variant = 2,
+        .granularity = 32,
         .is_secret = false,
         .hw_digest = false,
         .sw_digest = false,
+        .has_read_lock = false,
+        .has_ecc = true,
+        .lc_phase = 0,
         .is_lifecycle = true,
-        .num_fuses = 2,
+        .num_fuses = 1,
         .fuses = life_cycle_fuses
-    }
+    },
 };
 
 #endif // FUSE_CTRL_MMAP_HEADER
