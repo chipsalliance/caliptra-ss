@@ -386,9 +386,7 @@ General Rules:
 5. If Read Route is disabled, Read Fixed field is ignored.  
 6. If Write Route is disabled, Write Fixed field is ignored.  
 7. Addresses must be aligned to AXI data width (1 DWORD).
-
 8. Block Size is used only for reads from the Subsystem Recovery Interface. When block size has a non-zero value, the DMA will only issue AXI read requests when the payload available input signal is set to 1, and will limit the size of read requests to the value of block size. For all other transactions (such as AXI writes, or any single-dword access to a subsystem register via the DMA), block size shall be set to a value of 0 for every transaction.
-
 9. AES mode is only used with AXI RD -> AXI WR and must be used with Block Size 0.
 
 Steps:
@@ -404,16 +402,21 @@ Steps:
    1. First acquire Sha Accel Lock via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
    2. Initiate Sha Accel streaming operation via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
    3. Run this operation with the AXI RD \-\> AXI WR route to move data from SoC location into Sha Accelerator  
-8. Set Control Register  
+8. If AES Mode:
+   1. Fully configure AES
+   2. Stream in any header info to AES like AAD
+   3. Set read/write routes to AXI
+   4. Set AES_MODE in DMA
+9.  Set Control Register  
    1. Set Read/Write Routes  
    2. Set Read/Write Fixed=0/1  
    3. GO  
    4. (All 3 may be single write or separate, GO must be last bit to set)  
-9. If AHB data: Wait for RD FIFO not empty or WR FIFO not full  
+10. If AHB data: Wait for RD FIFO not empty or WR FIFO not full  
    1. Push/Pop data (using Rd Data/Wr Data register offsets) until all requested bytes transferred  
    2. If AHB Error – check status0 for Error, then check for “Command Error”   
-10. Wait for TXN Done Interrupt (or Poll Status0)   
-11. Read Status0, confirm Busy=0, Error=0
+11. Wait for TXN Done Interrupt (or Poll Status0)   
+12. Read Status0, confirm Busy=0, Error=0
 
 ## Descriptor
 
