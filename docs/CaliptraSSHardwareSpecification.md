@@ -319,17 +319,21 @@ The DMA assist initiates transactions on the AXI manager interface in compliance
 
 In the AXI DMA control state machine, both the read and write interfaces have their own “route”. A route is configured for read and write channels for every DMA operation that is requested. Routes determine how data flows through the DMA block.
 
-Read routes always apply when an AXI read is requested. Any AXI read will push the response data into the internal FIFO. The read route determines where this data will ultimately be sent when it is popped from the FIFO. For the AHB route, data from the FIFO is populated to the dataout register, where it may be read via AHB by the Caliptra RV core. For the mailbox route, data from the FIFO flows into the mailbox; for these operations, the mailbox address is determined by the destination address register value, with an offset applied based on how many bytes have been written to the mailbox. For the AXI route, data from the FIFO flows into the AXI Write Manager, whereupon it is sent out to AXI on the WDATA signal.
+Read routes always apply when an AXI read is requested and must be disabled otherwise. Any AXI read pushes the response data into the internal FIFO. The read route determines where this data is ultimately sent when it is popped from the FIFO. For the AHB route, data from the FIFO is populated to the dataout register, where it may be read via AHB by the Caliptra RV core. For the mailbox route, data from the FIFO flows into the mailbox; for these operations, the mailbox address is determined by the destination address register value, with an offset applied based on how many bytes have been written to the mailbox. For the AXI route, data from the FIFO flows into the AXI Write Manager, whereupon it is sent out to AXI on the WDATA signal. For the Read DISABLE route, data output from the FIFO always flows into the AXI write channel. In this case, data originates from a source other than an AXI read, so AXI reads are inactive.
 
-Write routes always apply when an AXI write is requested. Any AXI write will read data from the internal FIFO before sending it over AXI. The write route determines where this data originates before it is pushed onto the FIFO. For the AHB route, a write to the datain register via AHB results in write data being pushed onto the FIFO. For the mailbox route, data is read from the mailbox and pushed onto the FIFO; for these operations, the mailbox address is determined by the source address register value, with an offset applied based on how many bytes have been read from the mailbox. For the AXI route, data flows from the AXI Read Manager into the FIFO.
+Write routes always apply when an AXI write is requested and must be disabled otherwise. Any AXI write reads data from the internal FIFO before sending it over AXI. The write route determines where this data originates before it is pushed onto the FIFO. For the AHB route, a write to the datain register via AHB results in write data being pushed onto the FIFO. For the mailbox route, data is read from the mailbox and pushed onto the FIFO; for these operations, the mailbox address is determined by the source address register value, with an offset applied based on how many bytes have been read from the mailbox. For the AXI route, data flows from the AXI Read Manager into the FIFO. For the Write DISABLE route, data received on the AXI read channel is always pushed into the FIFO and then sent to an internal destination rather than a destination on the AXI bus, so AXI writes are inactive.
 
-*Example 1: Write Route \== MBOX*
+*Example 1: Write Route \== MBOX and Read Route \== DISABLE*
 
 ![](./images/Caliptra-AXI-DMA-WR.png)
 
-*Example 2: Read Route \== AHB*
+*Example 2: Read Route \== AHB and Write Route \== DISABLE*
 
 ![](./images/Caliptra-AXI-DMA-RD.png)
+
+*Example 3: Read Route \== AXI and Write Route \== AXI*
+
+~[](./images/Caliptra-AXI-DMA-RD-WR.png)
 
 
 

@@ -1,0 +1,7 @@
+---
+seed: 1
+testname: mcu_set_mci_cacheable
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for [mcu_set_mci_cacheable]"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=mcu_set_mci_cacheable mcu_program.hex
