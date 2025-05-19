@@ -372,7 +372,7 @@ The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware'
 
 If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly pad the AES input data with 0s and update the byte count at the end of the image. When streaming the image out it will only write the exact BYTE COUNT to the destination. Meaning it will utilize AXI WSTRB if the image is not a multiple of 1 DWORD.
 
-If AXI DMA encounters eny errors (AXI or other errors) it will abort the transfer. It is the Firmware's responsiblity to clear the error in the AXI DMA and flush the AES if required. 
+If AXI DMA encounters any errors (AXI or other errors) it will abort the transfer. It is the Firmware's responsiblity to clear the error in the AXI DMA and flush the AES if required. 
 
 When AXI DMA is using AES Caliptra shall not try to access AES via AHB until AXI DMA has completed.
 
