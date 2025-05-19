@@ -363,7 +363,7 @@ The DMA block can directly stream images from AXI to AES for decrypte/encrypt, a
 
 Other Read/Write Routes and Block sizes are not supported.
 
-The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware's responsiblity to:
+The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware's responsibility to:
 
 1. Fully configure AES before streaming the image via AXI DMA
 2. Push the AAD header into AES before straming the image via AXI DMA
