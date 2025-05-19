@@ -366,7 +366,7 @@ Other Read/Write Routes and Block sizes are not supported.
 The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware's responsiblity to:
 
 1. Fully configure AES before streaming the image via AXI DMA
-2. Push the AAD header into AES before stramingthe image via AXI DMA
+2. Push the AAD header into AES before straming the image via AXI DMA
 3. Retreive any tages from AES after the image has been processed.
  
 
@@ -374,7 +374,9 @@ If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly
 
 If AXI DMA encounters eny errors (AXI or other errors) it will abort the transfer. It is the Firmware's responsiblity to clear the error in the AXI DMA and flush the AES if required. 
 
-When AXI DMA is using AES the Caliptra shall not try to access AES via AHB until AXI DMA has completed.
+When AXI DMA is using AES Caliptra shall not try to access AES via AHB until AXI DMA has completed.
+
+AES access over AXI is restricted to only Caliptra DMA, all other requests will be dropped.
 
 *AES Mode: Read Route \== AXI, Write Route \== AXI, AES Mode \== 1*
 
