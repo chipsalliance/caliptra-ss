@@ -353,6 +353,7 @@ In all cases other than reading Recovery Interface Payloads, the block\_size reg
 
 The DMA block can directly stream images from AXI to AES for decrypte/encrypt, and then stream the processed image over AXI to some SOC storage. This can be done by configuring the AXI DMA as:
 
+* AES Mode == 1
 * Read Route == AXI
 * Write Route == AXI
 * Block Size == 0 (OPC Stream Boot Disabled)
