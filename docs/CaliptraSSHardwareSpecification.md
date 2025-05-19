@@ -366,7 +366,7 @@ Other Read/Write Routes and Block sizes are not supported.
 The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware's responsibility to:
 
 1. Fully configure AES before streaming the image via AXI DMA
-2. Push the AAD header into AES before straming the image via AXI DMA
+2. Push the AAD header into AES before streaming the image via AXI DMA
 3. Retreive any tages from AES after the image has been processed.
  
 
