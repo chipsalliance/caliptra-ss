@@ -367,7 +367,7 @@ The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware'
 
 1. Fully configure AES before streaming the image via AXI DMA
 2. Push the AAD header into AES before streaming the image via AXI DMA
-3. Retreive any tages from AES after the image has been processed.
+3. Retrieve any tags from AES after the image has been processed.
  
 
 If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly pad the AES input data with 0s and update the byte count at the end of the image. When streaming the image out it will only write the exact BYTE COUNT to the destination. Meaning it will utilize AXI WSTRB if the image is not a multiple of 1 DWORD.
