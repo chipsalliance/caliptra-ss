@@ -656,7 +656,7 @@ There are two primary programming avenues to interface with the Caliptra Subsyst
 
 2. **Caliptra Firmware**
    - **Description**: This method involves programming the Caliptra Core to execute firmware.
-   - **Details**: For more information on how to program and execute Caliptra Core firmware, please refer to the [Caliptra Programming Interface](#) documentation.
+   - **Details**: For more information on how to program and execute Caliptra Core firmware, please refer to the [Caliptra Core References and Related Specifications](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#references-and-related-specifications).
 
 ## Sequences
 
