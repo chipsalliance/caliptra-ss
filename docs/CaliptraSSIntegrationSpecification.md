@@ -550,16 +550,16 @@ Integrator must connect following list of manager and subordinates to axi interc
 
   - The following address map is a **suggested address** map for subordinates for the subsystem design. It details the memory layout and the connections between different components within the Caliptra subsystem.
 
-    | Start Address    | End Address      | Subordinate | Name        | Description                |
-    |------------------|------------------|-------|-------------------|---------------------------|
-    | 64'h1000_0000    | 64'h1000_FFFF    | 0     | imem              | MCU Instruction memory    |
-    | 64'h2000_4000    | 64'h2000_4FFF    | 1     | I3c               | I3C Core                  |
-    | 64'h8000_0000    | 64'h80FF_FFFF    | 2     | n/a               | Reserved                  |
-    | 64'h3000_0000    | 64'h3FFF_FFFF    | 3     | SoC IFC (tb)      | SoC / Testbench           |
-    | 64'h2100_0000    | 64'h2200_0000    | 4     | MCI               | Manufacturer Control Interface (for MCU) |
-    | 64'h7000_0000    | 64'h7000_01FF    | 5     | Fuse Ctrl         | Fuse Controller           |
-    | 64'h7000_0200    | 64'h7000_03FF    | 6     | Fuse Ctrl Core    | Fuse Controller Core      |
-    | 64'h7000_0400    | 64'h7000_05FF    | 7     | Life Cycle Ctrl   | Life Cycle Controller     |
+    | Start Address    | End Address      | Address Width | Subordinate | Name              | Description               |
+    |------------------|------------------|---------------|-------------|-------------------|---------------------------|
+    | 64'h1000_0000    | 64'h1000_FFFF    | 16            | 0           | imem              | MCU Instruction memory    |
+    | 64'h2000_4000    | 64'h2000_4FFF    | 12            | 1           | I3c               | I3C Core                  |
+    | 64'h8000_0000    | 64'h80FF_FFFF    | -             | 2           | n/a               | Reserved                  |
+    | 64'hA000_0000    | 64'hA007_FFFF    | 19            | 3           | SoC IFC (tb)      | SoC / Testbench           |
+    | 64'h2100_0000    | 64'h21FF_FFFF    | 24            | 4           | MCI               | Manufacturer Control Interface (for MCU) |
+    | 64'h7000_0000    | 64'h7000_01FF    | 9             | 5           | Fuse Ctrl         | Fuse Controller           |
+    | 64'h7000_0200    | 64'h7000_03FF    | 9             | 6           | Fuse Ctrl Core    | Fuse Controller Core      |
+    | 64'h7000_0400    | 64'h7000_05FF    | 9             | 7           | Life Cycle Ctrl   | Life Cycle Controller     |
 
 - Following are the header files path for the below suggested address map. These files would be useful in defining the address map using the given RDL Files.
 
