@@ -1567,7 +1567,8 @@ The two regions have different access protection. The size of the regions is dyn
 
     | Bits | Name | Description |
     | :---- | :---- | :---- |
-    | 63:0 | RESERVED | No allocated function |
+    | 63:1 | RESERVED | No allocated function |
+    | 0 | FIPS_ZEROIZATION_PPD_i | [FIP zeroization](CaliptraSSHardwareSpecification.md#zeroization-flow-for-secret-fuses) request sampled by MCU ROM. |
 
 ### Error Aggregation Connectivity Requirements
 
