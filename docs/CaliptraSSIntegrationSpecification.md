@@ -2073,7 +2073,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 2. **Recovery target** : Recovery target is dedicated to streaming boot / recovery interface.
 
 - This I3C code integrates with an AXI interconnect, allowing AXI read and write transactions to access I3C registers. For details on the core’s internal registers and functionality, see:
-  - [I3C Core Documentation](https://github.com/chipsalliance/i3c-core/blob/main/docs/source/top.md)
+  - [I3C Core Documentation](https://chipsalliance.github.io/i3c-core/)
   - [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md)
   - [I3C Core Registers](https://github.com/chipsalliance/i3c-core/tree/main/src/rdl)
 
