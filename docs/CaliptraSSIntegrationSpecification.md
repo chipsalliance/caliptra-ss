@@ -1648,10 +1648,10 @@ Below are the connections needed between MCI and LCC for the Gasket functionalit
 
 | MCI Port | Direction | LCC Port | Description |
 | ----- | :---: | ----- | ----- |
-| from\_lcc\_to\_otp\_program\_i | \<- | lc\_otp\_program\_o | See [LCC Section](Life-Cycle-Controller) |
-| lc\_dft\_en\_i | \<- | lc\_dft\_en\_o | See [LCC Section](Life-Cycle-Controller)|
-| lc\_hw\_debug\_en\_i | \<- | lc\_hw\_debug\_en\_o | See [LCC Section](Life-Cycle-Controller)|
-| from\_otp\_to\_lcc\_program\_i | \<- | otp\_lc\_data\_i | See [LCC Section](Life-Cycle-Controller) |
+| from\_lcc\_to\_otp\_program\_i | \<- | lc\_otp\_program\_o | See [LCC Section](#Life-Cycle-Controller) |
+| lc\_dft\_en\_i | \<- | lc\_dft\_en\_o | See [LCC Section](#Life-Cycle-Controller)|
+| lc\_hw\_debug\_en\_i | \<- | lc\_hw\_debug\_en\_o | See [LCC Section](#Life-Cycle-Controller)|
+| from\_otp\_to\_lcc\_program\_i | \<- | otp\_lc\_data\_i | See [LCC Section](#Life-Cycle-Controller) |
 
 **Table: LCC Gasket - MCI to Caliptra Core Connections**
 
