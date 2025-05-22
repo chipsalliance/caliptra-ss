@@ -414,7 +414,7 @@ module lc_ctrl_signal_decode
       && (lc_state_i == LcStRaw))
       |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
            lc_tx_test_false_strict(lc_hw_debug_en_o))
-    );
+    )
     
     //-----------------------------------------------------
     // TEST_LOCKED states: Both outputs must be Low.
@@ -430,7 +430,7 @@ module lc_ctrl_signal_decode
                           LcStTestLocked6}))
       |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
            lc_tx_test_false_strict(lc_hw_debug_en_o))
-    );
+    )
     
     //-----------------------------------------------------
     // TEST_UNLOCKED states: Both outputs must be High.
@@ -446,7 +446,7 @@ module lc_ctrl_signal_decode
                           LcStTestUnlocked6, LcStTestUnlocked7}))
       |=> (lc_tx_test_true_strict(lc_dft_en_o) &&
            lc_tx_test_true_strict(lc_hw_debug_en_o))
-    );
+    )
     
     //-----------------------------------------------------
     // MANUF state (represented by LcStDev): 
@@ -461,7 +461,7 @@ module lc_ctrl_signal_decode
     &&(lc_state_i == LcStDev))
       |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
            lc_tx_test_true_strict(lc_hw_debug_en_o))
-    );
+    )
     
     //-----------------------------------------------------
     // PROD_END state: Both outputs must be Low.
@@ -475,7 +475,7 @@ module lc_ctrl_signal_decode
     && (lc_state_i == LcStProdEnd))
       |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
            lc_tx_test_false_strict(lc_hw_debug_en_o))
-    );
+    )
     
     //-----------------------------------------------------
     // RMA state: Both outputs must be High.
@@ -489,7 +489,7 @@ module lc_ctrl_signal_decode
     && (lc_state_i == LcStRma))
       |=> (lc_tx_test_true_strict(lc_dft_en_o) &&
            lc_tx_test_true_strict(lc_hw_debug_en_o))
-    );
+    )
     
     //-----------------------------------------------------
     // SCRAP state: Both outputs must be Low.
@@ -502,7 +502,7 @@ module lc_ctrl_signal_decode
     && (lc_state_i == LcStScrap))
       |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
            lc_tx_test_false_strict(lc_hw_debug_en_o))
-    );
+    )
        
 
     //-----------------------------------------------------
@@ -514,7 +514,7 @@ module lc_ctrl_signal_decode
                           InvalidSt})
         |=> (lc_tx_test_false_strict(lc_dft_en_o) &&
               lc_tx_test_false_strict(lc_hw_debug_en_o))
-    );
+    )
 
 
 
