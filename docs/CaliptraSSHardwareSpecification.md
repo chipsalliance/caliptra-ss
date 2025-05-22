@@ -332,7 +332,7 @@ Write routes always apply when an AXI write is requested and must be disabled ot
 
 *Example 3: Read Route \== AXI and Write Route \== AXI*
 
-~[](./images/Caliptra-AXI-DMA-RD-WR.png)
+![](./images/Caliptra-AXI-DMA-RD-WR.png)
 
 
 ## OCP Streaming Boot Payloads
