@@ -383,6 +383,7 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/i3c_wrapper.sv
 ${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
 ${CALIPTRA_SS_ROOT}/src/libs/rtl/caliptra_ss_prim_assert_sec_cm.svh
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_core_reg_top.sv
+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_prim_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_dai.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_ecc_reg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/fuse_ctrl_filter.sv
