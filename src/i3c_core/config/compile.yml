@@ -13,7 +13,6 @@ targets:
     directories:
       - $COMPILE_ROOT/../../third_party/i3c-core/src
       - $COMPILE_ROOT/../../third_party/i3c-core/src/libs
-      - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi
       - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/axi_sub
     files:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/libs/mem/prim_ram_1p_pkg.sv
@@ -23,8 +22,6 @@ targets:
       - $COMPILE_ROOT/../../third_party/i3c-core/src/csr/I3CCSR_pkg.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/ctrl/controller_pkg.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/i3c_pkg.sv
-      - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/buf_pp.sv
-      - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/bufs.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/phy/i3c_phy.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/csr/I3CCSR.sv
       - $COMPILE_ROOT/../../third_party/i3c-core/src/interrupt.sv

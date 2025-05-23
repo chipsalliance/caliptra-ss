@@ -68,7 +68,7 @@ targets:
       - $COMPILE_ROOT/rtl/kmac_entropy.sv
       - $COMPILE_ROOT/rtl/kmac_errchk.sv
       - $COMPILE_ROOT/rtl/kmac_msgfifo.sv
-      - $COMPILE_ROOT/rtl/kmac_reduced.sv
+      # - $COMPILE_ROOT/rtl/kmac_reduced.sv
       - $COMPILE_ROOT/rtl/kmac_reg_top.sv
       - $COMPILE_ROOT/rtl/kmac_staterd.sv
       - $COMPILE_ROOT/rtl/kmac.sv

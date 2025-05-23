@@ -23,11 +23,9 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/mcu/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs
-+incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub
 +incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage
-+incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/../src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/include
@@ -283,7 +281,6 @@ ${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl/sub2tlul.sv
 ${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl/axi2tlul.sv
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_pkg.sv
-${CALIPTRA_SS_ROOT}/src/tlul/rtl/sram2tlul.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_adapter_host.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_adapter_reg.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_adapter_sram.sv
@@ -293,13 +290,11 @@ ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_data_integ_dec.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_data_integ_enc.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_err_resp.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_err.sv
-${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_fifo_async.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_fifo_sync.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_lc_gate.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_rsp_intg_chk.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_rsp_intg_gen.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_socket_1n.sv
-${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_socket_m1.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_sram_byte.sv
 ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dm_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dmi_jtag_tap.sv
@@ -314,7 +309,6 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_core.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_entropy.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_errchk.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_msgfifo.sv
-${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_reduced.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac_staterd.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/kmac.sv
@@ -335,8 +329,6 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/mem/prim_ra
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/csr/I3CCSR_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/controller_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/i3c_pkg.sv
-${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/buf_pp.sv
-${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/bufs.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/i3c_phy.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/csr/I3CCSR.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/interrupt.sv
@@ -400,7 +392,6 @@ ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_lfsr_timer.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_buf.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_unbuf.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_scrmbl.sv
-${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_token_const.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_pkg.sv
