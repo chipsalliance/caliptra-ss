@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -248,7 +248,7 @@ end
 `CALIPTRA_ASSERT(RawToNonDebug_A,
     $rose((otp_static_state == LcStRaw) & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-);
+)
 
 //-----------------------------------------------------
 // TEST_LOCKED -> Non-Debug
@@ -258,7 +258,7 @@ end
                              LcStTestLocked4, LcStTestLocked5, LcStTestLocked6}) 
             & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-);
+)
 
 //-----------------------------------------------------
 // TEST_UNLOCKED -> Unprovisioned Debug
@@ -270,7 +270,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
   |=> ##1 (security_state_o.device_lifecycle == DEVICE_UNPROVISIONED),
   clk_i,
   rst_ni || state_error
-);
+)
 
 //-----------------------------------------------------
 // MANUF -> Manuf Non-Debug
@@ -279,7 +279,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
     $rose((otp_static_state == LcStDev)  
     & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##1 (security_state_o.device_lifecycle == DEVICE_MANUFACTURING)
-);
+)
 
 //-----------------------------------------------------
 // PROD -> Prod Non-Debug
@@ -288,7 +288,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
     $rose((otp_static_state == LcStProd)  
         & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-);
+)
 
 //-----------------------------------------------------
 // PROD_END -> Prod Non-Debug
@@ -297,7 +297,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
     $rose((otp_static_state == LcStProdEnd)  
         & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-);
+)
 
 //-----------------------------------------------------
 // RMA -> Prod Debug
@@ -306,7 +306,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
     $rose((otp_static_state == LcStRma) 
         & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##1 (security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-);
+)
 
 //-----------------------------------------------------
 // SCRAP -> Non-Debug
@@ -317,20 +317,20 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
   |=> ##2 (security_state_o.device_lifecycle == DEVICE_PRODUCTION),
     clk_i,
     rst_ni || state_error
-);
+)
 
 `CALIPTRA_ASSERT(DebugUnlockedCheck_MANUF_A,
     $rose((ss_dbg_manuf_enable_i && (otp_static_state == LcStDev))
         & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##2 (security_state_o.debug_locked == 1'b0)
-);
+)
 
 `CALIPTRA_ASSERT(DebugUnlockedCheck_PROD_A,
     $rose(((CLPTR_PROD_DEBUG_UNLOCK_AND) 
         & (otp_static_state == LcStProd))  
         & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##2 (security_state_o.debug_locked == 1'b0)
-);
+)
 
 `CALIPTRA_ASSERT(NonDebugUnlockedCheck_A,
     $rose( ! (CLPTR_PROD_DEBUG_UNLOCK_AND && (otp_static_state == LcStProd))
@@ -340,7 +340,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
     & (mci_trans_st_current != TRANSLATOR_RESET))
   ) 
   |=> ##1 (security_state_o.debug_locked == 1'b1)
-);
+)
 
 //-----------------------------------------------------
 // Debug Locked Check: Debug should be locked when ss_dbg_manuf_enable_i is low,
@@ -353,7 +353,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
                                   LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7, LcStRma})) 
     & (mci_trans_st_current != TRANSLATOR_RESET))
   |=> ##1 (security_state_o.debug_locked == 1'b1)
-);
+)
 
 
 //  | **LCC State vs Decoder Output** 	| **DFT_EN** 	    | **SOC_DFT_EN** 	        | **SOC_HW_DEBUG_EN**           | **Caliptra “Core” Security States**  |
@@ -380,7 +380,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
         & (mci_trans_st_current != TRANSLATOR_RESET))
     |=> 
     ((SOC_DFT_EN == 0) && (SOC_HW_DEBUG_EN == 0))
-);
+)
 
 `CALIPTRA_ASSERT(MANUF_HW_EN_A,
     $rose((security_state_o.device_lifecycle == DEVICE_MANUFACTURING)
@@ -388,7 +388,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
         & ((lc_hw_debug_en_i == lc_ctrl_pkg::On)))
     |=> 
     (SOC_HW_DEBUG_EN == 1)
-);
+)
 
 
 `CALIPTRA_ASSERT(UnProvSIGNAL_Decoding_A,
@@ -398,7 +398,7 @@ $rose((security_state_o.device_lifecycle == DEVICE_UNPROVISIONED)
     |=>
     ((SOC_DFT_EN == 1) && (SOC_HW_DEBUG_EN == 1) 
         && (security_state_o.debug_locked == 1'b0)) 
-);
+)
 
 `CALIPTRA_ASSERT(ProdSIGNAL_Decoding_DebugHigh_DFT_A,
 $rose(((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
@@ -408,7 +408,7 @@ $rose(((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
         & ((lc_dft_en_i == lc_ctrl_pkg::On)))
     |=>
     (SOC_DFT_EN == 1) 
-);
+)
 
 `CALIPTRA_ASSERT(ProdSIGNAL_Decoding_DebugHigh_HW_EN_A,
 $rose(((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
@@ -418,7 +418,7 @@ $rose(((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
         & (lc_hw_debug_en_i == lc_ctrl_pkg::On))
     |=>
     (SOC_HW_DEBUG_EN == 1) 
-);
+)
 
 
 
