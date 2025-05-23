@@ -591,7 +591,33 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
-            items: [    
+            items: [
+                           
+                {
+                    name: "CPTRA_SS_OWNER_PK_HASH",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
+                {
+                    name:   "CPTRA_SS_OWNER_PQC_KEY_TYPE",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
+                {
+                    name:   "CPTRA_SS_OWNER_PK_HASH_VALID",
+                    size:   "1",
+                    desc: '''
+                    Once a key is marked valid, anything above should not be able to be written (essentially
+                    a volatile lock should be implemented on higher order bits).
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },   
     % for i in range(1, num_vendor_pk_fuses):               
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_${i}",
@@ -636,6 +662,30 @@
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
             items: [
+                {
+                    name:   "CPTRA_SS_OWNER_ECC_REVOCATION",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
+                {
+                    name:   "CPTRA_SS_OWNER_LMS_REVOCATION",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
+                {
+                    name:   "CPTRA_SS_OWNER_MLDSA_REVOCATION",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
     % for i in range(num_vendor_pk_fuses):  
                 {
                     name:   "CPTRA_CORE_ECC_REVOCATION_${i}",
