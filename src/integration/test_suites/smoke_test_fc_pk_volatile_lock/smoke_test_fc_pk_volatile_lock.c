@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -46,10 +47,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  *   4. Verify that writing to the second fuse now results in an error.
  */
 void program_vendor_hashes_prod_partition(void) {
-
-    // 0x2DDA: CPTRA_CORE_VENDOR_PK_HASH_3
-    // 0x2E3C: CPTRA_CORE_VENDOR_PK_HASH_5
-    const uint32_t addresses[2] = {0x2DDA, 0x2E3C};
+    const uint32_t addresses[2] = {CPTRA_CORE_VENDOR_PK_HASH_3, CPTRA_CORE_VENDOR_PK_HASH_5};
 
     const uint32_t data = 0xdeadbeef;
 
