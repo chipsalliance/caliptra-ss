@@ -829,8 +829,18 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 
 ## Memory Map	/ Address map
 
+The Caliptra Subsystem fuse controller supports a flexible and extensible memory map for storing one-time programmable (OTP) data. This structure is documented in the following files:
+See [Fuse Controller Register Map](../src/fuse_ctrl/doc/otp_ctrl_registers.md) for registers.
+See [Fuse Controller Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md) for fuse partition map.
 
-See [Fuse Controller Register Map](../src/fuse_ctrl/doc/otp_ctrl_registers.md).
+The current fuse memory map consists of **three main partitions**: **Caliptra-Core** (prefix: `CALIPTRA_CORE`), **Caliptra-Subsystem** (prefix: `CALIPTRA_SS`), **SoC/Vendor-Specific**.
+
+This structure enables separation of responsibilities and flexibility in SoC integration. While the **Caliptra-Core fuse items** are mandatory and must adhere to the [Caliptra Fuse Map Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#fuse-map), **Caliptra-Subsystem** fuses are required only when the subsystem is instantiated with Caliptra Subsystem. The **SoC/Vendor-specific** items can be customized based on integrator needs and product requirements. Therefore, the fields under SoC-specific categories can be resized or eliminated if unused.
+
+
+### **SOC_SPECIFIC_IDEVID_CERTIFICATE Usage**
+This field defaults to 4 bytes but can be extended to accommodate storage of a full IDevID hybrid certificate (e.g., ML-DSA + ECC) if desired. Integrators must adjust its size in the YAML config used by the generation script.
+
 
 ---
 
