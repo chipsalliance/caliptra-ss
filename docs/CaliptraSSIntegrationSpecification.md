@@ -52,7 +52,7 @@
   - [Overview](#overview-3)
   - [Parameters \& Defines](#parameters--defines-2)
   - [Interface](#interface)
-  - [Memory Map	/ Address map](#memory-map-address-map)
+  - [Fuse Macro Memory Map and Fuse Controller CSR Address Map](#fuse-macro-memory-map-and-fuse-controller-csr-address-map)
   - [FC Integration Requirements](#fc-integration-requirements)
   - [Direct Access Interface](#direct-access-interface)
   - [Initialization](#initialization)
@@ -827,10 +827,20 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 | Internal   | Output     | Struct  | `otp_broadcast_o`             |                                   | FUSE broadcast output to Caliptra Core. This port broadcasts UDS-seed and Field-entropy-seed.    |
 
 
-## Memory Map	/ Address map
+## Fuse Macro Memory Map and Fuse Controller CSR Address Map
+
+The Caliptra Subsystem fuse controller supports a flexible and extensible memory map for storing one-time programmable (OTP) data. This structure is documented in the following files:
+See [Fuse Controller Register Map](../src/fuse_ctrl/doc/otp_ctrl_registers.md) for registers.
+See [Fuse Macor Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md) for fuse partition map.
+
+The current fuse memory map consists of **three main architectural segments**: **Caliptra-Core** (prefix: `CALIPTRA_CORE`), **Caliptra-Subsystem** (prefix: `CALIPTRA_SS`), **SoC/Vendor-Specific**.
+
+This structure enables separation of responsibilities and flexibility in SoC integration. While the **Caliptra-Core fuse items** are mandatory and must adhere to the [Caliptra Fuse Map Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#fuse-map), **Caliptra-Subsystem** fuses are required only when the subsystem is instantiated with Caliptra Subsystem. These Caliptra Subsystem fuses can also be configured based on SoC requirements. The **SoC/Vendor-specific** items can be customized based on integrator needs and product requirements. Therefore, the fields under SoC-specific categories can be resized or eliminated if unused.
 
 
-See [Fuse Controller Register Map](../src/fuse_ctrl/doc/registers.md).
+### **SOC_SPECIFIC_IDEVID_CERTIFICATE Usage**
+This field defaults to 4 bytes but can be extended to accommodate storage of a full IDevID hybrid certificate (e.g., ML-DSA + ECC) if desired. Integrators must adjust its size in the YAML config used by the generation script.
+
 
 ---
 
@@ -869,29 +879,27 @@ Fuse macros has to be programmed via the Direct Access Interface, which is compr
 
 CSR Name                             | Description
 -------------------------------------|------------------------------------
-[`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | Low 32bit word to be written.
-[`DIRECT_ACCESS_WDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_wdata) | High 32bit word to be written.
-[`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | Low 32bit word that has been read.
-[`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) | High 32bit word that has been read.
-[`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address) | byte address for the access.
-[`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd)     | Command register to trigger a read or a write access.
-[`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen)  | Write protection register for DAI.
+[`DIRECT_ACCESS_WDATA_0`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_wdata) | Low 32bit word to be written.
+[`DIRECT_ACCESS_WDATA_1`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_wdata) | High 32bit word to be written.
+[`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_rdata) | Low 32bit word that has been read.
+[`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_rdata) | High 32bit word that has been read.
+[`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_address) | byte address for the access.
+[`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_cmd)     | Command register to trigger a read or a write access.
+[`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_regwen)  | Write protection register for DAI.
 
 ## Initialization
 
 The OTP controller initializes automatically upon power-up and is fully operational by the time the processor boots.
 The only initialization steps that SW should perform are:
 
-1. Check that the OTP controller has successfully initialized by reading [`STATUS`](../src/fuse_ctrl/doc/registers.md#status). I.e., make sure that none of the ERROR bits are set, and that the DAI is idle ([`STATUS.DAI_IDLE`](../src/fuse_ctrl/doc/registers.md#status)).
-    - Choose whether the periodic [background checks](#partition-checks) shall be subject to a timeout by programming a nonzero timeout cycle count to [`CHECK_TIMEOUT`](../src/fuse_ctrl/doc/registers.md#check_timeout).
-      In this case, the [`CHECK_TIMEOUT`](../src/fuse_ctrl/doc/registers.md#check_timeout) register must be set before the [`INTEGRITY_CHECK_PERIOD`](../src/fuse_ctrl/doc/registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](../src/fuse_ctrl/doc/registers.md#consistency_check_period) registers (see next point).
-    - Enable periodic [background checks](#partition-checks) by programming nonzero mask values to [`INTEGRITY_CHECK_PERIOD`](../src/fuse_ctrl/doc/registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](../src/fuse_ctrl/doc/registers.md#consistency_check_period).
-    - It is recommended to lock down the background check registers via [`CHECK_REGWEN`](../src/fuse_ctrl/doc/registers.md#check_regwen), once the background checks have been set up
+1. Check that the OTP controller has successfully initialized by reading [`STATUS`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#status). I.e., make sure that none of the ERROR bits are set, and that the DAI is idle ([`STATUS.DAI_IDLE`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#status)).
+    - Choose whether the periodic background checks shall be subject to a timeout by programming a nonzero timeout cycle count to [`CHECK_TIMEOUT`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#check_timeout).
+      In this case, the [`CHECK_TIMEOUT`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#check_timeout) register must be set before the [`INTEGRITY_CHECK_PERIOD`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#consistency_check_period) registers (see next point).
+    - Enable periodic background checks by programming nonzero mask values to [`INTEGRITY_CHECK_PERIOD`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#integrity_check_period) and [`CONSISTENCY_CHECK_PERIOD`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#consistency_check_period).
+    - It is recommended to lock down the background check registers via [`CHECK_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#check_regwen), once the background checks have been set up
 
 If needed, one-off integrity and consistency checks can be triggered via [`CHECK_TRIGGER`](../src/fuse_ctrl/doc/registers.md#check_trigger).
 If this functionality is not needed, it is recommended to lock down the trigger register via [`CHECK_TRIGGER_REGWEN`](../src/fuse_ctrl/doc/registers.md#check_trigger_regwen).
-
-Later on during the boot process, SW may also choose to block read access to the SW managed partitions via the associated partition lock registers, e.g. [`CREATOR_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#creator_sw_cfg_read_lock) or [`OWNER_SW_CFG_READ_LOCK`](../src/fuse_ctrl/doc/registers.md#owner_sw_cfg_read_lock).
 
 ## Programming interface
 The Fuse Controller (FC) programming interface is designed to manage lifecycle states, handle fuses with ECC support, and ensure secure interactions with the fuse macros. A key component in this architecture is the Fuse Controller Filter RTL. This module intercepts and verifies the fuse programming sequence by checking that all parts of the transaction originate from the same authorized source. In doing so, the filter guarantees that fuse provisioning is performed in an atomic manner.
@@ -933,18 +941,18 @@ Below are the key operations supported by the programming interface:
 
 A typical readout sequence looks as follows:
 
-  - Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register.
-  - Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/registers.md#direct_access_address).
+  - Check whether the DAI is idle by reading the [`STATUS`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#status) register.
+  - Write the byte address for the access to [`DIRECT_ACCESS_ADDRESS`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_address).
     Note that the address is aligned with the granule, meaning that either 2 or 3 LSBs of the address are ignored, depending on whether the access granule is 32 or 64bit.
-  - Trigger a read command by writing 0x1 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/registers.md#direct_access_cmd).
-  - Poll the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) until the DAI state goes back to idle.
+  - Trigger a read command by writing 0x1 to [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_cmd).
+  - Poll the [`STATUS`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#status) until the DAI state goes back to idle.
     Alternatively, the `otp_operation_done` interrupt can be enabled up to notify the processor once an access has completed.
   - If the status register flags a DAI error, additional handling is required.
-  - If the region accessed has a 32bit access granule, the 32bit chunk of read data can be read from [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata).
-    If the region accessed has a 64bit access granule, the 64bit chunk of read data can be read from the [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) and [`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/registers.md#direct_access_rdata) registers.
+  - If the region accessed has a 32bit access granule, the 32bit chunk of read data can be read from [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_rdata).
+    If the region accessed has a 64bit access granule, the 64bit chunk of read data can be read from the [`DIRECT_ACCESS_RDATA_0`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_rdata) and [`DIRECT_ACCESS_RDATA_1`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_rdata) registers.
   - Go back to the first step and repeat until all data has been read.
 
-The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
+The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_regwen) to 0x0 while an operation is pending in order to temporarily lock write access to the CSRs registers.
 
 ## Sequences: Reset, Boot
 
@@ -1173,7 +1181,7 @@ Internal    |output      |   1    | `hw_rev_o`            |                     
 Internal    |input       |   253  | `cptra_ss_mcu_ext_int` |                                     | Reflection of HW revision ID read from fuse controller              |
 
 
-## Memory Map / Address Map
+## Fuse Macro Memory Map / Fuse Controller CSR Address Map
 
 See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
 
@@ -1190,6 +1198,8 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
    - Verify that all output signals, including alerts, remain within the expected ranges under normal operation.
 2. **IMPORTANT SOC REQUIREMENT**:
     - Life cycle controller allows you to switch from internal to external clock on a request from SOC over JTAG or AXI (As explained in other sections, this is typically used for Fuse programming scenarios when a stable clock is not yet available within the SOC). When the request arrives, life cycle controller requests the SOC to do the clock switch. When such a request is made, SOC MUST respond with an acknowledgement within 2 clock cycles of the internal clock. If this condition is not met, OTP controller will assert "program error" and the SOC must go through a reset cycle and redo the above steps. This must be verified by the SOC as a part of Caliptra subsystem integration checks.
+    
+    To protect from clock stretching attacks Caliptra mandates using a clock source that is constructed within the SOC (eg. PLL, Calibrated Ring Oscillator, etc). For such a clock source, a SOC may require fuses to be programmed. TP programming demands a reliable and deterministic clock signal to ensure correct fuse write operations; which SOC may not have during the early phases of manufacturing flow due to above constraints. In order to overcome this issue, this `external clock` can be used typically in the manufacturing phase of a SOC; and for such SOCs this external clock is supplied from a platform (e.g an ATE). Since the Caliptra subsystem includes only one clock input (`cptra_ss_clk_i`), the SoC integrator is responsible for ensuring that this input can be switched to a stable source.
 
 3. **Scan Path Exclusions**:
    - Ensure that the RAW\_UNLOCK token is excluded from the scan chain. This token is different from other LC transition tokens as it is stored in the plaintext in gates, not in hashed form.

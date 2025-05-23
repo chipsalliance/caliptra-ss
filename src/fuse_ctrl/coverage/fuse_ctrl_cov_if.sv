@@ -68,7 +68,7 @@ interface fuse_ctrl_cov_if
     covergroup fuse_ctrl_fuses_cg @(posedge clk_i);                                        
       option.per_instance = 1;
       // SECRET_TEST_UNLOCK_PARTITION                                                         
-      CptraCoreManufDebugUnlockToken_cp:  coverpoint `FC_MEM[CptraCoreManufDebugUnlockTokenOffset/2] { bins Fuse = { [1:$] }; }
+      CptraCoreManufDebugUnlockToken_cp:  coverpoint `FC_MEM[CptraSsManufDebugUnlockTokenOffset/2] { bins Fuse = { [1:$] }; }
       SecretTestUnlockPartitionDigest_cp: coverpoint `FC_MEM[SwTestUnlockPartitionDigestOffset/2]    { bins Fuse = { [1:$] }; }  
       // SECRET_MANUF_PARTITION
       CptraCoreUdsSeed_cp:           coverpoint `FC_MEM[CptraCoreUdsSeedOffset/2]           { bins Fuse = { [1:$] }; }
