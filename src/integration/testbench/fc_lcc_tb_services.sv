@@ -114,7 +114,7 @@ module fc_lcc_tb_services (
           end
           CMD_FC_LCC_FAULT_DIGEST: begin
             $display("fc_lcc_tb_services: fault the transition tokens partition digest");
-            force `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[5732] = '0;
+            force `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[696] = '0;
           end
           CMD_FC_LCC_FAULT_BUS_ECC: begin
             $display("fc_lcc_tb_services: fault one bit in axi write request");
@@ -243,51 +243,51 @@ module fc_lcc_tb_services (
   // Uncorrectable error: Flip all bits of a word in a locked partition
   //-------------------------------------------------------------------------
 
-  reg fault_active_q;
-  reg [15:0] faulted_word_q [0:6];
+  // reg fault_active_q;
+  // reg [15:0] faulted_word_q [0:6];
 
-  localparam int partition_offsets [0:6] = '{'h024, 'h048, 'h050, 'h058, 'h060, 'h160C, 'h1880};
-  localparam int partition_digests [0:6] = '{'h044, 'h04C, 'h054, 'h05C, 'h064, 'h1664, 'h1980};
+  // localparam int partition_offsets [0:6] = '{'h024, 'h048, 'h050, 'h058, 'h060, 'h160C, 'h1880};
+  // localparam int partition_digests [0:6] = '{'h044, 'h04C, 'h054, 'h05C, 'h064, 'h1664, 'h1980};
 
-  always_ff @(posedge clk or negedge cptra_rst_b) begin
-    if (!cptra_rst_b) begin
-      fault_active_q <= 1'b0;
-    end else begin
-      if (tb_service_cmd_valid && (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT || tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) && !fault_active_q) begin
-        fault_active_q <= 1'b1;
-      end
-    end
-  end
+  // always_ff @(posedge clk or negedge cptra_rst_b) begin
+  //   if (!cptra_rst_b) begin
+  //     fault_active_q <= 1'b0;
+  //   end else begin
+  //     if (tb_service_cmd_valid && (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT || tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) && !fault_active_q) begin
+  //       fault_active_q <= 1'b1;
+  //     end
+  //   end
+  // end
 
-  generate
-  for (genvar i = 0; i < 7; i++) begin
-    always_ff @(posedge clk or negedge cptra_rst_b) begin
-      if (!cptra_rst_b) begin
-        faulted_word_q[i] <= '0;
-      end else begin
-        if (tb_service_cmd_valid && !fault_active_q) begin
-          // Only inject faults into partitions that are locked.
-          if (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT) begin
-            faulted_word_q[i] <= { `FC_MEM[partition_offsets[i]][15:1], `FC_MEM[partition_offsets[i]][0] ^ |`FC_MEM[partition_digests[i]] };
-          end else if (tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) begin
-            faulted_word_q[i] <= `FC_MEM[partition_offsets[i]][15:0] ^ {16{|`FC_MEM[partition_digests[i]]}};
-          end
-        end
-      end
-    end
-  end
-  endgenerate
+  // generate
+  // for (genvar i = 0; i < 7; i++) begin
+  //   always_ff @(posedge clk or negedge cptra_rst_b) begin
+  //     if (!cptra_rst_b) begin
+  //       faulted_word_q[i] <= '0;
+  //     end else begin
+  //       if (tb_service_cmd_valid && !fault_active_q) begin
+  //         // Only inject faults into partitions that are locked.
+  //         if (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT) begin
+  //           faulted_word_q[i] <= { `FC_MEM[partition_offsets[i]][15:1], `FC_MEM[partition_offsets[i]][0] ^ |`FC_MEM[partition_digests[i]] };
+  //         end else if (tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) begin
+  //           faulted_word_q[i] <= `FC_MEM[partition_offsets[i]][15:0] ^ {16{|`FC_MEM[partition_digests[i]]}};
+  //         end
+  //       end
+  //     end
+  //   end
+  // end
+  // endgenerate
 
-  generate
-  for (genvar i = 0; i < 7; i++) begin
-    always_comb begin
-      if (fault_active_q) begin
-        force `FC_MEM[partition_offsets[i]][15:0] = faulted_word_q[i];
-      end else begin
-        release `FC_MEM[partition_offsets[i]][15:0];
-      end
-    end
-  end
-  endgenerate
+  // generate
+  // for (genvar i = 0; i < 7; i++) begin
+  //   always_comb begin
+  //     if (fault_active_q) begin
+  //       force `FC_MEM[partition_offsets[i]][15:0] = faulted_word_q[i];
+  //     end else begin
+  //       release `FC_MEM[partition_offsets[i]][15:0];
+  //     end
+  //   end
+  // end
+  // endgenerate
 
 endmodule
