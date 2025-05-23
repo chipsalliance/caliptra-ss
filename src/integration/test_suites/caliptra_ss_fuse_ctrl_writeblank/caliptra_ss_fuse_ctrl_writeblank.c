@@ -28,6 +28,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -39,8 +40,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 void writeblank() {
     grant_mcu_for_fc_writes();
 
-    // 0x2CD0: CPTRA_CORE_FMC_KEY_MANIFEST_SVN
-    const uint32_t fuse_address = 0x2CD0;
+    const uint32_t fuse_address = CPTRA_CORE_FMC_KEY_MANIFEST_SVN;
 
     // Overwriting set bits in a fuse should result in an error.
     dai_wr(fuse_address, 0xFFFFFFFF, 0, 32, 0);

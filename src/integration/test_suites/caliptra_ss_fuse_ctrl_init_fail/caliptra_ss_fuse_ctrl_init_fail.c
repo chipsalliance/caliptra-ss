@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -35,38 +36,24 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-typedef struct {
-    uint32_t address;
-    uint32_t digest_address;
-    uint32_t index;
-} partition_t;
-
-// XXX: Fuse addresses, eventually these should be generated automatically.
-// Buffered partitions.
-static partition_t partitions[7] = {
-     // SECRET_MANUF_PARTITION
-    { .address = 0x0048, .digest_address = 0x0088, .index = 1 },
-    // SECRET_PROD_PARTITION_0
-    { .address = 0x0090, .digest_address = 0x0098, .index = 2 },
-    // SECRET_PROD_PARTITION_1 
-    { .address = 0x00A0, .digest_address = 0x00A8, .index = 3 },
-    // SECRET_PROD_PARTITION_2 
-    { .address = 0x00B0, .digest_address = 0x00B8, .index = 4 },
-    // SECRET_PROD_PARTITION_3
-    { .address = 0x00C0, .digest_address = 0x00C8, .index = 5 },
-    // SECRET_LC_TRANSITION_PARTITION
-    { .address = 0x2C18, .digest_address = 0x2CC8, .index = 7 },  
-    // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0x3100, .digest_address = 0x3300, .index = 13 }
-};
-
 void init_fail() {
     const uint32_t faults[2] = {
         CMD_FC_LCC_CORRECTABLE_FAULT,
         CMD_FC_LCC_UNCORRECTABLE_FAULT
     };
 
-    partition_t partition = partitions[xorshift32() % 7];
+    // Collect all buffered partitions with ECC enabled. Their content
+    // will be read out after bringup which will trigger the ECC errors.
+    partition_t part_sel[NUM_PARTITIONS];
+
+    uint32_t count = 0;
+    for (int i = 0; i < NUM_PARTITIONS; i++) {
+        if (partitions[i].variant == 0 && partitions[i].has_ecc) {
+            part_sel[count++] = partitions[i];
+        }
+    } 
+
+    partition_t partition = part_sel[xorshift32() % count];
     uint32_t fault = faults[xorshift32() % 2];
 
     if (partition.address > 0x40 && partition.address < 0xD0) {
@@ -76,7 +63,7 @@ void init_fail() {
     }
 
     // Write one word in the selected partition and lock it afterwards.
-    dai_wr(partition.address, 0x1, 0x2, 64, 0);
+    dai_wr(partition.address, 0x1, 0x2, partition.granularity, 0);
     calculate_digest(partition.address);
 
     // Inject either a correctable or uncorrectable error into the written partition.

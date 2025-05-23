@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -34,29 +35,6 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #else
     enum printf_verbosity verbosity_g = LOW;
 #endif
-
-typedef struct {
-    uint32_t address;
-    uint32_t granularity;
-} partition_t;
-
-static const partition_t partitions[15] = {
-    { .address = 0x0000, .granularity = 32 }, // SW_TEST_UNLOCK_PARTITION
-    { .address = 0x0048, .granularity = 64 }, // SECRET_MANUF_PARTITION
-    { .address = 0x0090, .granularity = 64 }, // SECRET_PROD_PARTITION_0
-    { .address = 0x00A0, .granularity = 64 }, // SECRET_PROD_PARTITION_1
-    { .address = 0x00B0, .granularity = 64 }, // SECRET_PROD_PARTITION_2
-    { .address = 0x00C0, .granularity = 64 }, // SECRET_PROD_PARTITION_3
-    { .address = 0x00D0, .granularity = 32 }, // SW_MANUF_PARTITION
-    { .address = 0x2C18, .granularity = 64 }, // SECRET_LC_TRANSITION_PARTITION
-    { .address = 0x2CD0, .granularity = 32 }, // SVN_PARTITION
-    { .address = 0x2CF8, .granularity = 32 }, // VENDOR_TEST
-    { .address = 0x2D38, .granularity = 32 }, // VENDOR_HASHES_MANUF_PARTITION
-    { .address = 0x2D78, .granularity = 32 }, // VENDOR_HASHES_PROD_PARTITION
-    { .address = 0x3068, .granularity = 32 }, // VENDOR_REVOCATIONS_PROD_PARTITION
-    { .address = 0x3100, .granularity = 64 }, // VENDOR_SECRET_PROD_PARTITION
-    { .address = 0x3308, .granularity = 64 }  // VENDOR_NON_SECRET_PROD_PARTITION
-};
 
 /**
  * This test performs DAI writes over the AXI bus on the boundaries of the
@@ -70,7 +48,8 @@ void axi_id() {
     uint32_t axi_user;
 
     for (int i = 0; i < 4; i++) {
-        partition = partitions[xorshift32() % 15];
+        // Exclude life-cycle partition as it is not writable.
+        partition = partitions[xorshift32() % (NUM_PARTITIONS-1)];
         axi_user = xorshift32() % 2;
         
         if (axi_user) {
