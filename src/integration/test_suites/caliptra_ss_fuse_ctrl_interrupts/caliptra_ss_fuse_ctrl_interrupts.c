@@ -57,7 +57,7 @@ void main (void) {
      * 1: An ordinary, successful DAI operation must result in an `otp_operation_done` interrupt.
      */
 
-    dai_wr(CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN, 0x1, 0, 32, 0);
+    dai_wr(CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN, 0x1, 0, 32, 0);
 
     uint32_t alert_state = lsu_read_32(SOC_OTP_CTRL_INTERRUPT_STATE);
     if (((alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_OPERATION_DONE_LOW) & 0x1 != 0x1) ||
