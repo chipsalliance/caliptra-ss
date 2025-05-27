@@ -305,6 +305,9 @@ def _validate_mmap(config: Dict) -> Dict:
         log.info("Partition {} at offset {} size {}".format(
             part["name"], part["offset"], part["size"]))
 
+        if part['clearable'] and part['variant'] != 'Buffered':
+            raise RuntimeError('Only buffered partitions can be clearable')
+
         # Loop over items within a partition
         item_dict = {}
         for k, item in enumerate(part["items"]):

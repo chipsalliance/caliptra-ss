@@ -222,6 +222,7 @@ typedef struct {
     bool has_read_lock;
     bool has_ecc;
     bool is_lifecycle;
+    bool is_clearable;
     uint32_t lc_phase;
     uint32_t num_fuses;
     uint32_t *fuses;
@@ -433,6 +434,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 16,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 1,
         .fuses = sw_test_unlock_partition_fuses
     },
@@ -450,6 +452,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 16,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 1,
         .fuses = secret_manuf_partition_fuses
     },
@@ -467,6 +470,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 1,
         .fuses = secret_prod_partition_0_fuses
     },
@@ -484,6 +488,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 1,
         .fuses = secret_prod_partition_1_fuses
     },
@@ -501,6 +506,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 1,
         .fuses = secret_prod_partition_2_fuses
     },
@@ -518,6 +524,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 1,
         .fuses = secret_prod_partition_3_fuses
     },
@@ -535,6 +542,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 16,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 13,
         .fuses = sw_manuf_partition_fuses
     },
@@ -552,6 +560,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 1,
         .is_lifecycle = false,
+        .is_clearable = true,
         .num_fuses = 11,
         .fuses = secret_lc_transition_partition_fuses
     },
@@ -569,6 +578,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = false,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 3,
         .fuses = svn_partition_fuses
     },
@@ -586,6 +596,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = false,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 1,
         .fuses = vendor_test_partition_fuses
     },
@@ -603,6 +614,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = false,
         .lc_phase = 16,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 2,
         .fuses = vendor_hashes_manuf_partition_fuses
     },
@@ -620,6 +632,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = false,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 34,
         .fuses = vendor_hashes_prod_partition_fuses
     },
@@ -637,6 +650,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = false,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 51,
         .fuses = vendor_revocations_prod_partition_fuses
     },
@@ -654,6 +668,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 16,
         .fuses = vendor_secret_prod_partition_fuses
     },
@@ -671,6 +686,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
+        .is_clearable = false,
         .num_fuses = 16,
         .fuses = vendor_non_secret_prod_partition_fuses
     },
@@ -688,6 +704,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 0,
         .is_lifecycle = true,
+        .is_clearable = false,
         .num_fuses = 1,
         .fuses = life_cycle_fuses
     },

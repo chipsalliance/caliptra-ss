@@ -72,7 +72,8 @@ module otp_ctrl_part_buf
   output logic                        scrmbl_valid_o,
   input  logic                        scrmbl_ready_i,
   input  logic                        scrmbl_valid_i,
-  input  logic [ScrmblBlockWidth-1:0] scrmbl_data_i
+  input  logic [ScrmblBlockWidth-1:0] scrmbl_data_i,
+  input  logic                        zeroize_i
 );
 
   ////////////////////////

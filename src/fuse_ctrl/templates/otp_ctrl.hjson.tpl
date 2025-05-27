@@ -1181,6 +1181,54 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
     % endif
   % endfor
 
+      //////////////////////
+      // Zeroization CSRs //
+      //////////////////////
+
+      { name: "ZEROIZE_REGWEN",
+        desc: '''
+              Register write enable for zeroization trigger registers.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hrw",
+        hwext:    "true",
+        hwqe:     "true",
+        fields: [
+          {
+              bits:   "0",
+              desc: '''
+              This bit controls whether the zeroization registers can be written.
+              Write 0 to it in order to clear the bit.
+              '''
+              resval: 1,
+          },
+        ]
+      },
+
+  % for part in otp_mmap.config["partitions"]:
+    % if part["clearable"]:
+      { name: "${part["name"]}_ZEROIZE",
+        desc: '''
+              Zeroization trigger for the ${part["name"]} partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "ZEROIZE_REGWEN",
+        tags: [// do not write to this registers
+             "excl:CsrNonInitTests:CsrExclWrite"]
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When set to 1, the ${part["name"]} partition is zeroized.
+            Write 0 to clear this bit.
+            '''
+            resval: 0,
+          },
+        ]
+      },
+    % endif
+  % endfor
+
       { name: "VENDOR_PK_HASH_VOLATILE_LOCK",
         desc: "Address register for direct accesses.",
         swaccess: "rw",

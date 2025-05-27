@@ -467,6 +467,16 @@ module otp_ctrl
     );
   end
 
+  //////////////////
+  // Zeroize CSRs //
+  //////////////////
+
+  logic [NumPart-1:0] part_zeroize;
+
+  always_comb begin : p_zeroize
+    part_zeroize = named_zeroize_assign(reg2hw);
+  end
+
   //////////////////////
   // DAI-related CSRs //
   //////////////////////
@@ -1221,7 +1231,8 @@ end
         .scrmbl_valid_o    ( part_scrmbl_req_bundle[k].valid ),
         .scrmbl_ready_i    ( part_scrmbl_req_ready[k]        ),
         .scrmbl_valid_i    ( part_scrmbl_rsp_valid[k]        ),
-        .scrmbl_data_i     ( part_scrmbl_rsp_data            )
+        .scrmbl_data_i     ( part_scrmbl_rsp_data            ),
+        .zeroize_i         ( part_zeroize[k]                 )
       );
 
       // Buffered partitions are not accessible via the TL-UL window.

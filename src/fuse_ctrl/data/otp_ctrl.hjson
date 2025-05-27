@@ -3590,6 +3590,50 @@
         ]
       },
 
+      //////////////////////
+      // Zeroization CSRs //
+      //////////////////////
+
+      { name: "ZEROIZE_REGWEN",
+        desc: '''
+              Register write enable for zeroization trigger registers.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hrw",
+        hwext:    "true",
+        hwqe:     "true",
+        fields: [
+          {
+              bits:   "0",
+              desc: '''
+              This bit controls whether the zeroization registers can be written.
+              Write 0 to it in order to clear the bit.
+              '''
+              resval: 1,
+          },
+        ]
+      },
+
+      { name: "SECRET_LC_TRANSITION_PARTITION_ZEROIZE",
+        desc: '''
+              Zeroization trigger for the SECRET_LC_TRANSITION_PARTITION partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "ZEROIZE_REGWEN",
+        tags: [// do not write to this registers
+             "excl:CsrNonInitTests:CsrExclWrite"]
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When set to 1, the SECRET_LC_TRANSITION_PARTITION partition is zeroized.
+            Write 0 to clear this bit.
+            '''
+            resval: 0,
+          },
+        ]
+      },
+
       { name: "VENDOR_PK_HASH_VOLATILE_LOCK",
         desc: "Address register for direct accesses.",
         swaccess: "rw",

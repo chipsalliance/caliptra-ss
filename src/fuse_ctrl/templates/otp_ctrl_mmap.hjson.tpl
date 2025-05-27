@@ -86,6 +86,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStDev",
+            clearable:    false,
             items: [
                 {
                     name: "CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN",
@@ -110,6 +111,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStDev",
+            clearable:    false,
             items: [
                 {
                     name: "CPTRA_CORE_UDS_SEED",
@@ -136,6 +138,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_0",
@@ -162,6 +165,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_1",
@@ -188,6 +192,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_2",
@@ -214,6 +219,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_3",
@@ -241,6 +247,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStDev",
+            clearable:    false,
             items: [
                 {
                     name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
@@ -370,6 +377,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStTestUnlocked0",
+            clearable:    true,
             items: [
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_1",
@@ -485,6 +493,7 @@
             integrity:    false,
             bkout_type:   false,
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
                 {
                     name: "CPTRA_CORE_FMC_KEY_MANIFEST_SVN",
@@ -531,6 +540,7 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
                 {
                     name: "VENDOR_TEST",
@@ -560,6 +570,7 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStDev",
+            clearable:    false,
             items: [
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_0",
@@ -591,6 +602,7 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
                            
                 {
@@ -661,6 +673,7 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
                 {
                     name:   "CPTRA_SS_OWNER_ECC_REVOCATION",
@@ -730,6 +743,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
     % for i in range(num_vendor_secret_fuses):
                 {
@@ -759,6 +773,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStProd",
+            clearable:    false,
             items: [
     % for i in range(num_vendor_non_secret_fuses):
                {
@@ -788,6 +803,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStRaw",
+            clearable:    false,
             items: [
                 // The life cycle transition count is specified
                 // first such that any programming attempt of the life cycle

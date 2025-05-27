@@ -45,35 +45,37 @@
 | otp_ctrl.[`VENDOR_HASHES_PROD_PARTITION_READ_LOCK`](#vendor_hashes_prod_partition_read_lock)           | 0xa0     |        4 | Runtime read lock for the VENDOR_HASHES_PROD_PARTITION partition.                                   |
 | otp_ctrl.[`VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK`](#vendor_revocations_prod_partition_read_lock) | 0xa4     |        4 | Runtime read lock for the VENDOR_REVOCATIONS_PROD_PARTITION partition.                              |
 | otp_ctrl.[`VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK`](#vendor_non_secret_prod_partition_read_lock)   | 0xa8     |        4 | Runtime read lock for the VENDOR_NON_SECRET_PROD_PARTITION partition.                               |
-| otp_ctrl.[`VENDOR_PK_HASH_VOLATILE_LOCK`](#vendor_pk_hash_volatile_lock)                               | 0xac     |        4 | Address register for direct accesses.                                                               |
-| otp_ctrl.[`SW_TEST_UNLOCK_PARTITION_DIGEST_0`](#sw_test_unlock_partition_digest)                       | 0xb0     |        4 | Integrity digest for the SW_TEST_UNLOCK_PARTITION partition.                                        |
-| otp_ctrl.[`SW_TEST_UNLOCK_PARTITION_DIGEST_1`](#sw_test_unlock_partition_digest)                       | 0xb4     |        4 | Integrity digest for the SW_TEST_UNLOCK_PARTITION partition.                                        |
-| otp_ctrl.[`SECRET_MANUF_PARTITION_DIGEST_0`](#secret_manuf_partition_digest)                           | 0xb8     |        4 | Integrity digest for the SECRET_MANUF_PARTITION partition.                                          |
-| otp_ctrl.[`SECRET_MANUF_PARTITION_DIGEST_1`](#secret_manuf_partition_digest)                           | 0xbc     |        4 | Integrity digest for the SECRET_MANUF_PARTITION partition.                                          |
-| otp_ctrl.[`SECRET_PROD_PARTITION_0_DIGEST_0`](#secret_prod_partition_0_digest)                         | 0xc0     |        4 | Integrity digest for the SECRET_PROD_PARTITION_0 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_0_DIGEST_1`](#secret_prod_partition_0_digest)                         | 0xc4     |        4 | Integrity digest for the SECRET_PROD_PARTITION_0 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_1_DIGEST_0`](#secret_prod_partition_1_digest)                         | 0xc8     |        4 | Integrity digest for the SECRET_PROD_PARTITION_1 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_1_DIGEST_1`](#secret_prod_partition_1_digest)                         | 0xcc     |        4 | Integrity digest for the SECRET_PROD_PARTITION_1 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_2_DIGEST_0`](#secret_prod_partition_2_digest)                         | 0xd0     |        4 | Integrity digest for the SECRET_PROD_PARTITION_2 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_2_DIGEST_1`](#secret_prod_partition_2_digest)                         | 0xd4     |        4 | Integrity digest for the SECRET_PROD_PARTITION_2 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_3_DIGEST_0`](#secret_prod_partition_3_digest)                         | 0xd8     |        4 | Integrity digest for the SECRET_PROD_PARTITION_3 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_3_DIGEST_1`](#secret_prod_partition_3_digest)                         | 0xdc     |        4 | Integrity digest for the SECRET_PROD_PARTITION_3 partition.                                         |
-| otp_ctrl.[`SW_MANUF_PARTITION_DIGEST_0`](#sw_manuf_partition_digest)                                   | 0xe0     |        4 | Integrity digest for the SW_MANUF_PARTITION partition.                                              |
-| otp_ctrl.[`SW_MANUF_PARTITION_DIGEST_1`](#sw_manuf_partition_digest)                                   | 0xe4     |        4 | Integrity digest for the SW_MANUF_PARTITION partition.                                              |
-| otp_ctrl.[`SECRET_LC_TRANSITION_PARTITION_DIGEST_0`](#secret_lc_transition_partition_digest)           | 0xe8     |        4 | Integrity digest for the SECRET_LC_TRANSITION_PARTITION partition.                                  |
-| otp_ctrl.[`SECRET_LC_TRANSITION_PARTITION_DIGEST_1`](#secret_lc_transition_partition_digest)           | 0xec     |        4 | Integrity digest for the SECRET_LC_TRANSITION_PARTITION partition.                                  |
-| otp_ctrl.[`VENDOR_TEST_PARTITION_DIGEST_0`](#vendor_test_partition_digest)                             | 0xf0     |        4 | Integrity digest for the VENDOR_TEST_PARTITION partition.                                           |
-| otp_ctrl.[`VENDOR_TEST_PARTITION_DIGEST_1`](#vendor_test_partition_digest)                             | 0xf4     |        4 | Integrity digest for the VENDOR_TEST_PARTITION partition.                                           |
-| otp_ctrl.[`VENDOR_HASHES_MANUF_PARTITION_DIGEST_0`](#vendor_hashes_manuf_partition_digest)             | 0xf8     |        4 | Integrity digest for the VENDOR_HASHES_MANUF_PARTITION partition.                                   |
-| otp_ctrl.[`VENDOR_HASHES_MANUF_PARTITION_DIGEST_1`](#vendor_hashes_manuf_partition_digest)             | 0xfc     |        4 | Integrity digest for the VENDOR_HASHES_MANUF_PARTITION partition.                                   |
-| otp_ctrl.[`VENDOR_HASHES_PROD_PARTITION_DIGEST_0`](#vendor_hashes_prod_partition_digest)               | 0x100    |        4 | Integrity digest for the VENDOR_HASHES_PROD_PARTITION partition.                                    |
-| otp_ctrl.[`VENDOR_HASHES_PROD_PARTITION_DIGEST_1`](#vendor_hashes_prod_partition_digest)               | 0x104    |        4 | Integrity digest for the VENDOR_HASHES_PROD_PARTITION partition.                                    |
-| otp_ctrl.[`VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0`](#vendor_revocations_prod_partition_digest)     | 0x108    |        4 | Integrity digest for the VENDOR_REVOCATIONS_PROD_PARTITION partition.                               |
-| otp_ctrl.[`VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1`](#vendor_revocations_prod_partition_digest)     | 0x10c    |        4 | Integrity digest for the VENDOR_REVOCATIONS_PROD_PARTITION partition.                               |
-| otp_ctrl.[`VENDOR_SECRET_PROD_PARTITION_DIGEST_0`](#vendor_secret_prod_partition_digest)               | 0x110    |        4 | Integrity digest for the VENDOR_SECRET_PROD_PARTITION partition.                                    |
-| otp_ctrl.[`VENDOR_SECRET_PROD_PARTITION_DIGEST_1`](#vendor_secret_prod_partition_digest)               | 0x114    |        4 | Integrity digest for the VENDOR_SECRET_PROD_PARTITION partition.                                    |
-| otp_ctrl.[`VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0`](#vendor_non_secret_prod_partition_digest)       | 0x118    |        4 | Integrity digest for the VENDOR_NON_SECRET_PROD_PARTITION partition.                                |
-| otp_ctrl.[`VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1`](#vendor_non_secret_prod_partition_digest)       | 0x11c    |        4 | Integrity digest for the VENDOR_NON_SECRET_PROD_PARTITION partition.                                |
+| otp_ctrl.[`ZEROIZE_REGWEN`](#zeroize_regwen)                                                           | 0xac     |        4 | Register write enable for zeroization trigger registers.                                            |
+| otp_ctrl.[`SECRET_LC_TRANSITION_PARTITION_ZEROIZE`](#secret_lc_transition_partition_zeroize)           | 0xb0     |        4 | Zeroization trigger for the SECRET_LC_TRANSITION_PARTITION partition.                               |
+| otp_ctrl.[`VENDOR_PK_HASH_VOLATILE_LOCK`](#vendor_pk_hash_volatile_lock)                               | 0xb4     |        4 | Address register for direct accesses.                                                               |
+| otp_ctrl.[`SW_TEST_UNLOCK_PARTITION_DIGEST_0`](#sw_test_unlock_partition_digest)                       | 0xb8     |        4 | Integrity digest for the SW_TEST_UNLOCK_PARTITION partition.                                        |
+| otp_ctrl.[`SW_TEST_UNLOCK_PARTITION_DIGEST_1`](#sw_test_unlock_partition_digest)                       | 0xbc     |        4 | Integrity digest for the SW_TEST_UNLOCK_PARTITION partition.                                        |
+| otp_ctrl.[`SECRET_MANUF_PARTITION_DIGEST_0`](#secret_manuf_partition_digest)                           | 0xc0     |        4 | Integrity digest for the SECRET_MANUF_PARTITION partition.                                          |
+| otp_ctrl.[`SECRET_MANUF_PARTITION_DIGEST_1`](#secret_manuf_partition_digest)                           | 0xc4     |        4 | Integrity digest for the SECRET_MANUF_PARTITION partition.                                          |
+| otp_ctrl.[`SECRET_PROD_PARTITION_0_DIGEST_0`](#secret_prod_partition_0_digest)                         | 0xc8     |        4 | Integrity digest for the SECRET_PROD_PARTITION_0 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_0_DIGEST_1`](#secret_prod_partition_0_digest)                         | 0xcc     |        4 | Integrity digest for the SECRET_PROD_PARTITION_0 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_1_DIGEST_0`](#secret_prod_partition_1_digest)                         | 0xd0     |        4 | Integrity digest for the SECRET_PROD_PARTITION_1 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_1_DIGEST_1`](#secret_prod_partition_1_digest)                         | 0xd4     |        4 | Integrity digest for the SECRET_PROD_PARTITION_1 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_2_DIGEST_0`](#secret_prod_partition_2_digest)                         | 0xd8     |        4 | Integrity digest for the SECRET_PROD_PARTITION_2 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_2_DIGEST_1`](#secret_prod_partition_2_digest)                         | 0xdc     |        4 | Integrity digest for the SECRET_PROD_PARTITION_2 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_3_DIGEST_0`](#secret_prod_partition_3_digest)                         | 0xe0     |        4 | Integrity digest for the SECRET_PROD_PARTITION_3 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_3_DIGEST_1`](#secret_prod_partition_3_digest)                         | 0xe4     |        4 | Integrity digest for the SECRET_PROD_PARTITION_3 partition.                                         |
+| otp_ctrl.[`SW_MANUF_PARTITION_DIGEST_0`](#sw_manuf_partition_digest)                                   | 0xe8     |        4 | Integrity digest for the SW_MANUF_PARTITION partition.                                              |
+| otp_ctrl.[`SW_MANUF_PARTITION_DIGEST_1`](#sw_manuf_partition_digest)                                   | 0xec     |        4 | Integrity digest for the SW_MANUF_PARTITION partition.                                              |
+| otp_ctrl.[`SECRET_LC_TRANSITION_PARTITION_DIGEST_0`](#secret_lc_transition_partition_digest)           | 0xf0     |        4 | Integrity digest for the SECRET_LC_TRANSITION_PARTITION partition.                                  |
+| otp_ctrl.[`SECRET_LC_TRANSITION_PARTITION_DIGEST_1`](#secret_lc_transition_partition_digest)           | 0xf4     |        4 | Integrity digest for the SECRET_LC_TRANSITION_PARTITION partition.                                  |
+| otp_ctrl.[`VENDOR_TEST_PARTITION_DIGEST_0`](#vendor_test_partition_digest)                             | 0xf8     |        4 | Integrity digest for the VENDOR_TEST_PARTITION partition.                                           |
+| otp_ctrl.[`VENDOR_TEST_PARTITION_DIGEST_1`](#vendor_test_partition_digest)                             | 0xfc     |        4 | Integrity digest for the VENDOR_TEST_PARTITION partition.                                           |
+| otp_ctrl.[`VENDOR_HASHES_MANUF_PARTITION_DIGEST_0`](#vendor_hashes_manuf_partition_digest)             | 0x100    |        4 | Integrity digest for the VENDOR_HASHES_MANUF_PARTITION partition.                                   |
+| otp_ctrl.[`VENDOR_HASHES_MANUF_PARTITION_DIGEST_1`](#vendor_hashes_manuf_partition_digest)             | 0x104    |        4 | Integrity digest for the VENDOR_HASHES_MANUF_PARTITION partition.                                   |
+| otp_ctrl.[`VENDOR_HASHES_PROD_PARTITION_DIGEST_0`](#vendor_hashes_prod_partition_digest)               | 0x108    |        4 | Integrity digest for the VENDOR_HASHES_PROD_PARTITION partition.                                    |
+| otp_ctrl.[`VENDOR_HASHES_PROD_PARTITION_DIGEST_1`](#vendor_hashes_prod_partition_digest)               | 0x10c    |        4 | Integrity digest for the VENDOR_HASHES_PROD_PARTITION partition.                                    |
+| otp_ctrl.[`VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0`](#vendor_revocations_prod_partition_digest)     | 0x110    |        4 | Integrity digest for the VENDOR_REVOCATIONS_PROD_PARTITION partition.                               |
+| otp_ctrl.[`VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1`](#vendor_revocations_prod_partition_digest)     | 0x114    |        4 | Integrity digest for the VENDOR_REVOCATIONS_PROD_PARTITION partition.                               |
+| otp_ctrl.[`VENDOR_SECRET_PROD_PARTITION_DIGEST_0`](#vendor_secret_prod_partition_digest)               | 0x118    |        4 | Integrity digest for the VENDOR_SECRET_PROD_PARTITION partition.                                    |
+| otp_ctrl.[`VENDOR_SECRET_PROD_PARTITION_DIGEST_1`](#vendor_secret_prod_partition_digest)               | 0x11c    |        4 | Integrity digest for the VENDOR_SECRET_PROD_PARTITION partition.                                    |
+| otp_ctrl.[`VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0`](#vendor_non_secret_prod_partition_digest)       | 0x120    |        4 | Integrity digest for the VENDOR_NON_SECRET_PROD_PARTITION partition.                                |
+| otp_ctrl.[`VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1`](#vendor_non_secret_prod_partition_digest)       | 0x124    |        4 | Integrity digest for the VENDOR_NON_SECRET_PROD_PARTITION partition.                                |
 | otp_ctrl.[`SW_CFG_WINDOW`](#sw_cfg_window)                                                             | 0x1000   |     4096 | Any read to this window directly maps to the corresponding offset in the creator and owner software |
 
 ## INTR_STATE
@@ -640,9 +642,44 @@ Runtime read lock for the VENDOR_NON_SECRET_PROD_PARTITION partition.
 |  31:1  |        |         |                                            | Reserved                                                                                                               |
 |   0    |  rw0c  |   0x1   | VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK | When cleared to 0, read access to the VENDOR_NON_SECRET_PROD_PARTITION partition is locked. Write 0 to clear this bit. |
 
+## ZEROIZE_REGWEN
+Register write enable for zeroization trigger registers.
+- Offset: `0xac`
+- Reset default: `0x1`
+- Reset mask: `0x1`
+
+### Fields
+
+```wavejson
+{"reg": [{"name": "ZEROIZE_REGWEN", "bits": 1, "attr": ["rw0c"], "rotate": -90}, {"bits": 31}], "config": {"lanes": 1, "fontsize": 10, "vspace": 160}}
+```
+
+|  Bits  |  Type  |  Reset  | Name           | Description                                                                                                  |
+|:------:|:------:|:-------:|:---------------|:-------------------------------------------------------------------------------------------------------------|
+|  31:1  |        |         |                | Reserved                                                                                                     |
+|   0    |  rw0c  |   0x1   | ZEROIZE_REGWEN | This bit controls whether the zeroization registers can be written. Write 0 to it in order to clear the bit. |
+
+## SECRET_LC_TRANSITION_PARTITION_ZEROIZE
+Zeroization trigger for the SECRET_LC_TRANSITION_PARTITION partition.
+- Offset: `0xb0`
+- Reset default: `0x0`
+- Reset mask: `0x1`
+- Register enable: [`ZEROIZE_REGWEN`](#zeroize_regwen)
+
+### Fields
+
+```wavejson
+{"reg": [{"name": "SECRET_LC_TRANSITION_PARTITION_ZEROIZE", "bits": 1, "attr": ["rw0c"], "rotate": -90}, {"bits": 31}], "config": {"lanes": 1, "fontsize": 10, "vspace": 400}}
+```
+
+|  Bits  |  Type  |  Reset  | Name                                   | Description                                                                                         |
+|:------:|:------:|:-------:|:---------------------------------------|:----------------------------------------------------------------------------------------------------|
+|  31:1  |        |         |                                        | Reserved                                                                                            |
+|   0    |  rw0c  |   0x0   | SECRET_LC_TRANSITION_PARTITION_ZEROIZE | When set to 1, the SECRET_LC_TRANSITION_PARTITION partition is zeroized. Write 0 to clear this bit. |
+
 ## VENDOR_PK_HASH_VOLATILE_LOCK
 Address register for direct accesses.
-- Offset: `0xac`
+- Offset: `0xb4`
 - Reset default: `0x0`
 - Reset mask: `0xffffffff`
 
@@ -667,8 +704,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                              | Offset   |
 |:----------------------------------|:---------|
-| SW_TEST_UNLOCK_PARTITION_DIGEST_0 | 0xb0     |
-| SW_TEST_UNLOCK_PARTITION_DIGEST_1 | 0xb4     |
+| SW_TEST_UNLOCK_PARTITION_DIGEST_0 | 0xb8     |
+| SW_TEST_UNLOCK_PARTITION_DIGEST_1 | 0xbc     |
 
 
 ### Fields
@@ -692,8 +729,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                            | Offset   |
 |:--------------------------------|:---------|
-| SECRET_MANUF_PARTITION_DIGEST_0 | 0xb8     |
-| SECRET_MANUF_PARTITION_DIGEST_1 | 0xbc     |
+| SECRET_MANUF_PARTITION_DIGEST_0 | 0xc0     |
+| SECRET_MANUF_PARTITION_DIGEST_1 | 0xc4     |
 
 
 ### Fields
@@ -717,8 +754,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                             | Offset   |
 |:---------------------------------|:---------|
-| SECRET_PROD_PARTITION_0_DIGEST_0 | 0xc0     |
-| SECRET_PROD_PARTITION_0_DIGEST_1 | 0xc4     |
+| SECRET_PROD_PARTITION_0_DIGEST_0 | 0xc8     |
+| SECRET_PROD_PARTITION_0_DIGEST_1 | 0xcc     |
 
 
 ### Fields
@@ -742,8 +779,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                             | Offset   |
 |:---------------------------------|:---------|
-| SECRET_PROD_PARTITION_1_DIGEST_0 | 0xc8     |
-| SECRET_PROD_PARTITION_1_DIGEST_1 | 0xcc     |
+| SECRET_PROD_PARTITION_1_DIGEST_0 | 0xd0     |
+| SECRET_PROD_PARTITION_1_DIGEST_1 | 0xd4     |
 
 
 ### Fields
@@ -767,8 +804,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                             | Offset   |
 |:---------------------------------|:---------|
-| SECRET_PROD_PARTITION_2_DIGEST_0 | 0xd0     |
-| SECRET_PROD_PARTITION_2_DIGEST_1 | 0xd4     |
+| SECRET_PROD_PARTITION_2_DIGEST_0 | 0xd8     |
+| SECRET_PROD_PARTITION_2_DIGEST_1 | 0xdc     |
 
 
 ### Fields
@@ -792,8 +829,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                             | Offset   |
 |:---------------------------------|:---------|
-| SECRET_PROD_PARTITION_3_DIGEST_0 | 0xd8     |
-| SECRET_PROD_PARTITION_3_DIGEST_1 | 0xdc     |
+| SECRET_PROD_PARTITION_3_DIGEST_0 | 0xe0     |
+| SECRET_PROD_PARTITION_3_DIGEST_1 | 0xe4     |
 
 
 ### Fields
@@ -819,8 +856,8 @@ the digest becomes visible in this CSR.
 
 | Name                        | Offset   |
 |:----------------------------|:---------|
-| SW_MANUF_PARTITION_DIGEST_0 | 0xe0     |
-| SW_MANUF_PARTITION_DIGEST_1 | 0xe4     |
+| SW_MANUF_PARTITION_DIGEST_0 | 0xe8     |
+| SW_MANUF_PARTITION_DIGEST_1 | 0xec     |
 
 
 ### Fields
@@ -844,8 +881,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                                    | Offset   |
 |:----------------------------------------|:---------|
-| SECRET_LC_TRANSITION_PARTITION_DIGEST_0 | 0xe8     |
-| SECRET_LC_TRANSITION_PARTITION_DIGEST_1 | 0xec     |
+| SECRET_LC_TRANSITION_PARTITION_DIGEST_0 | 0xf0     |
+| SECRET_LC_TRANSITION_PARTITION_DIGEST_1 | 0xf4     |
 
 
 ### Fields
@@ -871,8 +908,8 @@ the digest becomes visible in this CSR.
 
 | Name                           | Offset   |
 |:-------------------------------|:---------|
-| VENDOR_TEST_PARTITION_DIGEST_0 | 0xf0     |
-| VENDOR_TEST_PARTITION_DIGEST_1 | 0xf4     |
+| VENDOR_TEST_PARTITION_DIGEST_0 | 0xf8     |
+| VENDOR_TEST_PARTITION_DIGEST_1 | 0xfc     |
 
 
 ### Fields
@@ -898,8 +935,8 @@ the digest becomes visible in this CSR.
 
 | Name                                   | Offset   |
 |:---------------------------------------|:---------|
-| VENDOR_HASHES_MANUF_PARTITION_DIGEST_0 | 0xf8     |
-| VENDOR_HASHES_MANUF_PARTITION_DIGEST_1 | 0xfc     |
+| VENDOR_HASHES_MANUF_PARTITION_DIGEST_0 | 0x100    |
+| VENDOR_HASHES_MANUF_PARTITION_DIGEST_1 | 0x104    |
 
 
 ### Fields
@@ -925,8 +962,8 @@ the digest becomes visible in this CSR.
 
 | Name                                  | Offset   |
 |:--------------------------------------|:---------|
-| VENDOR_HASHES_PROD_PARTITION_DIGEST_0 | 0x100    |
-| VENDOR_HASHES_PROD_PARTITION_DIGEST_1 | 0x104    |
+| VENDOR_HASHES_PROD_PARTITION_DIGEST_0 | 0x108    |
+| VENDOR_HASHES_PROD_PARTITION_DIGEST_1 | 0x10c    |
 
 
 ### Fields
@@ -952,8 +989,8 @@ the digest becomes visible in this CSR.
 
 | Name                                       | Offset   |
 |:-------------------------------------------|:---------|
-| VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0 | 0x108    |
-| VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1 | 0x10c    |
+| VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0 | 0x110    |
+| VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1 | 0x114    |
 
 
 ### Fields
@@ -977,8 +1014,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                                  | Offset   |
 |:--------------------------------------|:---------|
-| VENDOR_SECRET_PROD_PARTITION_DIGEST_0 | 0x110    |
-| VENDOR_SECRET_PROD_PARTITION_DIGEST_1 | 0x114    |
+| VENDOR_SECRET_PROD_PARTITION_DIGEST_0 | 0x118    |
+| VENDOR_SECRET_PROD_PARTITION_DIGEST_1 | 0x11c    |
 
 
 ### Fields
@@ -1004,8 +1041,8 @@ the digest becomes visible in this CSR.
 
 | Name                                      | Offset   |
 |:------------------------------------------|:---------|
-| VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0 | 0x118    |
-| VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1 | 0x11c    |
+| VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0 | 0x120    |
+| VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1 | 0x124    |
 
 
 ### Fields

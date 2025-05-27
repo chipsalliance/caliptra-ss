@@ -126,6 +126,7 @@ package otp_ctrl_part_pkg;
     // Decoded LC state index. A partition can be written as long this index is
     // smaller or equal the current state index of the LC (see `dec_lc_state_e`).
     logic [DecLcStateWidth-1:0] lc_phase;
+    logic clearable;        // Whether the partition can be cleared/zeroized
   } part_info_t;
 
   parameter part_info_t PartInfoDefault = '{
@@ -141,7 +142,8 @@ package otp_ctrl_part_pkg;
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0,
-      lc_phase:         DecLcStRaw
+      lc_phase:         DecLcStRaw,
+      clearable:        1'b0
   };
 
   ////////////////////////
@@ -164,7 +166,8 @@ package otp_ctrl_part_pkg;
       integrity:        1'b${"1" if part["integrity"] else "0"},
       iskeymgr_creator: 1'b${"1" if part["iskeymgr_creator"] else "0"},
       iskeymgr_owner:   1'b${"1" if part["iskeymgr_owner"] else "0"},
-      lc_phase:         ${"Dec"+part["lc_phase"]}
+      lc_phase:         ${"Dec"+part["lc_phase"]},
+      clearable:        1'b${"1" if part["clearable"] else "0"}
     }${"" if loop.last else ","}
 % endfor
   };
@@ -379,5 +382,26 @@ package otp_ctrl_part_pkg;
     unused ^= valid;
     return otp_keymgr_key;
   endfunction : named_keymgr_key_assign
+
+  function automatic logic [NumPart-1:0] named_zeroize_assign(
+      otp_ctrl_core_reg2hw_t reg2hw);
+    logic [NumPart-1:0] zeroize;
+    logic unused_sigs;
+    unused_sigs = ^reg2hw;
+
+    // Default (this will be overridden by partition-internal settings).
+    zeroize = '0;
+
+% for k, part in enumerate(otp_mmap.config["partitions"]):
+  % if part["clearable"]:
+    // ${part["name"]}
+    if (!reg2hw.${part["name"].lower()}_zeroize) begin
+<% part_name = Name.from_snake_case(part["name"]) %>\
+      zeroize[${part_name.as_camel_case()}Idx] = 1'b1;
+    end
+  % endif
+% endfor
+
+  endfunction : named_zeroize_assign
 
 endpackage : otp_ctrl_part_pkg

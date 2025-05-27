@@ -58,6 +58,7 @@ typedef struct {
     bool has_read_lock;
     bool has_ecc;
     bool is_lifecycle;
+    bool is_clearable;
     uint32_t lc_phase;
     uint32_t num_fuses;
     uint32_t *fuses;
@@ -107,6 +108,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = ${"true" if p["integrity"] else "false"},
         .lc_phase = ${lc_state_decode(p["lc_phase"])},
         .is_lifecycle = ${"true" if p["variant"] == "LifeCycle" else "false"},
+        .is_clearable = ${"true" if p["clearable"] else "false"},
         .num_fuses = ${len(p["items"])-1},
         .fuses = ${p["name"].lower() + "_fuses"}
     },
