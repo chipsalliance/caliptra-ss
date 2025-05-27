@@ -356,7 +356,7 @@ The DMA block can directly stream images from AXI to AES for decrypte/encrypt, a
 * AES Mode == 1
 * Read Route == AXI
 * Write Route == AXI
-* Block Size == 0 (OPC Stream Boot Disabled)
+* Block Size == 0 (OCP Stream Boot Disabled)
 * Source Address == Start of image
 * Destination Address == Start address where processed image should be stored
 * Configure Byte Count
