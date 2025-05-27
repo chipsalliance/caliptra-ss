@@ -27,6 +27,7 @@ module mci_lcc_st_trans
     input logic                                         state_error, // That represents any invalid state errors
     // Inputs from LCC
     input  otp_ctrl_pkg::lc_otp_program_req_t           from_lcc_to_otp_program_i,
+    input logic                                         lcc_volatile_raw_unlock_success_i,
     input lc_ctrl_pkg::lc_tx_t                          lc_dft_en_i,
     input lc_ctrl_pkg::lc_tx_t                          lc_hw_debug_en_i,
     // Inputs from OTP_Ctrl
@@ -136,7 +137,6 @@ always_comb begin: state_branch
                                                 LcStTestLocked4,
                                                 LcStTestLocked5,
                                                 LcStTestLocked6}) begin
-
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
             end
             else if  (otp_static_state  inside {LcStTestUnlocked0,
@@ -147,33 +147,33 @@ always_comb begin: state_branch
                                                 LcStTestUnlocked5,
                                                 LcStTestUnlocked6,
                                                 LcStTestUnlocked7}) begin
-
                 mci_trans_st_next = TRANSLATOR_UNPROV_DEBUG;
             end
             else if  (otp_static_state == LcStDev) begin
-
                 mci_trans_st_next = TRANSLATOR_MANUF_NON_DEBUG;
             end
             else if  (otp_static_state == LcStProd) begin
-
                 mci_trans_st_next = TRANSLATOR_PROD_NON_DEBUG;
             end
             else if  (otp_static_state == LcStProdEnd) begin
-
                 mci_trans_st_next = TRANSLATOR_PROD_NON_DEBUG;
             end
             else if  (otp_static_state == LcStRma) begin
-
                 mci_trans_st_next = TRANSLATOR_PROD_DEBUG;
             end
             else begin
-
                 mci_trans_st_next = TRANSLATOR_IDLE;
             end
         end
         TRANSLATOR_NON_DEBUG: begin
-            mci_trans_st_next = TRANSLATOR_NON_DEBUG;
-            security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+            if (lcc_volatile_raw_unlock_success_i && !(lcc_valid_SCRAP_req || state_error)) begin
+                mci_trans_st_next = TRANSLATOR_UNPROV_DEBUG;
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+            end
+            else begin
+                mci_trans_st_next = TRANSLATOR_NON_DEBUG;
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};
+            end
         end
         TRANSLATOR_UNPROV_DEBUG: begin
             if (lcc_valid_SCRAP_req || state_error) begin
@@ -418,6 +418,15 @@ $rose(((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
         & (lc_hw_debug_en_i == lc_ctrl_pkg::On))
     |=>
     (SOC_HW_DEBUG_EN == 1) 
+)
+
+`CALIPTRA_ASSERT(UnProvSIGNAL_with_Volatile_Decoding_A,
+$rose(lcc_volatile_raw_unlock_success_i
+            & (mci_trans_st_current != TRANSLATOR_RESET))
+    |=> ##2
+    ((SOC_DFT_EN == 1) && (SOC_HW_DEBUG_EN == 1) 
+        && (security_state_o.debug_locked == 1'b0)
+        && (security_state_o.device_lifecycle == DEVICE_UNPROVISIONED) ) 
 )
 
 
