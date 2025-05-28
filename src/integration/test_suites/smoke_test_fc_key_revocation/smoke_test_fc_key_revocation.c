@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -53,9 +54,8 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 void vendor_revocations_prod_partition() {
 
-    // 0x3068: CPTRA_CORE_ECC_REVOCATION_0
-    const uint32_t base_address = 0x3068;
-    const uint32_t digest_address = 0x30F8;
+    const uint32_t base_address = CPTRA_CORE_ECC_REVOCATION_0;
+    const uint32_t digest_address = partitions[VENDOR_REVOCATIONS_PROD_PARTITION].digest_address;
     const uint32_t fuse_address = base_address;
 
     const uint32_t data = 0xdeadbeef;

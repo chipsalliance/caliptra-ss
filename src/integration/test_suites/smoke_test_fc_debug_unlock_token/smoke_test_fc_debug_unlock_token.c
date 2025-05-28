@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -49,9 +50,9 @@ void main (void) {
     
     initialize_otp_controller();
 
-    const uint32_t base_address = 0x0000;
-    const uint32_t fuse_address = 0x0000;
-    const uint32_t digest_address = 0x0040;
+    const uint32_t base_address = CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN;
+    const uint32_t fuse_address = base_address;
+    const uint32_t digest_address = SW_TEST_UNLOCK_PARTITION_DIGEST;
 
     const uint32_t sentinel = 0xAB;
 

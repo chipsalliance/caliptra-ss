@@ -21,7 +21,7 @@ GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
 
 ifndef CALIPTRA_SS_CLK_FREQ
-CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$((RANDOM % 2 + 1))), 170 400)
+CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$(( ($(PLAYBOOK_RANDOM_SEED) & 1)+1 )) ), 170 400)
 endif
 
 # Ensure that RISC-V toolchain is installed
@@ -75,6 +75,7 @@ COMP_LIB_NAMES := caliptra_ss_lib \
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 HEADER_FILES := $(RTL_DIR)/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_address_map.h \
+		$(RTL_DIR)/fuse_ctrl_mmap.h \
 		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
 		$(INCLUDES_DIR)/caliptra_ss_defines.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \

@@ -189,6 +189,7 @@ class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 					end
 					if(data[0] != 'h1) begin
 						test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
+						err_count++;
 					end
 				end else begin
 					test_log.substep($psprintf("Image send completed"));
@@ -347,7 +348,7 @@ class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 					end
 			endcase
 
-			#1us;
+			#2us;
 
 		end
 

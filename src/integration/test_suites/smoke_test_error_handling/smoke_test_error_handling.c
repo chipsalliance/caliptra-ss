@@ -35,12 +35,6 @@ volatile uint32_t  rst_count  = 0;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#ifdef PLAYBOOK_RANDOM_SEED
-    unsigned time = (unsigned) PLAYBOOK_RANDOM_SEED;
-#else
-    unsigned time = 0;
-#endif
-
 volatile uint32_t * mci_error0_intr_en  = (uint32_t *) SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R; //TODO: confirm
 volatile uint32_t * mci_error1_intr_en  = (uint32_t *) SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTR_EN_R;
 volatile uint32_t * mci_notif0_intr_en  = (uint32_t *) SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTR_EN_R;
@@ -109,14 +103,12 @@ void service_notif0_intr() {
 }
 
 uint32_t main(void) {
-    uint8_t rand_mask_sel;
+    uint32_t rand_mask_sel;
     uint32_t data = 0;
 
     VPRINTF(LOW, "---------------------------\n");
     VPRINTF(LOW, " Err Handling Smoke Test\n");
     VPRINTF(LOW, "---------------------------\n");
-
-    srand(time);
 
     //Enable SOC notif interrupt
     *mci_error0_intr_en = MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_INTERNAL_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX0_ECC_UNC_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_MBOX1_ECC_UNC_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER1_TIMEOUT_EN_MASK | MCI_REG_INTR_BLOCK_RF_ERROR0_INTR_EN_R_ERROR_WDT_TIMER2_TIMEOUT_EN_MASK;
@@ -144,7 +136,7 @@ uint32_t main(void) {
     }
     else if (rst_count == 2) {
         VPRINTF(LOW, "------------\nMCI err with mask\n------------\n");
-        rand_mask_sel = rand() % 0x8; //% 8 since there are 3 mask bits and 2**3 combinations
+        rand_mask_sel = xorshift32() % 0x8; //% 8 since there are 3 mask bits and 2**3 combinations
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK, rand_mask_sel);
         SEND_STDOUT_CTRL(TB_CMD_INJECT_MCI_ERROR_FATAL);
 
@@ -169,7 +161,7 @@ uint32_t main(void) {
 
         //Add other stuff here
         VPRINTF(LOW, "------------\nMCI non-ftl err with mask\n------------\n");
-        rand_mask_sel = rand() % 0x4; //% 4 since there are 2 mask bits and 2**2 combinations
+        rand_mask_sel = xorshift32() % 0x4; //% 4 since there are 2 mask bits and 2**2 combinations
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK, rand_mask_sel);
         SEND_STDOUT_CTRL(TB_CMD_INJECT_MCI_ERROR_NON_FATAL);
 
@@ -190,7 +182,7 @@ uint32_t main(void) {
     }
     else if (rst_count == 4) {
         VPRINTF(LOW, "-------------\nAggregate ftl err with mask\n---------------\n");
-        rand_mask_sel = rand() % 32;
+        rand_mask_sel = xorshift32();
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_FATAL_MASK, rand_mask_sel);
         SEND_STDOUT_CTRL(TB_CMD_INJECT_AGG_ERROR_FATAL);
 
@@ -214,7 +206,7 @@ uint32_t main(void) {
     }
     else if (rst_count == 6) {
         VPRINTF(LOW, "-------------\nAggregate non ftl err with mask\n---------------\n");
-        rand_mask_sel = rand() % 32;
+        rand_mask_sel = xorshift32();
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTERNAL_AGG_ERROR_NON_FATAL_MASK, rand_mask_sel);
         SEND_STDOUT_CTRL(TB_CMD_INJECT_AGG_ERROR_NON_FATAL);
 
@@ -227,8 +219,8 @@ uint32_t main(void) {
     }
     else if (rst_count == 7) {
         VPRINTF(LOW, "-------------\nFW ftl/non-ftl err without mask\n---------------\n");
-        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_FATAL, rand());
-        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL, rand());
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_FATAL, xorshift32());
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL, xorshift32());
 
         for(uint8_t i = 0; i < 10; i++);
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
@@ -239,8 +231,8 @@ uint32_t main(void) {
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_FATAL_MASK, 0xffff);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_INTERNAL_FW_ERROR_NON_FATAL_MASK, 0xffff);
 
-        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_FATAL, rand());
-        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL, rand());
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_FATAL, xorshift32());
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_FW_ERROR_NON_FATAL, xorshift32());
 
         for(uint8_t i = 0; i < 10; i++);
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);

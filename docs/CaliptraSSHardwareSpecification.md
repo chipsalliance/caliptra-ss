@@ -318,17 +318,21 @@ The DMA assist initiates transactions on the AXI manager interface in compliance
 
 In the AXI DMA control state machine, both the read and write interfaces have their own “route”. A route is configured for read and write channels for every DMA operation that is requested. Routes determine how data flows through the DMA block.
 
-Read routes always apply when an AXI read is requested. Any AXI read will push the response data into the internal FIFO. The read route determines where this data will ultimately be sent when it is popped from the FIFO. For the AHB route, data from the FIFO is populated to the dataout register, where it may be read via AHB by the Caliptra RV core. For the mailbox route, data from the FIFO flows into the mailbox; for these operations, the mailbox address is determined by the destination address register value, with an offset applied based on how many bytes have been written to the mailbox. For the AXI route, data from the FIFO flows into the AXI Write Manager, whereupon it is sent out to AXI on the WDATA signal.
+Read routes always apply when an AXI read is requested and must be disabled otherwise. Any AXI read pushes the response data into the internal FIFO. The read route determines where this data is ultimately sent when it is popped from the FIFO. For the AHB route, data from the FIFO is populated to the dataout register, where it may be read via AHB by the Caliptra RV core. For the mailbox route, data from the FIFO flows into the mailbox; for these operations, the mailbox address is determined by the destination address register value, with an offset applied based on how many bytes have been written to the mailbox. For the AXI route, data from the FIFO flows into the AXI Write Manager, whereupon it is sent out to AXI on the WDATA signal. For the Read DISABLE route, data output from the FIFO always flows into the AXI write channel. In this case, data originates from a source other than an AXI read, so AXI reads are inactive.
 
-Write routes always apply when an AXI write is requested. Any AXI write will read data from the internal FIFO before sending it over AXI. The write route determines where this data originates before it is pushed onto the FIFO. For the AHB route, a write to the datain register via AHB results in write data being pushed onto the FIFO. For the mailbox route, data is read from the mailbox and pushed onto the FIFO; for these operations, the mailbox address is determined by the source address register value, with an offset applied based on how many bytes have been read from the mailbox. For the AXI route, data flows from the AXI Read Manager into the FIFO.
+Write routes always apply when an AXI write is requested and must be disabled otherwise. Any AXI write reads data from the internal FIFO before sending it over AXI. The write route determines where this data originates before it is pushed onto the FIFO. For the AHB route, a write to the datain register via AHB results in write data being pushed onto the FIFO. For the mailbox route, data is read from the mailbox and pushed onto the FIFO; for these operations, the mailbox address is determined by the source address register value, with an offset applied based on how many bytes have been read from the mailbox. For the AXI route, data flows from the AXI Read Manager into the FIFO. For the Write DISABLE route, data received on the AXI read channel is always pushed into the FIFO and then sent to an internal destination rather than a destination on the AXI bus, so AXI writes are inactive.
 
-*Example 1: Write Route \== MBOX*
+*Example 1: Write Route \== MBOX and Read Route \== DISABLE*
 
 ![](./images/Caliptra-AXI-DMA-WR.png)
 
-*Example 2: Read Route \== AHB*
+*Example 2: Read Route \== AHB and Write Route \== DISABLE*
 
 ![](./images/Caliptra-AXI-DMA-RD.png)
+
+*Example 3: Read Route \== AXI and Write Route \== AXI*
+
+![](./images/Caliptra-AXI-DMA-RD-WR.png)
 
 
 ## OCP Streaming Boot Payloads
@@ -846,10 +850,10 @@ The registers can be split up into a few different categories:
 | **Write restrictions**     | **Description**     | 
 | :---------     | :---------| 
 | MCU Only        | These registers are only meant for MCU to have access. There is no reason for SOC or the MCI SOC Config User to access the. Example is the MTIMER|
-| MCU or MCSU      |  Access restricted to trusted agents but not locked. Example:RESET_REQUEST for MCU. |
-| MCU or MCRSU      |  Access restricted to trusted agents but not locked. Example:RESET_REASON for MCU. |
-| MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each warm reset |
-| Sticky MCU or MCSU and CONFIG locked      | Locked configuration by MCU ROM/MCSU and configured after each cold reset |
+| MCU or MSCU      |  Access restricted to trusted agents but not locked. Example:RESET_REQUEST for MCU. |
+| MCU or MSRCU      |  Access restricted to trusted agents but not locked. Example:RESET_REASON for MCU. |
+| MCU or MSCU and CONFIG locked      | Locked configuration by MCU ROM/MSCU and configured after each warm reset |
+| Sticky MCU or MSCU and CONFIG locked      | Locked configuration by MCU ROM/MSCU and configured after each cold reset |
 | Locked by SS_CONFIG_DONE_STICKY        | Configuration once per cold reset. |
 | Locked by SS_CONFIG_DONE        | Configuration once per warm reset. |
 | MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilieds then locked until next warm reset |
@@ -1006,6 +1010,7 @@ If a second Target user is required it is the MCU's responsibility to:
 Otherwise these registers are cleared when the mailbox lock is released. 
 
 Target users must be an [MCU Mailbox trusted user](mcu-mailbox-limited-trusted-AXI-user)
+
 #### MCU Mailbox Fully addressable SRAM
 
 The SRAM is fully addressable and reads are not destructive in this mailbox.
@@ -1015,6 +1020,8 @@ The SRAM is fully addressable and reads are not destructive in this mailbox.
 **Max Size**: 2MB
 
 If set to 0 the mailbox is not instantiated. 
+
+Accesses must be DWORD aligned and BYTE accesses are not supported by the SRAM.
 
 #### MCU Mailbox SRAM Clearing
 

@@ -107,8 +107,17 @@ For the exact definition of these vendor-specific fuses see `otp_ctrl_mmap.hjson
 
 ### Execution
 ```sh
+cd $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script
+cat requirements.txt
+> hjson==3.1.0
+> importlib_resources==5.4.0
+> Mako==1.1.6
+> pycryptodome==3.21.0
+> PyYAML==6.0.1
+> tabulate==0.8.10
 python3 -m pip install -r requirements.txt
-./caliptra-ss/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.py -f gen_fuse_ctr_partitions.yml
+cd $CALIPTRA_SS_ROOT
+./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.py -f gen_fuse_ctrl_partitions.yml
 ```
 
 ### Verification

@@ -244,10 +244,10 @@ module fc_lcc_tb_services (
   //-------------------------------------------------------------------------
 
   reg fault_active_q;
-  reg [15:0] faulted_word_q [0:7];
+  reg [15:0] faulted_word_q [0:6];
 
-  localparam int partition_offsets [0:7] = '{'h000, 'h024, 'h048, 'h050, 'h058, 'h060, 'h260, 'h4D4};
-  localparam int partition_digests [0:7] = '{'h020, 'h044, 'h04C, 'h054, 'h05C, 'h064, 'h2B8, 'h5D4};
+  localparam int partition_offsets [0:6] = '{'h024, 'h048, 'h050, 'h058, 'h060, 'h160C, 'h1880};
+  localparam int partition_digests [0:6] = '{'h044, 'h04C, 'h054, 'h05C, 'h064, 'h1664, 'h1980};
 
   always_ff @(posedge clk or negedge cptra_rst_b) begin
     if (!cptra_rst_b) begin
@@ -260,7 +260,7 @@ module fc_lcc_tb_services (
   end
 
   generate
-  for (genvar i = 0; i < 8; i++) begin
+  for (genvar i = 0; i < 7; i++) begin
     always_ff @(posedge clk or negedge cptra_rst_b) begin
       if (!cptra_rst_b) begin
         faulted_word_q[i] <= '0;
@@ -279,7 +279,7 @@ module fc_lcc_tb_services (
   endgenerate
 
   generate
-  for (genvar i = 0; i < 8; i++) begin
+  for (genvar i = 0; i < 7; i++) begin
     always_comb begin
       if (fault_active_q) begin
         force `FC_MEM[partition_offsets[i]][15:0] = faulted_word_q[i];

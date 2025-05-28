@@ -52,6 +52,7 @@ _start:
         //  - [UNMAPPED] @ 0xF000_0000:    SE
         li t0, 0xAAA9A2AA
         csrw mrac, t0
+        fence.i
 
         la sp, STACK
 
