@@ -45,6 +45,7 @@ module lc_ctrl_fsm
   // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
   // ---------------------------------------------------------------
   input  logic                  volatile_raw_unlock_i,
+  output                        volatile_raw_unlock_success_o,
   // output logic                  strap_en_override_o,
   // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------
   // Token input from OTP (these are all hash post-images).
@@ -200,6 +201,7 @@ module lc_ctrl_fsm
 
   // Registers whether volatile unlock has been successful
   caliptra_prim_mubi_pkg::mubi8_t volatile_raw_unlock_success_d, volatile_raw_unlock_success_q;
+  assign volatile_raw_unlock_success_o = (volatile_raw_unlock_success_q == caliptra_prim_mubi_pkg::MuBi8True);
 
   // SEC_CM: MAIN.CTRL_FLOW.CONSISTENCY
   always_comb begin : p_fsm

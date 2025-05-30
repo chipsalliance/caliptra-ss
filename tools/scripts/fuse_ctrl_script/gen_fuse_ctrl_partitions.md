@@ -117,7 +117,7 @@ cat requirements.txt
 > tabulate==0.8.10
 python3 -m pip install -r requirements.txt
 cd $CALIPTRA_SS_ROOT
-./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.py -f gen_fuse_ctrl_partitions.yml
+./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.py -f tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partitions.yml
 ```
 
 ### Verification
