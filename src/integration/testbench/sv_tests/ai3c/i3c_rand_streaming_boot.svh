@@ -54,9 +54,6 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 		test_log.substep("Reading DEVICE_ID register");
 		i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_ID, 24, data);
 	
-        test_log.substep("Reading HW_STATUS register");
-		i3c_read(recovery_target_addr, `I3C_CORE_HW_STATUS, 4, data);
-
 		test_log.substep("Reading DEVICE_STATUS register");
 		i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_STATUS, 7, data);
 
@@ -74,11 +71,12 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 				test_log.substep($psprintf("Recovery started : 'd %0d", data[0]));
 				break;
 			end
-			#1us;
+			#25us;
 		end
 		if(data[0] != 'h3) begin	
 			test_log.substep("Error : Recovery did not start");
 			err_count++;
+      $finish;
 		end
 
 		//-- Reading RECOVERY_STATUS register for recovery status
@@ -94,6 +92,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 		end
 		if(data[0] != 'h1) begin
 			test_log.substep("Recovery did not start");
+			err_count++;
 		end
 
 		test_log.step("=============================================================");
@@ -177,6 +176,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 					end
 					if(data[0] != 'h1) begin
 						test_log.substep("Indirect FIFO is not empty after 100 read attempts.. TIMEOUT");
+						err_count++;
 					end
 				end else begin
 					test_log.substep($psprintf("Image send completed"));
