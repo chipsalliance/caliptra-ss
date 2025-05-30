@@ -396,7 +396,7 @@ FUSE controller is an RTL module that is responsible for programming and reading
 
 ## Partition Details
 
-The Fuse Controller supports a total of **16 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)). Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle (LC) states, such as "MANUF" or "PROD." This naming convention indicates the LC state required to provision each partition.
+The Fuse Controller is configured a total of **16 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)), while it can support different number of partitions based on SoC product requirements. Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle (LC) states, such as "MANUF" or "PROD." This naming convention indicates the LC state required to provision each partition.
 
 ### Key Characteristics of Secret Partitions:
 1. **Programming Access:**  
