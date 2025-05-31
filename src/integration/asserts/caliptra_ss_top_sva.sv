@@ -59,7 +59,7 @@ module caliptra_ss_top_sva
   //WDT checks:
   cascade_wdt_t1_pet: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`MCI_WDT_PATH.timer1_restart && !`MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t1_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
+    (`MCI_WDT_PATH.timer1_restart && `MCI_WDT_PATH.timer1_en && !`MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t1_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
   )
   else $display("SVA ERROR: [Cascade] WDT Timer1 did not restart on pet");
 
@@ -71,7 +71,7 @@ module caliptra_ss_top_sva
 
   cascade_wdt_t1_service: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`MCI_WDT_PATH.i_wdt.wdt_timer1_timeout_serviced_qual && !`MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t2_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
+    (`MCI_WDT_PATH.i_wdt.wdt_timer1_timeout_serviced_qual && `MCI_WDT_PATH.timer1_en && !`MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t2_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
   )
   else $display("SVA ERROR: [Cascade] WDT Timer1 did not restart after interrupt service");
 
@@ -83,7 +83,7 @@ module caliptra_ss_top_sva
 
   independent_wdt_t1_pet: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`MCI_WDT_PATH.timer1_restart && `MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t1_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
+    (`MCI_WDT_PATH.timer1_restart && `MCI_WDT_PATH.timer1_en && `MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t1_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
   )
   else $display("SVA ERROR: [Independent] WDT Timer1 did not restart on pet");
 
@@ -95,7 +95,7 @@ module caliptra_ss_top_sva
 
   independent_wdt_t1_service: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (`MCI_WDT_PATH.i_wdt.wdt_timer1_timeout_serviced_qual && `MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t2_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
+    (`MCI_WDT_PATH.i_wdt.wdt_timer1_timeout_serviced_qual && `MCI_WDT_PATH.timer1_en && `MCI_WDT_PATH.timer2_en && !`MCI_WDT_PATH.t2_timeout) |=> (`MCI_WDT_PATH.i_wdt.timer1_count == 'h0)
   )
   else $display("SVA ERROR: [Independent] WDT Timer1 did not restart after interrupt service");
 

@@ -39,7 +39,7 @@ void main(void) {
     rst_count++;
     VPRINTF(LOW, "----------------\nrst count = %d\n----------------\n", rst_count);
 
-    VPRINTF(LOW, "==========================\nMCI Error & Interrupt Registers Test\n===========================\n\n");
+    VPRINTF(LOW, "==========================\nMCI Err/Interrupt Registers Test\n===========================\n\n");
 
     mci_register_group_t err_intr_groups[] = {
         REG_GROUP_ERROR_RW1C,
@@ -140,7 +140,7 @@ void main(void) {
         }
     }
  
-    VPRINTF(LOW, "\nMCI Error and Interrupt Register Access Tests Completed\n");
+    VPRINTF(LOW, "\nMCI Err/Interrupt Register Access Tests Completed\n");
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
