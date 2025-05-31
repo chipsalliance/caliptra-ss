@@ -162,6 +162,7 @@ module mci_top
 
     // Inputs from LCC
     input  otp_ctrl_pkg::lc_otp_program_req_t           from_lcc_to_otp_program_i,
+    input logic                                         lcc_volatile_raw_unlock_success_i,
     input lc_ctrl_pkg::lc_tx_t                          lc_dft_en_i,
     input lc_ctrl_pkg::lc_tx_t                          lc_hw_debug_en_i,
     input                                               lc_fatal_state_error_i,
@@ -803,6 +804,7 @@ mci_lcc_st_trans LCC_state_translator (
     .early_warm_reset_warn,
     .state_error(lc_fatal_state_error_i),  
     .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
+    .lcc_volatile_raw_unlock_success_i(lcc_volatile_raw_unlock_success_i),
     .lc_dft_en_i(lc_dft_en_i),
     .lc_hw_debug_en_i(lc_hw_debug_en_i),
     .from_otp_to_lcc_program_i(from_otp_to_lcc_program_i),

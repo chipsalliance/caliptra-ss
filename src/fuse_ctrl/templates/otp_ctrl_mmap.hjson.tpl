@@ -20,7 +20,7 @@
 
     otp: {
         width: "2", // bytes
-        depth: "8192"
+        depth: "2048"
     }
 
     // Definition of scrambling and digest constants and keys.
@@ -88,10 +88,10 @@
             lc_phase:     "LcStDev",
             items: [
                 {
-                    name: "CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN",
+                    name: "CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN",
                     size: "64",
                     desc: '''
-                    Secret value for manufacturing debug unlock authorization.
+                    Hashed, Non-secret, value for manufacturing debug unlock authorization.
                     '''
                 },                
             ],
@@ -252,11 +252,19 @@
                 },
                 {
                     name: "CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR",
-                    size: "7952",
+                    size: "96",
                     desc: '''
                     IDevID Certificate Generation Attributes.
-                    See IDevID certificate section. Caliptra only uses 352 bits. Integrator is not required
-                    to back the remaining 416 bits with physical fuses.
+                    Caliptra only uses 352 bits (44 bytes). Integrator is not required to back the remaining 416 bits with physical fuses.
+                    '''
+                },
+                {
+                    name: "SOC_SPECIFIC_IDEVID_CERTIFICATE",
+                    size: "4",
+                    desc: '''
+                    SoC product requirements determine the certificate sizes based on used DSA (ML-DSA and/or ECC).
+                    Size is determined by product requirements. SoC integrator re-generates the actual size based on
+                    how certificates are handled for a given product.
                     '''
                 },
                 {
@@ -264,7 +272,7 @@
                     size: "16",
                     desc: '''
                     Spare bits for Vendor IDevID provisioner CA identifiers.
-                    Caliptra does not use these bits. Integrator is not required to back these with physical fuses.
+                    Caliptra does not use these bits. SoC may have other mechanisms to back this identifier, therefore integrator is not required to back these with physical fuses.
                     '''
                 },
                 {
@@ -278,64 +286,72 @@
                     name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0",
                     size: "48",
                     desc: '''
-                    There are 8 different debug levels in production state.
-                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    There are 8 different debug levels in production state that Caliptra-Subsystem is configured and validated.
+                    There is a need to have eight 384-bit for the each of public key.
+                    SoC chooses the number of debug levels based on the product requirements.
                     '''
                 },
                 {
                     name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_1",
                     size: "48",
                     desc: '''
-                    There are 8 different debug levels in production state.
-                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    There are 8 different debug levels in production state that Caliptra-Subsystem is configured and validated.
+                    There is a need to have eight 384-bit for the each of public key.
+                    SoC chooses the number of debug levels based on the product requirements.
                     '''
                 },
                 {
                     name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_2",
                     size: "48",
                     desc: '''
-                    There are 8 different debug levels in production state.
-                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    There are 8 different debug levels in production state that Caliptra-Subsystem is configured and validated.
+                    There is a need to have eight 384-bit for the each of public key.
+                    SoC chooses the number of debug levels based on the product requirements.
                     '''
                 },
                 {
                     name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_3",
                     size: "48",
                     desc: '''
-                    There are 8 different debug levels in production state.
-                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    There are 8 different debug levels in production state that Caliptra-Subsystem is configured and validated.
+                    There is a need to have eight 384-bit for the each of public key.
+                    SoC chooses the number of debug levels based on the product requirements.
                     '''
                 },
                 {
                     name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_4",
                     size: "48",
                     desc: '''
-                    There are 8 different debug levels in production state.
-                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    There are 8 different debug levels in production state that Caliptra-Subsystem is configured and validated.
+                    There is a need to have eight 384-bit for the each of public key.
+                    SoC chooses the number of debug levels based on the product requirements.
                     '''
                 },
                 {
                     name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_5",
                     size: "48",
                     desc: '''
-                    There are 8 different debug levels in production state.
-                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    There are 8 different debug levels in production state that Caliptra-Subsystem is configured and validated.
+                    There is a need to have eight 384-bit for the each of public key.
+                    SoC chooses the number of debug levels based on the product requirements.
                     '''
                 },
                 {
                     name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_6",
                     size: "48",
                     desc: '''
-                    There are 8 different debug levels in production state.
-                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    There are 8 different debug levels in production state that Caliptra-Subsystem is configured and validated.
+                    There is a need to have eight 384-bit for the each of public key.
+                    SoC chooses the number of debug levels based on the product requirements.
                     '''
                 },
                 {
                     name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_7",
                     size: "48",
                     desc: '''
-                    There are 8 different debug levels in production state.
-                    Thus, we need eight 384-bit locations for the hash of each of public key.
+                    There are 8 different debug levels in production state that Caliptra-Subsystem is configured and validated.
+                    There is a need to have eight 384-bit for the each of public key.
+                    SoC chooses the number of debug levels based on the product requirements.
                     '''
                 },
             ],
@@ -359,36 +375,64 @@
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_1",
                     inv_default: "<random>",
                     size: "16"
+                    desc: '''
+                    There are 8 different test unlocked levels that require 7 different TOKENs.
+                    Each test unlocked level requires a different TOKEN.
+                    '''
                 },
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_2",
                     inv_default: "<random>",
                     size: "16"
+                    desc: '''
+                    There are 8 different test unlocked levels that require 7 different TOKENs.
+                    Each test unlocked level requires a different TOKEN.
+                    '''
                 },
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_3",
                     inv_default: "<random>",
                     size: "16"
+                    desc: '''
+                    There are 8 different test unlocked levels that require 7 different TOKENs.
+                    Each test unlocked level requires a different TOKEN.
+                    '''
                 },
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_4",
                     inv_default: "<random>",
                     size: "16"
+                    desc: '''
+                    There are 8 different test unlocked levels that require 7 different TOKENs.
+                    Each test unlocked level requires a different TOKEN.
+                    '''
                 },
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_5",
                     inv_default: "<random>",
                     size: "16"
+                    desc: '''
+                    There are 8 different test unlocked levels that require 7 different TOKENs.
+                    Each test unlocked level requires a different TOKEN.
+                    '''
                 },
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_6",
                     inv_default: "<random>",
                     size: "16"
+                    desc: '''
+                    There are 8 different test unlocked levels that require 7 different TOKENs.
+                    Each test unlocked level requires a different TOKEN.
+                    '''
                 },
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_7",
                     inv_default: "<random>",
                     size: "16"
+                    desc: '''
+                    There are 8 different test unlocked levels that require 7 different TOKENs.
+                    Each test unlocked level requires a different TOKEN.
+                    '''
                 },
                 {
                     name: "CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN",
@@ -547,13 +591,40 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
-            items: [    
+            items: [
+                           
+                {
+                    name: "CPTRA_SS_OWNER_PK_HASH",
+                    size: "48",
+                    desc: '''
+                    SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
+                {
+                    name:   "CPTRA_SS_OWNER_PQC_KEY_TYPE",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
+                {
+                    name:   "CPTRA_SS_OWNER_PK_HASH_VALID",
+                    size:   "1",
+                    desc: '''
+                    Once a key is marked valid, anything above should not be able to be written (essentially
+                    a volatile lock should be implemented on higher order bits).
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },   
     % for i in range(1, num_vendor_pk_fuses):               
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_${i}",
                     size: "48",
                     desc: '''
                     SHA384 hash of the Vendor ECDSA P384 and LMS or MLDSA Public Key Descriptors.
+                    SoC product requirements determine the need of this partition; and the number of public keys required.
                     '''
                 },
                 {
@@ -561,6 +632,7 @@
                     size:   "1",
                     desc: '''
                     One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
+                    SoC product requirements determine the need of this partition; and the number of public keys required.
                     '''
                 },
     % endfor
@@ -570,6 +642,7 @@
                     desc: '''
                     Once a key is marked valid, anything above should not be able to be written (essentially
                     a volatile lock should be implemented on higher order bits).
+                    SoC product requirements determine the need of this partition; and the number of public keys required.
                     '''
                 },                                          
             ],
@@ -589,12 +662,37 @@
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
             items: [
+                {
+                    name:   "CPTRA_SS_OWNER_ECC_REVOCATION",
+                    size:   "1",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
+                {
+                    name:   "CPTRA_SS_OWNER_LMS_REVOCATION",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
+                {
+                    name:   "CPTRA_SS_OWNER_MLDSA_REVOCATION",
+                    size:   "4",
+                    desc: '''
+                    One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    SoC product requirements determine the need of this partition.
+                    '''
+                },
     % for i in range(num_vendor_pk_fuses):  
                 {
                     name:   "CPTRA_CORE_ECC_REVOCATION_${i}",
                     size:   "1",
                     desc: '''
                     One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
+                    SoC product requirements determine the need of this partition; and the number of public keys required.
                     '''
                 },
                 {
@@ -602,6 +700,7 @@
                     size:   "4",
                     desc: '''
                     One-hot encoded list of revoked Vendor LMS Public Keys (up to 32 keys).
+                    SoC product requirements determine the need of this partition; and the number of public keys required.
                     '''
                 },
                 {
@@ -609,6 +708,7 @@
                     size:   "4",
                     desc: '''
                     One-hot encoded list of revoked Vendor MLDSA Public Keys (up to 4 keys).
+                    SoC product requirements determine the need of this partition; and the number of public keys required.
                     '''
                 },
     % endfor                                  

@@ -396,7 +396,7 @@ FUSE controller is an RTL module that is responsible for programming and reading
 
 ## Partition Details
 
-The Fuse Controller supports a total of **13 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)). Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle (LC) states, such as "MANUF" or "PROD." This naming convention indicates the LC state required to provision each partition.
+The Fuse Controller is configured a total of **16 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)), while it can support different number of partitions based on SoC product requirements. Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle (LC) states, such as "MANUF" or "PROD." This naming convention indicates the LC state required to provision each partition.
 
 ### Key Characteristics of Secret Partitions:
 1. **Programming Access:**  
@@ -492,19 +492,17 @@ Zeroization occurs under the following conditions:
 
 2. **Transient Condition (Before Cold Reset):**  
    - The **`cptra_ss_FIPS_ZEROIZATION_PPD_i`** GPIO pin must be **asserted high**.
-   - The **`ss_soc_MCU_ROM_zeroization_mask_reg`** must also be set.
+   - MCU ROM support is needed.
 
 ### Zeroization Process
 
-1. A new input port, `cptra_ss_FIPS_ZEROIZATION_PPD_i`, is introduced in the Caliptra Subsystem.
+1. A new input port, `cptra_ss_FIPS_ZEROIZATION_PPD_i`, is introduced in the Caliptra Subsystem. SoC integrator needs to connect this signal to MCI generic input wires (see [MCI Generic Input Allocation](./CaliptraSSIntegrationSpecification.md#mci-integration-requirements)).
 2. When this signal is asserted, it triggers preemptive zeroization of secret FUSEs before the SCRAP state transition.
 3. The **MCU ROM** samples `cptra_ss_FIPS_ZEROIZATION_PPD_i` by reading the corresponding register storing its value.
-4. If `cptra_ss_FIPS_ZEROIZATION_PPD_i == HIGH`, the MCU ROM executes the following sequence:
-   1. Writes `32'hFFFF_FFFF` to the `ss_soc_MCU_ROM_zeroization_mask_reg` register of **MCI**.
-   2. Creates a **Life Cycle Controller (LCC) transition request** to switch to the **SCRAP** state.
+4. If `cptra_ss_FIPS_ZEROIZATION_PPD_i == HIGH`, the MCU ROM executes a **Life Cycle Controller (LCC) transition request** to switch to the **SCRAP** state.
 
 - **Note:** The LCC state transition to SCRAP is completed **only after a cold reset**.
-- **Note:** The `ss_soc_MCU_ROM_zeroization_mask_reg` register can be set only by MCU ROM that prohibits run-time firmware to update this register.
+
 
 ### Cold Reset and Final Zeroization
 
