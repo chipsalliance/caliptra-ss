@@ -483,11 +483,15 @@ module otp_ctrl
                                    !reg2hw.direct_access_regwen.q) ? 1'b0 : direct_access_regwen_q;
 
   // Any write to this register triggers a DAI command.
-  assign dai_req = reg2hw.direct_access_cmd.digest.qe |
+  assign dai_req = reg2hw.direct_access_cmd.zeroize_read.qe |
+                   reg2hw.direct_access_cmd.zeroize_write.qe |
+                   reg2hw.direct_access_cmd.digest.qe |
                    reg2hw.direct_access_cmd.wr.qe  |
                    reg2hw.direct_access_cmd.rd.qe;
 
-  assign dai_cmd = dai_cmd_e'({reg2hw.direct_access_cmd.digest.q,
+  assign dai_cmd = dai_cmd_e'({reg2hw.direct_access_cmd.zeroize_read.q,
+                               reg2hw.direct_access_cmd.zeroize_write.q,
+                               reg2hw.direct_access_cmd.digest.q,
                                reg2hw.direct_access_cmd.wr.q,
                                reg2hw.direct_access_cmd.rd.q});
 

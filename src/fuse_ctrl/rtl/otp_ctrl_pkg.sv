@@ -40,11 +40,13 @@ package otp_ctrl_pkg;
     caliptra_prim_mubi_pkg::mubi8_t write_lock;
   } part_access_t;
 
-  parameter int DaiCmdWidth = 3;
+  parameter int DaiCmdWidth = 5;
   typedef enum logic [DaiCmdWidth-1:0] {
-    DaiRead   = 3'b001,
-    DaiWrite  = 3'b010,
-    DaiDigest = 3'b100
+    DaiRead      = 5'b00001,
+    DaiWrite     = 5'b00010,
+    DaiDigest    = 5'b00100,
+    ZeroizeWrite = 5'b01000,
+    ZeroizeRead  = 5'b10000
   } dai_cmd_e;
 
   parameter int DeviceIdWidth = 256;
