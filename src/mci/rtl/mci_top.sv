@@ -272,6 +272,7 @@ clk_gate cg (
     .generic_input_wires('0),
     .cptra_error_fatal('0),
     .cptra_in_debug_scan_mode('0),
+    .scan_mode,
     .cptra_dmi_reg_en_preQ('0)
 );
 

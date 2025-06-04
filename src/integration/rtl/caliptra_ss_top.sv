@@ -843,7 +843,7 @@ module caliptra_ss_top
         .dccm_ecc_double_error  (mcu_dccm_ecc_double_error),
 
         .core_id                ('0),
-        .scan_mode              ( 1'b0 ),        // To enable scan mode
+        .scan_mode              ( cptra_ss_cptra_core_scan_mode_i ),        // To enable scan mode
         .mbist_mode             ( 1'b0 ),        // to enable mbist
 
         .dmi_core_enable   (mcu_dmi_core_enable),
