@@ -568,7 +568,7 @@ module caliptra_ss_top
     //=========================================================================-
     // MCU instance
     //=========================================================================-
-    mcu_top rvtop_wrapper (
+    mcu_top #(.pt(pt)) rvtop_wrapper (
         .rst_l                  ( mcu_rst_b ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ),
         .clk                    ( mcu_clk_cg ),
