@@ -113,8 +113,8 @@ module otp_ctrl_part_buf
 
   // SEC_CM: PART.FSM.SPARSE
   // Encoding generated with:
-  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 16 -n 12 \
-  //      -s 3370657881 --language=sv
+  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 18 -n 12 \
+  //     -s 274883049 --language=sv
   //
   // Hamming distance histogram:
   //
@@ -123,38 +123,40 @@ module otp_ctrl_part_buf
   //  2: --
   //  3: --
   //  4: --
-  //  5: |||||||||||||| (28.33%)
-  //  6: |||||||||||||||||||| (38.33%)
-  //  7: |||||||||| (19.17%)
-  //  8: ||| (5.83%)
-  //  9: || (4.17%)
-  // 10: | (2.50%)
-  // 11:  (0.83%)
-  // 12:  (0.83%)
+  //  5: ||||||||||||||||| (32.03%)
+  //  6: |||||||||||||||||||| (35.95%)
+  //  7: |||||||| (15.03%)
+  //  8: |||| (7.84%)
+  //  9: || (5.23%)
+  // 10: | (3.27%)
+  // 11:  (0.65%)
+  // 12: --
   //
   // Minimum Hamming distance: 5
-  // Maximum Hamming distance: 12
-  // Minimum Hamming weight: 4
-  // Maximum Hamming weight: 8
+  // Maximum Hamming distance: 11
+  // Minimum Hamming weight: 3
+  // Maximum Hamming weight: 10
   //
   localparam int StateWidth = 12;
   typedef enum logic [StateWidth-1:0] {
-    ResetSt         = 12'b011000001110,
-    InitSt          = 12'b110100100111,
-    InitWaitSt      = 12'b001110110001,
-    InitDescrSt     = 12'b110010000100,
-    InitDescrWaitSt = 12'b100110101000,
-    IdleSt          = 12'b010101001101,
-    IntegScrSt      = 12'b110101011010,
-    IntegScrWaitSt  = 12'b100010011111,
-    IntegDigClrSt   = 12'b101001000001,
-    IntegDigSt      = 12'b011101100010,
-    IntegDigPadSt   = 12'b001101010111,
-    IntegDigFinSt   = 12'b011011100101,
-    IntegDigWaitSt  = 12'b100011110010,
-    CnstyReadSt     = 12'b000001101011,
-    CnstyReadWaitSt = 12'b101001111100,
-    ErrorSt         = 12'b010110111110
+    ResetSt         = 12'b010001101010,
+    InitDigSt       = 12'b110001010001,
+    InitDigWaitSt   = 12'b001011000000,
+    InitSt          = 12'b000111100111,
+    InitWaitSt      = 12'b010010010100,
+    InitDescrSt     = 12'b110111011111,
+    InitDescrWaitSt = 12'b111110101010,
+    IdleSt          = 12'b100000111111,
+    IntegScrSt      = 12'b111110110101,
+    IntegScrWaitSt  = 12'b100111110000,
+    IntegDigClrSt   = 12'b001000100011,
+    IntegDigSt      = 12'b100110001100,
+    IntegDigPadSt   = 12'b001011111110,
+    IntegDigFinSt   = 12'b010100101101,
+    IntegDigWaitSt  = 12'b001101010101,
+    CnstyReadSt     = 12'b011100011000,
+    CnstyReadWaitSt = 12'b100001000110,
+    ErrorSt         = 12'b101101101001
   } state_e;
 
   typedef enum logic {
@@ -173,7 +175,7 @@ module otp_ctrl_part_buf
   base_sel_e base_sel;
   mubi8_t dout_locked_d, dout_locked_q;
   logic [CntWidth-1:0] cnt;
-  logic cnt_en, cnt_clr, cnt_err;
+  logic cnt_en, cnt_sel_dig, cnt_clr, cnt_err;
   logic ecc_err;
   logic buffer_reg_en;
   logic [ScrmblBlockWidth-1:0] data_mux;
@@ -221,8 +223,9 @@ module otp_ctrl_part_buf
     scrmbl_valid_o = 1'b0;
 
     // Counter
-    cnt_en   = 1'b0;
-    cnt_clr  = 1'b0;
+    cnt_en      = 1'b0;
+    cnt_clr     = 1'b0;
+    cnt_sel_dig = 1'b0;
     base_sel = PartOffset;
 
     // Buffer register
@@ -243,17 +246,62 @@ module otp_ctrl_part_buf
       // initialization request.
       ResetSt: begin
         if (init_req_i) begin
-          state_d = InitSt;
+          // If available, read out digest first.
+          if (Info.hw_digest) begin
+            state_d = InitDigSt;
+          end else begin
+            state_d = InitSt;
+          end
         end
       end
+
+      ///////////////////////////////////////////////////////////////////
+      // Initialization of the digest. Wait here until the OTP request
+      // has been granted.
+      InitDigSt: begin
+        otp_req_o = 1'b1;
+        base_sel = DigOffset;
+        if (otp_gnt_i) begin
+          state_d = InitDigWaitSt;
+        end
+      end
+
+      ///////////////////////////////////////////////////////////////////
+      // Wait for OTP response and write the digest to the buffer
+      // register. In case an OTP transaction fails, latch the OTP error
+      // code and jump to a terminal error state.
+      InitDigWaitSt: begin
+        if (otp_rvalid_i) begin
+          cnt_sel_dig   = 1'b1;
+          buffer_reg_en = 1'b1;
+          if (otp_err inside {NoError, MacroEccCorrError}) begin
+            state_d = InitSt;
+            if (otp_err != NoError) begin
+              error_d = MacroEccCorrError;
+            end 
+          end else begin
+            state_d = ErrorSt;
+            error_d = otp_err;
+          end
+        end
+      end
+
       ///////////////////////////////////////////////////////////////////
       // Initialization reads out the digest only in unbuffered
       // partitions. Wait here until the OTP request has been granted.
       // And then wait until the OTP word comes back.
       InitSt: begin
-        otp_req_o = 1'b1;
-        if (otp_gnt_i) begin
-          state_d = InitWaitSt;
+        // Once we've read and descrambled the whole partition, we can go to integrity
+        // verification. Note that the last block is the digest value, which does not
+        // have to be descrambled.
+        if (((cnt == NumScrmblBlocks-1) && Info.hw_digest) ||
+            ((cnt == NumScrmblBlocks)   && !Info.hw_digest)) begin
+          state_d = IntegDigClrSt;
+        end else begin
+          otp_req_o = 1'b1;
+          if (otp_gnt_i) begin
+            state_d = InitWaitSt;
+          end
         end
       end
       ///////////////////////////////////////////////////////////////////
@@ -265,14 +313,9 @@ module otp_ctrl_part_buf
         if (otp_rvalid_i) begin
           buffer_reg_en = 1'b1;
           if (otp_err inside {NoError, MacroEccCorrError}) begin
-            // Once we've read and descrambled the whole partition, we can go to integrity
-            // verification. Note that the last block is the digest value, which does not
-            // have to be descrambled.
-            if (cnt == LastScrmblBlock) begin
-              state_d = IntegDigClrSt;
-            // Only need to descramble if this is a scrambled partition.
-            // Otherwise, we can just go back to InitSt and read the next block.
-            end else if (Info.secret) begin
+            // Descramble if this is a scrambled partition. Otherwise, we can just go back
+            // to InitSt and read the next block.
+            if (Info.secret) begin
               state_d = InitDescrSt;
             end else begin
               state_d = InitSt;
@@ -663,12 +706,12 @@ module otp_ctrl_part_buf
   ) u_otp_ctrl_ecc_reg (
     .clk_i,
     .rst_ni,
-    .wren_i    ( buffer_reg_en ),
-    .addr_i    ( cnt           ),
-    .wdata_i   ( data_mux      ),
-    .rdata_o   ( scrmbl_data_o ),
-    .data_o    ( data          ),
-    .ecc_err_o ( ecc_err       )
+    .wren_i    ( buffer_reg_en                       ),
+    .addr_i    ( cnt_sel_dig ? LastScrmblBlock : cnt ),
+    .wdata_i   ( data_mux                            ),
+    .rdata_o   ( scrmbl_data_o                       ),
+    .data_o    ( data                                ),
+    .ecc_err_o ( ecc_err                             )
   );
 
   // We have successfully initialized the partition once it has been unlocked.
