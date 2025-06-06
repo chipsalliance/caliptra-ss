@@ -47,9 +47,10 @@ module prim_generic_otp
   // #(Native words)-1, e.g. size == 0 for 1 native word.
   input [SizeWidth-1:0]          size_i,
   // See prim_otp_pkg for the command encoding.
-  input  cmd_e                   cmd_i,
-  input [AddrWidth-1:0]          addr_i,
-  input [IfWidth-1:0]            wdata_i,
+  input  cmd_e                          cmd_i,
+  input [AddrWidth-1:0]                 addr_i,
+  input [IfWidth-1:0]                   wdata_i,
+  input caliptra_prim_mubi_pkg::mubi4_t zeroize_i,
   // Response channel
   output logic                   valid_o,
   output logic [IfWidth-1:0]     rdata_o,

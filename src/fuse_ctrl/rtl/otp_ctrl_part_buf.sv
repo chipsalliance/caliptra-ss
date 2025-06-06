@@ -57,6 +57,7 @@ module otp_ctrl_part_buf
   output logic [OtpSizeWidth-1:0]     otp_size_o,
   output logic [OtpIfWidth-1:0]       otp_wdata_o,
   output logic [OtpAddrWidth-1:0]     otp_addr_o,
+  output caliptra_prim_mubi_pkg::mubi4_t otp_zeroize_o,
   input                               otp_gnt_i,
   input                               otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]       otp_rdata_i,
@@ -186,6 +187,10 @@ module otp_ctrl_part_buf
   // This partition cannot do any write accesses, hence we tie this
   // constantly off.
   assign otp_wdata_o = '0;
+
+  // Disable zeroization.
+  assign otp_zeroize_o = caliptra_prim_mubi_pkg::MuBi4False;
+
   // Depending on the partition configuration, the wrapper is instructed to ignore integrity
   // calculations and checks. To be on the safe side, the partition filters error responses at this
   // point and does not report any integrity errors if integrity is disabled.
