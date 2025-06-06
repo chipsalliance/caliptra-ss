@@ -47,13 +47,9 @@ regfile interface_regs {
 
         field { sw=rw; hw=r; } cptra_obf_uds_seed_vld = 1'b0;
         field { sw=rw; hw=r; } cptra_obf_field_entropy_vld = 1'b0;
-        // TODO: Revisit this
-        //field { sw=rw; hw=r; } ss_debug_locked = 1'b0;
-        //field { sw=rw; hw=r; } ss_device_lifecycle[2] = 2'b0;
-        //field { sw=rw; hw=r; } scan_mode = 1'b0;
-
-        field { sw=rw; hw=r; } force_mcu_dmi_core_enable = 1'b0;
-        field { sw=rw; hw=r; } force_mcu_dmi_uncore_enable = 1'b0;
+        // Removed bits here. Leaving reserved to avoid changing offsets
+        field { sw=rw; hw=r; } rsvd0 = 1'b0;
+        field { sw=rw; hw=r; } rsvd1 = 1'b0;
 
         field { sw=rw; hw=r; } bootfsm_brkpoint = 1'b0;
         field { sw=rw; hw=r; } ss_debug_intent = 1'b0;
@@ -76,8 +72,10 @@ regfile interface_regs {
         default sw=rw;
         default hw=r;
 
-        field {} pauser[32] = 32'b0;
-    } pauser;
+        field {
+            desc = "USER Value passed to AXI Interconnect for transactions initiated from the ARM core";
+        } arm_user[32] = 32'b0;
+    } arm_user;
 
     reg {
         default sw=rw;
@@ -134,37 +132,49 @@ regfile interface_regs {
         default sw=rw;
         default hw=r;
 
-        field {} lsu_user[32] = 32'b0;
+        field {
+            desc = "SS USER Strap";
+        } lsu_user[32] = 32'b0;
     } lsu_user;
     reg {
         default sw=rw;
         default hw=r;
 
-        field {} ifu_user[32] = 32'b0;
+        field {
+            desc = "SS USER Strap";
+        } ifu_user[32] = 32'b0;
     } ifu_user;
     reg {
         default sw=rw;
         default hw=r;
 
-        field {} clp_user[32] = 32'b0;
-    } clp_user;
+        field {
+            desc = "SS USER Strap";
+        } dma_axi_user[32] = 32'b0;
+    } dma_axi_user;
     reg {
         default sw=rw;
         default hw=r;
 
-        field {} soc_config_user[32] = 32'b0;
+        field {
+            desc = "SS USER Strap";
+        } soc_config_user[32] = 32'b0;
     } soc_config_user;
     reg {
         default sw=rw;
         default hw=r;
 
-        field {} sram_config_user[32] = 32'b0;
+        field {
+            desc = "SS USER Strap";
+        } sram_config_user[32] = 32'b0;
     } sram_config_user;
     reg {
         default sw=rw;
         default hw=r;
 
-        field {} mcu_reset_vector[32] = 32'b0;
+        field {
+            desc = "MCU Reset Vector Strap";
+        } mcu_reset_vector[32] = 32'b0;
     } mcu_reset_vector;
     reg {
         field { sw=r; hw=rw; } mci_error_fatal = 1'b0;
@@ -180,6 +190,24 @@ regfile interface_regs {
         
     } mcu_config;
 
+    reg {
+        default sw=rw;
+        default hw=r;
+
+        field {} uds_seed_base_addr[32] = 32'b0;
+    } uds_seed_base_addr;
+    reg {
+        default sw=rw;
+        default hw=r;
+
+        field {} prod_debug_unlock_auth_pk_hash_reg_bank_offset[32] = 32'b0;
+    } prod_debug_unlock_auth_pk_hash_reg_bank_offset;
+    reg {
+        default sw=rw;
+        default hw=r;
+
+        field {} num_of_prod_debug_unlock_auth_pk_hashes[32] = 32'b0;
+    } num_of_prod_debug_unlock_auth_pk_hashes;
     
     reg {
         field { sw=rw; hw=r; } value[32] = 32'b0;

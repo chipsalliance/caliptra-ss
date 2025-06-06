@@ -33,6 +33,9 @@ module caliptra_wrapper_top #(
     input bit core_clk,
     input bit i3c_clk,
 
+    output wire[31:0] ARM_USER,
+    output wire xilinx_i3c_aresetn,
+
     // I3C signals from AXI I3C
     (* syn_keep = "true", mark_debug = "true" *) input wire axi_i3c_scl_t,
     (* syn_keep = "true", mark_debug = "true" *) input wire axi_i3c_scl_o,
@@ -200,51 +203,11 @@ module caliptra_wrapper_top #(
     output wire S_AXI_MCU_ROM_RVALID,
     input  wire S_AXI_MCU_ROM_RREADY,
 
-    // MCI M_AXI Interface - Remove
-    output  wire [31:0] M_AXI_MCI_AWADDR,
-    output  wire [1:0] M_AXI_MCI_AWBURST,
-    output  wire [2:0] M_AXI_MCI_AWSIZE,
-    output  wire [7:0] M_AXI_MCI_AWLEN,
-    output  wire [31:0] M_AXI_MCI_AWUSER,
-    output  wire [15:0] M_AXI_MCI_AWID,
-    output  wire M_AXI_MCI_AWLOCK,
-    output  wire M_AXI_MCI_AWVALID,
-    input wire M_AXI_MCI_AWREADY,
-    // W
-    output  wire [31:0] M_AXI_MCI_WDATA,
-    output  wire [3:0] M_AXI_MCI_WSTRB,
-    output  wire M_AXI_MCI_WVALID,
-    input wire M_AXI_MCI_WREADY,
-    output  wire M_AXI_MCI_WLAST,
-    // B
-    input wire [1:0] M_AXI_MCI_BRESP,
-    input reg  [15:0] M_AXI_MCI_BID,
-    input wire M_AXI_MCI_BVALID,
-    output  wire M_AXI_MCI_BREADY,
-    // AR
-    output  wire [31:0] M_AXI_MCI_ARADDR,
-    output  wire [1:0] M_AXI_MCI_ARBURST,
-    output  wire [2:0] M_AXI_MCI_ARSIZE,
-    output  wire [7:0] M_AXI_MCI_ARLEN,
-    output  wire [31:0] M_AXI_MCI_ARUSER,
-    output  wire [15:0] M_AXI_MCI_ARID,
-    output  wire M_AXI_MCI_ARLOCK,
-    output  wire M_AXI_MCI_ARVALID,
-    input wire M_AXI_MCI_ARREADY,
-    // R
-    input wire [31:0] M_AXI_MCI_RDATA,
-    input wire [1:0] M_AXI_MCI_RRESP,
-    input reg  [15:0] M_AXI_MCI_RID,
-    input wire M_AXI_MCI_RLAST,
-    input wire M_AXI_MCI_RVALID,
-    output  wire M_AXI_MCI_RREADY,
-
-
     //-------------------------- MCU LSU AXI signals--------------------------
     // AXI Write Channels
     output wire                      M_AXI_MCU_LSU_AWVALID,
     input  wire                      M_AXI_MCU_LSU_AWREADY,
-    output wire [18:0]              M_AXI_MCU_LSU_AWID,
+    output wire [18:0]               M_AXI_MCU_LSU_AWID,
     output wire [              31:0] M_AXI_MCU_LSU_AWADDR,
     output wire [               3:0] M_AXI_MCU_LSU_AWREGION,
     output wire [               7:0] M_AXI_MCU_LSU_AWLEN,
@@ -264,12 +227,12 @@ module caliptra_wrapper_top #(
     input  wire                      M_AXI_MCU_LSU_BVALID,
     output wire                      M_AXI_MCU_LSU_BREADY,
     input  wire [               1:0] M_AXI_MCU_LSU_BRESP,
-    input  wire [18:0]              M_AXI_MCU_LSU_BID,
+    input  wire [18:0]               M_AXI_MCU_LSU_BID,
 
     // AXI Read Channels
     output wire                      M_AXI_MCU_LSU_ARVALID,
     input  wire                      M_AXI_MCU_LSU_ARREADY,
-    output wire [18:0]              M_AXI_MCU_LSU_ARID,
+    output wire [18:0]               M_AXI_MCU_LSU_ARID,
     output wire [              31:0] M_AXI_MCU_LSU_ARADDR,
     output wire [               3:0] M_AXI_MCU_LSU_ARREGION,
     output wire [               7:0] M_AXI_MCU_LSU_ARLEN,
@@ -282,7 +245,7 @@ module caliptra_wrapper_top #(
 
     input  wire                      M_AXI_MCU_LSU_RVALID,
     output wire                      M_AXI_MCU_LSU_RREADY,
-    input  wire [18:0]              M_AXI_MCU_LSU_RID,
+    input  wire [18:0]               M_AXI_MCU_LSU_RID,
     input  wire [              63:0] M_AXI_MCU_LSU_RDATA,
     input  wire [               1:0] M_AXI_MCU_LSU_RRESP,
     input  wire                      M_AXI_MCU_LSU_RLAST,
@@ -316,7 +279,7 @@ module caliptra_wrapper_top #(
     // AXI Read Channels
     output wire                      M_AXI_MCU_IFU_ARVALID,
     input  wire                      M_AXI_MCU_IFU_ARREADY,
-    output wire [18:0]              M_AXI_MCU_IFU_ARID,
+    output wire [18:0]               M_AXI_MCU_IFU_ARID,
     (* syn_keep = "true", mark_debug = "true" *) output wire [              31:0] M_AXI_MCU_IFU_ARADDR,
     output wire [               3:0] M_AXI_MCU_IFU_ARREGION,
     output wire [               7:0] M_AXI_MCU_IFU_ARLEN,
@@ -329,7 +292,7 @@ module caliptra_wrapper_top #(
 
     (* syn_keep = "true", mark_debug = "true" *) input  wire                      M_AXI_MCU_IFU_RVALID,
     (* syn_keep = "true", mark_debug = "true" *) output wire                      M_AXI_MCU_IFU_RREADY,
-    (* syn_keep = "true", mark_debug = "true" *) input  wire [18:0]              M_AXI_MCU_IFU_RID,
+    (* syn_keep = "true", mark_debug = "true" *) input  wire [18:0]               M_AXI_MCU_IFU_RID,
     (* syn_keep = "true", mark_debug = "true" *) input  wire [              63:0] M_AXI_MCU_IFU_RDATA,
     (* syn_keep = "true", mark_debug = "true" *) input  wire [               1:0] M_AXI_MCU_IFU_RRESP,
     input  wire                      M_AXI_MCU_IFU_RLAST,
@@ -565,6 +528,7 @@ module caliptra_wrapper_top #(
     //input  logic SCL
     );
 
+
     axi4lite_intf wrapper_s_axil ();
 
     caliptra_fpga_realtime_regs__in_t hwif_in;
@@ -607,6 +571,9 @@ module caliptra_wrapper_top #(
         .hwif_in (hwif_in),
         .hwif_out(hwif_out)
     );
+
+    assign ARM_USER = hwif_out.interface_regs.arm_user.arm_user.value;
+    assign xilinx_i3c_aresetn = hwif_out.interface_regs.control.cptra_ss_rst_b.value;
 
     // TODO: Rearrange this to be more logically located
     logic [127:0] ss_generic_fw_exec_ctrl;
@@ -653,7 +620,7 @@ module caliptra_wrapper_top #(
 
 `ifndef CALIPTRA_APB
     axi_if #(
-        .AW(`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+        .AW(32),
         .DW(`CALIPTRA_AXI_DATA_WIDTH),
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
@@ -664,7 +631,7 @@ module caliptra_wrapper_top #(
     assign cptra_core_s_axi.awburst  = S_AXI_CALIPTRA_AWBURST;
     assign cptra_core_s_axi.awsize   = S_AXI_CALIPTRA_AWSIZE;
     assign cptra_core_s_axi.awlen    = S_AXI_CALIPTRA_AWLEN;
-    assign cptra_core_s_axi.awuser   = hwif_out.interface_regs.pauser.pauser.value; //S_AXI_CALIPTRA_AWUSER;
+    assign cptra_core_s_axi.awuser   = S_AXI_CALIPTRA_AWUSER;
     assign cptra_core_s_axi.awid     = S_AXI_CALIPTRA_AWID;
     assign cptra_core_s_axi.awlock   = S_AXI_CALIPTRA_AWLOCK;
     assign cptra_core_s_axi.awvalid  = S_AXI_CALIPTRA_AWVALID;
@@ -685,7 +652,7 @@ module caliptra_wrapper_top #(
     assign cptra_core_s_axi.arburst = S_AXI_CALIPTRA_ARBURST;
     assign cptra_core_s_axi.arsize  = S_AXI_CALIPTRA_ARSIZE;
     assign cptra_core_s_axi.arlen   = S_AXI_CALIPTRA_ARLEN;
-    assign cptra_core_s_axi.aruser  = hwif_out.interface_regs.pauser.pauser.value; // S_AXI_CALIPTRA_ARUSER;
+    assign cptra_core_s_axi.aruser  = S_AXI_CALIPTRA_ARUSER;
     assign cptra_core_s_axi.arid    = S_AXI_CALIPTRA_ARID;
     assign cptra_core_s_axi.arlock  = S_AXI_CALIPTRA_ARLOCK;
     assign cptra_core_s_axi.arvalid = S_AXI_CALIPTRA_ARVALID;
@@ -699,7 +666,7 @@ module caliptra_wrapper_top #(
     assign cptra_core_s_axi.rready = S_AXI_CALIPTRA_RREADY;
 
     axi_if #(
-        .AW(32),//`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+        .AW(32),
         .DW(`CALIPTRA_AXI_DATA_WIDTH),
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
@@ -1095,7 +1062,7 @@ assign hwif_in.interface_regs.fpga_version.fpga_version.next = `FPGA_VERSION;
 
 // MCI AXI Subordinate
 axi_if #(
-    .AW(32),//`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+    .AW(32),
     .DW(`CALIPTRA_AXI_DATA_WIDTH),
     .IW(`CALIPTRA_AXI_ID_WIDTH),
     .UW(`CALIPTRA_AXI_USER_WIDTH)
@@ -1106,7 +1073,7 @@ assign cptra_ss_mci_s_axi.awaddr   = S_AXI_MCI_AWADDR;
 assign cptra_ss_mci_s_axi.awburst  = S_AXI_MCI_AWBURST;
 assign cptra_ss_mci_s_axi.awsize   = S_AXI_MCI_AWSIZE;
 assign cptra_ss_mci_s_axi.awlen    = S_AXI_MCI_AWLEN;
-assign cptra_ss_mci_s_axi.awuser   = hwif_out.interface_regs.pauser.pauser.value; //S_AXI_MCI_AWUSER;
+assign cptra_ss_mci_s_axi.awuser   = S_AXI_MCI_AWUSER;
 assign cptra_ss_mci_s_axi.awid     = S_AXI_MCI_AWID;
 assign cptra_ss_mci_s_axi.awlock   = S_AXI_MCI_AWLOCK;
 assign cptra_ss_mci_s_axi.awvalid  = S_AXI_MCI_AWVALID;
@@ -1127,7 +1094,7 @@ assign cptra_ss_mci_s_axi.araddr  = S_AXI_MCI_ARADDR;
 assign cptra_ss_mci_s_axi.arburst = S_AXI_MCI_ARBURST;
 assign cptra_ss_mci_s_axi.arsize  = S_AXI_MCI_ARSIZE;
 assign cptra_ss_mci_s_axi.arlen   = S_AXI_MCI_ARLEN;
-assign cptra_ss_mci_s_axi.aruser  = hwif_out.interface_regs.pauser.pauser.value; // S_AXI_MCI_ARUSER;
+assign cptra_ss_mci_s_axi.aruser  = S_AXI_MCI_ARUSER;
 assign cptra_ss_mci_s_axi.arid    = S_AXI_MCI_ARID;
 assign cptra_ss_mci_s_axi.arlock  = S_AXI_MCI_ARLOCK;
 assign cptra_ss_mci_s_axi.arvalid = S_AXI_MCI_ARVALID;
@@ -1153,7 +1120,7 @@ assign cptra_ss_mcu_rom_s_axi_if.awaddr   = S_AXI_MCU_ROM_AWADDR;
 assign cptra_ss_mcu_rom_s_axi_if.awburst  = S_AXI_MCU_ROM_AWBURST;
 assign cptra_ss_mcu_rom_s_axi_if.awsize   = S_AXI_MCU_ROM_AWSIZE;
 assign cptra_ss_mcu_rom_s_axi_if.awlen    = S_AXI_MCU_ROM_AWLEN;
-assign cptra_ss_mcu_rom_s_axi_if.awuser   = hwif_out.interface_regs.pauser.pauser.value; //S_AXI_MCU_ROM_AWUSER;
+assign cptra_ss_mcu_rom_s_axi_if.awuser   = S_AXI_MCU_ROM_AWUSER;
 assign cptra_ss_mcu_rom_s_axi_if.awid     = S_AXI_MCU_ROM_AWID;
 assign cptra_ss_mcu_rom_s_axi_if.awlock   = S_AXI_MCU_ROM_AWLOCK;
 assign cptra_ss_mcu_rom_s_axi_if.awvalid  = S_AXI_MCU_ROM_AWVALID;
@@ -1174,7 +1141,7 @@ assign cptra_ss_mcu_rom_s_axi_if.araddr  = S_AXI_MCU_ROM_ARADDR;
 assign cptra_ss_mcu_rom_s_axi_if.arburst = S_AXI_MCU_ROM_ARBURST;
 assign cptra_ss_mcu_rom_s_axi_if.arsize  = S_AXI_MCU_ROM_ARSIZE;
 assign cptra_ss_mcu_rom_s_axi_if.arlen   = S_AXI_MCU_ROM_ARLEN;
-assign cptra_ss_mcu_rom_s_axi_if.aruser  = hwif_out.interface_regs.pauser.pauser.value; // S_AXI_MCU_ROM_ARUSER;
+assign cptra_ss_mcu_rom_s_axi_if.aruser  = S_AXI_MCU_ROM_ARUSER;
 assign cptra_ss_mcu_rom_s_axi_if.arid    = S_AXI_MCU_ROM_ARID;
 assign cptra_ss_mcu_rom_s_axi_if.arlock  = S_AXI_MCU_ROM_ARLOCK;
 assign cptra_ss_mcu_rom_s_axi_if.arvalid = S_AXI_MCU_ROM_ARVALID;
@@ -1258,101 +1225,6 @@ mcu_rom (
     .wea(mcu_rom_mem_export_if.req.we),
     .web(mcu_rom_backdoor_we)
 );
-
-// MCI AXI Manager
-axi_if #(
-   .AW(32),//`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
-   .DW(`CALIPTRA_AXI_DATA_WIDTH),
-   .IW(`CALIPTRA_AXI_ID_WIDTH),
-   .UW(`CALIPTRA_AXI_USER_WIDTH)
-) cptra_ss_mci_m_axi_if (.clk(core_clk), .rst_n(hwif_out.interface_regs.control.cptra_ss_rst_b.value));
-
-// AW
-assign M_AXI_MCI_AWADDR =  cptra_ss_mci_m_axi_if.awaddr;
-assign M_AXI_MCI_AWBURST = cptra_ss_mci_m_axi_if.awburst;
-assign M_AXI_MCI_AWSIZE =  cptra_ss_mci_m_axi_if.awsize;
-assign M_AXI_MCI_AWLEN =   cptra_ss_mci_m_axi_if.awlen;
-assign M_AXI_MCI_AWUSER =  cptra_ss_mci_m_axi_if.awuser;
-assign M_AXI_MCI_AWID = cptra_ss_mci_m_axi_if.awid;
-assign M_AXI_MCI_AWLOCK = cptra_ss_mci_m_axi_if.awlock;
-assign M_AXI_MCI_AWVALID = cptra_ss_mci_m_axi_if.awvalid;
-assign cptra_ss_mci_m_axi_if.awready = M_AXI_MCI_AWREADY;
-// W
-assign M_AXI_MCI_WDATA =   cptra_ss_mci_m_axi_if.wdata;
-assign M_AXI_MCI_WSTRB =   cptra_ss_mci_m_axi_if.wstrb;
-assign M_AXI_MCI_WVALID =  cptra_ss_mci_m_axi_if.wvalid;
-assign cptra_ss_mci_m_axi_if.wready = M_AXI_MCI_WREADY;
-assign M_AXI_MCI_WLAST =   cptra_ss_mci_m_axi_if.wlast;
-// B
-assign cptra_ss_mci_m_axi_if.bresp =    M_AXI_MCI_BRESP;
-assign cptra_ss_mci_m_axi_if.bid =      M_AXI_MCI_BID;
-assign cptra_ss_mci_m_axi_if.bvalid =   M_AXI_MCI_BVALID;
-assign M_AXI_MCI_BREADY = cptra_ss_mci_m_axi_if.bready;
-// AR
-assign M_AXI_MCI_ARADDR = cptra_ss_mci_m_axi_if.araddr;
-assign M_AXI_MCI_ARBURST = cptra_ss_mci_m_axi_if.arburst;
-assign M_AXI_MCI_ARSIZE = cptra_ss_mci_m_axi_if.arsize;
-assign M_AXI_MCI_ARLEN = cptra_ss_mci_m_axi_if.arlen;
-assign M_AXI_MCI_ARUSER = cptra_ss_mci_m_axi_if.aruser;
-assign M_AXI_MCI_ARID = cptra_ss_mci_m_axi_if.arid;
-assign M_AXI_MCI_ARLOCK = cptra_ss_mci_m_axi_if.arlock;
-assign M_AXI_MCI_ARVALID = cptra_ss_mci_m_axi_if.arvalid;
-assign cptra_ss_mci_m_axi_if.arready = M_AXI_MCI_ARREADY;
-// R
-assign cptra_ss_mci_m_axi_if.rdata =    M_AXI_MCI_RDATA;
-assign cptra_ss_mci_m_axi_if.rresp =    M_AXI_MCI_RRESP;
-assign cptra_ss_mci_m_axi_if.rid =      M_AXI_MCI_RID;
-assign cptra_ss_mci_m_axi_if.rlast =    M_AXI_MCI_RLAST;
-assign cptra_ss_mci_m_axi_if.rvalid =   M_AXI_MCI_RVALID;
-assign M_AXI_MCI_RREADY = cptra_ss_mci_m_axi_if.rready;
-
-//mci_mcu_sram_if cptra_ss_mcu_rom_macro_req_if (
-//    .clk(core_clk),
-//    .rst_b(rst_l)
-//);
-
-/*
-I think this is the one that isn't used
-    xpm_memory_spram #(
-        .ADDR_WIDTH_A(32),              // DECIMAL
-        .AUTO_SLEEP_TIME(0),            // DECIMAL
-        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
-        .CASCADE_HEIGHT(0),             // DECIMAL
-        .ECC_MODE("no_ecc"),            // String
-        .MEMORY_INIT_FILE("none"),      // String
-        .MEMORY_INIT_PARAM("0"),        // String
-        .MEMORY_OPTIMIZATION("false"),  // String
-        .MEMORY_PRIMITIVE("auto"),      // String
-        .MEMORY_SIZE(64*1024*8),      // DECIMAL
-        .MESSAGE_CONTROL(0),            // DECIMAL
-        .READ_DATA_WIDTH_A(32),         // DECIMAL
-        .READ_LATENCY_A(1),             // DECIMAL
-        .READ_RESET_VALUE_A("0"),       // String
-        .RST_MODE_A("SYNC"),            // String
-        .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
-        .USE_MEM_INIT(1),               // DECIMAL
-        .USE_MEM_INIT_MMI(0),           // DECIMAL
-        .WAKEUP_TIME("disable_sleep"),  // String
-        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
-        .WRITE_MODE_A("no_change"),     // String
-        .WRITE_PROTECT(1)               // DECIMAL
-    )
-    mcu_rom (
-        .dbiterra(),
-        .douta(cptra_ss_mcu_rom_macro_req_if.resp.rdata),
-        .sbiterra(),
-        .addra({cptra_ss_mcu_rom_macro_req_if.req.addr, 2'b0}),
-        .clka(core_clk),
-        .dina(cptra_ss_mcu_rom_macro_req_if.req.wdata),
-        .ena(cptra_ss_mcu_rom_macro_req_if.req.cs),
-        .injectdbiterra(0),
-        .injectsbiterra(0),
-        .regcea(1),
-        .rsta(rom_backdoor_rst),
-        .sleep(0),
-        .wea(cptra_ss_mcu_rom_macro_req_if.req.we)
-    );
-    */
 
     mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if (
         .clk(core_clk),
@@ -1488,7 +1360,7 @@ I think this is the one that isn't used
     
     // MCU LSU AXI Manager
     axi_if #(
-        .AW(32),//`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+        .AW(32),
         .DW(64),
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
@@ -1535,7 +1407,7 @@ I think this is the one that isn't used
 
     // MCU IFU AXI Manager
     axi_if #(
-        .AW(32),//`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+        .AW(32),
         .DW(64),
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
@@ -1582,7 +1454,7 @@ I think this is the one that isn't used
     
     // MCU SB AXI Manager
     axi_if #(
-        .AW(32),//`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+        .AW(32),
         .DW(64),
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
@@ -1628,24 +1500,24 @@ I think this is the one that isn't used
     assign M_AXI_MCU_SB_RREADY = cptra_ss_mcu_sb_m_axi_if.rready;
 
     // CDC for user signal to I3C
-    logic [`CALIPTRA_AXI_USER_WIDTH-1:0] i3c_user_synch;
+    logic [63:0] i3c_user_synch;
     xpm_cdc_array_single #(
         .DEST_SYNC_FF(4),   // DECIMAL; range: 2-10
         .INIT_SYNC_FF(0),   // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
         .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
         .SRC_INPUT_REG(1),  // DECIMAL; 0=do not register input, 1=register input
-        .WIDTH(`CALIPTRA_AXI_USER_WIDTH) // DECIMAL; range: 1-1024
+        .WIDTH(64) // DECIMAL; range: 1-1024
     )
     xpm_cdc_array_single_inst (
         .dest_out(i3c_user_synch),
         .dest_clk(i3c_clk),
         .src_clk(core_clk),
-        .src_in(hwif_out.interface_regs.pauser.pauser.value)
+        .src_in({S_AXI_I3C_AWUSER, S_AXI_I3C_ARUSER})
     );
 
     // I3C AXI Subordinate
     axi_if #(
-        .AW(32),//`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),
+        .AW(32),
         .DW(`CALIPTRA_AXI_DATA_WIDTH),
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
@@ -1656,7 +1528,7 @@ I think this is the one that isn't used
     assign cptra_ss_i3c_s_axi_if.awburst  = S_AXI_I3C_AWBURST;
     assign cptra_ss_i3c_s_axi_if.awsize   = S_AXI_I3C_AWSIZE;
     assign cptra_ss_i3c_s_axi_if.awlen    = S_AXI_I3C_AWLEN;
-    assign cptra_ss_i3c_s_axi_if.awuser   = i3c_user_synch; //S_AXI_I3C_AWUSER;
+    assign cptra_ss_i3c_s_axi_if.awuser   = i3c_user_synch[63:32]; //S_AXI_I3C_AWUSER;
     assign cptra_ss_i3c_s_axi_if.awid     = S_AXI_I3C_AWID;
     assign cptra_ss_i3c_s_axi_if.awlock   = S_AXI_I3C_AWLOCK;
     assign cptra_ss_i3c_s_axi_if.awvalid  = S_AXI_I3C_AWVALID;
@@ -1677,7 +1549,7 @@ I think this is the one that isn't used
     assign cptra_ss_i3c_s_axi_if.arburst = S_AXI_I3C_ARBURST;
     assign cptra_ss_i3c_s_axi_if.arsize  = S_AXI_I3C_ARSIZE;
     assign cptra_ss_i3c_s_axi_if.arlen   = S_AXI_I3C_ARLEN;
-    assign cptra_ss_i3c_s_axi_if.aruser  = i3c_user_synch; // S_AXI_I3C_ARUSER;
+    assign cptra_ss_i3c_s_axi_if.aruser  = i3c_user_synch[31:0]; // S_AXI_I3C_ARUSER;
     assign cptra_ss_i3c_s_axi_if.arid    = S_AXI_I3C_ARID;
     assign cptra_ss_i3c_s_axi_if.arlock  = S_AXI_I3C_ARLOCK;
     assign cptra_ss_i3c_s_axi_if.arvalid = S_AXI_I3C_ARVALID;
@@ -1959,10 +1831,6 @@ logic cptra_ss_mcu_halt_ack;
 
 caliptra_ss_top caliptra_ss_top_0 (
 
-    // TODO: I can't figure out the LCC and debug interactions right now. Try forcing these bits
-    //.force_mcu_dmi_core_enable(hwif_out.interface_regs.control.force_mcu_dmi_core_enable.value),
-    //.force_mcu_dmi_uncore_enable(hwif_out.interface_regs.control.force_mcu_dmi_uncore_enable.value),
-
     .cptra_ss_clk_i(core_clk),
     .cptra_i3c_clk_i(i3c_clk),
     .cptra_ss_pwrgood_i(hwif_out.interface_regs.control.cptra_pwrgood.value),
@@ -2093,7 +1961,6 @@ caliptra_ss_top caliptra_ss_top_0 (
     // Caliptra SS MCU 
     .cptra_ss_strap_mcu_lsu_axi_user_i(hwif_out.interface_regs.lsu_user.lsu_user.value),
     .cptra_ss_strap_mcu_ifu_axi_user_i(hwif_out.interface_regs.ifu_user.ifu_user.value),
-    //.cptra_ss_strap_cptra_axi_user_i    (hwif_out.interface_regs.clp_user.clp_user.value), TODO
     .cptra_ss_strap_mcu_sram_config_axi_user_i(hwif_out.interface_regs.sram_config_user.sram_config_user.value),
     .cptra_ss_strap_mci_soc_config_axi_user_i(hwif_out.interface_regs.soc_config_user.soc_config_user.value),
     .cptra_ss_mcu_halt_status_o(cptra_ss_mcu_halt_status),
@@ -2115,7 +1982,7 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mcu_no_rom_config_i(hwif_out.interface_regs.mcu_config.mcu_no_rom_config.value),
     .cptra_ss_mci_boot_seq_brkpoint_i(hwif_out.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.value),
     
-    //input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
+    // TODO: input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
     .cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i(1'b0),
     .cptra_ss_FIPS_ZEROIZATION_PPD_i(1'b0), // TODO: Connect to wrapper?
 
@@ -2133,13 +2000,13 @@ caliptra_ss_top caliptra_ss_top_0 (
 
     // Address straps
     .cptra_ss_strap_caliptra_base_addr_i     (64'hA4100000),
-    .cptra_ss_strap_mci_base_addr_i          (64'hA4050000),
-    .cptra_ss_strap_recovery_ifc_base_addr_i (64'h0), // TODO: What to set this to?
+    .cptra_ss_strap_mci_base_addr_i          (64'hA8000000),
+    .cptra_ss_strap_recovery_ifc_base_addr_i (64'hA4030100), // I3C controller SecFwRecoveryIf
     .cptra_ss_strap_otp_fc_base_addr_i       (64'hA4060000),
-    .cptra_ss_strap_uds_seed_base_addr_i     (64'h0), // TODO: What to set this to?
-    .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i(32'h0), // TODO: What to set this to?
-    .cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i(32'h0), // TODO: What to set this to?
-    .cptra_ss_strap_caliptra_dma_axi_user_i(32'hCCCCCCCC),
+    .cptra_ss_strap_uds_seed_base_addr_i     ({32'h00000000, hwif_out.interface_regs.uds_seed_base_addr.uds_seed_base_addr.value}),
+    .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i(hwif_out.interface_regs.prod_debug_unlock_auth_pk_hash_reg_bank_offset.prod_debug_unlock_auth_pk_hash_reg_bank_offset.value),
+    .cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i(hwif_out.interface_regs.num_of_prod_debug_unlock_auth_pk_hashes.num_of_prod_debug_unlock_auth_pk_hashes.value),
+    .cptra_ss_strap_caliptra_dma_axi_user_i(hwif_out.interface_regs.dma_axi_user.dma_axi_user.value),
     .cptra_ss_strap_generic_0_i(32'h0),
     .cptra_ss_strap_generic_1_i(32'h0),
     .cptra_ss_strap_generic_2_i(32'h0),
@@ -2185,912 +2052,5 @@ caliptra_ss_top caliptra_ss_top_0 (
     // Hierarchical references to generic output wires register. Use as input to log FIFO.
     assign fifo_write_en = caliptra_ss_top_0.caliptra_top_dut.soc_ifc_top1.i_soc_ifc_reg.field_combo.CPTRA_GENERIC_OUTPUT_WIRES[0].generic_wires.load_next;
     assign fifo_char[7:0] = caliptra_ss_top_0.caliptra_top_dut.soc_ifc_top1.i_soc_ifc_reg.field_combo.CPTRA_GENERIC_OUTPUT_WIRES[0].generic_wires.next[7:0];
-
-
-`ifdef DISABLING_THIS
-Created ss_veer_sram_export_inst to use same implementation as testbench. This implementation looks basically the same so unlikely to be the cause of the failures.
-//////////////////////////////////////////////////////
-// DCCM
-//
-logic [pt.ICCM_NUM_BANKS-1:0][                   38:0] iccm_bank_wr_fdata;
-logic [pt.ICCM_NUM_BANKS-1:0][                   38:0] iccm_bank_fdout;
-logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-1:0] dccm_wr_fdata_bank;
-logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-1:0] dccm_bank_fdout;
-
-if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
-    `define MCU_LOCAL_DCCM_RAM_TEST_PORTS   .TEST1   (1'b0   ), \
-                                            .RME     (1'b0   ), \
-                                            .RM      (4'b0000), \
-                                            .LS      (1'b0   ), \
-                                            .DS      (1'b0   ), \
-                                            .SD      (1'b0   ), \
-                                            .TEST_RNM(1'b0   ), \
-                                            .BC1     (1'b0   ), \
-                                            .BC2     (1'b0   ), \
-
-    logic [pt.DCCM_NUM_BANKS-1:0] [pt.DCCM_FDATA_WIDTH-1:0] dccm_wdata_bitflip;
-    int ii;
-    localparam DCCM_INDEX_DEPTH = ((pt.DCCM_SIZE)*1024)/((pt.DCCM_BYTE_WIDTH)*(pt.DCCM_NUM_BANKS));  // Depth of memory bank
-    // 8 Banks, 16KB each (2048 x 72)
-    always_ff @(cptra_ss_mcu0_el2_mem_export.clk) begin : inject_dccm_ecc_error
-        // if (~error_injection_mode.dccm_single_bit_error && ~error_injection_mode.dccm_double_bit_error) begin
-        //     dccm_wdata_bitflip <= '{default:0};
-        // end else if (cptra_ss_mcu0_el2_mem_export.dccm_clken & cptra_ss_mcu0_el2_mem_export.dccm_wren_bank) begin
-        //     for (ii=0; ii<pt.DCCM_NUM_BANKS; ii++) begin: dccm_bitflip_injection_loop
-        //         dccm_wdata_bitflip[ii] <= get_bitflip_mask(error_injection_mode.dccm_double_bit_error);
-        //     end
-        // end
-        dccm_wdata_bitflip <= '{default:0};
-    end
-    for (genvar i=0; i<pt.DCCM_NUM_BANKS; i++) begin: dccm_loop
-
-        assign dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0] = {cptra_ss_mcu0_el2_mem_export.dccm_wr_ecc_bank[i], cptra_ss_mcu0_el2_mem_export.dccm_wr_data_bank[i]} ^ dccm_wdata_bitflip[i];
-        assign cptra_ss_mcu0_el2_mem_export.dccm_bank_dout[i] = dccm_bank_fdout[i][31:0];
-        assign cptra_ss_mcu0_el2_mem_export.dccm_bank_ecc[i] = dccm_bank_fdout[i][38:32];
-
-    `ifdef VERILATOR
-
-            el2_ram #(DCCM_INDEX_DEPTH,39)  ram (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-    `else
-
-        if (DCCM_INDEX_DEPTH == 32768) begin : dccm
-	 	 	 	 ram_32768x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-        else if (DCCM_INDEX_DEPTH == 16384) begin : dccm
-	 	 	 	 ram_16384x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-        else if (DCCM_INDEX_DEPTH == 8192) begin : dccm
-	 	 	 	 ram_8192x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-        else if (DCCM_INDEX_DEPTH == 4096) begin : dccm
-	 	 	 	 ram_4096x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-        else if (DCCM_INDEX_DEPTH == 3072) begin : dccm
-	 	 	 	 ram_3072x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-        else if (DCCM_INDEX_DEPTH == 2048) begin : dccm
-	 	 	 	 ram_2048x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-        else if (DCCM_INDEX_DEPTH == 1024) begin : dccm
-	 	 	 	 ram_1024x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-        else if (DCCM_INDEX_DEPTH == 512) begin : dccm
-	 	 	 	 ram_512x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-        else if (DCCM_INDEX_DEPTH == 256) begin : dccm
-	 	 	 	 ram_256x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-        else if (DCCM_INDEX_DEPTH == 128) begin : dccm
-	 	 	 	 ram_128x39  dccm_bank (
-                                    // Primary ports
-                                    .ME(cptra_ss_mcu0_el2_mem_export.dccm_clken[i]),
-                                    .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                    .WE(cptra_ss_mcu0_el2_mem_export.dccm_wren_bank[i]),
-                                    .ADR(cptra_ss_mcu0_el2_mem_export.dccm_addr_bank[i]),
-                                    .D(dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .Q(dccm_bank_fdout[i][pt.DCCM_FDATA_WIDTH-1:0]),
-                                    .ROP ( ),
-                                    // These are used by SoC
-                                    `MCU_LOCAL_DCCM_RAM_TEST_PORTS
-                                    .*
-                                    );
-        end
-    `endif
-    end : dccm_loop
-end :css_mcu0_dccm_enable
-
-//////////////////////////////////////////////////////
-// ICCM
-//
-if (pt.ICCM_ENABLE) begin : Gen_iccm_enable
-
-//logic [pt.ICCM_NUM_BANKS-1:0] [38:0] iccm_wdata_bitflip;
-//int jj;
-//always_ff @(cptra_ss_mcu0_el2_mem_export.clk) begin : inject_iccm_ecc_error
-//    if (~error_injection_mode.iccm_single_bit_error && ~error_injection_mode.iccm_double_bit_error) begin
-//        iccm_wdata_bitflip <= '{default:0};
-//    end else if (cptra_ss_mcu0_el2_mem_export.iccm_clken & cptra_ss_mcu0_el2_mem_export.iccm_wren_bank) begin
-//        for (jj=0; jj<pt.ICCM_NUM_BANKS; jj++) begin: iccm_bitflip_injection_loop
-//            iccm_wdata_bitflip[jj] <= get_bitflip_mask(error_injection_mode.iccm_double_bit_error);
-//        end
-//    end
-//end
-for (genvar i=0; i<pt.ICCM_NUM_BANKS; i++) begin: iccm_loop
-    // -- new --- assign iccm_bank_wr_fdata[i][31:0] = cptra_ss_mcu0_el2_mem_export.iccm_bank_wr_data[i];
-    // -- new --- assign iccm_bank_wr_fdata[i][38:32] = cptra_ss_mcu0_el2_mem_export.iccm_bank_wr_ecc[i];
-    // -- new --- assign cptra_ss_mcu0_el2_mem_export.iccm_bank_dout[i] = iccm_bank_fdout[i][31:0];
-    // -- new --- assign cptra_ss_mcu0_el2_mem_export.iccm_bank_ecc[i] = iccm_bank_fdout[i][38:32];
-    //assign cptra_ss_mcu0_el2_mem_export.iccm_bank_wr_data[i] = iccm_bank_wr_fdata[i][31:0];
-    //assign cptra_ss_mcu0_el2_mem_export.iccm_bank_wr_ecc[i] = iccm_bank_wr_fdata[i][37:32];
-    //assign iccm_bank_fdout[i] = {cptra_ss_mcu0_el2_mem_export.iccm_bank_ecc[i], cptra_ss_mcu0_el2_mem_export.iccm_bank_dout[i]};
-
-    `ifdef VERILATOR
-
-    el2_ram #(.depth(1<<pt.ICCM_INDEX_BITS), .width(39)) iccm_bank (
-                                        // Primary ports
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-    `else
-
-        if (pt.ICCM_INDEX_BITS == 6 ) begin : iccm
-	 	 	 	 ram_64x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-
-    else if (pt.ICCM_INDEX_BITS == 7 ) begin : iccm
-	 	 	 	 ram_128x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-
-        else if (pt.ICCM_INDEX_BITS == 8 ) begin : iccm
-	 	 	 	 ram_256x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-        else if (pt.ICCM_INDEX_BITS == 9 ) begin : iccm
-	 	 	 	 ram_512x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-        else if (pt.ICCM_INDEX_BITS == 10 ) begin : iccm
-	 	 	 	 ram_1024x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-        else if (pt.ICCM_INDEX_BITS == 11 ) begin : iccm
-	 	 	 	 ram_2048x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-        else if (pt.ICCM_INDEX_BITS == 12 ) begin : iccm
-	 	 	 	 ram_4096x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-        else if (pt.ICCM_INDEX_BITS == 13 ) begin : iccm
-	 	 	 	 ram_8192x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-        else if (pt.ICCM_INDEX_BITS == 14 ) begin : iccm
-	 	 	 	 ram_16384x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-        else begin : iccm
-	 	 	 	 ram_32768x39 iccm_bank (
-                                        // Primary ports
-                                        .CLK(cptra_ss_mcu0_el2_mem_export.clk),
-                                        .ME(cptra_ss_mcu0_el2_mem_export.iccm_clken[i]),
-                                        .WE(cptra_ss_mcu0_el2_mem_export.iccm_wren_bank[i]),
-                                        .ADR(cptra_ss_mcu0_el2_mem_export.iccm_addr_bank[i]),
-                                        .D(iccm_bank_wr_fdata[i][38:0]),
-                                        .Q(iccm_bank_fdout[i][38:0]),
-                                        .ROP ( ),
-                                        // These are used by SoC
-                                        .TEST1    (1'b0   ),
-                                        .RME      (1'b0   ),
-                                        .RM       (4'b0000),
-                                        .LS       (1'b0   ),
-                                        .DS       (1'b0   ),
-                                        .SD       (1'b0   ) ,
-                                        .TEST_RNM (1'b0   ),
-                                        .BC1      (1'b0   ),
-                                        .BC2      (1'b0   )
-
-                                        );
-        end // block: iccm
-`endif
-end : iccm_loop
-end : Gen_iccm_enable
-
-`include "icache_macros.svh"
-
-// ICACHE DATA
-if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_0
-    for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: WAYS
-       for (genvar k=0; k<pt.ICACHE_BANKS_WAY; k++) begin: BANKS_WAY   // 16B subbank
-       if (pt.ICACHE_ECC) begin : ECC1
-         if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
-            `EL2_IC_DATA_SRAM(8192,71,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
-            `EL2_IC_DATA_SRAM(4096,71,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
-            `EL2_IC_DATA_SRAM(2048,71,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
-            `EL2_IC_DATA_SRAM(1024,71,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
-            `EL2_IC_DATA_SRAM(512,71,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-          else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
-            `EL2_IC_DATA_SRAM(256,71,i,k,cptra_ss_mcu0_el2_mem_export)
-          end
-          else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
-            `EL2_IC_DATA_SRAM(128,71,i,k,cptra_ss_mcu0_el2_mem_export)
-          end
-          else  begin : size_64
-            `EL2_IC_DATA_SRAM(64,71,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-       end // if (pt.ICACHE_ECC)
- 
-       else  begin  : ECC0
-         if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
-            `EL2_IC_DATA_SRAM(8192,68,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
-            `EL2_IC_DATA_SRAM(4096,68,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-         else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
-            `EL2_IC_DATA_SRAM(2048,68,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
-            `EL2_IC_DATA_SRAM(1024,68,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-         else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
-            `EL2_IC_DATA_SRAM(512,68,i,k,cptra_ss_mcu0_el2_mem_export)
-         end
-          else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
-             `EL2_IC_DATA_SRAM(256,68,i,k,cptra_ss_mcu0_el2_mem_export)
-           end
-           else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
-             `EL2_IC_DATA_SRAM(128,68,i,k,cptra_ss_mcu0_el2_mem_export)
-           end
-           else  begin : size_64
-             `EL2_IC_DATA_SRAM(64,68,i,k,cptra_ss_mcu0_el2_mem_export)
-           end
-       end // else: !if(pt.ICACHE_ECC)
-       end // block: BANKS_WAY
-    end // block: WAYS
-
-end // block: PACKED_0
-
- // WAY PACKED
- else begin : PACKED_10
-
- // generate IC DATA PACKED SRAMS for 2/4 ways
-  for (genvar k=0; k<pt.ICACHE_BANKS_WAY; k++) begin: BANKS_WAY   // 16B subbank
-     if (pt.ICACHE_ECC) begin : ECC1
-        // SRAMS with ECC (single/double detect; no correct)
-        if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(8192,284,71,k,cptra_ss_mcu0_el2_mem_export)    // 64b data + 7b ecc
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(8192,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_8192
-
-        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(4096,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(4096,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_4096
-
-        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(2048,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(2048,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_2048
-
-        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(1024,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(1024,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_1024
-
-        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(512,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(512,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_512
-
-        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(256,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(256,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_256
-
-        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(128,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(128,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_128
-
-        else  begin : size_64
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(64,284,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(64,142,71,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_64
-       end // if (pt.ICACHE_ECC)
-
-     else  begin  : ECC0
-        // SRAMs with parity
-        if ($clog2(pt.ICACHE_DATA_DEPTH) == 13 )   begin : size_8192
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(8192,272,68,k,cptra_ss_mcu0_el2_mem_export)    // 64b data + 4b parity
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(8192,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_8192
-
-        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 12 )   begin : size_4096
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(4096,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(4096,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_4096
-
-        else if ($clog2(pt.ICACHE_DATA_DEPTH) == 11 ) begin : size_2048
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(2048,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(2048,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_2048
-
-        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 10 ) begin : size_1024
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(1024,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(1024,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_1024
-
-        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 9 ) begin : size_512
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(512,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(512,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_512
-
-        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 8 ) begin : size_256
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(256,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(256,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_256
-
-        else if ( $clog2(pt.ICACHE_DATA_DEPTH) == 7 ) begin : size_128
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(128,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(128,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_128
-
-        else  begin : size_64
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(64,272,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-           else   begin : WAYS
-              `EL2_PACKED_IC_DATA_SRAM(64,136,68,k,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        end // block: size_64
-     end // block: ECC0
-     end // block: BANKS_WAY
- end // block: PACKED_10
-
-
-// ICACHE TAG
-if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_11
-    for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: WAYS
-        if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
-                 `EL2_IC_TAG_SRAM(32,26,i,cptra_ss_mcu0_el2_mem_export)
-        end // if (pt.ICACHE_TAG_DEPTH == 32)
-        if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
-                 `EL2_IC_TAG_SRAM(64,26,i,cptra_ss_mcu0_el2_mem_export)
-        end // if (pt.ICACHE_TAG_DEPTH == 64)
-        if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
-                 `EL2_IC_TAG_SRAM(128,26,i,cptra_ss_mcu0_el2_mem_export)
-        end // if (pt.ICACHE_TAG_DEPTH == 128)
-        if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
-                 `EL2_IC_TAG_SRAM(256,26,i,cptra_ss_mcu0_el2_mem_export)
-        end // if (pt.ICACHE_TAG_DEPTH == 256)
-        if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
-                 `EL2_IC_TAG_SRAM(512,26,i,cptra_ss_mcu0_el2_mem_export)
-        end // if (pt.ICACHE_TAG_DEPTH == 512)
-        if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
-                 `EL2_IC_TAG_SRAM(1024,26,i,cptra_ss_mcu0_el2_mem_export)
-        end // if (pt.ICACHE_TAG_DEPTH == 1024)
-        if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
-                 `EL2_IC_TAG_SRAM(2048,26,i,cptra_ss_mcu0_el2_mem_export)
-        end // if (pt.ICACHE_TAG_DEPTH == 2048)
-        if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
-                 `EL2_IC_TAG_SRAM(4096,26,i,cptra_ss_mcu0_el2_mem_export)
-        end // if (pt.ICACHE_TAG_DEPTH == 4096)
-    end // block: WAYS
-end // block: PACKED_11
-
-else begin : PACKED_1
-    if (pt.ICACHE_ECC) begin  : ECC1
-        if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
-           if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(32,104,cptra_ss_mcu0_el2_mem_export)
-           end // block: WAYS
-        else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(32,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // if (pt.ICACHE_TAG_DEPTH == 32
-
-      if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
-        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(64,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(64,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_64
-
-      if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(128,104,cptra_ss_mcu0_el2_mem_export)
-      end // block: WAYS
-      else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(128,52,cptra_ss_mcu0_el2_mem_export)
-      end // block: WAYS
-
-      end // block: size_128
-
-      if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(256,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(256,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_256
-
-      if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(512,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(512,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_512
-
-      if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
-         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(1024,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(1024,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_1024
-
-      if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(2048,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(2048,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_2048
-
-      if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(4096,104,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(4096,52,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_4096
-    end // block: ECC1
-
-    else  begin : ECC0
-        if (pt.ICACHE_TAG_DEPTH == 32)   begin : size_32
-            if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(32,88,cptra_ss_mcu0_el2_mem_export)
-            end // block: WAYS
-            else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(32,44,cptra_ss_mcu0_el2_mem_export)
-            end // block: WAYS
-        end // if (pt.ICACHE_TAG_DEPTH == 32
-
-      if (pt.ICACHE_TAG_DEPTH == 64)   begin : size_64
-        if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(64,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(64,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_64
-
-      if (pt.ICACHE_TAG_DEPTH == 128)   begin : size_128
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(128,88,cptra_ss_mcu0_el2_mem_export)
-      end // block: WAYS
-      else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(128,44,cptra_ss_mcu0_el2_mem_export)
-      end // block: WAYS
-
-      end // block: size_128
-
-      if (pt.ICACHE_TAG_DEPTH == 256)   begin : size_256
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(256,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(256,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_256
-
-      if (pt.ICACHE_TAG_DEPTH == 512)   begin : size_512
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(512,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(512,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_512
-
-      if (pt.ICACHE_TAG_DEPTH == 1024)   begin : size_1024
-         if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(1024,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(1024,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_1024
-
-      if (pt.ICACHE_TAG_DEPTH == 2048)   begin : size_2048
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(2048,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(2048,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_2048
-
-      if (pt.ICACHE_TAG_DEPTH == 4096)   begin  : size_4096
-       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(4096,88,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-       else begin : WAYS
-                 `EL2_IC_TAG_PACKED_SRAM(4096,44,cptra_ss_mcu0_el2_mem_export)
-        end // block: WAYS
-      end // block: size_4096
-    end // block: ECC0
-end // block: PACKED_1
-// end ICACHE TAG
-
-`endif
-
 
 endmodule

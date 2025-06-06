@@ -129,19 +129,20 @@ CPTRA_UIO_NUM=0 cargo test --features=fpga_realtime,itrng -p caliptra-test smoke
 [FPGA Wrapper Registers](fpga_wrapper_regs.md)
 
 #### Versal Memory Map ####
-| IP/Peripheral                       | Accessibility    | Address size | Start address | End address |
-| :---------------------------------- | ---------------- | :----------- | :------------ | :---------- |
-| Caliptra core ROM Backdoor          | Always           | 96 KiB       | 0xB000_0000   | 0xB001_7FFF |
-| MCU ROM Backdoor                    | Always           | 128 KiB      | 0xB002_0000   | 0xB003_FFFF |
-| MCU ROM AXI Sub (provided by SS)    | cptra_ss_rst_b   | 128 KiB      | 0xB004_0000   | 0xB005_FFFF |
-| MCU SRAM                            | Always           | 96 KiB       | 0xB008_0000   | 0xB005_FFFF |
-| FPGA Wrapper Registers              | Always           | 8 KiB        | 0xA401_0000   | 0xA401_1FFF |
-| SS I3C                              | cptra_ss_rst_b   | 8 KiB        | 0xA403_0000   | 0xA403_1FFF |
-| LCC                                 | cptra_ss_rst_b   | 8 KiB        | 0xA404_0000   | 0xA404_1FFF |
-| OTP                                 | cptra_ss_rst_b   | 8 KiB        | 0xA406_0000   | 0xA406_1FFF |
-| Xilinx I3C                          | Always           | 4 KiB        | 0xA408_0000   | 0xA408_0FFF |
-| Caliptra                            | SS internal TODO | 1 MiB        | 0xA410_0000   | 0xA41F_FFFF |
-| MCI                                 | cptra_ss_rst_b   | 16 MiB       | 0xA800_0000   | 0xA8FF_FFFF |
+| IP/Peripheral                       | Accessibility        | Address size | Start address | End address |
+| :---------------------------------- | -------------------- | :----------- | :------------ | :---------- |
+| Caliptra core ROM Backdoor          | Always               | 96 KiB       | 0xB000_0000   | 0xB001_7FFF |
+| MCU ROM Backdoor                    | Always               | 128 KiB      | 0xB002_0000   | 0xB003_FFFF |
+| MCU ROM AXI Sub (provided by SS)    | cptra_ss_rst_b       | 128 KiB      | 0xB004_0000   | 0xB005_FFFF |
+| MCU SRAM                            | Always               | 96 KiB       | 0xB008_0000   | 0xB005_FFFF |
+| FPGA Wrapper Registers              | Always               | 8 KiB        | 0xA401_0000   | 0xA401_1FFF |
+| SS I3C                              | cptra_ss_rst_b       | 8 KiB        | 0xA403_0000   | 0xA403_1FFF |
+| LCC                                 | cptra_ss_rst_b       | 8 KiB        | 0xA404_0000   | 0xA404_1FFF |
+| OTP                                 | cptra_ss_rst_b       | 8 KiB        | 0xA406_0000   | 0xA406_1FFF |
+| Xilinx I3C                          | cptra_ss_rst_b       | 4 KiB        | 0xA408_0000   | 0xA408_0FFF |
+| AXI Firewall Control                | Always               | 4 KiB        | 0xA409_0000   | 0xA409_0FFF |
+| Caliptra                            | SS reset to Caliptra | 1 MiB        | 0xA410_0000   | 0xA41F_FFFF |
+| MCI                                 | cptra_ss_rst_b       | 16 MiB       | 0xA800_0000   | 0xA8FF_FFFF |
 
 ### JTAG debug
 Requirements:

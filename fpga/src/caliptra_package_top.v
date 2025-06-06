@@ -27,6 +27,9 @@
 module caliptra_package_axi_top (
     input wire core_clk,
     input wire i3c_clk,
+    
+    output wire[31:0] ARM_USER,
+    output wire xilinx_i3c_aresetn,
 
     input wire axi_i3c_scl_t,
     input wire axi_i3c_scl_o,
@@ -194,51 +197,11 @@ module caliptra_package_axi_top (
     output wire S_AXI_MCU_ROM_RVALID,
     input  wire S_AXI_MCU_ROM_RREADY,
 
-    // MCI M_AXI Interface
-    output  wire [31:0] M_AXI_MCI_AWADDR,
-    output  wire [1:0] M_AXI_MCI_AWBURST,
-    output  wire [2:0] M_AXI_MCI_AWSIZE,
-    output  wire [7:0] M_AXI_MCI_AWLEN,
-    output  wire [31:0] M_AXI_MCI_AWUSER,
-    output  wire [15:0] M_AXI_MCI_AWID,
-    output  wire M_AXI_MCI_AWLOCK,
-    output  wire M_AXI_MCI_AWVALID,
-    input wire M_AXI_MCI_AWREADY,
-    // W
-    output  wire [31:0] M_AXI_MCI_WDATA,
-    output  wire [3:0] M_AXI_MCI_WSTRB,
-    output  wire M_AXI_MCI_WVALID,
-    input wire M_AXI_MCI_WREADY,
-    output  wire M_AXI_MCI_WLAST,
-    // B
-    input wire [1:0] M_AXI_MCI_BRESP,
-    input wire [15:0] M_AXI_MCI_BID,
-    input wire M_AXI_MCI_BVALID,
-    output  wire M_AXI_MCI_BREADY,
-    // AR
-    output  wire [31:0] M_AXI_MCI_ARADDR,
-    output  wire [1:0] M_AXI_MCI_ARBURST,
-    output  wire [2:0] M_AXI_MCI_ARSIZE,
-    output  wire [7:0] M_AXI_MCI_ARLEN,
-    output  wire [31:0] M_AXI_MCI_ARUSER,
-    output  wire [15:0] M_AXI_MCI_ARID,
-    output  wire M_AXI_MCI_ARLOCK,
-    output  wire M_AXI_MCI_ARVALID,
-    input wire M_AXI_MCI_ARREADY,
-    // R
-    input wire [31:0] M_AXI_MCI_RDATA,
-    input wire [1:0] M_AXI_MCI_RRESP,
-    input wire [15:0] M_AXI_MCI_RID,
-    input wire M_AXI_MCI_RLAST,
-    input wire M_AXI_MCI_RVALID,
-    output  wire M_AXI_MCI_RREADY,
-
-
-    //-------------------------- LSU AXI signals--------------------------
+    //-------------------------- MCU LSU AXI signals--------------------------
     // AXI Write Channels
     output wire                      M_AXI_MCU_LSU_AWVALID,
     input  wire                      M_AXI_MCU_LSU_AWREADY,
-    output wire [18:0]              M_AXI_MCU_LSU_AWID,
+    output wire [18:0]               M_AXI_MCU_LSU_AWID,
     output wire [              31:0] M_AXI_MCU_LSU_AWADDR,
     output wire [               3:0] M_AXI_MCU_LSU_AWREGION,
     output wire [               7:0] M_AXI_MCU_LSU_AWLEN,
@@ -258,12 +221,12 @@ module caliptra_package_axi_top (
     input  wire                      M_AXI_MCU_LSU_BVALID,
     output wire                      M_AXI_MCU_LSU_BREADY,
     input  wire [               1:0] M_AXI_MCU_LSU_BRESP,
-    input  wire [18:0]              M_AXI_MCU_LSU_BID,
+    input  wire [18:0]               M_AXI_MCU_LSU_BID,
 
     // AXI Read Channels
     output wire                      M_AXI_MCU_LSU_ARVALID,
     input  wire                      M_AXI_MCU_LSU_ARREADY,
-    output wire [18:0]              M_AXI_MCU_LSU_ARID,
+    output wire [18:0]               M_AXI_MCU_LSU_ARID,
     output wire [              31:0] M_AXI_MCU_LSU_ARADDR,
     output wire [               3:0] M_AXI_MCU_LSU_ARREGION,
     output wire [               7:0] M_AXI_MCU_LSU_ARLEN,
@@ -276,16 +239,16 @@ module caliptra_package_axi_top (
 
     input  wire                      M_AXI_MCU_LSU_RVALID,
     output wire                      M_AXI_MCU_LSU_RREADY,
-    input  wire [18:0]              M_AXI_MCU_LSU_RID,
+    input  wire [18:0]               M_AXI_MCU_LSU_RID,
     input  wire [              63:0] M_AXI_MCU_LSU_RDATA,
     input  wire [               1:0] M_AXI_MCU_LSU_RRESP,
     input  wire                      M_AXI_MCU_LSU_RLAST,
 
-    //-------------------------- IFU AXI signals--------------------------
+    //-------------------------- MCU IFU AXI signals--------------------------
     // AXI Write Channels
     output wire                      M_AXI_MCU_IFU_AWVALID,
     input  wire                      M_AXI_MCU_IFU_AWREADY,
-    output wire [18:0]              M_AXI_MCU_IFU_AWID,
+    output wire [18:0]               M_AXI_MCU_IFU_AWID,
     output wire [              31:0] M_AXI_MCU_IFU_AWADDR,
     output wire [               3:0] M_AXI_MCU_IFU_AWREGION,
     output wire [               7:0] M_AXI_MCU_IFU_AWLEN,
@@ -305,12 +268,12 @@ module caliptra_package_axi_top (
     input  wire                      M_AXI_MCU_IFU_BVALID,
     output wire                      M_AXI_MCU_IFU_BREADY,
     input  wire [               1:0] M_AXI_MCU_IFU_BRESP,
-    input  wire [18:0]              M_AXI_MCU_IFU_BID,
+    input  wire [18:0]               M_AXI_MCU_IFU_BID,
 
     // AXI Read Channels
     output wire                      M_AXI_MCU_IFU_ARVALID,
     input  wire                      M_AXI_MCU_IFU_ARREADY,
-    output wire [18:0]              M_AXI_MCU_IFU_ARID,
+    output wire [18:0]               M_AXI_MCU_IFU_ARID,
     output wire [              31:0] M_AXI_MCU_IFU_ARADDR,
     output wire [               3:0] M_AXI_MCU_IFU_ARREGION,
     output wire [               7:0] M_AXI_MCU_IFU_ARLEN,
@@ -323,7 +286,7 @@ module caliptra_package_axi_top (
 
     input  wire                      M_AXI_MCU_IFU_RVALID,
     output wire                      M_AXI_MCU_IFU_RREADY,
-    input  wire [18:0]              M_AXI_MCU_IFU_RID,
+    input  wire [18:0]               M_AXI_MCU_IFU_RID,
     input  wire [              63:0] M_AXI_MCU_IFU_RDATA,
     input  wire [               1:0] M_AXI_MCU_IFU_RRESP,
     input  wire                      M_AXI_MCU_IFU_RLAST,
@@ -548,6 +511,8 @@ caliptra_wrapper_top cptra_wrapper (
     .core_clk(core_clk),
     .i3c_clk(i3c_clk),
 
+    .ARM_USER(ARM_USER),
+    .xilinx_i3c_aresetn(xilinx_i3c_aresetn),
 
     .axi_i3c_scl_t(axi_i3c_scl_t),
     .axi_i3c_scl_o(axi_i3c_scl_o),
@@ -702,45 +667,6 @@ caliptra_wrapper_top cptra_wrapper (
     .S_AXI_MCU_ROM_RLAST(S_AXI_MCU_ROM_RLAST),
     .S_AXI_MCU_ROM_RVALID(S_AXI_MCU_ROM_RVALID),
     .S_AXI_MCU_ROM_RREADY(S_AXI_MCU_ROM_RREADY),
-
-    // Caliptra M_AXI Interface
-    .M_AXI_MCI_AWADDR(M_AXI_MCI_AWADDR),
-    .M_AXI_MCI_AWBURST(M_AXI_MCI_AWBURST),
-    .M_AXI_MCI_AWSIZE(M_AXI_MCI_AWSIZE),
-    .M_AXI_MCI_AWLEN(M_AXI_MCI_AWLEN),
-    .M_AXI_MCI_AWUSER(M_AXI_MCI_AWUSER),
-    .M_AXI_MCI_AWID(M_AXI_MCI_AWID),
-    .M_AXI_MCI_AWLOCK(M_AXI_MCI_AWLOCK),
-    .M_AXI_MCI_AWVALID(M_AXI_MCI_AWVALID),
-    .M_AXI_MCI_AWREADY(M_AXI_MCI_AWREADY),
-    // W
-    .M_AXI_MCI_WDATA(M_AXI_MCI_WDATA),
-    .M_AXI_MCI_WSTRB(M_AXI_MCI_WSTRB),
-    .M_AXI_MCI_WVALID(M_AXI_MCI_WVALID),
-    .M_AXI_MCI_WREADY(M_AXI_MCI_WREADY),
-    .M_AXI_MCI_WLAST(M_AXI_MCI_WLAST),
-    // B
-    .M_AXI_MCI_BRESP(M_AXI_MCI_BRESP),
-    .M_AXI_MCI_BID(M_AXI_MCI_BID),
-    .M_AXI_MCI_BVALID(M_AXI_MCI_BVALID),
-    .M_AXI_MCI_BREADY(M_AXI_MCI_BREADY),
-    // AR
-    .M_AXI_MCI_ARADDR(M_AXI_MCI_ARADDR),
-    .M_AXI_MCI_ARBURST(M_AXI_MCI_ARBURST),
-    .M_AXI_MCI_ARSIZE(M_AXI_MCI_ARSIZE),
-    .M_AXI_MCI_ARLEN(M_AXI_MCI_ARLEN),
-    .M_AXI_MCI_ARUSER(M_AXI_MCI_ARUSER),
-    .M_AXI_MCI_ARID(M_AXI_MCI_ARID),
-    .M_AXI_MCI_ARLOCK(M_AXI_MCI_ARLOCK),
-    .M_AXI_MCI_ARVALID(M_AXI_MCI_ARVALID),
-    .M_AXI_MCI_ARREADY(M_AXI_MCI_ARREADY),
-    // R
-    .M_AXI_MCI_RDATA(M_AXI_MCI_RDATA),
-    .M_AXI_MCI_RRESP(M_AXI_MCI_RRESP),
-    .M_AXI_MCI_RID(M_AXI_MCI_RID),
-    .M_AXI_MCI_RLAST(M_AXI_MCI_RLAST),
-    .M_AXI_MCI_RVALID(M_AXI_MCI_RVALID),
-    .M_AXI_MCI_RREADY(M_AXI_MCI_RREADY),
 
     //-------------------------- LSU AXI signals--------------------------
     // AXI Write Channels
