@@ -189,7 +189,7 @@ module caliptra_ss_top
 
     input logic [63:0] cptra_ss_mci_generic_input_wires_i,
 
-    (* syn_keep = "true", mark_debug = "true" *) input logic [31:0] cptra_ss_strap_mcu_reset_vector_i,
+    input logic [31:0] cptra_ss_strap_mcu_reset_vector_i,
     input logic cptra_ss_mcu_no_rom_config_i,
     input logic cptra_ss_mci_boot_seq_brkpoint_i,
 
@@ -362,6 +362,8 @@ module caliptra_ss_top
     logic mci_mcu_timer_int;
 
     logic [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o; 
+
+    logic lcc_volatile_raw_unlock_success;
 
     // ----------------- FC to Caliptra-Core ports -----------------------
     otp_ctrl_part_pkg::otp_broadcast_t from_otp_to_clpt_core_broadcast;  // This is a struct data type
@@ -943,7 +945,6 @@ xpm_cdc_single_i3c_escalated_reset_inst (
    .src_in(i3c_escalated_reset_presync)      // 1-bit input: Input signal to be synchronized to dest_clk domain.
 );
 
-    logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
     assign priv_ids[0] = 32'd0;
     assign priv_ids[1] = 32'd0;
     assign priv_ids[2] = cptra_ss_strap_caliptra_dma_axi_user_i;
@@ -1178,6 +1179,7 @@ xpm_cdc_single_i3c_escalated_reset_inst (
         
 
         .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
+        .lcc_volatile_raw_unlock_success_i(lcc_volatile_raw_unlock_success),
         .lc_dft_en_i(lc_dft_en_i),
         .lc_hw_debug_en_i(lc_hw_debug_en_i),
 
@@ -1259,6 +1261,7 @@ xpm_cdc_single_i3c_escalated_reset_inst (
 
             .lc_otp_vendor_test_o(from_lc_to_otp_vendor_test_internal),
             .lc_otp_vendor_test_i(from_otp_to_lc_vendor_test_internal),
+            .volatile_raw_unlock_success_o(lcc_volatile_raw_unlock_success),
             .lc_otp_program_o(from_lcc_to_otp_program_i),
             .lc_otp_program_i(lc_otp_program_internal),
             .otp_lc_data_i(from_otp_to_lcc_data_i),

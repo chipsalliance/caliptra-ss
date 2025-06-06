@@ -66,9 +66,9 @@ void test_unlocked0_provision() {
             VPRINTF(LOW, "ERROR: incorrect value: exp: %08X act: %08X\n", read_value, sentinel);
         }
 
-        if (!partitions[i].is_secret) {
+        if (partitions[i].sw_digest) {
             dai_wr(partitions[i].digest_address, sentinel, 0, 64, 0);
-        } else {
+        } else if (partitions[i].hw_digest) {
             calculate_digest(partitions[i].address);
         }
     } 
@@ -83,9 +83,11 @@ void test_unlocked0_provision() {
             grant_mcu_for_fc_writes(); 
         }
 
-        dai_wr(rnd_fuse_addresses[i], sentinel, 0, partitions[i].granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+        if (partitions[i].sw_digest || partitions[i].hw_digest) {
+            dai_wr(rnd_fuse_addresses[i], sentinel, 0, partitions[i].granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+        }
         
-        if (!partitions[i].is_secret) {
+        if (partitions[i].sw_digest) {
             dai_rd(rnd_fuse_addresses[i], &read_value, &zero, partitions[i].granularity, 0);
             if ((read_value & 0xFF) != sentinel) {
                 VPRINTF(LOW, "ERROR: incorrect value: exp: %08X act: %08X\n", read_value, sentinel);

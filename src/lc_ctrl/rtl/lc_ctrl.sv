@@ -104,6 +104,9 @@ module lc_ctrl
   // Macro-specific test registers going to lifecycle TAP
   output otp_ctrl_pkg::lc_otp_vendor_test_req_t      lc_otp_vendor_test_o,
   input  otp_ctrl_pkg::lc_otp_vendor_test_rsp_t      lc_otp_vendor_test_i,
+
+  output                                             volatile_raw_unlock_success_o,
+
   // Life cycle transition command interface.
   // No sync required since LC and OTP are in the same clock domain.
   output otp_ctrl_pkg::lc_otp_program_req_t          lc_otp_program_o,
@@ -920,6 +923,7 @@ module lc_ctrl
     .use_ext_clock_i        ( use_ext_clock_q                  ),
     .ext_clock_switched_o   ( ext_clock_switched               ),
     .volatile_raw_unlock_i  ( volatile_raw_unlock_q            ),
+    .volatile_raw_unlock_success_o(volatile_raw_unlock_success_o),
     // .strap_en_override_o,
     .test_unlock_token_i    ( otp_lc_data_i.test_unlock_token  ),
     .test_exit_dev_token_i      ( otp_lc_data_i.test_exit_dev_token    ),

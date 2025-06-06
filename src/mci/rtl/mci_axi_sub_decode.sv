@@ -72,11 +72,11 @@ module mci_axi_sub_decode
     cif_if.request  mcu_mbox1_req_if,
 
     // Privileged requests 
-(* mark_debug = "true" *)     output logic axi_mcu_lsu_req,
-(* mark_debug = "true" *)     output logic axi_mcu_ifu_req,
-(* mark_debug = "true" *)     output logic axi_mcu_req    ,
-(* mark_debug = "true" *)     output logic axi_mci_soc_config_req    ,
-(* mark_debug = "true" *)     output logic axi_mcu_sram_config_req    ,
+    output logic axi_mcu_lsu_req,
+    output logic axi_mcu_ifu_req,
+    output logic axi_mcu_req    ,
+    output logic axi_mci_soc_config_req    ,
+    output logic axi_mcu_sram_config_req    ,
 
     
     // Privileged AXI users

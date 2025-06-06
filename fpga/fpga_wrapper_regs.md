@@ -20,81 +20,84 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 - Absolute Address: 0xA4010000
 - Base Offset: 0xA4010000
-- Size: 0x130
+- Size: 0x13C
 
-|Offset|         Identifier        |Name|
-|------|---------------------------|----|
-| 0x000|         fpga_magic        |  — |
-| 0x004|        fpga_version       |  — |
-| 0x008|          control          |  — |
-| 0x00C|           status          |  — |
-| 0x010|           pauser          |  — |
-| 0x014|       itrng_divisor       |  — |
-| 0x018|        cycle_count        |  — |
-| 0x030|   generic_input_wires[0]  |  — |
-| 0x034|   generic_input_wires[1]  |  — |
-| 0x038|  generic_output_wires[0]  |  — |
-| 0x03C|  generic_output_wires[1]  |  — |
-| 0x040|      cptra_obf_key[0]     |  — |
-| 0x044|      cptra_obf_key[1]     |  — |
-| 0x048|      cptra_obf_key[2]     |  — |
-| 0x04C|      cptra_obf_key[3]     |  — |
-| 0x050|      cptra_obf_key[4]     |  — |
-| 0x054|      cptra_obf_key[5]     |  — |
-| 0x058|      cptra_obf_key[6]     |  — |
-| 0x05C|      cptra_obf_key[7]     |  — |
-| 0x060|   cptra_csr_hmac_key[0]   |  — |
-| 0x064|   cptra_csr_hmac_key[1]   |  — |
-| 0x068|   cptra_csr_hmac_key[2]   |  — |
-| 0x06C|   cptra_csr_hmac_key[3]   |  — |
-| 0x070|   cptra_csr_hmac_key[4]   |  — |
-| 0x074|   cptra_csr_hmac_key[5]   |  — |
-| 0x078|   cptra_csr_hmac_key[6]   |  — |
-| 0x07C|   cptra_csr_hmac_key[7]   |  — |
-| 0x080|   cptra_csr_hmac_key[8]   |  — |
-| 0x084|   cptra_csr_hmac_key[9]   |  — |
-| 0x088|   cptra_csr_hmac_key[10]  |  — |
-| 0x08C|   cptra_csr_hmac_key[11]  |  — |
-| 0x090|   cptra_csr_hmac_key[12]  |  — |
-| 0x094|   cptra_csr_hmac_key[13]  |  — |
-| 0x098|   cptra_csr_hmac_key[14]  |  — |
-| 0x09C|   cptra_csr_hmac_key[15]  |  — |
-| 0x0A0|   cptra_obf_uds_seed[0]   |  — |
-| 0x0A4|   cptra_obf_uds_seed[1]   |  — |
-| 0x0A8|   cptra_obf_uds_seed[2]   |  — |
-| 0x0AC|   cptra_obf_uds_seed[3]   |  — |
-| 0x0B0|   cptra_obf_uds_seed[4]   |  — |
-| 0x0B4|   cptra_obf_uds_seed[5]   |  — |
-| 0x0B8|   cptra_obf_uds_seed[6]   |  — |
-| 0x0BC|   cptra_obf_uds_seed[7]   |  — |
-| 0x0C0|   cptra_obf_uds_seed[8]   |  — |
-| 0x0C4|   cptra_obf_uds_seed[9]   |  — |
-| 0x0C8|   cptra_obf_uds_seed[10]  |  — |
-| 0x0CC|   cptra_obf_uds_seed[11]  |  — |
-| 0x0D0|   cptra_obf_uds_seed[12]  |  — |
-| 0x0D4|   cptra_obf_uds_seed[13]  |  — |
-| 0x0D8|   cptra_obf_uds_seed[14]  |  — |
-| 0x0DC|   cptra_obf_uds_seed[15]  |  — |
-| 0x0E0| cptra_obf_field_entropy[0]|  — |
-| 0x0E4| cptra_obf_field_entropy[1]|  — |
-| 0x0E8| cptra_obf_field_entropy[2]|  — |
-| 0x0EC| cptra_obf_field_entropy[3]|  — |
-| 0x0F0| cptra_obf_field_entropy[4]|  — |
-| 0x0F4| cptra_obf_field_entropy[5]|  — |
-| 0x0F8| cptra_obf_field_entropy[6]|  — |
-| 0x0FC| cptra_obf_field_entropy[7]|  — |
-| 0x100|          lsu_user         |  — |
-| 0x104|          ifu_user         |  — |
-| 0x108|          clp_user         |  — |
-| 0x10C|      soc_config_user      |  — |
-| 0x110|      sram_config_user     |  — |
-| 0x114|      mcu_reset_vector     |  — |
-| 0x118|         mci_error         |  — |
-| 0x11C|         mcu_config        |  — |
-| 0x120| mci_generic_input_wires[0]|  — |
-| 0x124| mci_generic_input_wires[1]|  — |
-| 0x128|mci_generic_output_wires[0]|  — |
-| 0x12C|mci_generic_output_wires[1]|  — |
+|Offset|                  Identifier                  |Name|
+|------|----------------------------------------------|----|
+| 0x000|                  fpga_magic                  |  — |
+| 0x004|                 fpga_version                 |  — |
+| 0x008|                    control                   |  — |
+| 0x00C|                    status                    |  — |
+| 0x010|                   arm_user                   |  — |
+| 0x014|                 itrng_divisor                |  — |
+| 0x018|                  cycle_count                 |  — |
+| 0x030|            generic_input_wires[0]            |  — |
+| 0x034|            generic_input_wires[1]            |  — |
+| 0x038|            generic_output_wires[0]           |  — |
+| 0x03C|            generic_output_wires[1]           |  — |
+| 0x040|               cptra_obf_key[0]               |  — |
+| 0x044|               cptra_obf_key[1]               |  — |
+| 0x048|               cptra_obf_key[2]               |  — |
+| 0x04C|               cptra_obf_key[3]               |  — |
+| 0x050|               cptra_obf_key[4]               |  — |
+| 0x054|               cptra_obf_key[5]               |  — |
+| 0x058|               cptra_obf_key[6]               |  — |
+| 0x05C|               cptra_obf_key[7]               |  — |
+| 0x060|             cptra_csr_hmac_key[0]            |  — |
+| 0x064|             cptra_csr_hmac_key[1]            |  — |
+| 0x068|             cptra_csr_hmac_key[2]            |  — |
+| 0x06C|             cptra_csr_hmac_key[3]            |  — |
+| 0x070|             cptra_csr_hmac_key[4]            |  — |
+| 0x074|             cptra_csr_hmac_key[5]            |  — |
+| 0x078|             cptra_csr_hmac_key[6]            |  — |
+| 0x07C|             cptra_csr_hmac_key[7]            |  — |
+| 0x080|             cptra_csr_hmac_key[8]            |  — |
+| 0x084|             cptra_csr_hmac_key[9]            |  — |
+| 0x088|            cptra_csr_hmac_key[10]            |  — |
+| 0x08C|            cptra_csr_hmac_key[11]            |  — |
+| 0x090|            cptra_csr_hmac_key[12]            |  — |
+| 0x094|            cptra_csr_hmac_key[13]            |  — |
+| 0x098|            cptra_csr_hmac_key[14]            |  — |
+| 0x09C|            cptra_csr_hmac_key[15]            |  — |
+| 0x0A0|             cptra_obf_uds_seed[0]            |  — |
+| 0x0A4|             cptra_obf_uds_seed[1]            |  — |
+| 0x0A8|             cptra_obf_uds_seed[2]            |  — |
+| 0x0AC|             cptra_obf_uds_seed[3]            |  — |
+| 0x0B0|             cptra_obf_uds_seed[4]            |  — |
+| 0x0B4|             cptra_obf_uds_seed[5]            |  — |
+| 0x0B8|             cptra_obf_uds_seed[6]            |  — |
+| 0x0BC|             cptra_obf_uds_seed[7]            |  — |
+| 0x0C0|             cptra_obf_uds_seed[8]            |  — |
+| 0x0C4|             cptra_obf_uds_seed[9]            |  — |
+| 0x0C8|            cptra_obf_uds_seed[10]            |  — |
+| 0x0CC|            cptra_obf_uds_seed[11]            |  — |
+| 0x0D0|            cptra_obf_uds_seed[12]            |  — |
+| 0x0D4|            cptra_obf_uds_seed[13]            |  — |
+| 0x0D8|            cptra_obf_uds_seed[14]            |  — |
+| 0x0DC|            cptra_obf_uds_seed[15]            |  — |
+| 0x0E0|          cptra_obf_field_entropy[0]          |  — |
+| 0x0E4|          cptra_obf_field_entropy[1]          |  — |
+| 0x0E8|          cptra_obf_field_entropy[2]          |  — |
+| 0x0EC|          cptra_obf_field_entropy[3]          |  — |
+| 0x0F0|          cptra_obf_field_entropy[4]          |  — |
+| 0x0F4|          cptra_obf_field_entropy[5]          |  — |
+| 0x0F8|          cptra_obf_field_entropy[6]          |  — |
+| 0x0FC|          cptra_obf_field_entropy[7]          |  — |
+| 0x100|                   lsu_user                   |  — |
+| 0x104|                   ifu_user                   |  — |
+| 0x108|                 dma_axi_user                 |  — |
+| 0x10C|                soc_config_user               |  — |
+| 0x110|               sram_config_user               |  — |
+| 0x114|               mcu_reset_vector               |  — |
+| 0x118|                   mci_error                  |  — |
+| 0x11C|                  mcu_config                  |  — |
+| 0x120|              uds_seed_base_addr              |  — |
+| 0x124|prod_debug_unlock_auth_pk_hash_reg_bank_offset|  — |
+| 0x128|    num_of_prod_debug_unlock_auth_pk_hashes   |  — |
+| 0x12C|          mci_generic_input_wires[0]          |  — |
+| 0x130|          mci_generic_input_wires[1]          |  — |
+| 0x134|          mci_generic_output_wires[0]         |  — |
+| 0x138|          mci_generic_output_wires[1]         |  — |
 
 ### fpga_magic register
 
@@ -136,8 +139,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |  1 |       cptra_ss_rst_b      |  rw  | 0x0 |  — |
 |  2 |   cptra_obf_uds_seed_vld  |  rw  | 0x0 |  — |
 |  3 |cptra_obf_field_entropy_vld|  rw  | 0x0 |  — |
-|  4 | force_mcu_dmi_core_enable |  rw  | 0x0 |  — |
-|  5 |force_mcu_dmi_uncore_enable|  rw  | 0x0 |  — |
+|  4 |           rsvd0           |  rw  | 0x0 |  — |
+|  5 |           rsvd1           |  rw  | 0x0 |  — |
 |  6 |      bootfsm_brkpoint     |  rw  | 0x0 |  — |
 |  7 |      ss_debug_intent      |  rw  | 0x0 |  — |
 |  8 | i3c_axi_user_id_filtering |  rw  | 0x0 |  — |
@@ -158,7 +161,7 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |  5 |  mailbox_data_avail |   r  | 0x0 |  — |
 |  6 |  mailbox_flow_done  |   r  | 0x0 |  — |
 
-### pauser register
+### arm_user register
 
 - Absolute Address: 0xA4010010
 - Base Offset: 0x10
@@ -166,7 +169,11 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 |Bits|Identifier|Access|Reset|Name|
 |----|----------|------|-----|----|
-|31:0|  pauser  |  rw  | 0x0 |  — |
+|31:0| arm_user |  rw  | 0x0 |  — |
+
+#### arm_user field
+
+<p>USER Value passed to AXI Interconnect for transactions initiated from the ARM core</p>
 
 ### itrng_divisor register
 
@@ -874,6 +881,10 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |----|----------|------|-----|----|
 |31:0| lsu_user |  rw  | 0x0 |  — |
 
+#### lsu_user field
+
+<p>SS USER Strap</p>
+
 ### ifu_user register
 
 - Absolute Address: 0xA4010104
@@ -884,15 +895,23 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |----|----------|------|-----|----|
 |31:0| ifu_user |  rw  | 0x0 |  — |
 
-### clp_user register
+#### ifu_user field
+
+<p>SS USER Strap</p>
+
+### dma_axi_user register
 
 - Absolute Address: 0xA4010108
 - Base Offset: 0x108
 - Size: 0x4
 
-|Bits|Identifier|Access|Reset|Name|
-|----|----------|------|-----|----|
-|31:0| clp_user |  rw  | 0x0 |  — |
+|Bits| Identifier |Access|Reset|Name|
+|----|------------|------|-----|----|
+|31:0|dma_axi_user|  rw  | 0x0 |  — |
+
+#### dma_axi_user field
+
+<p>SS USER Strap</p>
 
 ### soc_config_user register
 
@@ -904,6 +923,10 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |----|---------------|------|-----|----|
 |31:0|soc_config_user|  rw  | 0x0 |  — |
 
+#### soc_config_user field
+
+<p>SS USER Strap</p>
+
 ### sram_config_user register
 
 - Absolute Address: 0xA4010110
@@ -914,6 +937,10 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |----|----------------|------|-----|----|
 |31:0|sram_config_user|  rw  | 0x0 |  — |
 
+#### sram_config_user field
+
+<p>SS USER Strap</p>
+
 ### mcu_reset_vector register
 
 - Absolute Address: 0xA4010114
@@ -923,6 +950,10 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |Bits|   Identifier   |Access|Reset|Name|
 |----|----------------|------|-----|----|
 |31:0|mcu_reset_vector|  rw  | 0x0 |  — |
+
+#### mcu_reset_vector field
+
+<p>MCU Reset Vector Strap</p>
 
 ### mci_error register
 
@@ -950,10 +981,40 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 |  4 |cptra_ss_lc_esclate_scrap_state0_i|  rw  | 0x0 |  — |
 |  5 |cptra_ss_lc_esclate_scrap_state1_i|  rw  | 0x0 |  — |
 
-### mci_generic_input_wires register
+### uds_seed_base_addr register
 
 - Absolute Address: 0xA4010120
 - Base Offset: 0x120
+- Size: 0x4
+
+|Bits|    Identifier    |Access|Reset|Name|
+|----|------------------|------|-----|----|
+|31:0|uds_seed_base_addr|  rw  | 0x0 |  — |
+
+### prod_debug_unlock_auth_pk_hash_reg_bank_offset register
+
+- Absolute Address: 0xA4010124
+- Base Offset: 0x124
+- Size: 0x4
+
+|Bits|                  Identifier                  |Access|Reset|Name|
+|----|----------------------------------------------|------|-----|----|
+|31:0|prod_debug_unlock_auth_pk_hash_reg_bank_offset|  rw  | 0x0 |  — |
+
+### num_of_prod_debug_unlock_auth_pk_hashes register
+
+- Absolute Address: 0xA4010128
+- Base Offset: 0x128
+- Size: 0x4
+
+|Bits|               Identifier              |Access|Reset|Name|
+|----|---------------------------------------|------|-----|----|
+|31:0|num_of_prod_debug_unlock_auth_pk_hashes|  rw  | 0x0 |  — |
+
+### mci_generic_input_wires register
+
+- Absolute Address: 0xA401012C
+- Base Offset: 0x12C
 - Size: 0x4
 - Array Dimensions: [2]
 - Array Stride: 0x4
@@ -965,8 +1026,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 ### mci_generic_input_wires register
 
-- Absolute Address: 0xA4010124
-- Base Offset: 0x120
+- Absolute Address: 0xA4010130
+- Base Offset: 0x12C
 - Size: 0x4
 - Array Dimensions: [2]
 - Array Stride: 0x4
@@ -978,8 +1039,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 ### mci_generic_output_wires register
 
-- Absolute Address: 0xA4010128
-- Base Offset: 0x128
+- Absolute Address: 0xA4010134
+- Base Offset: 0x134
 - Size: 0x4
 - Array Dimensions: [2]
 - Array Stride: 0x4
@@ -991,8 +1052,8 @@ Don't override. Generated from: caliptra_fpga_realtime_regs
 
 ### mci_generic_output_wires register
 
-- Absolute Address: 0xA401012C
-- Base Offset: 0x128
+- Absolute Address: 0xA4010138
+- Base Offset: 0x134
 - Size: 0x4
 - Array Dimensions: [2]
 - Array Stride: 0x4

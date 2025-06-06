@@ -49,6 +49,11 @@ for {set i 0x0} {$i < 16} {incr i} {
     puts "Reading SRAM addr $rd_addr"
     set expected [expr {$rd_addr ^ 0xffffffff}]
     riscv dmi_write $MCI_DMI_MCU_SRAM_ADDR $rd_addr
+    set actual [riscv dmi_read $MCI_DMI_MCU_SRAM_ADDR]
+    if {[compare $actual $rd_addr] != 0} {
+        puts "mismatch in SRAM address $rd_addr! Actual $actual"
+        shutdown error
+    }
     set actual [riscv dmi_read $MCI_DMI_MCU_SRAM_DATA]
     if {[compare $actual $expected] != 0} {
         puts "mismatch in SRAM address $rd_addr!"

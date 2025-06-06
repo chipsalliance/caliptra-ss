@@ -43,7 +43,7 @@ import css_mcu0_el2_pkg::*;
 
    input logic dec_tlu_flush_noredir_wb, // Don't fetch on flush
    input logic exu_flush_final, // FLush
-   (* syn_keep = "true", mark_debug = "true" *) input logic [31:1] exu_flush_path_final, // Flush path
+   input logic [31:1] exu_flush_path_final, // Flush path
 
    input logic ifu_bp_hit_taken_f, // btb hit, select the target path
    input logic [31:1] ifu_bp_btb_target_f, //  predicted target PC
@@ -54,8 +54,8 @@ import css_mcu0_el2_pkg::*;
 
    input logic [31:0]  dec_tlu_mrac_ff ,   // side_effect and cacheable for each region
 
-   (* syn_keep = "true", mark_debug = "true" *) output logic [31:1] ifc_fetch_addr_f, // fetch addr F
-   (* syn_keep = "true", mark_debug = "true" *) output logic [31:1] ifc_fetch_addr_bf, // fetch addr BF
+   output logic [31:1] ifc_fetch_addr_f, // fetch addr F
+   output logic [31:1] ifc_fetch_addr_bf, // fetch addr BF
 
    output logic  ifc_fetch_req_f,  // fetch request valid F
 
@@ -72,13 +72,13 @@ import css_mcu0_el2_pkg::*;
 
    );
 
-   (* syn_keep = "true", mark_debug = "true" *) logic [31:1]  fetch_addr_bf;
-   (* syn_keep = "true", mark_debug = "true" *) logic [31:1]  fetch_addr_next;
+   logic [31:1]  fetch_addr_bf;
+   logic [31:1]  fetch_addr_next;
    logic [3:0]   fb_write_f, fb_write_ns;
 
    logic     fb_full_f_ns, fb_full_f;
    logic     fb_right, fb_right2, fb_left, wfm, idle;
-   (* syn_keep = "true", mark_debug = "true" *) logic     sel_last_addr_bf, sel_next_addr_bf;
+   logic     sel_last_addr_bf, sel_next_addr_bf;
    logic     miss_f, miss_a;
    logic     flush_fb, dma_iccm_stall_any_f;
    logic     mb_empty_mod, goto_idle, leave_idle;
@@ -105,7 +105,7 @@ import css_mcu0_el2_pkg::*;
    // - Sequential
 
 if(pt.BTB_ENABLE==1) begin : genblock1
-   (* syn_keep = "true", mark_debug = "true" *) logic sel_btb_addr_bf;
+   logic sel_btb_addr_bf;
 
    assign sel_last_addr_bf = ~exu_flush_final & (~ifc_fetch_req_f | ~ic_hit_f);
    assign sel_btb_addr_bf  = ~exu_flush_final & ifc_fetch_req_f & ifu_bp_hit_taken_f & ic_hit_f;

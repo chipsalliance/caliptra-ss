@@ -47,18 +47,18 @@ import css_mcu0_el2_pkg::*;
    input logic [31:0]                             ifu_fetch_data_f,         // fetch data in memory format - not right justified
 
    input logic [1:0]                              ifu_fetch_val,            // valids on a 2B boundary, right justified
-   (* syn_keep = "true", mark_debug = "true" *) input logic [31:1]                             ifu_fetch_pc,             // starting pc of fetch
+   input logic [31:1]                             ifu_fetch_pc,             // starting pc of fetch
 
 
 
-   (* syn_keep = "true", mark_debug = "true" *) output logic                                   ifu_i0_valid,             // Instruction 0 is valid
-   (* syn_keep = "true", mark_debug = "true" *) output logic                                   ifu_i0_icaf,              // Instruction 0 has access fault
-   (* syn_keep = "true", mark_debug = "true" *) output logic [1:0]                             ifu_i0_icaf_type,         // Instruction 0 access fault type
-   (* syn_keep = "true", mark_debug = "true" *) output logic                                   ifu_i0_icaf_second,       // Instruction 0 has access fault on second 2B of 4B inst
+   output logic                                   ifu_i0_valid,             // Instruction 0 is valid
+   output logic                                   ifu_i0_icaf,              // Instruction 0 has access fault
+   output logic [1:0]                             ifu_i0_icaf_type,         // Instruction 0 access fault type
+   output logic                                   ifu_i0_icaf_second,       // Instruction 0 has access fault on second 2B of 4B inst
 
    output logic                                   ifu_i0_dbecc,             // Instruction 0 has double bit ecc error
-   (* syn_keep = "true", mark_debug = "true" *) output logic [31:0]                            ifu_i0_instr,             // Instruction 0
-   (* syn_keep = "true", mark_debug = "true" *) output logic [31:1]                            ifu_i0_pc,                // Instruction 0 PC
+   output logic [31:0]                            ifu_i0_instr,             // Instruction 0
+   output logic [31:1]                            ifu_i0_pc,                // Instruction 0 PC
    output logic                                   ifu_i0_pc4,
 
    output logic                                   ifu_fb_consume1,          // Consumed one buffer. To fetch control fetch for buffer mass balance
@@ -101,8 +101,8 @@ import css_mcu0_el2_pkg::*;
    logic [1:0]                                    f0val_in, f0val;
    logic [1:0]                                    sf1val, sf0val;
 
-   (* syn_keep = "true", mark_debug = "true" *) logic [31:0]                                   aligndata;
-   (* syn_keep = "true", mark_debug = "true" *) logic                                          first4B, first2B;
+   logic [31:0]                                   aligndata;
+   logic                                          first4B, first2B;
 
    logic [31:0]                                   uncompress0;
    logic                                          i0_shift;
@@ -110,8 +110,8 @@ import css_mcu0_el2_pkg::*;
    logic                                          f1_shift_2B;
    logic                                          f2_valid, sf1_valid, sf0_valid;
 
-   (* syn_keep = "true", mark_debug = "true" *) logic [31:0]                                   ifirst;
-   (* syn_keep = "true", mark_debug = "true" *) logic [1:0]                                    alignval;
+   logic [31:0]                                   ifirst;
+   logic [1:0]                                    alignval;
    logic [31:1]                                   firstpc, secondpc;
 
    logic [11:0]                                   f1poffset;
@@ -168,16 +168,16 @@ import css_mcu0_el2_pkg::*;
    logic [1:0]                                    wrptr, wrptr_in;
    logic [1:0]                                    rdptr, rdptr_in;
    logic [2:0]                                    qwen;
-   (* syn_keep = "true", mark_debug = "true" *) logic [31:0]                                   q2,q1,q0;
+   logic [31:0]                                   q2,q1,q0;
    logic                                          q2off_in, q2off;
    logic                                          q1off_in, q1off;
    logic                                          q0off_in, q0off;
    logic                                          f0_shift_2B;
 
-   (* syn_keep = "true", mark_debug = "true" *) logic [31:0]                                   q0eff;
-   (* syn_keep = "true", mark_debug = "true" *) logic [31:0]                                   q0final;
+   logic [31:0]                                   q0eff;
+   logic [31:0]                                   q0final;
    logic                                          q0ptr;
-   (* syn_keep = "true", mark_debug = "true" *) logic [1:0]                                    q0sel;
+   logic [1:0]                                    q0sel;
 
    logic [31:0]                                   q1eff;
    logic [15:0]                                   q1final;
@@ -238,7 +238,7 @@ else begin : genblock1
                                                         );
 end
 
-  (* syn_keep = "true", mark_debug = "true" *) logic [31:1] q2pc, q1pc, q0pc;
+  logic [31:1] q2pc, q1pc, q0pc;
 
    css_mcu0_rvdffe #(31)           q2pcff        (.*, .clk(clk), .en(qwen[2]),        .din(ifu_fetch_pc[31:1]),     .dout(q2pc[31:1]));
    css_mcu0_rvdffe #(31)           q1pcff        (.*, .clk(clk), .en(qwen[1]),        .din(ifu_fetch_pc[31:1]),     .dout(q1pc[31:1]));
@@ -480,8 +480,8 @@ end
 
    assign q1final[15:0]      = ({16{q1sel[0]}} & q1eff[15:0] ) |
                                ({16{q1sel[1]}} & q1eff[31:16]);
-   (* syn_keep = "true", mark_debug = "true" *) logic [31:1] q0pceff, q0pcfinal;
-   (* syn_keep = "true", mark_debug = "true" *) logic [31:1] q1pceff;
+   logic [31:1] q0pceff, q0pcfinal;
+   logic [31:1] q1pceff;
 
    assign {q1pceff[31:1],q0pceff[31:1]} = (({62{qren[0]}} & {q1pc[31:1],q0pc[31:1]}) |
                                            ({62{qren[1]}} & {q2pc[31:1],q1pc[31:1]}) |
