@@ -147,6 +147,7 @@ module prim_generic_otp
   err_e err_d, err_q;
   logic valid_d, valid_q;
   logic integrity_en_d, integrity_en_q;
+  logic zeroize_q;
   logic req, wren, rvalid;
   logic [1:0] rerror;
   logic [AddrWidth-1:0] addr_q;
@@ -155,7 +156,6 @@ module prim_generic_otp
   logic cnt_clr, cnt_en;
   logic read_ecc_on, write_ecc_on;
   logic wdata_inconsistent;
-
 
   assign cnt_d = (cnt_clr) ? '0           :
                  (cnt_en)  ? cnt_q + 1'b1 : cnt_q;
@@ -338,12 +338,15 @@ module prim_generic_otp
                                  : rdata_ecc;
 
   // Read-modify-write (OTP can only set bits to 1, but not clear to 0).
-  assign wdata_rmw = (write_ecc_on) ? wdata_ecc | rdata_q[cnt_q]
-                                    : {{EccWidth{1'b0}}, wdata_q[cnt_q]} | rdata_q[cnt_q];
+  // If the write is a zeroization simply set ECC and data to 1.
+  assign wdata_rmw = zeroize_q    ? '1 :
+                     write_ecc_on ? wdata_ecc | rdata_q[cnt_q] :
+                     {{EccWidth{1'b0}}, wdata_q[cnt_q]} | rdata_q[cnt_q];
 
   // This indicates if the write data is inconsistent (i.e., if the operation attempts to
-  // clear an already programmed bit to zero).
-  assign wdata_inconsistent = (rdata_q[cnt_q] & wdata_ecc) != rdata_q[cnt_q];
+  // clear an already programmed bit to zero). Disable the writeblank check for zeroization
+  // writes.
+  assign wdata_inconsistent = !zeroize_q && ((rdata_q[cnt_q] & wdata_ecc) != rdata_q[cnt_q]);
 
   // Output data without ECC bits.
   always_comb begin : p_output_map
@@ -395,6 +398,7 @@ module prim_generic_otp
       cnt_q   <= '0;
       size_q  <= '0;
       integrity_en_q <= 1'b0;
+      zeroize_q <= 1'b0;
     end else begin
       valid_q <= valid_d;
       err_q   <= err_d;
@@ -404,6 +408,11 @@ module prim_generic_otp
         addr_q  <= addr_i;
         wdata_q <= wdata_i;
         size_q  <= size_i;
+        if (mubi4_test_true_strict(zeroize_i)) begin
+          zeroize_q <= 1'b1;
+        end else begin
+          zeroize_q <= 1'b0;
+        end
       end
       if (rvalid) begin
         rdata_q[cnt_q] <= rdata_d;
