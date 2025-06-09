@@ -397,16 +397,10 @@ module otp_ctrl
     // Intercept write requests to the `VENDOR_HASHES_PROD` partition and verify
     // the write is allowed by the volatile lock of the `VENDOR_PK_HASH_VOLATILE LOCK` register.
     if (NumVendorPkFuses > 1) begin
-
-      localparam int prod_vendor_hash_num   = NumVendorPkFuses-1;
-      localparam int prod_vendor_hash_size  = CptraCoreVendorPkHash1Size + CptraCorePqcKeyType1Size;
-      localparam int prod_vendor_hash_start = CptraCoreVendorPkHash1Offset;
-      localparam int prod_vendor_hash_end   = CptraCoreVendorPkHash1Offset + (prod_vendor_hash_size * prod_vendor_hash_num);
-
       if (dai_cmd == DaiWrite && reg2hw.vendor_pk_hash_volatile_lock != '0 &&
-          dai_addr >= prod_vendor_hash_start &&
-          dai_addr < prod_vendor_hash_end) begin
-        if (32'(dai_addr) >= (prod_vendor_hash_start + ((reg2hw.vendor_pk_hash_volatile_lock-1) * prod_vendor_hash_size))) begin
+          dai_addr >= ProdVendorHashStart &&
+          dai_addr < ProdVendorHashEnd) begin
+        if (32'(dai_addr) >= (ProdVendorHashStart + ((reg2hw.vendor_pk_hash_volatile_lock-1) * ProdVendorHashSize))) begin
           part_access_pre[VendorHashesProdPartitionIdx].write_lock = MuBi8True;
         end
       end
