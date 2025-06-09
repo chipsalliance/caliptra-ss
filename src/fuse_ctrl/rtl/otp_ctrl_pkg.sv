@@ -32,6 +32,10 @@ package otp_ctrl_pkg;
   // values have been drawn from it.
   parameter int LfsrUsageThreshold = 16;
 
+  // A partition is deemed to be in a zeroization state if its digest
+  // field contains a predefined number of set bits.
+  parameter int ZeroizationThreshold = 64;
+
   // Redundantly encoded and complementary values are used to for signalling to the partition
   // controller FSMs and the DAI whether a partition is locked or not. Any other value than
   // "Mubi8Lo" is interpreted as "Locked" in those FSMs.

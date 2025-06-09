@@ -191,15 +191,17 @@ module otp_ctrl_part_buf
   // Disable zeroization.
   assign otp_zeroize_o = caliptra_prim_mubi_pkg::MuBi4False;
 
+  // Indicator of whether the partition is in a zeroized state.
+  logic is_zeroized;
+  assign is_zeroized = $countones(digest_o) >= ZeroizationThreshold;
+
   // Depending on the partition configuration, the wrapper is instructed to ignore integrity
   // calculations and checks. To be on the safe side, the partition filters error responses at this
   // point and does not report any integrity errors if integrity is disabled.
   otp_err_e otp_err;
   if (Info.integrity) begin : gen_integrity
-    assign otp_cmd_o = caliptra_prim_otp_pkg::Read;
     assign otp_err = otp_err_e'(otp_err_i);
   end else begin : gen_no_integrity
-    assign otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
     always_comb begin
       if (otp_err_e'(otp_err_i) inside {MacroEccCorrError, MacroEccUncorrError}) begin
         otp_err = NoError;
@@ -217,6 +219,7 @@ module otp_ctrl_part_buf
 
     // OTP signals
     otp_req_o = 1'b0;
+    otp_cmd_o = Info.integrity ? caliptra_prim_otp_pkg::Read : caliptra_prim_otp_pkg::ReadRaw;
 
     // Scrambling mutex
     scrmbl_mtx_req_o = 1'b0;
@@ -265,6 +268,7 @@ module otp_ctrl_part_buf
       // has been granted.
       InitDigSt: begin
         otp_req_o = 1'b1;
+        otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
         base_sel = DigOffset;
         if (otp_gnt_i) begin
           state_d = InitDigWaitSt;
@@ -301,9 +305,17 @@ module otp_ctrl_part_buf
         // have to be descrambled.
         if (((cnt == NumScrmblBlocks-1) && Info.hw_digest) ||
             ((cnt == NumScrmblBlocks)   && !Info.hw_digest)) begin
-          state_d = IntegDigClrSt;
+          // Skip consistency and integrity checks when in zeroized state.
+          if (is_zeroized) begin
+            state_d = IdleSt;
+          end else begin
+            state_d = IntegDigClrSt;
+          end
         end else begin
           otp_req_o = 1'b1;
+          if (is_zeroized) begin
+            otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+          end
           if (otp_gnt_i) begin
             state_d = InitWaitSt;
           end
@@ -319,12 +331,16 @@ module otp_ctrl_part_buf
           buffer_reg_en = 1'b1;
           if (otp_err inside {NoError, MacroEccCorrError}) begin
             // Descramble if this is a scrambled partition. Otherwise, we can just go back
-            // to InitSt and read the next block.
-            if (Info.secret) begin
+            // to InitSt and read the next block. If the partition is in a zeroized state
+            // do not descramble the read out data.
+            if (Info.secret && !is_zeroized) begin
               state_d = InitDescrSt;
             end else begin
               state_d = InitSt;
               cnt_en = 1'b1;
+              if (mubi8_test_true_strict(dout_locked_q)) begin
+                dout_locked_d = MuBi8False;
+              end
             end
             // At this point the only error that we could have gotten are correctable ECC errors.
             if (otp_err != NoError) begin
@@ -369,18 +385,20 @@ module otp_ctrl_part_buf
       // Idle state. We basically wait for integrity and consistency check
       // triggers in this state.
       IdleSt: begin
-        if (integ_chk_req_i) begin
-          if (Info.hw_digest) begin
-            state_d = IntegDigClrSt;
-          // In case there is nothing to check we can just
-          // acknowledge the request right away, without going to the
-          // integrity check.
-          end else begin
-            integ_chk_ack_o = 1'b1;
+        if (!is_zeroized) begin
+          if (integ_chk_req_i) begin
+           if (Info.hw_digest) begin
+              state_d = IntegDigClrSt;
+            // In case there is nothing to check we can just
+            // acknowledge the request right away, without going to the
+            // integrity check.
+            end else begin
+              integ_chk_ack_o = 1'b1;
+           end
+          end else if (cnsty_chk_req_i) begin
+           state_d = CnstyReadSt;
+           cnt_clr = 1'b1;
           end
-        end else if (cnsty_chk_req_i) begin
-          state_d = CnstyReadSt;
-          cnt_clr = 1'b1;
         end
       end
       ///////////////////////////////////////////////////////////////////

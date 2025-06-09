@@ -145,15 +145,17 @@ module otp_ctrl_part_unbuf
   // Disable zeroization.
   assign otp_zeroize_o = caliptra_prim_mubi_pkg::MuBi4False;
 
+  // Indicator of whether the partition is in a zeroized state.
+  logic is_zeroized;
+  assign is_zeroized = $countones(digest_o) >= ZeroizationThreshold;
+
   // Depending on the partition configuration, the wrapper is instructed to ignore integrity
   // calculations and checks. To be on the safe side, the partition filters error responses at this
   // point and does not report any integrity errors if integrity is disabled.
   otp_err_e otp_err;
   if (Info.integrity) begin : gen_integrity
-    assign otp_cmd_o = caliptra_prim_otp_pkg::Read;
     assign otp_err = otp_err_e'(otp_err_i);
   end else begin : gen_no_integrity
-    assign otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
     always_comb begin
       if (otp_err_e'(otp_err_i) inside {MacroEccCorrError, MacroEccUncorrError}) begin
         otp_err = NoError;
@@ -174,6 +176,7 @@ module otp_ctrl_part_unbuf
     // OTP signals
     otp_req_o   = 1'b0;
     otp_addr_sel = DigestAddrSel;
+    otp_cmd_o = Info.integrity ? caliptra_prim_otp_pkg::Read : caliptra_prim_otp_pkg::ReadRaw;
 
     // TL-UL signals
     tlul_gnt_o      = 1'b0;
@@ -208,6 +211,7 @@ module otp_ctrl_part_unbuf
       // And then wait until the OTP word comes back.
       InitSt: begin
         otp_req_o = 1'b1;
+        otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
         if (otp_gnt_i) begin
           state_d = InitWaitSt;
         end
@@ -236,7 +240,7 @@ module otp_ctrl_part_unbuf
       // Then latch address and go to readout state.
       IdleSt: begin
         init_done_o = 1'b1;
-        if (tlul_req_i) begin
+        if (tlul_req_i && !is_zeroized) begin
           error_d = NoError; // clear recoverable soft errors.
           state_d = ReadSt;
           tlul_gnt_o = 1'b1;
