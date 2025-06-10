@@ -354,25 +354,26 @@ In all cases other than reading Recovery Interface Payloads, the block\_size reg
 The DMA block can directly stream images from AXI to AES for decrypte/encrypt, and then stream the processed image over AXI to some SOC storage. This can be done by configuring the AXI DMA as:
 
 * AES Mode == 1
+* (optional) aes_gcm_mode in DMA == 1
 * Read Route == AXI
 * Write Route == AXI
 * Block Size == 0 (OCP Stream Boot Disabled)
 * Source Address == Start of image
 * Destination Address == Start address where processed image should be stored
-* Configure Byte Count
+* Configure Byte Count - must be DWORD aligned
 
 Other Read/Write Routes and Block sizes are not supported.
 
 The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware's responsibility to:
 
 1. Fully configure AES before streaming the image via AXI DMA
-2. Push the AAD header into AES before streaming the image via AXI DMA
+2. Push the IV, AAD header, or any other data into AES before streaming the image via AXI DMA
 3. Retrieve any tags from AES after the image has been processed.
  
 
-If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly pad the AES input data with 0s and update the byte count at the end of the image. When streaming the image out it will only write the exact BYTE COUNT to the destination. Meaning it will utilize AXI WSTRB if the image is not a multiple of 1 DWORD.
+If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly pad the AES input data with 0s. When streaming the image out it will only write the last DWORD to the destination. If ``aes_gcm_mode`` is set, at the start of the transfer it updates the GCM shadow byte count and phase registers in AES to the appropriate byte count and GCM_TEXT phase. Before the last block transfer to the AES it will again update the GCM shadow register to the appropriate values. 
 
-If AXI DMA encounters any errors (AXI or other errors) it will abort the transfer. It is the Firmware's responsiblity to clear the error in the AXI DMA and flush the AES if required. 
+If AXI DMA encounters any errors (AXI or other errors) it will finish the transfer and report an error. It is the Firmware's responsiblity to clear the error in the AXI DMA and flush the AES if required. 
 
 When AXI DMA is using AES Caliptra shall not try to access AES via AHB until AXI DMA has completed.
 
@@ -392,7 +393,7 @@ General Rules:
 4. If Read Route is disabled, Write route must be enabled to a configuration that is not AXI RD \-\> AXI WR.  
 5. If Read Route is disabled, Read Fixed field is ignored.  
 6. If Write Route is disabled, Write Fixed field is ignored.  
-7. Addresses must be aligned to AXI data width (1 DWORD).
+7. Addresses and Byte Counts must be aligned to AXI data width (1 DWORD).
 8. Block Size is used only for reads from the Subsystem Recovery Interface. When block size has a non-zero value, the DMA will only issue AXI read requests when the payload available input signal is set to 1, and will limit the size of read requests to the value of block size. For all other transactions (such as AXI writes, or any single-dword access to a subsystem register via the DMA), block size shall be set to a value of 0 for every transaction.
 9. AES mode is only used with AXI RD -> AXI WR and must be used with Block Size 0.
 
@@ -410,10 +411,11 @@ Steps:
    2. Initiate Sha Accel streaming operation via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
    3. Run this operation with the AXI RD \-\> AXI WR route to move data from SoC location into Sha Accelerator  
 8. If AES Mode:
-   1. Fully configure AES
+   1. Fully configure AES with IV, KEY, etc.
    2. Stream in any header info to AES like AAD
    3. Set read/write routes to AXI
    4. Set AES_MODE in DMA
+   5. Set aes_gcm_mode in DMA if this is the AES mode
 9.  Set Control Register  
    1. Set Read/Write Routes  
    2. Set Read/Write Fixed=0/1  
