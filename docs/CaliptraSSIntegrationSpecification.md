@@ -558,7 +558,7 @@ Integrator must connect following list of manager and subordinates to axi interc
     | 64'h1000_0000    | 64'h1FFF_FFFF    | -             | 0           | n/a               | Reserved    |
     | 64'h2000_4000    | 64'h2000_4FFF    | 12            | 1           | I3c               | I3C Core                  |
     | 64'h8000_0000    | 64'h80FF_FFFF    | 24            | 2           | MCU ROM           | MCU ROM                  |
-    | 64'hA002_0000    | 64'hA003_FFFF    | 18            | 3           | SoC IFC           | Caliptra Core AXI subordinate interface |
+    | 64'hA002_0000    | 64'hA003_FFFF    | 17            | 3           | SoC IFC           | Caliptra Core AXI subordinate interface |
     | 64'h2100_0000    | 64'h21DF_FFFF    | 24            | 4           | MCI               | Manufacturer Control Interface (for MCU) |
     | 64'h7000_0000    | 64'h7000_01FF    | 9             | 5           | Fuse Ctrl         | Fuse Controller           |
     | 64'h7000_0400    | 64'h7000_05FF    | 9             | 6           | Life Cycle Ctrl   | Life Cycle Controller     |
