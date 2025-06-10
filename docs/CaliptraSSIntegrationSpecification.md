@@ -53,6 +53,7 @@
   - [Parameters \& Defines](#parameters--defines-2)
   - [Interface](#interface)
   - [Fuse Macro Memory Map and Fuse Controller CSR Address Map](#fuse-macro-memory-map-and-fuse-controller-csr-address-map)
+    - [**SOC\_SPECIFIC\_IDEVID\_CERTIFICATE Usage**](#soc_specific_idevid_certificate-usage)
   - [FC Integration Requirements](#fc-integration-requirements)
   - [Direct Access Interface](#direct-access-interface)
   - [Initialization](#initialization)
@@ -70,7 +71,7 @@
   - [Overview](#overview-5)
   - [Parameters \& Defines](#parameters--defines-3)
   - [Interface](#interface-1)
-  - [Memory Map / Address Map](#memory-map--address-map)
+  - [Fuse Macro Memory Map / Fuse Controller CSR Address Map](#fuse-macro-memory-map--fuse-controller-csr-address-map)
   - [LC Integration Requirements](#lc-integration-requirements)
   - [Programming Interface](#programming-interface-2)
   - [Sequences: Reset, Boot](#sequences-reset-boot-1)
@@ -82,7 +83,7 @@
   - [Overview](#overview-6)
   - [Parameters \& Defines](#parameters--defines-4)
   - [Interface](#interface-2)
-  - [Memory Map	/ Address map](#memory-map-address-map-1)
+  - [Memory Map	/ Address map](#memory-map-address-map)
     - [Top Level Memory Map](#top-level-memory-map)
     - [MCU SRAM Memory Map](#mcu-sram-memory-map)
   - [MCI Integration Requirements](#mci-integration-requirements)
@@ -554,11 +555,11 @@ Integrator must connect following list of manager and subordinates to axi interc
 
     | Start Address    | End Address      | Address Width | Subordinate | Name              | Description               |
     |------------------|------------------|---------------|-------------|-------------------|---------------------------|
-    | 64'h1000_0000    | 64'h1000_FFFF    | 16            | 0           | imem              | MCU Instruction memory    |
+    | 64'h1000_0000    | 64'h1FFF_FFFF    | -             | 0           | n/a               | Reserved    |
     | 64'h2000_4000    | 64'h2000_4FFF    | 12            | 1           | I3c               | I3C Core                  |
-    | 64'h8000_0000    | 64'h80FF_FFFF    | -             | 2           | n/a               | Reserved                  |
-    | 64'hA000_0000    | 64'hA007_FFFF    | 19            | 3           | SoC IFC           | Caliptra Core AXI subordinate interface |
-    | 64'h2100_0000    | 64'h21FF_FFFF    | 24            | 4           | MCI               | Manufacturer Control Interface (for MCU) |
+    | 64'h8000_0000    | 64'h80FF_FFFF    | 24            | 2           | MCU ROM           | MCU ROM                  |
+    | 64'hA002_0000    | 64'hA003_FFFF    | 17            | 3           | SoC IFC           | Caliptra Core AXI subordinate interface |
+    | 64'h2100_0000    | 64'h21DF_FFFF    | 24            | 4           | MCI               | Manufacturer Control Interface (for MCU) |
     | 64'h7000_0000    | 64'h7000_01FF    | 9             | 5           | Fuse Ctrl         | Fuse Controller           |
     | 64'h7000_0400    | 64'h7000_05FF    | 9             | 6           | Life Cycle Ctrl   | Life Cycle Controller     |
 
