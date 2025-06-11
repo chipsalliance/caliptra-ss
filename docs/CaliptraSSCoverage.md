@@ -2,6 +2,8 @@
 
 This section provides an overview of the coverage for the Caliptra Subsystem (SS) and its components. Each subsystem block is linked to its coverage dashboard and notes for further insights.
 
+*Baseline Life Cycle Controller & Fuse controller are reusing silicon proven hardware module from open titan. Please follow the links to see the baseline coverage.
+
 | Subsystem Block             | Description                                      | Line      | Toggle    | Condition | Branch    | Link to Coverage                  | Notes                                                   |
 |-----------------------------|--------------------------------------------------|-----------|-----------|-----------|-----------|-----------------------------------|---------------------------------------------------------|
 | **Caliptra SS Top**         | Top-level block of the Caliptra Subsystem.       | 100.00%   |  97.40%   | 100.00%   | 100.00%   |                                   |                                                         |
