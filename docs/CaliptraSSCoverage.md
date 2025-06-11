@@ -4,31 +4,31 @@ This section provides an overview of the coverage for the Caliptra Subsystem (SS
 
 | Subsystem Block             | Description                                      | Line      | Toggle    | Condition | Branch    | Link to Coverage                  | Notes                                                   |
 |-----------------------------|--------------------------------------------------|-----------|-----------|-----------|-----------|-----------------------------------|---------------------------------------------------------|
-| **Caliptra SS Top**         | Top-level block of the Caliptra Subsystem.       | 100.00%   |  97.40%   | 100.00%   | 100.00%   | [SS Top Coverage](#)              |                                                         |
-| **I3C instance**            | Core implementing the I3C protocol.              |           |  96.71%   |           |           |                                   | Only toggle coverage                                    |
-| **I3C Core**                | I3C core.                                        |           |           |           |           | [I3C Core Coverage](#)            | Reusable Module                                    |
+| **Caliptra SS Top**         | Top-level block of the Caliptra Subsystem.       | 100.00%   |  97.40%   | 100.00%   | 100.00%   |                                   |                                                         |
+| **I3C instance**            | Core implementing the I3C protocol.              |           |  96.71%   |           |           |                                   | Integration coverage only.                                    |
+| **I3C Core**                | I3C core.                                        |           |           |           |           | [I3C Core Coverage](https://chipsalliance.github.io/i3c-core/coverview.html#/)            | Reusable Module                                    |
 | **MCI**                     | Memory Controller Interface.                     | 100.00%   |  97.99%   | 100%      | 100.00%   | [MCI Coverage](#)                 | [MCI Coverage Analysis](#mci-coverage-analysis-summary) |
-| **Fuse CTRL (Baseline)**    |                                                  |           |           |           |           | [FCC Baseline Coverage](#)        | Reusable Module                                    |
+| **Fuse CTRL (Baseline)**    |                                                  |           |           |           |           | [FCC Baseline Coverage](https://reports.opentitan.org/hw/ip/otp_ctrl/dv/latest/report.html)        | Reusable Module                                    |
 | **Fuse CTRL (Delta)**       | Fuse Controller with delta changes.              |  97.69%   | 100.99%   | 100.00%   | 100.00%   | [FCC Coverage](#)                 | [Fuse Controller Coverage Notes](#fuse-controller-coverage-analysis)   |
-| **LCC (Baseline)**          | Life cycle controller baseline config.           |           |           |           |           | [LCC Baseline Coverage](#)        | Reusable Module                                    |
+| **LCC (Baseline)**          | Life cycle controller baseline config.           |           |           |           |           | [LCC Baseline Coverage](https://reports.opentitan.org/hw/ip/lc_ctrl_volatile_unlock_enabled/dv/latest/report.html)        | Reusable Module                                    |
 | **LCC (Delta)**             | Life cycle controller with delta changes.        | 100.00%   | 100.00%   | 100.00%   | 100.00%   |                                   | [LCC Coverage Notes](#life-cycle-controller-coverage-analysis)        |
 | **AXI2TLUL**                | AXI to TLUL protocol conversion gasket.          | 100.00%   | 100.00%   | 100.00%   | 100.00%   | [AXI2TLUL Gasket Coverage](#)     | [AXI2TLUL Coverage Notes](#axi2tlul-coverage-analysis)  | 
-| **mcu_rom_i**               | MCU ROM instance.                                |           | 100.00%   |           |           |                                   |                                                         |
-| **MCU_wrapper**             | Instance of VeeR-EL2 RISC-V Core                 |           | 96.23%    |           |           |                                   | Only toggle coverage                                    |
-| **MCU**                     | VeeR-EL2 RISC-V core.                            |           |           |           |           | [VeeR Core Coverage](#)           | Reusable Module                                    |
-   ---
-## Caliptra Core Coverage Dashboard
-This section provides an overview of the coverage for the Caliptra Core and its components. Each core block is linked to its coverage dashboard and notes for further insights.
+| **MCU ROM**               | MCU ROM instance.                                |           | 100.00%   |           |           |                                   |                                                         |
+| **MCU_wrapper**             | Instance of VeeR-EL2 RISC-V Core                 |           | 96.23%    |           |           |                                   | Integration coverage Only.                                   |
+| **MCU**                     | VeeR-EL2 RISC-V core.                            |           |           |           |           | [VeeR Core Coverage](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/coverage_dashboard/all/#/?flatFileList=false&hideNotCovered=false)   | Reusable Module                                    |
+  ---
+  ## Caliptra Core Coverage Dashboard
 
-| Calitptra Core Block   | Description                                         | Line    | Toggle  | Condition | Branch  | Link to Coverage                    | Notes      |
-|------------------------|-----------------------------------------------------|---------|---------|-----------|---------|-------------------------------------|-----------------------------|
-| **Caliptra Core Top**  | Top-level block of the Caliptra Core.               |         |         |           |         | [Caliptra Core Coverage](#)         | [Coming Soon](#)            |
-| **VeerEl2 Core**       | Instance of the VeeR-EL2 RISC-V core.               |         |         |           |         | [RISCV VeeR El2 Coverage](#)        | [Coming Soon](#)            |
-| **MLDSA**              | Multi-Lane Digital Signature Accelerator.           |         |         |           |         | [MLDSA FPV Coverage](/docs/coverage_reports/Adams%20Bridge%20FPV%20Coverage%20Report%20from%20Lubis%200611.pdf)             | MLDSA went through FPV and the coverage shows the instance/interface here.            |
-| **AES**                | Advanced Encryption Standard block for crypto ops.  |         |         |           |         | [AES Coverage](/docs/coverage_reports/Caliptra%20FPV%20Coverage%20Report%20from%20Lubis.pdf)                  | [Coming Soon](#)            |
-| **SOC Interface**      | Interface block for System-on-Chip communication.   |         |         |           |         | [SOC Interface Coverage](#)          | [Coming Soon](#)            |
-| **cryptos (ECC, HMAC, SHA, DOE)** | | | | | [Crypto FPV Coveage](/docs/coverage_reports/Caliptra%20FPV%20Coverage%20Report%20from%20Lubis.pdf) |silicon proven through 1.x |
+  This section provides an overview of the coverage for the Caliptra Core and its components. Each core block is linked to its coverage dashboard and notes for further insights.
 
+  | Caliptra Core Block    | Description                                         | Link to Coverage                                                                 | Notes                                                      |
+  |------------------------|-----------------------------------------------------|----------------------------------------------------------------------------------|------------------------------------------------------------|
+  | **Caliptra Core Top**  | Top-level block of the Caliptra Core.               | [Caliptra Core Coverage](#)                                                       | [Coming Soon](#)                                          |
+  | **VeerEl2 Core**       | Instance of the VeeR-EL2 RISC-V core.               | [RISCV VeeR El2 Coverage](#)                                                      | [Coming Soon](#)                                          |
+  | **MLDSA**              | Multi-Lane Digital Signature Accelerator.           | [MLDSA FPV Coverage](/docs/coverage_reports/Adams%20Bridge%20FPV%20Coverage%20Report%20from%20Lubis%200611.pdf) | MLDSA went through FPV and the coverage shows the instance/interface here. |
+  | **AES**                | Advanced Encryption Standard block for crypto ops.  | [AES Coverage](/docs/coverage_reports/AES-GCM%20DV%20Test%20Report.pdf) <br> [Coverage Link](https://reports.opentitan.org/hw/ip/aes_masked/dv/latest/report.html) |                                                            |
+  | **SOC Interface**      | Interface block for System-on-Chip communication.   | [SOC Interface Coverage](#)                                                        | [Coming Soon](#)                                         |
+  | **cryptos (ECC, HMAC, SHA, DOE)** | Crypto blocks for ECC, HMAC, SHA, and DOE. | [Crypto FPV Coverage](/docs/coverage_reports/Caliptra%20FPV%20Coverage%20Report%20from%20Lubis.pdf) | Silicon proven through 1.x            |
 
 ---
 
