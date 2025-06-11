@@ -37,8 +37,8 @@ This section provides an overview of the coverage for the Caliptra Core and its 
 ### Module: i_boot_seqr
 
 #### Coverage Metrics
-- **Line Coverage:** 99.19%
-- **Toggle Coverage:** 100% with exclusions
+- **Line Coverage:** High, with minor exclusions
+- **Toggle Coverage:** Complete with exclusions
     - Exclusions on mci_boot_seq_brkpoint and mcu_no_rom_config because we expect these to be static while MCI is out of reset.
     - The following signals only a posedge is seen due to signals being set before MCI is out of reset and the signal propagates through a synchronizer.
         - mci_boot_seq_brkpoint_sync
@@ -48,18 +48,18 @@ This section provides an overview of the coverage for the Caliptra Core and its 
     - Signals that are set only when MCI is out of reset meaning only posedge is seen
         - mcu_reset_once
         - mcu_reset_once_next 
-- **FSM Coverage:** 100% with exclusions
+- **FSM Coverage:** Complete with exclusions
    - Transitions into BOOT_IDLE (warm reset) are architecturally only allowed in BOOT_WAIT_CPTRA_GO and BOOT_WAIT_MCU_RST_REQ. All other transitions are not allowed unless it is a cold reset. Cold reset is no different than what we test on all our boot sequences, so no need to add this coverage in our DV env
-- **Condition Coverage:** 100% with exclusions
+- **Condition Coverage:** Complete with exclusions
    - Line 356 - expected since (1,0) event is captured by an above case meaning this will never be hit.
-- **Branch Coverage:** 100% with exclusions
+- **Branch Coverage:** Complete with exclusions
     - Exclusions due to missing "ELSE" statements that are OK to be missing and we don't expect the FSM to be in "default" state. 
 
 ### Module: i_mci_axi_sub_decode
 
 #### Coverage Metrics
-- **Line Coverage:** 100%
-- **Toggle Coverage:** 100% with exclusions
+- **Line Coverage:** Complete
+- **Toggle Coverage:** Complete with exclusions
     - Straps with no expected toggling
         - strap_mci_soc_config_axi_user
             - Randomized in testing
@@ -75,90 +75,88 @@ This section provides an overview of the coverage for the Caliptra Core and its 
             - Have directed test setting before MCI is out of reset
 - **FSM Coverage:** NA
  
-- **Condition Coverage:** 100%
+- **Condition Coverage:** Complete
 
-- **Branch Coverage:** 100%
+- **Branch Coverage:** Complete
 
 ### Module: i_mci_mcu_sram_ctrl
 
 #### Coverage Metrics
-- **Line Coverage:** 100%
-- **Toggle Coverage:** 98.42% with exclusions
+- **Line Coverage:** Complete
+- **Toggle Coverage:** High with exclusions
     - Exclusions due to tieoffs
     - Missing coverage due to not crossing dmi with AXI traffic generating a DMI AXI Collision error. TB is hard to hit this scenario and we are OK with not detecting this error since it is not core functionality and more of a "nice to have" feature
 
 - **FSM Coverage:** NA
  
-- **Condition Coverage:** 100% 
+- **Condition Coverage:** Complete
 
-- **Branch Coverage:** 100%
+- **Branch Coverage:** Complete
 
 ### Module: i_mci_mcu_trace_buffer
 
 #### Coverage Metrics
-- **Line Coverage:** 100%
-- **Toggle Coverage:** 99.54% with exclusions
+- **Line Coverage:** Complete
+- **Toggle Coverage:** High with exclusions
     - Exclusions added for tieoffs within our design.
     - Exclusions added due to pointers not getting full coverage because size of trace buffer does not fully utilize the 32 bit pointers
 - **FSM Coverage:** NA
 
-- **Condition Coverage:** 100% with exclusions
+- **Condition Coverage:** Complete with exclusions
 
-- **Branch Coverage:** 100% with exclusions
+- **Branch Coverage:** Complete with exclusions
     - Exclusions due to "MISSING ELSE" statements
-
 
 ### Module: i_mci_reg_top
 
 #### Coverage Metrics
-- **Line Coverage:** 98.43% with exclusions
-- **Toggle Coverage:** 96.47% with exclusions
+- **Line Coverage:** High with exclusions
+- **Toggle Coverage:** High with exclusions
     - Many exclusions added due to tieoffs in our design example are agg error signals tied off a SS level.
     - Many exclusions due to counters we only care about it toggling once. Example the interrupt timers
     - The readback_array was also excluded because this is redundant coverage showing if we read certain registers. Better to look at the actual registers than this readback array. 
 - **FSM Coverage:** NA
  
-- **Condition Coverage:** 95.37% with exclusions
+- **Condition Coverage:** High with exclusions
 
-- **Branch Coverage:** 98.35% with exclusions
+- **Branch Coverage:** High with exclusions
 
 ### Module: i_mci_wdt_top
 
 #### Coverage Metrics
-- **Line Coverage:** 100%
-- **Toggle Coverage:** 100% with exclusions
+- **Line Coverage:** Complete
+- **Toggle Coverage:** Complete with exclusions
     - Only missing toggle are the timer1_count and timer2_count upper bits. These counters do not connect externally and we have verified much of this logic within Caliptra. We deem it OK that some of the upper bits haven't been hit after inspecting the RTL. 
 - **FSM Coverage:** NA
  
-- **Condition Coverage:** 95.83%
+- **Condition Coverage:** High
 
-- **Branch Coverage:** 100%
-
+- **Branch Coverage:** Complete
 
 ### Module: mcu_mbox*
 
 #### Coverage Metrics
-- **Line Coverage:** 100%
-- **Toggle Coverage:** 99.88% with exclusions
+- **Line Coverage:** Complete
+- **Toggle Coverage:** High with exclusions
     - Exclusions due to tieoffs in the design
     - MBOX_SRA.addr upper bits never toggle due to size of SRAM in our TB. We tested 2MB SRAM in a size TB but never put into regression. When our ENV supports multiple models we will add this coverage
 - **FSM Coverage:** NA
  
-- **Condition Coverage:** 100% with exclusions
+- **Condition Coverage:** Complete with exclusions
     - Some impossible conditions cannot be met, so excluded from coverage
 
-- **Branch Coverage:** 100%
+- **Branch Coverage:** Complete
 
 ### Module: LCC_state_translator
 
 #### Coverage Metrics
 General statement for LCC module, we need a new Caliptra ROM to get tests passing. Many of the missed coverages we have seen toggle before but due to failing tests we are not seeing the coverage. 
 
-- **Line Coverage:** 85.9%
-- **Toggle Coverage:** 84.97%
-- **FSM Coverage:** 71.43%
-- **Condition Coverage:** 71.88%
-- **Branch Coverage:** 79.31%
+- **Line Coverage:** Moderate
+- **Toggle Coverage:** Moderate
+- **FSM Coverage:** Moderate
+- **Condition Coverage:** Moderate
+- **Branch Coverage:** Moderate
 
 ---
 ## lc_ctrl Coverage Analysis
@@ -181,7 +179,7 @@ refer to the OpenTitan coverage dashboard:
 
 ### Module: lc_ctrl_fsm
 
-#### Line Coverage: 95%
+#### Line Coverage: High
 
 An invalid transition error is not covered during the token check phases. This
 is the second check of this nature. Since there is no update on the error logic,
@@ -189,14 +187,14 @@ OpenTitan coverage needs to be taken into account.
 
   - RTL: lc_ctrl_fsm.sv+492
 
-#### Toggle Coverage: 78%
+#### Toggle Coverage: Moderate
 
 Three error ports (token_hash_err_i, token_if_fsm_err_i, otp_prog_err_i) are
 not toggled. The former two are toggled, while programming the new lc state
 and counter. The logic drives these error signals are not updated and
 therefore OpenTitan coverage report is referred.
 
-#### Branch Coverage: 92%
+#### Branch Coverage: High
 
 The transition from the FSM idle state into SCRAP is not covered but will be
 covered in upcoming release.
@@ -334,17 +332,16 @@ data sheet the defines the remaining CSRs. Note that the only truly new
 register that is not tied to a partition and not found in OpenTitan is the
 public-key hash volatile lock.
 
-  - Coverage: > 99%. This is tracked through a dedicated covergroup
+  - Coverage: Near complete. This is tracked through a dedicated covergroup
     that records whether all writable registers are written and all readable
     ones are read correctly.
 
 ### Module: fuse_ctrl_filter
 
-
 The AXI filter is the only custom unit in the Caliptra-SS fuse_ctrl as such
 the coverage metrics are analyzed individual below.
 
-#### Line Coverage: 94%
+#### Line Coverage: High
 
 Two branches in the IDLE_ST and WDATA_ST are unaccounted for. Each 64-bit
 AXI write request should normally cover both of them.
@@ -379,12 +376,12 @@ AXI write request should normally cover both of them.
   3. fuse_ctrl_filter.sv+103: The AXI user ID table is constant and cannot
      be toggled. It is excluded from coverage.
 
-#### FSM Coverage: 100%
+#### FSM Coverage: Complete
 
 Transitions reverting back to the reset state are excluded from coverage
 as they cannot be triggered with the existing testbench.
 
-#### Branch Coverage: 93%
+#### Branch Coverage: High
 
 The previously mentioned uncovered lines also cause the corresponding branches
 to be uncovered.
@@ -402,16 +399,16 @@ to be uncovered.
 ### Module: sub2tlul  
 *(instantiated by axi2tlul; contains core gasket logic)*
 
-- **Statement Coverage:** 93.75%  
+- **Statement Coverage:** High  
   - *Note:* Transaction does not transition from `valid_put_txn` (write) to `no_txn` (idle). This is a hole in coverage.
 
-- **Toggle Coverage:** 100%  
+- **Toggle Coverage:** Complete  
   - *Note:* Signals where bits are not expected to toggle or where we are not testing toggle of all bits (e.g., data, addr) are excluded.
 
-- **FSM Coverage:** 83.33%  
+- **FSM Coverage:** Moderate  
   - *Note:* There is no transition from `valid_get_txn` (read) to `valid_put_txn` (write). This is a hole in coverage.
 
-- **Condition Coverage:** 85.19%  
+- **Condition Coverage:** Moderate  
   - *Lines 98-99:*  
     ```systemverilog
     else if (cur_txn == valid_put_txn && tl_i.d_opcode == AccessAck && tl_i.d_valid)
@@ -420,7 +417,7 @@ to be uncovered.
     - The scenario where all three conditions are true is never met. Only two conditions are met: `cur_txn == valid_put_txn` and `tl_i.d_opcode == AccessAck`, but `tl_i.d_valid` is false.
     - This appears to be a TL-UL bug, as `d_valid` indicates that the AccessAck response on the D channel is valid.
 
-- **Branch Coverage:** 94.12%  
+- **Branch Coverage:** High  
   - The branch on lines 98-99 is never hit because the condition never evaluates to true. This appears to be a TL-UL bug.
 
 - **Justified Exclusions:**  
