@@ -6,16 +6,16 @@ This section provides an overview of the coverage for the Caliptra Subsystem (SS
 |-----------------------------|--------------------------------------------------|-----------|-----------|-----------|-----------|-----------------------------------|---------------------------------------------------------|
 | **Caliptra SS Top**         | Top-level block of the Caliptra Subsystem.       | 100.00%   |  97.40%   | 100.00%   | 100.00%   | [SS Top Coverage](#)              |                                                         |
 | **I3C instance**            | Core implementing the I3C protocol.              |           |  96.71%   |           |           |                                   | Only toggle coverage                                    |
-| **I3C Core**                | I3C core.                                        |           |           |           |           | [I3C Core Coverage](#)            | Reusable IP                                    |
+| **I3C Core**                | I3C core.                                        |           |           |           |           | [I3C Core Coverage](#)            | Reusable Module                                    |
 | **MCI**                     | Memory Controller Interface.                     | 100.00%   |  97.99%   | 100%      | 100.00%   | [MCI Coverage](#)                 | [MCI Coverage Analysis](#mci-coverage-analysis-summary) |
-| **Fuse CTRL (Baseline)**          | Fuse Controller for baseline configuration.|           |           |           |           | [FCC Baseline Coverage](#)        | Reusable IP                                    |
+| **Fuse CTRL (Baseline)**          | Fuse Controller for baseline configuration.|           |           |           |           | [FCC Baseline Coverage](#)        | Reusable Module                                    |
 | **Fuse CTRL (Baseline + Delta)**  | Fuse Controller with delta changes.        |  97.69%   | 100.99%   | 100.00%   | 100.00%   | [FCC Coverage](#)                 | [Fuse Controller Coverage Notes](#fuse_ctrl-coverage-analysis)                         |
-| **LCC (Baseline)**          | Life cycle controller baseline config.           |           |           |           |           | [LCC Baseline Coverage](#)        | Reusable IP                                    |
+| **LCC (Baseline)**          | Life cycle controller baseline config.           |           |           |           |           | [LCC Baseline Coverage](#)        | Reusable Module                                    |
 | **LCC (Baseline + Delta)**  | Life cycle controller with delta changes.        | 100.00%   | 100.00%   | 100.00%   | 100.00%   |                                   | [LCC Coverage Notes](#lc_ctrl-coverage-analysis)        |
 | **AXI2TLUL**                | AXI to TLUL protocol conversion gasket.          | 100.00%   | 100.00%   | 100.00%   | 100.00%   | [AXI2TLUL Gasket Coverage](#)     | [AXI2TLUL Coverage Notes](#axi2tlul-coverage-analysis)  | 
 | **mcu_rom_i**               | MCU ROM instance.                                |           | 100.00%   |           |           |                                   |                                                         |
 | **MCU_wrapper**             | Instance of VeeR-EL2 RISC-V Core                 |           | 96.23%    |           |           |                                   | Only toggle coverage                                    |
-| **MCU**                     | VeeR-EL2 RISC-V core.                            |           |           |           |           | [VeeR Core Coverage](#)           | Reusable IP                                    |
+| **MCU**                     | VeeR-EL2 RISC-V core.                            |           |           |           |           | [VeeR Core Coverage](#)           | Reusable Module                                    |
    ---
 ## Caliptra Core Coverage Dashboard
 This section provides an overview of the coverage for the Caliptra Core and its components. Each core block is linked to its coverage dashboard and notes for further insights.
