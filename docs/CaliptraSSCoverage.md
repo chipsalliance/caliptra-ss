@@ -206,10 +206,7 @@ toggles mentioned above.
 
 ## fuse_ctrl Coverage Analysis
 
-In the following, we give a breakdown of the most salient uncovered lines,
-toggles, FSM transitions, branches and groups based on the coverage report
-merged on June 3, 2025 (6b50326). The fuse_ctrl is an adapted lightweight
-variant of the OpenTitan otp_ctrl (Earlgrey-PROD.M6- https://github.com/lowRISC/opentitan/releases/tag/Earlgrey-PROD-M6)
+The fuse_ctrl is an adapted lightweight variant of the OpenTitan otp_ctrl (Earlgrey-PROD.M6- https://github.com/lowRISC/opentitan/releases/tag/Earlgrey-PROD-M6)
 with some of the modules having been removed (KDI, flash interface, EDN).
 Some of these units do not contain any changes with respect to their
 OpenTitan counterparts:
