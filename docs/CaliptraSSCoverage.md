@@ -8,10 +8,10 @@ This section provides an overview of the coverage for the Caliptra Subsystem (SS
 | **I3C instance**            | Core implementing the I3C protocol.              |           |  96.71%   |           |           |                                   | Only toggle coverage                                    |
 | **I3C Core**                | I3C core.                                        |           |           |           |           | [I3C Core Coverage](#)            | Reusable Module                                    |
 | **MCI**                     | Memory Controller Interface.                     | 100.00%   |  97.99%   | 100%      | 100.00%   | [MCI Coverage](#)                 | [MCI Coverage Analysis](#mci-coverage-analysis-summary) |
-| **Fuse CTRL (Baseline)**          | Fuse Controller for baseline configuration.|           |           |           |           | [FCC Baseline Coverage](#)        | Reusable Module                                    |
-| **Fuse CTRL (Baseline + Delta)**  | Fuse Controller with delta changes.        |  97.69%   | 100.99%   | 100.00%   | 100.00%   | [FCC Coverage](#)                 | [Fuse Controller Coverage Notes](#fuse_ctrl-coverage-analysis)                         |
+| **Fuse CTRL (Baseline)**    |                                                  |           |           |           |           | [FCC Baseline Coverage](#)        | Reusable Module                                    |
+| **Fuse CTRL (Delta)**       | Fuse Controller with delta changes.              |  97.69%   | 100.99%   | 100.00%   | 100.00%   | [FCC Coverage](#)                 | [Fuse Controller Coverage Notes](#fuse-controller-coverage-analysis)   |
 | **LCC (Baseline)**          | Life cycle controller baseline config.           |           |           |           |           | [LCC Baseline Coverage](#)        | Reusable Module                                    |
-| **LCC (Baseline + Delta)**  | Life cycle controller with delta changes.        | 100.00%   | 100.00%   | 100.00%   | 100.00%   |                                   | [LCC Coverage Notes](#lc_ctrl-coverage-analysis)        |
+| **LCC (Delta)**             | Life cycle controller with delta changes.        | 100.00%   | 100.00%   | 100.00%   | 100.00%   |                                   | [LCC Coverage Notes](#life-cycle-controller-coverage-analysis)        |
 | **AXI2TLUL**                | AXI to TLUL protocol conversion gasket.          | 100.00%   | 100.00%   | 100.00%   | 100.00%   | [AXI2TLUL Gasket Coverage](#)     | [AXI2TLUL Coverage Notes](#axi2tlul-coverage-analysis)  | 
 | **mcu_rom_i**               | MCU ROM instance.                                |           | 100.00%   |           |           |                                   |                                                         |
 | **MCU_wrapper**             | Instance of VeeR-EL2 RISC-V Core                 |           | 96.23%    |           |           |                                   | Only toggle coverage                                    |
@@ -20,13 +20,15 @@ This section provides an overview of the coverage for the Caliptra Subsystem (SS
 ## Caliptra Core Coverage Dashboard
 This section provides an overview of the coverage for the Caliptra Core and its components. Each core block is linked to its coverage dashboard and notes for further insights.
 
-| Calitptra Core Block   | Description                                         | Line    | Toggle  | Condition | Branch  | Link to Coverage                    | Coverage Analysis Notes      |
+| Calitptra Core Block   | Description                                         | Line    | Toggle  | Condition | Branch  | Link to Coverage                    | Notes      |
 |------------------------|-----------------------------------------------------|---------|---------|-----------|---------|-------------------------------------|-----------------------------|
 | **Caliptra Core Top**  | Top-level block of the Caliptra Core.               |         |         |           |         | [Caliptra Core Coverage](#)         | [Coming Soon](#)            |
 | **VeerEl2 Core**       | Instance of the VeeR-EL2 RISC-V core.               |         |         |           |         | [RISCV VeeR El2 Coverage](#)        | [Coming Soon](#)            |
-| **MLDSA**              | Multi-Lane Digital Signature Accelerator.           |         |         |           |         | [MLDSA Coverage](#)                 | [Coming Soon](#)            |
-| **AES**                | Advanced Encryption Standard block for crypto ops.  |         |         |           |         | [AES Coverage](#)                   | [Coming Soon](#)            |
-| **SOC Interface**      | Interface block for System-on-Chip communication.   |         |         |           |         | [SOC Interface Coverage](#)         | [Coming Soon](#)            |
+| **MLDSA**              | Multi-Lane Digital Signature Accelerator.           |         |         |           |         | [MLDSA FPV Coverage](/docs/coverage_reports/Adams%20Bridge%20FPV%20Coverage%20Report%20from%20Lubis%200611.pdf)             | MLDSA went through FPV and the coverage shows the instance/interface here.            |
+| **AES**                | Advanced Encryption Standard block for crypto ops.  |         |         |           |         | [AES Coverage](/docs/coverage_reports/Caliptra%20FPV%20Coverage%20Report%20from%20Lubis.pdf)                  | [Coming Soon](#)            |
+| **SOC Interface**      | Interface block for System-on-Chip communication.   |         |         |           |         | [SOC Interface Coverage](#)          | [Coming Soon](#)            |
+| **cryptos (ECC, HMAC, SHA, DOE)** | | | | | [Crypto FPV Coveage](/docs/coverage_reports/Caliptra%20FPV%20Coverage%20Report%20from%20Lubis.pdf) |silicon proven through 1.x |
+
 
 ---
 
@@ -37,7 +39,7 @@ This section provides an overview of the coverage for the Caliptra Core and its 
 ### Module: i_boot_seqr
 
 #### Coverage Metrics
-- **Line Coverage:** High, with minor exclusions
+- **Line Coverage:** complete With exclusions
 - **Toggle Coverage:** Complete with exclusions
     - Exclusions on mci_boot_seq_brkpoint and mcu_no_rom_config because we expect these to be static while MCI is out of reset.
     - The following signals only a posedge is seen due to signals being set before MCI is out of reset and the signal propagates through a synchronizer.
@@ -83,7 +85,7 @@ This section provides an overview of the coverage for the Caliptra Core and its 
 
 #### Coverage Metrics
 - **Line Coverage:** Complete
-- **Toggle Coverage:** High with exclusions
+- **Toggle Coverage:** With exclusions
     - Exclusions due to tieoffs
     - Missing coverage due to not crossing dmi with AXI traffic generating a DMI AXI Collision error. TB is hard to hit this scenario and we are OK with not detecting this error since it is not core functionality and more of a "nice to have" feature
 
@@ -97,7 +99,7 @@ This section provides an overview of the coverage for the Caliptra Core and its 
 
 #### Coverage Metrics
 - **Line Coverage:** Complete
-- **Toggle Coverage:** High with exclusions
+- **Toggle Coverage:** With exclusions
     - Exclusions added for tieoffs within our design.
     - Exclusions added due to pointers not getting full coverage because size of trace buffer does not fully utilize the 32 bit pointers
 - **FSM Coverage:** NA
@@ -110,16 +112,16 @@ This section provides an overview of the coverage for the Caliptra Core and its 
 ### Module: i_mci_reg_top
 
 #### Coverage Metrics
-- **Line Coverage:** High with exclusions
-- **Toggle Coverage:** High with exclusions
+- **Line Coverage:** With exclusions
+- **Toggle Coverage:** With exclusions
     - Many exclusions added due to tieoffs in our design example are agg error signals tied off a SS level.
     - Many exclusions due to counters we only care about it toggling once. Example the interrupt timers
     - The readback_array was also excluded because this is redundant coverage showing if we read certain registers. Better to look at the actual registers than this readback array. 
 - **FSM Coverage:** NA
  
-- **Condition Coverage:** High with exclusions
+- **Condition Coverage:** With exclusions
 
-- **Branch Coverage:** High with exclusions
+- **Branch Coverage:** With exclusions
 
 ### Module: i_mci_wdt_top
 
@@ -129,7 +131,7 @@ This section provides an overview of the coverage for the Caliptra Core and its 
     - Only missing toggle are the timer1_count and timer2_count upper bits. These counters do not connect externally and we have verified much of this logic within Caliptra. We deem it OK that some of the upper bits haven't been hit after inspecting the RTL. 
 - **FSM Coverage:** NA
  
-- **Condition Coverage:** High
+- **Condition Coverage:** 
 
 - **Branch Coverage:** Complete
 
@@ -137,7 +139,7 @@ This section provides an overview of the coverage for the Caliptra Core and its 
 
 #### Coverage Metrics
 - **Line Coverage:** Complete
-- **Toggle Coverage:** High with exclusions
+- **Toggle Coverage:** With exclusions
     - Exclusions due to tieoffs in the design
     - MBOX_SRA.addr upper bits never toggle due to size of SRAM in our TB. We tested 2MB SRAM in a size TB but never put into regression. When our ENV supports multiple models we will add this coverage
 - **FSM Coverage:** NA
@@ -147,19 +149,9 @@ This section provides an overview of the coverage for the Caliptra Core and its 
 
 - **Branch Coverage:** Complete
 
-### Module: LCC_state_translator
-
-#### Coverage Metrics
-General statement for LCC module, we need a new Caliptra ROM to get tests passing. Many of the missed coverages we have seen toggle before but due to failing tests we are not seeing the coverage. 
-
-- **Line Coverage:** Moderate
-- **Toggle Coverage:** Moderate
-- **FSM Coverage:** Moderate
-- **Condition Coverage:** Moderate
-- **Branch Coverage:** Moderate
 
 ---
-## lc_ctrl Coverage Analysis
+## Life Cycle Controller Coverage Analysis
 
 The Caliptra-SS life-cycle controller is almost congruent to its OpenTitan
 counterpart with two exceptions:
@@ -179,7 +171,7 @@ refer to the OpenTitan coverage dashboard:
 
 ### Module: lc_ctrl_fsm
 
-#### Line Coverage: High
+#### Line Coverage: 
 
 An invalid transition error is not covered during the token check phases. This
 is the second check of this nature. Since there is no update on the error logic,
@@ -187,14 +179,14 @@ OpenTitan coverage needs to be taken into account.
 
   - RTL: lc_ctrl_fsm.sv+492
 
-#### Toggle Coverage: Moderate
+#### Toggle Coverage: 
 
 Three error ports (token_hash_err_i, token_if_fsm_err_i, otp_prog_err_i) are
 not toggled. The former two are toggled, while programming the new lc state
 and counter. The logic drives these error signals are not updated and
 therefore OpenTitan coverage report is referred.
 
-#### Branch Coverage: High
+#### Branch Coverage: 
 
 The transition from the FSM idle state into SCRAP is not covered but will be
 covered in upcoming release.
@@ -204,7 +196,7 @@ covered in upcoming release.
 The remaining uncovered branches relate directly to the uncovered lines and
 toggles mentioned above.
 
-## fuse_ctrl Coverage Analysis
+## Fuse Controller Coverage Analysis
 
 The fuse_ctrl is an adapted lightweight variant of the OpenTitan otp_ctrl (Earlgrey-PROD.M6- https://github.com/lowRISC/opentitan/releases/tag/Earlgrey-PROD-M6)
 with some of the modules having been removed (KDI, flash interface, EDN).
@@ -250,21 +242,17 @@ the baseline OpenTitan variant. It contains the following additions/removals:
 
   1. FIPS zeroization flow: Broadcasted secrets can be cleared by asserting a
      new input port signal.
-
-       - Coverage: Full.
        - RTL: otp_ctrl.sv+1314-1350
 
   2. Removal of unused modules and their associated signals and logic: The
      fuse_ctrl does not feature the key derivation interface, entropy
      distribution network nor any TLUL primitives.
-     
        - Coverage: The top-level still contains some residuals of the TLUL-SRAM
          adapter and is excluded from the report. All other removals are
          properly covered.
 
   3. Updated alerts: The two-way OpenTitan alert ports have been replaced with
      single-bit signals.
-
        - Coverage: Not all alerts (fatal_bus_integ_error, fatal_macro_error)
          are exhaustively toggled. This will be remedied by increasing the
          repetition number of the randomized tests or by more directed attempts
@@ -281,7 +269,7 @@ the baseline OpenTitan variant. It contains the following additions/removals:
          VENDOR_HASHES_PROD_PARTITION while a volatile lock is active. This will
          be fixed by amending the corresponding test with upcoming release. Low-risk as the
          correctness of the cone has been verified.
-	 ```
+      	 ```
          // if (1 && 1 && 0 && 1) and if (1 && 1 && 1 && 0) are not covered.
       	 if (dai_cmd == DaiWrite && reg2hw.vendor_pk_hash_volatile_lock != '0 &&
              dai_addr >= prod_vendor_hash_start &&
@@ -294,20 +282,16 @@ the baseline OpenTitan variant. It contains the following additions/removals:
   5. On-the-fly decoding of life-cycle states: In the fuse_ctrl, individual
      partition can write-restricted to particular life-cycle states. This
      requires an on-the-fly decoding mechanism.
-     
-       - Coverage: Full.
        - RTL: otp_ctrl.sv+415-440
 
   6. AXI filter wiring: The new fuse_ctrl_filter discards DAI requests based
      on rules in a predefined access table.
 
-       - Coverage: Full.
        - RTL: otp_ctrl.sv+1024-1076
 
   7. Incremental broadcast of unlock tokens: Test unlocked state transition
      tokens are broadcasted based on the current life-cycle phase.
 
-       - Coverage: Full.
        - RTL: otp_ctrl.sv+1352-1370
 
 ### Module: otp_ctrl_dai
@@ -318,7 +302,6 @@ It's a lightweight addition that only causes minor functional changes
 in the FSM where the write state is now aborted when the discard port
 is asserted.
 
-  - Coverage: Full.
   - RTL: otp_ctrl_dai.sv+415-445
 
 ### Module: otp_ctrl_core_reg_top
@@ -338,8 +321,7 @@ public-key hash volatile lock.
 The AXI filter is the only custom unit in the Caliptra-SS fuse_ctrl as such
 the coverage metrics are analyzed individual below.
 
-#### Line Coverage: High
-
+#### Line Coverage: 
 Two branches in the IDLE_ST and WDATA_ST are unaccounted for. Each 64-bit
 AXI write request should normally cover both of them.
 
@@ -378,7 +360,7 @@ AXI write request should normally cover both of them.
 Transitions reverting back to the reset state are excluded from coverage
 as they cannot be triggered with the existing testbench.
 
-#### Branch Coverage: High
+#### Branch Coverage:
 
 The previously mentioned uncovered lines also cause the corresponding branches
 to be uncovered.
@@ -396,16 +378,16 @@ to be uncovered.
 ### Module: sub2tlul  
 *(instantiated by axi2tlul; contains core gasket logic)*
 
-- **Statement Coverage:** High  
+- **Statement Coverage:**
   - *Note:* Transaction does not transition from `valid_put_txn` (write) to `no_txn` (idle). This is a hole in coverage.
 
-- **Toggle Coverage:** Complete  
+- **Toggle Coverage:**
   - *Note:* Signals where bits are not expected to toggle or where we are not testing toggle of all bits (e.g., data, addr) are excluded.
 
-- **FSM Coverage:** Moderate  
+- **FSM Coverage:** 
   - *Note:* There is no transition from `valid_get_txn` (read) to `valid_put_txn` (write). This is a hole in coverage.
 
-- **Condition Coverage:** Moderate  
+- **Condition Coverage:**
   - *Lines 98-99:*  
     ```systemverilog
     else if (cur_txn == valid_put_txn && tl_i.d_opcode == AccessAck && tl_i.d_valid)
@@ -414,7 +396,7 @@ to be uncovered.
     - The scenario where all three conditions are true is never met. Only two conditions are met: `cur_txn == valid_put_txn` and `tl_i.d_opcode == AccessAck`, but `tl_i.d_valid` is false.
     - This appears to be a TL-UL bug, as `d_valid` indicates that the AccessAck response on the D channel is valid.
 
-- **Branch Coverage:** High  
+- **Branch Coverage:**   
   - The branch on lines 98-99 is never hit because the condition never evaluates to true. This appears to be a TL-UL bug.
 
 - **Justified Exclusions:**  
