@@ -2,6 +2,8 @@
 
 This section provides an overview of the coverage for the Caliptra Subsystem (SS) and its components. Each subsystem block is linked to its coverage dashboard and notes for further insights.
 
+<span style="color:red">**Coverage extraction tooling is in progress, it will be available soon. All the numbers below are populated from coverage database manually.**</span>
+
 ## Caliptra SS Coverage Summary
 
 | Subsystem Block             | Coverage Description                                                                 | Line      | Toggle    | Condition | Branch    | Link to Coverage                                                                                                    | Notes                                                                                      |
@@ -14,7 +16,7 @@ This section provides an overview of the coverage for the Caliptra Subsystem (SS
 | **Fuse CTRL (Delta)**       | Coverage for Caliptra SS-specific modifications to the fuse controller              | 97.69%    | 100.99%   | 100.00%   | 100.00%   | [FCC Coverage](#)                                                                                                   | [Fuse Controller Coverage Notes](#fuse-controller-coverage-analysis)                       |
 | **LCC (Baseline)**          | Baseline Life Cycle Controller, reused from silicon-proven OpenTitan hardware module|           |           |           |           | [LCC Baseline Coverage](https://reports.opentitan.org/hw/ip/lc_ctrl_volatile_unlock_enabled/dv/latest/report.html)   | Reusable module                                                                            |
 | **LCC (Delta)**             | Coverage for Caliptra SS-specific changes to the Life Cycle Controller              | 100.00%   | 100.00%   | 100.00%   | 100.00%   |                                                                                                                     | [LCC Coverage Notes](#life-cycle-controller-coverage-analysis)                             |
-| **AXI2TLUL**                | AXI to TLUL protocol conversion gasket coverage                                     | 100.00%   | 100.00%   | 100.00%   | 100.00%   | [AXI2TLUL Gasket Coverage](#)                                                                                       | [AXI2TLUL Coverage Notes](#axi2tlul-coverage-analysis)                                     |
+| **AXI2TLUL**                | AXI to TLUL protocol conversion gasket coverage                                     | 100.00%   | 100.00%   | 100.00%   | 100.00%   | [AXI2TLUL Gasket Coverage](#)                                                                                       | [AXI2TLUL Coverage Notes](#)                                     |
 | **MCU ROM**                 | MCU ROM instance coverage                                                           |           | 100.00%   |           |           |                                                                                                                     |                                                                                            |
 | **MCU_wrapper**             | VeeR-EL2 RISC-V Core instance coverage                                              |           | 96.23%    |           |           |                                                                                                                     | Integration coverage only                                                                  |
 | **MCU**                     | VeeR-EL2 RISC-V coverage provided by Chips Alliance                                 |           |           |           |           | [VeeR Core Coverage](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/coverage_dashboard/all/#/?flatFileList=false&hideNotCovered=false) | Reusable module                                                                            |
@@ -27,11 +29,9 @@ This section provides an overview of the coverage for the Caliptra Core and its 
 
 | Caliptra Core Block         | Coverage Description                                            | Line      | Toggle    | Condition | Branch    | Link to Coverage                                                                 | Notes                                                                                  |
 |-----------------------------|-----------------------------------------------------------------|-----------|-----------|-----------|-----------|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| **Caliptra Core Top**       | Top-level block of the Caliptra Core integration                |           |           |           |           | [Caliptra Core Coverage](#)                                                      | [Coming Soon](#)                                                                       |
 | **MLDSA**                   | Module-Lattice-Based Digital Signature Algorithm Coverage                       |           |           |           |           | [MLDSA FPV Coverage](/docs/coverage_reports/Adams%20Bridge%20FPV%20Coverage%20Report%20from%20Lubis%200611.pdf) | MLDSA went through FPV; coverage shows the instance/interface here.                    |
 | **AES (Baseline)**          | AES block (reused from OpenTitan)                               |           |           |           |           | [AES OpenTitan Coverage](https://reports.opentitan.org/hw/ip/aes_masked/dv/latest/report.html) |                                                                                        |
 | **AES GCM**                 | AES GCM Delta changes for Caliptra Core                         |           |           |           |           | [AES GCM DV Report](/docs/coverage_reports/AES-GCM%20DV%20Test%20Report.pdf)          |                                                                                        |
-| **SOC Interface**           | Interface block for System-on-Chip communication                |           |           |           |           | [SOC Interface Coverage](#)                                                       | [Coming Soon](#)                                                                       |
 | **Cryptos (ECC, HMAC, SHA, DOE)** | Legacy from Caliptra 1.x and proven in silicon            |           |           |           |           | [Crypto FPV Coverage](/docs/coverage_reports/Caliptra%20FPV%20Coverage%20Report%20from%20Lubis.pdf) | Silicon proven through 1.x                                                             |
 
 ---
@@ -330,41 +330,3 @@ as they cannot be triggered with the existing testbench.
 
 The previously mentioned uncovered lines also cause the corresponding branches
 to be uncovered.
-
-## AXI2TLUL Coverage Analysis
-
-### Module: axi2tlul
-
-**Overall Coverage:**  
-- *Justified Exclusions:*
-  - `axi_sub` has been excluded from coverage as it is covered under Caliptra core coverage.
-  - TL-UL integrity generation and check are excluded as they are not used in Caliptra SS.
-
-
-### Module: sub2tlul  
-*(instantiated by axi2tlul; contains core gasket logic)*
-
-- **Statement Coverage:**
-  - *Note:* Transaction does not transition from `valid_put_txn` (write) to `no_txn` (idle). This is a hole in coverage.
-
-- **Toggle Coverage:**
-  - *Note:* Signals where bits are not expected to toggle or where we are not testing toggle of all bits (e.g., data, addr) are excluded.
-
-- **FSM Coverage:** 
-  - *Note:* There is no transition from `valid_get_txn` (read) to `valid_put_txn` (write). This is a hole in coverage.
-
-- **Condition Coverage:**
-  - *Lines 98-99:*  
-  ```systemverilog
-  else if (cur_txn == valid_put_txn && tl_i.d_opcode == AccessAck && tl_i.d_valid)
-    cur_txn <= no_txn
-  ```
-  - The scenario where all three conditions are true is never met. Only two conditions are met: `cur_txn == valid_put_txn` and `tl_i.d_opcode == AccessAck`, but `tl_i.d_valid` is false.
-  - This appears to be a TL-UL bug, as `d_valid` indicates that the AccessAck response on the D channel is valid.
-
-- **Branch Coverage:**   
-  - The branch on lines 98-99 is never hit because the condition never evaluates to true. This appears to be a TL-UL bug.
-
-- **Justified Exclusions:**  
-  - Branches where certain combinations of conditions cannot occur based on protocol behavior have been excluded.
-
