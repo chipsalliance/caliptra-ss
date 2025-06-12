@@ -357,6 +357,8 @@ module caliptra_ss_top
 
     logic [lc_ctrl_reg_pkg::NumAlerts-1:0] lc_alerts_o; 
 
+    logic lcc_volatile_raw_unlock_success;
+
     // ----------------- FC to Caliptra-Core ports -----------------------
     otp_ctrl_part_pkg::otp_broadcast_t from_otp_to_clpt_core_broadcast;  // This is a struct data type
     // broadcasted by fuse controller
@@ -1095,6 +1097,7 @@ module caliptra_ss_top
         
 
         .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
+        .lcc_volatile_raw_unlock_success_i(lcc_volatile_raw_unlock_success),
         .lc_dft_en_i(lc_dft_en_i),
         .lc_hw_debug_en_i(lc_hw_debug_en_i),
 
@@ -1176,6 +1179,7 @@ module caliptra_ss_top
 
             .lc_otp_vendor_test_o(from_lc_to_otp_vendor_test_internal),
             .lc_otp_vendor_test_i(from_otp_to_lc_vendor_test_internal),
+            .volatile_raw_unlock_success_o(lcc_volatile_raw_unlock_success),
             .lc_otp_program_o(from_lcc_to_otp_program_i),
             .lc_otp_program_i(lc_otp_program_internal),
             .otp_lc_data_i(from_otp_to_lcc_data_i),

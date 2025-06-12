@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -56,7 +57,7 @@ void main (void) {
      * 1: An ordinary, successful DAI operation must result in an `otp_operation_done` interrupt.
      */
 
-    dai_wr(0x000, 0x1, 0, 32, 0);
+    dai_wr(CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN, 0x1, 0, 32, 0);
 
     uint32_t alert_state = lsu_read_32(SOC_OTP_CTRL_INTERRUPT_STATE);
     if (((alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_OPERATION_DONE_LOW) & 0x1 != 0x1) ||
@@ -71,7 +72,7 @@ void main (void) {
      */
 
     grant_mcu_for_fc_writes();
-    dai_wr(0x048, 0x1, 0x1, 64, OTP_CTRL_STATUS_DAI_ERROR_MASK); // invalid AXI ID
+    dai_wr(CPTRA_CORE_UDS_SEED, 0x1, 0x1, 64, OTP_CTRL_STATUS_DAI_ERROR_MASK); // invalid AXI ID
 
     alert_state = lsu_read_32(SOC_OTP_CTRL_INTERRUPT_STATE);
     if (((alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_OPERATION_DONE_LOW) & 0x1 != 0x1) ||

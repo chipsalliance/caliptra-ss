@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -40,16 +41,12 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  * the volatile lock works as intended. The test proceeds in the following steps:
  * 
  *   1. Write a value to first fuse.
- *   2. Write a value to second fuse.
- *   3. Activate the volatile lock such that the fuse from step 2 is now in the
+ *   2. Activate the volatile lock such that the fuse from step 2 is now in the
  *      locked region.
- *   4. Verify that writing to the second fuse now results in an error.
+ *   3. Verify that writing to the second fuse now results in an error.
  */
 void program_vendor_hashes_prod_partition(void) {
-
-    // 0x2DDA: CPTRA_CORE_VENDOR_PK_HASH_3
-    // 0x2E3C: CPTRA_CORE_VENDOR_PK_HASH_5
-    const uint32_t addresses[2] = {0x2DDA, 0x2E3C};
+    const uint32_t addresses[2] = {CPTRA_CORE_VENDOR_PK_HASH_3, CPTRA_CORE_VENDOR_PK_HASH_4};
 
     const uint32_t data = 0xdeadbeef;
 
@@ -57,12 +54,9 @@ void program_vendor_hashes_prod_partition(void) {
     dai_wr(addresses[0], data, 0, 32, 0);
 
     // Step 2
-    //dai_wr(addresses[1], data+1, 0, 32, 0);
+    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 4); // Lock all hashes starting from index 4.
 
     // Step 3
-    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 4); // Lock all hashes starting from index 5.
-
-    // Step 4
     dai_wr(addresses[1], data+2, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 }
 

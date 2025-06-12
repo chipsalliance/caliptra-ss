@@ -44,6 +44,9 @@ task smoke_test_mcu_trace_buffer();
 
     halt_mcu_core(40000);
 
+    bfm_axi_read_check(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_CONFIG, $random(), 32'd256);
+
+
 
     if($test$plusargs("MCU_TRACE_BUFFER_ONLY_ONE_ENTRY")) begin
         bfm_axi_read_check(`SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_WRITE_PTR, $random(), 32'h4);

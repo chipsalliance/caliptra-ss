@@ -72,6 +72,11 @@ void main (void) {
         VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
         VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
 
+        if (lc_cnt_curr == 24) {
+            VPRINTF(LOW, "INFO: reached max. LC counter value, finish test test\n");
+            goto epilogue;
+        }
+
         uint32_t count = 0;
         memset(buf, 0, sizeof(buf));
         for (uint32_t i = 1, k = 0; (i + lc_state_curr)< NUM_LC_STATES; i++) {

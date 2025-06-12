@@ -4,7 +4,6 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs
-+incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_sva.svh
@@ -46,8 +45,6 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/mem/prim_ra
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/csr/I3CCSR_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/controller_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/i3c_pkg.sv
-${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/buf_pp.sv
-${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/bufs.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/phy/i3c_phy.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/csr/I3CCSR.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/interrupt.sv

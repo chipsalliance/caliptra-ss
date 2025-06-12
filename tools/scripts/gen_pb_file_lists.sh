@@ -38,6 +38,9 @@ function gen_pb_file_list {
 
     # Remove duplicate entries and empty lines from the file
     perl -i -ne 'print if ! $a{$_}++ and /\S/' ${cpt_ss_vf_file}
+
+    # Remove path with testbench in it
+    sed -i '/testbench/d' ${cpt_ss_vf_file}
 }
 
 if [[ $(command -v pb) = "" ]]; then

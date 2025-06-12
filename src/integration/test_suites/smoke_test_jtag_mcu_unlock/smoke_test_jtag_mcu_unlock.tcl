@@ -192,7 +192,12 @@ puts "Checking trace register reads..."
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_STATUS]
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_CONFIG]
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_WR_PTR]
+riscv dmi_write $MCI_DMI_MCU_TRACE_RD_PTR 0x1
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_RD_PTR]
+if {[compare $actual 0x1] != 0} {
+    puts "mismatch in register MCI_DMI_MCU_TRACE_RD_PTR: $actual expected 0x1"
+    shutdown error
+}
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_DATA]
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_STATUS]
 set actual [riscv dmi_read $MCI_DMI_MCU_TRACE_CONFIG]
