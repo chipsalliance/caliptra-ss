@@ -358,6 +358,7 @@ The DMA block can directly stream images from AXI to AES for decrypte/encrypt, a
 * Read Route == AXI
 * Write Route == AXI
 * Block Size == 0 (OCP Stream Boot Disabled)
+* Read/Write Fixed == 0 
 * Source Address == Start of image
 * Destination Address == Start address where processed image should be stored
 * Configure Byte Count - must be DWORD aligned
@@ -367,17 +368,19 @@ Other Read/Write Routes and Block sizes are not supported.
 The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware's responsibility to:
 
 1. Fully configure AES before streaming the image via AXI DMA
-2. Push the IV, AAD header, or any other data into AES before streaming the image via AXI DMA
+2. Push the IV, AAD header, and any other data into AES before streaming the image via AXI DMA
 3. Retrieve any tags from AES after the image has been processed.
  
 
 If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly pad the AES input data with 0s. When streaming the image out it will only write the last DWORD to the destination. If ``aes_gcm_mode`` is set, at the start of the transfer it updates the GCM shadow byte count and phase registers in AES to the appropriate byte count and GCM_TEXT phase. Before the last block transfer to the AES it will again update the GCM shadow register to the appropriate values. 
 
+Input images shall be stored in **little endian** format. The processed image will be stored in **little endian** format.  
+
 If AXI DMA encounters any errors (AXI or other errors) it will finish the transfer and report an error. It is the Firmware's responsiblity to clear the error in the AXI DMA and flush the AES if required. 
 
 When AXI DMA is using AES Caliptra shall not try to access AES via AHB until AXI DMA has completed.
 
-AES access over AXI is restricted to only Caliptra DMA, all other requests will be dropped.
+AES is not directly exposed on the AXI bus for external entities, it is protected behind the AXI DMA and can only be accessed via Caliptra uC AHB or the Caliptra DMA. 
 
 *AES Mode: Read Route \== AXI, Write Route \== AXI, AES Mode \== 1*
 
@@ -395,7 +398,7 @@ General Rules:
 6. If Write Route is disabled, Write Fixed field is ignored.  
 7. Addresses and Byte Counts must be aligned to AXI data width (1 DWORD).
 8. Block Size is used only for reads from the Subsystem Recovery Interface. When block size has a non-zero value, the DMA will only issue AXI read requests when the payload available input signal is set to 1, and will limit the size of read requests to the value of block size. For all other transactions (such as AXI writes, or any single-dword access to a subsystem register via the DMA), block size shall be set to a value of 0 for every transaction.
-9. AES mode is only used with AXI RD -> AXI WR and must be used with Block Size 0.
+9. AES mode is only valid with Read/Write routes AXI RD -> AXI WR, Read/Write Fixed = 0, and Block Size 0.
 
 Steps:
 
