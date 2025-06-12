@@ -380,4 +380,19 @@ package otp_ctrl_part_pkg;
     return otp_keymgr_key;
   endfunction : named_keymgr_key_assign
 
+% if num_vendor_pk_fuses <= 1:
+  parameter int ProdVendorHashNum   = 0;
+  parameter int ProdVendorHashSize  = 0;
+  parameter int ProdVendorHashStart = 0;
+  parameter int ProdVendorHashEnd   = 0;
+  % if num_vendor_pk_fuses == 0:
+  parameter int VendorHashesProdPartitionIdx = 0;
+  % endif
+% else:
+  parameter int ProdVendorHashNum   = NumVendorPkFuses-1;
+  parameter int ProdVendorHashSize  = CptraCoreVendorPkHash1Size + CptraCorePqcKeyType1Size;
+  parameter int ProdVendorHashStart = CptraCoreVendorPkHash1Offset;
+  parameter int ProdVendorHashEnd   = CptraCoreVendorPkHash1Offset + (ProdVendorHashSize * ProdVendorHashNum);
+% endif
+
 endpackage : otp_ctrl_part_pkg
