@@ -494,7 +494,7 @@ Zeroization occurs under the following conditions:
 
 1. A new input port, `cptra_ss_FIPS_ZEROIZATION_PPD_i`, is introduced in the Caliptra Subsystem.
 2. When this signal is asserted, it triggers preemptive zeroization of secret FUSEs before the SCRAP state transition.
-3. The **MCU ROM** samples `cptra_ss_FIPS_ZEROIZATION_PPD_i` by reading the corresponding register storing its value.
+3. The **MCU ROM** samples `cptra_ss_FIPS_ZEROIZATION_PPD_i` by reading the corresponding register storing its value in MCI.
 4. If `cptra_ss_FIPS_ZEROIZATION_PPD_i == HIGH`, the MCU ROM executes the following sequence:
    1. Writes `32'hFFFF_FFFF` to the `ss_soc_MCU_ROM_zeroization_mask_reg` register of **MCI**.
    2. Creates a **Life Cycle Controller (LCC) transition request** to switch to the **SCRAP** state.

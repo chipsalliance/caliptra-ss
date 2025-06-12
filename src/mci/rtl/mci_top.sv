@@ -658,6 +658,7 @@ mci_reg_top #(
 
     // LCC Gasket signals
     .security_state_o,
+    .FIPS_ZEROIZATION_PPD_i,
 
     // SOC Interrupts
     .all_error_fatal,
@@ -812,7 +813,7 @@ mci_lcc_st_trans LCC_state_translator (
     .ss_soc_dbg_unlock_mask_reg0_1({mci_reg_hwif_out.SOC_PROD_DEBUG_STATE[1].MASK.value, mci_reg_hwif_out.SOC_PROD_DEBUG_STATE[0].MASK.value}), 
     .ss_soc_CLTAP_unlock_mask_reg0_1({mci_reg_hwif_out.SOC_HW_DEBUG_EN[1].MASK.value, mci_reg_hwif_out.SOC_HW_DEBUG_EN[0].MASK.value}), 
     .ss_soc_MCU_ROM_zeroization_mask_reg(mci_reg_hwif_out.FC_FIPS_ZEROZATION.MASK.value), 
-    .FIPS_ZEROIZATION_PPD_i,
+    .FIPS_ZEROIZATION_PPD_i(mci_reg_hwif_out.FC_FIPS_ZEROZATION_STS.status.value),
     .FIPS_ZEROIZATION_CMD_o,
     .SOC_DFT_EN(SOC_DFT_EN),
     .SOC_HW_DEBUG_EN(SOC_HW_DEBUG_EN),
