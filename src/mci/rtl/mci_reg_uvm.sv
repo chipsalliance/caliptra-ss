@@ -2434,6 +2434,36 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FC_FIPS_ZEROZATION
 
+    // Reg - mci_reg::FC_FIPS_ZEROZATION_STS
+    class mci_reg__FC_FIPS_ZEROZATION_STS extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__FC_FIPS_ZEROZATION_STS_bit_cg status_bit_cg[1];
+        mci_reg__FC_FIPS_ZEROZATION_STS_fld_cg fld_cg;
+        rand uvm_reg_field status;
+
+        function new(string name = "mci_reg__FC_FIPS_ZEROZATION_STS");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.status = new("status");
+            this.status.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(status_bit_cg[bt]) status_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__FC_FIPS_ZEROZATION_STS
+
     // Reg - mci_reg::GENERIC_INPUT_WIRES
     class mci_reg__GENERIC_INPUT_WIRES extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -10636,6 +10666,7 @@ package mci_reg_uvm;
         rand mci_reg__SOC_HW_DEBUG_EN SOC_HW_DEBUG_EN[2];
         rand mci_reg__SOC_PROD_DEBUG_STATE SOC_PROD_DEBUG_STATE[2];
         rand mci_reg__FC_FIPS_ZEROZATION FC_FIPS_ZEROZATION;
+        rand mci_reg__FC_FIPS_ZEROZATION_STS FC_FIPS_ZEROZATION_STS;
         rand mci_reg__GENERIC_INPUT_WIRES GENERIC_INPUT_WIRES[2];
         rand mci_reg__GENERIC_OUTPUT_WIRES GENERIC_OUTPUT_WIRES[2];
         rand mci_reg__DEBUG_IN DEBUG_IN;
@@ -10966,6 +10997,11 @@ package mci_reg_uvm;
 
             this.FC_FIPS_ZEROZATION.build();
             this.default_map.add_reg(this.FC_FIPS_ZEROZATION, 'h318);
+            this.FC_FIPS_ZEROZATION_STS = new("FC_FIPS_ZEROZATION_STS");
+            this.FC_FIPS_ZEROZATION_STS.configure(this);
+
+            this.FC_FIPS_ZEROZATION_STS.build();
+            this.default_map.add_reg(this.FC_FIPS_ZEROZATION_STS, 'h31c);
             foreach(this.GENERIC_INPUT_WIRES[i0]) begin
                 this.GENERIC_INPUT_WIRES[i0] = new($sformatf("GENERIC_INPUT_WIRES[%0d]", i0));
                 this.GENERIC_INPUT_WIRES[i0].configure(this);

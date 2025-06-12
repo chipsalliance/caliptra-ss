@@ -824,6 +824,12 @@ addrmap mci_reg {
          field {sw=rw; hw=r; resetsignal = mci_pwrgood;swwe = axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky;} MASK[32]=0;
      } FC_FIPS_ZEROZATION;
 
+    reg {
+        name = "Fuse Controller FIPS Zeroization Status";
+         desc = "FIPS Zeriozation request status. This signal is sampled on every MCI reset deassertion. When set to 1 MCU ROM should initiate the FIPS Zerozation flow using FC_FIPS_ZEROZATION register.";
+         field {sw=r; hw=rw; we; resetsignal = mci_rst_b;} status=0;
+     } FC_FIPS_ZEROZATION_STS;
+
     // ----------------------------------------
     // ------------ DEBUG/GENERIC -------------
     reg { 
