@@ -350,7 +350,7 @@ In all cases other than reading Recovery Interface Payloads, the block\_size reg
 
 ## AES Mode
 
-The DMA block can directly stream images from AXI to AES for decrypte/encrypt, and then stream the processed image over AXI to some SOC storage. This can be done by configuring the AXI DMA as:
+The DMA block can directly stream images from AXI to AES for decrypt/encrypt, and then stream the processed image over AXI to some SOC storage. This can be done by configuring the AXI DMA as:
 
 * AES Mode == 1
 * (optional) aes_gcm_mode in DMA == 1
