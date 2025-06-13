@@ -376,7 +376,7 @@ If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly
 
 Input images shall be stored in **little endian** format. The processed image will be stored in **little endian** format.  
 
-If AXI DMA encounters any errors (AXI or other errors) it will finish the transfer and report an error. It is the Firmware's responsiblity to clear the error in the AXI DMA and flush the AES if required. 
+If AXI DMA encounters any errors (AXI or other errors) it will finish the transfer and report an error. It is the Firmware's responsibility to clear the error in the AXI DMA and flush the AES if required. 
 
 When AXI DMA is using AES Caliptra shall not try to access AES via AHB until AXI DMA has completed.
 
