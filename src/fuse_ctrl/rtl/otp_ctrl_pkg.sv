@@ -32,6 +32,10 @@ package otp_ctrl_pkg;
   // values have been drawn from it.
   parameter int LfsrUsageThreshold = 16;
 
+  // A partition is deemed to be in a zeroization state if its digest
+  // field contains a predefined number of set bits.
+  parameter int ZeroizationThreshold = 64;
+
   // Redundantly encoded and complementary values are used to for signalling to the partition
   // controller FSMs and the DAI whether a partition is locked or not. Any other value than
   // "Mubi8Lo" is interpreted as "Locked" in those FSMs.
@@ -40,11 +44,13 @@ package otp_ctrl_pkg;
     caliptra_prim_mubi_pkg::mubi8_t write_lock;
   } part_access_t;
 
-  parameter int DaiCmdWidth = 3;
+  parameter int DaiCmdWidth = 5;
   typedef enum logic [DaiCmdWidth-1:0] {
-    DaiRead   = 3'b001,
-    DaiWrite  = 3'b010,
-    DaiDigest = 3'b100
+    DaiRead      = 5'b00001,
+    DaiWrite     = 5'b00010,
+    DaiDigest    = 5'b00100,
+    ZeroizeWrite = 5'b01000,
+    ZeroizeRead  = 5'b10000
   } dai_cmd_e;
 
   parameter int DeviceIdWidth = 256;
@@ -380,6 +386,7 @@ package otp_ctrl_pkg;
       caliptra_prim_otp_pkg::cmd_e     cmd_i;
       logic [OtpAddrWidth-1:0]         addr_i;
       logic [OtpIfWidth-1:0]           wdata_i;
+      caliptra_prim_mubi_pkg::mubi4_t  zeroize_i;
     } prim_generic_otp_inputs_t;
   
     //------------------------------------------------------------------

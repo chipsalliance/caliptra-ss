@@ -55,6 +55,7 @@ module otp_ctrl_dai
   output logic [OtpSizeWidth-1:0]        otp_size_o,
   output logic [OtpIfWidth-1:0]          otp_wdata_o,
   output logic [OtpAddrWidth-1:0]        otp_addr_o,
+  output caliptra_prim_mubi_pkg::mubi4_t otp_zeroize_o,
   input                                  otp_gnt_i,
   input                                  otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]          otp_rdata_i,
@@ -92,8 +93,8 @@ module otp_ctrl_dai
 
   // SEC_CM: DAI.FSM.SPARSE
   // Encoding generated with:
-  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 20 -n 12 \
-  //      -s 3011551511 --language=sv
+  // $ ./util/design/sparse-fsm-encode.py -d 4 -m 24 -n 12 \
+  //     -s 411158998 --language=sv
   //
   // Hamming distance histogram:
   //
@@ -101,43 +102,47 @@ module otp_ctrl_dai
   //  1: --
   //  2: --
   //  3: --
-  //  4: --
-  //  5: |||||||||||||||| (31.05%)
-  //  6: |||||||||||||||||||| (36.84%)
-  //  7: |||||||| (15.26%)
-  //  8: |||| (8.95%)
-  //  9: || (5.26%)
-  // 10:  (1.58%)
-  // 11:  (1.05%)
+  //  4: |||||||||| (13.04%)
+  //  5: ||||||||||||||||||| (23.91%)
+  //  6: |||||||||||||||||||| (24.64%)
+  //  7: |||||||||||||||| (19.93%)
+  //  8: ||||||| (9.78%)
+  //  9: |||||| (7.61%)
+  // 10:  (0.72%)
+  // 11:  (0.36%)
   // 12: --
   //
-  // Minimum Hamming distance: 5
+  // Minimum Hamming distance: 4
   // Maximum Hamming distance: 11
-  // Minimum Hamming weight: 2
+  // Minimum Hamming weight: 3
   // Maximum Hamming weight: 9
   //
   localparam int StateWidth = 12;
   typedef enum logic [StateWidth-1:0] {
-    ResetSt       = 12'b101111010100,
-    InitOtpSt     = 12'b110000110010,
-    InitPartSt    = 12'b000111111001,
-    IdleSt        = 12'b111010000011,
-    ErrorSt       = 12'b100010001110,
-    ReadSt        = 12'b100101100110,
-    ReadWaitSt    = 12'b001100000000,
-    DescrSt       = 12'b011000101111,
-    DescrWaitSt   = 12'b110101011111,
-    WriteSt       = 12'b110111001000,
-    WriteWaitSt   = 12'b111001111100,
-    ScrSt         = 12'b000000010101,
-    ScrWaitSt     = 12'b010110110100,
-    DigClrSt      = 12'b001111001111,
-    DigReadSt     = 12'b001001110011,
-    DigReadWaitSt = 12'b101110111010,
-    DigSt         = 12'b011111100010,
-    DigPadSt      = 12'b011010011000,
-    DigFinSt      = 12'b110011100101,
-    DigWaitSt     = 12'b100000101001
+    ResetSt        = 12'b100101101100,
+    InitOtpSt      = 12'b000001111111,
+    InitPartSt     = 12'b101010100000,
+    IdleSt         = 12'b000111110011,
+    ErrorSt        = 12'b001000001001,
+    ReadSt         = 12'b000010010001,
+    ReadWaitSt     = 12'b111110000011,
+    DescrSt        = 12'b011011001110,
+    DescrWaitSt    = 12'b101100010110,
+    WriteSt        = 12'b111000111000,
+    WriteWaitSt    = 12'b101011001011,
+    ScrSt          = 12'b011111100111,
+    ScrWaitSt      = 12'b011111111100,
+    DigClrSt       = 12'b101111111001,
+    DigReadSt      = 12'b110101010101,
+    DigReadWaitSt  = 12'b000111001010,
+    DigSt          = 12'b011000010100,
+    DigPadSt       = 12'b110011011000,
+    DigFinSt       = 12'b111001101101,
+    DigWaitSt      = 12'b001000101110,
+    ZerWriteSt     = 12'b100000000111,
+    ZerWriteWaitSt = 12'b111010110110,
+    ZerReadSt      = 12'b010001100010,
+    ZerReadWaitSt  = 12'b100011100110
   } state_e;
 
   typedef enum logic [1:0] {
@@ -164,6 +169,17 @@ module otp_ctrl_dai
   logic [NumPartWidth-1:0] part_idx;
   logic [NumPart-1:0][OtpAddrWidth-1:0] digest_addr_lut;
   logic part_sel_valid;
+
+  // Make sure the multi-bit zeroization signal is not optimized away.
+  mubi4_t otp_zeroize_pre;
+  caliptra_prim_mubi4_sender #(
+    .AsyncOn(0)
+  ) u_prim_mubi4_sender_zeroize (
+    .clk_i,
+    .rst_ni,
+    .mubi_i(otp_zeroize_pre),
+    .mubi_o(otp_zeroize_o)
+  );
 
   // Depending on the partition configuration, the wrapper is instructed to ignore integrity
   // calculations and checks. To be on the safe side, the partition filters error responses at this
@@ -202,6 +218,7 @@ module otp_ctrl_dai
     // OTP signals
     otp_req_o = 1'b0;
     otp_cmd_o = caliptra_prim_otp_pkg::Init;
+    otp_zeroize_pre = MuBi4False;
 
     // Scrambling mutex
     scrmbl_mtx_req_o = 1'b0;
@@ -305,6 +322,14 @@ module otp_ctrl_dai
               state_d = DigClrSt;
               scrmbl_mtx_req_o = 1'b1;
               base_sel_d = PartOffset;
+            end
+            ZeroizeWrite: begin
+              state_d = ZerWriteSt;
+              base_sel_d = DaiOffset;
+            end
+            ZeroizeRead: begin
+              state_d = ZerReadSt;
+              base_sel_d = DaiOffset;
             end
             default: ; // Ignore invalid commands
           endcase // dai_cmd_i
@@ -668,6 +693,119 @@ module otp_ctrl_dai
           data_en = 1'b1;
         end
       end
+
+      ///////////////////////////////////////////////////////////////////
+      // Check whether partition is zeroizable and transition into the
+      // wait state once the OTP request has been granted. A zeroization
+      // write is always a raw operation to bypass any ECC checks.
+      ZerWriteSt: begin
+        dai_prog_idle_o = 1'b0;
+        if (!discard_fuse_write_i &&
+            part_sel_valid &&
+            PartInfo[part_idx].zeroizable &&
+            // The entire address space of a zeroizable partition is writable.
+            (PartInfo[part_idx].variant == Buffered && base_sel_q == DaiOffset) ||
+            (PartInfo[part_idx].variant != Buffered && base_sel_q == DaiOffset)) begin
+          otp_req_o = 1'b1;
+          otp_cmd_o = caliptra_prim_otp_pkg::WriteRaw;
+          otp_zeroize_pre = MuBi4True;
+          if (otp_gnt_i) begin
+            state_d = ZerWriteWaitSt;
+          end
+        end else begin
+          // Clear working register state.
+          discarded_fuse_write_d = 1'b1;
+          data_clr = 1'b1;
+          state_d = IdleSt;
+          error_d = AccessError; // Signal this error, but do not go into terminal error state.
+          dai_cmd_done_o = 1'b1;
+        end
+      end
+
+      ///////////////////////////////////////////////////////////////////
+      // Wait for OTP response to the zeroization write. Note that in
+      // order to retry a failed zeroization write all errors are treated
+      // as recoverable.
+      ZerWriteWaitSt: begin
+        dai_prog_idle_o = 1'b0;
+        // Continuously check write access and bail out if this is not consistent.
+        if (PartInfo[part_idx].zeroizable &&
+            // The entire address space of a zeroizable partition is writable.
+            (PartInfo[part_idx].variant == Buffered && base_sel_q == DaiOffset) ||
+            (PartInfo[part_idx].variant != Buffered && base_sel_q == DaiOffset)) begin
+          if (otp_rvalid_i) begin
+            // Clear working register state.
+            data_clr = 1'b1;
+            state_d = IdleSt;
+            dai_cmd_done_o = 1'b1;
+            // All errors are treated as recoverable during a zeroization.
+            if (otp_err != NoError) begin
+              error_d = otp_err;
+            end
+          end
+        // At this point, this check MUST succeed - otherwise this means that
+        // there was a tampering attempt. Hence we go into a terminal error state
+        // when this check fails.
+        end else begin
+          state_d = ErrorSt;
+          error_d = FsmStateError;
+        end
+      end
+
+      ///////////////////////////////////////////////////////////////////
+      // Check whether partition supports a zeroizable read and transition
+      // into the wait state once the OTP request has been granted. A
+      // zeroization read is always raw and bypasses the descrambling of
+      // the read out data.
+      ZerReadSt: begin
+        if (part_sel_valid &&
+            PartInfo[part_idx].zeroizable &&
+            // The entire address space of a zeroizable partition is readable.
+            (PartInfo[part_idx].variant == Buffered && base_sel_q == DaiOffset) ||
+            (PartInfo[part_idx].variant != Buffered && base_sel_q == DaiOffset)) begin
+          otp_req_o = 1'b1;
+          otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+          otp_zeroize_pre = MuBi4True;
+          if (otp_gnt_i) begin
+            state_d = ZerReadWaitSt;
+          end
+        end else begin
+          state_d = IdleSt;
+          error_d = AccessError; // Signal this error, but do not go into terminal error state.
+          dai_cmd_done_o = 1'b1;
+        end
+      end
+
+      ///////////////////////////////////////////////////////////////////
+      // Wait for OTP response to the zeroization read. Note that in
+      // order to retry a failed zeroization read all errors are treated
+      // as recoverable.
+      ZerReadWaitSt: begin
+        // Continuously check read access and bail out if this is not consistent.
+        if (part_sel_valid &&
+            PartInfo[part_idx].zeroizable &&
+            // The entire address space of a zeroizable partition is readable.
+            (PartInfo[part_idx].variant == Buffered && base_sel_q == DaiOffset) ||
+            (PartInfo[part_idx].variant != Buffered && base_sel_q == DaiOffset)) begin
+          if (otp_rvalid_i) begin
+            // Check OTP return code.
+            data_en = 1'b1;
+            state_d = IdleSt;
+            dai_cmd_done_o = 1'b1;
+            // All errors are treated as recoverable during a zeroization.
+            if (otp_err != NoError) begin
+              error_d = otp_err;
+            end
+          end
+        // At this point, this check MUST succeed - otherwise this means that
+        // there was a tampering attempt. Hence we go into a terminal error state
+        // when this check fails.
+        end else begin
+          state_d = ErrorSt;
+          error_d = FsmStateError;
+        end
+      end
+
       ///////////////////////////////////////////////////////////////////
       // Terminal Error State. This locks access to the DAI. Make sure
       // an FsmStateError error code is assigned here, in case no error code has

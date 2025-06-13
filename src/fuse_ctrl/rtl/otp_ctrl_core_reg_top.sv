@@ -269,6 +269,8 @@ module otp_ctrl_core_reg_top (
   logic direct_access_cmd_rd_wd;
   logic direct_access_cmd_wr_wd;
   logic direct_access_cmd_digest_wd;
+  logic direct_access_cmd_zeroize_write_wd;
+  logic direct_access_cmd_zeroize_read_wd;
   logic direct_access_address_we;
   logic [11:0] direct_access_address_qs;
   logic [11:0] direct_access_address_wd;
@@ -1306,7 +1308,7 @@ module otp_ctrl_core_reg_top (
 
   // R[direct_access_cmd]: V(True)
   logic direct_access_cmd_qe;
-  logic [2:0] direct_access_cmd_flds_we;
+  logic [4:0] direct_access_cmd_flds_we;
   assign direct_access_cmd_qe = &direct_access_cmd_flds_we;
   // Create REGWEN-gated WE signal
   logic direct_access_cmd_gated_we;
@@ -1358,6 +1360,38 @@ module otp_ctrl_core_reg_top (
     .qs     ()
   );
   assign reg2hw.direct_access_cmd.digest.qe = direct_access_cmd_qe;
+
+  //   F[zeroize_write]: 3:3
+  caliptra_prim_subreg_ext #(
+    .DW    (1)
+  ) u_direct_access_cmd_zeroize_write (
+    .re     (1'b0),
+    .we     (direct_access_cmd_gated_we),
+    .wd     (direct_access_cmd_zeroize_write_wd),
+    .d      ('0),
+    .qre    (),
+    .qe     (direct_access_cmd_flds_we[3]),
+    .q      (reg2hw.direct_access_cmd.zeroize_write.q),
+    .ds     (),
+    .qs     ()
+  );
+  assign reg2hw.direct_access_cmd.zeroize_write.qe = direct_access_cmd_qe;
+
+  //   F[zeroize_read]: 4:4
+  caliptra_prim_subreg_ext #(
+    .DW    (1)
+  ) u_direct_access_cmd_zeroize_read (
+    .re     (1'b0),
+    .we     (direct_access_cmd_gated_we),
+    .wd     (direct_access_cmd_zeroize_read_wd),
+    .d      ('0),
+    .qre    (),
+    .qe     (direct_access_cmd_flds_we[4]),
+    .q      (reg2hw.direct_access_cmd.zeroize_read.q),
+    .ds     (),
+    .qs     ()
+  );
+  assign reg2hw.direct_access_cmd.zeroize_read.qe = direct_access_cmd_qe;
 
 
   // R[direct_access_address]: V(False)
@@ -2619,6 +2653,10 @@ module otp_ctrl_core_reg_top (
   assign direct_access_cmd_wr_wd = reg_wdata[1];
 
   assign direct_access_cmd_digest_wd = reg_wdata[2];
+
+  assign direct_access_cmd_zeroize_write_wd = reg_wdata[3];
+
+  assign direct_access_cmd_zeroize_read_wd = reg_wdata[4];
   assign direct_access_address_we = addr_hit[25] & reg_we & !reg_error;
 
   assign direct_access_address_wd = reg_wdata[11:0];
@@ -2914,6 +2952,8 @@ module otp_ctrl_core_reg_top (
         reg_rdata_next[0] = '0;
         reg_rdata_next[1] = '0;
         reg_rdata_next[2] = '0;
+        reg_rdata_next[3] = '0;
+        reg_rdata_next[4] = '0;
       end
 
       addr_hit[25]: begin

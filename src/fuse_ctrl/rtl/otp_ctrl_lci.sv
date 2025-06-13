@@ -48,6 +48,7 @@ module otp_ctrl_lci
   output logic [OtpSizeWidth-1:0]           otp_size_o,
   output logic [OtpIfWidth-1:0]             otp_wdata_o,
   output logic [OtpAddrWidth-1:0]           otp_addr_o,
+  output caliptra_prim_mubi_pkg::mubi4_t    otp_zeroize_o,
   input                                     otp_gnt_i,
   input                                     otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]             otp_rdata_i,
@@ -259,6 +260,9 @@ module otp_ctrl_lci
 
   // Always transfer 16bit blocks.
   assign otp_size_o = '0;
+
+  // Disable zeroization.
+  assign otp_zeroize_o = caliptra_prim_mubi_pkg::MuBi4False;
 
   logic [NumLcOtpWords-1:0][OtpWidth-1:0] data;
   assign data        = lc_data_i;
