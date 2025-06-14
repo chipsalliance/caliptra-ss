@@ -7258,6 +7258,12 @@
 #ifndef MCI_REG_FC_FIPS_ZEROZATION
 #define MCI_REG_FC_FIPS_ZEROZATION                                                                  (0x318)
 #endif
+#define SOC_MCI_TOP_MCI_REG_FC_FIPS_ZEROZATION_STS                                                  (0x2100031c)
+#ifndef MCI_REG_FC_FIPS_ZEROZATION_STS
+#define MCI_REG_FC_FIPS_ZEROZATION_STS                                                              (0x31c)
+#define MCI_REG_FC_FIPS_ZEROZATION_STS_STATUS_LOW                                                   (0)
+#define MCI_REG_FC_FIPS_ZEROZATION_STS_STATUS_MASK                                                  (0x1)
+#endif
 #define SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0                                                   (0x21000400)
 #ifndef MCI_REG_GENERIC_INPUT_WIRES_0
 #define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (0x400)

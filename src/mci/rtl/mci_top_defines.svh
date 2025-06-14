@@ -106,6 +106,7 @@
 `define MCI_TOP_MCI_REG_SOC_PROD_DEBUG_STATE_0                                                      (32'h310)
 `define MCI_TOP_MCI_REG_SOC_PROD_DEBUG_STATE_1                                                      (32'h314)
 `define MCI_TOP_MCI_REG_FC_FIPS_ZEROZATION                                                          (32'h318)
+`define MCI_TOP_MCI_REG_FC_FIPS_ZEROZATION_STS                                                      (32'h31c)
 `define MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0                                                       (32'h400)
 `define MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1                                                       (32'h404)
 `define MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0                                                      (32'h408)

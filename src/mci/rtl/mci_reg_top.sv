@@ -110,7 +110,8 @@ module mci_reg_top
     input  logic mbox1_sram_double_ecc_error,
 
     // LCC Gasket
-    input soc_ifc_pkg::security_state_t                security_state_o,
+    input soc_ifc_pkg::security_state_t     security_state_o,
+    input logic                             FIPS_ZEROIZATION_PPD_i,
 
     // SOC Interrupts
     output logic all_error_fatal,
@@ -331,6 +332,7 @@ always_comb begin
     // STRAP with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = strap_we_sticky ? ss_debug_intent : mcu_dmi_uncore_wdata[0];
     mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
+    mci_reg_hwif_in.FC_FIPS_ZEROZATION_STS.status.next  = FIPS_ZEROIZATION_PPD_i;
 
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.next          = mcu_dmi_uncore_wdata[0] ; 
@@ -356,6 +358,8 @@ always_comb begin
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
     mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR));
+    
+    mci_reg_hwif_in.FC_FIPS_ZEROZATION_STS.status.we  = strap_we;
     
     // REGISTERS WITH TAP ACCESS
     mci_reg_hwif_in.RESET_REQUEST.mcu_req.we            =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
