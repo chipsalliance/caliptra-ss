@@ -16,8 +16,8 @@ set I3C_OUTSIDE FALSE
 set APB FALSE
 # Simplistic processing of command line arguments to override defaults
 foreach arg $argv {
-    regexp {(.*)=(.*)} $arg fullmatch option value
-    set $option "$value"
+  regexp {(.*)=(.*)} $arg fullmatch option value
+  set $option "$value"
 }
 # If VERSION was not set by tclargs, set it from the commit ID.
 # This assumes it is run from within caliptra-sw. If building from outside caliptra-sw call with "VERSION=[hex number]"
@@ -128,7 +128,7 @@ set_property -dict [list \
   CONFIG.NUM_MI {4} \
   CONFIG.NUM_SI {1} \
   CONFIG.NUM_CLKS {1} \
-] [get_bd_cells axi_interconnect_0]
+  ] [get_bd_cells axi_interconnect_0]
 
 # AXI Interconnect for Caliptra IPs (behind firewall)
 create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 axi_interconnect_1
@@ -136,7 +136,7 @@ set_property -dict [list \
   CONFIG.NUM_MI {9} \
   CONFIG.NUM_SI {5} \
   CONFIG.NUM_CLKS {2} \
-] [get_bd_cells axi_interconnect_1]
+  ] [get_bd_cells axi_interconnect_1]
 
 # Add AXI Firewall to protect the core from crashes
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_firewall:1.2 axi_firewall_0
@@ -146,7 +146,7 @@ set_property -dict [list \
   CONFIG.BUSER_WIDTH {32} \
   CONFIG.RUSER_WIDTH {32} \
   CONFIG.WUSER_WIDTH {32} \
-] [get_bd_cells axi_firewall_0]
+  ] [get_bd_cells axi_firewall_0]
 
 # Create reset block
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset_0
@@ -158,7 +158,7 @@ if {$APB} {
   set_property -dict [list \
     CONFIG.C_APB_NUM_SLAVES {1} \
     CONFIG.C_M_APB_PROTOCOL {apb4} \
-  ] [get_bd_cells axi_apb_bridge_0]
+    ] [get_bd_cells axi_apb_bridge_0]
   #set_property location {3 1041 439} [get_bd_cells axi_apb_bridge_0]
 }
 
@@ -180,7 +180,7 @@ create_bd_cell -type ip -vlnv xilinx.com:ip:emb_mem_gen:1.0 emb_mem_gen_0
 set_property -dict [list \
   CONFIG.MEMORY_DEPTH {98304} \
   CONFIG.MEMORY_OPTIMIZATION {no_mem_opt} \
-] [get_bd_cells emb_mem_gen_0]
+  ] [get_bd_cells emb_mem_gen_0]
 connect_bd_intf_net [get_bd_intf_pins mcu_ram_bram_ctrl_2/BRAM_PORTA] [get_bd_intf_pins emb_mem_gen_0/BRAM_PORTA]
 # Set regcea. Default should be 1
 create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0
@@ -193,7 +193,7 @@ set_property -dict [list \
   CONFIG.HJ_CAPABLE {1} \
   CONFIG.IBI_CAPABLE {1} \
   #CONFIG.SCL_CLK_FREQ {12500} \
-] [get_bd_cells xilinx_i3c_0]
+  ] [get_bd_cells xilinx_i3c_0]
 # Create CDC for AXI I3C
 create_bd_cell -type ip -vlnv xilinx.com:ip:xpm_cdc_gen:1.0 xpm_cdc_gen_0
 set_property CONFIG.CDC_TYPE {xpm_cdc_sync_rst} [get_bd_cells xpm_cdc_gen_0]
@@ -427,43 +427,55 @@ add_files -fileset constrs_1 $fpgaDir/src/ddr4_constraints.xdc
 
 if {$FAST_I3C} {
 } else {
-# TODO: Weird why this couldn't be earlier
-set_property CONFIG.SCL_CLK_FREQ {12500} [get_bd_cells xilinx_i3c_0]
+  # TODO: Weird why this couldn't be earlier
+  set_property CONFIG.SCL_CLK_FREQ {12500} [get_bd_cells xilinx_i3c_0]
 }
 
 # Mark AXI interfaces for debugging
 set_property HDL_ATTRIBUTE.DEBUG true [get_bd_intf_nets { \
   ps_0_M_AXI_FPD \
-  M_AXI_ARM \
-  S_AXI_FIREWALL \
-  M_AXI_FIREWALL \
-  S_AXI_CALIPTRA \
-  S_AXI_MCI \
-  S_AXI_OTP \
-  M_AXI_MCU_LSU \
-  M_AXI_CALIPTRA}]
-apply_bd_automation -rule xilinx.com:bd_rule:debug -dict [list \
-                                                          [get_bd_intf_nets M_AXI_ARM] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
-                                                          [get_bd_intf_nets M_AXI_CALIPTRA] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
-                                                          [get_bd_intf_nets M_AXI_MCU_LSU] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
-                                                          [get_bd_intf_nets S_AXI_CALIPTRA] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
-                                                          [get_bd_intf_nets S_AXI_FIREWALL] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
-                                                          [get_bd_intf_nets M_AXI_FIREWALL] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
-                                                          [get_bd_intf_nets S_AXI_MCI] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
-                                                          [get_bd_intf_nets S_AXI_OTP] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
-                                                         ]
+    M_AXI_ARM \
+    S_AXI_FIREWALL \
+    M_AXI_FIREWALL \
+    S_AXI_CALIPTRA \
+    S_AXI_MCI \
+    S_AXI_OTP \
+    M_AXI_MCU_LSU \
+    S_AXI_I3C \
+    M_AXI_CALIPTRA}]
 
+  apply_bd_automation -rule xilinx.com:bd_rule:debug -dict [list \
+    [get_bd_intf_nets M_AXI_ARM] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets M_AXI_CALIPTRA] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets M_AXI_MCU_LSU] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets S_AXI_CALIPTRA] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets S_AXI_FIREWALL] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets M_AXI_FIREWALL] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets S_AXI_MCI] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets S_AXI_I3C] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl1_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
+    [get_bd_intf_nets S_AXI_OTP] {AXI_R_ADDRESS "Data and Trigger" AXI_R_DATA "Data and Trigger" AXI_W_ADDRESS "Data and Trigger" AXI_W_DATA "Data and Trigger" AXI_W_RESPONSE "Data and Trigger" CLK_SRC "/ps_0/pl0_ref_clk" AXIS_ILA "Auto" APC_EN "0" } \
+  ]
+
+# Mark I3C signals for debugging
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {caliptra_package_top_0_SCL }]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {xilinx_i3c_0_scl_o }]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {xilinx_i3c_0_scl_t }]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {caliptra_package_top_0_SDA }]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {xilinx_i3c_0_sda_o }]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {xilinx_i3c_0_sda_t }]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {xilinx_i3c_0_sda_pullup_en }]
+set_property HDL_ATTRIBUTE.DEBUG true [get_bd_nets {xilinx_i3c_0_scl_pullup_en }]
 
 save_bd_design
 
 # Start build
 if {$BUILD} {
-  launch_runs synth_1 -jobs 10
-  wait_on_runs synth_1
-  launch_runs impl_1 -to_step write_device_image -jobs 10
-  wait_on_runs impl_1
-  open_run impl_1
-  report_utilization -file $outputDir/utilization.txt
+launch_runs synth_1 -jobs 32
+wait_on_runs synth_1
+launch_runs impl_1 -to_step write_device_image -jobs 32
+wait_on_runs impl_1
+open_run impl_1
+report_utilization -file $outputDir/utilization.txt
 
-  write_hw_platform -fixed -include_bit -force -file $outputDir/caliptra_fpga.xsa
+write_hw_platform -fixed -include_bit -force -file $outputDir/caliptra_fpga.xsa
 }
