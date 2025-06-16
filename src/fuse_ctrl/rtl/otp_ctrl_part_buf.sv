@@ -21,6 +21,7 @@ module otp_ctrl_part_buf
   // Pulse to start partition initialisation (required once per power cycle).
   input                               init_req_i,
   output logic                        init_done_o,
+  output logic                        init_zeroized_o,
   // Integrity check requests
   input                               integ_chk_req_i,
   output logic                        integ_chk_ack_o,
@@ -113,8 +114,8 @@ module otp_ctrl_part_buf
 
   // SEC_CM: PART.FSM.SPARSE
   // Encoding generated with:
-  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 16 -n 12 \
-  //      -s 3370657881 --language=sv
+  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 18 -n 12 \
+  //     -s 812680037 --language=sv
   //
   // Hamming distance histogram:
   //
@@ -123,38 +124,40 @@ module otp_ctrl_part_buf
   //  2: --
   //  3: --
   //  4: --
-  //  5: |||||||||||||| (28.33%)
-  //  6: |||||||||||||||||||| (38.33%)
-  //  7: |||||||||| (19.17%)
-  //  8: ||| (5.83%)
-  //  9: || (4.17%)
-  // 10: | (2.50%)
-  // 11:  (0.83%)
-  // 12:  (0.83%)
+  //  5: |||||||||||||||| (29.41%)
+  //  6: |||||||||||||||||||| (34.64%)
+  //  7: |||||||||| (18.30%)
+  //  8: |||||| (11.11%)
+  //  9: ||| (5.23%)
+  // 10:  (1.31%)
+  // 11: --
+  // 12: --
   //
   // Minimum Hamming distance: 5
-  // Maximum Hamming distance: 12
-  // Minimum Hamming weight: 4
-  // Maximum Hamming weight: 8
+  // Maximum Hamming distance: 10
+  // Minimum Hamming weight: 3
+  // Maximum Hamming weight: 10
   //
   localparam int StateWidth = 12;
   typedef enum logic [StateWidth-1:0] {
-    ResetSt         = 12'b011000001110,
-    InitSt          = 12'b110100100111,
-    InitWaitSt      = 12'b001110110001,
-    InitDescrSt     = 12'b110010000100,
-    InitDescrWaitSt = 12'b100110101000,
-    IdleSt          = 12'b010101001101,
-    IntegScrSt      = 12'b110101011010,
-    IntegScrWaitSt  = 12'b100010011111,
-    IntegDigClrSt   = 12'b101001000001,
-    IntegDigSt      = 12'b011101100010,
-    IntegDigPadSt   = 12'b001101010111,
-    IntegDigFinSt   = 12'b011011100101,
-    IntegDigWaitSt  = 12'b100011110010,
-    CnstyReadSt     = 12'b000001101011,
-    CnstyReadWaitSt = 12'b101001111100,
-    ErrorSt         = 12'b010110111110
+    ResetSt          = 12'b010100011000,
+    InitChkZerSt     = 12'b100010100001,
+    InitChkZerWaitSt = 12'b111111111010,
+    InitSt           = 12'b000001001011,
+    InitWaitSt       = 12'b110111000101,
+    InitDescrSt      = 12'b001000101000,
+    InitDescrWaitSt  = 12'b001000010101,
+    IdleSt           = 12'b100100111110,
+    IntegScrSt       = 12'b001011110110,
+    IntegScrWaitSt   = 12'b111000100111,
+    IntegDigClrSt    = 12'b101110001111,
+    IntegDigSt       = 12'b111010010000,
+    IntegDigPadSt    = 12'b010101110011,
+    IntegDigFinSt    = 12'b010010111101,
+    IntegDigWaitSt   = 12'b011011001100,
+    CnstyReadSt      = 12'b101101011001,
+    CnstyReadWaitSt  = 12'b000101100100,
+    ErrorSt          = 12'b110001010110
   } state_e;
 
   typedef enum logic {
@@ -172,6 +175,7 @@ module otp_ctrl_part_buf
   data_sel_e data_sel;
   base_sel_e base_sel;
   mubi8_t dout_locked_d, dout_locked_q;
+  mubi8_t zeroized_d, zeroized_q;
   logic [CntWidth-1:0] cnt;
   logic cnt_en, cnt_clr, cnt_err;
   logic ecc_err;
@@ -189,10 +193,8 @@ module otp_ctrl_part_buf
   // point and does not report any integrity errors if integrity is disabled.
   otp_err_e otp_err;
   if (Info.integrity) begin : gen_integrity
-    assign otp_cmd_o = caliptra_prim_otp_pkg::Read;
     assign otp_err = otp_err_e'(otp_err_i);
   end else begin : gen_no_integrity
-    assign otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
     always_comb begin
       if (otp_err_e'(otp_err_i) inside {MacroEccCorrError, MacroEccUncorrError}) begin
         otp_err = NoError;
@@ -208,8 +210,12 @@ module otp_ctrl_part_buf
     // Redundantly encoded lock signal for buffer regs.
     dout_locked_d = dout_locked_q;
 
+    // Redundantly encode zeroized signal.
+    zeroized_d = zeroized_q;
+
     // OTP signals
     otp_req_o = 1'b0;
+    otp_cmd_o = Info.integrity ? caliptra_prim_otp_pkg::Read : caliptra_prim_otp_pkg::ReadRaw;
 
     // Scrambling mutex
     scrmbl_mtx_req_o = 1'b0;
@@ -244,6 +250,44 @@ module otp_ctrl_part_buf
       ResetSt: begin
         if (init_req_i) begin
           state_d = InitSt;
+          // If enabled, check if partition is zeroized first.
+          if (Info.zeroizable) begin
+            state_d = InitChkZerSt;
+          end else begin
+            state_d = InitSt;
+          end
+        end
+      end
+      ///////////////////////////////////////////////////////////////////
+      // Read out of the digest. Wait here until the OTP request
+      // has been granted. The digest is read in raw (without ECC check)
+      // and only serves to check whether the partition is in the 
+      // zeroization state. The buffered digest is then read out during
+      // the following initialization states.
+      InitChkZerSt: begin
+        otp_req_o = 1'b1;
+        otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+        base_sel = DigOffset;
+        if (otp_gnt_i) begin
+          state_d = InitChkZerWaitSt;
+        end
+      end
+      ///////////////////////////////////////////////////////////////////
+      // Wait for OTP response and check whether the digest value signals
+      // whether the part is zeroized.
+      InitChkZerWaitSt: begin
+        if (otp_rvalid_i) begin
+          if (otp_err == NoError) begin
+            state_d = InitSt;
+            // Determine whether the partition is zeroized by counting
+            // the number of set bits.
+            if ($countones(otp_rdata_i) >= ZeroizationThreshold) begin
+              zeroized_d <= MuBi8True;
+            end
+          end else begin
+            state_d = ErrorSt;
+            error_d = otp_err;
+          end
         end
       end
       ///////////////////////////////////////////////////////////////////
@@ -252,6 +296,10 @@ module otp_ctrl_part_buf
       // And then wait until the OTP word comes back.
       InitSt: begin
         otp_req_o = 1'b1;
+        // If the partition is zeroized, then disable ECC checks.
+        if (init_zeroized_o) begin
+          otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+        end
         if (otp_gnt_i) begin
           state_d = InitWaitSt;
         end
@@ -673,6 +721,8 @@ module otp_ctrl_part_buf
 
   // We have successfully initialized the partition once it has been unlocked.
   assign init_done_o = mubi8_test_false_strict(dout_locked_q);
+  // Indicate whether partition is zeroized.
+  assign init_zeroized_o = mubi8_test_true_strict(zeroized_q);
   // Hardware output gating.
   // Note that this is decoupled from the DAI access rules further below.
   assign data_o = (init_done_o) ? data : DataDefault;
@@ -754,9 +804,12 @@ module otp_ctrl_part_buf
       error_q       <= NoError;
       // data output is locked by default
       dout_locked_q <= MuBi8True;
+      // A partition is always initialized as not zeroized before the digest is checked.
+      zeroized_q    <= MuBi8False;
     end else begin
       error_q       <= error_d;
       dout_locked_q <= dout_locked_d;
+      zeroized_q    <= zeroized_d;
     end
   end
 
@@ -817,5 +870,13 @@ module otp_ctrl_part_buf
   // The partition size must be greater than one scrambling block for the address calculation
   // and muxing to work correctly.
   `CALIPTRA_ASSERT_INIT(OtpPartBufSize_A, Info.size > (ScrmblBlockWidth/8))
+
+  // Read out of a zeroized partition should never result in an ECC error as it
+  // is disabled.
+  `CALIPTRA_ASSERT(OtpPartBufZeroizedNoEccErrors_A,
+   ((state_q == InitChkZerWaitSt) && otp_rvalid_i) ||
+   (init_zeroized_o && otp_rvalid_i)
+   |->
+   !(otp_err inside {MacroEccCorrError, MacroEccUncorrError}))
 
 endmodule : otp_ctrl_part_buf
