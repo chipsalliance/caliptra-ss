@@ -27,6 +27,11 @@ package otp_ctrl_part_pkg;
   parameter int NumVendorPkFuses = 16;
   parameter int NumVendorSecretFuses = 16;
   parameter int NumVendorNonSecretFuses = 16;
+  
+  // A partition is deemed to be in a zeroization state if its digest
+  // field contains a predefined number of set bits. The digest field
+  // is always of the same width as the scramble block size.
+  parameter int ZeroizationThreshold = ScrmblBlockWidth;
 
   ////////////////////////////////////
   // Scrambling Constants and Types //
