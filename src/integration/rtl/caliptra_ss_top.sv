@@ -242,6 +242,12 @@ module caliptra_ss_top
     output logic cptra_ss_i3c_scl_oe,
     output logic cptra_ss_i3c_sda_oe,
     output logic cptra_ss_sel_od_pp_o,
+    
+    output logic cptra_ss_i3c_recovery_payload_available_o,
+    input  logic cptra_ss_i3c_recovery_payload_available_i,
+
+    output logic cptra_ss_i3c_recovery_image_activated_o,
+    input  logic cptra_ss_i3c_recovery_image_activated_i,
 
     input  logic cptra_i3c_axi_user_id_filtering_enable_i,
 
@@ -368,8 +374,6 @@ module caliptra_ss_top
     // --------------------------------------------------------------------
 
     //---------------------------I3C---------------------------------------
-    logic                       payload_available_o;
-    logic                       image_activated_o;
     logic                       disable_id_filtering_i;
     logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
 
@@ -484,8 +488,8 @@ module caliptra_ss_top
         .mailbox_flow_done(),
         .BootFSM_BrkPoint(cptra_ss_cptra_core_bootfsm_bp_i),
 
-        .recovery_data_avail(payload_available_o),
-        .recovery_image_activated(image_activated_o),
+        .recovery_data_avail(cptra_ss_i3c_recovery_payload_available_i),
+        .recovery_image_activated(cptra_ss_i3c_recovery_image_activated_i),
 
         //SoC Interrupts
         .cptra_error_fatal    (cptra_error_fatal    ),
@@ -936,8 +940,8 @@ module caliptra_ss_top
         // Additional signals
         .sel_od_pp_o                    (cptra_ss_sel_od_pp_o),
 
-        .recovery_payload_available_o   (payload_available_o),
-        .recovery_image_activated_o     (image_activated_o),
+        .recovery_payload_available_o   (cptra_ss_i3c_recovery_payload_available_o),
+        .recovery_image_activated_o     (cptra_ss_i3c_recovery_image_activated_o),
         .peripheral_reset_o             (i3c_peripheral_reset),
         .peripheral_reset_done_i        (1'b1),
         .escalated_reset_o              (i3c_escalated_reset),
@@ -1257,7 +1261,7 @@ module caliptra_ss_top
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
     ); 
 
-    `CALIPTRA_ASSERT(i3c_payload_available, ($rose(payload_available_o) |-> ##[1:50] payload_available_o == 0),cptra_ss_clk_i, cptra_ss_rst_b_i)
-    `CALIPTRA_ASSERT(i3c_image_activated, ($rose(image_activated_o) |-> ##[1:50] image_activated_o == 0), cptra_ss_clk_i, cptra_ss_rst_b_i)
+    `CALIPTRA_ASSERT(i3c_payload_available, ($rose(cptra_ss_i3c_recovery_payload_available_i) |-> ##[1:50] cptra_ss_i3c_recovery_payload_available_i == 0),cptra_ss_clk_i, cptra_ss_rst_b_i)
+    `CALIPTRA_ASSERT(i3c_image_activated, ($rose(cptra_ss_i3c_recovery_image_activated_i) |-> ##[1:50] cptra_ss_i3c_recovery_image_activated_i == 0), cptra_ss_clk_i, cptra_ss_rst_b_i)
 
 endmodule

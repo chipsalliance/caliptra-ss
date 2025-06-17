@@ -1373,6 +1373,9 @@ module caliptra_ss_top_tb
     wire cptra_ss_sel_od_pp_o;
     logic cptra_ss_i3c_scl_oe;
     logic cptra_ss_i3c_sda_oe;
+    
+    logic cptra_ss_i3c_recovery_payload_available_o;
+    logic cptra_ss_i3c_recovery_image_activated_o;
 
     logic cptra_i3c_axi_user_id_filtering_enable_i;
     assign cptra_i3c_axi_user_id_filtering_enable_i = 1'b1;
@@ -1697,6 +1700,10 @@ module caliptra_ss_top_tb
         .cptra_ss_i3c_sda_oe,
         .cptra_ss_sel_od_pp_o,
         .cptra_i3c_axi_user_id_filtering_enable_i,
+        .cptra_ss_i3c_recovery_payload_available_o,
+        .cptra_ss_i3c_recovery_payload_available_i(cptra_ss_i3c_recovery_payload_available_o),
+        .cptra_ss_i3c_recovery_image_activated_o,
+        .cptra_ss_i3c_recovery_image_activated_i(cptra_ss_i3c_recovery_image_activated_o),
 
         .cptra_ss_cptra_core_generic_input_wires_i,
         .cptra_ss_cptra_core_scan_mode_i,

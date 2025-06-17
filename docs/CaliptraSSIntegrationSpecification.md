@@ -435,6 +435,10 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | 1     | `cptra_ss_sel_od_pp_o`               | Select open-drain push-pull output       |
 | External | inout     | 1     | `cptra_ss_i3c_scl_io`                | I3C clock bidirectional                  |
 | External | inout     | 1     | `cptra_ss_i3c_sda_io`                | I3C data bidirectional                   |
+| External | output    | 1     | `cptra_ss_i3c_recovery_payload_available_o`                | I3C indicates recovery payload is available. If there is no external I3C it should be looped back to `cptra_ss_i3c_recovery_payload_available_i`. If there is an external I3C it can be combined with or replaced with SOC logic and connected to `cptra_ss_i3c_recovery_payload_available_i`                  |
+| External | input     | 1     | `cptra_ss_i3c_recovery_payload_available_i`                | I3C indication for Caliptra Core that a recovery payload is available. If no external I3C should be connected to `cptra_ss_i3c_recovery_payload_available_o`. If external I3C it can be connected to a combination of SOC logic + `cptra_ss_i3c_recovery_payload_available_o`                  |
+| External | output    | 1     | `cptra_ss_i3c_recovery_image_activated_o`                | Indicates the recovery image is activated. If there is no external I3C it should be looped back to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C it can be combined with or replaced with SOC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`                  |
+| External | input     | 1     | `cptra_ss_i3c_recovery_image_activated_i`                | I3C indication for Caliptra Core that the recovery image is activated. If no external I3C should be connected to `cptra_ss_i3c_recovery_image_activated_o`. If there is an external I3C it can be connected to a combination of SOC logic + `cptra_ss_i3c_recovery_image_activated_o`                  |
 | External | input     | 64    | `cptra_ss_cptra_core_generic_input_wires_i` | Generic input wires for Caliptra core |
 | External | input     | 1     | `cptra_ss_cptra_core_scan_mode_i`    | Caliptra core scan mode input            |
 | External | output    | 1     | `cptra_error_fatal`                  | Fatal error output                       |
@@ -2201,8 +2205,8 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | `sel_od_pp_o`                     | output    | 1 bit                     | Open-drain / push-pull selection (digital output)                    |
 | `i3c_scl_io`                      | inout     | 1 bit (else)              | I3C clock line (analog/digital)                                      |
 | `i3c_sda_io`                      | inout     | 1 bit (else)              | I3C data line (analog/digital)                                       |
-| `recovery_payload_available_o`    | output    | 1 bit                     | Indicates recovery payload is available                              |
-| `recovery_image_activated_o`      | output    | 1 bit                     | Indicates the recovery image is activated                            |
+| `recovery_payload_available_o`    | output    | 1 bit                     | Indicates recovery payload is available and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_payload_available_o` to SOC |
+| `recovery_image_activated_o`      | output    | 1 bit                     | Indicates the recovery image is activated and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_image_activated_o` to SOC | 
 | `peripheral_reset_o`              | output    | 1 bit                     | Resets connected peripherals                                         |
 | `peripheral_reset_done_i`         | input     | 1 bit                     | Acknowledges peripheral reset completion                             |
 | `escalated_reset_o`               | output    | 1 bit                     | Escalated reset output                                               |
@@ -2216,6 +2220,8 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
   1. Connect the `cptra_ss_i3c_s_axi_if` with AXI interconnect.
   2. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#1** to initialize the I3C targets.
   3. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#2** to set both I3C target device with static addresses. **Note**, this is not required if I3C Host device is using the CCC `ENTDAA` for initializing the dynamic address to both targets.
+  4. If no external I3C connect `cptra_ss_i3c_recovery_image_activated_o` directly to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C `cptra_ss_i3c_recovery_image_activated_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`.
+  5. If no external I3C connect `cptra_ss_i3c_recovery_payload_available_o` directly to `cptra_ss_i3c_recovery_payload_available_i`. If there is an external I3C `cptra_ss_i3c_recovery_payload_available_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_payload_available_i`.
 
 ## Programming Sequence
 
