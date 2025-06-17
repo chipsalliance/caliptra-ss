@@ -50,6 +50,7 @@ module prim_generic_otp
   input  cmd_e                   cmd_i,
   input [AddrWidth-1:0]          addr_i,
   input [IfWidth-1:0]            wdata_i,
+  input caliptra_prim_mubi_pkg::mubi4_t zeroize_i,
   // Response channel
   output logic                   valid_o,
   output logic [IfWidth-1:0]     rdata_o,

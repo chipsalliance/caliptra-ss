@@ -381,6 +381,7 @@ package otp_ctrl_pkg;
       caliptra_prim_otp_pkg::cmd_e     cmd_i;
       logic [OtpAddrWidth-1:0]         addr_i;
       logic [OtpIfWidth-1:0]           wdata_i;
+      caliptra_prim_mubi_pkg::mubi4_t  zeroize_i;
     } prim_generic_otp_inputs_t;
   
     //------------------------------------------------------------------
