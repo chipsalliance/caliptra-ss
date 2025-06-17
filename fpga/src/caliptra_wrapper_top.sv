@@ -370,7 +370,7 @@ module caliptra_wrapper_top #(
     input	wire                      S_AXI_I3C_RREADY,
     output	wire [31:0]               S_AXI_I3C_RDATA,
     output	wire [1:0]                S_AXI_I3C_RRESP,
-    
+
     input wire [1:0] S_AXI_I3C_ARBURST,
     input wire [2:0] S_AXI_I3C_ARSIZE,
     input wire [7:0] S_AXI_I3C_ARLEN,
@@ -408,7 +408,7 @@ module caliptra_wrapper_top #(
     input	wire                      S_AXI_LCC_RREADY,
     output	wire [31:0]               S_AXI_LCC_RDATA,
     output	wire [1:0]                S_AXI_LCC_RRESP,
-    
+
     input wire [1:0] S_AXI_LCC_ARBURST,
     input wire [2:0] S_AXI_LCC_ARSIZE,
     input wire [7:0] S_AXI_LCC_ARLEN,
@@ -425,7 +425,7 @@ module caliptra_wrapper_top #(
     input wire                    S_AXI_LCC_AWLOCK,
     input  wire                  S_AXI_LCC_WLAST,
     output wire [18:0] S_AXI_LCC_BID,
-    
+
     // OTP
     input	wire                      S_AXI_OTP_AWVALID,
     output	wire                      S_AXI_OTP_AWREADY,
@@ -446,7 +446,7 @@ module caliptra_wrapper_top #(
     input	wire                      S_AXI_OTP_RREADY,
     output	wire [31:0]               S_AXI_OTP_RDATA,
     output	wire [1:0]                S_AXI_OTP_RRESP,
-    
+
     input wire [1:0] S_AXI_OTP_ARBURST,
     input wire [2:0] S_AXI_OTP_ARSIZE,
     input wire [7:0] S_AXI_OTP_ARLEN,
@@ -472,7 +472,7 @@ module caliptra_wrapper_top #(
     input  logic [31:0] rom_backdoor_wrdata,
     output logic [31:0] rom_backdoor_rddata,
     input  logic rom_backdoor_rst,
-    
+
     // MCU ROM Backdoor Interface
     input  logic        mcu_rom_backdoor_clk,
     input  logic        mcu_rom_backdoor_en,
@@ -494,7 +494,7 @@ module caliptra_wrapper_top #(
     input logic                       mcu_jtag_tdi_i,
     input logic                       mcu_jtag_trst_n_i,
     output logic                      mcu_jtag_tdo_o,
-    
+
     input logic                       lc_jtag_tck_i,
     input logic                       lc_jtag_tms_i,
     input logic                       lc_jtag_tdi_i,
@@ -591,7 +591,7 @@ module caliptra_wrapper_top #(
 
     logic mbox_sram_cs;
     logic mbox_sram_we;
-    logic [14:0] mbox_sram_addr;
+    logic [15:0] mbox_sram_addr;
     logic [39-1:0] mbox_sram_wdata;
     logic [39-1:0] mbox_sram_rdata;
 
@@ -600,7 +600,7 @@ module caliptra_wrapper_top #(
     logic [`CALIPTRA_IMEM_DATA_WIDTH-1:0] imem_rdata;
 
     logic [255:0]                              cptra_obf_key;
-    (* syn_keep = "true", mark_debug = "true" *) logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_csr_hmac_key;
+    logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_csr_hmac_key;
     assign cptra_obf_key =
         {hwif_out.interface_regs.cptra_obf_key[7].value.value,
          hwif_out.interface_regs.cptra_obf_key[6].value.value,
@@ -743,7 +743,7 @@ mldsa_mem_top mldsa_mem_top_inst (
 
 // Mailbox RAM
 xpm_memory_spram #(
-    .ADDR_WIDTH_A(15),             // DECIMAL
+    .ADDR_WIDTH_A(16),             // DECIMAL
     .AUTO_SLEEP_TIME(0),           // DECIMAL
     .BYTE_WRITE_WIDTH_A(39),       // DECIMAL
     .CASCADE_HEIGHT(0),            // DECIMAL
@@ -752,7 +752,7 @@ xpm_memory_spram #(
     .MEMORY_INIT_PARAM("0"),       // String
     .MEMORY_OPTIMIZATION("true"),  // String
     .MEMORY_PRIMITIVE("auto"),     // String
-    .MEMORY_SIZE(128*1024*8*39/32), // DECIMAL
+    .MEMORY_SIZE(256*1024*8*39/32), // DECIMAL
     .MESSAGE_CONTROL(0),           // DECIMAL
     .READ_DATA_WIDTH_A(39),        // DECIMAL
     .READ_LATENCY_A(1),            // DECIMAL
@@ -1239,16 +1239,16 @@ mcu_rom (
     xpm_memory_spram #(
         .ADDR_WIDTH_A(32),              // DECIMAL
         .AUTO_SLEEP_TIME(0),            // DECIMAL
-        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
+        .BYTE_WRITE_WIDTH_A(39),        // DECIMAL
         .CASCADE_HEIGHT(0),             // DECIMAL
         .ECC_MODE("no_ecc"),            // String
         .MEMORY_INIT_FILE("none"),      // String
         .MEMORY_INIT_PARAM("0"),        // String
         .MEMORY_OPTIMIZATION("false"),  // String
         .MEMORY_PRIMITIVE("auto"),      // String
-        .MEMORY_SIZE(1024*1024*8),      // DECIMAL
+        .MEMORY_SIZE(1024*512*8*39/32),// DECIMAL
         .MESSAGE_CONTROL(0),            // DECIMAL
-        .READ_DATA_WIDTH_A(32),         // DECIMAL
+        .READ_DATA_WIDTH_A(39),         // DECIMAL
         .READ_LATENCY_A(1),             // DECIMAL
         .READ_RESET_VALUE_A("0"),       // String
         .RST_MODE_A("SYNC"),            // String
@@ -1256,7 +1256,7 @@ mcu_rom (
         .USE_MEM_INIT(1),               // DECIMAL
         .USE_MEM_INIT_MMI(0),           // DECIMAL
         .WAKEUP_TIME("disable_sleep"),  // String
-        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
+        .WRITE_DATA_WIDTH_A(39),        // DECIMAL
         .WRITE_MODE_A("no_change"),     // String
         .WRITE_PROTECT(1)               // DECIMAL
     )
@@ -1283,16 +1283,16 @@ mcu_rom (
     xpm_memory_spram #(
         .ADDR_WIDTH_A(32),              // DECIMAL
         .AUTO_SLEEP_TIME(0),            // DECIMAL
-        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
+        .BYTE_WRITE_WIDTH_A(39),        // DECIMAL
         .CASCADE_HEIGHT(0),             // DECIMAL
         .ECC_MODE("no_ecc"),            // String
         .MEMORY_INIT_FILE("none"),      // String
         .MEMORY_INIT_PARAM("0"),        // String
         .MEMORY_OPTIMIZATION("false"),  // String
         .MEMORY_PRIMITIVE("auto"),      // String
-        .MEMORY_SIZE(4*1024*8),      // DECIMAL
+        .MEMORY_SIZE(4*1024*8*39/32),   // DECIMAL
         .MESSAGE_CONTROL(0),            // DECIMAL
-        .READ_DATA_WIDTH_A(32),         // DECIMAL
+        .READ_DATA_WIDTH_A(39),         // DECIMAL
         .READ_LATENCY_A(1),             // DECIMAL
         .READ_RESET_VALUE_A("0"),       // String
         .RST_MODE_A("SYNC"),            // String
@@ -1300,7 +1300,7 @@ mcu_rom (
         .USE_MEM_INIT(1),               // DECIMAL
         .USE_MEM_INIT_MMI(0),           // DECIMAL
         .WAKEUP_TIME("disable_sleep"),  // String
-        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
+        .WRITE_DATA_WIDTH_A(39),        // DECIMAL
         .WRITE_MODE_A("no_change"),     // String
         .WRITE_PROTECT(1)               // DECIMAL
     )
@@ -1319,7 +1319,7 @@ mcu_rom (
         .sleep(0),
         .wea(cptra_ss_mcu_mbox0_sram_req_if.req.we)
     );
-    
+
     mci_mcu_sram_if cptra_ss_mcu_mbox1_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
@@ -1327,16 +1327,16 @@ mcu_rom (
     xpm_memory_spram #(
         .ADDR_WIDTH_A(32),              // DECIMAL
         .AUTO_SLEEP_TIME(0),            // DECIMAL
-        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
+        .BYTE_WRITE_WIDTH_A(39),        // DECIMAL
         .CASCADE_HEIGHT(0),             // DECIMAL
         .ECC_MODE("no_ecc"),            // String
         .MEMORY_INIT_FILE("none"),      // String
         .MEMORY_INIT_PARAM("0"),        // String
         .MEMORY_OPTIMIZATION("false"),  // String
         .MEMORY_PRIMITIVE("auto"),      // String
-        .MEMORY_SIZE(4*1024*8),      // DECIMAL
+        .MEMORY_SIZE(4*1024*8*39/32),   // DECIMAL
         .MESSAGE_CONTROL(0),            // DECIMAL
-        .READ_DATA_WIDTH_A(32),         // DECIMAL
+        .READ_DATA_WIDTH_A(39),         // DECIMAL
         .READ_LATENCY_A(1),             // DECIMAL
         .READ_RESET_VALUE_A("0"),       // String
         .RST_MODE_A("SYNC"),            // String
@@ -1344,7 +1344,7 @@ mcu_rom (
         .USE_MEM_INIT(1),               // DECIMAL
         .USE_MEM_INIT_MMI(0),           // DECIMAL
         .WAKEUP_TIME("disable_sleep"),  // String
-        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
+        .WRITE_DATA_WIDTH_A(39),        // DECIMAL
         .WRITE_MODE_A("no_change"),     // String
         .WRITE_PROTECT(1)               // DECIMAL
     )
@@ -1363,7 +1363,7 @@ mcu_rom (
         .sleep(0),
         .wea(cptra_ss_mcu_mbox1_sram_req_if.req.we)
     );
-    
+
     // MCU LSU AXI Manager
     axi_if #(
         .AW(32),
@@ -1457,7 +1457,7 @@ mcu_rom (
     assign cptra_ss_mcu_ifu_m_axi_if.rlast =    M_AXI_MCU_IFU_RLAST;
     assign cptra_ss_mcu_ifu_m_axi_if.rvalid =   M_AXI_MCU_IFU_RVALID;
     assign M_AXI_MCU_IFU_RREADY = cptra_ss_mcu_ifu_m_axi_if.rready;
-    
+
     // MCU SB AXI Manager
     axi_if #(
         .AW(32),
@@ -1654,7 +1654,7 @@ mcu_rom (
     assign S_AXI_OTP_RLAST   = cptra_ss_otp_core_axi_rd_rsp_o.rlast;
     assign S_AXI_OTP_RVALID  = cptra_ss_otp_core_axi_rd_rsp_o.rvalid;
 
-    
+
     otp_ctrl_pkg::prim_generic_otp_outputs_t cptra_ss_fuse_macro_outputs_tb;
     otp_ctrl_pkg::prim_generic_otp_inputs_t  cptra_ss_fuse_macro_inputs_tb;
     prim_generic_otp #(
@@ -1697,7 +1697,7 @@ mcu_rom (
         .rdata_o        ( cptra_ss_fuse_macro_outputs_tb.rdata_o ),
         .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
     );
-    
+
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export ();
 
     caliptra_ss_veer_sram_export ss_veer_sram_export_inst (
@@ -1964,7 +1964,7 @@ caliptra_ss_top caliptra_ss_top_0 (
 
     //.cptra_ss_mcu_rom_macro_req_if,
 
-    // Caliptra SS MCU 
+    // Caliptra SS MCU
     .cptra_ss_strap_mcu_lsu_axi_user_i(hwif_out.interface_regs.lsu_user.lsu_user.value),
     .cptra_ss_strap_mcu_ifu_axi_user_i(hwif_out.interface_regs.ifu_user.ifu_user.value),
     .cptra_ss_strap_mcu_sram_config_axi_user_i(hwif_out.interface_regs.sram_config_user.sram_config_user.value),
@@ -1980,21 +1980,21 @@ caliptra_ss_top caliptra_ss_top_0 (
     .cptra_ss_mcu_mbox0_sram_req_if,
     .cptra_ss_mcu_mbox1_sram_req_if,
     .cptra_ss_mcu0_el2_mem_export,
-    
+
     .cptra_ss_mci_generic_input_wires_i({hwif_out.interface_regs.mci_generic_input_wires[0].value.value, hwif_out.interface_regs.mci_generic_input_wires[1].value.value}),
     .cptra_ss_mci_generic_output_wires_o({hwif_in.interface_regs.mci_generic_output_wires[0].value.next, hwif_in.interface_regs.mci_generic_output_wires[1].value.next}),
 
     .cptra_ss_strap_mcu_reset_vector_i(hwif_out.interface_regs.mcu_reset_vector.mcu_reset_vector.value),
     .cptra_ss_mcu_no_rom_config_i(hwif_out.interface_regs.mcu_config.mcu_no_rom_config.value),
     .cptra_ss_mci_boot_seq_brkpoint_i(hwif_out.interface_regs.mcu_config.cptra_ss_mci_boot_seq_brkpoint_i.value),
-    
+
     // TODO: input logic cptra_ss_lc_Allow_RMA_on_PPD_i,
     .cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i(1'b0),
     .cptra_ss_FIPS_ZEROIZATION_PPD_i(1'b0), // TODO: Connect to wrapper?
 
     .cptra_ss_all_error_fatal_o(hwif_in.interface_regs.mci_error.mci_error_fatal.next), // TODO: Update name in wrapper
     .cptra_ss_all_error_non_fatal_o(hwif_in.interface_regs.mci_error.mci_error_non_fatal.next), // TODO: Update name in wrapper
-    
+
     // TODO: MCU JTAG
     .cptra_ss_mcu_ext_int(0), // TODO: Should SW drive this to something?
     .cptra_ss_mcu_jtag_tck_i(mcu_jtag_tck_i),
@@ -2033,7 +2033,7 @@ caliptra_ss_top caliptra_ss_top_0 (
 
     /*output wire*/ .cptra_ss_soc_dft_en_o(),
     /*output wire*/ .cptra_ss_soc_hw_debug_en_o(),
-    
+
     // Caliptra SS Fuse Controller Interface (Fuse Macros)
     .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
     .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
