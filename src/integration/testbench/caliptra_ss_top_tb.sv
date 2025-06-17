@@ -1350,6 +1350,7 @@ module caliptra_ss_top_tb
         .cmd_i          ( cptra_ss_fuse_macro_inputs_tb.cmd_i ),
         .addr_i         ( cptra_ss_fuse_macro_inputs_tb.addr_i ),
         .wdata_i        ( cptra_ss_fuse_macro_inputs_tb.wdata_i ),
+        .zeroize_i      ( cptra_ss_fuse_macro_inputs_tb.zeroize_i ),
         // Response channel
         .valid_o        ( cptra_ss_fuse_macro_outputs_tb.valid_o ),
         .rdata_o        ( cptra_ss_fuse_macro_outputs_tb.rdata_o ),
