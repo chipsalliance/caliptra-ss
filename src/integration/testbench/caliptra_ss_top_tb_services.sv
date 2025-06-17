@@ -507,7 +507,7 @@ import tb_top_pkg::*;
     // Load SHA Test Vectors into MCU SRAM
     initial begin
         bit sha512_mode;
-        bit endian_swizzle;
+        bit endian_toggle;
         bit[MCU_SRAM_ECC_WIDTH-1:0] ecc;
         bit[MCU_SRAM_DATA_WIDTH-1:0] data;
         bit[MCU_SRAM_ADDR_WIDTH-1:0] addr;
@@ -533,7 +533,7 @@ import tb_top_pkg::*;
                 // ============= SHA test setup =============
                 // Randomize test parameters
                 if (!std::randomize(sha512_mode)) $fatal("Failed to randomize sha mode");
-                if (!std::randomize(endian_swizzle)) $fatal("Failed to randomize endian swizzling");
+                if (!std::randomize(endian_toggle)) $fatal("Failed to randomize endian toggling");
                 if (!std::randomize(test_case) with {test_case inside {[1:256]};}) $fatal("Failed to randomize test_case");
                 if (sha512_mode) begin
                     case(test_case) inside
@@ -559,7 +559,7 @@ import tb_top_pkg::*;
                     end
                   endcase
                 end
-                $display("[%t] TB: Populating SHA testcase (mode=%s, endian-swizzle=%d, case=%d, fname=%s) to MCU SRAM", $time, sha512_mode?"SHA512":"SHA384", endian_swizzle, test_case, file_name);
+                $display("[%t] TB: Populating SHA testcase (mode=%s, endian-toggle=%d, case=%d, fname=%s) to MCU SRAM", $time, sha512_mode?"SHA512":"SHA384", endian_toggle, test_case, file_name);
 
                 // Parse appropriate test vector files
                 fd_r = $fopen(file_name,"r");
@@ -583,7 +583,7 @@ import tb_top_pkg::*;
 
                 // ============= SHA test load to SRAM =============
                 // Set mode to dw0
-                data = MCU_SRAM_DATA_WIDTH'(sha512_mode | (endian_swizzle << 1));
+                data = MCU_SRAM_DATA_WIDTH'(sha512_mode | (endian_toggle << 1));
                 ecc = |data ? riscv_ecc32(data) : 0;
                 lmem.ram[0] = {ecc,data};
                 // Set length (in bytes) to dw1
@@ -609,9 +609,9 @@ import tb_top_pkg::*;
 
                 if (dlen != 0) begin
                     for (ii=most_sig_dword; ii >= 0 ; ii--) begin
-                        // Leave data as-is for endian swizzling (SHA acc will endian-swap) or swizzle data here
-                        // for no endian-swizzling, since SHA acc hw will swap it back to original value.
-                        data = endian_swizzle ? sha_block_data[ii] : {sha_block_data[ii][7:0],sha_block_data[ii][15:8],sha_block_data[ii][23:16],sha_block_data[ii][31:24]};
+                        // Leave data as-is for endian toggle (SHA acc assumes big-endian input) or swizzle data here
+                        // for no endian toggle, since SHA acc hw assumes little-endian input by default and swaps it back to big-endian.
+                        data = endian_toggle ? sha_block_data[ii] : {sha_block_data[ii][7:0],sha_block_data[ii][15:8],sha_block_data[ii][23:16],sha_block_data[ii][31:24]};
                         $display("TB: [SHA Message Iteration: %0d] Setting SRAM offset 0x%x with dword: 0x%x", ii, addr, data);
                         ecc = |data ? riscv_ecc32(data) : 0;
                         lmem.ram[addr] = {ecc,data};
