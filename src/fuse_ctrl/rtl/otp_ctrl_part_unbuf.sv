@@ -50,7 +50,7 @@ module otp_ctrl_part_unbuf
   output logic [31:0]                 tlul_rdata_o,
   // OTP interface
   output logic                        otp_req_o,
-  output caliptra_prim_otp_pkg::cmd_e          otp_cmd_o,
+  output prim_generic_otp_pkg::cmd_e                        otp_cmd_o,
   output logic [OtpSizeWidth-1:0]     otp_size_o,
   output logic [OtpIfWidth-1:0]       otp_wdata_o,
   output logic [OtpAddrWidth-1:0]     otp_addr_o,
@@ -58,7 +58,7 @@ module otp_ctrl_part_unbuf
   input                               otp_gnt_i,
   input                               otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]       otp_rdata_i,
-  input  caliptra_prim_otp_pkg::err_e          otp_err_i
+  input  prim_generic_otp_pkg::err_e                        otp_err_i
 );
 
   ////////////////////////
@@ -179,7 +179,7 @@ module otp_ctrl_part_unbuf
     // OTP signals
     otp_req_o   = 1'b0;
     otp_addr_sel = DigestAddrSel;
-    otp_cmd_o = Info.integrity ? caliptra_prim_otp_pkg::Read : caliptra_prim_otp_pkg::ReadRaw;
+    otp_cmd_o = Info.integrity ? prim_generic_otp_pkg::Read : prim_generic_otp_pkg::ReadRaw;
 
     // TL-UL signals
     tlul_gnt_o      = 1'b0;
@@ -219,7 +219,7 @@ module otp_ctrl_part_unbuf
       // the following initialization states.
       InitChkZerSt: begin
         otp_req_o = 1'b1;
-        otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+        otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
         if (otp_gnt_i) begin
           state_d = InitChkZerWaitSt;
         end
@@ -254,7 +254,7 @@ module otp_ctrl_part_unbuf
       InitSt: begin
         otp_req_o = 1'b1;
         if (init_zeroized_o) begin
-          otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+          otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
         end
         if (otp_gnt_i) begin
           state_d = InitWaitSt;

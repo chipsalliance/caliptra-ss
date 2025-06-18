@@ -8,6 +8,7 @@ package otp_ctrl_pkg;
   import caliptra_prim_util_pkg::vbits;
   import otp_ctrl_reg_pkg::*;
   import ast_pkg::*;
+  import prim_generic_otp_pkg::*;
 
   ////////////////////////
   // General Parameters //
@@ -378,7 +379,7 @@ package otp_ctrl_pkg;
       // Ready/valid handshake and command channel
       logic                            valid_i;
       logic [OtpSizeWidth-1:0]         size_i;   // (Native words)-1
-      caliptra_prim_otp_pkg::cmd_e     cmd_i;
+      cmd_e                            cmd_i;
       logic [OtpAddrWidth-1:0]         addr_i;
       logic [OtpIfWidth-1:0]           wdata_i;
       caliptra_prim_mubi_pkg::mubi4_t  zeroize_i;
@@ -403,7 +404,7 @@ package otp_ctrl_pkg;
       logic                       ready_o;
       logic                       valid_o;
       logic [OtpIfWidth-1:0]         rdata_o;
-      caliptra_prim_otp_pkg::err_e     err_o;
+      err_e     err_o;
     } prim_generic_otp_outputs_t;
 
 endpackage : otp_ctrl_pkg

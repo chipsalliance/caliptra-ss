@@ -54,7 +54,7 @@ module otp_ctrl_part_buf
   output logic [Info.size*8-1:0]      data_o,
   // OTP interface
   output logic                        otp_req_o,
-  output caliptra_prim_otp_pkg::cmd_e          otp_cmd_o,
+  output prim_generic_otp_pkg::cmd_e                        otp_cmd_o,
   output logic [OtpSizeWidth-1:0]     otp_size_o,
   output logic [OtpIfWidth-1:0]       otp_wdata_o,
   output logic [OtpAddrWidth-1:0]     otp_addr_o,
@@ -62,7 +62,7 @@ module otp_ctrl_part_buf
   input                               otp_gnt_i,
   input                               otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]       otp_rdata_i,
-  input  caliptra_prim_otp_pkg::err_e          otp_err_i,
+  input  prim_generic_otp_pkg::err_e                        otp_err_i,
   // Scrambling mutex request
   output logic                        scrmbl_mtx_req_o,
   input                               scrmbl_mtx_gnt_i,
@@ -198,7 +198,7 @@ module otp_ctrl_part_buf
   end else begin : gen_no_integrity
     always_comb begin
       if (otp_err_e'(otp_err_i) inside {MacroEccCorrError, MacroEccUncorrError}) begin
-        otp_err = NoError;
+        otp_err = prim_generic_otp_pkg::NoError;
       end else begin
         otp_err = otp_err_e'(otp_err_i);
       end
@@ -219,7 +219,7 @@ module otp_ctrl_part_buf
 
     // OTP signals
     otp_req_o = 1'b0;
-    otp_cmd_o = Info.integrity ? caliptra_prim_otp_pkg::Read : caliptra_prim_otp_pkg::ReadRaw;
+    otp_cmd_o = Info.integrity ? prim_generic_otp_pkg::Read : prim_generic_otp_pkg::ReadRaw;
 
     // Scrambling mutex
     scrmbl_mtx_req_o = 1'b0;
@@ -270,7 +270,7 @@ module otp_ctrl_part_buf
       // the following initialization states.
       InitChkZerSt: begin
         otp_req_o = 1'b1;
-        otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+        otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
         base_sel = DigOffset;
         if (otp_gnt_i) begin
           state_d = InitChkZerWaitSt;
@@ -302,7 +302,7 @@ module otp_ctrl_part_buf
         otp_req_o = 1'b1;
         // If the partition is zeroized, then disable ECC checks.
         if (init_zeroized_o) begin
-          otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+          otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
         end
         if (otp_gnt_i) begin
           state_d = InitWaitSt;
