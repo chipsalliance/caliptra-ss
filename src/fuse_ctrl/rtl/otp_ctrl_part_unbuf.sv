@@ -20,7 +20,6 @@ module otp_ctrl_part_unbuf
   // Pulse to start partition initialisation (required once per power cycle).
   input                               init_req_i,
   output logic                        init_done_o,
-  output logic                        init_zeroized_o,
   // Escalation input. This moves the FSM into a terminal state and locks down
   // the partition.
   input  lc_ctrl_pkg::lc_tx_t         escalate_en_i,
@@ -54,7 +53,6 @@ module otp_ctrl_part_unbuf
   output logic [OtpSizeWidth-1:0]     otp_size_o,
   output logic [OtpIfWidth-1:0]       otp_wdata_o,
   output logic [OtpAddrWidth-1:0]     otp_addr_o,
-  output caliptra_prim_mubi_pkg::mubi4_t otp_zeroize_o,
   input                               otp_gnt_i,
   input                               otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]       otp_rdata_i,
@@ -162,8 +160,10 @@ module otp_ctrl_part_unbuf
     end
   end
 
-  // Disable zeroization.
-  assign otp_zeroize_o = caliptra_prim_mubi_pkg::MuBi4False;
+  // Screen the read out data for the zeroization marker. This is only relevant
+  // to determine whether the partition is zeroized upon initialization.
+  mubi8_t is_zeroized;
+  assign is_zeroized = $countones(otp_rdata_i) >= ZeroizationThreshold ? MuBi8True : MuBi8False;
 
   `CALIPTRA_ASSERT_KNOWN(FsmStateKnown_A, state_q)
   always_comb begin : p_fsm
@@ -238,7 +238,7 @@ module otp_ctrl_part_unbuf
             end
             // Determine whether the partition is zeroized by counting
             // the number of set bits.
-            if ($countones(otp_rdata_i) >= ZeroizationThreshold) begin
+            if (mubi8_test_true_strict(is_zeroized)) begin
               zeroized_d <= MuBi8True;
             end
           end else begin
@@ -253,7 +253,7 @@ module otp_ctrl_part_unbuf
       // And then wait until the OTP word comes back.
       InitSt: begin
         otp_req_o = 1'b1;
-        if (init_zeroized_o) begin
+        if (mubi8_test_true_strict(zeroized_q)) begin
           otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
         end
         if (otp_gnt_i) begin
@@ -440,9 +440,6 @@ module otp_ctrl_part_unbuf
     assign ecc_err = 1'b0;
   end
 
-  // Indicate whether partition is zeroized.
-  assign init_zeroized_o = mubi8_test_true_strict(zeroized_q);
-
   ////////////////////////
   // DAI Access Control //
   ////////////////////////
@@ -521,17 +518,25 @@ module otp_ctrl_part_unbuf
       error_q              <= NoError;
       tlul_addr_q          <= '0;
       pending_tlul_error_q <= 1'b0;
-      // A partition is always initialized as not zeroized before the digest is checked.
-      zeroized_q           <= MuBi8False;
     end else begin
       error_q              <= error_d;
       pending_tlul_error_q <= pending_tlul_error_d;
       if (tlul_gnt_o) begin
         tlul_addr_q <= tlul_addr_d;
       end
-      zeroized_q <= zeroized_d;
     end
   end
+
+  // Flop the zeroization state.
+  caliptra_prim_flop #(
+    .Width(MuBi8Width),
+    .ResetValue(MuBi8Width'(MuBi8False))
+  ) u_zeroized_flop(
+    .clk_i,
+    .rst_ni,
+    .d_i(MuBi8Width'(zeroized_d)),
+    .q_o({zeroized_q})
+  );
 
   ////////////////
   // Assertions //
@@ -591,7 +596,7 @@ module otp_ctrl_part_unbuf
   // is disabled.
   `CALIPTRA_ASSERT(OtpPartUnbufZeroizedNoEccErrors_A,
    ((state_q == InitChkZerWaitSt) && otp_rvalid_i) ||
-   (init_zeroized_o && otp_rvalid_i)
+   (mubi8_test_true_strict(zeroized_q) && otp_rvalid_i)
    |->
    !(otp_err inside {MacroEccCorrError, MacroEccUncorrError}))
 

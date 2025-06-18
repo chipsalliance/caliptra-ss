@@ -48,7 +48,6 @@ module otp_ctrl_lci
   output logic [OtpSizeWidth-1:0]           otp_size_o,
   output logic [OtpIfWidth-1:0]             otp_wdata_o,
   output logic [OtpAddrWidth-1:0]           otp_addr_o,
-  output caliptra_prim_mubi_pkg::mubi4_t    otp_zeroize_o,
   input                                     otp_gnt_i,
   input                                     otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]             otp_rdata_i,
@@ -113,9 +112,6 @@ module otp_ctrl_lci
 
   // Output LCI errors
   assign error_o = error_q;
-
-  // Disable zeroization.
-  assign otp_zeroize_o = caliptra_prim_mubi_pkg::MuBi4False;
 
   always_comb begin : p_fsm
     state_d = state_q;

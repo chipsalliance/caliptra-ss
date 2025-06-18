@@ -100,6 +100,15 @@ package otp_ctrl_pkg;
     DigestFinalize
   } otp_scrmbl_cmd_e;
 
+  //////////////////////////
+  // OCP Lock Zeroization //
+  //////////////////////////
+
+  // A partition is deemed to be in a zeroization state if its digest
+  // field contains a predefined number of set bits. The digest field
+  // is always of the same width as the scramble block size.
+  parameter int ZeroizationThreshold = ScrmblBlockWidth;
+
   ///////////////////////////////
   // Typedefs for LC Interface //
   ///////////////////////////////
@@ -382,7 +391,6 @@ package otp_ctrl_pkg;
       cmd_e                            cmd_i;
       logic [OtpAddrWidth-1:0]         addr_i;
       logic [OtpIfWidth-1:0]           wdata_i;
-      caliptra_prim_mubi_pkg::mubi4_t  zeroize_i;
     } prim_generic_otp_inputs_t;
   
     //------------------------------------------------------------------
