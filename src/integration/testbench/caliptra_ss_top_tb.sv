@@ -995,7 +995,7 @@ module caliptra_ss_top_tb
     logic mailbox_data_avail;
     logic cptra_ss_cptra_core_mbox_sram_cs_o;
     logic cptra_ss_cptra_core_mbox_sram_we_o;
-    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_sscptra_core_mbox_sram_addr_o;
+    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_ss_cptra_core_mbox_sram_addr_o;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_wdata_o;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_rdata_i;
 
@@ -1115,7 +1115,7 @@ module caliptra_ss_top_tb
         //SRAM interface for mbox
         .mbox_sram_cs   (cptra_ss_cptra_core_mbox_sram_cs_o   ),
         .mbox_sram_we   (cptra_ss_cptra_core_mbox_sram_we_o   ),
-        .mbox_sram_addr (cptra_sscptra_core_mbox_sram_addr_o ),
+        .mbox_sram_addr (cptra_ss_cptra_core_mbox_sram_addr_o ),
         .mbox_sram_wdata(cptra_ss_cptra_core_mbox_sram_wdata_o),
         .mbox_sram_rdata(cptra_ss_cptra_core_mbox_sram_rdata_i),
 
@@ -1611,7 +1611,7 @@ module caliptra_ss_top_tb
     //SRAM interface for mbox
         .cptra_ss_cptra_core_mbox_sram_cs_o,
         .cptra_ss_cptra_core_mbox_sram_we_o,
-        .cptra_sscptra_core_mbox_sram_addr_o,
+        .cptra_ss_cptra_core_mbox_sram_addr_o,
         .cptra_ss_cptra_core_mbox_sram_wdata_o,
         .cptra_ss_cptra_core_mbox_sram_rdata_i,
 
