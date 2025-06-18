@@ -89,7 +89,7 @@ module sub2tlul
         else if (opcode == Get && tl_o.a_valid) begin
             cur_txn <= valid_get_txn;
         end
-        else if (opcode == PutFullData || opcode == PutPartialData && tl_o.a_valid) begin
+        else if ((opcode == PutFullData || opcode == PutPartialData) && tl_o.a_valid) begin
             cur_txn <= valid_put_txn;
         end
         else if (cur_txn == valid_get_txn && tl_i.d_opcode == AccessAckData && tl_i.d_valid) begin
