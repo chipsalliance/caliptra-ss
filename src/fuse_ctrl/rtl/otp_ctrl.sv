@@ -768,7 +768,6 @@ end
     logic [OtpSizeWidth-1:0]     size; // Number of native words to write.
     logic [OtpIfWidth-1:0]       wdata;
     logic [OtpAddrWidth-1:0]     addr; // Halfword address.
-    caliptra_prim_mubi_pkg::mubi4_t zeroize;
   } otp_bundle_t;
 
   logic [NumAgents-1:0]        part_otp_arb_req, part_otp_arb_gnt;
@@ -854,7 +853,6 @@ end
     prim_generic_otp_inputs_o.cmd_i    = otp_arb_bundle.cmd;
     prim_generic_otp_inputs_o.addr_i   = otp_arb_bundle.addr;
     prim_generic_otp_inputs_o.wdata_i  = otp_arb_bundle.wdata;
-    prim_generic_otp_inputs_o.zeroize_i = otp_arb_bundle.zeroize;
     
     // Ready/Response signals
     otp_prim_ready      = prim_generic_otp_outputs_i.ready_o;
@@ -1057,7 +1055,6 @@ end
     .otp_size_o       ( part_otp_arb_bundle[DaiIdx].size      ),
     .otp_wdata_o      ( part_otp_arb_bundle[DaiIdx].wdata     ),
     .otp_addr_o       ( part_otp_arb_bundle[DaiIdx].addr      ),
-    .otp_zeroize_o    ( part_otp_arb_bundle[DaiIdx].zeroize   ),
     .otp_gnt_i        ( part_otp_arb_gnt[DaiIdx]              ),
     .otp_rvalid_i     ( part_otp_rvalid[DaiIdx]               ),
     .otp_rdata_i      ( part_otp_rdata                        ),
@@ -1103,7 +1100,6 @@ end
     .otp_size_o       ( part_otp_arb_bundle[LciIdx].size  ),
     .otp_wdata_o      ( part_otp_arb_bundle[LciIdx].wdata ),
     .otp_addr_o       ( part_otp_arb_bundle[LciIdx].addr  ),
-    .otp_zeroize_o    ( part_otp_arb_bundle[LciIdx].zeroize ),
     .otp_gnt_i        ( part_otp_arb_gnt[LciIdx]          ),
     .otp_rvalid_i     ( part_otp_rvalid[LciIdx]           ),
     .otp_rdata_i      ( part_otp_rdata                    ),
@@ -1136,7 +1132,6 @@ end
         .rst_ni,
         .init_req_i      ( part_init_req                ),
         .init_done_o     ( part_init_done[k]            ),
-        .init_zeroized_o (                              ),
         .escalate_en_i   ( lc_escalate_en[k]            ),
         .error_o         ( part_error[k]                ),
         .fsm_err_o       ( part_fsm_err[k]              ),
@@ -1154,7 +1149,6 @@ end
         .otp_size_o      ( part_otp_arb_bundle[k].size  ),
         .otp_wdata_o     ( part_otp_arb_bundle[k].wdata ),
         .otp_addr_o      ( part_otp_arb_bundle[k].addr  ),
-        .otp_zeroize_o   ( part_otp_arb_bundle[k].zeroize ),
         .otp_gnt_i       ( part_otp_arb_gnt[k]          ),
         .otp_rvalid_i    ( part_otp_rvalid[k]           ),
         .otp_rdata_i     ( part_otp_rdata               ),
@@ -1192,7 +1186,6 @@ end
         .rst_ni,
         .init_req_i        ( part_init_req                   ),
         .init_done_o       ( part_init_done[k]               ),
-        .init_zeroized_o   (                                 ),
         .integ_chk_req_i   ( integ_chk_req[k]                ),
         .integ_chk_ack_o   ( integ_chk_ack[k]                ),
         .cnsty_chk_req_i   ( cnsty_chk_req[k]                ),
@@ -1211,7 +1204,6 @@ end
         .otp_size_o        ( part_otp_arb_bundle[k].size     ),
         .otp_wdata_o       ( part_otp_arb_bundle[k].wdata    ),
         .otp_addr_o        ( part_otp_arb_bundle[k].addr     ),
-        .otp_zeroize_o     ( part_otp_arb_bundle[k].zeroize  ),
         .otp_gnt_i         ( part_otp_arb_gnt[k]             ),
         .otp_rvalid_i      ( part_otp_rvalid[k]              ),
         .otp_rdata_i       ( part_otp_rdata                  ),
@@ -1249,7 +1241,6 @@ end
         .rst_ni,
         .init_req_i        ( part_init_req                   ),
         .init_done_o       ( part_init_done[k]               ),
-        .init_zeroized_o   (                                 ),
         .integ_chk_req_i   ( integ_chk_req[k]                ),
         .integ_chk_ack_o   ( integ_chk_ack[k]                ),
         .cnsty_chk_req_i   ( cnsty_chk_req[k]                ),
@@ -1270,7 +1261,6 @@ end
         .otp_size_o        ( part_otp_arb_bundle[k].size     ),
         .otp_wdata_o       ( part_otp_arb_bundle[k].wdata    ),
         .otp_addr_o        ( part_otp_arb_bundle[k].addr     ),
-        .otp_zeroize_o     ( part_otp_arb_bundle[k].zeroize  ),
         .otp_gnt_i         ( part_otp_arb_gnt[k]             ),
         .otp_rvalid_i      ( part_otp_rvalid[k]              ),
         .otp_rdata_i       ( part_otp_rdata                  ),
