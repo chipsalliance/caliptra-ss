@@ -72,7 +72,8 @@ module otp_ctrl_part_buf
   output logic                        scrmbl_valid_o,
   input  logic                        scrmbl_ready_i,
   input  logic                        scrmbl_valid_i,
-  input  logic [ScrmblBlockWidth-1:0] scrmbl_data_i
+  input  logic [ScrmblBlockWidth-1:0] scrmbl_data_i,
+  input logic zer_trig_en_i
 );
 
   ////////////////////////
@@ -175,6 +176,7 @@ module otp_ctrl_part_buf
   base_sel_e base_sel;
   mubi8_t dout_locked_d, dout_locked_q;
   mubi8_t zeroized_d, zeroized_q;
+  mubi8_t zeroized_trig_d, zeroized_trig_q;
   logic [CntWidth-1:0] cnt;
   logic cnt_en, cnt_clr, cnt_err;
   logic ecc_err;
@@ -207,6 +209,14 @@ module otp_ctrl_part_buf
   // to determine whether the partition is zeroized upon initialization.
   mubi8_t is_zeroized;
   assign is_zeroized = $countones(otp_rdata_i) >= ZeroizationThreshold ? MuBi8True : MuBi8False;
+
+  always_comb begin : p_zeroized_trig
+    if (zer_trig_en_i) begin
+      zeroized_trig_d = MuBi8True;
+    end else begin
+      zeroized_trig_d = zeroized_trig_q;
+    end
+  end
 
   always_comb begin : p_fsm
     state_d = state_q;
@@ -391,7 +401,9 @@ module otp_ctrl_part_buf
             end else begin
               integ_chk_ack_o = 1'b1;
             end
-          end else if (cnsty_chk_req_i) begin
+          // Do not start a consistency check when a zeroization trigger has been observed.
+          // The integrity check can go through because it only operates on the buffers.
+          end else if (cnsty_chk_req_i && mubi8_test_false_strict(zeroized_trig_q)) begin
             state_d = CnstyReadSt;
             cnt_clr = 1'b1;
           end
@@ -832,6 +844,17 @@ module otp_ctrl_part_buf
     .rst_ni,
     .d_i(MuBi8Width'(zeroized_d)),
     .q_o({zeroized_q})
+  );
+
+  // Flop the zeroization trigger state.
+  caliptra_prim_flop #(
+    .Width(MuBi8Width),
+    .ResetValue(MuBi8Width'(MuBi8False))
+  ) u_zeroized_trig_flop(
+    .clk_i,
+    .rst_ni,
+    .d_i(MuBi8Width'(zeroized_trig_d)),
+    .q_o({zeroized_trig_q})
   );
 
   ////////////////

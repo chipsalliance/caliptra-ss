@@ -56,7 +56,8 @@ module otp_ctrl_part_unbuf
   input                               otp_gnt_i,
   input                               otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]       otp_rdata_i,
-  input  prim_generic_otp_pkg::err_e                        otp_err_i
+  input  prim_generic_otp_pkg::err_e                        otp_err_i,
+  input logic zer_trig_en_i
 );
 
   ////////////////////////
@@ -164,6 +165,9 @@ module otp_ctrl_part_unbuf
   // to determine whether the partition is zeroized upon initialization.
   mubi8_t is_zeroized;
   assign is_zeroized = $countones(otp_rdata_i) >= ZeroizationThreshold ? MuBi8True : MuBi8False;
+
+  logic unused_zer_trig;
+  assign unused_zer_trig = zer_trig_en_i;
 
   `CALIPTRA_ASSERT_KNOWN(FsmStateKnown_A, state_q)
   always_comb begin : p_fsm

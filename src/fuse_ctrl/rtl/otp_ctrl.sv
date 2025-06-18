@@ -997,6 +997,7 @@ end
   logic                           part_init_req;
   logic [NumPart-1:0]             part_init_done;
   part_access_t [NumPart-1:0]     part_access_dai;
+  logic [NumPart-1:0]             part_zer_trig_en;
 
   // The init request comes from the power manager, which lives in the AON clock domain.
   logic pwr_otp_req_synced;
@@ -1074,7 +1075,8 @@ end
     .scrmbl_valid_o   ( part_scrmbl_req_bundle[DaiIdx].valid  ),
     .scrmbl_ready_i   ( part_scrmbl_req_ready[DaiIdx]         ),
     .scrmbl_valid_i   ( part_scrmbl_rsp_valid[DaiIdx]         ),
-    .scrmbl_data_i    ( part_scrmbl_rsp_data                  )
+    .scrmbl_data_i    ( part_scrmbl_rsp_data                  ),
+    .zer_trig_en_o    ( part_zer_trig_en                      )
   );
 
   ////////////////////////////////////
@@ -1158,7 +1160,8 @@ end
         .otp_gnt_i       ( part_otp_arb_gnt[k]          ),
         .otp_rvalid_i    ( part_otp_rvalid[k]           ),
         .otp_rdata_i     ( part_otp_rdata               ),
-        .otp_err_i       ( part_otp_err                 )
+        .otp_err_i       ( part_otp_err                 ),
+        .zer_trig_en_i   ( part_zer_trig_en[k]          )
       );
 
       // Tie off unused connections.
@@ -1223,7 +1226,8 @@ end
         .scrmbl_valid_o    ( part_scrmbl_req_bundle[k].valid ),
         .scrmbl_ready_i    ( part_scrmbl_req_ready[k]        ),
         .scrmbl_valid_i    ( part_scrmbl_rsp_valid[k]        ),
-        .scrmbl_data_i     ( part_scrmbl_rsp_data            )
+        .scrmbl_data_i     ( part_scrmbl_rsp_data            ),
+        .zer_trig_en_i     ( part_zer_trig_en[k]             )
       );
 
       // Buffered partitions are not accessible via the TL-UL window.
@@ -1281,7 +1285,8 @@ end
         .scrmbl_valid_o    (                                 ),
         .scrmbl_ready_i    ( 1'b0                            ),
         .scrmbl_valid_i    ( 1'b0                            ),
-        .scrmbl_data_i     ( '0                              )
+        .scrmbl_data_i     ( '0                              ),
+        .zer_trig_en_i     ( part_zer_trig_en[k]             )
       );
 
       // Buffered partitions are not accessible via the TL-UL window.

@@ -70,7 +70,11 @@ module otp_ctrl_dai
   output logic                           scrmbl_valid_o,
   input  logic                           scrmbl_ready_i,
   input  logic                           scrmbl_valid_i,
-  input  logic [ScrmblBlockWidth-1:0]    scrmbl_data_i
+  input  logic [ScrmblBlockWidth-1:0]    scrmbl_data_i,
+  // Zeroization trigger indicators for each partition.
+  // The first successful zeroization request will set the
+  // corresponding bit in the array.
+  output logic [NumPart-1:0] zer_trig_en_o
 );
 
   ////////////////////////
@@ -232,6 +236,9 @@ module otp_ctrl_dai
     // Error Register
     error_d = error_q;
     fsm_err_o = 1'b0;
+
+    // Zeroization trigger.
+    zer_trig_en_o = '0;
 
     unique case (state_q)
       ///////////////////////////////////////////////////////////////////
@@ -732,6 +739,8 @@ module otp_ctrl_dai
             // All errors are treated as recoverable during a zeroization.
             if (otp_err != NoError) begin
               error_d = otp_err;
+            end else begin
+              zer_trig_en_o[part_idx] = 1'b1;
             end
           end
         // At this point, this check MUST succeed - otherwise this means that
