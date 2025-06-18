@@ -159,14 +159,14 @@ module otp_ctrl
   `CALIPTRA_ASSERT_INIT(OtpIfWidth_A, OtpIfWidth == ScrmblBlockWidth)
 
   // These error codes need to be identical.
-  `CALIPTRA_ASSERT_INIT(ErrorCodeWidth_A, OtpErrWidth == caliptra_prim_otp_pkg::ErrWidth)
-  `CALIPTRA_ASSERT_INIT(OtpErrorCode0_A,  int'(NoError) == int'(caliptra_prim_otp_pkg::NoError))
-  `CALIPTRA_ASSERT_INIT(OtpErrorCode1_A,  int'(MacroError) == int'(caliptra_prim_otp_pkg::MacroError))
-  `CALIPTRA_ASSERT_INIT(OtpErrorCode2_A,  int'(MacroEccCorrError) == int'(caliptra_prim_otp_pkg::MacroEccCorrError))
+  `CALIPTRA_ASSERT_INIT(ErrorCodeWidth_A, OtpErrWidth == prim_generic_otp_pkg::ErrWidth)
+  `CALIPTRA_ASSERT_INIT(OtpErrorCode0_A,  int'(NoError) == int'(prim_generic_otp_pkg::NoError))
+  `CALIPTRA_ASSERT_INIT(OtpErrorCode1_A,  int'(MacroError) == int'(prim_generic_otp_pkg::MacroError))
+  `CALIPTRA_ASSERT_INIT(OtpErrorCode2_A,  int'(MacroEccCorrError) == int'(prim_generic_otp_pkg::MacroEccCorrError))
   `CALIPTRA_ASSERT_INIT(OtpErrorCode3_A,
-               int'(MacroEccUncorrError) == int'(caliptra_prim_otp_pkg::MacroEccUncorrError))
+               int'(MacroEccUncorrError) == int'(prim_generic_otp_pkg::MacroEccUncorrError))
   `CALIPTRA_ASSERT_INIT(OtpErrorCode4_A,
-               int'(MacroWriteBlankError) == int'(caliptra_prim_otp_pkg::MacroWriteBlankError))
+               int'(MacroWriteBlankError) == int'(prim_generic_otp_pkg::MacroWriteBlankError))
 
   /////////////
   // Regfile //
@@ -764,7 +764,7 @@ end
   ///////////////////////////////
 
   typedef struct packed {
-    caliptra_prim_otp_pkg::cmd_e          cmd;
+    prim_generic_otp_pkg::cmd_e          cmd;
     logic [OtpSizeWidth-1:0]     size; // Number of native words to write.
     logic [OtpIfWidth-1:0]       wdata;
     logic [OtpAddrWidth-1:0]     addr; // Halfword address.
@@ -802,7 +802,7 @@ end
   assign otp_prim_valid     = otp_arb_valid & otp_rsp_fifo_ready;
   assign otp_rsp_fifo_valid = otp_prim_ready & otp_prim_valid;
 
-  caliptra_prim_otp_pkg::err_e          part_otp_err;
+  prim_generic_otp_pkg::err_e          part_otp_err;
   logic [OtpIfWidth-1:0]       part_otp_rdata;
   logic                        otp_rvalid;
   tlul_pkg::tl_h2d_t           prim_tl_h2d_gated;
