@@ -201,11 +201,14 @@ Caliptra Subsystem includes:
 
 By performing these design and verification tasks, the integrator ensures that the Caliptra Subsystem is properly integrated and can function as intended within the larger system. Several files contain code that may be specific to an integrator's implementation and should be overridden. This overridable code is either configuration parameters with integrator-specific values or modules that implement process-specific functionality. Code in these files should be modified or replaced by integrators using components from the cell library of their fabrication vendor. The following table describes recommended modifications for each file.
 
-| Type | Name | Path |
-|------|------|------|
-| rtl | Design Top       | [caliptra_ss_top.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/rtl/caliptra_ss_top.sv)          |
-| tb  | Interconnect Top | [testbench\aaxi4_interconnect.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/aaxi4_interconnect.sv) |
-| tb  | Testbench Top    | [testbench\caliptra_ss_top_tb.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/testbench/caliptra_ss_top_tb.sv) |
+| File | Description |
+|------|------|
+| [css_mcu0_dmi_jtag_to_core_sync.v](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/dmi/css_mcu0_dmi_jtag_to_core_sync.v)      |Replace with a technology-specific sync cell. This synchronizer implements edge detection logic using a delayed flip flop on the output domain to produce a pulse output. Integrators must take care to ensure logical equivalence when replacing this logic with custom cells.|
+|[css_mcu0_beh_lib.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvclkhdr/css_mcu0_rvoclkhdr with a technology-specific clock gater. Modifying this file may not be necessary if integrators override the clock gate module that is used by setting TECH_SPECIFIC_EC_RV_ICG.|
+|[css_mcu0_beh_lib.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvsyncss (and css_mcu0_rvsyncss_fpga if the design will be implemented on an FPGA) with a technology-specific sync cell.|
+
+
+[Caliptra Core RTL modifications](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#integrator-rtl-modification-requirements)
 
 ## Design Considerations
 
@@ -431,10 +434,14 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | 1     | `cptra_ss_i3c_sda_o`                 | I3C data output                          |
 | External | output    | 1     | `cptra_ss_i3c_scl_oe`                | I3C clock output enable                  |
 | External | output    | 1     | `cptra_ss_i3c_sda_oe`                | I3C data output  enable                  |
-| External | output    | 1     | `cptra_i3c_axi_user_id_filtering_enable_i` | I3C AXI user filtering enable (active high)     |
+| External | input     | 1     | `cptra_i3c_axi_user_id_filtering_enable_i` | I3C AXI user filtering enable (active high)     |
 | External | output    | 1     | `cptra_ss_sel_od_pp_o`               | Select open-drain push-pull output       |
 | External | inout     | 1     | `cptra_ss_i3c_scl_io`                | I3C clock bidirectional                  |
 | External | inout     | 1     | `cptra_ss_i3c_sda_io`                | I3C data bidirectional                   |
+| External | output    | 1     | `cptra_ss_i3c_recovery_payload_available_o`                | I3C indicates recovery payload is available. If there is no external I3C it should be looped back to `cptra_ss_i3c_recovery_payload_available_i`. If there is an external I3C it can be combined with or replaced with SOC logic and connected to `cptra_ss_i3c_recovery_payload_available_i`                  |
+| External | input     | 1     | `cptra_ss_i3c_recovery_payload_available_i`                | I3C indication for Caliptra Core that a recovery payload is available. If no external I3C should be connected to `cptra_ss_i3c_recovery_payload_available_o`. If external I3C it can be connected to a combination of SOC logic + `cptra_ss_i3c_recovery_payload_available_o`                  |
+| External | output    | 1     | `cptra_ss_i3c_recovery_image_activated_o`                | Indicates the recovery image is activated. If there is no external I3C it should be looped back to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C it can be combined with or replaced with SOC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`                  |
+| External | input     | 1     | `cptra_ss_i3c_recovery_image_activated_i`                | I3C indication for Caliptra Core that the recovery image is activated. If no external I3C should be connected to `cptra_ss_i3c_recovery_image_activated_o`. If there is an external I3C it can be connected to a combination of SOC logic + `cptra_ss_i3c_recovery_image_activated_o`                  |
 | External | input     | 64    | `cptra_ss_cptra_core_generic_input_wires_i` | Generic input wires for Caliptra core |
 | External | input     | 1     | `cptra_ss_cptra_core_scan_mode_i`    | Caliptra core scan mode input            |
 | External | output    | 1     | `cptra_error_fatal`                  | Fatal error output                       |
@@ -472,19 +479,19 @@ The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_c
 
 ### Reset
 
-The `cptra_ss_reset_n` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles) to allow all internal logic to initialize properly.
+The `cptra_ss_rst_b_i` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles) to allow all internal logic to initialize properly.
 
-   - **Signal Name** `cptra_ss_reset_n`
+   - **Signal Name** `cptra_ss_rst_b_i`
    - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
    - **Reset Type** Synchronous with the `cptra_ss_clk_i` signal
    - **Integration Notes**
      - The reset signal must be synchronized to the `cptra_ss_clk_i` clock to prevent metastability issues.
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
-     - It is **illegal** to only toggle `cptra_ss_reset_n` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
+     - It is **illegal** to only toggle `cptra_ss_rst_b_i` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
      - SOC shall toggle `cptra_ss_reset_b` only after `cptra_ss_mcu_halt_status_o` is asserted to guarantee MCU is idle and to prevent any RDC issues.
 
-The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_reset_n` to ensure `cptra_ss_rdc_clk_cg_o` is gated before reset is asserted. This reset is needed for the purpose of RDC between the warm reset domain and the cold reset/memory domain.
+The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_rst_b_i` to ensure `cptra_ss_rdc_clk_cg_o` is gated before reset is asserted. This reset is needed for the purpose of RDC between the warm reset domain and the cold reset/memory domain.
 
    - **Signal Name** `cptra_ss_rst_b_o`
    - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
@@ -492,7 +499,7 @@ The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_reset_n` to ensure `cpt
    - **Integration Notes**
      1. SOCs shall use this reset for any memory logic connected to MCU SRAM or MCU MBOX to avoid RDC corruption of the memories.
      2. It is recommended to be used for SOC AXI interconnect if it is on the same reset domain as Caliptra SS to avoid RDC issues.
-     3. SOC logic on `cptra_ss_reset_n` domain and transitions into a deeper reset domain can use this reset paired with `cptra_ss_rdc_clk_cg_o` to avoid RDC issues.
+     3. SOC logic on `cptra_ss_rst_b_i` domain and transitions into a deeper reset domain can use this reset paired with `cptra_ss_rdc_clk_cg_o` to avoid RDC issues.
 
 ### Power Good Signal
 
@@ -2200,8 +2207,8 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | `sel_od_pp_o`                     | output    | 1 bit                     | Open-drain / push-pull selection (digital output)                    |
 | `i3c_scl_io`                      | inout     | 1 bit (else)              | I3C clock line (analog/digital)                                      |
 | `i3c_sda_io`                      | inout     | 1 bit (else)              | I3C data line (analog/digital)                                       |
-| `recovery_payload_available_o`    | output    | 1 bit                     | Indicates recovery payload is available                              |
-| `recovery_image_activated_o`      | output    | 1 bit                     | Indicates the recovery image is activated                            |
+| `recovery_payload_available_o`    | output    | 1 bit                     | Indicates recovery payload is available and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_payload_available_o` to SOC |
+| `recovery_image_activated_o`      | output    | 1 bit                     | Indicates the recovery image is activated and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_image_activated_o` to SOC | 
 | `peripheral_reset_o`              | output    | 1 bit                     | Resets connected peripherals                                         |
 | `peripheral_reset_done_i`         | input     | 1 bit                     | Acknowledges peripheral reset completion                             |
 | `escalated_reset_o`               | output    | 1 bit                     | Escalated reset output                                               |
@@ -2215,6 +2222,8 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
   1. Connect the `cptra_ss_i3c_s_axi_if` with AXI interconnect.
   2. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#1** to initialize the I3C targets.
   3. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#2** to set both I3C target device with static addresses. **Note**, this is not required if I3C Host device is using the CCC `ENTDAA` for initializing the dynamic address to both targets.
+  4. If no external I3C connect `cptra_ss_i3c_recovery_image_activated_o` directly to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C `cptra_ss_i3c_recovery_image_activated_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`.
+  5. If no external I3C connect `cptra_ss_i3c_recovery_payload_available_o` directly to `cptra_ss_i3c_recovery_payload_available_i`. If there is an external I3C `cptra_ss_i3c_recovery_payload_available_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_payload_available_i`.
 
 ## Programming Sequence
 
