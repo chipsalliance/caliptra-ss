@@ -21,7 +21,6 @@ module otp_ctrl_part_buf
   // Pulse to start partition initialisation (required once per power cycle).
   input                               init_req_i,
   output logic                        init_done_o,
-  output logic                        init_zeroized_o,
   // Integrity check requests
   input                               integ_chk_req_i,
   output logic                        integ_chk_ack_o,
@@ -58,7 +57,6 @@ module otp_ctrl_part_buf
   output logic [OtpSizeWidth-1:0]     otp_size_o,
   output logic [OtpIfWidth-1:0]       otp_wdata_o,
   output logic [OtpAddrWidth-1:0]     otp_addr_o,
-  output caliptra_prim_mubi_pkg::mubi4_t otp_zeroize_o,
   input                               otp_gnt_i,
   input                               otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]       otp_rdata_i,
@@ -205,8 +203,10 @@ module otp_ctrl_part_buf
     end
   end
 
-  // Disable zeroization.
-  assign otp_zeroize_o = caliptra_prim_mubi_pkg::MuBi4False;
+  // Screen the read out data for the zeroization marker. This is only relevant
+  // to determine whether the partition is zeroized upon initialization.
+  mubi8_t is_zeroized;
+  assign is_zeroized = $countones(otp_rdata_i) >= ZeroizationThreshold ? MuBi8True : MuBi8False;
 
   always_comb begin : p_fsm
     state_d = state_q;
@@ -285,7 +285,7 @@ module otp_ctrl_part_buf
             state_d = InitSt;
             // Determine whether the partition is zeroized by counting
             // the number of set bits.
-            if ($countones(otp_rdata_i) >= ZeroizationThreshold) begin
+            if (mubi8_test_true_strict(is_zeroized)) begin
               zeroized_d <= MuBi8True;
             end
           end else begin
@@ -301,7 +301,7 @@ module otp_ctrl_part_buf
       InitSt: begin
         otp_req_o = 1'b1;
         // If the partition is zeroized, then disable ECC checks.
-        if (init_zeroized_o) begin
+        if (mubi4_test_true_strict(zeroized_q)) begin
           otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
         end
         if (otp_gnt_i) begin
@@ -321,10 +321,17 @@ module otp_ctrl_part_buf
             // verification. Note that the last block is the digest value, which does not
             // have to be descrambled.
             if (cnt == LastScrmblBlock) begin
-              state_d = IntegDigClrSt;
+              if (mubi8_test_true_strict(zeroized_q)) begin
+                state_d = IdleSt;
+                if (mubi8_test_true_strict(dout_locked_q)) begin
+                  dout_locked_d = MuBi8False;
+                end
+              end else begin
+                state_d = IntegDigClrSt;
+              end
             // Only need to descramble if this is a scrambled partition.
             // Otherwise, we can just go back to InitSt and read the next block.
-            end else if (Info.secret) begin
+            end else if (Info.secret && mubi8_test_false_strict(zeroized_q)) begin
               state_d = InitDescrSt;
             end else begin
               state_d = InitSt;
@@ -373,18 +380,21 @@ module otp_ctrl_part_buf
       // Idle state. We basically wait for integrity and consistency check
       // triggers in this state.
       IdleSt: begin
-        if (integ_chk_req_i) begin
-          if (Info.hw_digest) begin
-            state_d = IntegDigClrSt;
-          // In case there is nothing to check we can just
-          // acknowledge the request right away, without going to the
-          // integrity check.
-          end else begin
-            integ_chk_ack_o = 1'b1;
+        // Disable integrity and consistency checks for zeroized partitions.
+        if (mubi8_test_false_strict(zeroized_q)) begin
+          if (integ_chk_req_i) begin
+            if (Info.hw_digest) begin
+              state_d = IntegDigClrSt;
+            // In case there is nothing to check we can just
+            // acknowledge the request right away, without going to the
+            // integrity check.
+            end else begin
+              integ_chk_ack_o = 1'b1;
+            end
+          end else if (cnsty_chk_req_i) begin
+            state_d = CnstyReadSt;
+            cnt_clr = 1'b1;
           end
-        end else if (cnsty_chk_req_i) begin
-          state_d = CnstyReadSt;
-          cnt_clr = 1'b1;
         end
       end
       ///////////////////////////////////////////////////////////////////
@@ -725,8 +735,6 @@ module otp_ctrl_part_buf
 
   // We have successfully initialized the partition once it has been unlocked.
   assign init_done_o = mubi8_test_false_strict(dout_locked_q);
-  // Indicate whether partition is zeroized.
-  assign init_zeroized_o = mubi8_test_true_strict(zeroized_q);
   // Hardware output gating.
   // Note that this is decoupled from the DAI access rules further below.
   assign data_o = (init_done_o) ? data : DataDefault;
@@ -809,13 +817,22 @@ module otp_ctrl_part_buf
       // data output is locked by default
       dout_locked_q <= MuBi8True;
       // A partition is always initialized as not zeroized before the digest is checked.
-      zeroized_q    <= MuBi8False;
     end else begin
       error_q       <= error_d;
       dout_locked_q <= dout_locked_d;
-      zeroized_q    <= zeroized_d;
     end
   end
+
+  // Flop the zeroization state.
+  caliptra_prim_flop #(
+    .Width(MuBi8Width),
+    .ResetValue(MuBi8Width'(MuBi8False))
+  ) u_zeroized_flop(
+    .clk_i,
+    .rst_ni,
+    .d_i(MuBi8Width'(zeroized_d)),
+    .q_o({zeroized_q})
+  );
 
   ////////////////
   // Assertions //
@@ -879,7 +896,7 @@ module otp_ctrl_part_buf
   // is disabled.
   `CALIPTRA_ASSERT(OtpPartBufZeroizedNoEccErrors_A,
    ((state_q == InitChkZerWaitSt) && otp_rvalid_i) ||
-   (init_zeroized_o && otp_rvalid_i)
+   (mubi8_test_true_strict(zeroized_q) && otp_rvalid_i)
    |->
    !(otp_err inside {MacroEccCorrError, MacroEccUncorrError}))
 
