@@ -60,7 +60,7 @@ module otp_ctrl_part_buf
   input                               otp_gnt_i,
   input                               otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]       otp_rdata_i,
-  input  prim_generic_otp_pkg::err_e                        otp_err_i,
+  input  prim_generic_otp_pkg::err_e  otp_err_i,
   // Scrambling mutex request
   output logic                        scrmbl_mtx_req_o,
   input                               scrmbl_mtx_gnt_i,
@@ -72,7 +72,9 @@ module otp_ctrl_part_buf
   output logic                        scrmbl_valid_o,
   input  logic                        scrmbl_ready_i,
   input  logic                        scrmbl_valid_i,
-  input  logic [ScrmblBlockWidth-1:0] scrmbl_data_i
+  input  logic [ScrmblBlockWidth-1:0] scrmbl_data_i,
+  input mubi8_t zer_trig_i,
+  output mubi8_t zer_o
 );
 
   ////////////////////////
@@ -113,8 +115,8 @@ module otp_ctrl_part_buf
 
   // SEC_CM: PART.FSM.SPARSE
   // Encoding generated with:
-  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 18 -n 12 \
-  //     -s 812680037 --language=sv
+  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 19 -n 12 \
+  //     -s 143174455 --language=sv
   //
   // Hamming distance histogram:
   //
@@ -123,40 +125,41 @@ module otp_ctrl_part_buf
   //  2: --
   //  3: --
   //  4: --
-  //  5: |||||||||||||||| (29.41%)
-  //  6: |||||||||||||||||||| (34.64%)
-  //  7: |||||||||| (18.30%)
-  //  8: |||||| (11.11%)
-  //  9: ||| (5.23%)
-  // 10:  (1.31%)
-  // 11: --
+  //  5: |||||||||||||||| (29.82%)
+  //  6: |||||||||||||||||||| (36.26%)
+  //  7: |||||||| (15.79%)
+  //  8: |||||| (11.70%)
+  //  9: || (5.26%)
+  // 10:  (0.58%)
+  // 11:  (0.58%)
   // 12: --
   //
   // Minimum Hamming distance: 5
-  // Maximum Hamming distance: 10
-  // Minimum Hamming weight: 3
+  // Maximum Hamming distance: 11
+  // Minimum Hamming weight: 1
   // Maximum Hamming weight: 10
   //
   localparam int StateWidth = 12;
   typedef enum logic [StateWidth-1:0] {
-    ResetSt          = 12'b010100011000,
-    InitChkZerSt     = 12'b100010100001,
-    InitChkZerWaitSt = 12'b111111111010,
-    InitSt           = 12'b000001001011,
-    InitWaitSt       = 12'b110111000101,
-    InitDescrSt      = 12'b001000101000,
-    InitDescrWaitSt  = 12'b001000010101,
-    IdleSt           = 12'b100100111110,
-    IntegScrSt       = 12'b001011110110,
-    IntegScrWaitSt   = 12'b111000100111,
-    IntegDigClrSt    = 12'b101110001111,
-    IntegDigSt       = 12'b111010010000,
-    IntegDigPadSt    = 12'b010101110011,
-    IntegDigFinSt    = 12'b010010111101,
-    IntegDigWaitSt   = 12'b011011001100,
-    CnstyReadSt      = 12'b101101011001,
-    CnstyReadWaitSt  = 12'b000101100100,
-    ErrorSt          = 12'b110001010110
+    ResetSt          = 12'b101101111111,
+    InitChkZerSt     = 12'b111000011011,
+    InitChkZerWaitSt = 12'b100000111000,
+    InitChkZerCnfSt  = 12'b000110011110,
+    InitSt           = 12'b011100100111,
+    InitWaitSt       = 12'b000001010101,
+    InitDescrSt      = 12'b100111110010,
+    InitDescrWaitSt  = 12'b010010101101,
+    IdleSt           = 12'b111111000000,
+    IntegScrSt       = 12'b011101011100,
+    IntegScrWaitSt   = 12'b001011101011,
+    IntegDigClrSt    = 12'b101010100110,
+    IntegDigSt       = 12'b100001001110,
+    IntegDigPadSt    = 12'b010110010001,
+    IntegDigFinSt    = 12'b101110001101,
+    IntegDigWaitSt   = 12'b111011110101,
+    CnstyReadSt      = 12'b110101101001,
+    CnstyReadWaitSt  = 12'b011001110010,
+    ErrorSt          = 12'b001000000000
   } state_e;
 
   typedef enum logic {
@@ -174,12 +177,14 @@ module otp_ctrl_part_buf
   data_sel_e data_sel;
   base_sel_e base_sel;
   mubi8_t dout_locked_d, dout_locked_q;
-  mubi8_t zeroized_d, zeroized_q;
   logic [CntWidth-1:0] cnt;
   logic cnt_en, cnt_clr, cnt_err;
   logic ecc_err;
   logic buffer_reg_en;
   logic [ScrmblBlockWidth-1:0] data_mux;
+  logic zer_dig_en, zer_dig_ecc_err;
+  logic [ScrmblBlockWidth-1:0] zer_dig;
+  prim_generic_otp_pkg::cmd_e cmd_d;
 
   // Output partition error state.
   assign error_o = error_q;
@@ -205,8 +210,24 @@ module otp_ctrl_part_buf
 
   // Screen the read out data for the zeroization marker. This is only relevant
   // to determine whether the partition is zeroized upon initialization.
-  mubi8_t is_zeroized;
-  assign is_zeroized = $countones(otp_rdata_i) >= ZeroizationThreshold ? MuBi8True : MuBi8False;
+  mubi8_t is_zeroized_pre, is_zeroized;
+  assign is_zeroized_pre = check_zeroized(zer_dig, 2'b11) ? MuBi8True : MuBi8False;
+
+  caliptra_prim_buf #(
+    .Width(MuBi8Width)
+  ) u_is_zeroized_buf (
+    .in_i  ( is_zeroized_pre ),
+    .out_o ( {is_zeroized}   )
+  );
+
+  caliptra_prim_mubi8_sender #(
+    .AsyncOn(0)
+  ) u_is_zeroized_sender (
+    .clk_i,
+    .rst_ni,
+    .mubi_i ( is_zeroized ),
+    .mubi_o ( zer_o       )
+  );
 
   always_comb begin : p_fsm
     state_d = state_q;
@@ -214,12 +235,8 @@ module otp_ctrl_part_buf
     // Redundantly encoded lock signal for buffer regs.
     dout_locked_d = dout_locked_q;
 
-    // Redundantly encode zeroized signal.
-    zeroized_d = zeroized_q;
-
     // OTP signals
     otp_req_o = 1'b0;
-    otp_cmd_o = Info.integrity ? prim_generic_otp_pkg::Read : prim_generic_otp_pkg::ReadRaw;
 
     // Scrambling mutex
     scrmbl_mtx_req_o = 1'b0;
@@ -247,6 +264,12 @@ module otp_ctrl_part_buf
     cnsty_chk_ack_o = 1'b0;
     integ_chk_ack_o = 1'b0;
 
+    // Zeroization digest register enable
+    zer_dig_en = 1'b0;
+
+    // Flopped OTP command.
+    cmd_d = otp_cmd_o;
+
     unique case (state_q)
       ///////////////////////////////////////////////////////////////////
       // State right after reset. Wait here until we get a an
@@ -270,28 +293,33 @@ module otp_ctrl_part_buf
       // the following initialization states.
       InitChkZerSt: begin
         otp_req_o = 1'b1;
-        otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
         base_sel = DigOffset;
         if (otp_gnt_i) begin
           state_d = InitChkZerWaitSt;
         end
       end
       ///////////////////////////////////////////////////////////////////
-      // Wait for OTP response and check whether the digest value signals
-      // whether the part is zeroized.
+      // Wait for OTP response and and write read out digest into a
+      // register.
       InitChkZerWaitSt: begin
         if (otp_rvalid_i) begin
           if (otp_err == NoError) begin
-            state_d = InitSt;
-            // Determine whether the partition is zeroized by counting
-            // the number of set bits.
-            if (mubi8_test_true_strict(is_zeroized)) begin
-              zeroized_d <= MuBi8True;
-            end
+            state_d = InitChkZerCnfSt;
+            zer_dig_en = 1'b1;
           end else begin
             state_d = ErrorSt;
             error_d = otp_err;
           end
+        end
+      end
+      ///////////////////////////////////////////////////////////////////
+      // Configurations based on the read out and flopped zeroization
+      // digest. Currently, this only affects the OTP command.
+      InitChkZerCnfSt: begin
+        state_d = InitSt;
+        // Use ECC-protected reads when the partition is not zeroized.
+        if (Info.integrity && mubi8_test_false_strict(is_zeroized)) begin
+          cmd_d = prim_generic_otp_pkg::Read;
         end
       end
       ///////////////////////////////////////////////////////////////////
@@ -300,10 +328,6 @@ module otp_ctrl_part_buf
       // And then wait until the OTP word comes back.
       InitSt: begin
         otp_req_o = 1'b1;
-        // If the partition is zeroized, then disable ECC checks.
-        if (mubi4_test_true_strict(zeroized_q)) begin
-          otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
-        end
         if (otp_gnt_i) begin
           state_d = InitWaitSt;
         end
@@ -321,7 +345,7 @@ module otp_ctrl_part_buf
             // verification. Note that the last block is the digest value, which does not
             // have to be descrambled.
             if (cnt == LastScrmblBlock) begin
-              if (mubi8_test_true_strict(zeroized_q)) begin
+              if (mubi8_test_true_strict(is_zeroized)) begin
                 state_d = IdleSt;
                 if (mubi8_test_true_strict(dout_locked_q)) begin
                   dout_locked_d = MuBi8False;
@@ -331,7 +355,7 @@ module otp_ctrl_part_buf
               end
             // Only need to descramble if this is a scrambled partition.
             // Otherwise, we can just go back to InitSt and read the next block.
-            end else if (Info.secret && mubi8_test_false_strict(zeroized_q)) begin
+            end else if (Info.secret && mubi8_test_false_strict(is_zeroized)) begin
               state_d = InitDescrSt;
             end else begin
               state_d = InitSt;
@@ -381,7 +405,7 @@ module otp_ctrl_part_buf
       // triggers in this state.
       IdleSt: begin
         // Disable integrity and consistency checks for zeroized partitions.
-        if (mubi8_test_false_strict(zeroized_q)) begin
+        if (mubi8_test_false_strict(is_zeroized)) begin
           if (integ_chk_req_i) begin
             if (Info.hw_digest) begin
               state_d = IntegDigClrSt;
@@ -391,7 +415,9 @@ module otp_ctrl_part_buf
             end else begin
               integ_chk_ack_o = 1'b1;
             end
-          end else if (cnsty_chk_req_i) begin
+          // Do not start a consistency check when a zeroization trigger has been observed.
+          // The integrity check can go through because it only operates on the buffers.
+          end else if (cnsty_chk_req_i && mubi8_test_false_strict(zer_trig_i)) begin
             state_d = CnstyReadSt;
             cnt_clr = 1'b1;
           end
@@ -668,6 +694,19 @@ module otp_ctrl_part_buf
         error_d = FsmStateError;
       end
     end
+    // Unconditionally transfer the partition into the terminal error state
+    // when an invalid indicator is detected.
+    if (mubi8_test_invalid(is_zeroized) || zer_dig_ecc_err) begin
+      state_d = ErrorSt;
+      fsm_err_o = 1'b1;
+      error_d = FsmStateError;
+    end
+    // The command is flopped and needs to permanently check for invalid values.
+    if (!(otp_cmd_o inside {prim_generic_otp_pkg::ReadRaw, prim_generic_otp_pkg::Read})) begin
+      state_d = ErrorSt;
+      fsm_err_o = 1'b1;
+      error_d = FsmStateError;
+    end
   end
 
   ////////////////////////////
@@ -823,16 +862,34 @@ module otp_ctrl_part_buf
     end
   end
 
-  // Flop the zeroization state.
   caliptra_prim_flop #(
-    .Width(MuBi8Width),
-    .ResetValue(MuBi8Width'(MuBi8False))
-  ) u_zeroized_flop(
+    .Width(prim_generic_otp_pkg::CmdWidth),
+    .ResetValue((Info.zeroizable || !Info.integrity) ? prim_generic_otp_pkg::ReadRaw : prim_generic_otp_pkg::Read)
+  ) u_otp_cmd_flop (
     .clk_i,
     .rst_ni,
-    .d_i(MuBi8Width'(zeroized_d)),
-    .q_o({zeroized_q})
+    .d_i     ( cmd_d ),
+    .q_o     ( { otp_cmd_o }  )
   );
+
+  if (Info.zeroizable) begin : zer_dig_reg
+    otp_ctrl_ecc_reg #(
+      .Width ( ScrmblBlockWidth ),
+      .Depth ( 1 )
+    ) u_zer_dig_reg (
+      .clk_i,
+      .rst_ni,
+      .wren_i    ( zer_dig_en      ),
+      .addr_i    ( '0              ),
+      .wdata_i   ( data_mux        ),
+      .rdata_o   (                 ),
+      .data_o    ( zer_dig         ),
+      .ecc_err_o ( zer_dig_ecc_err )
+    );
+  end else begin
+    assign zer_dig = '0;
+    assign zer_dig_ecc_err = 1'b0;
+  end
 
   ////////////////
   // Assertions //
@@ -891,13 +948,5 @@ module otp_ctrl_part_buf
   // The partition size must be greater than one scrambling block for the address calculation
   // and muxing to work correctly.
   `CALIPTRA_ASSERT_INIT(OtpPartBufSize_A, Info.size > (ScrmblBlockWidth/8))
-
-  // Read out of a zeroized partition should never result in an ECC error as it
-  // is disabled.
-  `CALIPTRA_ASSERT(OtpPartBufZeroizedNoEccErrors_A,
-   ((state_q == InitChkZerWaitSt) && otp_rvalid_i) ||
-   (mubi8_test_true_strict(zeroized_q) && otp_rvalid_i)
-   |->
-   !(otp_err inside {MacroEccCorrError, MacroEccUncorrError}))
 
 endmodule : otp_ctrl_part_buf

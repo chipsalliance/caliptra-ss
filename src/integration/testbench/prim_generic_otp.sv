@@ -320,7 +320,7 @@ module prim_generic_otp
       end
       // Read back the zeroized word.
       ZerReadSt: begin
-        state_d = ReadWaitSt;
+        state_d = ZerReadWaitSt;
         req     = 1'b1;
         read_ecc_on = 1'b0;
       end
@@ -330,17 +330,11 @@ module prim_generic_otp
         read_ecc_on = 1'b0;
         if (rvalid) begin
           cnt_en = 1'b1;
-          if (rerror != NoError) begin
+          if (cnt_q == size_q) begin
             state_d = IdleSt;
             valid_d = 1'b1;
-            err_d = MacroZeroizeError;
           end else begin
-            if (cnt_q == size_q) begin
-              state_d = IdleSt;
-              valid_d = 1'b1;
-            end else begin
-              state_d = ZerReadSt;
-            end
+            state_d = ZerReadSt;
           end
         end
       end

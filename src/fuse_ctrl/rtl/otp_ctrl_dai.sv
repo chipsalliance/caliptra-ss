@@ -70,7 +70,12 @@ module otp_ctrl_dai
   output logic                           scrmbl_valid_o,
   input  logic                           scrmbl_ready_i,
   input  logic                           scrmbl_valid_i,
-  input  logic [ScrmblBlockWidth-1:0]    scrmbl_data_i
+  input  logic [ScrmblBlockWidth-1:0]    scrmbl_data_i,
+  // Zeroization trigger indicators for each partition.
+  // The first successful zeroization request will set the
+  // corresponding bit in the array.
+  output mubi8_t [NumPart-1:0] zer_trigs_o,
+  input mubi8_t [NumPart-1:0] zer_i
 );
 
   ////////////////////////
@@ -165,6 +170,7 @@ module otp_ctrl_dai
   logic [NumPartWidth-1:0] part_idx;
   logic [NumPart-1:0][OtpAddrWidth-1:0] digest_addr_lut;
   logic part_sel_valid;
+  mubi8_t [NumPart-1:0] zer_trigs_d;
 
   // Depending on the partition configuration, the wrapper is instructed to ignore integrity
   // calculations and checks. To be on the safe side, the partition filters error responses at this
@@ -188,10 +194,41 @@ module otp_ctrl_dai
   // after digest and write ops.
   assign dai_rdata_o   = (state_q == IdleSt) ? data_q : '0;
 
-  // Read out data is screened for the zeroization marker. This is only relevant for the
-  // `ZEROIZE` command to prevent exposing scrambled data to software.
-  mubi8_t is_zeroized;
-  assign is_zeroized = $countones(otp_rdata_i) >= ZeroizationThreshold ? MuBi8True : MuBi8False;
+  ///////////////////////
+  // Zeroization Check //
+  ///////////////////////
+
+  // The read-out data is is buffered and replicated, then screened for the
+  // zeroization marker. This is only relevant for the `ZEROIZE` command to
+  // prevent exposing scrambled data to software.
+
+  localparam int ZerFanout = 4;
+
+  // Compose several individual MuBis into a larger MuBi. The resulting
+  // value must always be a valid MuBi constant (either `true` or `false`).
+  logic   [ZerFanout-1:0][ScrmblBlockWidth-1:0] otp_rdata_post;
+  mubi4_t [ZerFanout-1:0] is_zeroized_pre;
+  mubi16_t is_zeroized;
+  for (genvar k = 0; k < ZerFanout; k++) begin
+    caliptra_prim_buf #(
+      .Width(ScrmblBlockWidth)
+    ) u_rdata_buf (
+      .in_i  ( otp_rdata_i       ),
+      .out_o ( otp_rdata_post[k] )
+    );
+
+    // Interleave MuBi4 chunks to a create higher-order MuBis.
+    // Even indices: (MuBi4True, MuBi4False)
+    // Odd indices:  (MuBi4False, MuBi4True)
+    assign is_zeroized_pre[k] = (check_zeroized(otp_rdata_post[k], otp_size_o) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
+  end
+
+  caliptra_prim_buf #(
+    .Width(MuBi16Width)
+  ) u_is_zeroized_buf (
+    .in_i  ( is_zeroized_pre ),
+    .out_o ( {is_zeroized}   )
+  );
 
   always_comb begin : p_fsm
     state_d = state_q;
@@ -232,6 +269,9 @@ module otp_ctrl_dai
     // Error Register
     error_d = error_q;
     fsm_err_o = 1'b0;
+
+    // Zeroization trigger
+    zer_trigs_d = zer_trigs_o;
 
     unique case (state_q)
       ///////////////////////////////////////////////////////////////////
@@ -332,7 +372,7 @@ module otp_ctrl_dai
           otp_req_o = 1'b1;
           // Depending on the partition configuration,
           // the wrapper is instructed to ignore integrity errors.
-          if (PartInfo[part_idx].integrity) begin
+          if (PartInfo[part_idx].integrity && mubi8_test_false_strict(zer_i[part_idx])) begin
             otp_cmd_o = prim_generic_otp_pkg::Read;
           end else begin
             otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
@@ -723,8 +763,11 @@ module otp_ctrl_dai
           if (otp_rvalid_i) begin
             // Only store zeroized value in the CSRs and only if the request was
             // successful.
-            if (mubi8_test_true_strict(is_zeroized) && (otp_err == NoError)) begin
+            if (mubi16_test_true_strict(is_zeroized) && (otp_err == NoError)) begin
               data_en = 1'b1;
+              // Flop trigger for the affected partition such that it can disable
+              // periodic checks that could fail.
+              zer_trigs_d[part_idx] = MuBi8True;
             end
             // Clear working register state.
             state_d = IdleSt;
@@ -768,6 +811,15 @@ module otp_ctrl_dai
       state_d = ErrorSt;
       fsm_err_o = 1'b1;
       if (state_q != ErrorSt) begin
+        error_d = FsmStateError;
+      end
+    end
+    // Unconditionally jump into the termainl error state when a zeroization
+    // indicator takes on an invalid value.
+    for (int k = 0; k < NumPart; k++) begin
+      if (mubi8_test_invalid(zer_trigs_o[k]) || mubi16_test_invalid(is_zeroized)) begin
+        state_d = ErrorSt;
+        fsm_err_o = 1'b1;
         error_d = FsmStateError;
       end
     end
@@ -916,6 +968,17 @@ module otp_ctrl_dai
       discarded_fuse_write_o        <= discarded_fuse_write_d;
     end
   end
+
+  // Flop the array of zeroization triggers.
+  caliptra_prim_flop #(
+    .Width(NumPart*MuBi8Width),
+    .ResetValue({NumPart{MuBi8False}})
+  ) u_zeroized_flop(
+    .clk_i,
+    .rst_ni,
+    .d_i(zer_trigs_d),
+    .q_o({zer_trigs_o})
+  );
 
   ////////////////
   // Assertions //
