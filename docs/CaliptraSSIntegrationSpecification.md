@@ -461,7 +461,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem.
 
   - **Signal Name** `cptra_ss_clk_i`
-  - **Required Frequency** 170 Mhz to 400 MHz 
+  - **Required Frequency** 170 Mhz to 400 MHz
     - I3C core imposes requirement for minimum operating clock frequency set to 170 Mhz or higher.
   - **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
   - **Integration Notes**
@@ -475,7 +475,7 @@ The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_c
   - **Required Frequency** Same as `cptra_ss_clk_i`.
   - **Clock Source** Caliptra SS MCI clock gater
   - **Integration Notes**
-     1. Gated a few clock cycles before `cptra_ss_rst_b_o` asserted and remains gated until reset is deasserted. 
+     1. Gated a few clock cycles before `cptra_ss_rst_b_o` asserted and remains gated until reset is deasserted.
      2. MCU SRAM and MCU MBOX memories shall be connected to this clock to avoid RDC issues.
      3. Any SOC logic on a deeper reset domain than CSS can use this clock to resolve RDC issues.
 
@@ -637,7 +637,7 @@ The following figure shows the SRAM interface timing.
 
 ### SRAM parameterization
 
-Parameterization for ICCM/DCCM/I-Cache memories is derived from the configuration of the VeeR RISC-V core that has been selected for Caliptra Subsystem integration. Parameters defined in the VeeR core determine signal dimensions at the Subsystem top-level interface and drive requirements for SRAM layout. For details about interface parameterization, see the [Interfaces \& Signals](#interfaces--signals) section. 
+Parameterization for ICCM/DCCM/I-Cache memories is derived from the configuration of the VeeR RISC-V core that has been selected for Caliptra Subsystem integration. Parameters defined in the VeeR core determine signal dimensions at the Subsystem top-level interface and drive requirements for SRAM layout. For details about interface parameterization, see the [Interfaces \& Signals](#interfaces--signals) section.
 
 ### Example SRAM machine check reliability integration
 
@@ -678,25 +678,25 @@ Note that the example assumes that data and ECC codes are in non-deterministic b
     2. The non-intrusive error injection does not interfere with the operation of memories.
     3. The non-intrusive error injection is functional in Production fused parts.
 
-#### Caliptra Subsystem error and recovery flow
+#### Caliptra Subsystem error handling flow
 
-1. Caliptra Subsystem Stuck:
-    1. SoC BC timeout mechanism with 300us timeout.
-2. Caliptra Subsystem reports non-fatal error during boot flow:
+1. An example implementation of error and recovery flows adheres to the error handling requirements specified in [Caliptra.md](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling)
+2. Example timeout handling:
+    1. Caliptra watchdog timer asserts, indicating internal Caliptra timeout. This may be the result of an AHB bus hang, or any procedure taking longer than expected to complete during boot. Either condition results in the non-maskable interrupt in Caliptra, which places Caliptra into an error state that may only be recovered by a reset.
+    2. Caliptra fails to assert expected signals within the time defined by SoC. This may include timeouts on the ready_for_fuses and ready_for_mb_processing signals. These timeout windows are defined by integrators, and an example response may include entering the Subsystem and SoC into an error state (requiring reset).
+3. Example handling when Caliptra Subsystem reports non-fatal error during boot flow:
     1. `cptra_ss_all_error_non_fatal_o` is an output Caliptra Subsystem signal, which shall be routed to SoC interrupt controller.
     2. See [MCI error handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure.
     3. SoC can read the MCI non-fatal error register for error source.
-    4. Assume Caliptra Subsystem can report a non-fatal error at any time.
+    4. Integrators must assume Caliptra Subsystem can report a non-fatal error at any time.
     5. SoC should monitor the error interrupt or check it before requesting any Subsystem operations.
-    6. In the event of a non-fatal error during boot, SoC should enter recovery flow and attempt to boot again using alternate boot part/partition.
-    7. If SoC sees that a non-fatal error has occurred AFTER initial bringup, SoC may attempt to recover Caliptra by executing the “Run Self-Test” mailbox command (not yet defined).
-    8. If this command completes successfully, SoC may continue using Caliptra as before.
-    9. If this command is unsuccessful, Caliptra is in an error state for the remainder of the current boot.
-    10. SoC needs to monitor MCRIP for non-fatal ECC errors that are not reported by Caliptra Subsystem.
-3. Caliptra Subsystem reports fatal error during boot flow:
+    6. SoC may alternatively monitor the [MCI Error registers](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.HW_ERROR_NON_FATAL)
+    7. This example implementation detects and corrects single-bit SRAM ECC errors outside of the Caliptra Subsystem boundary, therefore Caliptra Subsystem will never report non-fatal ECC errors. Such errors are logged through MCRIP and shall be monitored by SoC.
+    8. Occurrence of any non-fatal error may suggest SoC is using invalid mailbox protocols, invalid firmware images, or that a transient error has occurred. Depending on the signature, SoC non-fatal errors may be used to trigger system reset or boot retry attempts or to trigger SoC transition to an error state, resulting in SoC attestation failure. SoC integrators must decide how to respond to each case.
+4. Caliptra Subsystem reports fatal error during boot flow:
     1. `cptra_ss_all_error_fatal_o` is an output Caliptra Subsystem signal, which shall be routed to SoC interrupt controller.
-    2. SoC can read the MCI fatal error register for error source.
-    3. Assume Caliptra Subsystem can report a fatal error at any time.
+    2. SoC can read the [MCI fatal error register](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.HW_ERROR_FATAL) for error source.
+    3. Integrators must assume Caliptra Subsystem can report a fatal error at any time.
     4. Fatal errors are generally hardware in nature. SoC may attempt to recover by full reset of the entire SoC. If SoC continues without a full reset Caliptra Subsystem will be unavailable for the remainder of the current boot.
     5. In the event of an uncorrectable error that is not correctly detected by Caliptra Subsystem, ECC fatal errors shall be reported by SoC MCRIP.
 
@@ -729,7 +729,7 @@ Reference tests are available at `caliptra-ss\src\integration\test_suites`
 | `MCU_DCCM_ACCESS`              | Validates access to the Data Closely Coupled Memory (DCCM) by the MCU.      |
 | `MCU_FUSE_CTRL_BRINGUP`        | Tests the bring-up sequence of the Fuse Controller by the MCU.              |
 | `MCU_LMEM_EXE`                 | Tests execution by MCU from the MCU SRAM, contained inside the MCI component. LMEM refers to Local Memory, a generic alias for MCU SRAM. |
-| `MCU_MCTP_SMOKE_TEST`          | Test verifies the I3C main target operation                                 | 
+| `MCU_MCTP_SMOKE_TEST`          | Test verifies the I3C main target operation                                 |
 | `MCU_TEST_ROM_I3C_STREAMING_BOOT` | Test verifies the I3C recovery target operation by using caliptra test ROM |
 | `FUSE_PROV_WITH_LC_CTRL`       | Tests fuse provisioning in conjunction with the Lifecycle Controller.       |
 | `CALIPTRA_SS_LC_CTRL_BRINGUP`  | Tests the bring-up sequence of the Lifecycle Controller.                    |
@@ -1210,7 +1210,7 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
    - Verify that all output signals, including alerts, remain within the expected ranges under normal operation.
 2. **IMPORTANT SOC REQUIREMENT**:
     - Life cycle controller allows you to switch from internal to external clock on a request from SOC over JTAG or AXI (As explained in other sections, this is typically used for Fuse programming scenarios when a stable clock is not yet available within the SOC). When the request arrives, life cycle controller requests the SOC to do the clock switch. When such a request is made, SOC MUST respond with an acknowledgement within 2 clock cycles of the internal clock. If this condition is not met, OTP controller will assert "program error" and the SOC must go through a reset cycle and redo the above steps. This must be verified by the SOC as a part of Caliptra subsystem integration checks.
-    
+
     To protect from clock stretching attacks Caliptra mandates using a clock source that is constructed within the SOC (eg. PLL, Calibrated Ring Oscillator, etc). For such a clock source, a SOC may require fuses to be programmed. TP programming demands a reliable and deterministic clock signal to ensure correct fuse write operations; which SOC may not have during the early phases of manufacturing flow due to above constraints. In order to overcome this issue, this `external clock` can be used typically in the manufacturing phase of a SOC; and for such SOCs this external clock is supplied from a platform (e.g an ATE). Since the Caliptra subsystem includes only one clock input (`cptra_ss_clk_i`), the SoC integrator is responsible for ensuring that this input can be switched to a stable source.
 
 3. **Scan Path Exclusions**:
@@ -2313,7 +2313,7 @@ In an unconstrained environment, several CDC violations are anticipated. CDC ana
  Will not affect complete solution.
   - Suppressible error in [Line 235](https://github.com/chipsalliance/caliptra-rtl/blob/ea416cbe89805221a0cdb92a34a2cfefb795fbec/src/entropy_src/rtl/entropy_src.sv#L235) of entropy_src.sv
     - Occurs in stub code. Comment out to proceed
-  - Function definition in [Line 45](https://github.com/chipsalliance/caliptra-rtl/blob/ea416cbe89805221a0cdb92a34a2cfefb795fbec/src/caliptra_prim/rtl/caliptra_prim_sparse_fsm_flop.sv#L45) of caliptra_prim_sparse_fsm_flop.sv may cause CDC tool to quit compilation 
+  - Function definition in [Line 45](https://github.com/chipsalliance/caliptra-rtl/blob/ea416cbe89805221a0cdb92a34a2cfefb795fbec/src/caliptra_prim/rtl/caliptra_prim_sparse_fsm_flop.sv#L45) of caliptra_prim_sparse_fsm_flop.sv may cause CDC tool to quit compilation
     - CALIPTRA_INC_ASSERT not defined by default
     - Comment out code under if condition for CDC analysis
 
