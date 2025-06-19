@@ -5,7 +5,8 @@ HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and
 
 ## Project Links
 
-[caliptra-ss](https://github.com/chipsalliance/caliptra-ss)
+[caliptra-ss](https://github.com/chipsalliance/caliptra-ss)<BR>
+[Caliptra Subsystem v1.0 Example Register Map](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=)<BR>
 
 ## **Tools Used** ##
 
