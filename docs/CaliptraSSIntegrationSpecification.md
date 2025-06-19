@@ -36,7 +36,7 @@
     - [Example SRAM machine check reliability integration](#example-sram-machine-check-reliability-integration)
       - [Error detection and logging](#error-detection-and-logging)
       - [Error injection](#error-injection)
-      - [Caliptra Subsystem error and recovery flow](#caliptra-subsystem-error-and-recovery-flow)
+      - [Example Caliptra Subsystem error handling flow](#example-caliptra-subsystem-error-handling-flow)
   - [Programming interface](#programming-interface)
   - [Sequences](#sequences)
   - [How to test](#how-to-test)
@@ -678,7 +678,7 @@ Note that the example assumes that data and ECC codes are in non-deterministic b
     2. The non-intrusive error injection does not interfere with the operation of memories.
     3. The non-intrusive error injection is functional in Production fused parts.
 
-#### Caliptra Subsystem error handling flow
+#### Example Caliptra Subsystem error handling flow
 
 1. An example implementation of error and recovery flows adheres to the error handling requirements specified in [Caliptra.md](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling)
 2. Example timeout handling:
