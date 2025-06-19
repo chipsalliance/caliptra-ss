@@ -246,7 +246,7 @@ package otp_ctrl_part_pkg;
     '{
       variant:          Unbuffered,
       offset:           12'd208,
-      size:             512,
+      size:             520,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
       sw_digest:        1'b1,
@@ -261,7 +261,7 @@ package otp_ctrl_part_pkg;
     // SECRET_LC_TRANSITION_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd720,
+      offset:           12'd728,
       size:             184,
       key_sel:          SecretLifeCycleTransitionKey,
       secret:           1'b1,
@@ -277,7 +277,7 @@ package otp_ctrl_part_pkg;
     // SVN_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd904,
+      offset:           12'd912,
       size:             40,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -293,7 +293,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_TEST_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd944,
+      offset:           12'd952,
       size:             64,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -309,7 +309,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_HASHES_MANUF_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1008,
+      offset:           12'd1016,
       size:             64,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -325,8 +325,8 @@ package otp_ctrl_part_pkg;
     // VENDOR_HASHES_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1072,
-      size:             816,
+      offset:           12'd1080,
+      size:             864,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
       sw_digest:        1'b1,
@@ -341,8 +341,8 @@ package otp_ctrl_part_pkg;
     // VENDOR_REVOCATIONS_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd1888,
-      size:             184,
+      offset:           12'd1944,
+      size:             216,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
       sw_digest:        1'b1,
@@ -357,7 +357,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_SECRET_PROD_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd2072,
+      offset:           12'd2160,
       size:             520,
       key_sel:          VendorSecretProdKey,
       secret:           1'b1,
@@ -373,7 +373,7 @@ package otp_ctrl_part_pkg;
     // VENDOR_NON_SECRET_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd2592,
+      offset:           12'd2680,
       size:             520,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -389,7 +389,7 @@ package otp_ctrl_part_pkg;
     // LIFE_CYCLE
     '{
       variant:          LifeCycle,
-      offset:           12'd3112,
+      offset:           12'd3200,
       size:             88,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -558,7 +558,7 @@ package otp_ctrl_part_pkg;
 
 
   // OTP invalid partition default for buffered partitions.
-  parameter logic [25599:0] PartInvDefault = 25600'({
+  parameter logic [26303:0] PartInvDefault = 26304'({
     704'({
       320'h1149EFDC5F023299DFB44D70A9F906859E02C05185213FCF029CB3E62CE6FDDCBA7F6C9D2519EA1A,
       384'h956AEADB13BAAA10D2336E399E5F1AEB58C2A1BA65D13A0FE39B01C95A626001CC969493D06CDB450C26A87F7BF58DDA
@@ -601,103 +601,103 @@ package otp_ctrl_part_pkg;
       256'h851B80674A2B6FBE93B61DE417B9FB339605F051E74379CBCC6596C7174EBA64,
       256'h1E46311FD36D95401136C663A36C3E3E817E760B27AE937BFCDF15A3429452A
     }),
-    1472'({
+    1728'({
       64'h769D73F614F297C5,
-      48'h0, // unallocated space
+      32'h0, // unallocated space
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0,
       32'h0,
       32'h0,
-      16'h0
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0,
+      32'h0
     }),
-    6528'({
+    6912'({
       64'hFEEC587DCB2A9253,
       32'h0, // unallocated space
-      16'h0,
-      16'h0,
+      128'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
+      32'h0,
       384'h0,
-      16'h0,
-      16'h0,
+      32'h0,
+      32'h0,
       384'h0
     }),
     512'({
       64'hF545B7FC56675745,
-      48'h0, // unallocated space
-      16'h0,
+      32'h0, // unallocated space
+      32'h0,
       384'h0
     }),
     512'({
@@ -706,8 +706,7 @@ package otp_ctrl_part_pkg;
       256'h0
     }),
     320'({
-      16'h0, // unallocated space
-      16'h0,
+      32'h0,
       128'h0,
       128'h0,
       32'h0
@@ -726,8 +725,9 @@ package otp_ctrl_part_pkg;
       128'h7E17D06B5D4E0DDDDBB9844327F20FB5,
       128'hB6711DB6F5D40A37DBC827839FE2DCC2
     }),
-    4096'({
+    4160'({
       64'h7ADDC105A37BE10E,
+      32'h0, // unallocated space
       384'h0,
       384'h0,
       384'h0,
@@ -736,11 +736,11 @@ package otp_ctrl_part_pkg;
       384'h0,
       384'h0,
       384'h0,
-      16'h0,
+      32'h0,
       128'h0,
       32'h0,
       768'h0,
-      16'h0
+      32'h0
     }),
     128'({
       64'hE8207D2509C0D925,

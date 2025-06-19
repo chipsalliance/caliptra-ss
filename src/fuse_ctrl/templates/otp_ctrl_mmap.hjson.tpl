@@ -250,7 +250,7 @@
             items: [
                 {
                     name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
-                    size: "2",
+                    size: "4",
                     desc: '''
                     Disables anti-rollback support from Caliptra.
                     For example, if a Platform RoT is managing FW storage and anti-rollback protection external to the SoC.
@@ -283,7 +283,7 @@
                 },
                 {
                     name: "CPTRA_CORE_SOC_STEPPING_ID",
-                    size: "2",
+                    size: "4",
                     desc: '''
                     Identifier assigned by vendor to differentiate silicon steppings.
                     '''
@@ -516,7 +516,7 @@
                 },
                 {
                     name: "CPTRA_CORE_SOC_MANIFEST_MAX_SVN",
-                    size: "2",
+                    size: "4",
                     desc: '''
                     Maximum value for the SOC authorization manifest SVN..
                     '''
@@ -579,7 +579,7 @@
                 },
                 {
                     name:   "CPTRA_CORE_PQC_KEY_TYPE_0",
-                    size:   "2",
+                    size:   "4",
                     desc: '''
                     One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
                     '''
@@ -613,7 +613,7 @@
                 },
                 {
                     name:   "CPTRA_SS_OWNER_PQC_KEY_TYPE",
-                    size:   "2",
+                    size:   "4",
                     desc: '''
                     One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
                     SoC product requirements determine the need of this partition.
@@ -621,7 +621,7 @@
                 },
                 {
                     name:   "CPTRA_SS_OWNER_PK_HASH_VALID",
-                    size:   "2",
+                    size:   "4",
                     desc: '''
                     Once a key is marked valid, anything above should not be able to be written (essentially
                     a volatile lock should be implemented on higher order bits).
@@ -639,7 +639,7 @@
                 },
                 {
                     name:   "CPTRA_CORE_PQC_KEY_TYPE_${i}",
-                    size:   "2",
+                    size:   "4",
                     desc: '''
                     One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
                     SoC product requirements determine the need of this partition; and the number of public keys required.
@@ -648,7 +648,7 @@
     % endfor
                 {
                     name:   "CPTRA_CORE_VENDOR_PK_HASH_VALID",
-                    size:   "${2 * (-(-num_vendor_pk_fuses // 16))}",
+                    size:   "${4 * (-(-num_vendor_pk_fuses // 4))}",
                     desc: '''
                     Once a key is marked valid, anything above should not be able to be written (essentially
                     a volatile lock should be implemented on higher order bits).
@@ -675,7 +675,7 @@
             items: [
                 {
                     name:   "CPTRA_SS_OWNER_ECC_REVOCATION",
-                    size:   "2",
+                    size:   "4",
                     desc: '''
                     One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
                     SoC product requirements determine the need of this partition.
@@ -700,7 +700,7 @@
     % for i in range(num_vendor_pk_fuses):  
                 {
                     name:   "CPTRA_CORE_ECC_REVOCATION_${i}",
-                    size:   "2",
+                    size:   "4",
                     desc: '''
                     One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
                     SoC product requirements determine the need of this partition; and the number of public keys required.
