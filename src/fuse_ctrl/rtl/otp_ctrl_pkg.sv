@@ -8,6 +8,7 @@ package otp_ctrl_pkg;
   import caliptra_prim_util_pkg::vbits;
   import otp_ctrl_reg_pkg::*;
   import ast_pkg::*;
+  import prim_generic_otp_pkg::*;
 
   ////////////////////////
   // General Parameters //
@@ -40,11 +41,12 @@ package otp_ctrl_pkg;
     caliptra_prim_mubi_pkg::mubi8_t write_lock;
   } part_access_t;
 
-  parameter int DaiCmdWidth = 3;
+  parameter int DaiCmdWidth = 4;
   typedef enum logic [DaiCmdWidth-1:0] {
-    DaiRead   = 3'b001,
-    DaiWrite  = 3'b010,
-    DaiDigest = 3'b100
+    DaiRead    = 4'b0001,
+    DaiWrite   = 4'b0010,
+    DaiDigest  = 4'b0100,
+    DaiZeroize = 4'b1000
   } dai_cmd_e;
 
   parameter int DeviceIdWidth = 256;
@@ -97,6 +99,15 @@ package otp_ctrl_pkg;
     DigestInit,
     DigestFinalize
   } otp_scrmbl_cmd_e;
+
+  //////////////////////////
+  // OCP Lock Zeroization //
+  //////////////////////////
+
+  // A partition is deemed to be in a zeroization state if its digest
+  // field contains a predefined number of set bits. The digest field
+  // is always of the same width as the scramble block size.
+  parameter int ZeroizationThreshold = ScrmblBlockWidth;
 
   ///////////////////////////////
   // Typedefs for LC Interface //
@@ -377,7 +388,7 @@ package otp_ctrl_pkg;
       // Ready/valid handshake and command channel
       logic                            valid_i;
       logic [OtpSizeWidth-1:0]         size_i;   // (Native words)-1
-      caliptra_prim_otp_pkg::cmd_e     cmd_i;
+      cmd_e                            cmd_i;
       logic [OtpAddrWidth-1:0]         addr_i;
       logic [OtpIfWidth-1:0]           wdata_i;
     } prim_generic_otp_inputs_t;
@@ -401,7 +412,7 @@ package otp_ctrl_pkg;
       logic                       ready_o;
       logic                       valid_o;
       logic [OtpIfWidth-1:0]         rdata_o;
-      caliptra_prim_otp_pkg::err_e     err_o;
+      err_e     err_o;
     } prim_generic_otp_outputs_t;
 
 endpackage : otp_ctrl_pkg

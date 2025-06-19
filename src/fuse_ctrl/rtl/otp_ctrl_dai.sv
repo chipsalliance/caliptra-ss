@@ -51,14 +51,14 @@ module otp_ctrl_dai
   output logic [NumDaiWords-1:0][31:0]   dai_rdata_o,
   // OTP interface
   output logic                           otp_req_o,
-  output caliptra_prim_otp_pkg::cmd_e             otp_cmd_o,
+  output prim_generic_otp_pkg::cmd_e             otp_cmd_o,
   output logic [OtpSizeWidth-1:0]        otp_size_o,
   output logic [OtpIfWidth-1:0]          otp_wdata_o,
   output logic [OtpAddrWidth-1:0]        otp_addr_o,
   input                                  otp_gnt_i,
   input                                  otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]          otp_rdata_i,
-  input  caliptra_prim_otp_pkg::err_e             otp_err_i,
+  input  prim_generic_otp_pkg::err_e             otp_err_i,
   // Scrambling mutex request
   output logic                           scrmbl_mtx_req_o,
   input                                  scrmbl_mtx_gnt_i,
@@ -70,7 +70,11 @@ module otp_ctrl_dai
   output logic                           scrmbl_valid_o,
   input  logic                           scrmbl_ready_i,
   input  logic                           scrmbl_valid_i,
-  input  logic [ScrmblBlockWidth-1:0]    scrmbl_data_i
+  input  logic [ScrmblBlockWidth-1:0]    scrmbl_data_i,
+  // Zeroization trigger indicators for each partition.
+  // The first successful zeroization request will set the
+  // corresponding bit in the array.
+  output logic [NumPart-1:0] zer_trig_en_o
 );
 
   ////////////////////////
@@ -90,10 +94,9 @@ module otp_ctrl_dai
   // DAI Control FSM //
   /////////////////////
 
-  // SEC_CM: DAI.FSM.SPARSE
   // Encoding generated with:
-  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 20 -n 12 \
-  //      -s 3011551511 --language=sv
+  // $ ./util/design/sparse-fsm-encode.py -d 4 -m 22 -n 12 \
+  //     -s 803253351 --language=sv
   //
   // Hamming distance histogram:
   //
@@ -101,43 +104,45 @@ module otp_ctrl_dai
   //  1: --
   //  2: --
   //  3: --
-  //  4: --
-  //  5: |||||||||||||||| (31.05%)
-  //  6: |||||||||||||||||||| (36.84%)
-  //  7: |||||||| (15.26%)
-  //  8: |||| (8.95%)
-  //  9: || (5.26%)
-  // 10:  (1.58%)
-  // 11:  (1.05%)
+  //  4: |||||||||| (12.99%)
+  //  5: |||||||||||||||||||| (25.11%)
+  //  6: |||||||||||||||| (21.21%)
+  //  7: |||||||||||||||| (20.35%)
+  //  8: |||||||||| (12.99%)
+  //  9: |||| (6.06%)
+  // 10:  (0.87%)
+  // 11:  (0.43%)
   // 12: --
   //
-  // Minimum Hamming distance: 5
+  // Minimum Hamming distance: 4
   // Maximum Hamming distance: 11
-  // Minimum Hamming weight: 2
+  // Minimum Hamming weight: 3
   // Maximum Hamming weight: 9
   //
   localparam int StateWidth = 12;
   typedef enum logic [StateWidth-1:0] {
-    ResetSt       = 12'b101111010100,
-    InitOtpSt     = 12'b110000110010,
-    InitPartSt    = 12'b000111111001,
-    IdleSt        = 12'b111010000011,
-    ErrorSt       = 12'b100010001110,
-    ReadSt        = 12'b100101100110,
-    ReadWaitSt    = 12'b001100000000,
-    DescrSt       = 12'b011000101111,
-    DescrWaitSt   = 12'b110101011111,
-    WriteSt       = 12'b110111001000,
-    WriteWaitSt   = 12'b111001111100,
-    ScrSt         = 12'b000000010101,
-    ScrWaitSt     = 12'b010110110100,
-    DigClrSt      = 12'b001111001111,
-    DigReadSt     = 12'b001001110011,
-    DigReadWaitSt = 12'b101110111010,
-    DigSt         = 12'b011111100010,
-    DigPadSt      = 12'b011010011000,
-    DigFinSt      = 12'b110011100101,
-    DigWaitSt     = 12'b100000101001
+    ResetSt       = 12'b111001101100,
+    InitOtpSt     = 12'b000011010001,
+    InitPartSt    = 12'b101100000010,
+    IdleSt        = 12'b101011110010,
+    ErrorSt       = 12'b110010101001,
+    ReadSt        = 12'b001111011011,
+    ReadWaitSt    = 12'b000000111101,
+    DescrSt       = 12'b100110010100,
+    DescrWaitSt   = 12'b010100010001,
+    WriteSt       = 12'b010111001100,
+    WriteWaitSt   = 12'b101100100101,
+    ScrSt         = 12'b110001010011,
+    ScrWaitSt     = 12'b000101010110,
+    DigClrSt      = 12'b011010111100,
+    DigReadSt     = 12'b101011011100,
+    DigReadWaitSt = 12'b101001001001,
+    DigSt         = 12'b001110101001,
+    DigPadSt      = 12'b001101100000,
+    DigFinSt      = 12'b010010110111,
+    DigWaitSt     = 12'b110101101111,
+    ZerSt         = 12'b000100111010,
+    ZerWaitSt     = 12'b001000001100
   } state_e;
 
   typedef enum logic [1:0] {
@@ -187,6 +192,11 @@ module otp_ctrl_dai
   // after digest and write ops.
   assign dai_rdata_o   = (state_q == IdleSt) ? data_q : '0;
 
+  // Read out data is screened for the zeroization marker. This is only relevant for the
+  // `ZEROIZE` command to prevent exposing scrambled data to software.
+  mubi8_t is_zeroized;
+  assign is_zeroized = $countones(otp_rdata_i) >= ZeroizationThreshold ? MuBi8True : MuBi8False;
+
   always_comb begin : p_fsm
     state_d = state_q;
 
@@ -201,7 +211,7 @@ module otp_ctrl_dai
 
     // OTP signals
     otp_req_o = 1'b0;
-    otp_cmd_o = caliptra_prim_otp_pkg::Init;
+    otp_cmd_o = prim_generic_otp_pkg::Init;
 
     // Scrambling mutex
     scrmbl_mtx_req_o = 1'b0;
@@ -226,6 +236,9 @@ module otp_ctrl_dai
     // Error Register
     error_d = error_q;
     fsm_err_o = 1'b0;
+
+    // Zeroization trigger.
+    zer_trig_en_o = '0;
 
     unique case (state_q)
       ///////////////////////////////////////////////////////////////////
@@ -306,6 +319,9 @@ module otp_ctrl_dai
               scrmbl_mtx_req_o = 1'b1;
               base_sel_d = PartOffset;
             end
+            DaiZeroize: begin
+              state_d = ZerSt;
+            end
             default: ; // Ignore invalid commands
           endcase // dai_cmd_i
         end // dai_req_i
@@ -324,9 +340,9 @@ module otp_ctrl_dai
           // Depending on the partition configuration,
           // the wrapper is instructed to ignore integrity errors.
           if (PartInfo[part_idx].integrity) begin
-            otp_cmd_o = caliptra_prim_otp_pkg::Read;
+            otp_cmd_o = prim_generic_otp_pkg::Read;
           end else begin
-            otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+            otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
           end
           if (otp_gnt_i) begin
             state_d = ReadWaitSt;
@@ -428,9 +444,9 @@ module otp_ctrl_dai
           // Depending on the partition configuration,
           // the wrapper is instructed to ignore integrity errors.
           if (PartInfo[part_idx].integrity) begin
-            otp_cmd_o = caliptra_prim_otp_pkg::Write;
+            otp_cmd_o = prim_generic_otp_pkg::Write;
           end else begin
-            otp_cmd_o = caliptra_prim_otp_pkg::WriteRaw;
+            otp_cmd_o = prim_generic_otp_pkg::WriteRaw;
           end
           if (otp_gnt_i) begin
             state_d = WriteWaitSt;
@@ -562,9 +578,9 @@ module otp_ctrl_dai
           // Depending on the partition configuration,
           // the wrapper is instructed to ignore integrity errors.
           if (PartInfo[part_idx].integrity) begin
-            otp_cmd_o = caliptra_prim_otp_pkg::Read;
+            otp_cmd_o = prim_generic_otp_pkg::Read;
           end else begin
-            otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+            otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
           end
           if (otp_gnt_i) begin
             state_d = DigReadWaitSt;
@@ -668,6 +684,74 @@ module otp_ctrl_dai
           data_en = 1'b1;
         end
       end
+
+      ///////////////////////////////////////////////////////////////////
+      // Check whether partition is zeroizable and transition into the
+      // wait state once the OTP request has been granted.
+      ZerSt: begin
+        dai_prog_idle_o = 1'b0;
+        if (// Fuses in a partition can only be zeroized if the partition
+            // is parametrized so.
+            PartInfo[part_idx].zeroizable &&
+            // Check that the address is not out-of-bounds.
+            part_sel_valid &&
+            // Check that the AXI user ID is correct.
+            !discard_fuse_write_i &&
+            // The entire address space of a zeroizable partition can be cleared
+            (PartInfo[part_idx].variant == Buffered && base_sel_q == DaiOffset) ||
+            (PartInfo[part_idx].variant != Buffered && base_sel_q == DaiOffset)) begin
+          otp_req_o = 1'b1;
+          otp_cmd_o = prim_generic_otp_pkg::Zeroize;
+          if (otp_gnt_i) begin
+            state_d = ZerWaitSt;
+          end
+        end else begin
+          // Clear working register state.
+          discarded_fuse_write_d = 1'b1;
+          data_clr = 1'b1;
+          state_d = IdleSt;
+          error_d = AccessError; // Signal this error, but do not go into terminal error state.
+          dai_cmd_done_o = 1'b1;
+        end
+      end
+
+      ///////////////////////////////////////////////////////////////////
+      // Wait for OTP response to the zeroization request. An error or
+      // a non-zeroized value will not be returned to software. Note that
+      // in order to retry a failed zeroization requeset all errors are
+      // treated as recoverable.
+      ZerWaitSt: begin
+        dai_prog_idle_o = 1'b0;
+        // Continuously check write access and bail out if this is not consistent.
+        if (PartInfo[part_idx].zeroizable &&
+            // The entire address space of a zeroizable partition is writable.
+            (PartInfo[part_idx].variant == Buffered && base_sel_q == DaiOffset) ||
+            (PartInfo[part_idx].variant != Buffered && base_sel_q == DaiOffset)) begin
+          if (otp_rvalid_i) begin
+            // Only store zeroized value in the CSRs and only if the request was
+            // successful.
+            if (mubi8_test_true_strict(is_zeroized) && (otp_err == NoError)) begin
+              data_en = 1'b1;
+            end
+            // Clear working register state.
+            state_d = IdleSt;
+            dai_cmd_done_o = 1'b1;
+            // All errors are treated as recoverable during a zeroization.
+            if (otp_err != NoError) begin
+              error_d = otp_err;
+            end else begin
+              zer_trig_en_o[part_idx] = 1'b1;
+            end
+          end
+        // At this point, this check MUST succeed - otherwise this means that
+        // there was a tampering attempt. Hence we go into a terminal error state
+        // when this check fails.
+        end else begin
+          state_d = ErrorSt;
+          error_d = FsmStateError;
+        end
+      end
+
       ///////////////////////////////////////////////////////////////////
       // Terminal Error State. This locks access to the DAI. Make sure
       // an FsmStateError error code is assigned here, in case no error code has
