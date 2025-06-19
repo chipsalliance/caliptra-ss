@@ -56,7 +56,6 @@ REG_PKG_TEMPLATE  = "reg_pkg.sv.tpl"
 REG_TOP_TEMPLATE  = "reg_top.sv.tpl"
 
 # C templates
-C_HEADER_TEMPLATE = "fuse_ctrl_address_map.h.tpl"
 C_MMAP_TEMPLATE   = "fuse_ctrl_mmap.h.tpl"
 
 def render_template(template: str, target_path: Path, params: Dict[str, object]):
@@ -142,12 +141,6 @@ def main():
     )
 
     # Render C header files
-    render_template(
-        template=TEMPLATES_PATH / C_HEADER_TEMPLATE,
-        target_path=C_OUTPUT_PATH / C_HEADER_TEMPLATE.replace(".tpl", ""),
-        params={"rb": ip_block.reg_blocks["core"]}
-    )
-
     render_template(
         template=TEMPLATES_PATH / C_MMAP_TEMPLATE,
         target_path=C_OUTPUT_PATH / C_MMAP_TEMPLATE.replace(".tpl", ""),
