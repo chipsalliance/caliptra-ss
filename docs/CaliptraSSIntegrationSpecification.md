@@ -678,27 +678,14 @@ Note that the example assumes that data and ECC codes are in non-deterministic b
     2. The non-intrusive error injection does not interfere with the operation of memories.
     3. The non-intrusive error injection is functional in Production fused parts.
 
-#### Example Caliptra Subsystem error handling flow
+#### Caliptra Subsystem error handling flow
 
-1. An example implementation of error and recovery flows adheres to the error handling requirements specified in [Caliptra.md](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling)
-2. Example timeout handling:
-    1. Caliptra watchdog timer asserts, indicating internal Caliptra timeout. This may be the result of an AHB bus hang, or any procedure taking longer than expected to complete during boot. Either condition results in the non-maskable interrupt in Caliptra, which places Caliptra into an error state that may only be recovered by a reset.
-    2. Caliptra fails to assert expected signals within the time defined by SoC. This may include timeouts on the ready_for_fuses and ready_for_mb_processing signals. These timeout windows are defined by integrators, and an example response may include entering the Subsystem and SoC into an error state (requiring reset).
-3. Example handling when Caliptra Subsystem reports non-fatal error during boot flow:
-    1. `cptra_ss_all_error_non_fatal_o` is an output Caliptra Subsystem signal, which shall be routed to SoC interrupt controller.
-    2. See [MCI error handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure.
-    3. SoC can read the MCI non-fatal error register for error source.
-    4. Integrators must assume Caliptra Subsystem can report a non-fatal error at any time.
-    5. SoC should monitor the error interrupt or check it before requesting any Subsystem operations.
-    6. SoC may alternatively monitor the [MCI Error registers](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.HW_ERROR_NON_FATAL)
-    7. This example implementation detects and corrects single-bit SRAM ECC errors outside of the Caliptra Subsystem boundary, therefore Caliptra Subsystem will never report non-fatal ECC errors. Such errors are logged through MCRIP and shall be monitored by SoC.
-    8. Occurrence of any non-fatal error may suggest SoC is using invalid mailbox protocols, invalid firmware images, or that a transient error has occurred. Depending on the signature, SoC non-fatal errors may be used to trigger system reset or boot retry attempts or to trigger SoC transition to an error state, resulting in SoC attestation failure. SoC integrators must decide how to respond to each case.
-4. Caliptra Subsystem reports fatal error during boot flow:
-    1. `cptra_ss_all_error_fatal_o` is an output Caliptra Subsystem signal, which shall be routed to SoC interrupt controller.
-    2. SoC can read the [MCI fatal error register](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.HW_ERROR_FATAL) for error source.
-    3. Integrators must assume Caliptra Subsystem can report a fatal error at any time.
-    4. Fatal errors are generally hardware in nature. SoC may attempt to recover by full reset of the entire SoC. If SoC continues without a full reset Caliptra Subsystem will be unavailable for the remainder of the current boot.
-    5. In the event of an uncorrectable error that is not correctly detected by Caliptra Subsystem, ECC fatal errors shall be reported by SoC MCRIP.
+1. Any implementation of error and recovery flows must adhere to the error handling requirements specified in [Caliptra.md](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling)
+    1. Integrators must assume Caliptra Subsystem can report a fatal or non-fatal error at any time.
+2. See [MCI error handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure and error handling in Caliptra Subsystem.
+    1. An implementation may detect and correct single-bit SRAM ECC errors outside of the Caliptra Subsystem boundary, meaning Caliptra Subsystem will never report non-fatal ECC errors. Such errors may be logged through MCRIP and monitored by SoC.
+    2. In the event of an uncorrectable error that is not correctly detected by Caliptra Subsystem, ECC fatal errors may be detected and reported by SoC MCRIP.
+3. Occurrence of any fatal or non-fatal error may indicate a variety of events have occurred. SoC integrators must decide how to respond to each case.
 
 
 ## Programming interface
