@@ -236,15 +236,15 @@ Integrators must instantiate SRAM components outside of the Caliptra Subsystem b
 
 | **Device** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
   |---------------------|-----------------------|--------------------------------------|----------|-----------------|---------------------------------------------------------------------------------|
-  | **MCU0**            | Instruction ROM       | `mcu_rom_mem_export_if`              | SoC Specific      | Read-Only       | Stores the instructions for MCU0 execution                                      |
-  | **MCU0**            | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | SoC Specific      | Read/Write      | Memory export for MCU0 access                                                   |
-  | **MCU0**            | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific      | Read/Write      | Shared memory between MCI and MCU for data storage                              |
-  | **MAILBOX**         | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific      | Read/Write      | Memory for MBOX0 communication                                                  |
-  | **MAILBOX**         | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific      | Read/Write      | Memory for MBOX1 communication                                                  |
-  | **Caliptra Core**   | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to Caliptra Core spec      | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core |
-  | **Caliptra Core**   | Caliptra ROM          | `cptra_ss_cptra_core_imem` | Refer to Caliptra Core spec      | Read-Only       | Interface for Caliptra ROM                                    |
-  | **Caliptra Core**   | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram` | Refer to Caliptra Core spec | Read/Write      | Interface for Caliptra mailbox memory |
-  | **Caliptra Core**   | Caliptra MLDSA SRAM   | `mldsa_memory_export_req` | Refer to Caliptra Core spec | Read/Write            | Interface for SRAM instantiated within Adams Bridge block |
+  | **MCU0**            | Instruction ROM       | `mcu_rom_mem_export_if`              | SoC Specific                     | Read-Only             | Stores the instructions for MCU0 execution. Write-enable (we) and write-data (wdata) signals must be left unconnected, as MCU ROM has no write support. | 
+  | **MCU0**            | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | SoC Specific                     | Read/Write            | Memory export for MCU0 access                                                                                                                           |
+  | **MCU0**            | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific                     | Read/Write            | Shared memory between MCI and MCU for data storage                                                                                                      |
+  | **MAILBOX**         | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific                     | Read/Write            | Memory for MBOX0 communication                                                                                                                          |
+  | **MAILBOX**         | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific                     | Read/Write            | Memory for MBOX1 communication                                                                                                                          |
+  | **Caliptra Core**   | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to Caliptra Core spec      | Read/Write            | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core                                                                  |
+  | **Caliptra Core**   | Caliptra ROM          | `cptra_ss_cptra_core_imem`           | Refer to Caliptra Core spec      | Read-Only             | Interface for Caliptra ROM                                                                                                                              |
+  | **Caliptra Core**   | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram`      | Refer to Caliptra Core spec      | Read/Write            | Interface for Caliptra mailbox memory                                                                                                                   |
+  | **Caliptra Core**   | Caliptra MLDSA SRAM   | `mldsa_memory_export_req`            | Refer to Caliptra Core spec      | Read/Write            | Interface for SRAM instantiated within Adams Bridge block                                                                                               |
 
 # Caliptra Subsystem Top
 
@@ -338,7 +338,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | axi_if    | na    | `cptra_ss_cptra_core_m_axi_if_r_mgr`       | Caliptra core AXI read manager interface      |
 | External | axi_if    | na    | `cptra_ss_mci_s_axi_if_w_sub`              | Caliptra Subsystem MCI AXI write sub-interface |
 | External | axi_if    | na    | `cptra_ss_mci_s_axi_if_r_sub`              | Caliptra Subsystem MCI AXI read sub-interface |
-| External | axi_if    | na    | `cptra_ss_mcu_rom_s_axi_if_w_sub`          | Caliptra Subsystem MCU ROM AXI write sub-interface |
+| External | axi_if    | na    | `cptra_ss_mcu_rom_s_axi_if_w_sub`          | Caliptra Subsystem MCU ROM AXI write sub-interface. Writes to MCU ROM are not supported, this interface shall be left unconnected from AXI interconnect and tied to 0-value inputs. |
 | External | axi_if    | na    | `cptra_ss_mcu_rom_s_axi_if_r_sub`          | Caliptra Subsystem MCU ROM AXI read sub-interface |
 | External | axi_if    | na    | `cptra_ss_mcu_lsu_m_axi_if_w_mgr`          | Caliptra Subsystem MCU LSU AXI write manager interface |
 | External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_awcache`        | Caliptra Subsystem MCU LSU AXI write manager address transaction attributes signal |
@@ -396,7 +396,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | na    | `cptra_ss_lc_ctrl_jtag_i`            | LC controller JTAG request input         |
 | External | output    | na    | `cptra_ss_lc_ctrl_jtag_o`            | LC controller JTAG response output       |
 | External | interface | na    | `cptra_ss_cptra_core_el2_mem_export` | Caliptra core EL2 memory export interface |
-| External | interface | na    | `mcu_rom_mem_export_if`              | MCU ROM memory export interface          |
+| External | interface | na    | `mcu_rom_mem_export_if`              | MCU ROM memory export interface. Write-enable (we) and write-data (wdata) signals must be left unconnected, as MCU ROM has no write support. |
 | External | output    | 1     | `cptra_ss_cptra_core_mbox_sram_cs_o` | Mailbox SRAM chip select output          |
 | External | output    | 1     | `cptra_ss_cptra_core_mbox_sram_we_o` | Mailbox SRAM write enable output         |
 | External | output    | `CPTRA_MBOX_ADDR_W` | `cptra_ss_cptra_core_mbox_sram_addr_o` | Mailbox SRAM address output |
