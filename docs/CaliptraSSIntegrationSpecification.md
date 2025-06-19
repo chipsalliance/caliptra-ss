@@ -36,7 +36,7 @@
     - [Example SRAM machine check reliability integration](#example-sram-machine-check-reliability-integration)
       - [Error detection and logging](#error-detection-and-logging)
       - [Error injection](#error-injection)
-      - [Example Caliptra Subsystem error handling flow](#example-caliptra-subsystem-error-handling-flow)
+      - [Caliptra Subsystem error handling flow](#caliptra-subsystem-error-handling-flow)
   - [Programming interface](#programming-interface)
   - [Sequences](#sequences)
   - [How to test](#how-to-test)
