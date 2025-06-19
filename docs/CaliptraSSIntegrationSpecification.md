@@ -682,8 +682,6 @@ Note that the example assumes that data and ECC codes are in non-deterministic b
 
 1. Any implementation of error and recovery flows must adhere to the error handling requirements specified in [Caliptra.md](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling)
 2. See [MCI error handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure and error handling in Caliptra Subsystem.
-    1. An implementation may detect and correct single-bit SRAM ECC errors outside of the Caliptra Subsystem boundary, meaning Caliptra Subsystem will never report non-fatal ECC errors. Such errors may be logged through MCRIP and monitored by SoC.
-    2. In the event of an uncorrectable error that is not correctly detected by Caliptra Subsystem, ECC fatal errors may be detected and reported by SoC MCRIP.
 3. SoC integrators must decide how to respond to each possible event that may be reported as an error.
 
 
