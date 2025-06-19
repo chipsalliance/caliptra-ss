@@ -936,9 +936,9 @@ end
     ) imem (
         .clk_i   (clk),
         .cs_i    (mcu_rom_mem_export_if.req.cs),
-        .we_i    (mcu_rom_mem_export_if.req.we),
+        .we_i    ('0),
         .addr_i  (mcu_rom_mem_export_if.req.addr),
-        .wdata_i (mcu_rom_mem_export_if.req.wdata),
+        .wdata_i ('0),
         .rdata_o (mcu_rom_mem_export_if.resp.rdata)
     );
 
