@@ -648,7 +648,7 @@
     % endfor
                 {
                     name:   "CPTRA_CORE_VENDOR_PK_HASH_VALID",
-                    size:   "${-(-i // 8)}",
+                    size:   "${2 * (-(-num_vendor_pk_fuses // 16))}",
                     desc: '''
                     Once a key is marked valid, anything above should not be able to be written (essentially
                     a volatile lock should be implemented on higher order bits).
