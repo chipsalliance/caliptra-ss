@@ -230,7 +230,7 @@ The following block diagram shows details on verification view of Caliptra Subsy
 
 ## Memory Requirements
 
-Caliptra Subsystem required following memory export connected to various memories to function as per the specification.
+Integrators must instantiate SRAM components outside of the Caliptra Subsystem boundary (see [SRAM Implementation](#sram-implementation) for more details). SRAM wrapper logic within the Caliptra Subsystem boundary facilitates the connection to SRAM instances through memory export interfaces in the top-level port list. Integrators must connect the following memory export interfaces to the instantiated SRAM components.
 
 **SoC Specific** in below table means the size of the memory is not fixed and can be configured based on the design requirements by integrator. The actual size will depend on the specific implementation and configuration of the Caliptra Subsystem.
 
@@ -241,8 +241,10 @@ Caliptra Subsystem required following memory export connected to various memorie
   | **MCU0**            | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific      | Read/Write      | Shared memory between MCI and MCU for data storage                              |
   | **MAILBOX**         | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific      | Read/Write      | Memory for MBOX0 communication                                                  |
   | **MAILBOX**         | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific      | Read/Write      | Memory for MBOX1 communication                                                  |
-  | **Caliptra Core**   | ICCM, DCCM   | `cptra_ss_cptra_core_el2_mem_export` | Refer to Caliptra Core spec      | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core |
-  | **Caliptra Core**   | IFU                   | `cptra_ss_mcu_rom_macro_req_if` | Refer to Caliptra Core spec      | Read-Only       | Interface for instruction fetch unit (IFU)                                      |
+  | **Caliptra Core**   | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to Caliptra Core spec      | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core |
+  | **Caliptra Core**   | Caliptra ROM          | `cptra_ss_cptra_core_imem` | Refer to Caliptra Core spec      | Read-Only       | Interface for Caliptra ROM                                    |
+  | **Caliptra Core**   | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram` | Refer to Caliptra Core spec | Read/Write      | Interface for Caliptra mailbox memory |
+  | **Caliptra Core**   | Caliptra MLDSA SRAM   | `mldsa_memory_export_req` | Refer to Caliptra Core spec | Read/Write            | Interface for SRAM instantiated within Adams Bridge block |
 
 # Caliptra Subsystem Top
 
