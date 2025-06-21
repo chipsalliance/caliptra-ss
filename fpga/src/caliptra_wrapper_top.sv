@@ -482,6 +482,15 @@ module caliptra_wrapper_top #(
     output logic [31:0] mcu_rom_backdoor_dout,
     input  logic        mcu_rom_backdoor_rst,
 
+    // OTP memory backdoor interface
+    input  logic        otp_mem_backdoor_clk,
+    input  logic        otp_mem_backdoor_en,
+    input  logic [3:0]  otp_mem_backdoor_we,
+    input  logic [31:0] otp_mem_backdoor_addr,
+    input  logic [31:0] otp_mem_backdoor_din,
+    output logic [31:0] otp_mem_backdoor_dout,
+    input  logic        otp_mem_backdoor_rst,
+
     // JTAG Interface
     input logic                       jtag_tck,    // JTAG clk
     input logic                       jtag_tms,    // JTAG tms
@@ -1364,6 +1373,84 @@ mcu_rom (
         .wea(cptra_ss_mcu_mbox1_sram_req_if.req.we)
     );
 
+    // OTP memory AXI
+    axi_mem_if #(
+        .ADDR_WIDTH(32),
+        .DATA_WIDTH(64)
+    ) otp_mem_export_if (
+        .clk(core_clk),
+        .rst_b(hwif_out.interface_regs.control.cptra_ss_rst_b.value)
+    );
+
+    logic        otp_mem_en,
+    logic        otp_mem_we,
+    logic [15:0] otp_mem_addr,
+    logic [15:0] otp_mem_wdata,
+    logic [15:0] otp_mem_rdata,
+
+    // Dual port memory for OTP memory. A is to AXI, B is backdoor
+    xpm_memory_tdpram #(
+        .ADDR_WIDTH_A(32),              // DECIMAL
+        .ADDR_WIDTH_B(16),              // DECIMAL
+        .AUTO_SLEEP_TIME(0),            // DECIMAL
+        .BYTE_WRITE_WIDTH_A(64),        // DECIMAL
+        .BYTE_WRITE_WIDTH_B(16),         // DECIMAL
+        .CASCADE_HEIGHT(0),             // DECIMAL
+        .CLOCKING_MODE("common_clock"), // String
+        .ECC_MODE("no_ecc"),            // String
+        .MEMORY_INIT_FILE("none"),      // String
+        .MEMORY_INIT_PARAM("0"),        // String
+        .MEMORY_OPTIMIZATION("false"),  // String
+        .MEMORY_PRIMITIVE("auto"),      // String
+        .MEMORY_SIZE(16*1024),          // DECIMAL
+        .MESSAGE_CONTROL(0),            // DECIMAL
+        .READ_DATA_WIDTH_A(64),         // DECIMAL
+        .READ_DATA_WIDTH_B(16),         // DECIMAL
+        .READ_LATENCY_A(1),             // DECIMAL
+        .READ_LATENCY_B(1),             // DECIMAL
+        .READ_RESET_VALUE_A("0"),       // String
+        .READ_RESET_VALUE_B("0"),       // String
+        .RST_MODE_A("SYNC"),            // String
+        .RST_MODE_B("SYNC"),            // String
+        .SIM_ASSERT_CHK(0),             // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .USE_EMBEDDED_CONSTRAINT(0),    // DECIMAL
+        .USE_MEM_INIT(1),               // DECIMAL
+        .USE_MEM_INIT_MMI(0),           // DECIMAL
+        .WAKEUP_TIME("disable_sleep"),  // String
+        .WRITE_DATA_WIDTH_A(64),        // DECIMAL
+        .WRITE_DATA_WIDTH_B(16),        // DECIMAL
+        .WRITE_MODE_A("no_change"),     // String
+        .WRITE_MODE_B("no_change"),     // String
+        .WRITE_PROTECT(1)               // DECIMAL
+    )
+    otp_mem (
+        .dbiterra(),
+        .dbiterrb(),
+        .douta(otp_mem_export_if.resp.rdata),
+        .doutb(otp_mem_rdata),
+        .sbiterra(),
+        .sbiterrb(),
+        .addra(otp_mem_export_if.req.addr),
+        .addrb(otp_mem_addr),
+        .clka(core_clk),
+        .clkb(otp_mem_backdoor_clk),
+        .dina(otp_mem_export_if.req.wdata),
+        .dinb(otp_mem_wdata),
+        .ena(otp_mem_export_if.req.cs),
+        .enb(otp_mem_en),
+        .injectdbiterra(0),
+        .injectdbiterrb(0),
+        .injectsbiterra(0),
+        .injectsbiterrb(0),
+        .regcea(1),
+        .regceb(1),
+        .rsta(mcu_rom_backdoor_rst),
+        .rstb(mcu_rom_backdoor_rst),
+        .sleep(0),
+        .wea(otp_mem_export_if.req.we),
+        .web(otp_mem_we)
+    );
+
     // MCU LSU AXI Manager
     axi_if #(
         .AW(32),
@@ -1657,7 +1744,16 @@ mcu_rom (
 
     otp_ctrl_pkg::prim_generic_otp_outputs_t cptra_ss_fuse_macro_outputs_tb;
     otp_ctrl_pkg::prim_generic_otp_inputs_t  cptra_ss_fuse_macro_inputs_tb;
-    prim_generic_otp #(
+
+    input  logic        otp_mem_backdoor_clk,
+    input  logic        otp_mem_backdoor_en,
+    input  logic [3:0]  otp_mem_backdoor_we,
+    input  logic [31:0] otp_mem_backdoor_addr,
+    input  logic [31:0] otp_mem_backdoor_din,
+    output logic [31:0] otp_mem_backdoor_dout,
+    input  logic        otp_mem_backdoor_rst,
+
+    backdoor_otp #(
         .Width            ( otp_ctrl_pkg::OtpWidth            ),
         .Depth            ( otp_ctrl_pkg::OtpDepth            ),
         .SizeWidth        ( otp_ctrl_pkg::OtpSizeWidth        ),
@@ -1665,7 +1761,6 @@ mcu_rom (
         .TestCtrlWidth    ( otp_ctrl_pkg::OtpTestCtrlWidth    ),
         .TestStatusWidth  ( otp_ctrl_pkg::OtpTestStatusWidth  ),
         .TestVectWidth    ( otp_ctrl_pkg::OtpTestVectWidth    ),
-        .MemInitFile      ("otp-img.2048.vmem"                  ),
         .VendorTestOffset ( otp_ctrl_reg_pkg::VendorTestOffset    ),
         .VendorTestSize   ( otp_ctrl_reg_pkg::VendorTestSize      )
     ) u_otp (
@@ -1695,7 +1790,14 @@ mcu_rom (
         // Response channel
         .valid_o        ( cptra_ss_fuse_macro_outputs_tb.valid_o ),
         .rdata_o        ( cptra_ss_fuse_macro_outputs_tb.rdata_o ),
-        .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
+        .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o ),
+
+        // memory interface
+        .otp_mem_en( otp_mem_en ),
+        .otp_mem_we( otp_mem_we ),
+        .otp_mem_addr( otp_mem_addr ),
+        .otp_mem_wdata( otp_mem_wdata ),
+        .otp_mem_rdata( otp_mem_rdata )
     );
 
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export ();
