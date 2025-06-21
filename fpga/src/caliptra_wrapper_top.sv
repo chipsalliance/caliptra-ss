@@ -485,7 +485,7 @@ module caliptra_wrapper_top #(
     // OTP memory backdoor interface
     input  logic        otp_mem_backdoor_clk,
     input  logic        otp_mem_backdoor_en,
-    input  logic [3:0]  otp_mem_backdoor_we,
+    input  logic        otp_mem_backdoor_we,
     input  logic [31:0] otp_mem_backdoor_addr,
     input  logic [31:0] otp_mem_backdoor_din,
     output logic [31:0] otp_mem_backdoor_dout,
@@ -1373,22 +1373,14 @@ mcu_rom (
         .wea(cptra_ss_mcu_mbox1_sram_req_if.req.we)
     );
 
-    // OTP memory AXI
-    axi_mem_if #(
-        .ADDR_WIDTH(32),
-        .DATA_WIDTH(64)
-    ) otp_mem_export_if (
-        .clk(core_clk),
-        .rst_b(hwif_out.interface_regs.control.cptra_ss_rst_b.value)
-    );
-
+    // OTP interface
     logic        otp_mem_en,
     logic        otp_mem_we,
     logic [15:0] otp_mem_addr,
     logic [15:0] otp_mem_wdata,
     logic [15:0] otp_mem_rdata,
 
-    // Dual port memory for OTP memory. A is to AXI, B is backdoor
+    // Dual port memory for OTP memory. A is to backdoor, B is OTP
     xpm_memory_tdpram #(
         .ADDR_WIDTH_A(32),              // DECIMAL
         .ADDR_WIDTH_B(16),              // DECIMAL
@@ -1426,17 +1418,17 @@ mcu_rom (
     otp_mem (
         .dbiterra(),
         .dbiterrb(),
-        .douta(otp_mem_export_if.resp.rdata),
+        .douta(otp_mem_backdoor_dout),
         .doutb(otp_mem_rdata),
         .sbiterra(),
         .sbiterrb(),
-        .addra(otp_mem_export_if.req.addr),
+        .addra(otp_mem_backdoor_addr),
         .addrb(otp_mem_addr),
-        .clka(core_clk),
-        .clkb(otp_mem_backdoor_clk),
-        .dina(otp_mem_export_if.req.wdata),
+        .clka(otp_mem_backdoor_clk),
+        .clkb(core_clk),
+        .dina(otp_mem_backdoor_din),
         .dinb(otp_mem_wdata),
-        .ena(otp_mem_export_if.req.cs),
+        .ena(otp_mem_backdoor_en),
         .enb(otp_mem_en),
         .injectdbiterra(0),
         .injectdbiterrb(0),
@@ -1444,10 +1436,10 @@ mcu_rom (
         .injectsbiterrb(0),
         .regcea(1),
         .regceb(1),
-        .rsta(mcu_rom_backdoor_rst),
-        .rstb(mcu_rom_backdoor_rst),
+        .rsta(otp_mem_backdoor_rst),
+        .rstb(otp_mem_backdoor_rst),
         .sleep(0),
-        .wea(otp_mem_export_if.req.we),
+        .wea(otp_mem_backdoor_we),
         .web(otp_mem_we)
     );
 

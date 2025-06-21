@@ -228,7 +228,7 @@ connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/M03_AXI] [get_bd_intf_p
 connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/mcu_rom_backdoor] [get_bd_intf_pins cptra_rom_bram_ctrl_1/BRAM_PORTA]
 # OTP RAM Backdoor
 connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/M08_AXI] [get_bd_intf_pins otp_ram_bram_ctrl_0/S_AXI]
-connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/otp_mem] [get_bd_intf_pins otp_ram_bram_ctrl_0/BRAM_PORTA]
+connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/otp_mem_backdoor] [get_bd_intf_pins otp_ram_bram_ctrl_0/BRAM_PORTA]
 #### End axi_interconnect_0 ####
 
 #### axi_interconnect_1 ####
