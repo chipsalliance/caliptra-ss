@@ -1394,7 +1394,7 @@ mcu_rom (
         .MEMORY_INIT_PARAM("0"),        // String
         .MEMORY_OPTIMIZATION("false"),  // String
         .MEMORY_PRIMITIVE("auto"),      // String
-        .MEMORY_SIZE(16*1024),          // DECIMAL
+        .MEMORY_SIZE(16*1024*8),        // DECIMAL
         .MESSAGE_CONTROL(0),            // DECIMAL
         .READ_DATA_WIDTH_A(64),         // DECIMAL
         .READ_DATA_WIDTH_B(16),         // DECIMAL
