@@ -56,14 +56,14 @@ module backdoor_otp
   // Response channel
   output logic                   valid_o,
   output logic [IfWidth-1:0]     rdata_o,
-  output err_e                   err_o
+  output err_e                   err_o,
 
   // Backing RAM interface
   output  logic                 mem_en,
   output  logic                 mem_we,
   output  logic [AddrWidth-1:0] mem_addr,
   output  logic [Width-1:0]     mem_wdata,
-  input   logic [Width-1:0]     mem_rdata,
+  input   logic [Width-1:0]     mem_rdata
 );
 
   import caliptra_prim_mubi_pkg::MuBi4False;
@@ -434,4 +434,4 @@ module backdoor_otp
       |-> cmd_i inside {Read, ReadRaw, Write, WriteRaw})
 
 
-endmodule : prim_generic_otp
+endmodule : backdoor_otp

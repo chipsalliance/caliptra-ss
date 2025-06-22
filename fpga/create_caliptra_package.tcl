@@ -99,6 +99,7 @@ remove_files [ glob $caliptrartlDir/src/spi_host/rtl/*.sv ]
 #remove_files [ glob $caliptrartlDir/src/keyvault/rtl/kv_reg.sv ]
 
 # Add FPGA specific sources
+add_files $fpgaDir/src/backdoor_otp.sv
 add_files [ glob $fpgaDir/src/*.sv]
 add_files [ glob $fpgaDir/src/*.v]
 

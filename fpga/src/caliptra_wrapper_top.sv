@@ -1374,11 +1374,11 @@ mcu_rom (
     );
 
     // OTP interface
-    logic        otp_mem_en,
-    logic        otp_mem_we,
-    logic [15:0] otp_mem_addr,
-    logic [15:0] otp_mem_wdata,
-    logic [15:0] otp_mem_rdata,
+    logic        otp_mem_en;
+    logic        otp_mem_we;
+    logic [15:0] otp_mem_addr;
+    logic [15:0] otp_mem_wdata;
+    logic [15:0] otp_mem_rdata;
 
     // Dual port memory for OTP memory. A is to backdoor, B is OTP
     xpm_memory_tdpram #(
@@ -1737,14 +1737,6 @@ mcu_rom (
     otp_ctrl_pkg::prim_generic_otp_outputs_t cptra_ss_fuse_macro_outputs_tb;
     otp_ctrl_pkg::prim_generic_otp_inputs_t  cptra_ss_fuse_macro_inputs_tb;
 
-    input  logic        otp_mem_backdoor_clk,
-    input  logic        otp_mem_backdoor_en,
-    input  logic [3:0]  otp_mem_backdoor_we,
-    input  logic [31:0] otp_mem_backdoor_addr,
-    input  logic [31:0] otp_mem_backdoor_din,
-    output logic [31:0] otp_mem_backdoor_dout,
-    input  logic        otp_mem_backdoor_rst,
-
     backdoor_otp #(
         .Width            ( otp_ctrl_pkg::OtpWidth            ),
         .Depth            ( otp_ctrl_pkg::OtpDepth            ),
@@ -1785,11 +1777,11 @@ mcu_rom (
         .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o ),
 
         // memory interface
-        .otp_mem_en( otp_mem_en ),
-        .otp_mem_we( otp_mem_we ),
-        .otp_mem_addr( otp_mem_addr ),
-        .otp_mem_wdata( otp_mem_wdata ),
-        .otp_mem_rdata( otp_mem_rdata )
+        .mem_en( otp_mem_en ),
+        .mem_we( otp_mem_we ),
+        .mem_addr( otp_mem_addr ),
+        .mem_wdata( otp_mem_wdata ),
+        .mem_rdata( otp_mem_rdata )
     );
 
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export ();
