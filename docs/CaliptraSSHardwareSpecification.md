@@ -372,9 +372,9 @@ The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware'
 3. Retrieve any tags from AES after the image has been processed.
  
 
-If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly pad the AES input data with 0s. When streaming the image out it will only write the last DWORD to the destination. If ``aes_gcm_mode`` is set, at the start of the transfer it updates the GCM shadow byte count and phase registers in AES to the appropriate byte count and GCM_TEXT phase. Before the last block transfer to the AES it will again update the GCM shadow register to the appropriate values. 
+If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly pad the AES input data with 0s. When streaming the image out it reads all 4 DWORDS from the AES, but only writes up to the last DWORD of the image to the destination. If ``aes_gcm_mode`` register is set, at the start of the transfer it updates the GCM shadow byte count and phase registers in AES to the appropriate byte count and GCM_TEXT phase. Before the last block transfer to the AES it will again update the GCM shadow register to the appropriate values. 
 
-Input images shall be stored in **little endian** format. The processed image will be stored in **little endian** format.  
+Input images can be in **little endian** or **big endian**. It is FW's responsibility to configure the AES wrapper's ENDIAN_SWAP register.  
 
 If AXI DMA encounters any errors (AXI or other errors) it will finish the transfer and report an error. It is the Firmware's responsibility to clear the error in the AXI DMA and flush the AES if required. 
 
