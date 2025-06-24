@@ -277,7 +277,6 @@ connect_bd_net -net proc_sys_reset_0_peripheral_aresetn \
   [get_bd_pins caliptra_package_top_0/S_AXI_WRAPPER_ARESETN] \
   [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aresetn] \
   [get_bd_pins cptra_rom_bram_ctrl_1/s_axi_aresetn] \
-  [get_bd_pins mcu_ram_bram_ctrl_2/s_axi_aresetn] \
   [get_bd_pins otp_ram_bram_ctrl_0/s_axi_aresetn] \
   [get_bd_pins axi_firewall_0/aresetn]
 # Create clock connections
@@ -291,7 +290,6 @@ connect_bd_net \
   [get_bd_pins caliptra_package_top_0/core_clk] \
   [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aclk] \
   [get_bd_pins cptra_rom_bram_ctrl_1/s_axi_aclk] \
-  [get_bd_pins mcu_ram_bram_ctrl_2/s_axi_aclk] \
   [get_bd_pins otp_ram_bram_ctrl_0/s_axi_aclk] \
   [get_bd_pins axi_firewall_0/aclk]
 # Create clock connection for I3C

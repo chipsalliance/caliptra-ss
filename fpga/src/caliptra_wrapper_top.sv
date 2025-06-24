@@ -1385,7 +1385,7 @@ mcu_rom (
         .ADDR_WIDTH_A(32),              // DECIMAL
         .ADDR_WIDTH_B(16),              // DECIMAL
         .AUTO_SLEEP_TIME(0),            // DECIMAL
-        .BYTE_WRITE_WIDTH_A(64),        // DECIMAL
+        .BYTE_WRITE_WIDTH_A(32),        // DECIMAL
         .BYTE_WRITE_WIDTH_B(16),         // DECIMAL
         .CASCADE_HEIGHT(0),             // DECIMAL
         .CLOCKING_MODE("common_clock"), // String
@@ -1396,7 +1396,7 @@ mcu_rom (
         .MEMORY_PRIMITIVE("auto"),      // String
         .MEMORY_SIZE(16*1024*8),        // DECIMAL
         .MESSAGE_CONTROL(0),            // DECIMAL
-        .READ_DATA_WIDTH_A(64),         // DECIMAL
+        .READ_DATA_WIDTH_A(32),         // DECIMAL
         .READ_DATA_WIDTH_B(16),         // DECIMAL
         .READ_LATENCY_A(1),             // DECIMAL
         .READ_LATENCY_B(1),             // DECIMAL
@@ -1409,7 +1409,7 @@ mcu_rom (
         .USE_MEM_INIT(1),               // DECIMAL
         .USE_MEM_INIT_MMI(0),           // DECIMAL
         .WAKEUP_TIME("disable_sleep"),  // String
-        .WRITE_DATA_WIDTH_A(64),        // DECIMAL
+        .WRITE_DATA_WIDTH_A(32),        // DECIMAL
         .WRITE_DATA_WIDTH_B(16),        // DECIMAL
         .WRITE_MODE_A("no_change"),     // String
         .WRITE_MODE_B("no_change"),     // String
