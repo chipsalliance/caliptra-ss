@@ -1241,10 +1241,15 @@ mcu_rom (
     .web(mcu_rom_backdoor_we)
 );
 
-    mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if (
+    mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if
+    #(
+        .ADDR_WIDTH(19) // 512 KB
+    )
+    (
         .clk(core_clk),
         .rst_b(rst_l)
     );
+
     xpm_memory_spram #(
         .ADDR_WIDTH_A(32),              // DECIMAL
         .AUTO_SLEEP_TIME(0),            // DECIMAL
