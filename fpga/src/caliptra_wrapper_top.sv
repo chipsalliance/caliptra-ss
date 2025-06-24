@@ -1241,11 +1241,10 @@ mcu_rom (
     .web(mcu_rom_backdoor_we)
 );
 
-    mci_mcu_sram_if cptra_ss_mci_mcu_sram_req_if
-    #(
+    mci_mcu_sram_if #(
         .ADDR_WIDTH(19) // 512 KB
     )
-    (
+    cptra_ss_mci_mcu_sram_req_if (
         .clk(core_clk),
         .rst_b(rst_l)
     );
