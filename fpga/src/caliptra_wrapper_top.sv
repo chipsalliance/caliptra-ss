@@ -1741,7 +1741,7 @@ mcu_rom (
     otp_ctrl_pkg::prim_generic_otp_outputs_t cptra_ss_fuse_macro_outputs_tb;
     otp_ctrl_pkg::prim_generic_otp_inputs_t  cptra_ss_fuse_macro_inputs_tb;
 
-    backdoor_otp #(
+    prim_generic_otp #(
         .Width            ( otp_ctrl_pkg::OtpWidth            ),
         .Depth            ( otp_ctrl_pkg::OtpDepth            ),
         .SizeWidth        ( otp_ctrl_pkg::OtpSizeWidth        ),
@@ -1778,14 +1778,14 @@ mcu_rom (
         // Response channel
         .valid_o        ( cptra_ss_fuse_macro_outputs_tb.valid_o ),
         .rdata_o        ( cptra_ss_fuse_macro_outputs_tb.rdata_o ),
-        .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o ),
+        .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
 
         // memory interface
-        .mem_en( otp_mem_en ),
-        .mem_we( otp_mem_we ),
-        .mem_addr( otp_mem_addr ),
-        .mem_wdata( otp_mem_wdata ),
-        .mem_rdata( otp_mem_rdata )
+        // .mem_en( otp_mem_en ),
+        // .mem_we( otp_mem_we ),
+        // .mem_addr( otp_mem_addr ),
+        // .mem_wdata( otp_mem_wdata ),
+        // .mem_rdata( otp_mem_rdata )
     );
 
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export ();
