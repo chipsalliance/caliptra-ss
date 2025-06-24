@@ -1242,7 +1242,7 @@ mcu_rom (
 );
 
     mci_mcu_sram_if #(
-        .ADDR_WIDTH(19) // 512 KB
+        .ADDR_WIDTH(19) // 512 KB just in case even though this might only need to be 17
     )
     cptra_ss_mci_mcu_sram_req_if (
         .clk(core_clk),
@@ -1277,7 +1277,7 @@ mcu_rom (
         .dbiterra(),
         .douta(cptra_ss_mci_mcu_sram_req_if.resp.rdata),
         .sbiterra(),
-        .addra({cptra_ss_mci_mcu_sram_req_if.req.addr, 2'b0}),
+        .addra(cptra_ss_mci_mcu_sram_req_if.req.addr),
         .clka(core_clk),
         .dina(cptra_ss_mci_mcu_sram_req_if.req.wdata),
         .ena(cptra_ss_mci_mcu_sram_req_if.req.cs),
@@ -1321,7 +1321,7 @@ mcu_rom (
         .dbiterra(),
         .douta(cptra_ss_mcu_mbox0_sram_req_if.resp.rdata),
         .sbiterra(),
-        .addra({cptra_ss_mcu_mbox0_sram_req_if.req.addr, 2'b0}),
+        .addra(cptra_ss_mcu_mbox0_sram_req_if.req.addr),
         .clka(core_clk),
         .dina(cptra_ss_mcu_mbox0_sram_req_if.req.wdata),
         .ena(cptra_ss_mcu_mbox0_sram_req_if.req.cs),
@@ -1365,7 +1365,7 @@ mcu_rom (
         .dbiterra(),
         .douta(cptra_ss_mcu_mbox1_sram_req_if.resp.rdata),
         .sbiterra(),
-        .addra({cptra_ss_mcu_mbox1_sram_req_if.req.addr, 2'b0}),
+        .addra(cptra_ss_mcu_mbox1_sram_req_if.req.addr),
         .clka(core_clk),
         .dina(cptra_ss_mcu_mbox1_sram_req_if.req.wdata),
         .ena(cptra_ss_mcu_mbox1_sram_req_if.req.cs),
