@@ -170,21 +170,9 @@ set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells cptra_rom_bram_ctrl_0]
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 cptra_rom_bram_ctrl_1
 set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells cptra_rom_bram_ctrl_1]
 
-# Add memory for MCU
-create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 mcu_ram_bram_ctrl_2
-set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells mcu_ram_bram_ctrl_2]
-connect_bd_net [get_bd_pins mcu_ram_bram_ctrl_2/s_axi_aclk] [get_bd_pins $ps_pl_clk]
-connect_bd_net [get_bd_pins mcu_ram_bram_ctrl_2/s_axi_aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
-# Create memory
-create_bd_cell -type ip -vlnv xilinx.com:ip:emb_mem_gen:1.0 emb_mem_gen_0
-set_property -dict [list \
-  CONFIG.MEMORY_DEPTH {98304} \
-  CONFIG.MEMORY_OPTIMIZATION {no_mem_opt} \
-  ] [get_bd_cells emb_mem_gen_0]
-connect_bd_intf_net [get_bd_intf_pins mcu_ram_bram_ctrl_2/BRAM_PORTA] [get_bd_intf_pins emb_mem_gen_0/BRAM_PORTA]
-# Set regcea. Default should be 1
-create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0
-connect_bd_net [get_bd_pins xlconstant_0/dout] [get_bd_pins emb_mem_gen_0/regcea]
+# Add memory for OTP
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 otp_ram_bram_ctrl_0
+set_property CONFIG.SINGLE_PORT_BRAM {1} [get_bd_cells otp_ram_bram_ctrl_0]
 
 # Create AXI I3C to act as external I3C
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_i3c:1.0 xilinx_i3c_0
@@ -226,6 +214,8 @@ connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/rom_backdoor] [get_
 # MCU ROM Backdoor
 connect_bd_intf_net [get_bd_intf_pins axi_interconnect_0/M03_AXI] [get_bd_intf_pins cptra_rom_bram_ctrl_1/S_AXI]
 connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/mcu_rom_backdoor] [get_bd_intf_pins cptra_rom_bram_ctrl_1/BRAM_PORTA]
+# OTP RAM Backdoor
+connect_bd_intf_net [get_bd_intf_pins caliptra_package_top_0/otp_mem_backdoor] [get_bd_intf_pins otp_ram_bram_ctrl_0/BRAM_PORTA]
 #### End axi_interconnect_0 ####
 
 #### axi_interconnect_1 ####
@@ -272,8 +262,8 @@ connect_bd_intf_net [get_bd_intf_pins axi_interconnect_1/M06_AXI] [get_bd_intf_p
 set_property name S_AXI_WRAPPER [get_bd_intf_nets axi_interconnect_1_M06_AXI]
 # Xilinx I3C
 connect_bd_intf_net [get_bd_intf_pins axi_interconnect_1/M07_AXI] [get_bd_intf_pins xilinx_i3c_0/S_AXI]
-# MCU RAM
-connect_bd_intf_net [get_bd_intf_pins axi_interconnect_1/M08_AXI] [get_bd_intf_pins mcu_ram_bram_ctrl_2/S_AXI]
+# OTP RAM
+connect_bd_intf_net [get_bd_intf_pins axi_interconnect_1/M08_AXI] [get_bd_intf_pins otp_ram_bram_ctrl_0/S_AXI]
 #### End axi_interconnect_1 ####
 
 
@@ -287,6 +277,7 @@ connect_bd_net -net proc_sys_reset_0_peripheral_aresetn \
   [get_bd_pins caliptra_package_top_0/S_AXI_WRAPPER_ARESETN] \
   [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aresetn] \
   [get_bd_pins cptra_rom_bram_ctrl_1/s_axi_aresetn] \
+  [get_bd_pins otp_ram_bram_ctrl_0/s_axi_aresetn] \
   [get_bd_pins axi_firewall_0/aresetn]
 # Create clock connections
 connect_bd_net \
@@ -299,6 +290,7 @@ connect_bd_net \
   [get_bd_pins caliptra_package_top_0/core_clk] \
   [get_bd_pins cptra_rom_bram_ctrl_0/s_axi_aclk] \
   [get_bd_pins cptra_rom_bram_ctrl_1/s_axi_aclk] \
+  [get_bd_pins otp_ram_bram_ctrl_0/s_axi_aclk] \
   [get_bd_pins axi_firewall_0/aclk]
 # Create clock connection for I3C
 if {$FAST_I3C} {
@@ -373,7 +365,8 @@ foreach manager $managers {
   assign_bd_address -offset 0xB0000000 -range 0x00018000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs cptra_rom_bram_ctrl_0/S_AXI/Mem0] -force
   assign_bd_address -offset 0xB0020000 -range 0x00020000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs cptra_rom_bram_ctrl_1/S_AXI/Mem0] -force
   assign_bd_address -offset 0xB0040000 -range 0x00020000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_MCU_ROM/reg0] -force
-  assign_bd_address -offset 0xB0080000 -range 0x00080000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs mcu_ram_bram_ctrl_2/S_AXI/Mem0] -force
+  # OTP RAM
+  assign_bd_address -offset 0xB0080000 -range 0x00010000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs otp_ram_bram_ctrl_0/S_AXI/Mem0] -force
   # Wrapper
   assign_bd_address -offset 0xA4010000 -range 0x00002000 -target_address_space [get_bd_addr_spaces $manager] [get_bd_addr_segs caliptra_package_top_0/S_AXI_WRAPPER/reg0] -force
   # SS IPs

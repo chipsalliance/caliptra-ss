@@ -27,7 +27,7 @@
 module caliptra_package_axi_top (
     input wire core_clk,
     input wire i3c_clk,
-    
+
     output wire[31:0] ARM_USER,
     output wire xilinx_i3c_aresetn,
 
@@ -364,7 +364,7 @@ module caliptra_package_axi_top (
     input	wire                      S_AXI_I3C_RREADY,
     output	wire [31:0]               S_AXI_I3C_RDATA,
     output	wire [1:0]                S_AXI_I3C_RRESP,
-    
+
     input wire [1:0] S_AXI_I3C_ARBURST,
     input wire [2:0] S_AXI_I3C_ARSIZE,
     input wire [7:0] S_AXI_I3C_ARLEN,
@@ -402,7 +402,7 @@ module caliptra_package_axi_top (
     input	wire                      S_AXI_LCC_RREADY,
     output	wire [31:0]               S_AXI_LCC_RDATA,
     output	wire [1:0]                S_AXI_LCC_RRESP,
-    
+
     input wire [1:0] S_AXI_LCC_ARBURST,
     input wire [2:0] S_AXI_LCC_ARSIZE,
     input wire [7:0] S_AXI_LCC_ARLEN,
@@ -440,7 +440,7 @@ module caliptra_package_axi_top (
     input	wire                      S_AXI_OTP_RREADY,
     output	wire [31:0]               S_AXI_OTP_RDATA,
     output	wire [1:0]                S_AXI_OTP_RRESP,
-    
+
     input wire [1:0] S_AXI_OTP_ARBURST,
     input wire [2:0] S_AXI_OTP_ARSIZE,
     input wire [7:0] S_AXI_OTP_ARLEN,
@@ -475,6 +475,16 @@ module caliptra_package_axi_top (
     input  wire [31:0] mcu_rom_backdoor_din,
     output wire [31:0] mcu_rom_backdoor_dout,
     input  wire        mcu_rom_backdoor_rst,
+
+    // OTP RAM Backdoor Interface
+    input  wire        otp_mem_backdoor_clk,
+    input  wire        otp_mem_backdoor_en,
+    input  wire        otp_mem_backdoor_we,
+    input  wire [31:0] otp_mem_backdoor_addr,
+    input  wire [31:0] otp_mem_backdoor_din,
+    output wire [31:0] otp_mem_backdoor_dout,
+    input  wire        otp_mem_backdoor_rst,
+
 
     // JTAG Interface
     input wire [14:0]                  jtag_in,     // JTAG input signals concatenated
@@ -878,7 +888,7 @@ caliptra_wrapper_top cptra_wrapper (
     .S_AXI_LCC_RREADY(S_AXI_LCC_RREADY),
     .S_AXI_LCC_RDATA(S_AXI_LCC_RDATA),
     .S_AXI_LCC_RRESP(S_AXI_LCC_RRESP),
-    
+
     .S_AXI_LCC_ARBURST(S_AXI_LCC_ARBURST),
     .S_AXI_LCC_ARSIZE(S_AXI_LCC_ARSIZE),
     .S_AXI_LCC_ARLEN(S_AXI_LCC_ARLEN),
@@ -916,7 +926,7 @@ caliptra_wrapper_top cptra_wrapper (
     .S_AXI_OTP_RREADY(S_AXI_OTP_RREADY),
     .S_AXI_OTP_RDATA(S_AXI_OTP_RDATA),
     .S_AXI_OTP_RRESP(S_AXI_OTP_RRESP),
-    
+
     .S_AXI_OTP_ARBURST(S_AXI_OTP_ARBURST),
     .S_AXI_OTP_ARSIZE(S_AXI_OTP_ARSIZE),
     .S_AXI_OTP_ARLEN(S_AXI_OTP_ARLEN),
@@ -952,6 +962,15 @@ caliptra_wrapper_top cptra_wrapper (
     .mcu_rom_backdoor_dout(mcu_rom_backdoor_dout),
     .mcu_rom_backdoor_rst(mcu_rom_backdoor_rst),
 
+    // SOC access to program OTP memory
+    .otp_mem_backdoor_clk(otp_mem_backdoor_clk),
+    .otp_mem_backdoor_en(otp_mem_backdoor_en),
+    .otp_mem_backdoor_we(otp_mem_backdoor_we),
+    .otp_mem_backdoor_addr(otp_mem_backdoor_addr[31:2]),
+    .otp_mem_backdoor_din(otp_mem_backdoor_din),
+    .otp_mem_backdoor_dout(otp_mem_backdoor_dout),
+    .otp_mem_backdoor_rst(otp_mem_backdoor_rst),
+
     // EL2 JTAG interface
     .jtag_tck(jtag_in[0]),
     .jtag_tdi(jtag_in[1]),
@@ -965,7 +984,7 @@ caliptra_wrapper_top cptra_wrapper (
     .mcu_jtag_tdi_i(jtag_in[7]),
     .mcu_jtag_trst_n_i(jtag_in[8]),
     .mcu_jtag_tdo_o(jtag_out[9]),
-    
+
     .lc_jtag_tck_i(jtag_in[10]),
     .lc_jtag_tms_i(jtag_in[11]),
     .lc_jtag_tdi_i(jtag_in[12]),
