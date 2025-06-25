@@ -414,7 +414,7 @@ Steps:
    2. Initiate Sha Accel streaming operation via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
    3. Run this operation with the AXI RD \-\> AXI WR route to move data from SoC location into Sha Accelerator  
 8. If AES Mode:
-   1. Fully configure AES with IV, KEY, etc.
+   1. Fully configure AES with IV/KEY see [AES spec for more details](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraHardwareSpecification.md#aes)
    2. Stream in any header info to AES like AAD
    3. Set read/write routes to AXI
    4. Set AES_MODE in DMA
