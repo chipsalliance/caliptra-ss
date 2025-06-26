@@ -346,7 +346,7 @@ After exclusions, the SoC Interface module in Caliptra Core has > 99% coverage o
 ### Module: axi_dma_top (i_axi_dma)
 
 There are two low-risk coverage holes after applying exclusions:
-1. Error injection scenarios: Many command decode scenarios are validated, but some error cases (for malformed DMA descriptors) are not included. These edge cases are unexpected for correct Firmware and, if encountered during firmware development will produce failure signatures that have been evaluated:
+1. Error injection scenarios: Many command decode scenarios are validated, but some error cases (for malformed DMA descriptors) are not included. Firmware is required to send correctly configured DMA commands. These edge cases are unexpected for correct Firmware and, if encountered during firmware development will produce failure signatures that have been evaluated:
    1. Invalid Route Combo error: Some invalid routes are not covered. Compliant firmware will never encounter these scenarios.
    2. Mailbox Lock Error: For transfers into/out of the Mailbox by DMA, mailbox lock must be acquired. Firmware shall not clear the mailbox lock until the transfer has completed. If lock is cleared during a transfer, this error should fire. Risk: Low, since compliant firmware will never do this.
 2. Access to DMA registers by SoC via AXI: This is an illegal path. Writes from the AXI interface to any DMA register are blocked using the same logic as in a other SoC interface register blocks. Risk assessment: Low, because the same logic is proven in other blocks.
@@ -357,7 +357,7 @@ Additionally, coverage is incomplete for some don't-care scenarios, such as writ
 
 Test cases are under development for these scenarios:
 - All possible command decode error combinations (include a complete matrix for illegal route combinations)
-- AXI error injection (this has been informally validated in both simulation and FPGA contexts but is not part of regressions)
+- AXI error injection (this has been validated in both simulation and FPGA contexts as part of development and focused local testing, but is not part of regressions)
 - SoC access to all DMA registers via AXI to prove access protections
 - Attempted writes to DMA registers during DMA operation (to prove immutability of in-progress transactions)
 
@@ -381,7 +381,7 @@ Coverage is complete after adding exclusions.
 
 ### Module: i_sha512_acc_top
 
-Module is unchanged from release version 1.1, which has been proven in simulation, FPGA testing, and production silicon.
+Module in release version 1.1 has been proven in simulation, FPGA testing, and production silicon.
 
 ### Module: i_soc_ifc_arb
 
