@@ -391,11 +391,6 @@ Coverage is complete after adding exclusions:
 - Backpressure logic inputs directly from the CSR blocks that will never assert. Simple logic is used at the CSRs to manage reads and writes, and none of the CSR blocks within soc_ifc have any implicit backpressure mechanisms. All backpressure in soc_ifc results from possible access contention within this arbitration block. Collision logic is exercised in various testcases to prove correct behavior.
 - Other data signals are unused or tied off, such as uc_req_data.id.
 
-### Module: i_soc_ifc_boot_fsm
-
-Coverage is complete after excluding unreachable conditions.
-
-
 ### Module: i_soc_ifc_reg
 
 The register file is fully covered after applying exclusions. Exclusions are applied primarily for:
