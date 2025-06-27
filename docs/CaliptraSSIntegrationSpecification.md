@@ -868,6 +868,39 @@ This field defaults to 4 bytes but can be extended to accommodate storage of a f
    - There are some fuses that can be programmed only by Caliptra Core. Therefore, each AXI write should follow the access permission rule defined by `access_control_table ` in `src/fuse_ctrl/rtl/otp_ctrl_pkg.sv`.
    - Timeout conditions during consistency checks (`FUSE_CTRL_CHECK_TIMEOUT`) should trigger appropriate alerts.
    - Errors like invalid data, ECC failures, or access violations should raise alerts via the `alerts` signal.
+   -  Here's the revised section with corrected grammar and spelling:
+
+## Fuse Macro Memory Map and Fuse Controller CSR Address Map
+
+The Caliptra Subsystem fuse controller supports a flexible and extensible memory map for storing one-time programmable (OTP) data. This structure is documented in the following files:
+See Fuse Controller Register Map for registers.
+See Fuse Macro Memory Map for fuse partition map.
+
+The current fuse memory map consists of **three main architectural segments**: **Caliptra-Core** (prefix: `CALIPTRA_CORE`), **Caliptra-Subsystem** (prefix: `CALIPTRA_SS`), **SoC/Vendor-Specific**.
+
+This structure enables separation of responsibilities and flexibility in SoC integration. While the **Caliptra-Core fuse items** are mandatory and must adhere to the [Caliptra Fuse Map Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#fuse-map), **Caliptra-Subsystem** fuses are required only when the subsystem is instantiated with Caliptra Subsystem. These Caliptra Subsystem fuses can also be configured based on SoC requirements. The **SoC/Vendor-specific** items can be customized based on integrator needs and product requirements. Therefore, the fields under SoC-specific categories can be resized or eliminated if unused.
+
+### **SOC_SPECIFIC_IDEVID_CERTIFICATE Usage**
+This field defaults to 4 bytes but can be extended to accommodate storage of a full IDevID hybrid certificate (e.g., ML-DSA + ECC) if desired. Integrators must adjust its size in the YAML config used by the generation script.
+
+---
+
+## FC Integration Requirements
+
+**Connectivity, Clock & Reset, Constraints & Violations**
+
+1. **Connectivity**:
+   - The Fuse Controller must interface seamlessly with the Fuse Macros, ensuring proper ECC support during programming and read operations.
+   - All AXI interfaces (`core_axi_wr_req`, `core_axi_rd_req`) must follow the protocol specifications.
+   - Inputs like `lc_otp_program_i` and `pwr_otp_i` should connect properly to the Lifecycle Controller (LC) and MCI respectively.
+   - Alerts must propagate correctly to the system's alert manager for error handling.
+
+2. **Constraints & Violations**:
+   - Any access to fuses must be gated by the `FUSE_CTRL_DIRECT_ACCESS_REGWEN` bit to prevent unauthorized writes.
+   - There are some fuses that can be programmed only by Caliptra Core. Therefore, each AXI write should follow the access permission rule defined by `access_control_table` in otp_ctrl_pkg.sv.
+   - Timeout conditions during consistency checks (`FUSE_CTRL_CHECK_TIMEOUT`) should trigger appropriate alerts.
+   - Errors like invalid data, ECC failures, or access violations should raise alerts via the `alerts` signal.
+   - The fuse macro is modeled in the testbench environment, but the model does not reflect all features or constraints that the vendor fuse macro might have. Therefore, the fuse macro specification must be taken into account before adjusting fuse partition configurations. If needed, ECC features should be disabled. For example, key revocation items need to be active for each revocation, and therefore ECC might prevent them from being updated.
 
 3. **Scan Path Exclusions**:
    - Ensure that secret fuse fields (UDS and Field-Entropy) and their corresponding flip-flops are not a parth of the scan path. Specifically, in this version, there are five OTP partitions that contain secrets that must not be leaked:
