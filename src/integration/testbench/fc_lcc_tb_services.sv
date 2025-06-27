@@ -33,7 +33,7 @@ module fc_lcc_tb_services (
 
   logic ecc_fault_en = 1'b0;
   logic lcc_bus_error_en = 1'b0;
-  logic lcc_external_clk_req = 1'b0;
+  logic lcc_external_clk_req;
  
   always_ff @(posedge clk or negedge cptra_rst_b) begin
     if (!cptra_rst_b) begin
