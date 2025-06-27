@@ -36,6 +36,7 @@
   - [AXI Feature Support](#axi-feature-support)
   - [Routes](#routes)
   - [OCP Streaming Boot Payloads](#ocp-streaming-boot-payloads)
+  - [AES Mode](#aes-mode)
   - [Programming Flowchart {#programming-flowchart}](#programming-flowchart-programming-flowchart)
   - [Descriptor](#descriptor)
 - [Caliptra Subsystem Fuse Controller](#caliptra-subsystem-fuse-controller)
@@ -292,7 +293,7 @@ Caliptra ROM & RT firmware must program DMA assist with correct image size (mult
 Received transfer data can be obtained by the driver via a read from XFER_DATA_PORT register. Received data threshold is indicated to BMC by the controller with TX_THLD_STAT interrupt if RX_THLD_STAT_EN is set. The RX threshold can be set via RX_BUF_THLD. In case of a read when no RX data is available, the controller shall raise an error on the frontend bus interface (AHB / AXI).
 
 # Caliptra Core AXI Manager & DMA assist
-SOC\_IFC includes a hardware-assist block that is capable of initiating DMA transfers to the attached SoC AXI interconnect. The DMA transfers include several modes of operation, including raw transfer between SoC (AXI) addresses, moving data into or out of the SOC\_IFC mailbox, and directly driving data through AHB CSR accesses to datain/dataout registers. One additional operating mode allows the DMA engine to autonomously wait for data availability via the OCP Recovery interface (which will be slowly populated via an I3C or similar interface). 
+SOC\_IFC includes a hardware-assist block that is capable of initiating DMA transfers to the attached SoC AXI interconnect. The DMA transfers include several modes of operation, including raw transfer between SoC (AXI) addresses, moving data into or out of the SOC\_IFC mailbox, directly encrypting/decrypting images with the AES block, and directly driving data through AHB CSR accesses to datain/dataout registers. One additional operating mode allows the DMA engine to autonomously wait for data availability via the OCP Recovery interface (which will be slowly populated via an I3C or similar interface). 
 
 Caliptra arms transfers by populating a transaction descriptor to the AXI DMA CSR block via register writes over the internal AHB bus. Once armed, the DMA will autonomously issue AXI transactions to the SoC until the requested data movement is completed. The DMA uses an internal FIFO to buffer transfer data. For any transfer using AXI Writes (Write Route is not disabled), the DMA waits until sufficient data is available in the FIFO before initiating any AXI write requests.
 
@@ -347,6 +348,43 @@ When programming an AXI to AXI transfer for a Streaming Boot Payload (e.g., to t
 
 In all cases other than reading Recovery Interface Payloads, the block\_size register must be programmed to 0\.
 
+## AES Mode
+
+The DMA block can directly stream images from AXI to AES for decrypt/encrypt, and then stream the processed image over AXI to some SOC storage. This can be done by configuring the AXI DMA as:
+
+* AES Mode == 1
+* (optional) aes_gcm_mode in DMA == 1
+* Read Route == AXI
+* Write Route == AXI
+* Block Size == 0 (OCP Stream Boot Disabled)
+* Read/Write Fixed == 0 
+* Source Address == Start of image
+* Destination Address == Start address where processed image should be stored
+* Configure Byte Count - must be DWORD aligned
+
+Other Read/Write Routes and Block sizes are not supported.
+
+The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware's responsibility to:
+
+1. Fully configure AES before streaming the image via AXI DMA
+2. Push the IV, AAD header, and any other data into AES before streaming the image via AXI DMA
+3. Retrieve any tags from AES after the image has been processed.
+ 
+
+If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly pad the AES input data with 0s. When streaming the image out it reads all 4 DWORDS from the AES, but only writes up to the last DWORD of the image to the destination. If ``aes_gcm_mode`` register is set, at the start of the transfer it updates the GCM shadow byte count and phase registers in AES to the appropriate byte count and GCM_TEXT phase. Before the last block transfer to the AES it will again update the GCM shadow register to the appropriate values. 
+
+Input images can be in **little endian** or **big endian**. It is FW's responsibility to configure the AES wrapper's ENDIAN_SWAP register.  
+
+If AXI DMA encounters any errors (AXI or other errors) it will finish the transfer and report an error. It is the Firmware's responsibility to clear the error in the AXI DMA and flush the AES if required. 
+
+When AXI DMA is using AES Caliptra shall not try to access AES via AHB until AXI DMA has completed.
+
+AES is not directly exposed on the AXI bus for external entities, it is protected behind the AXI DMA and can only be accessed via Caliptra uC AHB or the Caliptra DMA. 
+
+*AES Mode: Read Route \== AXI, Write Route \== AXI, AES Mode \== 1*
+
+![](./images/Caliptra-AXI-DMA-AES.png)
+
 ## Programming Flowchart {#programming-flowchart}
 
 General Rules:
@@ -358,8 +396,8 @@ General Rules:
 5. If Read Route is disabled, Read Fixed field is ignored.  
 6. If Write Route is disabled, Write Fixed field is ignored.  
 7. Addresses and Byte Counts must be aligned to AXI data width (1 DWORD).
-
 8. Block Size is used only for reads from the Subsystem Recovery Interface. When block size has a non-zero value, the DMA will only issue AXI read requests when the payload available input signal is set to 1, and will limit the size of read requests to the value of block size. For all other transactions (such as AXI writes, or any single-dword access to a subsystem register via the DMA), block size shall be set to a value of 0 for every transaction.
+9. AES mode is only valid with Read/Write routes AXI RD -> AXI WR, Read/Write Fixed = 0, and Block Size 0.
 
 Steps:
 
@@ -374,16 +412,22 @@ Steps:
    1. First acquire Sha Accel Lock via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
    2. Initiate Sha Accel streaming operation via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
    3. Run this operation with the AXI RD \-\> AXI WR route to move data from SoC location into Sha Accelerator  
-8. Set Control Register  
+8. If AES Mode:
+   1. Fully configure AES with IV/KEY see [AES spec for more details](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraHardwareSpecification.md#aes)
+   2. Stream in any header info to AES like AAD
+   3. Set read/write routes to AXI
+   4. Set AES_MODE in DMA
+   5. Set aes_gcm_mode in DMA if this is the AES mode
+9.  Set Control Register  
    1. Set Read/Write Routes  
    2. Set Read/Write Fixed=0/1  
    3. GO  
    4. (All 3 may be single write or separate, GO must be last bit to set)  
-9. If AHB data: Wait for RD FIFO not empty or WR FIFO not full  
+10. If AHB data: Wait for RD FIFO not empty or WR FIFO not full  
    1. Push/Pop data (using Rd Data/Wr Data register offsets) until all requested bytes transferred  
    2. If AHB Error – check status0 for Error, then check for “Command Error”   
-10. Wait for TXN Done Interrupt (or Poll Status0)   
-11. Read Status0, confirm Busy=0, Error=0
+11. Wait for TXN Done Interrupt (or Poll Status0)   
+12. Read Status0, confirm Busy=0, Error=0
 
 ## Descriptor
 
