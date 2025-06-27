@@ -372,7 +372,7 @@ module otp_ctrl_dai
           otp_req_o = 1'b1;
           // Depending on the partition configuration,
           // the wrapper is instructed to ignore integrity errors.
-          if (PartInfo[part_idx].integrity && mubi8_test_false_strict(zer_i[part_idx])) begin
+          if (PartInfo[part_idx].integrity && mubi8_test_false_loose(zer_i[part_idx])) begin
             otp_cmd_o = prim_generic_otp_pkg::Read;
           end else begin
             otp_cmd_o = prim_generic_otp_pkg::ReadRaw;

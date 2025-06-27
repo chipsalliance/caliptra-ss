@@ -167,8 +167,28 @@ module otp_ctrl_part_unbuf
 
   // Screen the read out data for the zeroization marker. This is only relevant
   // to determine whether the partition is zeroized upon initialization.
-  mubi8_t is_zeroized_pre, is_zeroized;
-  assign is_zeroized_pre = check_zeroized(zer_dig, 2'b11) ? MuBi8True : MuBi8False;
+
+  localparam int ZerFanout = 2;
+
+  // Compose several individual MuBis into a larger MuBi. The resulting
+  // value must always be a valid MuBi constant (either `true` or `false`).
+  logic   [ZerFanout-1:0][ScrmblBlockWidth-1:0] zer_dig_post;
+  mubi4_t [ZerFanout-1:0] is_zeroized_pre;
+  mubi8_t is_zeroized;
+
+  for (genvar k = 0; k < ZerFanout; k++) begin
+    caliptra_prim_buf #(
+      .Width(ScrmblBlockWidth)
+    ) u_rdata_buf (
+      .in_i  ( zer_dig         ),
+      .out_o ( zer_dig_post[k] )
+    );
+
+    // Interleave MuBi4 chunks to create higher-order MuBis.
+    // Even indices: (MuBi4True, MuBi4False)
+    // Odd indices:  (MuBi4False, MuBi4True)
+    assign is_zeroized_pre[k] = (check_zeroized(zer_dig_post[k], 2'b11) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
+  end
 
   caliptra_prim_buf #(
     .Width(MuBi8Width)
@@ -274,7 +294,7 @@ module otp_ctrl_part_unbuf
       InitChkZerCnfSt: begin
         state_d = InitSt;
         // Use ECC-protected reads when the partition is not zeroized.
-        if (Info.integrity && mubi8_test_false_strict(is_zeroized)) begin
+        if (Info.integrity && mubi8_test_false_loose(is_zeroized)) begin
           cmd_d = prim_generic_otp_pkg::Read;
         end
       end
