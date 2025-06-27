@@ -371,6 +371,12 @@ def _validate_mmap(config: Dict) -> Dict:
                                    part["name"], part["size"],
                                    offset - part["offset"]))
 
+        # Check that zeroizable partitions have a digest.
+        if part["zeroizable"] and not(part["hw_digest"] or part["sw_digest"]):
+            raise RuntimeError("A zeroizable partition must be equipped with "
+                               "either a hardware or software digest")
+
+
         offset = check_int(part["offset"]) + check_int(part["size"])
 
         part_dict.setdefault(part['name'], {'index': j, 'items': item_dict})
