@@ -101,6 +101,8 @@ void initialize_otp_controller(void) {
     VPRINTF(LOW, "INFO: CHECK_REGWEN locked.\n");
 }
 
+#define FUSE_CTRL_CMD_DAI_ZER 0x8
+#define FUSE_CTRL_CMD_DAI_DIG 0x4
 #define FUSE_CTRL_CMD_DAI_WRITE 0x2
 #define FUSE_CTRL_CMD_DAI_READ  0x1
 
@@ -163,5 +165,27 @@ void calculate_digest(uint32_t partition_base_address) {
 
     // Step 4: Poll STATUS until DAI state goes back to idle    
     wait_dai_op_idle(0);
+    return;
+}
+
+void dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_status) {
+    VPRINTF(LOW, "DEBUG: Starting DAI zeroization operation...\n");
+
+    VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
+    lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+
+    VPRINTF(LOW, "DEBUG: Triggering DAI write command.\n");
+    lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_ZER);
+
+    wait_dai_op_idle(exp_status);
+
+    *rdata0 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_0);
+    VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_0: 0x%08X\n", *rdata0);
+
+    if (granularity == 64) {
+        *rdata1 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_1);
+        VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
+    }
+
     return;
 }
