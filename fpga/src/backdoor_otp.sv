@@ -362,34 +362,12 @@ module backdoor_otp
     rdata_o = rdata_reshaped;
   end
 
-  caliptra_prim_ram_1p_adv #(
-    .Depth                (Depth),
-    .Width                (Width + EccWidth),
-    .MemInitFile          (MemInitFile),
-    .EnableInputPipeline  (1),
-    .EnableOutputPipeline (1)
-  ) u_prim_ram_1p_adv (
-    .clk_i,
-    .rst_ni,
-    .req_i    ( req                    ),
-    .write_i  ( wren                   ),
-    .addr_i   ( addr                   ),
-    .wdata_i  ( wdata_rmw              ),
-    .wmask_i  ( {Width+EccWidth{1'b1}} ),
-    .rdata_o  ( rdata_ecc              ),
-    .rvalid_o ( rvalid                 ),
-    .rerror_o (                        ),
-    .cfg_i    ( '0                     ),
-    .alert_o  (                        )
-  );
-
-  // disable backdoored memory for now
-
-  // assign mem_en = req;
-  // assign mem_we = wren && req;
-  // assign mem_wdata = wdata_rmw & 16'hffff; // Mask out ECC bits for the input
-  // assign mem_rdata = rdata_ecc & 16'hffff; // Mask out ECC bits for the output
-  // assign mem_addr = addr;
+  assign mem_en = req;
+  assign mem_we = wren && req;
+  assign mem_wdata = wdata_rmw & 16'hffff; // Mask out ECC bits for the input
+  assign mem_rdata = rdata_ecc & 16'hffff; // Mask out ECC bits for the output
+  assign mem_addr = addr;
+  assign rvalid = 1'b1;
 
   // Currently it is assumed that no wrap arounds can occur.
   `CALIPTRA_ASSERT(NoWrapArounds_A, req |-> (addr >= addr_q))
