@@ -447,22 +447,22 @@ module caliptra_wrapper_top #(
     output	wire [31:0]               S_AXI_OTP_RDATA,
     output	wire [1:0]                S_AXI_OTP_RRESP,
 
-    input wire [1:0] S_AXI_OTP_ARBURST,
-    input wire [2:0] S_AXI_OTP_ARSIZE,
-    input wire [7:0] S_AXI_OTP_ARLEN,
-    input wire [31:0] S_AXI_OTP_ARUSER,
-    input wire [18:0] S_AXI_OTP_ARID,
-    input wire S_AXI_OTP_ARLOCK,
-    output wire [18:0]           S_AXI_OTP_RID,
-    output wire                   S_AXI_OTP_RLAST,
-    input wire [             1:0] S_AXI_OTP_AWBURST,
-    input wire [             2:0] S_AXI_OTP_AWSIZE,
-    input wire [             7:0] S_AXI_OTP_AWLEN,
+    (* syn_keep = "true", mark_debug = "true" *)input wire [1:0] S_AXI_OTP_ARBURST,
+    (* syn_keep = "true", mark_debug = "true" *)input wire [2:0] S_AXI_OTP_ARSIZE,
+    (* syn_keep = "true", mark_debug = "true" *)input wire [7:0] S_AXI_OTP_ARLEN,
+    (* syn_keep = "true", mark_debug = "true" *)input wire [31:0] S_AXI_OTP_ARUSER,
+    (* syn_keep = "true", mark_debug = "true" *)input wire [18:0] S_AXI_OTP_ARID,
+    (* syn_keep = "true", mark_debug = "true" *)input wire S_AXI_OTP_ARLOCK,
+    (* syn_keep = "true", mark_debug = "true" *)output wire [18:0]           S_AXI_OTP_RID,
+    (* syn_keep = "true", mark_debug = "true" *)output wire                   S_AXI_OTP_RLAST,
+    (* syn_keep = "true", mark_debug = "true" *)input wire [             1:0] S_AXI_OTP_AWBURST,
+    (* syn_keep = "true", mark_debug = "true" *)input wire [             2:0] S_AXI_OTP_AWSIZE,
+    (* syn_keep = "true", mark_debug = "true" *)input wire [             7:0] S_AXI_OTP_AWLEN,
     input wire [31:0] S_AXI_OTP_AWUSER,
-    input wire [18:0] S_AXI_OTP_AWID,
-    input wire                    S_AXI_OTP_AWLOCK,
-    input  wire                  S_AXI_OTP_WLAST,
-    output wire [18:0] S_AXI_OTP_BID,
+    (* syn_keep = "true", mark_debug = "true" *)input wire [18:0] S_AXI_OTP_AWID,
+    (* syn_keep = "true", mark_debug = "true" *)input wire                    S_AXI_OTP_AWLOCK,
+    (* syn_keep = "true", mark_debug = "true" *)input  wire                  S_AXI_OTP_WLAST,
+    (* syn_keep = "true", mark_debug = "true" *)output wire [18:0] S_AXI_OTP_BID,
 
     // ROM AXI Interface
     input  logic rom_backdoor_clk,
@@ -1738,10 +1738,10 @@ mcu_rom (
     assign S_AXI_OTP_RVALID  = cptra_ss_otp_core_axi_rd_rsp_o.rvalid;
 
 
-    otp_ctrl_pkg::prim_generic_otp_outputs_t cptra_ss_fuse_macro_outputs_tb;
-    otp_ctrl_pkg::prim_generic_otp_inputs_t  cptra_ss_fuse_macro_inputs_tb;
+    (* syn_keep = "true", mark_debug = "true" *) otp_ctrl_pkg::prim_generic_otp_outputs_t cptra_ss_fuse_macro_outputs_tb;
+    (* syn_keep = "true", mark_debug = "true" *) otp_ctrl_pkg::prim_generic_otp_inputs_t  cptra_ss_fuse_macro_inputs_tb;
 
-    prim_generic_otp #(
+    backdoor_otp #(
         .Width            ( otp_ctrl_pkg::OtpWidth            ),
         .Depth            ( otp_ctrl_pkg::OtpDepth            ),
         .SizeWidth        ( otp_ctrl_pkg::OtpSizeWidth        ),
@@ -1778,14 +1778,14 @@ mcu_rom (
         // Response channel
         .valid_o        ( cptra_ss_fuse_macro_outputs_tb.valid_o ),
         .rdata_o        ( cptra_ss_fuse_macro_outputs_tb.rdata_o ),
-        .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
+        .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o ),
 
         // memory interface
-        // .mem_en( otp_mem_en ),
-        // .mem_we( otp_mem_we ),
-        // .mem_addr( otp_mem_addr ),
-        // .mem_wdata( otp_mem_wdata ),
-        // .mem_rdata( otp_mem_rdata )
+        .mem_en( otp_mem_en ),
+        .mem_we( otp_mem_we ),
+        .mem_addr( otp_mem_addr ),
+        .mem_wdata( otp_mem_wdata ),
+        .mem_rdata( otp_mem_rdata )
     );
 
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export ();

@@ -29,41 +29,41 @@ module backdoor_otp
   parameter  int VendorTestOffset = 0,
   parameter  int VendorTestSize   = 0
 ) (
-  input                          clk_i,
-  input                          rst_ni,
+  (* syn_keep = "true", mark_debug = "true" *) input                          clk_i,
+  (* syn_keep = "true", mark_debug = "true" *) input                          rst_ni,
   // Observability
-  input ast_pkg::ast_obs_ctrl_t obs_ctrl_i,
-  output logic [7:0] otp_obs_o,
+  (* syn_keep = "true", mark_debug = "true" *) input ast_pkg::ast_obs_ctrl_t obs_ctrl_i,
+  (* syn_keep = "true", mark_debug = "true" *) output logic [7:0] otp_obs_o,
   // Macro-specific power sequencing signals to/from AST
-  output logic [PwrSeqWidth-1:0] pwr_seq_o,
-  input        [PwrSeqWidth-1:0] pwr_seq_h_i,
+  (* syn_keep = "true", mark_debug = "true" *) output logic [PwrSeqWidth-1:0] pwr_seq_o,
+  (* syn_keep = "true", mark_debug = "true" *) input        [PwrSeqWidth-1:0] pwr_seq_h_i,
   // Other DFT signals
-  input caliptra_prim_mubi_pkg::mubi4_t   scanmode_i,  // Scan Mode input
-  input                          scan_en_i,   // Scan Shift
-  input                          scan_rst_ni, // Scan Reset
+  (* syn_keep = "true", mark_debug = "true" *) input caliptra_prim_mubi_pkg::mubi4_t   scanmode_i,  // Scan Mode input
+  (* syn_keep = "true", mark_debug = "true" *) input                          scan_en_i,   // Scan Shift
+  (* syn_keep = "true", mark_debug = "true" *) input                          scan_rst_ni, // Scan Reset
   // Alert indication (to be connected to alert sender in the instantiating IP)
-  output logic                   fatal_alert_o,
-  output logic                   recov_alert_o,
+  (* syn_keep = "true", mark_debug = "true" *) output logic                   fatal_alert_o,
+  (* syn_keep = "true", mark_debug = "true" *) output logic                   recov_alert_o,
   // Ready valid handshake for read/write command
-  output logic                   ready_o,
-  input                          valid_i,
+  (* syn_keep = "true", mark_debug = "true" *) output logic                   ready_o,
+  (* syn_keep = "true", mark_debug = "true" *) input                          valid_i,
   // #(Native words)-1, e.g. size == 0 for 1 native word.
-  input [SizeWidth-1:0]          size_i,
+  (* syn_keep = "true", mark_debug = "true" *) input [SizeWidth-1:0]          size_i,
   // See prim_otp_pkg for the command encoding.
-  input  cmd_e                   cmd_i,
-  input [AddrWidth-1:0]          addr_i,
-  input [IfWidth-1:0]            wdata_i,
+  (* syn_keep = "true", mark_debug = "true" *) input  cmd_e                   cmd_i,
+  (* syn_keep = "true", mark_debug = "true" *) input [AddrWidth-1:0]          addr_i,
+  (* syn_keep = "true", mark_debug = "true" *) input [IfWidth-1:0]            wdata_i,
   // Response channel
-  output logic                   valid_o,
-  output logic [IfWidth-1:0]     rdata_o,
-  output err_e                   err_o,
+  (* syn_keep = "true", mark_debug = "true" *) output logic                   valid_o,
+  (* syn_keep = "true", mark_debug = "true" *) output logic [IfWidth-1:0]     rdata_o,
+  (* syn_keep = "true", mark_debug = "true" *) output err_e                   err_o,
 
   // Backing RAM interface
-  output  logic                 mem_en,
-  output  logic                 mem_we,
-  output  logic [AddrWidth-1:0] mem_addr,
-  output  logic [Width-1:0]     mem_wdata,
-  input   logic [Width-1:0]     mem_rdata
+  (* syn_keep = "true", mark_debug = "true" *) output  logic                 mem_en,
+  (* syn_keep = "true", mark_debug = "true" *) output  logic                 mem_we,
+  (* syn_keep = "true", mark_debug = "true" *) output  logic [AddrWidth-1:0] mem_addr,
+  (* syn_keep = "true", mark_debug = "true" *) output  logic [Width-1:0]     mem_wdata,
+  (* syn_keep = "true", mark_debug = "true" *) input   logic [Width-1:0]     mem_rdata
 );
 
   import caliptra_prim_mubi_pkg::MuBi4False;
@@ -362,34 +362,12 @@ module backdoor_otp
     rdata_o = rdata_reshaped;
   end
 
-  caliptra_prim_ram_1p_adv #(
-    .Depth                (Depth),
-    .Width                (Width + EccWidth),
-    .MemInitFile          (MemInitFile),
-    .EnableInputPipeline  (1),
-    .EnableOutputPipeline (1)
-  ) u_prim_ram_1p_adv (
-    .clk_i,
-    .rst_ni,
-    .req_i    ( req                    ),
-    .write_i  ( wren                   ),
-    .addr_i   ( addr                   ),
-    .wdata_i  ( wdata_rmw              ),
-    .wmask_i  ( {Width+EccWidth{1'b1}} ),
-    .rdata_o  ( rdata_ecc              ),
-    .rvalid_o ( rvalid                 ),
-    .rerror_o (                        ),
-    .cfg_i    ( '0                     ),
-    .alert_o  (                        )
-  );
-
-  // disable backdoored memory for now
-
-  // assign mem_en = req;
-  // assign mem_we = wren && req;
-  // assign mem_wdata = wdata_rmw & 16'hffff; // Mask out ECC bits for the input
-  // assign mem_rdata = rdata_ecc & 16'hffff; // Mask out ECC bits for the output
-  // assign mem_addr = addr;
+  assign mem_en = req;
+  assign mem_we = wren && req;
+  assign mem_wdata = wdata_rmw & 16'hffff; // Mask out ECC bits for the input
+  assign mem_rdata = rdata_ecc & 16'hffff; // Mask out ECC bits for the output
+  assign mem_addr = addr;
+  assign rvalid = 1'b1;
 
   // Currently it is assumed that no wrap arounds can occur.
   `CALIPTRA_ASSERT(NoWrapArounds_A, req |-> (addr >= addr_q))
