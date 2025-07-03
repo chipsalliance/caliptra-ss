@@ -30,7 +30,8 @@ module caliptra_ss_top_w_stub(
     import soc_ifc_pkg::*;
     import css_mcu0_el2_pkg::*;
     
-    `include "css_mcu0_el2_param.vh" ;
+    `include "css_mcu0_el2_param.vh"
+    ;
     // Define the logic and interfaces
     logic cptra_ss_pwrgood_i;
     logic cptra_ss_rst_b_i;
@@ -179,7 +180,7 @@ module caliptra_ss_top_w_stub(
 
     logic cptra_ss_cptra_core_mbox_sram_cs_o;
     logic cptra_ss_cptra_core_mbox_sram_we_o;
-    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_sscptra_core_mbox_sram_addr_o;
+    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_ss_cptra_core_mbox_sram_addr_o;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_wdata_o;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_rdata_i;
     assign cptra_ss_cptra_core_mbox_sram_rdata_i = '0;
@@ -458,7 +459,7 @@ module caliptra_ss_top_w_stub(
     //SRAM interface for mbox
         .cptra_ss_cptra_core_mbox_sram_cs_o,
         .cptra_ss_cptra_core_mbox_sram_we_o,
-        .cptra_sscptra_core_mbox_sram_addr_o,
+        .cptra_ss_cptra_core_mbox_sram_addr_o,
         .cptra_ss_cptra_core_mbox_sram_wdata_o,
         .cptra_ss_cptra_core_mbox_sram_rdata_i,
     

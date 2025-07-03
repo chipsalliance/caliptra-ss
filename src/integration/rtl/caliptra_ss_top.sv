@@ -140,7 +140,7 @@ module caliptra_ss_top
 // Caliptra SS mailbox sram interface
     output logic cptra_ss_cptra_core_mbox_sram_cs_o,
     output logic cptra_ss_cptra_core_mbox_sram_we_o,
-    output logic [CPTRA_MBOX_ADDR_W-1:0] cptra_sscptra_core_mbox_sram_addr_o,
+    output logic [CPTRA_MBOX_ADDR_W-1:0] cptra_ss_cptra_core_mbox_sram_addr_o,
     output logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_wdata_o,
     input  logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_rdata_i,
 
@@ -476,7 +476,7 @@ module caliptra_ss_top
 
         .mbox_sram_cs(cptra_ss_cptra_core_mbox_sram_cs_o),
         .mbox_sram_we(cptra_ss_cptra_core_mbox_sram_we_o),
-        .mbox_sram_addr(cptra_sscptra_core_mbox_sram_addr_o),
+        .mbox_sram_addr(cptra_ss_cptra_core_mbox_sram_addr_o),
         .mbox_sram_wdata(cptra_ss_cptra_core_mbox_sram_wdata_o),
         .mbox_sram_rdata(cptra_ss_cptra_core_mbox_sram_rdata_i),
             
@@ -847,7 +847,7 @@ module caliptra_ss_top
         .dccm_ecc_double_error  (mcu_dccm_ecc_double_error),
 
         .core_id                ('0),
-        .scan_mode              ( 1'b0 ),        // To enable scan mode
+        .scan_mode              ( cptra_ss_cptra_core_scan_mode_i ),        // To enable scan mode
         .mbist_mode             ( 1'b0 ),        // to enable mbist
 
         .dmi_core_enable   (mcu_dmi_core_enable),

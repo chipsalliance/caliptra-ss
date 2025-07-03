@@ -995,7 +995,7 @@ module caliptra_ss_top_tb
     logic mailbox_data_avail;
     logic cptra_ss_cptra_core_mbox_sram_cs_o;
     logic cptra_ss_cptra_core_mbox_sram_we_o;
-    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_sscptra_core_mbox_sram_addr_o;
+    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_ss_cptra_core_mbox_sram_addr_o;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_wdata_o;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_rdata_i;
 
@@ -1115,7 +1115,7 @@ module caliptra_ss_top_tb
         //SRAM interface for mbox
         .mbox_sram_cs   (cptra_ss_cptra_core_mbox_sram_cs_o   ),
         .mbox_sram_we   (cptra_ss_cptra_core_mbox_sram_we_o   ),
-        .mbox_sram_addr (cptra_sscptra_core_mbox_sram_addr_o ),
+        .mbox_sram_addr (cptra_ss_cptra_core_mbox_sram_addr_o ),
         .mbox_sram_wdata(cptra_ss_cptra_core_mbox_sram_wdata_o),
         .mbox_sram_rdata(cptra_ss_cptra_core_mbox_sram_rdata_i),
 
@@ -1201,26 +1201,26 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
 
-    assign cptra_ss_mcu_rom_s_axi_if.awvalid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWVALID;
-    assign cptra_ss_mcu_rom_s_axi_if.awaddr                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWADDR[31:0];
-    assign cptra_ss_mcu_rom_s_axi_if.awid                         = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWID;
-    assign cptra_ss_mcu_rom_s_axi_if.awlen                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWLEN;
-    assign cptra_ss_mcu_rom_s_axi_if.awsize                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWSIZE;
-    assign cptra_ss_mcu_rom_s_axi_if.awburst                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWBURST;
-    assign cptra_ss_mcu_rom_s_axi_if.awlock                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWLOCK;
-    assign cptra_ss_mcu_rom_s_axi_if.awuser                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWREADY     = cptra_ss_mcu_rom_s_axi_if.awready;
-    assign cptra_ss_mcu_rom_s_axi_if.wvalid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WVALID;
-    assign cptra_ss_mcu_rom_s_axi_if.wdata                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WDATA;
-    assign cptra_ss_mcu_rom_s_axi_if.wstrb                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WSTRB;
-    assign cptra_ss_mcu_rom_s_axi_if.wlast                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WLAST;
-    assign cptra_ss_mcu_rom_s_axi_if.wuser                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WREADY      = cptra_ss_mcu_rom_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BVALID      = cptra_ss_mcu_rom_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BRESP       = cptra_ss_mcu_rom_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BUSER       = cptra_ss_mcu_rom_s_axi_if.buser;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BID         = cptra_ss_mcu_rom_s_axi_if.bid;
-    assign cptra_ss_mcu_rom_s_axi_if.bready                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BREADY;
+    assign cptra_ss_mcu_rom_s_axi_if.awvalid                      = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWVALID;
+    assign cptra_ss_mcu_rom_s_axi_if.awaddr                       = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWADDR[31:0];
+    assign cptra_ss_mcu_rom_s_axi_if.awid                         = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWID;
+    assign cptra_ss_mcu_rom_s_axi_if.awlen                        = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWLEN;
+    assign cptra_ss_mcu_rom_s_axi_if.awsize                       = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWSIZE;
+    assign cptra_ss_mcu_rom_s_axi_if.awburst                      = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWBURST;
+    assign cptra_ss_mcu_rom_s_axi_if.awlock                       = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWLOCK;
+    assign cptra_ss_mcu_rom_s_axi_if.awuser                       = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWREADY     = 0;//cptra_ss_mcu_rom_s_axi_if.awready;
+    assign cptra_ss_mcu_rom_s_axi_if.wvalid                       = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WVALID;
+    assign cptra_ss_mcu_rom_s_axi_if.wdata                        = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WDATA;
+    assign cptra_ss_mcu_rom_s_axi_if.wstrb                        = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WSTRB;
+    assign cptra_ss_mcu_rom_s_axi_if.wlast                        = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WLAST;
+    assign cptra_ss_mcu_rom_s_axi_if.wuser                        = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].WREADY      = 0;//cptra_ss_mcu_rom_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BVALID      = 0;//cptra_ss_mcu_rom_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BRESP       = 0;//cptra_ss_mcu_rom_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BUSER       = 0;//cptra_ss_mcu_rom_s_axi_if.buser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BID         = 0;//cptra_ss_mcu_rom_s_axi_if.bid;
+    assign cptra_ss_mcu_rom_s_axi_if.bready                       = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].BREADY;
     assign cptra_ss_mcu_rom_s_axi_if.arvalid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].ARVALID;
     assign cptra_ss_mcu_rom_s_axi_if.araddr                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].ARADDR[31:0];
     assign cptra_ss_mcu_rom_s_axi_if.arid                         = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].ARID;
@@ -1611,7 +1611,7 @@ module caliptra_ss_top_tb
     //SRAM interface for mbox
         .cptra_ss_cptra_core_mbox_sram_cs_o,
         .cptra_ss_cptra_core_mbox_sram_we_o,
-        .cptra_sscptra_core_mbox_sram_addr_o,
+        .cptra_ss_cptra_core_mbox_sram_addr_o,
         .cptra_ss_cptra_core_mbox_sram_wdata_o,
         .cptra_ss_cptra_core_mbox_sram_rdata_i,
 
