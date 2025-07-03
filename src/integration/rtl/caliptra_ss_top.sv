@@ -44,6 +44,12 @@ module caliptra_ss_top
     input  logic cptra_ss_mci_cptra_rst_b_i,
     output logic cptra_ss_mci_cptra_rst_b_o,
     output logic cptra_ss_rst_b_o,
+    output logic cptra_ss_mcu_rst_b_o,
+    input  logic cptra_ss_mcu_rst_b_i,
+
+    output logic cptra_ss_warm_reset_rdc_clk_dis_o,
+    output logic cptra_ss_early_warm_reset_warn_o,
+    output logic cptra_ss_mcu_fw_update_rdc_clk_dis_o,
 
 // Caliptra Core AXI Sub Interface
     axi_if.w_sub cptra_ss_cptra_core_s_axi_if_w_sub,
@@ -325,7 +331,6 @@ module caliptra_ss_top
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
 
     // ----------------- MCI Connections within Subsystem -----------------------
-    logic mcu_rst_b;
 
 
     // ----------------- MCI Connections LCC Connections -----------------------
@@ -573,7 +578,7 @@ module caliptra_ss_top
     // MCU instance
     //=========================================================================-
     mcu_top rvtop_wrapper (
-        .rst_l                  ( mcu_rst_b ),
+        .rst_l                  ( cptra_ss_mcu_rst_b_i ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ),
         .clk                    ( mcu_clk_cg ),
         .rst_vec                ( reset_vector[31:1]),
@@ -1043,6 +1048,12 @@ module caliptra_ss_top
         
         // OTP
         .intr_otp_operation_done,
+
+        // RDC Signals
+        .rdc_clk_dis(cptra_ss_warm_reset_rdc_clk_dis_o),
+        .early_warm_reset_warn(cptra_ss_early_warm_reset_warn_o),
+        .fw_update_rdc_clk_dis(cptra_ss_mcu_fw_update_rdc_clk_dis_o),
+
         
         // MCU Halt Signals
         .mcu_cpu_halt_req_o   (cptra_ss_mcu_halt_req_o   ),
@@ -1054,7 +1065,7 @@ module caliptra_ss_top
         .nmi_intr(mci_mcu_nmi_int),
         .mcu_nmi_vector(mci_mcu_nmi_vector),
 
-        .mcu_rst_b(mcu_rst_b),
+        .mcu_rst_b(cptra_ss_mcu_rst_b_o),
         .cptra_rst_b(cptra_ss_mci_cptra_rst_b_o),
 
         // MBOX

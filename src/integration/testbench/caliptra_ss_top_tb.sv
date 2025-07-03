@@ -61,6 +61,11 @@ module caliptra_ss_top_tb
     logic                       cptra_ss_rst_b_i;
     logic                       cptra_ss_mci_cptra_rst_b_o;
     logic                       cptra_ss_rdc_clk_cg_o;
+    logic                       cptra_ss_mcu_rst_b_o;
+    
+    logic                       cptra_ss_warm_reset_rdc_clk_dis_o;
+    logic                       cptra_ss_early_warm_reset_warn_o;
+    logic                       cptra_ss_mcu_fw_update_rdc_clk_dis_o;
 
     logic        [31:0]         trace_rv_i_insn_ip;
     logic        [31:0]         trace_rv_i_address_ip;
@@ -1510,6 +1515,14 @@ module caliptra_ss_top_tb
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o,
+        .cptra_ss_mcu_rst_b_o,
+        .cptra_ss_mcu_rst_b_i(cptra_ss_mcu_rst_b_o),
+
+    // RDC related signals
+        .cptra_ss_warm_reset_rdc_clk_dis_o,
+        .cptra_ss_early_warm_reset_warn_o,
+        .cptra_ss_mcu_fw_update_rdc_clk_dis_o,
+ 
 
     //SoC AXI Interface
         .cptra_ss_cptra_core_s_axi_if_r_sub(cptra_ss_cptra_core_s_axi_if.r_sub),

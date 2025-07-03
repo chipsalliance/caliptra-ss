@@ -138,7 +138,7 @@ always_ff @(posedge clk or negedge mci_pwrgood) begin
     end
 end
 
-// Us to sync change signal to a safe value that feed
+// Use to sync change signal to a safe value that feed
 // into different reset domains that can't have their 
 // clocks gated like caliptra core/noncore
 assign early_warm_reset_warn = mci_rst_window_sync;
