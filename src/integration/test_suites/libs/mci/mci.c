@@ -923,6 +923,7 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
     uint32_t err_data;
     uint32_t read_intr_sts;
     uint32_t axi_user_lock;
+    uint32_t cap_lock_reg_value;
     bool update_axi_user = false;
     bool update_config_reg = false;
     bool update_cap_lock_reg = false;
@@ -983,7 +984,8 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
     if (group_index == REG_GROUP_CAPABILITIES) {
         if (reg_index <= 1) {
             cap_lock_reg = get_register_info(REG_GROUP_CAPABILITIES, 2);
-            if (cap_lock_reg == 0) {
+            cap_lock_reg_value = mci_reg_read(cap_lock_reg->address);
+            if (cap_lock_reg_value == 0) {
                 update_config_reg = true;
             }
         } else if (reg_index == 2) {
@@ -1017,9 +1019,9 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
     }
 
     // Special case for capabilities registers - override the above conditions
-    if (group_index == REG_GROUP_CAPABILITIES && reg_index <= 2 && cap_lock_reg == 1) {
-        update_exp_data = false;  // Block update regardless of other conditions 
-        VPRINTF(MEDIUM, "Capabilities REG %d, cap lock = %d, update_exp_data = %d\n", reg_index, cap_lock_reg, update_exp_data);
+    if (group_index == REG_GROUP_CAPABILITIES && reg_index <= 2 && cap_lock_reg_value == 1) {
+        update_exp_data = false;  // Block update regardless of other conditions
+        VPRINTF(MEDIUM, "Capabilities REG %d, cap lock = %d, update_exp_data = %d\n", reg_index, cap_lock_reg_value, update_exp_data);
     }
     
 
