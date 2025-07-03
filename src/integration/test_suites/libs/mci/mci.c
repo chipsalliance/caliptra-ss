@@ -923,7 +923,7 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
     uint32_t err_data;
     uint32_t read_intr_sts;
     uint32_t axi_user_lock;
-    uint32_t cap_lock_reg_value;
+    uint32_t cap_lock_reg_value = 0;
     bool update_axi_user = false;
     bool update_config_reg = false;
     bool update_cap_lock_reg = false;
