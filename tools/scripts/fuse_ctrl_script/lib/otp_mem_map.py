@@ -540,11 +540,6 @@ class OtpMemMap():
 
         for k, part in enumerate(self.config["partitions"]):
             for j, item in enumerate(part["items"]):
-                if part["secret"] or part["name"] in {
-                        "VENDOR_TEST", "LIFE_CYCLE"
-                }:
-                    continue
-
                 name = None
                 if check_bool(item["isdigest"]):
                     continue
