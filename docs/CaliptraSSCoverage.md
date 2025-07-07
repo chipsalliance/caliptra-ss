@@ -6,39 +6,41 @@ This section provides an overview of the coverage for the Caliptra Subsystem (SS
 
 ## Caliptra SS Coverage Summary
 
-| Subsystem Block             | Coverage Description                                                                 | Line      | Toggle    | Condition | Branch    | Link to Coverage                                                                                                    | Notes                                                                                      |
-|-----------------------------|-------------------------------------------------------------------------------------|-----------|-----------|-----------|-----------|---------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
-| **Caliptra SS Top**         | Top-level coverage of Caliptra SS                                                   | 100.00%   | 97.40%    | 100.00%   | 100.00%   |                                                                                                                     |                                                                                            |
-| **I3C Instance**            | I3C instance-level coverage                                                         |           | 96.71%    |           |           |                                                                                                                     | Integration coverage only                                                                  |
-| **I3C Core**                | I3C Core coverage provided by Chips Alliance                                        |           |           |           |           | [I3C Core Coverage](https://chipsalliance.github.io/i3c-core/coverview.html#/)                                      | Reusable module                                                                            |
-| **MCI**                     | Memory Controller Interface coverage                                                | 100.00%   | 97.99%    | 100.00%   | 100.00%   | [MCI Coverage](#)                                                                                                   | [MCI Coverage Analysis](#mci-coverage-analysis-summary)                                    |
-| **Fuse CTRL (Baseline)**    | Baseline fuse controller, reused from silicon-proven OpenTitan hardware module      |           |           |           |           | [FCC Baseline Coverage](https://reports.opentitan.org/hw/ip/otp_ctrl/dv/latest/report.html)                         | Reusable module                                                                            |
-| **Fuse CTRL (Delta)**       | Coverage for Caliptra SS-specific modifications to the fuse controller              | 97.69%    | 100.99%   | 100.00%   | 100.00%   | [FCC Coverage](#)                                                                                                   | [Fuse Controller Coverage Notes](#fuse-controller-coverage-analysis)                       |
-| **LCC (Baseline)**          | Baseline Life Cycle Controller, reused from silicon-proven OpenTitan hardware module|           |           |           |           | [LCC Baseline Coverage](https://reports.opentitan.org/hw/ip/lc_ctrl_volatile_unlock_enabled/dv/latest/report.html)   | Reusable module                                                                            |
-| **LCC (Delta)**             | Coverage for Caliptra SS-specific changes to the Life Cycle Controller              | 100.00%   | 100.00%   | 100.00%   | 100.00%   |                                                                                                                     | [LCC Coverage Notes](#life-cycle-controller-coverage-analysis)                             |
-| **AXI2TLUL**                | AXI to TLUL protocol conversion gasket coverage                                     | 100.00%   | 100.00%   | 100.00%   | 100.00%   | [AXI2TLUL Gasket Coverage](#)                                                                                       | [AXI2TLUL Coverage Notes](#)                                     |
-| **MCU ROM**                 | MCU ROM instance coverage                                                           |           | 100.00%   |           |           |                                                                                                                     |                                                                                            |
-| **MCU_wrapper**             | VeeR-EL2 RISC-V Core instance coverage                                              |           | 96.23%    |           |           |                                                                                                                     | Integration coverage only                                                                  |
-| **MCU**                     | VeeR-EL2 RISC-V coverage provided by Chips Alliance                                 |           |           |           |           | [VeeR Core Coverage](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/coverage_dashboard/all/#/?flatFileList=false&hideNotCovered=false) | Reusable module                                                                            |
+| Subsystem Block             | Coverage Description                                                                | Link to Coverage                                                                                                                                                                | Coverage Notes                                                                             |
+|-----------------------------|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| **Caliptra SS Top**         | Top-level coverage of Caliptra SS                                                   | [Caliptra SS Top](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-ss.zip#/src%2Fintegration%2Frtl?flatFileList=false&hideNotCovered=false&testsAsTotal=false)       |                                                                                            |
+| **I3C Instance**            | I3C instance-level coverage                                                         | [I3C Instance Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-ss.zip#/third_party%2Fi3c-core?flatFileList=false&hideNotCovered=false&testsAsTotal=false)  | Integration coverage only                                                                  |
+| **I3C Core**                | I3C Core coverage provided by Chips Alliance                                        | [I3C Core Coverage](https://chipsalliance.github.io/i3c-core/coverview.html#/)                                                                                                  | Reusable module                                                                            |
+| **MCI**                     | Memory Controller Interface coverage                                                | [MCI Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-ss.zip#/src%2Fmci?flatFileList=false&hideNotCovered=false&testsAsTotal=false)                        | [MCI Coverage Notes](#mci-coverage-analysis-summary)                                    |
+| **Fuse CTRL (Baseline)**    | Baseline fuse controller, reused from silicon-proven OpenTitan hardware module      | [FCC Baseline Coverage](https://reports.opentitan.org/hw/ip/otp_ctrl/dv/latest/report.html)                                                                                     | Reusable module                                                                            |
+| **Fuse CTRL (Delta)**       | Coverage for Caliptra SS-specific modifications to the fuse controller              | [FCC Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-ss.zip#/src%2Ffuse_ctrl?flatFileList=false&hideNotCovered=false&testsAsTotal=false)                  | [Fuse Controller Coverage Notes](#fuse-controller-coverage-analysis)                       |
+| **LCC (Baseline)**          | Baseline Life Cycle Controller, reused from silicon-proven OpenTitan hardware module| [LCC Baseline Coverage](https://reports.opentitan.org/hw/ip/lc_ctrl_volatile_unlock_enabled/dv/latest/report.html)                                                              | Reusable module                                                                            |
+| **LCC (Delta)**             | Coverage for Caliptra SS-specific changes to the Life Cycle Controller              | [LCC Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-ss.zip#/src%2Flc_ctrl?flatFileList=false&hideNotCovered=false&testsAsTotal=false)                    | [LCC Coverage Notes](#life-cycle-controller-coverage-analysis)                             |
+| **AXI2TLUL**                | AXI to TLUL protocol conversion gasket coverage                                     | [AXI2TLUL Gasket Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-ss.zip#/src%2Faxi2tlul?flatFileList=false&hideNotCovered=false&testsAsTotal=false)       |                                                                                            |
+| **MCU ROM**                 | MCU ROM instance coverage                                                           | [AXI mem Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-ss.zip#/src%2Faxi_mem?flatFileList=false&hideNotCovered=false&testsAsTotal=false)                |                                                                                            |
+| **MCU_wrapper**             | VeeR-EL2 RISC-V Core instance coverage                                              | [MCU Instance Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-ss.zip#/src%2Fmcu%2Frtl?flatFileList=false&hideNotCovered=false&testsAsTotal=false)         | Integration coverage only                                                                  |
+| **MCU**                     | VeeR-EL2 RISC-V coverage provided by Chips Alliance                                 | [VeeR Core Coverage](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/coverage_dashboard/all/#/?flatFileList=false&hideNotCovered=false) | Reusable module              |
 
 ---
 
 ## Caliptra Core Coverage Dashboard
 
 This section provides an overview of the coverage for the Caliptra Core and its components. Each core block is linked to its coverage dashboard and notes for further insights.
-
-| Caliptra Core Block         | Coverage Description                                            | Line      | Toggle    | Condition | Branch    | Link to Coverage                                                                 | Notes                                                                                  |
-|-----------------------------|-----------------------------------------------------------------|-----------|-----------|-----------|-----------|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| **MLDSA**                   | Module-Lattice-Based Digital Signature Algorithm Coverage                       |           |           |           |           | [MLDSA FPV Coverage](/docs/coverage_reports/Adams%20Bridge%20FPV%20Coverage%20Report%20from%20Lubis%200611.pdf) | MLDSA went through FPV; coverage shows the instance/interface here.                    |
-| **AES (Baseline)**          | AES block (reused from OpenTitan)                               |           |           |           |           | [AES OpenTitan Coverage](https://reports.opentitan.org/hw/ip/aes_masked/dv/latest/report.html) |                                                                                        |
-| **AES GCM**                 | AES GCM Delta changes for Caliptra Core                         |           |           |           |           | [AES GCM DV Report](/docs/coverage_reports/AES-GCM%20DV%20Test%20Report.pdf)          |                                                                                        |
-| **Cryptos (ECC, HMAC, SHA, DOE)** | Legacy from Caliptra 1.x and proven in silicon            |           |           |           |           | [Crypto FPV Coverage](/docs/coverage_reports/Caliptra%20FPV%20Coverage%20Report%20from%20Lubis.pdf) | Silicon proven through 1.x                                                             |
+| Caliptra Core Block                | Coverage Description                                              | Link to Coverage                                                                                                                                                   | Coverage Notes                                                                                |
+|------------------------------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| **Caliptra Core**                  | Top-level coverage for Caliptra 2.0 Core                          | [Caliptra Core Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-rtl.zip#/?flatFileList=false&hideNotCovered=false&testsAsTotal=false)         | [Caliptra Core Coverage Notes](#soc-interface--caliptra-core-coverage-analysis-summary)       |
+| **MLDSA**                          | Module-Lattice-Based Digital Signature Algorithm (MLDSA) coverage | [MLDSA FPV Coverage](/docs/coverage_reports/Adams%20Bridge%20FPV%20Coverage%20Report%20from%20Lubis%200611.pdf)                                                    | MLDSA verified via FPV.                                 |
+| **MLDSA Instance**                 | MLDSA instance-level coverage                                     | [MLDSA Instance](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-rtl.zip#/submodules%2Fadams-bridge%2Fsrc%2Fmldsa_top?flatFileList=false&hideNotCovered=false&testsAsTotal=false) | MLDSA instance top coverage.                                       |
+| **AES (Baseline)**                 | AES block reused from OpenTitan                                   | [AES OpenTitan Coverage](https://reports.opentitan.org/hw/ip/aes_masked/dv/latest/report.html)                                                                     | Reusable module                                                                                              |
+| **AES (Instance)**                 | AES instance-level coverage                                       | [AES Instance Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-rtl.zip#/src%2Faes?flatFileList=false&hideNotCovered=false&testsAsTotal=false) |                                                                                               |
+| **AES GCM**                        | AES GCM delta changes for Caliptra Core                           | [AES GCM DV Report](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-rtl.zip#/src%2Faes?flatFileList=false&hideNotCovered=false&testsAsTotal=false)     |                                                                                               |
+| **Cryptos (ECC, HMAC, SHA, DOE)**  | Legacy cryptographic blocks from Caliptra 1.x, silicon-proven     | [Crypto FPV Coverage](/docs/coverage_reports/Caliptra%20FPV%20Coverage%20Report%20from%20Lubis.pdf)                                                                | Proven in silicon through Caliptra 1.x.                                                       |
 
 ---
 
 # Coverage Analysis Notes
 
-## MCI Coverage Analysis Summary
+## MCI Coverage Analysis Notes
 
 ### Module: i_boot_seqr
 
@@ -162,6 +164,7 @@ covered in upcoming release.
 The remaining uncovered branches relate directly to the uncovered lines and
 toggles mentioned above.
 
+---
 ## Fuse Controller Coverage Analysis
 
 The fuse_ctrl is an adapted lightweight variant of the OpenTitan otp_ctrl [Earlgrey-PROD.M6](https://github.com/lowRISC/opentitan/releases/tag/Earlgrey-PROD-M6)
@@ -330,3 +333,75 @@ as they cannot be triggered with the existing testbench.
 
 The previously mentioned uncovered lines also cause the corresponding branches
 to be uncovered.
+
+---
+## SoC Interface / Caliptra Core Coverage Analysis Summary
+
+### Overview
+After exclusions, the SoC Interface module in Caliptra Core has > 99% coverage on all sub-blocks with the exception of DMA Assist and AXI Subordinate. Analysis from those modules is outlined in the following sections.
+
+### Module: i_ahb_slv_sif_soc_ifc
+
+  - Exclusions on hresp and err signals toggling. Correctly validated firmware is never expected to encounter these errors. Risk assessment: LOW, correctly functioning firmware will not encounter this. Potential impact to debugability, but these error signals have been shown to work in tests not included in the regression.
+    - Tests will be added to inject AHB address decode error.
+
+### Module: axi_dma_top (i_axi_dma)
+
+There are two low-risk coverage holes after applying exclusions:
+1. Error injection scenarios: Many command decode scenarios are validated, but some error cases (for malformed DMA descriptors) are not included. Firmware is required to send correctly configured DMA commands. These edge cases are unexpected for correct Firmware and, if encountered during firmware development will produce failure signatures that have been evaluated:
+   1. Invalid Route Combo error: Some invalid routes are not covered. Compliant firmware will never encounter these scenarios.
+   2. Mailbox Lock Error: For transfers into/out of the Mailbox by DMA, mailbox lock must be acquired. Firmware shall not clear the mailbox lock until the transfer has completed. If lock is cleared during a transfer, this error should fire. Risk: Low, since compliant firmware will never do this.
+2. Access to DMA registers by SoC via AXI: This is an illegal path. Writes from the AXI interface to any DMA register are blocked using the same logic as in a other SoC interface register blocks. Risk assessment: Low, because the same logic is proven in other blocks.
+
+Additionally, coverage is incomplete for some don't-care scenarios, such as writes to read-only status registers or readback from control registers that are written to arm operations. This poses no functional risk for the design.
+
+#### Future Work
+
+Test cases are under development for these scenarios:
+- All possible command decode error combinations (include a complete matrix for illegal route combinations)
+- AXI error injection (this has been validated in both simulation and FPGA contexts as part of development and focused local testing, but is not part of regressions)
+- SoC access to all DMA registers via AXI to prove access protections
+- Attempted writes to DMA registers during DMA operation (to prove immutability of in-progress transactions)
+
+### Module: axi_sub (i_axi_sub_sif_soc_ifc)
+
+There are a few coverage holes related to AXI backpressure scenarios after applying exclusions:
+1. Read channel: Data backpressure due to stalls on AXI interconnect in accepting read data
+2. Write channel: Request stalls, backpressure on acceptance of write data, and write response stalls due to AXI interconnect delays.
+
+Randomized backpressure on the AXI Sub module is extensively tested in a testbench context (as part of the DMA testsuite), so the module handling of backpressure has high confidence. Since the same code is used in soc_ifc as in that testing, the actual coverage gap is minimal. Additionally, local UVM testing that will soon be added to the nightly regression suite shows high coverage of backpressure scenarios without issue. Tests will be added to the regression to show complete coverage of all possible backpressure scenarios.
+Risk assessment: Very low, as UVM tests locally show high coverage of backpressure signaling and AXI sub module coverage is high (outside of SoC interface).
+
+### Module: i_mbox
+
+Coverage is complete after adding exclusions.
+
+#### Coverage Metrics
+- **Toggle/Line/Branch Coverage:** With exclusions:
+  - TAP mode mailbox as there is no expected use-case for Caliptra to issue mailbox command to TAP (debug unlock scenarios are in the opposite direction, TAP -> Caliptra).
+  - DMI accesses to mailbox registers, as this is covered through JTAG testing in FPGA and Caliptra Subsystem
+
+### Module: i_sha512_acc_top
+
+Module in release version 1.1 has been proven in simulation, FPGA testing, and production silicon.
+
+### Module: i_soc_ifc_arb
+
+Coverage is complete after adding exclusions:
+- Unreachable signals for CSR error indicators that are tied off and cannot assert (placeholder logic from the RDL generator)
+- Individual data signals are irrelevant within the arbitration logic because this module is concerned with control handshake signals and addressing information.
+- Backpressure logic inputs directly from the CSR blocks that will never assert. Simple logic is used at the CSRs to manage reads and writes, and none of the CSR blocks within soc_ifc have any implicit backpressure mechanisms. All backpressure in soc_ifc results from possible access contention within this arbitration block. Collision logic is exercised in various testcases to prove correct behavior.
+- Other data signals are unused or tied off, such as uc_req_data.id.
+
+### Module: i_soc_ifc_reg
+
+The register file is fully covered after applying exclusions. Exclusions are applied primarily for:
+- Test scenarios covered in Caliptra Subsystem (such as debug unlock flows and SS strap registers)
+- Test scenarios covered in FPGA testing (JTAG access to registers, CSR flow)
+- Interrupt registers and interrupt statistics counters, which are only useful for debug but are unused in production. Caliptra Firmware uses polling mode, so interrupt registers are not fully covered. Extensive tests exist to prove that interrupt registers operate as intended, counters reflect the intended statistics, and enables/disables function correctly.
+- Fuse register values. Data contents in the fuses are irrelevant for most contexts, as they may be hash values or signatures. Functionality of fuse registers is thoroughly validated and proven in silicon, and coverage is complete for the associated control signals.
+- Unreachable events, such as access errors or backpressure (soc_ifc_reg will never stall an incoming request, this would happen at the arbitration layer).
+
+### Module: i_wdt
+
+Watchdog Timer coverage is complete after applying some exclusions for large timer values that are unreachable in simulation. Functional coverage for operating modes of the watchdog timer is complete with randomness applied to timer threshold values. Exclusions for certain index bits of the timer counters poses low design risk.
