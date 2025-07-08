@@ -77,6 +77,7 @@
         {
             name:         "SW_TEST_UNLOCK_PARTITION",
             variant:      "Buffered",
+            absorb:       false,
             secret:       false,
             sw_digest:    false,
             hw_digest:    true,
@@ -101,6 +102,7 @@
         {
             name:         "SECRET_MANUF_PARTITION",
             variant:      "Buffered",
+            absorb:       false,
             secret:       true,
             sw_digest:    false,
             hw_digest:    true,
@@ -127,6 +129,7 @@
         {
             name:         "SECRET_PROD_PARTITION_0",
             variant:      "Buffered",
+            absorb:       false,
             secret:       true,
             sw_digest:    false,
             hw_digest:    true,
@@ -153,6 +156,7 @@
         {
             name:         "SECRET_PROD_PARTITION_1",
             variant:      "Buffered",
+            absorb:       false,
             secret:       true,
             sw_digest:    false,
             hw_digest:    true,
@@ -179,6 +183,7 @@
         {
             name:         "SECRET_PROD_PARTITION_2",
             variant:      "Buffered",
+            absorb:       false,
             secret:       true,
             sw_digest:    false,
             hw_digest:    true,
@@ -205,6 +210,7 @@
         {
             name:         "SECRET_PROD_PARTITION_3",
             variant:      "Buffered",
+            absorb:       false,
             secret:       true,
             sw_digest:    false,
             hw_digest:    true,
@@ -231,7 +237,7 @@
         {
             name:         "SW_MANUF_PARTITION",
             variant:      "Unbuffered",
-            absorb:       true,
+            absorb:       false,
             secret:       false,
             sw_digest:    true,
             hw_digest:    false,
@@ -244,7 +250,7 @@
             items: [
                 {
                     name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
-                    size: "1",
+                    size: "4",
                     desc: '''
                     Disables anti-rollback support from Caliptra.
                     For example, if a Platform RoT is managing FW storage and anti-rollback protection external to the SoC.
@@ -277,7 +283,7 @@
                 },
                 {
                     name: "CPTRA_CORE_SOC_STEPPING_ID",
-                    size: "2",
+                    size: "4",
                     desc: '''
                     Identifier assigned by vendor to differentiate silicon steppings.
                     '''
@@ -361,6 +367,7 @@
         {
             name:         "SECRET_LC_TRANSITION_PARTITION",
             variant:      "Buffered",
+            absorb:       false,
             secret:       true,
             sw_digest:    false,
             hw_digest:    true,
@@ -509,7 +516,7 @@
                 },
                 {
                     name: "CPTRA_CORE_SOC_MANIFEST_MAX_SVN",
-                    size: "1",
+                    size: "4",
                     desc: '''
                     Maximum value for the SOC authorization manifest SVN..
                     '''
@@ -521,6 +528,7 @@
         {
             name:         "VENDOR_TEST_PARTITION",
             variant:      "Unbuffered",
+            absorb:       false,
             size:         "64", // in bytes
             secret:       false,
             sw_digest:    true,
@@ -551,6 +559,7 @@
         {
             name:         "VENDOR_HASHES_MANUF_PARTITION",
             variant:      "Unbuffered",
+            absorb:       false,
             secret:       false,
             sw_digest:    true,
             hw_digest:    false,
@@ -570,7 +579,7 @@
                 },
                 {
                     name:   "CPTRA_CORE_PQC_KEY_TYPE_0",
-                    size:   "1",
+                    size:   "4",
                     desc: '''
                     One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
                     '''
@@ -582,6 +591,7 @@
         {
             name:         "VENDOR_HASHES_PROD_PARTITION",
             variant:      "Unbuffered",
+            absorb:       false,
             secret:       false,
             sw_digest:    true,
             hw_digest:    false,
@@ -603,7 +613,7 @@
                 },
                 {
                     name:   "CPTRA_SS_OWNER_PQC_KEY_TYPE",
-                    size:   "1",
+                    size:   "4",
                     desc: '''
                     One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
                     SoC product requirements determine the need of this partition.
@@ -611,7 +621,7 @@
                 },
                 {
                     name:   "CPTRA_SS_OWNER_PK_HASH_VALID",
-                    size:   "1",
+                    size:   "4",
                     desc: '''
                     Once a key is marked valid, anything above should not be able to be written (essentially
                     a volatile lock should be implemented on higher order bits).
@@ -629,7 +639,7 @@
                 },
                 {
                     name:   "CPTRA_CORE_PQC_KEY_TYPE_${i}",
-                    size:   "1",
+                    size:   "4",
                     desc: '''
                     One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
                     SoC product requirements determine the need of this partition; and the number of public keys required.
@@ -638,7 +648,7 @@
     % endfor
                 {
                     name:   "CPTRA_CORE_VENDOR_PK_HASH_VALID",
-                    size:   "${-(-i // 8)}",
+                    size:   "${4 * (-(-num_vendor_pk_fuses // 4))}",
                     desc: '''
                     Once a key is marked valid, anything above should not be able to be written (essentially
                     a volatile lock should be implemented on higher order bits).
@@ -652,6 +662,7 @@
         {
             name:         "VENDOR_REVOCATIONS_PROD_PARTITION",
             variant:      "Unbuffered",
+            absorb:       false,
             secret:       false,
             sw_digest:    true,
             hw_digest:    false,
@@ -664,7 +675,7 @@
             items: [
                 {
                     name:   "CPTRA_SS_OWNER_ECC_REVOCATION",
-                    size:   "1",
+                    size:   "4",
                     desc: '''
                     One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
                     SoC product requirements determine the need of this partition.
@@ -689,7 +700,7 @@
     % for i in range(num_vendor_pk_fuses):  
                 {
                     name:   "CPTRA_CORE_ECC_REVOCATION_${i}",
-                    size:   "1",
+                    size:   "4",
                     desc: '''
                     One-hot encoded list of revoked Vendor ECDSA P384 Public Keys (up to 4 keys).
                     SoC product requirements determine the need of this partition; and the number of public keys required.
@@ -721,6 +732,7 @@
         {
             name:         "VENDOR_SECRET_PROD_PARTITION",
             variant:      "Buffered",
+            absorb:       false,
             secret:       true,
             sw_digest:    false,
             hw_digest:    true,
@@ -749,7 +761,7 @@
         {
             name:         "VENDOR_NON_SECRET_PROD_PARTITION",
             variant:      "Unbuffered",
-            absorb:       true,
+            absorb:       false,
             secret:       false,
             sw_digest:    true,
             hw_digest:    false,
@@ -779,6 +791,7 @@
         {
             name:         "LIFE_CYCLE",
             variant:      "LifeCycle",
+            absorb:       false,
             secret:       false,
             sw_digest:    false,
             hw_digest:    false,
