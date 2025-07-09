@@ -39,6 +39,7 @@ module caliptra_ss_top
 ) (
     input logic cptra_ss_clk_i,
     output logic cptra_ss_rdc_clk_cg_o,
+    output logic cptra_ss_mcu_clk_cg_o,
     input logic cptra_ss_pwrgood_i,
     input logic cptra_ss_rst_b_i,
     input  logic cptra_ss_mci_cptra_rst_b_i,
@@ -307,7 +308,6 @@ module caliptra_ss_top
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
 
-    logic mcu_clk_cg;
 
     logic        mcu_dmi_core_enable;
     logic        mcu_dmi_uncore_enable;
@@ -580,7 +580,7 @@ module caliptra_ss_top
     mcu_top rvtop_wrapper (
         .rst_l                  ( cptra_ss_mcu_rst_b_i ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ),
-        .clk                    ( mcu_clk_cg ),
+        .clk                    ( cptra_ss_mcu_clk_cg_o ),
         .rst_vec                ( reset_vector[31:1]),
         .nmi_int                ( mci_mcu_nmi_int),
         .nmi_vec                ( mci_mcu_nmi_vector[31:1]),
@@ -1004,7 +1004,7 @@ module caliptra_ss_top
     ) mci_top_i (
 
         .clk(cptra_ss_clk_i),
-        .mcu_clk_cg(mcu_clk_cg),
+        .mcu_clk_cg(cptra_ss_mcu_clk_cg_o),
         .cptra_ss_rdc_clk_cg(cptra_ss_rdc_clk_cg_o), 
 
 

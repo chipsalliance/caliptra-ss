@@ -61,6 +61,7 @@ module caliptra_ss_top_tb
     logic                       cptra_ss_rst_b_i;
     logic                       cptra_ss_mci_cptra_rst_b_o;
     logic                       cptra_ss_rdc_clk_cg_o;
+    logic                       cptra_ss_mcu_clk_cg_o;
     logic                       cptra_ss_mcu_rst_b_o;
     
     logic                       cptra_ss_warm_reset_rdc_clk_dis_o;
@@ -1511,6 +1512,7 @@ module caliptra_ss_top_tb
 
         .cptra_ss_clk_i(core_clk),
         .cptra_ss_rdc_clk_cg_o,
+        .cptra_ss_mcu_clk_cg_o,
         .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i),
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
