@@ -70,14 +70,20 @@ module otp_ctrl_part_unbuf
 
   localparam logic [OtpByteAddrWidth:0] PartEnd = (OtpByteAddrWidth+1)'(Info.offset) +
                                                   (OtpByteAddrWidth+1)'(Info.size);
-  localparam int unsigned DigestOffsetInt = int'(PartEnd) - ScrmblBlockWidth/8;
+
+  // The digest is either the penultimate or ultimate 64-bit block of a partition
+  // depending on whether it is zeroizable or not. 
+  localparam int unsigned DigestOffsetInt = int'(PartEnd) - (Info.zeroizable ? 2*(ScrmblBlockWidth/8) : (ScrmblBlockWidth/8));
+  localparam int unsigned ZeroizeOffsetInt = int'(PartEnd) - ScrmblBlockWidth/8;
 
   localparam bit [OtpByteAddrWidth-1:0] DigestOffset = DigestOffsetInt[OtpByteAddrWidth-1:0];
+  localparam bit [OtpByteAddrWidth-1:0] ZeroizeOffset = ZeroizeOffsetInt[OtpByteAddrWidth-1:0];
 
   // Integration checks for parameters.
   `CALIPTRA_ASSERT_INIT(OffsetMustBeBlockAligned_A, (Info.offset % (ScrmblBlockWidth/8)) == 0)
   `CALIPTRA_ASSERT_INIT(SizeMustBeBlockAligned_A, (Info.size % (ScrmblBlockWidth/8)) == 0)
   `CALIPTRA_ASSERT_INIT(DigestOffsetMustBeRepresentable_A, DigestOffsetInt == int'(DigestOffset))
+  `CALIPTRA_ASSERT_INIT(ZeroizeOffsetMustBeRepresentable_A, ZeroizeOffsetInt == int'(ZeroizeOffset))
 
   ///////////////////////
   // OTP Partition FSM //
@@ -121,9 +127,10 @@ module otp_ctrl_part_unbuf
     ErrorSt          = 10'b0110110010
   } state_e;
 
-  typedef enum logic {
-    DigestAddrSel = 1'b0,
-    DataAddrSel = 1'b1
+  typedef enum logic [1:0] {
+    DigestAddrSel = 2'b00,
+    DataAddrSel = 2'b01,
+    ZeroizeAddrSel = 2'b10
   } addr_sel_e;
 
   state_e state_d, state_q;
@@ -187,7 +194,7 @@ module otp_ctrl_part_unbuf
     // Interleave MuBi4 chunks to create higher-order MuBis.
     // Even indices: (MuBi4True, MuBi4False)
     // Odd indices:  (MuBi4False, MuBi4True)
-    assign is_zeroized_pre[k] = (check_zeroized(zer_dig_post[k], 2'b11) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
+    assign is_zeroized_pre[k] = (check_zeroized_valid(zer_dig_post[k]) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
   end
 
   caliptra_prim_buf #(
@@ -265,6 +272,7 @@ module otp_ctrl_part_unbuf
       // the following initialization states.
       InitChkZerSt: begin
         otp_req_o = 1'b1;
+        otp_addr_sel = ZeroizeAddrSel;
         if (otp_gnt_i) begin
           state_d = InitChkZerWaitSt;
         end

@@ -84,12 +84,21 @@ module otp_ctrl_part_buf
   import caliptra_prim_mubi_pkg::*;
   import caliptra_prim_util_pkg::vbits;
 
-  localparam int unsigned DigestOffsetInt = (int'(Info.offset) +
-                                             int'(Info.size) - ScrmblBlockWidth/8);
-  localparam int NumScrmblBlocks = int'(Info.size) / (ScrmblBlockWidth/8);
+  // The digest is either the penultimate or ultimate 64-bit block of a partition
+  // depending on whether it is zeroizable or not.
+  localparam int unsigned DigestOffsetInt = int'(Info.offset) +
+                                            int'(Info.size) -
+                                            (Info.zeroizable ? 2*(ScrmblBlockWidth/8) : (ScrmblBlockWidth/8));
+
+  // The zeroization field is always the last 64-bit block if enabled.
+  localparam int unsigned ZeroizeOffsetInt = int'(Info.offset) + int'(Info.size) - ScrmblBlockWidth/8;
+
+  // The total number of 64-bit blocks without the zeroization field.
+  localparam int NumScrmblBlocks = (int'(Info.size) / (ScrmblBlockWidth/8)) - (Info.zeroizable ? 1 : 0);
   localparam int CntWidth = vbits(NumScrmblBlocks);
 
   localparam bit [OtpByteAddrWidth-1:0] DigestOffset = DigestOffsetInt[OtpByteAddrWidth-1:0];
+  localparam bit [OtpByteAddrWidth-1:0] ZeroizeOffset = ZeroizeOffsetInt[OtpByteAddrWidth-1:0];
 
   localparam int unsigned LastScrmblBlockInt = NumScrmblBlocks - 1;
   localparam int unsigned PenultimateScrmblBlockInt = NumScrmblBlocks - 2;
@@ -100,6 +109,7 @@ module otp_ctrl_part_buf
   `CALIPTRA_ASSERT_INIT(OffsetMustBeBlockAligned_A, (Info.offset % (ScrmblBlockWidth/8)) == 0)
   `CALIPTRA_ASSERT_INIT(SizeMustBeBlockAligned_A, (Info.size % (ScrmblBlockWidth/8)) == 0)
   `CALIPTRA_ASSERT_INIT(DigestOffsetMustBeRepresentable_A, DigestOffsetInt == int'(DigestOffset))
+  `CALIPTRA_ASSERT_INIT(ZeroizeOffsetMustBeRepresentable_A, ZeroizeOffsetInt == int'(ZeroizeOffset))
   `CALIPTRA_ASSERT(ScrambledImpliesDigest_A, Info.secret |-> Info.hw_digest)
   `CALIPTRA_ASSERT(WriteLockImpliesDigest_A, Info.read_lock |-> Info.hw_digest)
   `CALIPTRA_ASSERT(ReadLockImpliesDigest_A, Info.write_lock |-> Info.hw_digest)
@@ -167,9 +177,10 @@ module otp_ctrl_part_buf
     OtpData
   } data_sel_e;
 
-  typedef enum logic {
+  typedef enum logic [1:0] {
     PartOffset,
-    DigOffset
+    DigOffset,
+    ZerOffset
   } base_sel_e;
 
   state_e state_d, state_q;
@@ -230,7 +241,7 @@ module otp_ctrl_part_buf
     // Interleave MuBi4 chunks to create higher-order MuBis.
     // Even indices: (MuBi4True, MuBi4False)
     // Odd indices:  (MuBi4False, MuBi4True)
-    assign is_zeroized_pre[k] = (check_zeroized(zer_dig_post[k], 2'b11) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
+    assign is_zeroized_pre[k] = (check_zeroized_valid(zer_dig_post[k]) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
   end
 
   caliptra_prim_buf #(
@@ -312,7 +323,7 @@ module otp_ctrl_part_buf
       // the following initialization states.
       InitChkZerSt: begin
         otp_req_o = 1'b1;
-        base_sel = DigOffset;
+        base_sel = ZerOffset;
         if (otp_gnt_i) begin
           state_d = InitChkZerWaitSt;
         end
@@ -756,7 +767,8 @@ module otp_ctrl_part_buf
   );
 
   logic [OtpByteAddrWidth-1:0] addr_base;
-  assign addr_base = (base_sel == DigOffset) ? DigestOffset : Info.offset;
+  assign addr_base = (base_sel == DigOffset) ? DigestOffset  :
+                     (base_sel == ZerOffset) ? ZeroizeOffset : Info.offset;
 
   // Note that OTP works on halfword (16bit) addresses, hence need to
   // shift the addresses appropriately.
@@ -779,7 +791,7 @@ module otp_ctrl_part_buf
   /////////////////
 
   // SEC_CM: PART.DATA_REG.INTEGRITY
-  logic [Info.size*8-1:0] data;
+  logic [(int'(Info.size) - (Info.zeroizable ? 8 : 0))*8-1:0] data;
   otp_ctrl_ecc_reg #(
     .Width ( ScrmblBlockWidth ),
     .Depth ( NumScrmblBlocks  )
@@ -798,9 +810,9 @@ module otp_ctrl_part_buf
   assign init_done_o = mubi8_test_false_strict(dout_locked_q);
   // Hardware output gating.
   // Note that this is decoupled from the DAI access rules further below.
-  assign data_o = (init_done_o) ? data : DataDefault;
+  assign data_o = (init_done_o) ? {zer_dig, data} : DataDefault;
   // The digest does not have to be gated.
-  assign digest_o = data[$high(data_o) -: ScrmblBlockWidth];
+  assign digest_o = data[$high(data) -: ScrmblBlockWidth];
 
   ////////////////////////
   // DAI Access Control //
