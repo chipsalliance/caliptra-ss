@@ -56,7 +56,7 @@ module otp_ctrl_part_unbuf
   input                               otp_gnt_i,
   input                               otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]       otp_rdata_i,
-  input  prim_generic_otp_pkg::err_e                        otp_err_i,
+  input  prim_generic_otp_pkg::err_e  otp_err_i,
   input mubi8_t zer_trig_i,
   output mubi8_t zer_o
 );
@@ -242,7 +242,7 @@ module otp_ctrl_part_unbuf
 
     unique case (state_q)
       ///////////////////////////////////////////////////////////////////
-      // State right after reset. Wait here until we get a an
+      // State right after reset. Wait here until we get an
       // initialization request.
       ResetSt: begin
         if (init_req_i) begin
