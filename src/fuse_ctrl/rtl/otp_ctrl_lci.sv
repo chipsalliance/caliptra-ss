@@ -44,14 +44,14 @@ module otp_ctrl_lci
   output logic                              lci_prog_idle_o,
   // OTP interface
   output logic                              otp_req_o,
-  output prim_generic_otp_pkg::cmd_e                              otp_cmd_o,
+  output prim_generic_otp_pkg::cmd_e        otp_cmd_o,
   output logic [OtpSizeWidth-1:0]           otp_size_o,
   output logic [OtpIfWidth-1:0]             otp_wdata_o,
   output logic [OtpAddrWidth-1:0]           otp_addr_o,
   input                                     otp_gnt_i,
   input                                     otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]             otp_rdata_i,
-  input  prim_generic_otp_pkg::err_e                              otp_err_i
+  input  prim_generic_otp_pkg::err_e        otp_err_i
 );
 
   ////////////////////////

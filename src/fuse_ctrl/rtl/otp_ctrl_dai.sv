@@ -51,14 +51,14 @@ module otp_ctrl_dai
   output logic [NumDaiWords-1:0][31:0]   dai_rdata_o,
   // OTP interface
   output logic                           otp_req_o,
-  output prim_generic_otp_pkg::cmd_e             otp_cmd_o,
+  output prim_generic_otp_pkg::cmd_e     otp_cmd_o,
   output logic [OtpSizeWidth-1:0]        otp_size_o,
   output logic [OtpIfWidth-1:0]          otp_wdata_o,
   output logic [OtpAddrWidth-1:0]        otp_addr_o,
   input                                  otp_gnt_i,
   input                                  otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]          otp_rdata_i,
-  input  prim_generic_otp_pkg::err_e             otp_err_i,
+  input  prim_generic_otp_pkg::err_e     otp_err_i,
   // Scrambling mutex request
   output logic                           scrmbl_mtx_req_o,
   input                                  scrmbl_mtx_gnt_i,
@@ -73,7 +73,7 @@ module otp_ctrl_dai
   input  logic [ScrmblBlockWidth-1:0]    scrmbl_data_i,
   // Zeroization trigger indicators for each partition.
   // The first successful zeroization request will set the
-  // corresponding bit in the array.
+  // corresponding MuBi in the array.
   output mubi8_t [NumPart-1:0] zer_trigs_o,
   input mubi8_t [NumPart-1:0] zer_i
 );
@@ -724,15 +724,14 @@ module otp_ctrl_dai
       ZerSt: begin
         dai_prog_idle_o = 1'b0;
         if (// Fuses in a partition can only be zeroized if the partition
-            // is parametrized so.
+            // is parametrized to allow it.
             PartInfo[part_idx].zeroizable &&
             // Check that the address is not out-of-bounds.
             part_sel_valid &&
             // Check that the AXI user ID is correct.
             !discard_fuse_write_i &&
             // The entire address space of a zeroizable partition can be cleared
-            (PartInfo[part_idx].variant == Buffered && base_sel_q == DaiOffset) ||
-            (PartInfo[part_idx].variant != Buffered && base_sel_q == DaiOffset)) begin
+            base_sel_q == DaiOffset) begin
           otp_req_o = 1'b1;
           otp_cmd_o = prim_generic_otp_pkg::Zeroize;
           if (otp_gnt_i) begin
@@ -758,8 +757,7 @@ module otp_ctrl_dai
         // Continuously check write access and bail out if this is not consistent.
         if (PartInfo[part_idx].zeroizable &&
             // The entire address space of a zeroizable partition is writable.
-            (PartInfo[part_idx].variant == Buffered && base_sel_q == DaiOffset) ||
-            (PartInfo[part_idx].variant != Buffered && base_sel_q == DaiOffset)) begin
+            base_sel_q == DaiOffset) begin
           if (otp_rvalid_i) begin
             // Only store zeroized value in the CSRs and only if the request was
             // successful.
@@ -814,7 +812,7 @@ module otp_ctrl_dai
         error_d = FsmStateError;
       end
     end
-    // Unconditionally jump into the termainl error state when a zeroization
+    // Unconditionally jump into the terminal error state when a zeroization
     // indicator takes on an invalid value.
     for (int k = 0; k < NumPart; k++) begin
       if (mubi8_test_invalid(zer_trigs_o[k]) || mubi16_test_invalid(is_zeroized)) begin
