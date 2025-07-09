@@ -1,0 +1,96 @@
+From 8c270ff94bcb071804520c0e44d4b0b210d5ae3e Mon Sep 17 00:00:00 2001
+From: Andreas Kurth <adk@lowrisc.org>
+Date: Tue, 26 Aug 2025 11:48:35 +0200
+Subject: [PATCH] [fuse_ctrl] Extend smoke test with write (incl. digest) and readback
+
+---
+ .../smoke_test_fc_ocp_lock_zeroization.c      | 32 +++++++++++++++----
+ 1 file changed, 25 insertions(+), 7 deletions(-)
+
+diff --git a/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.c b/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.c
+index 22c274c..6d97707 100644
+--- a/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.c
++++ b/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.c
+@@ -45,7 +45,8 @@ void ocp_lock_zeroization(void) {
+     uint32_t data[2];
+ 
+     const partition_t hw_part = partitions[SECRET_LC_TRANSITION_PARTITION];
+-    const partition_t sw_part = partitions[SW_MANUF_PARTITION];
++    const partition_t sw_part0 = partitions[SW_MANUF_PARTITION];
++    const partition_t sw_part1 = partitions[CPTRA_SS_LOCK_HEK_PROD_0];
+     // A partition that is not zeroizable.
+     const partition_t ctrl_part = partitions[VENDOR_SECRET_PROD_PARTITION];
+     
+@@ -73,14 +74,32 @@ void ocp_lock_zeroization(void) {
+     // software-readable but the zeroization should nonetheless work.
+ 
+     // Zeroize fuse.
+-    dai_zer(sw_part.address, &data[0], &data[1], sw_part.granularity, 0);
++    dai_zer(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
+     if (data[0] != 0xFFFFFFFF) {
+         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
+         goto epilogue;
+     }
+     memset(data, 0, 2*sizeof(uint32_t));
+     // Zeroize marker field.
+-    dai_zer(sw_part.zer_address, &data[0], &data[1], 64, 0);
++    dai_zer(sw_part0.zer_address, &data[0], &data[1], 64, 0);
++    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
++        VPRINTF(LOW, "ERROR: digest is not zeroized\n");
++        goto epilogue;
++    }
++    memset(data, 0, 2*sizeof(uint32_t));
++
++    // Write, then calculate & write digest, then read an unbuffered partition. Finally, zeroize the
++    // partition.
++    uint32_t exp_data = 0xA5A5A5A5;
++    data[0] = exp_data;
++    dai_wr(sw_part1.address, data[0], data[1], sw_part1.granularity, 0);
++    calculate_digest(sw_part1.address);
++    dai_rd(sw_part1.address, &data[0], &data[1], sw_part1.granularity, 0);
++    if (data[0] != exp_data) {
++        VPRINTF(LOW, "ERROR: read data does not match written data\n");
++        goto epilogue;
++    }
++    dai_zer(sw_part1.zer_address, &data[0], &data[1], sw_part1.granularity, 0);
+     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+         VPRINTF(LOW, "ERROR: digest is not zeroized\n");
+         goto epilogue;
+@@ -89,7 +108,7 @@ void ocp_lock_zeroization(void) {
+ 
+     // Attempting to zeroize a partition that is not zeroizable must
+     // result in an error.
+-    dai_zer(ctrl_part.address, &data[0], &data[1], sw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
++    dai_zer(ctrl_part.address, &data[0], &data[1], sw_part0.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+     if (data[0] != 0x0 || data[1] != 0x0) {
+         VPRINTF(LOW, "ERROR: fuse is not 0.\n");
+         goto epilogue;
+@@ -112,7 +131,7 @@ void ocp_lock_zeroization(void) {
+     }
+     memset(data, 0, 2*sizeof(uint32_t));
+     // Sw part fuse.
+-    dai_zer(sw_part.address, &data[0], &data[1], sw_part.granularity, 0);
++    dai_zer(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
+     if (data[0] != 0xFFFFFFFF) {
+         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
+         goto epilogue;
+@@ -126,7 +145,7 @@ void ocp_lock_zeroization(void) {
+         goto epilogue;
+     }
+     memset(data, 0, 2*sizeof(uint32_t));
+-    dai_rd(sw_part.zer_address, &data[0], &data[1], 64, 0);
++    dai_rd(sw_part0.zer_address, &data[0], &data[1], 64, 0);
+     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
+         goto epilogue;
+@@ -148,7 +167,6 @@ void main (void) {
+     wait_dai_op_idle(0);
+       
+     lcc_initialization();
+-    grant_mcu_for_fc_writes(); 
+ 
+     initialize_otp_controller();
+ 
+-- 
+2.49.0
+

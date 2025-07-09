@@ -1,0 +1,111 @@
+From d9e5ca2db46f4e976bb1227011b7a0318c08e1ee Mon Sep 17 00:00:00 2001
+From: Andreas Kurth <adk@lowrisc.org>
+Date: Tue, 26 Aug 2025 16:29:00 +0200
+Subject: [PATCH] [fuse_ctrl, rtl] Clear broadcast valid on any zeroization
+
+Note that the broadcast `valid` bit gets cleared even for partitions on
+whose initalization the `valid` bit does NOT depend (per requirements).
+---
+ src/fuse_ctrl/rtl/otp_ctrl.sv                    |  2 +-
+ src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv           | 11 +++++++++++
+ src/fuse_ctrl/templates/otp_ctrl_part_pkg.sv.tpl |  4 ++++
+ 3 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/src/fuse_ctrl/rtl/otp_ctrl.sv b/src/fuse_ctrl/rtl/otp_ctrl.sv
+index 1a85501..54b6fbb 100644
+--- a/src/fuse_ctrl/rtl/otp_ctrl.sv
++++ b/src/fuse_ctrl/rtl/otp_ctrl.sv
+@@ -1338,7 +1338,7 @@ end
+                             == lc_ctrl_state_pkg::LcStScrap);
+   // Make sure the broadcast valid is flopped before sending it out.
+   lc_ctrl_pkg::lc_tx_t otp_broadcast_valid_q;
+-  assign otp_broadcast = named_broadcast_assign(part_init_done, part_buf_data);
++  assign otp_broadcast = named_broadcast_assign(part_init_done, part_is_zer, part_buf_data);
+   caliptra_prim_lc_sender u_prim_lc_sender_otp_broadcast_valid (
+     .clk_i,
+     .rst_ni,
+diff --git a/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv b/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
+index edd7dc7..1d13514 100644
+--- a/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
++++ b/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
+@@ -1081,6 +1081,7 @@ package otp_ctrl_part_pkg;
+ 
+   function automatic otp_broadcast_t named_broadcast_assign(
+       logic [NumPart-1:0] part_init_done,
++      mubi8_t [NumPart-1:0] part_is_zer,
+       logic [$bits(PartInvDefault)/8-1:0][7:0] part_buf_data);
+     otp_broadcast_t otp_broadcast;
+     logic valid, unused;
+@@ -1107,9 +1108,11 @@ package otp_ctrl_part_pkg;
+     // SW_MANUF_PARTITION
+     unused ^= ^{part_init_done[SwManufPartitionIdx],
+                 part_buf_data[SwManufPartitionOffset +: SwManufPartitionSize]};
++    valid &= mubi8_test_false_strict(part_is_zer[SwManufPartitionIdx]);
+     // SECRET_LC_TRANSITION_PARTITION
+     unused ^= ^{part_init_done[SecretLcTransitionPartitionIdx],
+                 part_buf_data[SecretLcTransitionPartitionOffset +: SecretLcTransitionPartitionSize]};
++    valid &= mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx]);
+     // SVN_PARTITION
+     unused ^= ^{part_init_done[SvnPartitionIdx],
+                 part_buf_data[SvnPartitionOffset +: SvnPartitionSize]};
+@@ -1134,27 +1137,35 @@ package otp_ctrl_part_pkg;
+     // CPTRA_SS_LOCK_HEK_PROD_0
+     unused ^= ^{part_init_done[CptraSsLockHekProd0Idx],
+                 part_buf_data[CptraSsLockHekProd0Offset +: CptraSsLockHekProd0Size]};
++    valid &= mubi8_test_false_strict(part_is_zer[CptraSsLockHekProd0Idx]);
+     // CPTRA_SS_LOCK_HEK_PROD_1
+     unused ^= ^{part_init_done[CptraSsLockHekProd1Idx],
+                 part_buf_data[CptraSsLockHekProd1Offset +: CptraSsLockHekProd1Size]};
++    valid &= mubi8_test_false_strict(part_is_zer[CptraSsLockHekProd1Idx]);
+     // CPTRA_SS_LOCK_HEK_PROD_2
+     unused ^= ^{part_init_done[CptraSsLockHekProd2Idx],
+                 part_buf_data[CptraSsLockHekProd2Offset +: CptraSsLockHekProd2Size]};
++    valid &= mubi8_test_false_strict(part_is_zer[CptraSsLockHekProd2Idx]);
+     // CPTRA_SS_LOCK_HEK_PROD_3
+     unused ^= ^{part_init_done[CptraSsLockHekProd3Idx],
+                 part_buf_data[CptraSsLockHekProd3Offset +: CptraSsLockHekProd3Size]};
++    valid &= mubi8_test_false_strict(part_is_zer[CptraSsLockHekProd3Idx]);
+     // CPTRA_SS_LOCK_HEK_PROD_4
+     unused ^= ^{part_init_done[CptraSsLockHekProd4Idx],
+                 part_buf_data[CptraSsLockHekProd4Offset +: CptraSsLockHekProd4Size]};
++    valid &= mubi8_test_false_strict(part_is_zer[CptraSsLockHekProd4Idx]);
+     // CPTRA_SS_LOCK_HEK_PROD_5
+     unused ^= ^{part_init_done[CptraSsLockHekProd5Idx],
+                 part_buf_data[CptraSsLockHekProd5Offset +: CptraSsLockHekProd5Size]};
++    valid &= mubi8_test_false_strict(part_is_zer[CptraSsLockHekProd5Idx]);
+     // CPTRA_SS_LOCK_HEK_PROD_6
+     unused ^= ^{part_init_done[CptraSsLockHekProd6Idx],
+                 part_buf_data[CptraSsLockHekProd6Offset +: CptraSsLockHekProd6Size]};
++    valid &= mubi8_test_false_strict(part_is_zer[CptraSsLockHekProd6Idx]);
+     // CPTRA_SS_LOCK_HEK_PROD_7
+     unused ^= ^{part_init_done[CptraSsLockHekProd7Idx],
+                 part_buf_data[CptraSsLockHekProd7Offset +: CptraSsLockHekProd7Size]};
++    valid &= mubi8_test_false_strict(part_is_zer[CptraSsLockHekProd7Idx]);
+     // LIFE_CYCLE
+     unused ^= ^{part_init_done[LifeCycleIdx],
+                 part_buf_data[LifeCycleOffset +: LifeCycleSize]};
+diff --git a/src/fuse_ctrl/templates/otp_ctrl_part_pkg.sv.tpl b/src/fuse_ctrl/templates/otp_ctrl_part_pkg.sv.tpl
+index bfa307a..943534b 100755
+--- a/src/fuse_ctrl/templates/otp_ctrl_part_pkg.sv.tpl
++++ b/src/fuse_ctrl/templates/otp_ctrl_part_pkg.sv.tpl
+@@ -310,6 +310,7 @@ package otp_ctrl_part_pkg;
+ 
+   function automatic otp_broadcast_t named_broadcast_assign(
+       logic [NumPart-1:0] part_init_done,
++      mubi8_t [NumPart-1:0] part_is_zer,
+       logic [$bits(PartInvDefault)/8-1:0][7:0] part_buf_data);
+     otp_broadcast_t otp_broadcast;
+     logic valid, unused;
+@@ -328,6 +329,9 @@ package otp_ctrl_part_pkg;
+     unused ^= ^{part_init_done[${part_name_camel}Idx],
+                 part_buf_data[${part_name_camel}Offset +: ${part_name_camel}Size]};
+   % endif
++  % if part["zeroizable"]:
++    valid &= mubi8_test_false_strict(part_is_zer[${part_name_camel}Idx]);
++  % endif
+ % endfor
+     otp_broadcast.valid = lc_ctrl_pkg::lc_tx_bool_to_lc_tx(valid);
+     return otp_broadcast;
+-- 
+2.49.0
+

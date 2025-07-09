@@ -53,7 +53,7 @@ module otp_ctrl_part_buf
   output logic [Info.size*8-1:0]      data_o,
   // OTP interface
   output logic                        otp_req_o,
-  output prim_generic_otp_pkg::cmd_e                        otp_cmd_o,
+  output prim_generic_otp_pkg::cmd_e  otp_cmd_o,
   output logic [OtpSizeWidth-1:0]     otp_size_o,
   output logic [OtpIfWidth-1:0]       otp_wdata_o,
   output logic [OtpAddrWidth-1:0]     otp_addr_o,
@@ -296,7 +296,6 @@ module otp_ctrl_part_buf
       // initialization request.
       ResetSt: begin
         if (init_req_i) begin
-          state_d = InitSt;
           // If enabled, check if partition is zeroized first.
           if (Info.zeroizable) begin
             state_d = InitChkZerSt;
@@ -306,7 +305,7 @@ module otp_ctrl_part_buf
         end
       end
       ///////////////////////////////////////////////////////////////////
-      // Read out of the digest. Wait here until the OTP request
+      // Read out the digest. Wait here until the OTP request
       // has been granted. The digest is read in raw (without ECC check)
       // and only serves to check whether the partition is in the 
       // zeroization state. The buffered digest is then read out during

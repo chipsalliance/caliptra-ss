@@ -1,0 +1,101 @@
+From b1b29960d8be0c3b2928196a16b94fa69232578c Mon Sep 17 00:00:00 2001
+From: Andreas Kurth <adk@lowrisc.org>
+Date: Tue, 26 Aug 2025 18:10:38 +0200
+Subject: [PATCH] [fuse_ctrl, rtl] Change zeroizable partitions
+
+---
+ src/fuse_ctrl/data/otp_ctrl_mmap.hjson        |  6 ++---
+ .../smoke_test_fc_ocp_lock_zeroization.c      | 26 +++++++++----------
+ 2 files changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/src/fuse_ctrl/data/otp_ctrl_mmap.hjson b/src/fuse_ctrl/data/otp_ctrl_mmap.hjson
+index 1afae63..52c520f 100755
+--- a/src/fuse_ctrl/data/otp_ctrl_mmap.hjson
++++ b/src/fuse_ctrl/data/otp_ctrl_mmap.hjson
+@@ -251,7 +251,7 @@
+             integrity:    true,
+             bkout_type:   false,
+             lc_phase:     "LcStDev",
+-            zeroizable:   true,
++            zeroizable:   false,
+             items: [
+                 {
+                     name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
+@@ -382,7 +382,7 @@
+             integrity:    true,
+             bkout_type:   false,
+             lc_phase:     "LcStTestUnlocked0",
+-            zeroizable:   true,
++            zeroizable:   false,
+             items: [
+                 {
+                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_1",
+@@ -1327,7 +1327,7 @@
+             integrity:    true,
+             bkout_type:   true,
+             lc_phase:     "LcStProd",
+-            zeroizable:   false,
++            zeroizable:   true,
+             items: [
+                 {
+                     name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_0",
+diff --git a/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.c b/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.c
+index 6d97707..23f192f 100644
+--- a/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.c
++++ b/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.c
+@@ -37,21 +37,21 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
+ #endif
+ 
+ /**
+- * SW_MANUF_PARTITION and SECRET_LC_TRANSITION_PARTITION are zeroizable
+- * while the others are not. This test verifies basic functionalities
+- * of the zeroization flow.
++ * VENDOR_SECRET_PROD_PARTITION and CPTRA_SS_LOCK_HEK_PROD_* partitions
++ * are zeroizable while the others are not. This test verifies basic
++ * functionalities of the zeroization flow.
+  */
+ void ocp_lock_zeroization(void) {
+     uint32_t data[2];
+ 
+-    const partition_t hw_part = partitions[SECRET_LC_TRANSITION_PARTITION];
+-    const partition_t sw_part0 = partitions[SW_MANUF_PARTITION];
+-    const partition_t sw_part1 = partitions[CPTRA_SS_LOCK_HEK_PROD_0];
++    const partition_t hw_part = partitions[VENDOR_SECRET_PROD_PARTITION];
++    const partition_t sw_part0 = partitions[CPTRA_SS_LOCK_HEK_PROD_0];
++    const partition_t sw_part1 = partitions[CPTRA_SS_LOCK_HEK_PROD_1];
+     // A partition that is not zeroizable.
+-    const partition_t ctrl_part = partitions[VENDOR_SECRET_PROD_PARTITION];
++    const partition_t ctrl_part = partitions[SW_MANUF_PARTITION];
+     
+-    // Zeroize the first 64-bit word of the hardware SECRET_LC_TRANSITION_PARTITION
+-    // and its digest. This partition is buffered, secret and already locked.
++    // Zeroize the first 64-bit word of the hardware partition and its
++    // digest. This partition is buffered, secret and already locked.
+     // Zeroization should work normally.
+ 
+     // Zeroize fuse.
+@@ -69,8 +69,8 @@ void ocp_lock_zeroization(void) {
+     }
+     memset(data, 0, 2*sizeof(uint32_t));
+ 
+-    // Zeroize the first 32-bit word of the software SW_MANUF_PARTITION
+-    // and its digest. This partition is unbuffered, unlocked and
++    // Zeroize the first 32-bit word of the software partition and its
++    // digest. This partition is unbuffered, unlocked and
+     // software-readable but the zeroization should nonetheless work.
+ 
+     // Zeroize fuse.
+@@ -88,8 +88,8 @@ void ocp_lock_zeroization(void) {
+     }
+     memset(data, 0, 2*sizeof(uint32_t));
+ 
+-    // Write, then calculate & write digest, then read an unbuffered partition. Finally, zeroize the
+-    // partition.
++    // Write, then calculate & write digest, then read an unbuffered
++    // partition. Finally, zeroize the partition.
+     uint32_t exp_data = 0xA5A5A5A5;
+     data[0] = exp_data;
+     dai_wr(sw_part1.address, data[0], data[1], sw_part1.granularity, 0);
+-- 
+2.49.0
+
