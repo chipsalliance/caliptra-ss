@@ -1157,7 +1157,8 @@ end
         .otp_rvalid_i    ( part_otp_rvalid[k]           ),
         .otp_rdata_i     ( part_otp_rdata               ),
         .otp_err_i       ( part_otp_err                 ),
-        .zer_trig_i      ( part_zer_trigs[k]            )
+        .zer_trig_i      ( part_zer_trigs[k]            ),
+        .zer_o           ( part_is_zer[k]               )
       );
 
       // Tie off unused connections.
