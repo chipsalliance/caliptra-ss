@@ -16,7 +16,7 @@ It has been generated with ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partit
 |         |                                   |            |      64bit       |           [SECRET_PROD_PARTITION_2_DIGEST](#Reg_secret_prod_partition_2_digest_0)           |     0x0B8      |     8      |
 |    5    |      SECRET_PROD_PARTITION_3      |     16     |      64bit       |                                 CPTRA_CORE_FIELD_ENTROPY_3                                  |     0x0C0      |     8      |
 |         |                                   |            |      64bit       |           [SECRET_PROD_PARTITION_3_DIGEST](#Reg_secret_prod_partition_3_digest_0)           |     0x0C8      |     8      |
-|    6    |        SW_MANUF_PARTITION         |    520     |      32bit       |                              CPTRA_CORE_ANTI_ROLLBACK_DISABLE                               |     0x0D0      |     4      |
+|    6    |        SW_MANUF_PARTITION         |    528     |      32bit       |                              CPTRA_CORE_ANTI_ROLLBACK_DISABLE                               |     0x0D0      |     4      |
 |         |                                   |            |      32bit       |                             CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR                              |     0x0D4      |     96     |
 |         |                                   |            |      32bit       |                               SOC_SPECIFIC_IDEVID_CERTIFICATE                               |     0x134      |     4      |
 |         |                                   |            |      32bit       |                           CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER                            |     0x138      |     16     |
