@@ -265,11 +265,10 @@ module otp_ctrl_part_unbuf
         end
       end
       ///////////////////////////////////////////////////////////////////
-      // Read out of the digest. Wait here until the OTP request
-      // has been granted. The digest is read in raw (without ECC check)
+      // Read out of the zeroization marker. Wait here until the OTP request
+      // has been granted. The marker is read in raw (without ECC check)
       // and only serves to check whether the partition is in the 
-      // zeroization state. The buffered digest is then read out during
-      // the following initialization states.
+      // zeroization state.
       InitChkZerSt: begin
         otp_req_o = 1'b1;
         otp_addr_sel = ZeroizeAddrSel;
@@ -278,7 +277,7 @@ module otp_ctrl_part_unbuf
         end
       end
       ///////////////////////////////////////////////////////////////////
-      // Wait for OTP response and and write read out digest into a
+      // Wait for OTP response and and write read out marker into a
       // register.
       InitChkZerWaitSt: begin
         if (otp_rvalid_i) begin
@@ -468,7 +467,8 @@ module otp_ctrl_part_unbuf
   // Note that OTP works on halfword (16bit) addresses, hence need to
   // shift the addresses appropriately.
   logic [OtpByteAddrWidth-1:0] addr_calc;
-  assign addr_calc = (otp_addr_sel == DigestAddrSel) ? DigestOffset : {tlul_addr_q, 2'b00};
+  assign addr_calc = (otp_addr_sel == DigestAddrSel)  ? DigestOffset  : 
+                     (otp_addr_sel == ZeroizeAddrSel) ? ZeroizeOffset : {tlul_addr_q, 2'b00};
   assign otp_addr_o = addr_calc[OtpByteAddrWidth-1:OtpAddrShift];
 
   if (OtpAddrShift > 0) begin : gen_unused
@@ -477,7 +477,7 @@ module otp_ctrl_part_unbuf
   end
 
   // Request 32bit except in case of the digest.
-  assign otp_size_o = (otp_addr_sel == DigestAddrSel) ?
+  assign otp_size_o = ((otp_addr_sel == DigestAddrSel) || (otp_addr_sel == ZeroizeAddrSel)) ?
                       OtpSizeWidth'(unsigned'(ScrmblBlockWidth / OtpWidth - 1)) :
                       OtpSizeWidth'(unsigned'(32 / OtpWidth - 1));
 

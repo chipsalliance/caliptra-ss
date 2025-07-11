@@ -316,11 +316,10 @@ module otp_ctrl_part_buf
         end
       end
       ///////////////////////////////////////////////////////////////////
-      // Read out the digest. Wait here until the OTP request
-      // has been granted. The digest is read in raw (without ECC check)
+      // Read out the zeroization marker. Wait here until the OTP request
+      // has been granted. The marker is read in raw (without ECC check)
       // and only serves to check whether the partition is in the 
-      // zeroization state. The buffered digest is then read out during
-      // the following initialization states.
+      // zeroization state.
       InitChkZerSt: begin
         otp_req_o = 1'b1;
         base_sel = ZerOffset;
@@ -329,7 +328,7 @@ module otp_ctrl_part_buf
         end
       end
       ///////////////////////////////////////////////////////////////////
-      // Wait for OTP response and and write read out digest into a
+      // Wait for OTP response and and write read out marker into a
       // register.
       InitChkZerWaitSt: begin
         if (otp_rvalid_i) begin
@@ -344,7 +343,7 @@ module otp_ctrl_part_buf
       end
       ///////////////////////////////////////////////////////////////////
       // Configurations based on the read out and flopped zeroization
-      // digest. Currently, this only affects the OTP command.
+      // marker. Currently, this only affects the OTP command.
       InitChkZerCnfSt: begin
         state_d = InitSt;
         // Use ECC-protected reads when the partition is not zeroized.
