@@ -193,8 +193,8 @@ module otp_ctrl_part_buf
   logic ecc_err;
   logic buffer_reg_en;
   logic [ScrmblBlockWidth-1:0] data_mux;
-  logic zer_dig_en, zer_dig_ecc_err;
-  logic [ScrmblBlockWidth-1:0] zer_dig;
+  logic zer_mrk_en, zer_mrk_ecc_err;
+  logic [ScrmblBlockWidth-1:0] zer_mrk;
   prim_generic_otp_pkg::cmd_e cmd_d;
 
   // Output partition error state.
@@ -226,7 +226,7 @@ module otp_ctrl_part_buf
 
   // Compose several individual MuBis into a larger MuBi. The resulting
   // value must always be a valid MuBi constant (either `true` or `false`).
-  logic   [ZerFanout-1:0][ScrmblBlockWidth-1:0] zer_dig_post;
+  logic   [ZerFanout-1:0][ScrmblBlockWidth-1:0] zer_mrk_post;
   mubi4_t [ZerFanout-1:0] is_zeroized_pre;
   mubi8_t is_zeroized;
 
@@ -234,14 +234,14 @@ module otp_ctrl_part_buf
     caliptra_prim_buf #(
       .Width(ScrmblBlockWidth)
     ) u_rdata_buf (
-      .in_i  ( zer_dig         ),
-      .out_o ( zer_dig_post[k] )
+      .in_i  ( zer_mrk         ),
+      .out_o ( zer_mrk_post[k] )
     );
 
     // Interleave MuBi4 chunks to create higher-order MuBis.
     // Even indices: (MuBi4True, MuBi4False)
     // Odd indices:  (MuBi4False, MuBi4True)
-    assign is_zeroized_pre[k] = (check_zeroized_valid(zer_dig_post[k]) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
+    assign is_zeroized_pre[k] = (check_zeroized_valid(zer_mrk_post[k]) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
   end
 
   caliptra_prim_buf #(
@@ -296,7 +296,7 @@ module otp_ctrl_part_buf
     integ_chk_ack_o = 1'b0;
 
     // Zeroization digest register enable
-    zer_dig_en = 1'b0;
+    zer_mrk_en = 1'b0;
 
     // Flopped OTP command.
     cmd_d = otp_cmd_o;
@@ -316,11 +316,10 @@ module otp_ctrl_part_buf
         end
       end
       ///////////////////////////////////////////////////////////////////
-      // Read out the digest. Wait here until the OTP request
-      // has been granted. The digest is read in raw (without ECC check)
+      // Read out the zeroization marker. Wait here until the OTP request
+      // has been granted. The marker is read in raw (without ECC check)
       // and only serves to check whether the partition is in the 
-      // zeroization state. The buffered digest is then read out during
-      // the following initialization states.
+      // zeroization state.
       InitChkZerSt: begin
         otp_req_o = 1'b1;
         base_sel = ZerOffset;
@@ -329,13 +328,13 @@ module otp_ctrl_part_buf
         end
       end
       ///////////////////////////////////////////////////////////////////
-      // Wait for OTP response and and write read out digest into a
+      // Wait for OTP response and and write read out marker into a
       // register.
       InitChkZerWaitSt: begin
         if (otp_rvalid_i) begin
           if (otp_err == NoError) begin
             state_d = InitChkZerCnfSt;
-            zer_dig_en = 1'b1;
+            zer_mrk_en = 1'b1;
           end else begin
             state_d = ErrorSt;
             error_d = otp_err;
@@ -344,7 +343,7 @@ module otp_ctrl_part_buf
       end
       ///////////////////////////////////////////////////////////////////
       // Configurations based on the read out and flopped zeroization
-      // digest. Currently, this only affects the OTP command.
+      // marker. Currently, this only affects the OTP command.
       InitChkZerCnfSt: begin
         state_d = InitSt;
         // Use ECC-protected reads when the partition is not zeroized.
@@ -729,7 +728,7 @@ module otp_ctrl_part_buf
     end
     // Unconditionally transfer the partition into the terminal error state
     // when an invalid indicator is detected.
-    if (mubi8_test_invalid(is_zeroized) || zer_dig_ecc_err) begin
+    if (mubi8_test_invalid(is_zeroized) || zer_mrk_ecc_err) begin
       state_d = ErrorSt;
       fsm_err_o = 1'b1;
       error_d = FsmStateError;
@@ -810,7 +809,7 @@ module otp_ctrl_part_buf
   assign init_done_o = mubi8_test_false_strict(dout_locked_q);
   // Hardware output gating.
   // Note that this is decoupled from the DAI access rules further below.
-  assign data_o = (init_done_o) ? {zer_dig, data} : DataDefault;
+  assign data_o = (init_done_o) ? ((Info.zeroizable) ? {zer_mrk, data} : data) : DataDefault;
   // The digest does not have to be gated.
   assign digest_o = data[$high(data) -: ScrmblBlockWidth];
 
@@ -905,24 +904,24 @@ module otp_ctrl_part_buf
     .q_o     ( { otp_cmd_o }  )
   );
 
-  if (Info.zeroizable) begin : zer_dig_reg
+  if (Info.zeroizable) begin : zer_mrk_reg
     otp_ctrl_ecc_reg #(
       .Width ( ScrmblBlockWidth ),
       .Depth ( 1 )
-    ) u_zer_dig_reg (
+    ) u_zer_mrk_reg (
       .clk_i,
-      // A partition is always initialized as not zeroized before the digest is checked.
+      // A partition is always initialized as not zeroized before the marker is checked.
       .rst_ni,
-      .wren_i    ( zer_dig_en      ),
+      .wren_i    ( zer_mrk_en      ),
       .addr_i    ( '0              ),
       .wdata_i   ( data_mux        ),
       .rdata_o   (                 ),
-      .data_o    ( zer_dig         ),
-      .ecc_err_o ( zer_dig_ecc_err )
+      .data_o    ( zer_mrk         ),
+      .ecc_err_o ( zer_mrk_ecc_err )
     );
   end else begin
-    assign zer_dig = '0;
-    assign zer_dig_ecc_err = 1'b0;
+    assign zer_mrk = '0;
+    assign zer_mrk_ecc_err = 1'b0;
   end
 
   ////////////////

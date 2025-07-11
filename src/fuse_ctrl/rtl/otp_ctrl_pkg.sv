@@ -105,26 +105,15 @@ package otp_ctrl_pkg;
   //////////////////////////
 
   // A 64-bit word is recognized as correctly zeroized if and only if the number of
-  // set bits is greater or equal `ZeroizationValidBound`. Conversely, if a zeroization
-  // results in word with less than `ZeroizationFatalBound` set bits without the OTP
-  // macro signalling a corresponding error, then a fatal (possibly of malicious
-  // nature) fault has occurred. If the number of set bits falls between the two bounds,
-  // then it is at the discretion of the fuse_ctrl to act accordingly. For example, the
-  // DAI might decide to discard the read out word without entering a terminal state.
-  // Integrators should calibrate these two bounds in line with the macro-specific
-  // ratio of potentially stuck-at-0 bits.
-  parameter int unsigned ZeroizationValidBound = ScrmblBlockWidth - 8;        // 87.50%
-  parameter int unsigned ZeroizationFatalBound = (ScrmblBlockWidth >> 2) * 3; // 75.00%
+  // set bits is greater or equal `ZeroizationValidBound`. Integrators should
+  // calibrate these this bounds in line with the macro-specific ratio of potentially
+  // stuck-at-0 bits.
+  parameter int unsigned ZeroizationValidBound = ScrmblBlockWidth - 6; // 90.625%
 
   // Check if the zeroization marker falls into the valid range.
   function automatic logic check_zeroized_valid(logic [ScrmblBlockWidth-1:0] word);
     return $countones(word) >= ZeroizationValidBound;
   endfunction : check_zeroized_valid
-
-  // Check if the zeroization marker falls into the fatal range.
-  function automatic logic check_zeroized_fatal(logic [ScrmblBlockWidth-1:0] word);
-    return $countones(word) < ZeroizationFatalBound;
-  endfunction : check_zeroized_fatal
 
   ///////////////////////////////
   // Typedefs for LC Interface //

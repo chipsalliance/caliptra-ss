@@ -119,8 +119,14 @@ void ocp_lock_zeroization(void) {
     }
     memset(data, 0, 2*sizeof(uint32_t));
 
-    // Reading the digest field should still work, now without ECC.
+    // Reading the zeroization field should still work, now without ECC.
     dai_rd(hw_part.zer_address, &data[0], &data[1], hw_part.granularity, 0);
+    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+        VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
+        goto epilogue;
+    }
+    memset(data, 0, 2*sizeof(uint32_t));
+    dai_rd(sw_part.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;

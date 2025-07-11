@@ -209,9 +209,7 @@ module otp_ctrl_dai
   // value must always be a valid MuBi constant (either `true` or `false`).
   logic   [ZerFanout-1:0][ScrmblBlockWidth-1:0] otp_rdata_post;
   mubi4_t [ZerFanout-1:0] zeroized_valid_pre;
-  mubi4_t [ZerFanout-1:0] zeroized_fatal_pre;
   mubi16_t zeroized_valid;
-  mubi16_t zeroized_fatal;
   for (genvar k = 0; k < ZerFanout; k++) begin
     caliptra_prim_buf #(
       .Width(ScrmblBlockWidth)
@@ -220,11 +218,10 @@ module otp_ctrl_dai
       .out_o ( otp_rdata_post[k] )
     );
 
-    // Interleave MuBi4 chunks to a create higher-order MuBis.
+    // Interleave MuBi4 chunks to create a higher-order MuBi.
     // Even indices: (MuBi4True, MuBi4False)
     // Odd indices:  (MuBi4False, MuBi4True)
     assign zeroized_valid_pre[k] = (check_zeroized_valid(otp_rdata_post[k]) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
-    assign zeroized_fatal_pre[k] = (check_zeroized_fatal(otp_rdata_post[k]) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
   end
 
   caliptra_prim_buf #(
@@ -232,13 +229,6 @@ module otp_ctrl_dai
   ) u_zeroized_valid_buf (
     .in_i  ( zeroized_valid_pre ),
     .out_o ( {zeroized_valid}   )
-  );
-
-  caliptra_prim_buf #(
-    .Width(MuBi16Width)
-  ) u_zeroized_fatal_buf (
-    .in_i  ( zeroized_fatal_pre ),
-    .out_o ( {zeroized_fatal}   )
   );
 
   always_comb begin : p_fsm
@@ -784,12 +774,6 @@ module otp_ctrl_dai
                   // periodic checks that could fail.
                   zer_trigs_d[part_idx] = MuBi8True;
                 end
-                // Enter the terminal error state when a zeroization does not reach
-                // the fatal threshold.
-                if (mubi16_test_true_strict(zeroized_fatal)) begin
-                  state_d = ErrorSt;
-                  error_d = FsmStateError;
-                end
               // For software partitions, the read out data is always released.
               end else begin
                 data_en = 1'b1;
@@ -927,6 +911,12 @@ module otp_ctrl_dai
     end else if ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
         (base_sel_q == DaiOffset) &&
         ({dai_addr_i[OtpByteAddrWidth-1:3], 2'b0} == digest_addr_lut[part_idx])) begin
+      otp_size_o = OtpSizeWidth'(unsigned'(ScrmblBlockWidth / OtpWidth - 1));
+      addr_base = {dai_addr_i[OtpByteAddrWidth-1:3], 3'h0};
+    // 64bit transaction if the DAI address points to the partition's zeroization marker.
+    end else if ((PartInfo[part_idx].zeroizable) &&
+        (base_sel_q == DaiOffset) &&
+        ({dai_addr_i[OtpByteAddrWidth-1:3], 2'b0} == zeroize_addr_lut[part_idx])) begin
       otp_size_o = OtpSizeWidth'(unsigned'(ScrmblBlockWidth / OtpWidth - 1));
       addr_base = {dai_addr_i[OtpByteAddrWidth-1:3], 3'h0};
     end
