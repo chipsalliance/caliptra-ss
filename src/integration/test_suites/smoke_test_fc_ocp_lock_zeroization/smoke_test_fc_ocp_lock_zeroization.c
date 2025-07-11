@@ -60,8 +60,8 @@ void ocp_lock_zeroization(void) {
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
-    // Zeroize digest.
-    dai_zer(hw_part.digest_address, &data[0], &data[1], 64, 0);
+    // Zeroize marker field.
+    dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: digest is not zeroized\n");
         goto epilogue;
@@ -79,8 +79,8 @@ void ocp_lock_zeroization(void) {
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
-    // Zeroize digest.
-    dai_zer(sw_part.digest_address, &data[0], &data[1], 64, 0);
+    // Zeroize marker field.
+    dai_zer(sw_part.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: digest is not zeroized\n");
         goto epilogue;
@@ -120,7 +120,7 @@ void ocp_lock_zeroization(void) {
     memset(data, 0, 2*sizeof(uint32_t));
 
     // Reading the digest field should still work, now without ECC.
-    dai_rd(hw_part.digest_address, &data[0], &data[1], hw_part.granularity, 0);
+    dai_rd(hw_part.zer_address, &data[0], &data[1], hw_part.granularity, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
