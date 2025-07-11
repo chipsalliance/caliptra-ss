@@ -820,6 +820,7 @@ module lc_ctrl_fsm
     .fsm_state_i           ( fsm_state_q    ),
     .trans_target_i,
     .volatile_raw_unlock_i,
+    .test_tokens_valid_i,
     .trans_cmd_i,
     .next_lc_state_o       ( next_lc_state  ),
     .next_lc_cnt_o         ( next_lc_cnt    ),
