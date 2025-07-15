@@ -120,7 +120,7 @@ module sub2tlul
     assign tl_o.a_opcode    = opcode;
     assign tl_o.a_source    = id;
     assign tl_o.a_mask      = mask_local;
-    assign tl_o.a_data      = write ? wdata : 'h0;
+    assign tl_o.a_data      = !write ? TL_DW'(0) : wdata;
     assign tl_o.a_size      = size[top_pkg::TL_SZW-1:0];
 
     // TL-UL TO AXI SUB RESPONSE
