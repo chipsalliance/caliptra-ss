@@ -26,6 +26,7 @@ module fc_lcc_tb_services (
   // Include the command list definitions (e.g., CMD_FORCE_AWUSER_0, CMD_FORCE_AWUSER_1, etc.)
   `include "caliptra_ss_tb_cmd_list.svh"
   `include "caliptra_ss_includes.svh"
+  `include "soc_address_map_defines.svh"
 
   import otp_ctrl_reg_pkg::*;
 
@@ -166,18 +167,18 @@ module fc_lcc_tb_services (
 
   // Toggle a bit when observing a fuse_ctrl DAI write.
   always_comb begin
-    if (ecc_fault_en == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.write == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.addr == 32'h7000_0068) begin
-      force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0] = '0;
+    if (ecc_fault_en == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.write == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.addr == `SOC_OTP_CTRL_DAI_WDATA_RF_START) begin
+      force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0] = `FC_PATH.u_core_axi2tlul.i_sub2tlul.wdata ^ 1;
     end else begin
-      force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data = `FC_PATH.u_core_axi2tlul.i_sub2tlul.wdata;
+      release `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data;
     end
   end
 
   always_comb begin
-  if (lcc_bus_error_en == 1'b1 && `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.write == 1'b1 && `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.addr == 32'h7000_0400) begin
-      force `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.tl_o.a_data[0] = '0;
+  if (lcc_bus_error_en == 1'b1 && `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.write == 1'b1 && `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.addr == `SOC_LC_CTRL_ALERT_TEST) begin
+      force `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.tl_o.a_data[0] = `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.wdata ^ 1;
     end else begin
-      force `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.tl_o.a_data = `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.wdata;
+      release `LCC_PATH.u_lc_axi2tlul.i_sub2tlul.tl_o.a_data;
     end
   end
 
