@@ -167,7 +167,7 @@ module fc_lcc_tb_services (
 
   // Toggle a bit when observing a fuse_ctrl DAI write.
   always_comb begin
-    if (ecc_fault_en == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.write == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.addr == `SOC_OTP_CTRL_DAI_WDATA_RF_START) begin
+    if (ecc_fault_en == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.write == 1'b1 && `FC_PATH.u_core_axi2tlul.i_sub2tlul.addr == `SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_0) begin
       force `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data[0] = `FC_PATH.u_core_axi2tlul.i_sub2tlul.wdata ^ 1;
     end else begin
       release `FC_PATH.u_core_axi2tlul.i_sub2tlul.tl_o.a_data;
