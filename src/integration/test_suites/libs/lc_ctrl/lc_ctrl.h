@@ -23,6 +23,9 @@
 #define NUM_LC_STATES 21
 #define NUM_TOKENS 12
 
+#define CALIPTRA_SS_LC_CTRL_READY_MASK 2
+#define CALIPTRA_SS_LC_CTRL_INIT_MASK 1
+
 typedef enum {
     RAU, // RAW_UNLOCK
     TU1, // TEST_UNLOCKED1

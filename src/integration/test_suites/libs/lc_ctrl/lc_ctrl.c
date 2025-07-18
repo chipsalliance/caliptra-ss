@@ -21,7 +21,6 @@
 #include "fuse_ctrl.h"
 #include "printf.h"
 #include "soc_ifc.h"
-#include "caliptra_ss_lc_ctrl_address_map.h"
 #include "riscv_hw_if.h"
 #include "lc_ctrl.h"
 
@@ -114,19 +113,19 @@ uint32_t raw_unlock_token[4] = {
 
 void lcc_initialization(void) {
 
-    uint32_t reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+    uint32_t reg_value = lsu_read_32(SOC_LC_CTRL_STATUS);
     uint32_t loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1); 
     while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_READY_MASK); 
-        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", SOC_LC_CTRL_STATUS, reg_value, CALIPTRA_SS_LC_CTRL_READY_MASK); 
+        reg_value = lsu_read_32(SOC_LC_CTRL_STATUS);
         loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is ready!\n");
-    reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+    reg_value = lsu_read_32(SOC_LC_CTRL_STATUS);
     loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
-        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", SOC_LC_CTRL_STATUS, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+        reg_value = lsu_read_32(SOC_LC_CTRL_STATUS);
         loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
@@ -148,11 +147,11 @@ void sw_transition_req(uint32_t next_lc_state,
     uint32_t status_val;
     uint32_t loop_ctrl;
     int trigger_alert = 0;
-    reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+    reg_value = lsu_read_32(SOC_LC_CTRL_STATUS);
     loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
-        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", SOC_LC_CTRL_STATUS, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+        reg_value = lsu_read_32(SOC_LC_CTRL_STATUS);
         loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
@@ -162,38 +161,38 @@ void sw_transition_req(uint32_t next_lc_state,
     // Step 1: Set Claim Transition Register
     loop_ctrl = 0;
     while (loop_ctrl != CLAIM_TRANS_VAL) {
-        lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, CLAIM_TRANS_VAL);
-        reg_value = lsu_read_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET);
+        lsu_write_32(SOC_LC_CTRL_CLAIM_TRANSITION_IF, CLAIM_TRANS_VAL);
+        reg_value = lsu_read_32(SOC_LC_CTRL_CLAIM_TRANSITION_IF);
         loop_ctrl = reg_value & CLAIM_TRANS_VAL;
         VPRINTF(LOW, "Claim Mutex Register [0x%08x]: Read 0x%08x, expected 0x%08x\n",
-                LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, reg_value, CLAIM_TRANS_VAL);
+                SOC_LC_CTRL_CLAIM_TRANSITION_IF, reg_value, CLAIM_TRANS_VAL);
     }
     VPRINTF(LOW, "LC_CTRL: Mutex successfully acquired.\n");
 
     // Step 3: Set Target Lifecycle State
-    VPRINTF(LOW, "Setting next lifecycle state [0x%08x]: 0x%08x\n", LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
-    lsu_write_32(LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
+    VPRINTF(LOW, "Setting next lifecycle state [0x%08x]: 0x%08x\n", SOC_LC_CTRL_TRANSITION_TARGET, next_lc_state);
+    lsu_write_32(SOC_LC_CTRL_TRANSITION_TARGET, next_lc_state);
 
     // Step 4: Write Transition Tokens
     if (conditional == 1) {        
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_31_0);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, token_31_0);
+        lsu_write_32(SOC_LC_CTRL_TRANSITION_TOKEN_0, token_31_0);
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_63_32);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_1_OFFSET, token_63_32);
+        lsu_write_32(SOC_LC_CTRL_TRANSITION_TOKEN_1, token_63_32);
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_95_64);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_2_OFFSET, token_95_64);
+        lsu_write_32(SOC_LC_CTRL_TRANSITION_TOKEN_2, token_95_64);
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_127_96);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, token_127_96);
+        lsu_write_32(SOC_LC_CTRL_TRANSITION_TOKEN_3, token_127_96);
     }
 
     // Step 6: Trigger the Transition Command
-    VPRINTF(LOW, "Triggering transition command [0x%08x]: 0x1\n", LC_CTRL_TRANSITION_CMD_OFFSET);
-    lsu_write_32(LC_CTRL_TRANSITION_CMD_OFFSET, 0x1);
+    VPRINTF(LOW, "Triggering transition command [0x%08x]: 0x1\n", SOC_LC_CTRL_TRANSITION_CMD);
+    lsu_write_32(SOC_LC_CTRL_TRANSITION_CMD, 0x1);
 
     // Step 7: Poll Status Register
-    VPRINTF(LOW, "Polling status register [0x%08x]...\n", LC_CTRL_STATUS_OFFSET);
+    VPRINTF(LOW, "Polling status register [0x%08x]...\n", SOC_LC_CTRL_STATUS);
     while (1) {
-        status_val = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+        status_val = lsu_read_32(SOC_LC_CTRL_STATUS);
         uint32_t TRANSITION_SUCCESSFUL = ((status_val & 0x8) >> 3);
         uint32_t TRANSITION_COUNT_ERROR = ((status_val & 0x10) >> 4);
         uint32_t TRANSITION_ERROR = ((status_val & 0x20) >> 5);
@@ -243,7 +242,7 @@ void sw_transition_req(uint32_t next_lc_state,
         }
     }
     
-    lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, 0x0);
+    lsu_write_32(SOC_LC_CTRL_CLAIM_TRANSITION_IF, 0x0);
 
     VPRINTF(LOW, "sw_transition_req completed.\n");
 }
@@ -355,12 +354,12 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
     uint32_t status_val;
     uint32_t loop_ctrl;
     int trigger_alert = 0;
-    reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+    reg_value = lsu_read_32(SOC_LC_CTRL_STATUS);
     loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
 
     while(!loop_ctrl){
-    VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
-        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+    VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", SOC_LC_CTRL_STATUS, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+        reg_value = lsu_read_32(SOC_LC_CTRL_STATUS);
         loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
@@ -369,40 +368,40 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
     // Step 1: Set Claim Transition Register
     loop_ctrl = 0;
     while (loop_ctrl != CLAIM_TRANS_VAL) {
-        lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, CLAIM_TRANS_VAL);
-        reg_value = lsu_read_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET);
+        lsu_write_32(SOC_LC_CTRL_CLAIM_TRANSITION_IF, CLAIM_TRANS_VAL);
+        reg_value = lsu_read_32(SOC_LC_CTRL_CLAIM_TRANSITION_IF);
         loop_ctrl = reg_value & CLAIM_TRANS_VAL;
         VPRINTF(LOW, "Claim Mutex Register [0x%08x]: Read 0x%08x, expected 0x%08x\n",
-        LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, reg_value, CLAIM_TRANS_VAL);
+        SOC_LC_CTRL_CLAIM_TRANSITION_IF, reg_value, CLAIM_TRANS_VAL);
     }
     VPRINTF(LOW, "LC_CTRL: Mutex successfully acquired.\n");
     // Step 3: Set Target Lifecycle State
-    VPRINTF(LOW, "Setting next lifecycle state [0x%08x]: 0x%08x\n", LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
-    lsu_write_32(LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
+    VPRINTF(LOW, "Setting next lifecycle state [0x%08x]: 0x%08x\n", SOC_LC_CTRL_TRANSITION_TARGET, next_lc_state);
+    lsu_write_32(SOC_LC_CTRL_TRANSITION_TARGET, next_lc_state);
     // Step 4: Write Transition Tokens
     if (conditional == 1) {        
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_31_0);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, token_31_0);
+        lsu_write_32(SOC_LC_CTRL_TRANSITION_TOKEN_0, token_31_0);
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_63_32);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_1_OFFSET, token_63_32);
+        lsu_write_32(SOC_LC_CTRL_TRANSITION_TOKEN_1, token_63_32);
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_95_64);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_2_OFFSET, token_95_64);
+        lsu_write_32(SOC_LC_CTRL_TRANSITION_TOKEN_2, token_95_64);
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_127_96);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, token_127_96);
+        lsu_write_32(SOC_LC_CTRL_TRANSITION_TOKEN_3, token_127_96);
     }
 
     // Step 6: Trigger the Transition Command
-    VPRINTF(LOW, "Triggering transition command [0x%08x]: 0x1\n", LC_CTRL_TRANSITION_CMD_OFFSET);
-    lsu_write_32(LC_CTRL_TRANSITION_CMD_OFFSET, 0x1);
+    VPRINTF(LOW, "Triggering transition command [0x%08x]: 0x1\n", SOC_LC_CTRL_TRANSITION_CMD);
+    lsu_write_32(SOC_LC_CTRL_TRANSITION_CMD, 0x1);
 
     for (uint16_t ii = 0; ii < 1000; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
     // Step 7: Poll Status Register
-    VPRINTF(LOW, "Polling status register [0x%08x]...\n", LC_CTRL_STATUS_OFFSET);
+    VPRINTF(LOW, "Polling status register [0x%08x]...\n", SOC_LC_CTRL_STATUS);
     while (1)
     {
-        status_val = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+        status_val = lsu_read_32(SOC_LC_CTRL_STATUS);
         uint32_t TRANSITION_SUCCESSFUL = ((status_val & 0x8) >> 3);
         uint32_t TRANSITION_COUNT_ERROR = ((status_val & 0x10) >> 4);
         uint32_t TRANSITION_ERROR = ((status_val & 0x20) >> 5);
@@ -453,7 +452,7 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
         }
     }
 
-    lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, 0x0);
+    lsu_write_32(SOC_LC_CTRL_CLAIM_TRANSITION_IF, 0x0);
 
     VPRINTF(LOW, "sw_transition_req completed.\n");
 }
@@ -468,7 +467,7 @@ uint32_t read_lc_state(void) {
         __asm__ volatile ("nop");
     }
     // Read LC_CTRL_LC_STATE register and mask out the reserved bits (bits 31:30)
-    uint32_t reg_val = lsu_read_32(LC_CTRL_LC_STATE_OFFSET) & 0x3FFFFFFF;
+    uint32_t reg_val = lsu_read_32(SOC_LC_CTRL_LC_STATE) & 0x3FFFFFFF;
     const char *state_str;
 
     // Decode the redundant encoding.  (The encoding is defined as six repeated 5-bit values.)
@@ -511,7 +510,7 @@ uint32_t read_lc_counter(void) {
         __asm__ volatile ("nop");
     }
     // Read LC_CTRL_LC_TRANSITION_CNT register and mask out the reserved bits (bits 31:5)
-    uint32_t reg_val = lsu_read_32(LC_CTRL_LC_TRANSITION_CNT_OFFSET) & 0x1F;
+    uint32_t reg_val = lsu_read_32(SOC_LC_CTRL_LC_TRANSITION_CNT) & 0x1F;
 
     VPRINTF(LOW, "LC_CTRL_LC_TRANSITION_CNT register: 0x%08x\n", reg_val);
 

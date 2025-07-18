@@ -20,7 +20,6 @@
 #include "riscv_hw_if.h"
 #include "veer-csr.h"
 #include "soc_ifc.h"
-#include "caliptra_ss_lc_ctrl_address_map.h"
 #include <string.h>
 #include <stdint.h>
 #include <time.h>

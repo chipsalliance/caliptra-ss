@@ -21,7 +21,6 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
-#include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"

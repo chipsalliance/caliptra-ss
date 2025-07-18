@@ -17,7 +17,6 @@
 #include "soc_address_map.h"
 #include "printf.h"
 #include "soc_ifc.h"
-#include "caliptra_ss_lc_ctrl_address_map.h"
 #include "riscv_hw_if.h"
 #include "string.h"
 #include "caliptra_ss_clk_freq.h"
