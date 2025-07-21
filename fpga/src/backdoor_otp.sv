@@ -237,7 +237,7 @@ module backdoor_otp
         state_d = ReadWaitSt;
         req     = 1'b1;
         // Suppress ECC correction if needed.
-        read_ecc_on = integrity_en_q;
+        //read_ecc_on = integrity_en_q;
       end
       // Wait for response from macro.
       ReadWaitSt: begin
@@ -340,8 +340,9 @@ module backdoor_otp
     .data_i     (rdata_ecc),
     .data_o     (rdata_corr),
     .syndrome_o ( ),
-    .err_o      (rerror)
+    .err_o      ()
   );
+  assign rerror = 2'b00; // disable ECC errors
 
   assign rdata_d = (read_ecc_on) ? {{EccWidth{1'b0}}, rdata_corr}
                                  : rdata_ecc;
@@ -365,7 +366,8 @@ module backdoor_otp
   assign mem_en = req;
   assign mem_we = wren && req;
   assign mem_wdata = wdata_rmw & 16'hffff; // Mask out ECC bits for the input
-  assign mem_rdata = rdata_ecc & 16'hffff; // Mask out ECC bits for the output
+  //assign mem_rdata = rdata_ecc & 16'hffff; // Mask out ECC bits for the output
+  assign rdata_ecc = mem_rdata;
   assign mem_addr = addr;
   assign rvalid = 1'b1;
 

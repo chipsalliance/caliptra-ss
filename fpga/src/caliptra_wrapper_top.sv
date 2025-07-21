@@ -2113,9 +2113,9 @@ caliptra_ss_top caliptra_ss_top_0 (
     /*output logic        */ .cptra_ss_dbg_manuf_enable_o(),
     /*output logic [63:0] */ .cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o(),
 
-    // LC Clock bypass not interesting for FPGA. Disconnect
-    .cptra_ss_lc_clk_byp_ack_i(),
-    .cptra_ss_lc_clk_byp_req_o(),
+    // LC Clock bypass not interesting for FPGA. Tie to Off so that LC transitions work.
+    .cptra_ss_lc_clk_byp_ack_i(lc_ctrl_pkg::Off),
+    .cptra_ss_lc_clk_byp_req_o(lc_ctrl_pkg::Off),
     .cptra_ss_lc_ctrl_scan_rst_ni_i(1'b1),
 
     .cptra_ss_lc_esclate_scrap_state0_i(hwif_out.interface_regs.mcu_config.cptra_ss_lc_esclate_scrap_state0_i.value),   // NOTE: These two signals are very important. FIXME: Renaming is needed
