@@ -274,6 +274,12 @@ interface mci_top_cov_if
         end
     end
 
+    // sample them whenever the signal changes (or on clock edge, as you prefer)
+    always @(posedge clk iff mci_rst_b) begin
+      foreach (prod_unlock_level[i])
+        prod_unlock_level[i].sample(ss_soc_dbg_unlock_level_i[i]);
+    end
+
 
   
   

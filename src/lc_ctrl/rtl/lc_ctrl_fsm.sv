@@ -16,14 +16,15 @@ module lc_ctrl_fsm
   parameter lc_keymgr_div_t RndCnstLcKeymgrDivDev          = LcKeymgrDivWidth'(2),
   parameter lc_keymgr_div_t RndCnstLcKeymgrDivProduction   = LcKeymgrDivWidth'(3),
   parameter lc_keymgr_div_t RndCnstLcKeymgrDivRma          = LcKeymgrDivWidth'(4),
-  parameter lc_token_mux_t  RndCnstInvalidTokens           = {TokenMuxBits{1'b1}},
-  parameter bit             SecVolatileRawUnlockEn         = 0
+  parameter lc_token_mux_t  RndCnstInvalidTokens           = {TokenMuxBits{1'b1}}
 ) (
   // This module is combinational, but we
   // need the clock and reset for the assertions.
   input                         clk_i,
   input                         rst_ni,
   input                         Allow_RMA_or_SCRAP_on_PPD,
+  input                         lc_sec_volatile_raw_unlock_en_i, // Note: This is GPIO strap pin. This pin should be high if volatile unlock wants to be
+                                                                       // enabled. This pin should be low if volatile unlock is not needed. 
   // Initialization request from power manager.
   input                         init_req_i,
   output logic                  init_done_o,
@@ -42,7 +43,7 @@ module lc_ctrl_fsm
   // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
   // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
   // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-  // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+  // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
   // ---------------------------------------------------------------
   input  logic                  volatile_raw_unlock_i,
   output                        volatile_raw_unlock_success_o,
@@ -231,7 +232,7 @@ module lc_ctrl_fsm
     // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
     // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
     // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-    // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+    // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
     // ---------------------------------------------------------------
     set_strap_en_override = 1'b0;
     volatile_raw_unlock_success_d = volatile_raw_unlock_success_q;
@@ -270,12 +271,12 @@ module lc_ctrl_fsm
         // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
         // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
         // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-        // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+        // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
         // ---------------------------------------------------------------
         // Note that if the volatile unlock mechanism is available,
         // we have to stop fetching the OTP value after a volatile unlock has succeeded.
         // Otherwise we unconditionally fetch from OTP in this state.
-        if (!(SecVolatileRawUnlockEn && lc_state_q == LcStTestUnlocked0 && lc_cnt_q != LcCnt0) ||
+        if (!(lc_sec_volatile_raw_unlock_en_i && lc_state_q == LcStTestUnlocked0 && lc_cnt_q != LcCnt0) ||
             caliptra_prim_mubi_pkg::mubi8_test_false_loose(volatile_raw_unlock_success_q)) begin
           // Continuously fetch LC state vector from OTP.
           // The state is locked in once a transition is started.
@@ -292,10 +293,10 @@ module lc_ctrl_fsm
         // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
         // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
         // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-        // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+        // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
         // ---------------------------------------------------------------
         // Only enter here if volatile RAW unlock is available and enabled.
-        end else if (SecVolatileRawUnlockEn && volatile_raw_unlock_i && trans_cmd_i) begin
+        end else if (lc_sec_volatile_raw_unlock_en_i && volatile_raw_unlock_i && trans_cmd_i) begin
           // We only allow transitions from RAW -> TEST_UNLOCKED0
           if (lc_state_q == LcStRaw &&
               trans_target_i == {DecLcStateNumRep{DecLcStTestUnlocked0}} &&
@@ -617,34 +618,29 @@ module lc_ctrl_fsm
   // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
   // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
   // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-  // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+  // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
   // ---------------------------------------------------------------
-  if (SecVolatileRawUnlockEn) begin : gen_strap_delay_regs
-    // The delay on the life cycle signals is 1 sender + 2 receiver domain
-    // cycles. We are delaying this cycle several cycles more than that so
-    // that the life cycle signals have time to propagate (for good measure).
-    localparam int NumStrapDelayRegs = 10;
-    logic [NumStrapDelayRegs-1:0] strap_en_override_q;
-    always_ff @(posedge clk_i or negedge rst_ni) begin : p_volatile_raw_unlock_reg
-      if(!rst_ni) begin
-        strap_en_override_q <= '0;
-        volatile_raw_unlock_success_q <= caliptra_prim_mubi_pkg::MuBi8False;
-      end else begin
+
+  localparam int NumStrapDelayRegs = 10;
+  logic [NumStrapDelayRegs-1:0] strap_en_override_q;
+  // In this case we tie the strap sampling off.
+  logic unused_sigs;
+  always_ff @(posedge clk_i or negedge rst_ni) begin : p_volatile_raw_unlock_reg
+    if(!rst_ni) begin
+      strap_en_override_q <= '0;
+      volatile_raw_unlock_success_q <= caliptra_prim_mubi_pkg::MuBi8False;
+    end else begin
+      if (lc_sec_volatile_raw_unlock_en_i) begin
         strap_en_override_q <= {strap_en_override_q[NumStrapDelayRegs-2:0],
                                 // This is a set-reg that will stay high until the next reset.
                                 set_strap_en_override || strap_en_override_q[0]};
         volatile_raw_unlock_success_q <= volatile_raw_unlock_success_d;
+      end else begin
+        unused_sigs <= ^{set_strap_en_override,
+                          volatile_raw_unlock_success_d};
+        volatile_raw_unlock_success_q <= caliptra_prim_mubi_pkg::MuBi8False;
       end
     end
-
-    // assign strap_en_override_o = strap_en_override_q[NumStrapDelayRegs-1];
-  end else begin : gen_no_strap_delay_regs
-    // In this case we tie the strap sampling off.
-    logic unused_sigs;
-    assign unused_sigs = ^{set_strap_en_override,
-                           volatile_raw_unlock_success_d};
-    // assign strap_en_override_o = 1'b0;
-    assign volatile_raw_unlock_success_q = caliptra_prim_mubi_pkg::MuBi8False;
   end
   // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------
 
@@ -811,11 +807,10 @@ module lc_ctrl_fsm
   );
 
   // LC transition checker logic and next state generation.
-  lc_ctrl_state_transition #(
-    .SecVolatileRawUnlockEn(SecVolatileRawUnlockEn)
-  ) u_lc_ctrl_state_transition (
+  lc_ctrl_state_transition u_lc_ctrl_state_transition (
     .lc_state_i            ( lc_state_q     ),
     .lc_cnt_i              ( lc_cnt_q       ),
+    .lc_sec_volatile_raw_unlock_en_i(lc_sec_volatile_raw_unlock_en_i),
     .dec_lc_state_i        ( dec_lc_state_o ),
     .fsm_state_i           ( fsm_state_q    ),
     .trans_target_i,

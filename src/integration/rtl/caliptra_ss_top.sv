@@ -35,7 +35,6 @@ module caliptra_ss_top
     ,parameter [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
-    ,parameter bit LCC_SecVolatileRawUnlockEn = 1
 ) (
     input logic cptra_ss_clk_i,
     output logic cptra_ss_rdc_clk_cg_o,
@@ -229,6 +228,7 @@ module caliptra_ss_top
     input  lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_ack_i,
     output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_req_o,
     input  logic cptra_ss_lc_ctrl_scan_rst_ni_i,
+    input logic cptra_ss_lc_sec_volatile_raw_unlock_en_i,
 
     input logic cptra_ss_lc_esclate_scrap_state0_i,   
     input logic cptra_ss_lc_esclate_scrap_state1_i,   
@@ -1166,11 +1166,10 @@ module caliptra_ss_top
     assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl_pwr_lc_o.lc_done);
     assign lcc_init_req.lc_init = mci_to_lcc_init_req; 
 
-    lc_ctrl  #(
-        .SecVolatileRawUnlockEn (LCC_SecVolatileRawUnlockEn)
-    ) u_lc_ctrl (
+    lc_ctrl u_lc_ctrl (
             .clk_i(cptra_ss_clk_i),
             .rst_ni(cptra_ss_rst_b_o),
+            .lc_sec_volatile_raw_unlock_en_i(cptra_ss_lc_sec_volatile_raw_unlock_en_i),
             .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
             .axi_wr_req(cptra_ss_lc_axi_wr_req_i),
             .axi_wr_rsp(cptra_ss_lc_axi_wr_rsp_o),

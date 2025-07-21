@@ -28,15 +28,16 @@ module lc_ctrl
   parameter lc_keymgr_div_t RndCnstLcKeymgrDivDev          = LcKeymgrDivWidth'(2),
   parameter lc_keymgr_div_t RndCnstLcKeymgrDivProduction   = LcKeymgrDivWidth'(3),
   parameter lc_keymgr_div_t RndCnstLcKeymgrDivRma          = LcKeymgrDivWidth'(4),
-  parameter lc_token_mux_t  RndCnstInvalidTokens           = {TokenMuxBits{1'b1}},
-  parameter bit             SecVolatileRawUnlockEn         = 1
+  parameter lc_token_mux_t  RndCnstInvalidTokens           = {TokenMuxBits{1'b1}}
 ) (
   // Life cycle controller clock
   input                                              clk_i,
   input                                              rst_ni,
   input                                              Allow_RMA_or_SCRAP_on_PPD, // Note: Addded another condition to RMA and SCRAP transition with Physical presence Detect
                                                                        // This is GPIO strap pin. This pin should be high until LC completes its state
-                                                                       // transition to RMA or SCRAP.  
+                                                                       // transition to RMA or SCRAP.
+  input                                             lc_sec_volatile_raw_unlock_en_i, // Note: This is GPIO strap pin. This pin should be high if volatile unlock wants to be
+                                                                       // enabled. This pin should be low if volatile unlock is not needed.
   // Clock for KMAC interface
   // input                                              clk_kmac_i,
   // input                                              rst_kmac_ni,
@@ -97,7 +98,7 @@ module lc_ctrl
   // Power manager interface (inputs are synced to lifecycle clock domain).
   input  pwrmgr_pkg::pwr_lc_req_t                    pwr_lc_i,
   output pwrmgr_pkg::pwr_lc_rsp_t                    pwr_lc_o,
-  // Strap sampling override that is only used when SecVolatileRawUnlockEn = 1,
+  // Strap sampling override that is only used when lc_sec_volatile_raw_unlock_en_i = 1,
   // Otherwise this output is tied off to 0.
   // output logic                                       strap_en_override_o,
   // Strap override - this is only used when
@@ -525,7 +526,7 @@ module lc_ctrl
         // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
         // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
         // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-        // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+        // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
         // ---------------------------------------------------------------
         if (tap_reg2hw.transition_ctrl.volatile_raw_unlock.qe) begin
           volatile_raw_unlock_d = tap_reg2hw.transition_ctrl.volatile_raw_unlock.q;
@@ -559,7 +560,7 @@ module lc_ctrl
         // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
         // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
         // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-        // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+        // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
         // ---------------------------------------------------------------
         if (reg2hw.transition_ctrl.volatile_raw_unlock.qe) begin
           volatile_raw_unlock_d = reg2hw.transition_ctrl.volatile_raw_unlock.q;
@@ -607,12 +608,12 @@ module lc_ctrl
       // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
       // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
       // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-      // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+      // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
       // ---------------------------------------------------------------
       // In case of a volatile RAW unlock, this bit has to be cleared when the volatile
       // unlock is followed by a real transition.
       // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------
-      if (SecVolatileRawUnlockEn && transition_cmd && !volatile_raw_unlock_q) begin
+      if (lc_sec_volatile_raw_unlock_en_i && transition_cmd && !volatile_raw_unlock_q) begin
         trans_success_q <= 1'b0;
       end else begin
         trans_success_q <= trans_success_d | trans_success_q;
@@ -641,21 +642,23 @@ module lc_ctrl
   // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
   // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
   // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-  // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+  // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
   // ---------------------------------------------------------------
   // If not enabled, this register will become a constant.
-  if (SecVolatileRawUnlockEn) begin : gen_volatile_raw_unlock_reg
-    always_ff @(posedge clk_i or negedge rst_ni) begin : p_volatile_raw_unlock_reg
-      if (!rst_ni) begin
-        volatile_raw_unlock_q     <= 1'b0;
-      end else begin
+  logic unused_volatile_raw_unlock;
+  always_ff @(posedge clk_i or negedge rst_ni) begin : p_volatile_raw_unlock_reg
+    if (!rst_ni) begin
+      volatile_raw_unlock_q     <= 1'b0;
+    end else begin
+      if (lc_sec_volatile_raw_unlock_en_i) begin
         volatile_raw_unlock_q     <= volatile_raw_unlock_d;
       end
+      else begin
+        unused_volatile_raw_unlock <= ^volatile_raw_unlock_d;
+        volatile_raw_unlock_q     <= 1'b0;
+      end
+      
     end
-  end else begin : gen_volatile_raw_unlock_const
-    logic unused_volatile_raw_unlock;
-    assign unused_volatile_raw_unlock = ^volatile_raw_unlock_d;
-    assign volatile_raw_unlock_q = 1'b0;
   end
   // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------
 
@@ -905,12 +908,12 @@ module lc_ctrl
     .RndCnstLcKeymgrDivDev         ( RndCnstLcKeymgrDivDev          ),
     .RndCnstLcKeymgrDivProduction  ( RndCnstLcKeymgrDivProduction   ),
     .RndCnstLcKeymgrDivRma         ( RndCnstLcKeymgrDivRma          ),
-    .RndCnstInvalidTokens          ( RndCnstInvalidTokens           ),
-    .SecVolatileRawUnlockEn        ( SecVolatileRawUnlockEn         )
+    .RndCnstInvalidTokens          ( RndCnstInvalidTokens           )
   ) u_lc_ctrl_fsm (
     .clk_i,
     .rst_ni,
     .Allow_RMA_or_SCRAP_on_PPD,
+    .lc_sec_volatile_raw_unlock_en_i,
     .init_req_i             ( lc_init                          ),
     .init_done_o            ( lc_done_d                        ),
     .idle_o                 ( lc_idle_d                        ),
