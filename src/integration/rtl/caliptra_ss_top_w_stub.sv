@@ -300,6 +300,9 @@ module caliptra_ss_top_w_stub(
     logic cptra_error_fatal;
     logic cptra_error_non_fatal;
 
+
+   logic cptra_ss_lc_sec_volatile_raw_unlock_en_i;
+
     always_comb begin
         cptra_ss_pwrgood_i = '0;
         cptra_ss_rst_b_i = '0;
@@ -353,6 +356,7 @@ module caliptra_ss_top_w_stub(
         cptra_i3c_axi_user_id_filtering_enable_i = 1'b1;
         cptra_ss_i3c_scl_i=0;
         cptra_ss_i3c_sda_i=0;
+        cptra_ss_lc_sec_volatile_raw_unlock_en_i = 1'b1; // Enable the raw unlock for sec volatile
     end
 
     caliptra_ss_top
@@ -371,6 +375,7 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_warm_reset_rdc_clk_dis_o,
         .cptra_ss_early_warm_reset_warn_o,
         .cptra_ss_mcu_fw_update_rdc_clk_dis_o,
+        .cptra_ss_lc_sec_volatile_raw_unlock_en_i,
 
     
     //SoC AXI Interface

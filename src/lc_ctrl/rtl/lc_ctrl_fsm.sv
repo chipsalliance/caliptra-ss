@@ -629,6 +629,7 @@ module lc_ctrl_fsm
     if(!rst_ni) begin
       strap_en_override_q <= '0;
       volatile_raw_unlock_success_q <= caliptra_prim_mubi_pkg::MuBi8False;
+        unused_sigs <= '0;
     end else begin
       if (lc_sec_volatile_raw_unlock_en_i) begin
         strap_en_override_q <= {strap_en_override_q[NumStrapDelayRegs-2:0],

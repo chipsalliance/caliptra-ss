@@ -649,6 +649,7 @@ module lc_ctrl
   always_ff @(posedge clk_i or negedge rst_ni) begin : p_volatile_raw_unlock_reg
     if (!rst_ni) begin
       volatile_raw_unlock_q     <= 1'b0;
+      unused_volatile_raw_unlock <= 1'b0;
     end else begin
       if (lc_sec_volatile_raw_unlock_en_i) begin
         volatile_raw_unlock_q     <= volatile_raw_unlock_d;
