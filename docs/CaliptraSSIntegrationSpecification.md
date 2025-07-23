@@ -832,7 +832,7 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 |------------|------------|-------  |-------------------------------|-----------------------------------|--------------------------------------------------------|
 | External   | Input      | 1       | `clk_i`                       | `cptra_ss_clk_i`                  | Fuse Controller clock input.                          |
 | External   | Input      | 1       | `rst_ni`                      | `cptra_ss_rst_b_i`                | Reset signal input, active low.                       |
-| Internal   | Input      | 1       | `FIPS_ZEROIZATION_CMD_i`      |                                   | Fuse Zeroization signal controlled by MCI             |
+| Internal   | Input      | 1       | `FIPS_ZEROIZATION_CMD_i`      |                                   | Fuse Zeroization request sampled on MCI reset deassertion.|
 | External   | interface  | 1       | `core_axi_wr_req`             | `cptra_ss_otp_core_axi_wr_req_i`  | AXI write request.                         |
 | External   | interface  | 1       | `core_axi_wr_rsp`             | `cptra_ss_otp_core_axi_wr_rsp_o`  | AXI write response.                          |
 | External   | interface  | 1       | `core_axi_rd_req`             | `cptra_ss_otp_core_axi_rd_req_i`  | AXI read request.                          |
