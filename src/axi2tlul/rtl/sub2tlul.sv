@@ -73,6 +73,7 @@ module sub2tlul
     logic       pending_txn;
     tl_a_op_e   opcode;
     logic [3:0] mask_local;
+    logic [TL_DW-1:0] a_data_local;
 
     typedef enum logic [1:0] { 
         no_txn = 2'b00, 
@@ -113,14 +114,15 @@ module sub2tlul
     end
 
     assign opcode = !write ? Get : ((wstrb == '1) ? PutFullData : PutPartialData);
-    assign mask_local = !write ? user[21:18] : wstrb;
+    assign mask_local   = !write ? user[21:18] : wstrb;
+    assign a_data_local = !write ? TL_DW'(0)   : wdata;
 
     assign tl_o.a_address   = addr;
     assign tl_o.a_valid     = dv &  ~pending_txn;
     assign tl_o.a_opcode    = opcode;
     assign tl_o.a_source    = id;
     assign tl_o.a_mask      = mask_local;
-    assign tl_o.a_data      = wdata;
+    assign tl_o.a_data      = a_data_local;
     assign tl_o.a_size      = size[top_pkg::TL_SZW-1:0];
 
     // TL-UL TO AXI SUB RESPONSE
@@ -145,7 +147,7 @@ module sub2tlul
         .addr_i         (addr),
         .opcode_i       (opcode),
         .mask_i         (mask_local),
-        .data_i         (wdata),
+        .data_i         (a_data_local),
         .cmd_intg       (cmd_intg),
         .data_intg      (data_intg) 
     );

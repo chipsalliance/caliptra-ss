@@ -57,12 +57,10 @@ void main (void) {
 
     uint32_t status = lsu_read_32(SOC_OTP_CTRL_STATUS);
     if (!((status >> OTP_CTRL_STATUS_BUS_INTEG_ERROR_LOW) & 0x1)) {
-        VPRINTF(LOW, "ERROR: bus integrity error is not set %08X\n", status);
+        handle_error("ERROR: bus integrity error is not set %08X\n", status);
     }
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    mcu_sleep(160);
 
     SEND_STDOUT_CTRL(0xff);
 }
