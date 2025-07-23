@@ -108,8 +108,8 @@ void main (void) {
 
     cptra_boot_go = 0;
     VPRINTF(LOW, "MCU: waits in success loop\n");
-    while(cptra_boot_go != SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK){
-        cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK;
+    while(cptra_boot_go != SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK){
+        cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
         for (uint32_t ii = 0; ii < 500; ii++) {
             __asm__ volatile ("nop"); // Sleep loop as "nop"
         }
@@ -127,12 +127,16 @@ void main (void) {
         VPRINTF(LOW, "MCU: Set 0x%X to ss_soc_dft_en_mask_reg\n",0x1<<ii);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_HW_DEBUG_EN_0, 0x1<<ii);
         VPRINTF(LOW, "MCU: Set 0x%X to ss_soc_hardware_dbg_en_mask_reg\n",0x1<<ii);
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_PROD_DEBUG_STATE_0, 0x1<<ii);
+        VPRINTF(LOW, "MCU: Set 0x%X to ss_soc_hardware_dbg_en_mask_reg\n",0x1<<ii);
     }
     for (uint32_t ii = 0; ii < 32; ii++){
         lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_DFT_EN_1, 0x1<<ii);
         VPRINTF(LOW, "MCU: Set 0x%X00000000 to ss_soc_dft_en_mask_reg\n",0x1<<ii);
         lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_HW_DEBUG_EN_1, 0x1<<ii);
         VPRINTF(LOW, "MCU: Set 0x%X00000000 to ss_soc_hardware_dbg_en_mask_reg\n",0x1<<ii);
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_PROD_DEBUG_STATE_1, 0x1<<ii);
+        VPRINTF(LOW, "MCU: Set 0x%X to ss_soc_hardware_dbg_en_mask_reg\n",0x1<<ii);
     }
     for (uint32_t ii = 0; ii < 500; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"

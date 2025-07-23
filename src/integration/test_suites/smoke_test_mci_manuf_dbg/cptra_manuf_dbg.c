@@ -53,6 +53,7 @@ void main(void) {
     VPRINTF(LOW,"----------------------------------\nCaliptra: Mimicking ROM from Subsystem!!\n----------------------------------\n");
     uint32_t status_reg ;
     status_reg =  SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK;
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
     VPRINTF(LOW, "\n\nCLP_CORE: set MANUF_DBG_UNLOCK_SUCCESS is 0x%X...\n\n", status_reg);
     cpt_sleep(50000);
     

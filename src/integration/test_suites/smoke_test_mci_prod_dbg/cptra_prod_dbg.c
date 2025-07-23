@@ -61,7 +61,11 @@ volatile uint32_t  intr_count;
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
 
-
+inline void cpt_sleep (const uint32_t cycles) {
+    for (uint8_t ii = 0; ii < cycles; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
 
 void main(void) {
     int argc=0;
@@ -74,7 +78,8 @@ void main(void) {
     lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
     status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
     status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
-    VPRINTF(LOW, "\n\nCLP_CORE: set PROD_DBG_UNLOCK_SUCCESS high...\n\n");
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+    VPRINTF(LOW, "\n\nCLP_CORE: set PROD_DBG_UNLOCK_SUCCESS high 0x%X...\n\n", status_reg);
     status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
     status_reg = 0xFFFFFFFF;
     lsu_write_32(CLP_SOC_IFC_REG_SS_SOC_DBG_UNLOCK_LEVEL_0, status_reg);
@@ -83,5 +88,6 @@ void main(void) {
     status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
     lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
     VPRINTF(LOW, "CLP_CORE: set low to PROD_DBG_UNLOCK_IN_PROGRESS...\n");
+    cpt_sleep(50000);
 
 }
