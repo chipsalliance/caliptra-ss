@@ -57,9 +57,10 @@ void sha_accel_acquire_lock(uint64_t base_addr) {
     }
 }
 
-void sha_accel_set_cmd(uint64_t base_addr, enum sha_accel_mode_e mode, uint32_t dlen) {
+void sha_accel_set_cmd(uint64_t base_addr, enum sha_accel_mode_e mode, uint8_t endian_toggle, uint32_t dlen) {
     uint32_t reg;
     reg = (mode << SHA512_ACC_CSR_MODE_MODE_LOW) & SHA512_ACC_CSR_MODE_MODE_MASK;
+    reg |= endian_toggle ? SHA512_ACC_CSR_MODE_ENDIAN_TOGGLE_MASK : 0;
     VPRINTF(MEDIUM, "FW: Set SHA command\n");
     soc_ifc_axi_dma_send_ahb_payload(base_addr + SHA512_ACC_CSR_MODE, 0, &reg, 4, 0);
     soc_ifc_axi_dma_send_ahb_payload(base_addr + SHA512_ACC_CSR_DLEN, 0, &dlen, 4, 0);
@@ -128,7 +129,9 @@ void main () {
 
     uint32_t ii;
     uint32_t data;
+    uint32_t ctrl;
     uint32_t mode; // 0 = sha384, 1 = sha512
+    uint32_t endian_toggle; // 0 = input data byte-swap, 1 = leave data as-is (HW will swap)
     uint32_t dlen; // bytes
     uint32_t digest[16];
     uint32_t exp_digest[16]; // expected result
@@ -152,10 +155,12 @@ void main () {
     mcu_sram_addr += SOC_MCI_TOP_MCU_SRAM_BASE_ADDR & MCI_ADDR_WIDTH_MASK;
 
     // Read parameters for SHA test case to run
-    soc_ifc_axi_dma_read_ahb_payload(mcu_sram_addr + 0    , 0, &mode     ,  4, 0);
+    soc_ifc_axi_dma_read_ahb_payload(mcu_sram_addr + 0    , 0, &ctrl     ,  4, 0);
+    mode          =  ctrl & 1;
+    endian_toggle = (ctrl & 2) >> 1;
     soc_ifc_axi_dma_read_ahb_payload(mcu_sram_addr + 4    , 0, &dlen     ,  4, 0);
     soc_ifc_axi_dma_read_ahb_payload(mcu_sram_addr + 0x100, 0, exp_digest, 64, 0); // MSB stored to index 0, which matches how we'll read the result later
-    VPRINTF(LOW, "FW: Running sha accel test with SHA512_mode: %d dlen: 0x%x\n", mode, dlen);
+    VPRINTF(LOW, "FW: Running sha accel test with SHA512_mode: %d endian_toggle: %d dlen: 0x%x\n", mode, endian_toggle, dlen);
     VPRINTF(HIGH, "FW: Exp Digest [%d]: 0x%x\n", 0 , exp_digest[0]);
     VPRINTF(HIGH, "FW: Exp Digest [%d]: 0x%x\n", 1 , exp_digest[1]);
     VPRINTF(HIGH, "FW: Exp Digest [%d]: 0x%x\n", 2 , exp_digest[2]);
@@ -179,14 +184,14 @@ void main () {
     soc_ifc_sha_accel_clr_lock();
 
     // Run SHA Accelerator protocol via AXI using DMA assist
-                sha_accel_acquire_lock(sha_acc_addr                                              );
-                sha_accel_set_cmd     (sha_acc_addr, mode ? SHA_STREAM_512 : SHA_STREAM_384, dlen);
-                sha_accel_push_datain (mcu_sram_addr, sha_acc_addr, dlen                         );
-                sha_accel_execute     (sha_acc_addr                                              );
-                sha_accel_poll_status (sha_acc_addr                                              );
-                sha_accel_read_result (sha_acc_addr, mode ? 16 : 12, digest                      );
-    test_pass = sha_accel_check_result(mode ? 16 : 12, digest, exp_digest                        );
-                sha_accel_clr_lock    (sha_acc_addr                                              );
+                sha_accel_acquire_lock(sha_acc_addr                                                             );
+                sha_accel_set_cmd     (sha_acc_addr, mode ? SHA_STREAM_512 : SHA_STREAM_384, endian_toggle, dlen);
+                sha_accel_push_datain (mcu_sram_addr, sha_acc_addr, dlen                                        );
+                sha_accel_execute     (sha_acc_addr                                                             );
+                sha_accel_poll_status (sha_acc_addr                                                             );
+                sha_accel_read_result (sha_acc_addr, mode ? 16 : 12, digest                                     );
+    test_pass = sha_accel_check_result(mode ? 16 : 12, digest, exp_digest                                       );
+                sha_accel_clr_lock    (sha_acc_addr                                                             );
 
     // Report result and end sim
     if (test_pass) {
