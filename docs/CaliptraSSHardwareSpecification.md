@@ -768,6 +768,8 @@ The masking registers in the MCI act as an OR gate with the existing debug signa
 
 This mechanism is only authorized when both the LCC and Caliptra core are in the PROD state and operating in production debug mode. The masking logic ensures that these features are enabled securely, in line with the production debug flow described in the "SoC Debug Flow and Architecture for Production Mode" section. By leveraging the MCI’s masking infrastructure, the SoC integrator has greater flexibility to implement custom debugging options during production without compromising the security framework established by Caliptra.
 
+**Note: Unlike the production state, the manufacturing state supports only a single debug level. Although it uses the same masking register to override DFT_EN, only the register’s least significant bit is used in manufacturing debug mode.
+
 
 ## LCC Interpretation for Caliptra “Core” Security States
 
@@ -785,11 +787,11 @@ The LCC provides specific decoding signals—DFT_EN, SOC_DFT_EN, SOC_HW_DEBUG_EN
 
 **Manufacturing Non-Debug Mode:** This state occurs when the LCC is in the MANUF state, with SOC_HW_DEBUG_EN high and DFT_EN and  SOC_DFT_EN low. In this state, the secrets have been programmed into the system, and the Caliptra can generate CSR (Certificate Signing Request) upon request. However, it remains in a secure, non-debug mode to prevent reading secrets through the debugging interfaces.
 
-**Manufacturing Debug Mode:** Also occurring in the MANUF state, this mode is enabled when SOC_HW_DEBUG_EN is high. Here, the Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. In this state, DFT_EN is low. However, it is important to note that it is up to SoC integrator if there is a need to enable DFT_EN with another set of mask register since LCC state is reflected to SoC. 
+**Manufacturing Debug Mode:** Also occurring in the MANUF state, this mode is enabled when SOC_HW_DEBUG_EN is high. Here, the Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. In this state, DFT_EN is low. However, SOC_DFT_EN can be set high if LSB of CALIPTRA_SS_SOC_DEBUG_UNLOCK_LEVEL is set to high in MANUF debug state [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci). 
 
 **Production Non-Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with all debug signals (DFT_EN, SOC_HW_DEBUG_EN) set to low. The Caliptra Core operates in a secure mode with no debug access, suitable for fully deployed production environments.
 
-**Production Debug Mode:** This state is active when the LCC is in the PROD, with debug DFT_EN, SOC_HW_DEBUG_EN set to low. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. However, SOC_DFT_EN can be set high and CLTAP can be open if MCI masking logic is used.
+**Production Debug Mode:** This state is active when the LCC is in the PROD, with debug DFT_EN, SOC_HW_DEBUG_EN set to low. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. However, SOC_DFT_EN can be set high and CLTAP can be open if MCI masking logic is used [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci).
 
 **Production Debug Mode in RMA:** In the RMA state, all debug signals are set high, allowing full debugging access. This state is typically used for end-of-life scenarios where detailed inspection of the system's operation is required.
 
@@ -803,7 +805,7 @@ The table below summarizes the relationship between the LCC state, the decoder o
 | TEST_LOCKED 				            | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
 | TEST_UNLOCKED  			            | High  	      | High  	         | High	 		         | Unprovisioned Debug                  |
 | MANUF 				                  | Low 		   | Low 		      | High 			         | Manuf Non-Debug                      |
-| MANUF* 				               | Low 		   | Low 		      | High 			         | Manuf Debug                          |
+| MANUF* 				               | Low 		   | High**  		      | High 			         | Manuf Debug                          |
 | PROD 					               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
 | PROD* 				                  | Low 	      | High**          | High** 		         | Prod Debug                           |
 | PROD_END 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
@@ -813,7 +815,7 @@ The table below summarizes the relationship between the LCC state, the decoder o
 
 **Note:** In RAW, TEST_LOCKED, SCRAP and INVALID states, Caliptra “Core” is not brought out of reset.
 *: These states are Caliptra SS’s extension to LCC. Although the LCC is in either MANUF or PROD states, Caliptra core can grant debug mode through the logics explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”. 
-**: SOC_HW_DEBUG_EN and DFT_EN can be overridden by SoC support in PROD state.
+**: SOC_HW_DEBUG_EN and DFT_EN can be overridden by SoC support in debug mode of MANUF and PROD states. 
 
 ## Exception: Non-Volatile Debugging Infrastructure and Initial RAW State Operations
 The Caliptra Subsystem features a non-volatile debugging infrastructure that allows the SoC integrator to utilize a dedicated SRAM for early-stage debugging during the VolatileUnlock state. This SRAM provides a means to store executable content for the MCU, enabling early manufacturing debug operations.

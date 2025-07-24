@@ -36,7 +36,7 @@ interface lc_ctrl_cov_if
     assign next_dec_state = ext_dec_lc_state_t'(lc_ctrl.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.trans_target_i);
 
     bit sec_volatile_raw_unlock;
-    assign sec_volatile_raw_unlock = lc_ctrl.SecVolatileRawUnlockEn;
+    assign sec_volatile_raw_unlock = lc_ctrl.lc_sec_volatile_raw_unlock_en_i;
 
     logic [NumAlerts-1:0] alerts;
     assign alerts = lc_ctrl.alerts;

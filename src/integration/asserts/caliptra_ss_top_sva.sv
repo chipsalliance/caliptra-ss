@@ -417,7 +417,7 @@ module caliptra_ss_top_sva
 
   // Assert that a successful volatile raw unlock will assert the dft output port.
   `CALIPTRA_ASSERT(LccVolatileRawUnlockDftEn_A,
-    (`LCC_PATH.SecVolatileRawUnlockEn &&
+    (`LCC_PATH.lc_sec_volatile_raw_unlock_en_i &&
      `LCC_PATH.volatile_raw_unlock_q &&
      `LCC_PATH.trans_success_q)
     |=>
@@ -429,7 +429,7 @@ module caliptra_ss_top_sva
   ////////////////////////////////////////////////////
 
   `CALIPTRA_ASSERT(LccVolatileRawUnlockDecoding_A,
-    (`LCC_PATH.SecVolatileRawUnlockEn &&
+    (`LCC_PATH.lc_sec_volatile_raw_unlock_en_i &&
      `LCC_PATH.volatile_raw_unlock_q &&
      `LCC_PATH.trans_success_q)
     |->
