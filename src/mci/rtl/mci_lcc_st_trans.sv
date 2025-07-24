@@ -72,7 +72,8 @@ logic                                        MCU_ROM_zeroization_AND;
 assign otp_data_valid               = from_otp_to_lcc_program_i.valid;
 assign lc_otp_prog_req              = from_lcc_to_otp_program_i.req;
 assign lc_alive_state               = from_lcc_to_otp_program_i.state;
-assign SOC_DFT_EN_AND               = |(ss_soc_dbg_unlock_level_i & ss_soc_dft_en_mask_reg0_1);
+assign SOC_DFT_EN_AND               = (  (|(ss_soc_dbg_unlock_level_i & ss_soc_dft_en_mask_reg0_1))
+                                       | (ss_dbg_manuf_enable_i & ss_soc_dft_en_mask_reg0_1[0])); // Manuf debug unlock has one debug level, unlike production debug unlock.
 assign SOC_HW_DEBUG_EN_AND          = |(ss_soc_dbg_unlock_level_i & ss_soc_CLTAP_unlock_mask_reg0_1);
 assign CLPTR_PROD_DEBUG_UNLOCK_AND  = |(ss_soc_dbg_unlock_level_i & ss_soc_dbg_unlock_mask_reg0_1);
 assign lcc_valid_SCRAP_req          = (lc_alive_state ==  LcStScrap && lc_otp_prog_req);
