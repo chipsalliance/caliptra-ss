@@ -41,24 +41,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-uint32_t PROD_DBG_PK_HASH_OFFSET_BASE = 0x21000480;
-uint32_t PROD_DBG_PK_HASH_OFFSET      = 0x00000480;
-uint32_t debug_level = 5;
 
-uint32_t PROD_dbg_pk[] =  {
-    0x2bb37255, 
-    0x51a4edc7,
-    0xbd948b1e,
-    0x2c2a257e,
-    0x7a694bfd,
-    0xc2d5de4d,
-    0x8adec52a,
-    0xe7aeda4a,
-    0x2761c721,
-    0x98940dae,
-    0xe14e2482,
-    0xd6da39e1
-};
 
 
 void main (void) {
@@ -87,46 +70,41 @@ void main (void) {
     uint32_t cptra_boot_go;
 
     uint32_t vector[16] = {
-        0xba03f195, 0xcfb86f60, 0x6ce5adc0, 0x90be97cd,
-        0x5021e4df, 0x25edab7d, 0xb141e89a, 0xd115a87b,
-        0x28abfbfa, 0x5a8f41,   0x44901cee, 0x4961df3f,
-        0x8db3e5ea, 0x8d489c51, 0x90e26b42, 0xaf9369e
+        0x9d2fee5e,
+    0xd6ad3ab7,
+    0xde49acb6,
+    0x32afd8f2,
+    0xc9cddd33,
+    0xd5ed2846,
+    0xc34b9649,
+    0xb3a54fa3,
+    0x67343f15,
+    0x908277c6,
+    0xc6779c52,
+    0xfe55fd7d,
+    0x96966232,
+    0xcd03999d,
+    0x90b3fae2,
+    0x7f04e213
     };
     // VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
-    mcu_mci_boot_go();
-    ////////////////////////////////////
-    // Fuse and Boot Bringup
-    //
-    // Wait for ready_for_fuses
-    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
+    mcu_cptra_init_d(.cfg_skip_set_fuse_done=false);
 
-    for (uint32_t ii = 0; ii < 400; ii++) {
+    for (uint32_t ii = 0; ii < 600; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
 
-    VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG PROD DEBUG TEST with ROM \n=================\n\n");
+    VPRINTF(LOW, "=================\n CALIPTRA_SS PROD DEBUG TEST without ROM \n=================\n\n");
 
-    // lcc_initialization();
-    // transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    // reset_fc_lcc_rtl();
-    lsu_write_32(SOC_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES, 8);
-    VPRINTF(LOW, "MCU: Set number of PK hashes to 8\n");
-    lsu_write_32(SOC_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET, PROD_DBG_PK_HASH_OFFSET);
-    VPRINTF(LOW, "MCU: Set PK hash register bank offset to 0x%08X\n", PROD_DBG_PK_HASH_OFFSET);
-    uint32_t base_address;
-    base_address = PROD_DBG_PK_HASH_OFFSET_BASE + 12 * (debug_level-1) * 4;
-    for (int i = 0; i < 12; i++) {
-        uint32_t addr = base_address + (i * 4);
-        VPRINTF(LOW, "MCU: writing PROD_dbg_pk[%02d] to address 0x%08X = 0x%08X\n", i, addr, PROD_dbg_pk[i]);
-        lsu_write_32(addr, PROD_dbg_pk[i]);
-    }
-     
-    // Initialize fuses
-    lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
-    VPRINTF(LOW, "MCU: Set fuse wr done\n");  
+    // Enable ss_soc_dft_en_mask_reg
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_DFT_EN_0, 0x1);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_HW_DEBUG_EN_0, 0x1);
+    VPRINTF(LOW, "MCU: Set 0x1 to ss_soc_dft_en_mask_reg\n");
+    VPRINTF(LOW, "MCU: Set 0x1 to ss_soc_hardware_dbg_en_mask_reg\n");
+    
 
     cptra_boot_go = 0;
     VPRINTF(LOW, "MCU: waits in success loop\n");
@@ -139,7 +117,28 @@ void main (void) {
 
     VPRINTF(LOW, "MCU: Success done\n");
     // reset_fc_lcc_rtl();
-    for (uint32_t ii = 0; ii < 5000; ii++) {
+    for (uint32_t ii = 0; ii < 500; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+
+    // Disable ss_soc_dft_en_mask_reg
+    for (uint32_t ii = 0; ii < 32; ii++){
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_DFT_EN_0, 0x1<<ii);
+        VPRINTF(LOW, "MCU: Set 0x%X to ss_soc_dft_en_mask_reg\n",0x1<<ii);
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_HW_DEBUG_EN_0, 0x1<<ii);
+        VPRINTF(LOW, "MCU: Set 0x%X to ss_soc_hardware_dbg_en_mask_reg\n",0x1<<ii);
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_PROD_DEBUG_STATE_0, 0x1<<ii);
+        VPRINTF(LOW, "MCU: Set 0x%X to ss_soc_hardware_dbg_en_mask_reg\n",0x1<<ii);
+    }
+    for (uint32_t ii = 0; ii < 32; ii++){
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_DFT_EN_1, 0x1<<ii);
+        VPRINTF(LOW, "MCU: Set 0x%X00000000 to ss_soc_dft_en_mask_reg\n",0x1<<ii);
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_HW_DEBUG_EN_1, 0x1<<ii);
+        VPRINTF(LOW, "MCU: Set 0x%X00000000 to ss_soc_hardware_dbg_en_mask_reg\n",0x1<<ii);
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_PROD_DEBUG_STATE_1, 0x1<<ii);
+        VPRINTF(LOW, "MCU: Set 0x%X to ss_soc_hardware_dbg_en_mask_reg\n",0x1<<ii);
+    }
+    for (uint32_t ii = 0; ii < 500; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
 

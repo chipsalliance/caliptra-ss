@@ -66,6 +66,11 @@ module mci_top
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_sram_config_axi_user,
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mci_soc_config_axi_user,
     input logic ss_debug_intent,
+    
+    // RDC
+    output logic rdc_clk_dis,
+    output logic fw_update_rdc_clk_dis,
+    output logic early_warm_reset_warn,
 
     // SRAM ADHOC connections
     input logic mcu_sram_fw_exec_region_lock,
@@ -247,12 +252,7 @@ module mci_top
 
     // Other
     logic mci_ss_debug_intent;
-    logic early_warm_reset_warn;
 
-    // RDC
-
-    logic rdc_clk_dis;
-    logic fw_update_rdc_clk_dis;
 
 
 

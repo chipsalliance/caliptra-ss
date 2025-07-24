@@ -35,15 +35,21 @@ module caliptra_ss_top
     ,parameter [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
-    ,parameter bit LCC_SecVolatileRawUnlockEn = 1
 ) (
     input logic cptra_ss_clk_i,
     output logic cptra_ss_rdc_clk_cg_o,
+    output logic cptra_ss_mcu_clk_cg_o,
     input logic cptra_ss_pwrgood_i,
     input logic cptra_ss_rst_b_i,
     input  logic cptra_ss_mci_cptra_rst_b_i,
     output logic cptra_ss_mci_cptra_rst_b_o,
     output logic cptra_ss_rst_b_o,
+    output logic cptra_ss_mcu_rst_b_o,
+    input  logic cptra_ss_mcu_rst_b_i,
+
+    output logic cptra_ss_warm_reset_rdc_clk_dis_o,
+    output logic cptra_ss_early_warm_reset_warn_o,
+    output logic cptra_ss_mcu_fw_update_rdc_clk_dis_o,
 
 // Caliptra Core AXI Sub Interface
     axi_if.w_sub cptra_ss_cptra_core_s_axi_if_w_sub,
@@ -222,6 +228,7 @@ module caliptra_ss_top
     input  lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_ack_i,
     output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_req_o,
     input  logic cptra_ss_lc_ctrl_scan_rst_ni_i,
+    input logic cptra_ss_lc_sec_volatile_raw_unlock_en_i,
 
     input logic cptra_ss_lc_esclate_scrap_state0_i,   
     input logic cptra_ss_lc_esclate_scrap_state1_i,   
@@ -301,7 +308,6 @@ module caliptra_ss_top
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
 
-    logic mcu_clk_cg;
 
     logic        mcu_dmi_core_enable;
     logic        mcu_dmi_uncore_enable;
@@ -325,7 +331,6 @@ module caliptra_ss_top
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
 
     // ----------------- MCI Connections within Subsystem -----------------------
-    logic mcu_rst_b;
 
 
     // ----------------- MCI Connections LCC Connections -----------------------
@@ -573,9 +578,9 @@ module caliptra_ss_top
     // MCU instance
     //=========================================================================-
     mcu_top rvtop_wrapper (
-        .rst_l                  ( mcu_rst_b ),
+        .rst_l                  ( cptra_ss_mcu_rst_b_i ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ),
-        .clk                    ( mcu_clk_cg ),
+        .clk                    ( cptra_ss_mcu_clk_cg_o ),
         .rst_vec                ( reset_vector[31:1]),
         .nmi_int                ( mci_mcu_nmi_int),
         .nmi_vec                ( mci_mcu_nmi_vector[31:1]),
@@ -999,7 +1004,7 @@ module caliptra_ss_top
     ) mci_top_i (
 
         .clk(cptra_ss_clk_i),
-        .mcu_clk_cg(mcu_clk_cg),
+        .mcu_clk_cg(cptra_ss_mcu_clk_cg_o),
         .cptra_ss_rdc_clk_cg(cptra_ss_rdc_clk_cg_o), 
 
 
@@ -1043,6 +1048,12 @@ module caliptra_ss_top
         
         // OTP
         .intr_otp_operation_done,
+
+        // RDC Signals
+        .rdc_clk_dis(cptra_ss_warm_reset_rdc_clk_dis_o),
+        .early_warm_reset_warn(cptra_ss_early_warm_reset_warn_o),
+        .fw_update_rdc_clk_dis(cptra_ss_mcu_fw_update_rdc_clk_dis_o),
+
         
         // MCU Halt Signals
         .mcu_cpu_halt_req_o   (cptra_ss_mcu_halt_req_o   ),
@@ -1054,7 +1065,7 @@ module caliptra_ss_top
         .nmi_intr(mci_mcu_nmi_int),
         .mcu_nmi_vector(mci_mcu_nmi_vector),
 
-        .mcu_rst_b(mcu_rst_b),
+        .mcu_rst_b(cptra_ss_mcu_rst_b_o),
         .cptra_rst_b(cptra_ss_mci_cptra_rst_b_o),
 
         // MBOX
@@ -1155,11 +1166,10 @@ module caliptra_ss_top
     assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl_pwr_lc_o.lc_done);
     assign lcc_init_req.lc_init = mci_to_lcc_init_req; 
 
-    lc_ctrl  #(
-        .SecVolatileRawUnlockEn (LCC_SecVolatileRawUnlockEn)
-    ) u_lc_ctrl (
+    lc_ctrl u_lc_ctrl (
             .clk_i(cptra_ss_clk_i),
             .rst_ni(cptra_ss_rst_b_o),
+            .lc_sec_volatile_raw_unlock_en_i(cptra_ss_lc_sec_volatile_raw_unlock_en_i),
             .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
             .axi_wr_req(cptra_ss_lc_axi_wr_req_i),
             .axi_wr_rsp(cptra_ss_lc_axi_wr_rsp_o),

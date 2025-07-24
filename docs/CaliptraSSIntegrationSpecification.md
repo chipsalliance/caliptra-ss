@@ -28,6 +28,7 @@
     - [Caliptra Subsystem Reference Register Map](#caliptra-subsystem-reference-register-map)
     - [FW Execution Control Connections](#fw-execution-control-connections)
     - [Caliptra Core Reset Control](#caliptra-core-reset-control)
+    - [MCU Reset Control](#mcu-reset-control)
   - [SRAM implementation](#sram-implementation)
     - [Overview](#overview-1)
     - [RISC-V internal memory export](#risc-v-internal-memory-export)
@@ -330,7 +331,13 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 1     | `cptra_ss_rst_b_i`                   | Reset signal input, active low           |
 | External | input     | 1     | `cptra_ss_mci_cptra_rst_b_i`         | Reset signal input for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
 | External | output    | 1     | `cptra_ss_mci_cptra_rst_b_o`         | Reset signal output from MCI for Caliptra Core, active low. See [Caliptra Core Reset Control](#caliptra-core-reset-control) for more details          |
+| External | input     | 1     | `cptra_ss_mcu_rst_b_i`         | Reset signal input for MCU, active low. See [MCU Reset Control](#mcu-reset-control) for more details          |
+| External | output    | 1     | `cptra_ss_mcu_rst_b_o`         | Reset signal output for MCU, active low. See [MCU Reset Control](#mcu-reset-control) for more details          |
+| External | output    | 1     | `cptra_ss_warm_reset_rdc_clk_dis_o`         | Clock disable for warm reset. Used to disable `cptra_ss_rdc_clk_cg_o` and `cptra_ss_mcu_clk_cg_o` clocks. Asserted a few clock cycles after `cptra_ss_rst_b_i` asserted and before `cptra_ss_rst_b_o` asserted. Deasserted a few clock cycles after `cptra_ss_rst_b_i` deasserted.    |
+| External | output    | 1     | `cptra_ss_early_warm_reset_warn_o`         | Early reset warn used to change security related signals to a safe value before reset is asserted. Needed since Caliptra Core clock gating is slightly after MCI clock gating/reset assertion. Example is the security_state fed from MCI to Caliptra Core. |
+| External | output    | 1     | `cptra_ss_mcu_fw_update_rdc_clk_dis_o`         | Clock disable for MCU reset. Used to disable `cptra_ss_mcu_clk_cg_o` clock. Asserted a few clock cycles before `cptra_ss_mcu_rst_b_o` is asserted. Deasserted when MCI boot sequencer switches out of `BOOT_RST_MCU` state.  |
 | External | output    | 1     | `cptra_ss_rdc_clk_cg_o`              | Caliptra subsystem clock gated clock for RDC. [Clock Control](#clock)         |
+| External | output    | 1     | `cptra_ss_mcu_clk_cg_o`              | MCU clock gated clock for RDC. [Clock Control](#clock)         |
 | External | output    | 1     | `cptra_ss_rst_b_o`                   | Caliptra subsystem reset aligned for RDC crossing [Reset Control](#reset)         |
 | External | axi_if    | na    | `cptra_ss_cptra_core_s_axi_if_w_sub`       | Caliptra core AXI write sub-interface          |
 | External | axi_if    | na    | `cptra_ss_cptra_core_s_axi_if_r_sub`       | Caliptra core AXI read sub-interface          |
@@ -411,7 +418,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 1     | `cptra_ss_cptra_core_itrng_valid_i`  | Internal TRNG valid input                |
 | External | interface | na    | `cptra_ss_mci_mcu_sram_req_if`       | MCI MCU SRAM request interface           |
 | External | interface | na    | `cptra_ss_mci_mbox0_sram_req_if`     | MCI mailbox 0 SRAM request interface     |
-| External | interface | na    | `cptra_ss_mci_mbox1_sram_req_if`     | MCI mailbox 1 SRAM request interface     |
+| External | interface | na    | `cptra_ss_mci_mbox1_sram_req_if`     | MCI mailbox 1 SRAM request interface     |har
 | External | output    | 1     | `cptra_ss_soc_mcu_mbox0_data_avail`  | MCU Mailbox0 data available output            |
 | External | output    | 1     | `cptra_ss_soc_mcu_mbox1_data_avail`  | MCU Mailbox1 data available output            |
 | External | interface | na    | `cptra_ss_mcu0_el2_mem_export`       | MCU0 EL2 memory export interface         |
@@ -419,7 +426,8 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 1     | `cptra_ss_mcu_no_rom_config_i`       | No ROM configuration input               |
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
 | External | input     | 1     | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`     | Allow RMA or SCRAP on PPD input                   |
-| External | input     | 1     | `cptra_ss_FIPS_ZEROIZATION_PPD_i`    | Zeroization request with PPD input. If FIPS zeroization flow is required, it shall be set before Caliptra SS is out of reset. Sampled on CSS reset deassertion.
+| External | input     | 1     | `cptra_ss_FIPS_ZEROIZATION_PPD_i`    | Zeroization request with PPD input. If FIPS zeroization flow is required, it shall be set before Caliptra SS is out of reset.       |
+| External |input      |   1   | `cptra_ss_lc_sec_volatile_raw_unlock_en_i`        | Enables Volatile TEST_UNLOCKED0 state transition infra (see [Volatile-Unlock](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#exception-non-volatile-debugging-infrastructure-and-initial-raw-state-operations))|
 | External | output    | 1     | `cptra_ss_dbg_manuf_enable_o`    | Indication that the debug is unlocked for manufacturing state and this is set by Caliptra Core        |
 | External | output    | 64    | `cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o`    | Indication that the debug is unlocked for production state. Each bit represents a debug level. Currently, 8-bit is supported with Caliptra ROM |
 | External | output    | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro for any additional SOC specific use cases       |
@@ -477,7 +485,18 @@ The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_c
   - **Integration Notes**
      1. Gated a few clock cycles before `cptra_ss_rst_b_o` asserted and remains gated until reset is deasserted.
      2. MCU SRAM and MCU MBOX memories shall be connected to this clock to avoid RDC issues.
-     3. Any SOC logic on a deeper reset domain than CSS can use this clock to resolve RDC issues.
+     3. Clock gating controlled by `cptra_ss_warm_reset_rdc_clk_dis_o`.
+     4. Any SOC logic on a deeper reset domain than CSS can use this clock to resolve RDC issues.
+
+The `cptra_ss_mcu_clk_cg_o` output clock is a gated version of `cptra_ss_clk_i`. It is gated whenever `cptra_ss_mcu_rst_b_o` is asserted to avoid RDC issues within the MCU warm and cold reset domains. 
+  
+  - **Signal Name** `cptra_ss_mcu_clk_cg_o`
+  - **Required Frequency** Same as `cptra_ss_clk_i`.
+  - **Clock Source** Caliptra SS MCI clock gater
+  - **Integration Notes**
+     1. Gated a few clock cycles before `cptra_ss_mcu_rst_b_o` asserted and remains gated until reset is deasserted.
+     2. Clock gating controlled by `cptra_ss_mcu_fw_update_rdc_clk_dis_o` and `cptra_ss_warm_reset_rdc_clk_dis_o`.
+     3. Any SOC logic on a deeper reset domain than MCU can use this clock to resolve RDC issues.
 
 ### Reset
 
@@ -491,7 +510,7 @@ The `cptra_ss_rst_b_i` signal is the primary reset input for the Caliptra Subsys
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
      - It is **illegal** to only toggle `cptra_ss_rst_b_i` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
-     - SOC shall toggle `cptra_ss_reset_b` only after `cptra_ss_mcu_halt_status_o` is asserted to guarantee MCU is idle and to prevent any RDC issues.
+     - SOC should assert `cptra_ss_reset_b_i` after `cptra_ss_mcu_halt_status_o` is asserted to guarantee MCU is idle. This will guarantee no outstanding AXI transactions from MCU and help avoid RDC issues.  
 
 The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_rst_b_i` to ensure `cptra_ss_rdc_clk_cg_o` is gated before reset is asserted. This reset is needed for the purpose of RDC between the warm reset domain and the cold reset/memory domain.
 
@@ -600,6 +619,18 @@ If an SOC wants to keep Caliptra in reset they can tie off `cptra_ss_mci_cptra_r
 If an SOC wants to modify Caliptra reset they can do so by adding additional logic to the above signals.
 
 **NOTE**: Caliptra SS RDC and CDC are only evaluated when the MCI control is looped back to Caliptra. Any modification to this reset control requires a full RDC and CDC analysis done by the SOC integration team.
+
+### MCU Reset Control
+
+Typically MCU reset is directly controlled by MCI. This means `cptra_ss_mcu_rst_b_o` is directly looped back to  `cptra_ss_mcu_rst_b_i`.
+
+The SOC can choose to delay the MCU reset deassertion. The SOC should be aware that MCU clock enable is based off `cptra_ss_mcu_rst_b_o`.
+
+If the SOC wants to delay assertion of MCU reset this can be done, but integrators need to be aware the MCU reset counter (`MIN_MCU_RST_COUNTER_WIDTH`) starts counting when `cptra_ss_mcu_rst_b_i` asserts. Meaning MCU could be in reset for shorter than expected. To resolve this issue the SOC should implement their own reset counter to delay the reset deassertion. 
+
+Arbitrary reset assertions/deassertions should not be done unless the integrator understands exactly what they are doing. This can cause RDC issues within Caliptra SS.
+
+**NOTE**: Caliptra SS RDC and CDC are only evaluated when MCU reset is looped back. Any modification to this reset control requires a full RDC and CDC analysis done by the SOC integration team.
 
 ## SRAM implementation
 
@@ -1138,7 +1169,6 @@ Parameter                        | Default (Max)  | Description
 `RndCnstLcKeymgrDivDev`          | (see RTL)      | Diversification value used for the DEV life cycle state.
 `RndCnstLcKeymgrDivProduction`   | (see RTL)      | Diversification value used for the PROD/PROD_END life cycle states.
 `RndCnstLcKeymgrDivRma`          | (see RTL)      | Diversification value used for the RMA life cycle state.
-`SecVolatileRawUnlockEn`         | 1'b1           | Enables Volatile TEST_UNLOCKED0 state transition infra
 
 ## Interface
 
@@ -1147,6 +1177,7 @@ Facing      | Type       | width  | Name                  |  External Name in So
 ------------|:-----------|:-------|:----------------------|:------------------------------------|:-------       |
 External    |input       |   1    | `clk_i`               | `cptra_ss_clk_i`                    | clock         |
 External    |input       |   1    | `rst_ni`              | `cptra_ss_rst_b_i`                  | LC controller reset input, active low|
+External    |input       |   1    | `lc_sec_volatile_raw_unlock_en_i`              | `cptra_ss_lc_sec_volatile_raw_unlock_en_i`                  | Enables Volatile TEST_UNLOCKED0 state transition infra|
 External    |input       |   1    | `Allow_RMA_or_SCRAP_on_PPD`    | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`    | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA or SCRAP.|
 External    |interface   |   1    | `axi_wr_req`          | `cptra_ss_lc_axi_wr_req_i`          | LC controller AXI write request input |
 External    |interface   |   1    | `axi_wr_rsp`          | `cptra_ss_lc_axi_wr_rsp_o`          | LC controller AXI write response output|
@@ -1390,7 +1421,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Facing | Type | Width | Name | Clock | Description |
 | :---- | :---- | :---- | :---- | :---- | :---- |
 | External | Input | 1 | `clk` |  | MCI Clock. Connected to subsystem top level clk input.|
-| Internal | Output | 1 | `mcu_clk_cg` |  | MCU clock gated when MCU in reset for RDC. |
+| External | Output | 1 | `mcu_clk_cg` |  | MCU clock gated when MCU in reset for RDC. Exposed as `cptra_ss_mcu_clk_cg_o` externally.|
 | External | Output | 1 | `cptra_ss_rdc_clk_cg` |  | MCI SS clock gated when caliptra reset asserted for RDC. Should be used whenever their is a Warm reset ->  cold reset crossing in design. Must be paired with `cptra_ss_rst_b_o` reset for proper gating. Exposed to SOC as `cptra_ss_rdc_clk_cg_o`|
 
 **Table: MCI Resets**
@@ -1400,8 +1431,8 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | External | Input  | 1     | `mci_pwrgood` |  Active high power good indicator. Deepest reset domain for MCI.             |
 | External | Input  | 1     | `mci_rst_b`   |  Active low asynchronous reset for MCI.                                      |
 | External | Input  | 1     | `cptra_ss_rst_b_o`   |  Active low asyn reset for Caliptra SS. Delayed version of `mci_rst_b` in order to gate `cptra_ss_rdc_clk_cg` and `mcu_clk_cg` before reset assertions for RDC purposes. When `scan_mode` is set, this is directly controlle  by `mci_rst_b`                                     |
-| Internal | Output | 1     | `mcu_rst_b`   | Reset for MCU. When `scan_mode` is set, this is directly controlled by `mci_rst_b`. |
-| Internal | Output | 1     | `cptra_rst_b` | Reset for Caliptra. When `scan_mode` is set, this is directly controlled by `mci_rst_b`. |
+| External | Output | 1     | `mcu_rst_b`   | Reset for MCU. When `scan_mode` is set, this is directly controlled by `mci_rst_b`. Exposed as `cptra_ss_mcu_rst_b_o` externally. |
+| External | Output | 1     | `cptra_rst_b` | Reset for Caliptra. When `scan_mode` is set, this is directly controlled by `mci_rst_b`. Exposed as `cptra_ss_mci_cptra_rst_b_o` externally.  |
 
 **Table: MCI AXI Interface**
 
@@ -1421,6 +1452,15 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | External | Input  | `AXI_USER_WIDTH` | `strap_mci_soc_config_axi_user`       | AXI USER with MCU privilages in MCI reg. Use for Romless config. 0x0: Disable 0xFFFFFFFF: Debug (all AXI users get this privilage). Exposed to SOC via `cptra_ss_strap_mci_soc_config_axi_user_i`                                        |
 | External | Input  | 32             | `strap_mcu_reset_vector`  | Default reset vector for MCI. Can be overridden via MCI register write. Exposed to SOC via `cptra_ss_strap_mcu_reset_vector_i`|
 | External | Input  | 32             | `ss_debug_intent`  | Debug intent |
+
+
+**Table: MCI CG Controls**
+| Facing   | Type   | Width          | Name                      | Description                                                   |
+|:-------- |:------ |:-------------- |:------------------------- | :------------------------------------------------------------- |
+| External | output    | 1     | `rdc_clk_dis`         | Clock disable for warm reset. Used to disable `cptra_ss_rdc_clk_cg_o` and `cptra_ss_mcu_clk_cg_o` clocks. Asserted a few clock cycles after `cptra_ss_rst_b_i` asserted and before `cptra_ss_rst_b_o` asserted. Deasserted a few clock cycles after `cptra_ss_rst_b_i` deasserted. Exposed as `cptra_ss_warm_reset_rdc_clk_dis_o` externally.   |
+| External | output    | 1     | `early_warm_reset_warn`         | Early reset warn used to change security related signals to a safe value before reset is asserted. Needed since Caliptra Core clock gating is slightly after MCI clock gating/reset assertion. Example is the security_state fed from MCI to Caliptra Core. Exposed as `cptra_ss_early_warm_reset_warn_o` externally |
+| External | output    | 1     | `fw_update_rdc_clk_dis`         | Clock disable for MCU reset. Used to disable `cptra_ss_mcu_clk_cg_o` clock. Asserted a few clock cycles before `cptra_ss_mcu_rst_b_o` is asserted. Deasserted when MCI boot sequencer switches out of `BOOT_RST_MCU` state. Exposed as `cptra_ss_mcu_fw_update_rdc_clk_dis_o` externally |
+
 
 
 **Table: MCI MISC Interface**

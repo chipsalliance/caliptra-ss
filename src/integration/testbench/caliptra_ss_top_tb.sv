@@ -61,6 +61,12 @@ module caliptra_ss_top_tb
     logic                       cptra_ss_rst_b_i;
     logic                       cptra_ss_mci_cptra_rst_b_o;
     logic                       cptra_ss_rdc_clk_cg_o;
+    logic                       cptra_ss_mcu_clk_cg_o;
+    logic                       cptra_ss_mcu_rst_b_o;
+    
+    logic                       cptra_ss_warm_reset_rdc_clk_dis_o;
+    logic                       cptra_ss_early_warm_reset_warn_o;
+    logic                       cptra_ss_mcu_fw_update_rdc_clk_dis_o;
 
     logic        [31:0]         trace_rv_i_insn_ip;
     logic        [31:0]         trace_rv_i_address_ip;
@@ -1250,6 +1256,7 @@ module caliptra_ss_top_tb
    // driven by lc_ctrl_bfm
    logic cptra_ss_lc_esclate_scrap_state0_i;
    logic cptra_ss_lc_esclate_scrap_state1_i;
+   logic cptra_ss_lc_sec_volatile_raw_unlock_en_i;
 
 
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_ack_i;
@@ -1279,6 +1286,8 @@ module caliptra_ss_top_tb
 
     initial begin
         cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
+        cptra_ss_lc_sec_volatile_raw_unlock_en_i = 1'b1; // Enable the raw unlock for sec volatile
+
     end
 
     // JTAG DPI
@@ -1499,17 +1508,25 @@ module caliptra_ss_top_tb
         .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),
         .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB),
         .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),
-        .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER),
-        .LCC_SecVolatileRawUnlockEn(LCC_SecVolatileRawUnlockEn)
+        .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER)
     )
     caliptra_ss_dut (
 
         .cptra_ss_clk_i(core_clk),
         .cptra_ss_rdc_clk_cg_o,
+        .cptra_ss_mcu_clk_cg_o,
         .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i),
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o,
+        .cptra_ss_mcu_rst_b_o,
+        .cptra_ss_mcu_rst_b_i(cptra_ss_mcu_rst_b_o),
+
+    // RDC related signals
+        .cptra_ss_warm_reset_rdc_clk_dis_o,
+        .cptra_ss_early_warm_reset_warn_o,
+        .cptra_ss_mcu_fw_update_rdc_clk_dis_o,
+ 
 
     //SoC AXI Interface
         .cptra_ss_cptra_core_s_axi_if_r_sub(cptra_ss_cptra_core_s_axi_if.r_sub),
@@ -1681,6 +1698,7 @@ module caliptra_ss_top_tb
         .cptra_ss_lc_clk_byp_ack_i           (cptra_ss_lc_clk_byp_ack_i),
         .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),
         .cptra_ss_lc_ctrl_scan_rst_ni_i      (1'b1), // Note: Since we do not use dmi and use JTAG we do not need this
+        .cptra_ss_lc_sec_volatile_raw_unlock_en_i(cptra_ss_lc_sec_volatile_raw_unlock_en_i),
 
         .cptra_ss_lc_esclate_scrap_state0_i,
         .cptra_ss_lc_esclate_scrap_state1_i,
