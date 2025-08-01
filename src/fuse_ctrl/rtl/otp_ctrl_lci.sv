@@ -44,14 +44,14 @@ module otp_ctrl_lci
   output logic                              lci_prog_idle_o,
   // OTP interface
   output logic                              otp_req_o,
-  output caliptra_prim_otp_pkg::cmd_e                otp_cmd_o,
+  output prim_generic_otp_pkg::cmd_e        otp_cmd_o,
   output logic [OtpSizeWidth-1:0]           otp_size_o,
   output logic [OtpIfWidth-1:0]             otp_wdata_o,
   output logic [OtpAddrWidth-1:0]           otp_addr_o,
   input                                     otp_gnt_i,
   input                                     otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]             otp_rdata_i,
-  input  caliptra_prim_otp_pkg::err_e                otp_err_i
+  input  prim_generic_otp_pkg::err_e        otp_err_i
 );
 
   ////////////////////////
@@ -125,7 +125,7 @@ module otp_ctrl_lci
 
     // OTP signals
     otp_req_o = 1'b0;
-    otp_cmd_o = caliptra_prim_otp_pkg::Read;
+    otp_cmd_o = prim_generic_otp_pkg::Read;
 
     // Response to LC controller
     lc_err_o = 1'b0;
@@ -158,7 +158,7 @@ module otp_ctrl_lci
       // programmed to 1 before, the OTP errors out.
       WriteSt: begin
         otp_req_o = 1'b1;
-        otp_cmd_o = caliptra_prim_otp_pkg::Write;
+        otp_cmd_o = prim_generic_otp_pkg::Write;
         lci_prog_idle_o = 1'b0;
         if (otp_gnt_i) begin
           state_d = WriteWaitSt;
