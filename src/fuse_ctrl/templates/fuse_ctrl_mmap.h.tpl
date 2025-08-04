@@ -57,8 +57,8 @@ typedef struct {
     bool sw_digest;
     bool has_read_lock;
     bool has_ecc;
-    bool is_lifecycle;
     uint32_t lc_phase;
+    bool is_lifecycle;
     uint32_t num_fuses;
     uint32_t *fuses;
 } partition_t;
