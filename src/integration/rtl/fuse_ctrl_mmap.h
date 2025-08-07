@@ -186,9 +186,25 @@ typedef enum {
     CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_13 = 0x0C28,
     CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_14 = 0x0C48,
     CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_15 = 0x0C68,
+    // CPTRA_SS_LOCK_HEK_PROD_0
+    CPTRA_SS_LOCK_HEK_PROD_0_RATCHET_SEED = 0x0C90,
+    // CPTRA_SS_LOCK_HEK_PROD_1
+    CPTRA_SS_LOCK_HEK_PROD_1_RATCHET_SEED = 0x0CC0,
+    // CPTRA_SS_LOCK_HEK_PROD_2
+    CPTRA_SS_LOCK_HEK_PROD_2_RATCHET_SEED = 0x0CF0,
+    // CPTRA_SS_LOCK_HEK_PROD_3
+    CPTRA_SS_LOCK_HEK_PROD_3_RATCHET_SEED = 0x0D20,
+    // CPTRA_SS_LOCK_HEK_PROD_4
+    CPTRA_SS_LOCK_HEK_PROD_4_RATCHET_SEED = 0x0D50,
+    // CPTRA_SS_LOCK_HEK_PROD_5
+    CPTRA_SS_LOCK_HEK_PROD_5_RATCHET_SEED = 0x0D80,
+    // CPTRA_SS_LOCK_HEK_PROD_6
+    CPTRA_SS_LOCK_HEK_PROD_6_RATCHET_SEED = 0x0DB0,
+    // CPTRA_SS_LOCK_HEK_PROD_7
+    CPTRA_SS_LOCK_HEK_PROD_7_RATCHET_SEED = 0x0DE0,
     // LIFE_CYCLE
-    LC_TRANSITION_CNT = 0x0C90,
-    LC_STATE = 0x0CC0
+    LC_TRANSITION_CNT = 0x0E10,
+    LC_STATE = 0x0E40
 } fuse_k;
 
 typedef enum {
@@ -207,6 +223,14 @@ typedef enum {
     VENDOR_REVOCATIONS_PROD_PARTITION,
     VENDOR_SECRET_PROD_PARTITION,
     VENDOR_NON_SECRET_PROD_PARTITION,
+    CPTRA_SS_LOCK_HEK_PROD_0,
+    CPTRA_SS_LOCK_HEK_PROD_1,
+    CPTRA_SS_LOCK_HEK_PROD_2,
+    CPTRA_SS_LOCK_HEK_PROD_3,
+    CPTRA_SS_LOCK_HEK_PROD_4,
+    CPTRA_SS_LOCK_HEK_PROD_5,
+    CPTRA_SS_LOCK_HEK_PROD_6,
+    CPTRA_SS_LOCK_HEK_PROD_7,
     LIFE_CYCLE
 } partition_k;
 
@@ -228,7 +252,7 @@ typedef struct {
     uint32_t *fuses;
 } partition_t;
 
-#define NUM_PARTITIONS 16
+#define NUM_PARTITIONS 24
 
 uint32_t sw_test_unlock_partition_fuses[] = {
     CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN
@@ -413,6 +437,30 @@ uint32_t vendor_non_secret_prod_partition_fuses[] = {
     CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_13,
     CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_14,
     CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_15
+};
+uint32_t cptra_ss_lock_hek_prod_0_fuses[] = {
+    CPTRA_SS_LOCK_HEK_PROD_0_RATCHET_SEED
+};
+uint32_t cptra_ss_lock_hek_prod_1_fuses[] = {
+    CPTRA_SS_LOCK_HEK_PROD_1_RATCHET_SEED
+};
+uint32_t cptra_ss_lock_hek_prod_2_fuses[] = {
+    CPTRA_SS_LOCK_HEK_PROD_2_RATCHET_SEED
+};
+uint32_t cptra_ss_lock_hek_prod_3_fuses[] = {
+    CPTRA_SS_LOCK_HEK_PROD_3_RATCHET_SEED
+};
+uint32_t cptra_ss_lock_hek_prod_4_fuses[] = {
+    CPTRA_SS_LOCK_HEK_PROD_4_RATCHET_SEED
+};
+uint32_t cptra_ss_lock_hek_prod_5_fuses[] = {
+    CPTRA_SS_LOCK_HEK_PROD_5_RATCHET_SEED
+};
+uint32_t cptra_ss_lock_hek_prod_6_fuses[] = {
+    CPTRA_SS_LOCK_HEK_PROD_6_RATCHET_SEED
+};
+uint32_t cptra_ss_lock_hek_prod_7_fuses[] = {
+    CPTRA_SS_LOCK_HEK_PROD_7_RATCHET_SEED
 };
 uint32_t life_cycle_fuses[] = {
     LC_TRANSITION_CNT,
@@ -690,10 +738,154 @@ partition_t partitions[NUM_PARTITIONS] = {
         .num_fuses = 16,
         .fuses = vendor_non_secret_prod_partition_fuses
     },
-    // LIFE_CYCLE
+    // CPTRA_SS_LOCK_HEK_PROD_0
     {
         .index = 15,
         .address = 0x0C90,
+        .digest_address = 0x0CB0,
+        .zer_address = 0x0CB8,
+        .variant = 1,
+        .granularity = 32,
+        .is_secret = false,
+        .hw_digest = false,
+        .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 17,
+        .is_lifecycle = false,
+        .num_fuses = 2,
+        .fuses = cptra_ss_lock_hek_prod_0_fuses
+    },
+    // CPTRA_SS_LOCK_HEK_PROD_1
+    {
+        .index = 16,
+        .address = 0x0CC0,
+        .digest_address = 0x0CE0,
+        .zer_address = 0x0CE8,
+        .variant = 1,
+        .granularity = 32,
+        .is_secret = false,
+        .hw_digest = false,
+        .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 17,
+        .is_lifecycle = false,
+        .num_fuses = 2,
+        .fuses = cptra_ss_lock_hek_prod_1_fuses
+    },
+    // CPTRA_SS_LOCK_HEK_PROD_2
+    {
+        .index = 17,
+        .address = 0x0CF0,
+        .digest_address = 0x0D10,
+        .zer_address = 0x0D18,
+        .variant = 1,
+        .granularity = 32,
+        .is_secret = false,
+        .hw_digest = false,
+        .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 17,
+        .is_lifecycle = false,
+        .num_fuses = 2,
+        .fuses = cptra_ss_lock_hek_prod_2_fuses
+    },
+    // CPTRA_SS_LOCK_HEK_PROD_3
+    {
+        .index = 18,
+        .address = 0x0D20,
+        .digest_address = 0x0D40,
+        .zer_address = 0x0D48,
+        .variant = 1,
+        .granularity = 32,
+        .is_secret = false,
+        .hw_digest = false,
+        .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 17,
+        .is_lifecycle = false,
+        .num_fuses = 2,
+        .fuses = cptra_ss_lock_hek_prod_3_fuses
+    },
+    // CPTRA_SS_LOCK_HEK_PROD_4
+    {
+        .index = 19,
+        .address = 0x0D50,
+        .digest_address = 0x0D70,
+        .zer_address = 0x0D78,
+        .variant = 1,
+        .granularity = 32,
+        .is_secret = false,
+        .hw_digest = false,
+        .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 17,
+        .is_lifecycle = false,
+        .num_fuses = 2,
+        .fuses = cptra_ss_lock_hek_prod_4_fuses
+    },
+    // CPTRA_SS_LOCK_HEK_PROD_5
+    {
+        .index = 20,
+        .address = 0x0D80,
+        .digest_address = 0x0DA0,
+        .zer_address = 0x0DA8,
+        .variant = 1,
+        .granularity = 32,
+        .is_secret = false,
+        .hw_digest = false,
+        .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 17,
+        .is_lifecycle = false,
+        .num_fuses = 2,
+        .fuses = cptra_ss_lock_hek_prod_5_fuses
+    },
+    // CPTRA_SS_LOCK_HEK_PROD_6
+    {
+        .index = 21,
+        .address = 0x0DB0,
+        .digest_address = 0x0DD0,
+        .zer_address = 0x0DD8,
+        .variant = 1,
+        .granularity = 32,
+        .is_secret = false,
+        .hw_digest = false,
+        .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 17,
+        .is_lifecycle = false,
+        .num_fuses = 2,
+        .fuses = cptra_ss_lock_hek_prod_6_fuses
+    },
+    // CPTRA_SS_LOCK_HEK_PROD_7
+    {
+        .index = 22,
+        .address = 0x0DE0,
+        .digest_address = 0x0E00,
+        .zer_address = 0x0E08,
+        .variant = 1,
+        .granularity = 32,
+        .is_secret = false,
+        .hw_digest = false,
+        .sw_digest = true,
+        .has_read_lock = true,
+        .has_ecc = true,
+        .lc_phase = 17,
+        .is_lifecycle = false,
+        .num_fuses = 2,
+        .fuses = cptra_ss_lock_hek_prod_7_fuses
+    },
+    // LIFE_CYCLE
+    {
+        .index = 23,
+        .address = 0x0E10,
         .digest_address = 0x0000,
         .zer_address = 0x0000,
         .variant = 2,

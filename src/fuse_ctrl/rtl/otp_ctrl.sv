@@ -406,6 +406,14 @@ module otp_ctrl
       end
     end
 
+    // Intercept write requests to the ratchet seed partitions and lock them
+    // based on the value in `RATCHET_SEED_VOLATILE_LOCK`.
+    for (int i = 0; i < NumRatchetSeedPartitions; i++) begin
+      if (i < reg2hw.ratchet_seed_volatile_lock) begin
+        part_access_pre[CptraSsLockHekProd0Idx+i].write_lock = MuBi8True;
+      end
+    end
+
     // XXX: Maybe encode the LC state index directly into the LC partition
     // instead of decoding it on-the-fly.
     unique case (otp_lc_data_o.state)
