@@ -30,12 +30,18 @@ module caliptra_ss_top_w_stub(
     import soc_ifc_pkg::*;
     import css_mcu0_el2_pkg::*;
     
-    `include "css_mcu0_el2_param.vh" ;
+    `include "css_mcu0_el2_param.vh"
+    ;
     // Define the logic and interfaces
     logic cptra_ss_pwrgood_i;
     logic cptra_ss_rst_b_i;
     logic cptra_ss_mci_cptra_rst_b_o;
+    logic cptra_ss_mcu_rst_b_o;
     logic cptra_ss_rdc_clk_cg_o;
+    logic cptra_ss_mcu_clk_cg_o;
+    logic cptra_ss_warm_reset_rdc_clk_dis_o;
+    logic cptra_ss_early_warm_reset_warn_o;
+    logic cptra_ss_mcu_fw_update_rdc_clk_dis_o;
 
     `define AXI_M_IF_TIE_OFF(_sig_name) \
     assign ``_sig_name``.awready = '0;\
@@ -179,7 +185,7 @@ module caliptra_ss_top_w_stub(
 
     logic cptra_ss_cptra_core_mbox_sram_cs_o;
     logic cptra_ss_cptra_core_mbox_sram_we_o;
-    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_sscptra_core_mbox_sram_addr_o;
+    logic [CPTRA_MBOX_ADDR_W-1:0] cptra_ss_cptra_core_mbox_sram_addr_o;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_wdata_o;
     logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_rdata_i;
     assign cptra_ss_cptra_core_mbox_sram_rdata_i = '0;
@@ -285,6 +291,9 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_i3c_sda_oe;
     logic cptra_ss_sel_od_pp_o;
     logic cptra_i3c_axi_user_id_filtering_enable_i;
+    logic cptra_ss_i3c_recovery_payload_available_o;
+    logic cptra_ss_i3c_recovery_image_activated_o;
+
 
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
     logic cptra_ss_cptra_core_scan_mode_i;
@@ -354,7 +363,15 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o(cptra_ss_mci_cptra_rst_b_o),
+        .cptra_ss_mcu_rst_b_i(cptra_ss_mcu_rst_b_o),
+        .cptra_ss_mcu_rst_b_o(cptra_ss_mcu_rst_b_o),
         .cptra_ss_rdc_clk_cg_o(cptra_ss_rdc_clk_cg_o),
+        .cptra_ss_mcu_clk_cg_o(cptra_ss_mcu_clk_cg_o),
+
+        .cptra_ss_warm_reset_rdc_clk_dis_o,
+        .cptra_ss_early_warm_reset_warn_o,
+        .cptra_ss_mcu_fw_update_rdc_clk_dis_o,
+
     
     //SoC AXI Interface
         .cptra_ss_cptra_core_s_axi_if_r_sub(cptra_ss_cptra_core_s_axi_if.r_sub),
@@ -455,7 +472,7 @@ module caliptra_ss_top_w_stub(
     //SRAM interface for mbox
         .cptra_ss_cptra_core_mbox_sram_cs_o,
         .cptra_ss_cptra_core_mbox_sram_we_o,
-        .cptra_sscptra_core_mbox_sram_addr_o,
+        .cptra_ss_cptra_core_mbox_sram_addr_o,
         .cptra_ss_cptra_core_mbox_sram_wdata_o,
         .cptra_ss_cptra_core_mbox_sram_rdata_i,
     
@@ -547,6 +564,11 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_i3c_sda_oe,
         .cptra_i3c_axi_user_id_filtering_enable_i,
         .cptra_ss_sel_od_pp_o,
+        .cptra_ss_i3c_recovery_payload_available_o,
+        .cptra_ss_i3c_recovery_payload_available_i(cptra_ss_i3c_recovery_payload_available_o),
+        .cptra_ss_i3c_recovery_image_activated_o,
+        .cptra_ss_i3c_recovery_image_activated_i(cptra_ss_i3c_recovery_image_activated_o),
+
     
         .cptra_ss_cptra_core_generic_input_wires_i,
         .cptra_ss_cptra_core_scan_mode_i,

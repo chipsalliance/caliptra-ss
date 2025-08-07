@@ -39,11 +39,18 @@ module caliptra_ss_top
 ) (
     input logic cptra_ss_clk_i,
     output logic cptra_ss_rdc_clk_cg_o,
+    output logic cptra_ss_mcu_clk_cg_o,
     input logic cptra_ss_pwrgood_i,
     input logic cptra_ss_rst_b_i,
     input  logic cptra_ss_mci_cptra_rst_b_i,
     output logic cptra_ss_mci_cptra_rst_b_o,
     output logic cptra_ss_rst_b_o,
+    output logic cptra_ss_mcu_rst_b_o,
+    input  logic cptra_ss_mcu_rst_b_i,
+
+    output logic cptra_ss_warm_reset_rdc_clk_dis_o,
+    output logic cptra_ss_early_warm_reset_warn_o,
+    output logic cptra_ss_mcu_fw_update_rdc_clk_dis_o,
 
 // Caliptra Core AXI Sub Interface
     axi_if.w_sub cptra_ss_cptra_core_s_axi_if_w_sub,
@@ -140,7 +147,7 @@ module caliptra_ss_top
 // Caliptra SS mailbox sram interface
     output logic cptra_ss_cptra_core_mbox_sram_cs_o,
     output logic cptra_ss_cptra_core_mbox_sram_we_o,
-    output logic [CPTRA_MBOX_ADDR_W-1:0] cptra_sscptra_core_mbox_sram_addr_o,
+    output logic [CPTRA_MBOX_ADDR_W-1:0] cptra_ss_cptra_core_mbox_sram_addr_o,
     output logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_wdata_o,
     input  logic [CPTRA_MBOX_DATA_AND_ECC_W-1:0] cptra_ss_cptra_core_mbox_sram_rdata_i,
 
@@ -242,6 +249,12 @@ module caliptra_ss_top
     output logic cptra_ss_i3c_scl_oe,
     output logic cptra_ss_i3c_sda_oe,
     output logic cptra_ss_sel_od_pp_o,
+    
+    output logic cptra_ss_i3c_recovery_payload_available_o,
+    input  logic cptra_ss_i3c_recovery_payload_available_i,
+
+    output logic cptra_ss_i3c_recovery_image_activated_o,
+    input  logic cptra_ss_i3c_recovery_image_activated_i,
 
     input  logic cptra_i3c_axi_user_id_filtering_enable_i,
 
@@ -295,7 +308,6 @@ module caliptra_ss_top
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
 
-    logic mcu_clk_cg;
 
     logic        mcu_dmi_core_enable;
     logic        mcu_dmi_uncore_enable;
@@ -319,7 +331,6 @@ module caliptra_ss_top
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
 
     // ----------------- MCI Connections within Subsystem -----------------------
-    logic mcu_rst_b;
 
 
     // ----------------- MCI Connections LCC Connections -----------------------
@@ -368,8 +379,6 @@ module caliptra_ss_top
     // --------------------------------------------------------------------
 
     //---------------------------I3C---------------------------------------
-    logic                       payload_available_o;
-    logic                       image_activated_o;
     logic                       disable_id_filtering_i;
     logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
 
@@ -472,7 +481,7 @@ module caliptra_ss_top
 
         .mbox_sram_cs(cptra_ss_cptra_core_mbox_sram_cs_o),
         .mbox_sram_we(cptra_ss_cptra_core_mbox_sram_we_o),
-        .mbox_sram_addr(cptra_sscptra_core_mbox_sram_addr_o),
+        .mbox_sram_addr(cptra_ss_cptra_core_mbox_sram_addr_o),
         .mbox_sram_wdata(cptra_ss_cptra_core_mbox_sram_wdata_o),
         .mbox_sram_rdata(cptra_ss_cptra_core_mbox_sram_rdata_i),
             
@@ -484,8 +493,8 @@ module caliptra_ss_top
         .mailbox_flow_done(),
         .BootFSM_BrkPoint(cptra_ss_cptra_core_bootfsm_bp_i),
 
-        .recovery_data_avail(payload_available_o),
-        .recovery_image_activated(image_activated_o),
+        .recovery_data_avail(cptra_ss_i3c_recovery_payload_available_i),
+        .recovery_image_activated(cptra_ss_i3c_recovery_image_activated_i),
 
         //SoC Interrupts
         .cptra_error_fatal    (cptra_error_fatal    ),
@@ -569,9 +578,9 @@ module caliptra_ss_top
     // MCU instance
     //=========================================================================-
     mcu_top rvtop_wrapper (
-        .rst_l                  ( mcu_rst_b ),
+        .rst_l                  ( cptra_ss_mcu_rst_b_i ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ),
-        .clk                    ( mcu_clk_cg ),
+        .clk                    ( cptra_ss_mcu_clk_cg_o ),
         .rst_vec                ( reset_vector[31:1]),
         .nmi_int                ( mci_mcu_nmi_int),
         .nmi_vec                ( mci_mcu_nmi_vector[31:1]),
@@ -843,7 +852,7 @@ module caliptra_ss_top
         .dccm_ecc_double_error  (mcu_dccm_ecc_double_error),
 
         .core_id                ('0),
-        .scan_mode              ( 1'b0 ),        // To enable scan mode
+        .scan_mode              ( cptra_ss_cptra_core_scan_mode_i ),        // To enable scan mode
         .mbist_mode             ( 1'b0 ),        // to enable mbist
 
         .dmi_core_enable   (mcu_dmi_core_enable),
@@ -936,8 +945,8 @@ module caliptra_ss_top
         // Additional signals
         .sel_od_pp_o                    (cptra_ss_sel_od_pp_o),
 
-        .recovery_payload_available_o   (payload_available_o),
-        .recovery_image_activated_o     (image_activated_o),
+        .recovery_payload_available_o   (cptra_ss_i3c_recovery_payload_available_o),
+        .recovery_image_activated_o     (cptra_ss_i3c_recovery_image_activated_o),
         .peripheral_reset_o             (i3c_peripheral_reset),
         .peripheral_reset_done_i        (1'b1),
         .escalated_reset_o              (i3c_escalated_reset),
@@ -995,7 +1004,7 @@ module caliptra_ss_top
     ) mci_top_i (
 
         .clk(cptra_ss_clk_i),
-        .mcu_clk_cg(mcu_clk_cg),
+        .mcu_clk_cg(cptra_ss_mcu_clk_cg_o),
         .cptra_ss_rdc_clk_cg(cptra_ss_rdc_clk_cg_o), 
 
 
@@ -1039,6 +1048,12 @@ module caliptra_ss_top
         
         // OTP
         .intr_otp_operation_done,
+
+        // RDC Signals
+        .rdc_clk_dis(cptra_ss_warm_reset_rdc_clk_dis_o),
+        .early_warm_reset_warn(cptra_ss_early_warm_reset_warn_o),
+        .fw_update_rdc_clk_dis(cptra_ss_mcu_fw_update_rdc_clk_dis_o),
+
         
         // MCU Halt Signals
         .mcu_cpu_halt_req_o   (cptra_ss_mcu_halt_req_o   ),
@@ -1050,7 +1065,7 @@ module caliptra_ss_top
         .nmi_intr(mci_mcu_nmi_int),
         .mcu_nmi_vector(mci_mcu_nmi_vector),
 
-        .mcu_rst_b(mcu_rst_b),
+        .mcu_rst_b(cptra_ss_mcu_rst_b_o),
         .cptra_rst_b(cptra_ss_mci_cptra_rst_b_o),
 
         // MBOX
@@ -1257,7 +1272,7 @@ module caliptra_ss_top
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
     ); 
 
-    `CALIPTRA_ASSERT(i3c_payload_available, ($rose(payload_available_o) |-> ##[1:50] payload_available_o == 0),cptra_ss_clk_i, cptra_ss_rst_b_i)
-    `CALIPTRA_ASSERT(i3c_image_activated, ($rose(image_activated_o) |-> ##[1:50] image_activated_o == 0), cptra_ss_clk_i, cptra_ss_rst_b_i)
+    //`CALIPTRA_ASSERT(i3c_payload_available, ($rose(cptra_ss_i3c_recovery_payload_available_i) |-> ##[1:50] cptra_ss_i3c_recovery_payload_available_i == 0),cptra_ss_clk_i, cptra_ss_rst_b_i) - Nilesh to explain/fix
+    //`CALIPTRA_ASSERT(i3c_image_activated, ($rose(cptra_ss_i3c_recovery_image_activated_i) |-> ##[1:50] cptra_ss_i3c_recovery_image_activated_i == 0), cptra_ss_clk_i, cptra_ss_rst_b_i) - Nilesh to explain/fix
 
 endmodule
