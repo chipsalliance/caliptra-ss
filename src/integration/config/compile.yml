@@ -225,7 +225,8 @@ global:
         #- '+ai3c_dbg_name=master'
         - '+vpi'
         # - -lpthread'
-        - '+CLP_BUS_LOGS=1'
+        # Uncomment to enable exec.log, ahb bus logs, etc. in Caliptra Core
+        #- '+CLP_BUS_LOGS=1'
         # Command line arg to spcify the I3C test 
         # - +AVY_TEST=ai3ct_ext_basic
         # Command line arg to spcify the I3C test Runtime
