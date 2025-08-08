@@ -102,7 +102,7 @@ module caliptra_ss_top_tb
     int                         cycleCnt;
 
 
-    mldsa_mem_if mldsa_memory_export();
+    abr_mem_if abr_memory_export();
 
 
 // ----------------- MCI Connections within Subsystem -----------------------
@@ -140,6 +140,8 @@ module caliptra_ss_top_tb
          logic image_activated_o;
 
 //------------------------------------------------------------------------
+
+    logic cptra_ss_ocp_lock_en_i;
 
     logic         cptra_ss_debug_intent_i;
     logic cptra_ss_soc_mcu_mbox0_data_avail;
@@ -1116,7 +1118,7 @@ module caliptra_ss_top_tb
 
         // Caliptra Memory Export Interface
         .el2_mem_export (cptra_ss_cptra_core_el2_mem_export.veer_sram_sink),
-        .mldsa_memory_export (mldsa_memory_export.resp),
+        .abr_memory_export (abr_memory_export.resp),
 
         //SRAM interface for mbox
         .mbox_sram_cs   (cptra_ss_cptra_core_mbox_sram_cs_o   ),
@@ -1461,6 +1463,9 @@ module caliptra_ss_top_tb
     logic [63:0]  cptra_ss_strap_mci_base_addr_i;
     logic [63:0]  cptra_ss_strap_recovery_ifc_base_addr_i;
     logic [63:0]  cptra_ss_strap_otp_fc_base_addr_i;
+    logic [63:0]  cptra_ss_strap_ss_external_staging_area_base_addr_i;
+    logic [63:0]  cptra_ss_strap_ss_key_release_base_addr_i;
+    logic [15:0]  cptra_ss_strap_ss_key_release_key_size_i;
     logic [63:0]  cptra_ss_strap_uds_seed_base_addr_i;
     logic [31:0]  cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i;
     logic [31:0]  cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i;
@@ -1478,6 +1483,9 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
+    assign cptra_ss_strap_ss_key_release_base_addr_i = '0; // FIXME
+    assign cptra_ss_strap_ss_key_release_key_size_i = 16'h40; // FIXME
+    assign cptra_ss_strap_ss_external_staging_area_base_addr_i = 64'(`SOC_MCI_TOP_MCU_SRAM_BASE_ADDR); 
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
     assign cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i        = 32'h0;
     assign cptra_ss_strap_generic_0_i           = 32'h0;
@@ -1485,6 +1493,16 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_generic_2_i           = 32'h0;
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
+
+`ifdef CALIPTRA_MODE_SUBSYSTEM
+    initial begin
+        if ($test$plusargs("CLP_OCP_LOCK_DIS"))
+            cptra_ss_ocp_lock_en_i = 1'b0;
+    end
+`else
+    assign cptra_ss_ocp_lock_en_i = 1'b1;
+`endif
+
 
     // JTAG DPI
     jtagdpi #(
@@ -1617,13 +1635,16 @@ module caliptra_ss_top_tb
         .cptra_ss_dbg_manuf_enable_o,
         .cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o,
 
+    // OCP LOCK
+        .cptra_ss_ocp_lock_en_i,
+
     // LC Controller JTAG
         .cptra_ss_lc_ctrl_jtag_i,
         .cptra_ss_lc_ctrl_jtag_o,
 
     // Caliptra Memory Export Interface
         .cptra_ss_cptra_core_el2_mem_export,
-        .mldsa_memory_export_req(mldsa_memory_export.req),
+        .abr_memory_export(abr_memory_export.req),
 
     //SRAM interface for mbox
         .cptra_ss_cptra_core_mbox_sram_cs_o,
@@ -1686,6 +1707,10 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mci_base_addr_i,
         .cptra_ss_strap_recovery_ifc_base_addr_i,
         .cptra_ss_strap_otp_fc_base_addr_i,
+        .cptra_ss_strap_ss_key_release_base_addr_i,
+        .cptra_ss_strap_ss_key_release_key_size_i,
+        .cptra_ss_strap_ss_external_staging_area_base_addr_i,
+
         .cptra_ss_strap_uds_seed_base_addr_i,
         .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i,
         .cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i,

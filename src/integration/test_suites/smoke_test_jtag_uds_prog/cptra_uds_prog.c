@@ -25,7 +25,7 @@
 
 /*
 #### UDS Provisioning
-1. On reset, the ROM checks if the `UDS_PROGRAM_REQ` bit in the `SS_DBG_MANUF_SERVICE_REG_REQ` register is set. If the bit is set, ROM initiates the UDS seed programming flow by setting the `UDS_PROGRAM_IN_PROGRESS` bit in the `SS_DBG_MANUF_SERVICE_REG_RSP` register. If the flow fails at some point past reading the REQ bits, the flow will be aborted and an error returned.
+1. On reset, the ROM checks if the `UDS_PROGRAM_REQ` bit in the `SS_DBG_SERVICE_REG_REQ` register is set. If the bit is set, ROM initiates the UDS seed programming flow by setting the `UDS_PROGRAM_IN_PROGRESS` bit in the `SS_DBG_SERVICE_REG_RSP` register. If the flow fails at some point past reading the REQ bits, the flow will be aborted and an error returned.
 
 2. ROM then retrieves a 512-bit value from the iTRNG, the UDS Seed programming base address from the `SS_UDS_SEED_BASE_ADDR_L` and `SS_UDS_SEED_BASE_ADDR_H` registers and the Fuse Controller's base address from the `SS_OTP_FC_BASE_ADDR_L` and `SS_OTP_FC_BASE_ADDR_H` registers.
 
@@ -45,9 +45,9 @@
     2. The ROM triggers the digest calculation command by writing 0x4 to the `DIRECT_ACCESS_CMD` register.
     3. The ROM continuously polls the Fuse Controller's `STATUS` register until the DAI state returns to idle.
 
-7. ROM updates the `UDS_PROGRAM_SUCCESS` or the `UDS_PROGRAM_FAIL` bit in the `SS_DBG_MANUF_SERVICE_REG_RSP` register to indicate the outcome of the operation.
+7. ROM updates the `UDS_PROGRAM_SUCCESS` or the `UDS_PROGRAM_FAIL` bit in the `SS_DBG_SERVICE_REG_RSP` register to indicate the outcome of the operation.
 
-8. ROM then resets the `UDS_PROGRAM_IN_PROGRESS` bit in the `SS_DBG_MANUF_SERVICE_REG_RSP` register to indicate completion of the programming.
+8. ROM then resets the `UDS_PROGRAM_IN_PROGRESS` bit in the `SS_DBG_SERVICE_REG_RSP` register to indicate completion of the programming.
 
 9. The manufacturing process then polls this bit and continues with the fuse burning flow as outlined by the fuse controller specifications and SOC-specific VR methodologies.
 */
@@ -94,7 +94,7 @@ void wait_dai_op_idle(uint32_t status_mask) {
     status &= ((((uint32_t)1) << (FUSE_CTRL_STATUS_DAI_IDLE_OFFSET - 1)) - 1);
     if (status != status_mask) {
         VPRINTF(LOW, "CLP_CORE ERROR: unexpected status: expected: %08X actual: %08X\n", status_mask, status);
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_MASK);
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_MASK);
         printf("%c",0xff); //End the test
     }
     VPRINTF(LOW, "CLP_CORE: DAI is now idle.\n");
@@ -161,24 +161,24 @@ void main(void) {
 
     VPRINTF(LOW,"----------------------------------\nCaliptra: Mimicking ROM from Subsystem!!\n----------------------------------\n");
     uint32_t status_reg = 0;
-    status_reg = (lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK) == SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK;
+    status_reg = (lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ) & SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK) == SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK;
     if (status_reg){
         VPRINTF(LOW, "CLP_CORE: detected UDS prog request...\n");
-        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK;
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK;
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         VPRINTF(LOW, "CLP_CORE: set DBG_MANUF_SERVICE_REG_RSP high...\n");
         uint32_t UDS_low_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_UDS_SEED_BASE_ADDR_L);
         uint32_t UDS_high_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_UDS_SEED_BASE_ADDR_H);
         uint32_t FC_base_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_OTP_FC_BASE_ADDR_H);
         UDS_provision(FC_base_addr+UDS_low_addr);
-        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         VPRINTF(LOW, "CLP_CORE: set RSP_UDS_PROGRAM_SUCCESS high...\n");
-        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg & (SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         while(1);
     } else {
         VPRINTF(LOW, "CLP_CORE: Error because there is no UDS prog request...\n");

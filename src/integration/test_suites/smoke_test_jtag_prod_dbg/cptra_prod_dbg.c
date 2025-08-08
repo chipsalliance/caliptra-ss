@@ -86,9 +86,9 @@ uint32_t dma_read_from_lsu(uint32_t address){
 
 void wait_for_mailbox_cmd() {
     uint32_t status_reg ;
-    status_reg = SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK;
-    status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK;
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+    status_reg = SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK;
+    status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK;
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
     VPRINTF(LOW, "CLP_CORE: set PROD_DBG_UNLOCK_IN_PROGRESS...\n");
     VPRINTF(LOW, "CLP_CORE: set MAILBOX_AVAILABLE...\n");
     // DEBUG UNLOCK should be in in-progress, write a register
@@ -101,8 +101,8 @@ void wait_for_mailbox_cmd() {
     VPRINTF(LOW, "CLP_CORE: Checking cmd from tap\n");
     uint32_t cmd = lsu_read_32(CLP_MBOX_CSR_MBOX_CMD);
     if (cmd != AUTH_DEBUG_UNLOCK_REQ_CMD) {
-        status_reg = SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK;
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK;
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         VPRINTF(ERROR, "ERROR: mailbox command mismatch actual (0x%x) expected (0x%x)\n", cmd, AUTH_DEBUG_UNLOCK_REQ_CMD);
         printf("%c", 0x01);
     }
@@ -154,7 +154,7 @@ void wait_and_read_token() {
     uint32_t cmd = lsu_read_32(CLP_MBOX_CSR_MBOX_CMD);
     if (cmd != AUTH_DEBUG_UNLOCK_TOKEN) {
         VPRINTF(ERROR, "ERROR: mailbox command mismatch actual (0x%x) expected (0x%x)\n", cmd, AUTH_DEBUG_UNLOCK_TOKEN);
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK);
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK);
         printf("%c", 0x01);
     }
     VPRINTF(LOW, "CLP_CORE: Received expected mailbox cmd 0x%08X\n", cmd);
@@ -201,22 +201,22 @@ void main(void) {
         return;
     }
 
-    uint32_t req_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ);
+    uint32_t req_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ);
     uint32_t intent = lsu_read_32(CLP_SOC_IFC_REG_SS_DEBUG_INTENT);
-    if ((req_reg == SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_PROD_DBG_UNLOCK_REQ_MASK) && intent) {
+    if ((req_reg == SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_PROD_DBG_UNLOCK_REQ_MASK) && intent) {
         VPRINTF(LOW, "CLP_CORE: PROD DEBUG UNLOCK request detected\n");
         wait_for_mailbox_cmd();
         read_unlock_req_payload();
         send_challenge_response();
         wait_and_read_token();
         // read_pk_hash();
-        uint32_t status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        uint32_t status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         VPRINTF(LOW, "\n\nCLP_CORE: set PROD_DBG_UNLOCK_SUCCESS high...\n\n");
-        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg & (SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         lsu_write_32(CLP_MBOX_CSR_TAP_MODE,0);
         VPRINTF(LOW, "CLP_CORE: Token received and test complete.\n");
         while(1); // Do not complete the execution, wait for MCU terminal cmd

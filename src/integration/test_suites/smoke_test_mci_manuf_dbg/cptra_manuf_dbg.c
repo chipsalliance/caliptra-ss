@@ -33,11 +33,11 @@ volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
 /*
 #### Debug Unlock
-1. The ROM sets the `SS_DBG_MANUF_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_IN_PROGRESS` bit to 1.
+1. The ROM sets the `SS_DBG_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_IN_PROGRESS` bit to 1.
 
-2. The ROM authorizes the debug unlock by setting the `SS_DBG_MANUF_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_SUCCESS` bit to 1.
+2. The ROM authorizes the debug unlock by setting the `SS_DBG_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_SUCCESS` bit to 1.
 
-3. The ROM sets the `SS_DBG_MANUF_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_IN_PROGRESS` bit to 0.
+3. The ROM sets the `SS_DBG_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_IN_PROGRESS` bit to 0.
 */
 
 inline void cpt_sleep (const uint32_t cycles) {
@@ -52,8 +52,8 @@ void main(void) {
 
     VPRINTF(LOW,"----------------------------------\nCaliptra: Mimicking ROM from Subsystem!!\n----------------------------------\n");
     uint32_t status_reg ;
-    status_reg =  SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK;
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+    status_reg =  SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK;
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
     VPRINTF(LOW, "\n\nCLP_CORE: set MANUF_DBG_UNLOCK_SUCCESS is 0x%X...\n\n", status_reg);
     cpt_sleep(50000);
     

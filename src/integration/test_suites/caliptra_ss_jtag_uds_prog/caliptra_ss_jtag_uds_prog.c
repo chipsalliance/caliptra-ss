@@ -97,8 +97,8 @@ void main (void) {
 
     cptra_boot_go = 0;
     VPRINTF(LOW, "MCU: waits in success loop\n");
-    while(cptra_boot_go != SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK){
-        cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
+    while(cptra_boot_go != SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK){
+        cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
     }
 
     cptra_boot_go = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm

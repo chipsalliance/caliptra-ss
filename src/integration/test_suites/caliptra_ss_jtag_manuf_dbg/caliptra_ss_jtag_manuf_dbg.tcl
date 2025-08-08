@@ -43,15 +43,15 @@ if {($val & 0x00000c00) == 0} {
 puts ""
 
 # Define register addresses
-set SS_DBG_MANUF_SERVICE_REG_REQ        0x70
-set SS_DBG_MANUF_SERVICE_REG_RSP        0x71
+set SS_DBG_SERVICE_REG_REQ        0x70
+set SS_DBG_SERVICE_REG_RSP        0x71
 set DMI_REG_BOOTFSM_GO_ADDR             0x61
 
 # Write to the debug service register to trigger UDS programming.
 puts "TAP: Triggering MANUF DEBUG REQ programming..."
-riscv dmi_write $SS_DBG_MANUF_SERVICE_REG_REQ 0x1
-set actual [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_REQ]
-puts "TAP: SS_DBG_MANUF_SERVICE_REG_REQ: $actual"
+riscv dmi_write $SS_DBG_SERVICE_REG_REQ 0x1
+set actual [riscv dmi_read $SS_DBG_SERVICE_REG_REQ]
+puts "TAP: SS_DBG_SERVICE_REG_REQ: $actual"
 
 puts "TAP: Set BOOTFSM_GO to High..."
 riscv dmi_write $DMI_REG_BOOTFSM_GO_ADDR 0x1
@@ -84,11 +84,11 @@ puts ""
 
 # Polling UDS programming status
 puts "TAP: Polling MANUF DBG status: waiting for in-progress flag..."
-set status [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
+set status [riscv dmi_read $SS_DBG_SERVICE_REG_RSP]
 puts "TAP: Expected in-progress flag (bit 3) not set initially. Waiting."
 while {([expr {$status & 0x4}] == 0)} {    
     after 5000
-    set status [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
+    set status [riscv dmi_read $SS_DBG_SERVICE_REG_RSP]
 }
 
 puts "TAP: In-progress flag set. Programming complete."
@@ -96,13 +96,13 @@ puts "TAP: In-progress flag set. Programming complete."
 # Now, continuously poll until the in-progress flag clears.
 while {($status & 0x4) != 0} {
     after 1000    ;# Wait 1000ms between polls to avoid busy looping.
-    set status [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
+    set status [riscv dmi_read $SS_DBG_SERVICE_REG_RSP]
 }
 
 puts "TAP: MANUF DBG in-progress flag cleared. Evaluating result..."
 
 # After the in-progress flag is cleared, read the response register.
-set rsp_val [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
+set rsp_val [riscv dmi_read $SS_DBG_SERVICE_REG_RSP]
 # Check for failure (bit 8, mask 0x80) and success (bit 7, mask 0x40).
 set failure [expr {($rsp_val & 0x2) != 0}]
 set success [expr {($rsp_val & 0x1) != 0}]
@@ -122,7 +122,7 @@ puts "TAP: MANUF DBG completed successfully."
 puts "Put JTAG into a infinite loop!!!"
 while {([expr {$status & 0x4}] == 0)} {    
     after 5000
-    set status [riscv dmi_read $SS_DBG_MANUF_SERVICE_REG_RSP]
+    set status [riscv dmi_read $SS_DBG_SERVICE_REG_RSP]
 }
 shutdown
 
