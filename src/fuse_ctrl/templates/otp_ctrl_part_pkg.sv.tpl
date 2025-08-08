@@ -28,6 +28,7 @@ package otp_ctrl_part_pkg;
   parameter int NumVendorPkFuses = ${num_vendor_pk_fuses};
   parameter int NumVendorSecretFuses = ${num_vendor_secret_fuses};
   parameter int NumVendorNonSecretFuses = ${num_vendor_non_secret_fuses};
+  parameter int NumRatchetSeedPartitions = ${num_ratchet_seed_partitions};
   
   ////////////////////////////////////
   // Scrambling Constants and Types //

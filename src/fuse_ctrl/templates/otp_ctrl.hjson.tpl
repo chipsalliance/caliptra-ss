@@ -1203,6 +1203,20 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
         ]
       }
 
+      { name: "RATCHET_SEED_VOLATILE_LOCK",
+        desc: "Address register for direct accesses.",
+        swaccess: "rw",
+        hwaccess: "hro",
+        resval:   0,
+        fields: [
+          { bits: "31:0",
+            desc: '''
+                  Volatile write lock for ratchet seed partitions.
+                  '''
+          }
+        ]
+      }
+
       ///////////////////////
       // Integrity Digests //
       ///////////////////////
