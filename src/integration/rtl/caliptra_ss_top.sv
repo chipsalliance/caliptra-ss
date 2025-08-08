@@ -1268,6 +1268,9 @@ module caliptra_ss_top
 
         .otp_lc_data_o(from_otp_to_lcc_data_i),
 
+        .cio_test_o(),    // confirmed unused in design
+        .cio_test_en_o(), // confirmed unused in design
+
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
     ); 
