@@ -1383,9 +1383,13 @@ end
 
   lc_ctrl_pkg::lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
   // The transition tokens have been provisioned.
-  assign test_tokens_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign test_tokens_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0 &&
+                              mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])) ?
+                              lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The rma token has been provisioned.
-  assign rma_token_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign rma_token_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0 &&
+                            mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])) ?
+                            lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
   assign secrets_valid = lc_ctrl_pkg::Off;
 
@@ -1452,7 +1456,9 @@ end
   `CALIPTRA_ASSERT_KNOWN(OtpLcDataKnown_A,            otp_lc_data_o)
   `CALIPTRA_ASSERT_KNOWN(OtpBroadcastKnown_A,         otp_broadcast_o)
 
-  `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 |-> test_tokens_valid == lc_ctrl_pkg::On)
+  `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 &&
+                                            mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])
+                                            |-> test_tokens_valid == lc_ctrl_pkg::On)
 
   // Redirect error triggers to the state error alert port.
   `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrlDaiPrimCountCheck_A, u_otp_ctrl_dai.u_prim_count, alerts[1])
