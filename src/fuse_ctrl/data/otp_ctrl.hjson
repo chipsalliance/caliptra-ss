@@ -3538,15 +3538,15 @@
           { bits: "28"
             name: "SCRAMBLING_FSM_ERROR"
             desc: '''
-                  Set to 1 if the scrambling datapath FSM has reached an invalid state.
-                  This raises an fatal_check_error alert and is an unrecoverable error condition.
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
                   '''
           }
           { bits: "29"
             name: "BUS_INTEG_ERROR"
             desc: '''
-                  This bit is set to 1 if a fatal bus integrity fault is detected.
-                  This error triggers a fatal_bus_integ_error alert.
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
                   '''
           }
           { bits: "30"
