@@ -1493,16 +1493,13 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_generic_2_i           = 32'h0;
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
-
-`ifdef CALIPTRA_MODE_SUBSYSTEM
+    
     initial begin
         if ($test$plusargs("CLP_OCP_LOCK_DIS"))
             cptra_ss_ocp_lock_en_i = 1'b0;
+        else 
+            cptra_ss_ocp_lock_en_i = 1'b1;
     end
-`else
-    assign cptra_ss_ocp_lock_en_i = 1'b1;
-`endif
-
 
     // JTAG DPI
     jtagdpi #(
