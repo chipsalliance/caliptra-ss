@@ -365,6 +365,57 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
 
     endtask
 
+	virtual task i3c_queue_read(	input ai3c_addr_t  addr,
+									input int   	   len,
+									output bit [7:0] data[]);
+
+		ai3c_transaction tr;
+		ai3c_message     msg;
+		bit              ok;
+        bit [7:0]        pec;
+
+        time timeout;
+        timeout = (len * 2us) + 20us;
+
+		test_log.step($psprintf("I3C rd txfer started at...: addr = 'h %0h, len = 'd %0d", addr, len));
+		tr = new(`avery_strarg sys_agt.mgr);
+		ok = tr.randomize () with {
+				mhs.size() == 1;
+				mhs.size() == 1 -> mhs[0].addr == addr;
+				mhs.size() == 1 -> mhs[0].rw   == AI3C_read;
+                mhs.size() == 1 -> mhs[0].len  == len+1; // Account for len lsb+msb and PEC
+		};
+
+		if (!ok) begin 
+				test_log.fatal($psprintf("%m: randomization failed"));
+		end
+
+		sys_agt.post_transaction(tr);
+		tr.wait_done(timeout);
+		
+		//-- read data from the subordinate
+		msg = tr.msgs[0];
+		data = new[len];
+		foreach(msg.data_bytes[i]) begin
+            data[i] = msg.data_bytes[i];
+            test_log.substep($psprintf("Data Read : 'h %0h", msg.data_bytes[i]));
+		end
+
+		pec = crc8('{(addr << 1) | 1}); // address
+        pec = crc8(data, pec); // payload
+
+		test_log.substep($psprintf("Addr      : 'h %0h ", addr));
+		test_log.substep($psprintf("Length    : 'h %0h ", len));
+		test_log.substep($psprintf("Data Read :\n%s", tr.sprint(2)));
+
+        test_log.substep($psprintf("PEC recvd : 'h %0h", msg.data_bytes[len+1]));
+        test_log.substep($psprintf("PEC calcd : 'h %0h", pec));
+		
+		chk_tr(tr);
+		test_log.step($psprintf("I3C rd txfer completed at.: addr = 'h %0h, len = 'd %0d", addr, len));
+
+	endtask
+	
 	virtual task i3c_read(	input ai3c_addr_t  addr,
 					input bit [7:0]    cmd,
 					input int   	   len,
