@@ -19,6 +19,14 @@ It has been generated with ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partit
 | VENDOR_REVOCATIONS_PROD_PARTITION |    no    |     no     |     no      | yes (Digest)  |   yes (CSR)   | Vendor revocations production partition.                            |
 |   VENDOR_SECRET_PROD_PARTITION    |   yes    |    yes     |     yes     | yes (Digest)  | yes (Digest)  | Vendor secret production partition.                                 |
 | VENDOR_NON_SECRET_PROD_PARTITION  |    no    |     no     |     yes     | yes (Digest)  |   yes (CSR)   | Vendor non-secret production partition.                             |
+|     CPTRA_SS_LOCK_HEK_PROD_0      |    no    |     no     |     yes     | yes (Digest)  |   yes (CSR)   | OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 0.               |
+|     CPTRA_SS_LOCK_HEK_PROD_1      |    no    |     no     |     yes     | yes (Digest)  |   yes (CSR)   | OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 1.               |
+|     CPTRA_SS_LOCK_HEK_PROD_2      |    no    |     no     |     yes     | yes (Digest)  |   yes (CSR)   | OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 2.               |
+|     CPTRA_SS_LOCK_HEK_PROD_3      |    no    |     no     |     yes     | yes (Digest)  |   yes (CSR)   | OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 3.               |
+|     CPTRA_SS_LOCK_HEK_PROD_4      |    no    |     no     |     yes     | yes (Digest)  |   yes (CSR)   | OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 4.               |
+|     CPTRA_SS_LOCK_HEK_PROD_5      |    no    |     no     |     yes     | yes (Digest)  |   yes (CSR)   | OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 5.               |
+|     CPTRA_SS_LOCK_HEK_PROD_6      |    no    |     no     |     yes     | yes (Digest)  |   yes (CSR)   | OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 6.               |
+|     CPTRA_SS_LOCK_HEK_PROD_7      |    no    |     no     |     yes     | yes (Digest)  |   yes (CSR)   | OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 7.               |
 |            LIFE_CYCLE             |    no    |    yes     |     yes     |      no       |      no       | Lifecycle partition.                                                |
 |                                   |          |            |             |               |               | This contains lifecycle transition count and state. This partition  |
 |                                   |          |            |             |               |               | cannot be locked since the life cycle state needs to advance to RMA |
