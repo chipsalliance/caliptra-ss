@@ -75,7 +75,9 @@ package mci_dmi_pkg;
     parameter MCI_DMI_SS_CONFIG_DONE                    = 7'h79;
     parameter MCI_DMI_SS_CONFIG_DONE_STICKY             = 7'h7A;
     parameter MCI_DMI_MCU_NMI_VECTOR                    = 7'h7B;
-    parameter MCI_DMI_MCI_HW_OVERRIDE                   = 7'h7C; 
+    parameter MCI_DMI_MCI_HW_OVERRIDE                   = 7'h7C;
+    parameter MCI_DMI_SS_TRACE_SELECT                   = 7'h7D;
+    parameter MCI_DMI_CPTRA_DCLS_CTRL                   = 7'h7E;
 
     typedef struct packed{
         logic [30:0] reserved;

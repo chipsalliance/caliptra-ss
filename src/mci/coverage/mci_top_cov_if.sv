@@ -75,13 +75,13 @@ interface mci_top_cov_if
     input logic        mcu_dmi_active, 
 
     // MCU Trace
-    input logic [31:0] mcu_trace_rv_i_insn_ip,
-    input logic [31:0] mcu_trace_rv_i_address_ip,
-    input logic        mcu_trace_rv_i_valid_ip,
-    input logic        mcu_trace_rv_i_exception_ip,
-    input logic [ 4:0] mcu_trace_rv_i_ecause_ip,
-    input logic        mcu_trace_rv_i_interrupt_ip,
-    input logic [31:0] mcu_trace_rv_i_tval_ip,
+    input logic [31:0] trace_rv_i_insn_ip,
+    input logic [31:0] trace_rv_i_address_ip,
+    input logic        trace_rv_i_valid_ip,
+    input logic        trace_rv_i_exception_ip,
+    input logic [ 4:0] trace_rv_i_ecause_ip,
+    input logic        trace_rv_i_interrupt_ip,
+    input logic [31:0] trace_rv_i_tval_ip,
 
     // Caliptra MBOX
     input logic cptra_mbox_data_avail,
