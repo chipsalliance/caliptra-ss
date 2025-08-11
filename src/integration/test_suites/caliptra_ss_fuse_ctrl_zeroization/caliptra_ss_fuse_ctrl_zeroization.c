@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -41,24 +42,29 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  * signal cannot be observed in software and must be verified through assertions.
  */
 void zeroize() {
-    const uint32_t sentinel = 0xAB;
-    const uint32_t granularity = 32;
+    uint32_t data[2];
 
-    // 0x000: CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN
-    grant_caliptra_core_for_fc_writes();
-    dai_wr(0x000, sentinel, 0, granularity, 0);
+    const partition_t hw_part = partitions[SECRET_LC_TRANSITION_PARTITION];
+
+    dai_zer(hw_part.address, &data[0], &data[1], hw_part.granularity, 0);
+    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+        VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
+        goto epilogue;
+    }
+    memset(data, 0, 2*sizeof(uint32_t));
+    // Zeroize marker field.
+    dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
+    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+        VPRINTF(LOW, "ERROR: digest is not zeroized\n");
+        goto epilogue;
+    }
+    memset(data, 0, 2*sizeof(uint32_t));
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
-    wait_dai_op_idle(0);
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_RELEASE_ZEROIZATION);
-    wait_dai_op_idle(0);
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION_RESET);
-    wait_dai_op_idle(0);
+epilogue:
+    VPRINTF(LOW, "zeroization test finished\n");
 }
 
 void main (void) {
@@ -74,6 +80,7 @@ void main (void) {
     wait_dai_op_idle(0);
 
     initialize_otp_controller();
+    wait_dai_op_idle(0);
 
     zeroize();
 
